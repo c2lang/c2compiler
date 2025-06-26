@@ -98,7 +98,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     d.base.functionDeclBits.call_kind = prefix ? CallKind.StaticTypeFunc : CallKind.Normal;
     d.base.functionDeclBits.is_type = is_type;
     d.flagBits = 0;
-    d.num_params = cast<u8>(num_params);
+    d.num_params = (u8)num_params;
     d.attr_printf_arg = 0;
     d.instance_idx = 0;
     d.template_name = 0;
@@ -143,7 +143,7 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     d.base.functionDeclBits.is_template = 1;
     d.base.functionDeclBits.is_type  = false;
     d.flagBits = 0;
-    d.num_params = cast<u8>(num_params);
+    d.num_params = (u8)num_params;
     d.attr_printf_arg = 0;
     d.instance_idx = 0;
     d.template_name = template_name;
@@ -165,7 +165,7 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
 
 public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instantiator* inst)
 {
-    // ref is the template arg (eg myfunc<Foo*>(..) -> Foo*)
+    // ref is the template arg (eg myfunc<Foo*)..) -> Foo*)
     // Note: the rtype could change, so this could make the size larger or smaller:
     // X could be replaced by mod.Foo, then bigger
     // X could be replaced by i32, then smaller
@@ -190,12 +190,12 @@ public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instant
     fd2.template_name = 0;
     fd2.template_loc = fd.template_loc;
     fd2.flagBits = fd.flagBits;
-    fd2.flags.instance_ast_idx = cast<u16>(inst.instance_ast_idx);
+    fd2.flags.instance_ast_idx = (u16)inst.instance_ast_idx;
     fd2.prefix = fd.prefix;
     fd2.rtype.instantiate(&fd.rtype, inst);
 
-    VarDecl** src = cast<VarDecl**>(fd.rtype.getPointerAfter());
-    VarDecl** dst = cast<VarDecl**>(fd2.rtype.getPointerAfter());
+    VarDecl** src = (VarDecl**)fd.rtype.getPointerAfter();
+    VarDecl** dst = (VarDecl**)fd2.rtype.getPointerAfter();
     for (u32 i=0; i<fd2.num_params; i++) {
         dst[i] = src[i].instantiate(inst);
     }
@@ -303,7 +303,7 @@ public fn void FunctionDecl.setCallKind(FunctionDecl* d, CallKind kind) {
 }
 
 public fn CallKind FunctionDecl.getCallKind(const FunctionDecl* d) {
-    return cast<CallKind>(d.base.functionDeclBits.call_kind);
+    return (CallKind)d.base.functionDeclBits.call_kind;
 }
 
 public fn bool FunctionDecl.isVariadic(const FunctionDecl* d) {
@@ -316,7 +316,7 @@ public fn u32 FunctionDecl.getNumParams(const FunctionDecl* d) {
 
 public fn VarDecl** FunctionDecl.getParams(const FunctionDecl* d) {
     u8* tail = d.rtype.getPointerAfter();
-    VarDecl** params = cast<VarDecl**>(tail);
+    VarDecl** params = (VarDecl**)tail;
     return params;
 }
 
@@ -449,7 +449,7 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
 
     //d.rtype.print(out, true,);
 
-    VarDecl** params = cast<VarDecl**>(tail);
+    VarDecl** params = (VarDecl**)tail;
     for (u32 i=0; i<d.num_params; i++) {
         params[i].print(out, indent + 1);
     }
@@ -471,7 +471,7 @@ fn void FunctionDecl.printType(const FunctionDecl* d, string_buffer.Buf* out) {
     out.add(" (");
 
     const u8* tail = d.rtype.getPointerAfter();
-    VarDecl** params = cast<VarDecl**>(tail);
+    VarDecl** params = (VarDecl**)tail;
     for (u32 i=0; i<d.num_params; i++) {
         if (i != 0) out.add(", ");
         params[i].printType(out);

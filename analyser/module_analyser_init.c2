@@ -23,7 +23,7 @@ import src_loc local;
 fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType, SrcLoc assignLoc) {
     Expr* e = *e_ptr;
     if (e.isInitList()) {
-        return ma.analyseInitListExpr(cast<InitListExpr*>(e), expectedType);
+        return ma.analyseInitListExpr((InitListExpr*)e, expectedType);
     }
 
     if (e.isStringLiteral()) {
@@ -71,7 +71,7 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
     }
 
     if (e.isCall() && ma.globalScope()) {
-        //CallExpr* c = cast<CallExpr*>(e);
+        //CallExpr* c = (CallExpr*)e);
         QualType qt = ma.analysePureCallExpr(e);
         // TODO check if compatible
         return true;
@@ -116,10 +116,10 @@ fn bool Analyser.checkEnumArg(Analyser* ma, Expr** e_ptr, QualType expectedType)
         // Note: can also be another enum variable! (Color c = prevColor)
         EnumType* et = expectedType.getEnum();
         EnumTypeDecl* etd = et.getDecl();
-        IdentifierExpr* ie = cast<IdentifierExpr*>(e);
+        IdentifierExpr* ie = (IdentifierExpr*)e;
         EnumConstantDecl* ecd = etd.findConstant(ie.getNameIdx());
         if (ecd) {
-            Decl* d = cast<Decl*>(ecd);
+            Decl* d = (Decl*)ecd;
             d.setUsed();
             e.setType(expectedType);
             ie.setDecl(d);
@@ -142,14 +142,14 @@ fn bool Analyser.analyseInitListExpr(Analyser* ma, InitListExpr* ile, QualType e
         return ma.analyseInitListStruct(ile, expectedType);
     }
 
-    Expr* e = cast<Expr*>(ile);
+    Expr* e = (Expr*)ile;
     ma.error(e.getLoc(), "cannot initialize variable of type '%s' with initializer list", expectedType.diagName());
     return false;
 }
 
 // Note: this function should only be called from analyseInitListArray directly!
 fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expectedType) {
-    ArrayDesignatedInitExpr* ad = cast<ArrayDesignatedInitExpr*>(e);
+    ArrayDesignatedInitExpr* ad = (ArrayDesignatedInitExpr*)e;
 
     QualType qt = ma.analyseExpr(ad.getDesignator2(), false, RHS);
     if (qt.isInvalid()) return false;
@@ -163,7 +163,7 @@ fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expe
     Expr* val = ad.getInit();
 
     if (val.isInitList()) {
-        return ma.analyseInitListExpr(cast<InitListExpr*>(val), expectedType);
+        return ma.analyseInitListExpr((InitListExpr*)val, expectedType);
     }
     bool ok = ma.analyseInitExpr(ad.getInit2(), expectedType, val.getLoc());
     if (!ok) return false;
@@ -187,7 +187,7 @@ fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expe
 }
 
 fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType expectedType) {
-    Expr* e = cast<Expr*>(ile);
+    Expr* e = (Expr*)ile;
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
 
@@ -226,13 +226,13 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
         ile.setHasDesignators();
 
         i32 array_size = -1; // will be determined by init-expr
-        if (at.hasSize()) array_size = cast<i32>(at.getSize());
+        if (at.hasSize()) array_size = (i32)at.getSize();
 
         init_checker.Checker* checker = ma.getInitChecker();
         ok = ma.checkArrayDesignators(ile, &array_size, checker);
         ma.putInitChecker(checker);
 
-        if (!at.hasSize()) at.setSize(cast<u32>(array_size));
+        if (!at.hasSize()) at.setSize((u32)array_size);
 
     } else {
         if (at.hasSize()) {
@@ -260,7 +260,7 @@ fn bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* siz
         SrcLoc loc;
         Expr* value = values[i];
         if (value.isArrayDesignatedInit()) {
-            ArrayDesignatedInitExpr* ad = cast<ArrayDesignatedInitExpr*>(value);
+            ArrayDesignatedInitExpr* ad = (ArrayDesignatedInitExpr*)value;
             Expr* desig = ad.getDesignator();
             loc = desig.getLoc();
             Value idx = ctv_analyser.get_value(desig);
@@ -268,7 +268,7 @@ fn bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* siz
                 ma.error(loc, "array designator value '%s' is negative", idx.str());
                 return false;
             }
-            if (*size != -1 && (*size <= 0 || !idx.checkRange(0, cast<u64>(*size - 1)))) {
+            if (*size != -1 && (*size <= 0 || !idx.checkRange(0, (u64)*size - 1))) {
                 ma.error(loc, "array designator index (%s) exceeds array bounds (%d)", idx.str(), *size);
                 return false;
             }
@@ -283,12 +283,12 @@ fn bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* siz
         }
 
         // check for duplicate entries
-        SrcLoc duplicate = checker.find(cast<u32>(current_index));
+        SrcLoc duplicate = checker.find((u32)current_index);
         if (duplicate) {
             ma.error(loc, "duplicate initialization of array index");
             ma.note(duplicate, "previous initialization is here");
         } else {
-            checker.add(cast<u32>(current_index), loc);
+            checker.add((u32)current_index, loc);
         }
 
         if (current_index > max_index) max_index = current_index;
@@ -319,7 +319,7 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
             goto out;
         }
 
-        FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(value);
+        FieldDesignatedInitExpr* fdi = (FieldDesignatedInitExpr*)value;
         u32 field_name = fdi.getField();
         u32 offset = 0;
         Decl* member = ma.findStructMember(std, field_name, value.getLoc(), &offset, false);
@@ -342,7 +342,7 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
     }
 
     expectedType.clearQuals();
-    Expr* e = cast<Expr*>(ile);
+    Expr* e = (Expr*)ile;
     e.setType(expectedType);
     checker.free();
     return true;
@@ -353,7 +353,7 @@ out:
 
 fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType expectedType) {
     // Note: expectedType is StructType
-    Expr* e = cast<Expr*>(ile);
+    Expr* e = (Expr*)ile;
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
 
@@ -416,7 +416,7 @@ fn bool Analyser.checkFieldDesignators(Analyser* ma, InitListExpr* ile, init_che
             ma.error(value.getLoc(), "mixing field designators with non-field designators");
             return false;
         }
-        FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(value);
+        FieldDesignatedInitExpr* fdi = (FieldDesignatedInitExpr*)value;
         SrcLoc loc = value.getLoc();
         u32 field = fdi.getField();
 

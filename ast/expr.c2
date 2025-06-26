@@ -349,33 +349,33 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
     case Type:
         break;
     case Call:
-        return (cast<CallExpr*>(e)).getStartLoc();
+        return ((CallExpr*)e).getStartLoc();
     case InitList:
     case FieldDesignatedInit:
     case ArrayDesignatedInit:
         break;
     case BinaryOperator:
-        return (cast<BinaryOperator*>(e)).getStartLoc();
+        return ((BinaryOperator*)e).getStartLoc();
     case UnaryOperator:
-        return (cast<UnaryOperator*>(e)).getStartLoc();
+        return ((UnaryOperator*)e).getStartLoc();
     case ConditionalOperator:
-        return (cast<ConditionalOperator*>(e)).getStartLoc();
+        return ((ConditionalOperator*)e).getStartLoc();
     case Builtin:
         break;
     case ArraySubscript:
-        return (cast<ArraySubscriptExpr*>(e)).getStartLoc();
+        return ((ArraySubscriptExpr*)e).getStartLoc();
     case Member:
-        return (cast<MemberExpr*>(e)).getStartLoc();
+        return ((MemberExpr*)e).getStartLoc();
     case Paren:
         break;
     case BitOffset:
-        return (cast<BitOffsetExpr*>(e)).getStartLoc();
+        return ((BitOffsetExpr*)e).getStartLoc();
     case ExplicitCast:
         break;
     case ImplicitCast:
-        return (cast<ImplicitCastExpr*>(e)).getStartLoc();
+        return ((ImplicitCastExpr*)e).getStartLoc();
     case Range:
-        return (cast<RangeExpr*>(e)).getStartLoc();
+        return ((RangeExpr*)e).getStartLoc();
     }
     return e.base.loc;
 }
@@ -383,51 +383,51 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
 public fn SrcLoc Expr.getEndLoc(const Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
-        return (cast<IntegerLiteral*>(e)).getEndLoc();
+        return ((IntegerLiteral*)e).getEndLoc();
     case FloatLiteral:
-        return (cast<FloatLiteral*>(e)).getEndLoc();
+        return ((FloatLiteral*)e).getEndLoc();
     case BooleanLiteral:
-        return (cast<BooleanLiteral*>(e)).getEndLoc();
+        return ((BooleanLiteral*)e).getEndLoc();
     case CharLiteral:
-        return (cast<CharLiteral*>(e)).getEndLoc();
+        return ((CharLiteral*)e).getEndLoc();
     case StringLiteral:
-        return (cast<StringLiteral*>(e)).getEndLoc();
+        return ((StringLiteral*)e).getEndLoc();
     case Nil:
-        return (cast<NilExpr*>(e)).getEndLoc();
+        return ((NilExpr*)e).getEndLoc();
     case Identifier:
-        return (cast<IdentifierExpr*>(e)).getEndLoc();
+        return ((IdentifierExpr*)e).getEndLoc();
     case Type:
-        return (cast<TypeExpr*>(e)).getEndLoc();
+        return ((TypeExpr*)e).getEndLoc();
     case Call:
-        return (cast<CallExpr*>(e)).getEndLoc();
+        return ((CallExpr*)e).getEndLoc();
     case InitList:
-        return (cast<InitListExpr*>(e)).getEndLoc();
+        return ((InitListExpr*)e).getEndLoc();
     case FieldDesignatedInit:
-        return (cast<FieldDesignatedInitExpr*>(e)).getEndLoc();
+        return ((FieldDesignatedInitExpr*)e).getEndLoc();
     case ArrayDesignatedInit:
-        return (cast<ArrayDesignatedInitExpr*>(e)).getEndLoc();
+        return ((ArrayDesignatedInitExpr*)e).getEndLoc();
     case BinaryOperator:
-        return (cast<BinaryOperator*>(e)).getEndLoc();
+        return ((BinaryOperator*)e).getEndLoc();
     case UnaryOperator:
-        return (cast<UnaryOperator*>(e)).getEndLoc();
+        return ((UnaryOperator*)e).getEndLoc();
     case ConditionalOperator:
-        return (cast<ConditionalOperator*>(e)).getEndLoc();
+        return ((ConditionalOperator*)e).getEndLoc();
     case Builtin:
-        return (cast<BuiltinExpr*>(e)).getEndLoc();
+        return ((BuiltinExpr*)e).getEndLoc();
     case ArraySubscript:
-        return (cast<ArraySubscriptExpr*>(e)).getEndLoc();
+        return ((ArraySubscriptExpr*)e).getEndLoc();
     case Member:
-        return (cast<MemberExpr*>(e)).getEndLoc();
+        return ((MemberExpr*)e).getEndLoc();
     case Paren:
-        return (cast<ParenExpr*>(e)).getEndLoc();
+        return ((ParenExpr*)e).getEndLoc();
     case BitOffset:
-        return (cast<BitOffsetExpr*>(e)).getEndLoc();
+        return ((BitOffsetExpr*)e).getEndLoc();
     case ExplicitCast:
-        return (cast<ExplicitCastExpr*>(e)).getEndLoc();
+        return ((ExplicitCastExpr*)e).getEndLoc();
     case ImplicitCast:
-        return (cast<ImplicitCastExpr*>(e)).getEndLoc();
+        return ((ImplicitCastExpr*)e).getEndLoc();
     case Range:
-        return (cast<RangeExpr*>(e)).getEndLoc();
+        return ((RangeExpr*)e).getEndLoc();
     }
     return e.base.loc;
 }
@@ -452,73 +452,73 @@ public fn void Expr.dump(const Expr* e) {
 fn void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
     switch (e.getKind()) {
     case IntegerLiteral:
-        IntegerLiteral.print(cast<IntegerLiteral*>(e), out, indent);
+        IntegerLiteral.print((IntegerLiteral*)e, out, indent);
         break;
     case FloatLiteral:
-        FloatLiteral.print(cast<FloatLiteral*>(e), out, indent);
+        FloatLiteral.print((FloatLiteral*)e, out, indent);
         break;
     case BooleanLiteral:
-        BooleanLiteral.print(cast<BooleanLiteral*>(e), out, indent);
+        BooleanLiteral.print((BooleanLiteral*)e, out, indent);
         break;
     case CharLiteral:
-        CharLiteral.print(cast<CharLiteral*>(e), out, indent);
+        CharLiteral.print((CharLiteral*)e, out, indent);
         break;
     case StringLiteral:
-        StringLiteral.print(cast<StringLiteral*>(e), out, indent);
+        StringLiteral.print((StringLiteral*)e, out, indent);
         break;
     case Nil:
-        NilExpr.print(cast<NilExpr*>(e), out, indent);
+        NilExpr.print((NilExpr*)e, out, indent);
         break;
     case Identifier:
-        IdentifierExpr.print(cast<IdentifierExpr*>(e), out, indent);
+        IdentifierExpr.print((IdentifierExpr*)e, out, indent);
         break;
     case Type:
-        TypeExpr.print(cast<TypeExpr*>(e), out, indent);
+        TypeExpr.print((TypeExpr*)e, out, indent);
         break;
     case Call:
-        CallExpr.print(cast<CallExpr*>(e), out, indent);
+        CallExpr.print((CallExpr*)e, out, indent);
         break;
     case InitList:
-        InitListExpr.print(cast<InitListExpr*>(e), out, indent);
+        InitListExpr.print((InitListExpr*)e, out, indent);
         break;
     case FieldDesignatedInit:
-        FieldDesignatedInitExpr.print(cast<FieldDesignatedInitExpr*>(e), out, indent);
+        FieldDesignatedInitExpr.print((FieldDesignatedInitExpr*)e, out, indent);
         break;
     case ArrayDesignatedInit:
-        ArrayDesignatedInitExpr.print(cast<ArrayDesignatedInitExpr*>(e), out, indent);
+        ArrayDesignatedInitExpr.print((ArrayDesignatedInitExpr*)e, out, indent);
         break;
     case BinaryOperator:
-        BinaryOperator.print(cast<BinaryOperator*>(e), out, indent);
+        BinaryOperator.print((BinaryOperator*)e, out, indent);
         break;
     case UnaryOperator:
-        UnaryOperator.print(cast<UnaryOperator*>(e), out, indent);
+        UnaryOperator.print((UnaryOperator*)e, out, indent);
         break;
     case ConditionalOperator:
-        ConditionalOperator.print(cast<ConditionalOperator*>(e), out, indent);
+        ConditionalOperator.print((ConditionalOperator*)e, out, indent);
         break;
     case Builtin:
-        BuiltinExpr.print(cast<BuiltinExpr*>(e), out, indent);
+        BuiltinExpr.print((BuiltinExpr*)e, out, indent);
         break;
     case ArraySubscript:
-        ArraySubscriptExpr.print(cast<ArraySubscriptExpr*>(e), out, indent);
+        ArraySubscriptExpr.print((ArraySubscriptExpr*)e, out, indent);
         break;
     case Member:
-        MemberExpr.print(cast<MemberExpr*>(e), out, indent);
+        MemberExpr.print((MemberExpr*)e, out, indent);
         break;
     case Paren:
-        ParenExpr.print(cast<ParenExpr*>(e), out, indent);
+        ParenExpr.print((ParenExpr*)e, out, indent);
         break;
     case BitOffset:
-        BitOffsetExpr.print(cast<BitOffsetExpr*>(e), out, indent);
+        BitOffsetExpr.print((BitOffsetExpr*)e, out, indent);
         break;
     case ExplicitCast:
-        ExplicitCastExpr.print(cast<ExplicitCastExpr*>(e), out, indent);
+        ExplicitCastExpr.print((ExplicitCastExpr*)e, out, indent);
         break;
     case ImplicitCast:
-        ImplicitCastExpr.print(cast<ImplicitCastExpr*>(e), out, indent);
+        ImplicitCastExpr.print((ImplicitCastExpr*)e, out, indent);
         break;
     case Range:
-        RangeExpr.print(cast<RangeExpr*>(e), out, indent);
+        RangeExpr.print((RangeExpr*)e, out, indent);
         break;
     }
 }
@@ -527,73 +527,73 @@ fn void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
 public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     switch (e.getKind()) {
     case IntegerLiteral:
-        IntegerLiteral.printLiteral(cast<IntegerLiteral*>(e), out);
+        IntegerLiteral.printLiteral((IntegerLiteral*)e, out);
         return;
     case FloatLiteral:
-        FloatLiteral.printLiteral(cast<FloatLiteral*>(e), out);
+        FloatLiteral.printLiteral((FloatLiteral*)e, out);
         return;
     case BooleanLiteral:
-        BooleanLiteral.printLiteral(cast<BooleanLiteral*>(e), out);
+        BooleanLiteral.printLiteral((BooleanLiteral*)e, out);
         return;
     case CharLiteral:
-        CharLiteral.printLiteral(cast<CharLiteral*>(e), out);
+        CharLiteral.printLiteral((CharLiteral*)e, out);
         return;
     case StringLiteral:
-        StringLiteral.printLiteral(cast<StringLiteral*>(e), out);
+        StringLiteral.printLiteral((StringLiteral*)e, out);
         return;
     case Nil:
-        NilExpr.printLiteral(cast<NilExpr*>(e), out);
+        NilExpr.printLiteral((NilExpr*)e, out);
         return;
     case Identifier:
-        IdentifierExpr.printLiteral(cast<IdentifierExpr*>(e), out);
+        IdentifierExpr.printLiteral((IdentifierExpr*)e, out);
         return;
     case Type:
-        TypeExpr.printLiteral(cast<TypeExpr*>(e), out, false);
+        TypeExpr.printLiteral((TypeExpr*)e, out, false);
         return;
     case Call:
-        CallExpr.printLiteral(cast<CallExpr*>(e), out);
+        CallExpr.printLiteral((CallExpr*)e, out);
         return;
     case InitList:
-        InitListExpr.printLiteral(cast<InitListExpr*>(e), out);
+        InitListExpr.printLiteral((InitListExpr*)e, out);
         return;
     case FieldDesignatedInit:
-        FieldDesignatedInitExpr.printLiteral(cast<FieldDesignatedInitExpr*>(e), out);
+        FieldDesignatedInitExpr.printLiteral((FieldDesignatedInitExpr*)e, out);
         return;
     case ArrayDesignatedInit:
-        ArrayDesignatedInitExpr.printLiteral(cast<ArrayDesignatedInitExpr*>(e), out);
+        ArrayDesignatedInitExpr.printLiteral((ArrayDesignatedInitExpr*)e, out);
         return;
     case BinaryOperator:
-        BinaryOperator.printLiteral(cast<BinaryOperator*>(e), out);
+        BinaryOperator.printLiteral((BinaryOperator*)e, out);
         return;
     case UnaryOperator:
-        UnaryOperator.printLiteral(cast<UnaryOperator*>(e), out);
+        UnaryOperator.printLiteral((UnaryOperator*)e, out);
         return;
     case ConditionalOperator:
-        ConditionalOperator.printLiteral(cast<ConditionalOperator*>(e), out);
+        ConditionalOperator.printLiteral((ConditionalOperator*)e, out);
         return;
     case Builtin:
-        BuiltinExpr.printLiteral(cast<BuiltinExpr*>(e), out);
+        BuiltinExpr.printLiteral((BuiltinExpr*)e, out);
         return;
     case ArraySubscript:
-        ArraySubscriptExpr.printLiteral(cast<ArraySubscriptExpr*>(e), out);
+        ArraySubscriptExpr.printLiteral((ArraySubscriptExpr*)e, out);
         return;
     case Member:
-        MemberExpr.printLiteral(cast<MemberExpr*>(e), out);
+        MemberExpr.printLiteral((MemberExpr*)e, out);
         return;
     case Paren:
-        ParenExpr.printLiteral(cast<ParenExpr*>(e), out);
+        ParenExpr.printLiteral((ParenExpr*)e, out);
         return;
     case BitOffset:
-        BitOffsetExpr.printLiteral(cast<BitOffsetExpr*>(e), out);
+        BitOffsetExpr.printLiteral((BitOffsetExpr*)e, out);
         return;
     case ExplicitCast:
-        ExplicitCastExpr.printLiteral(cast<ExplicitCastExpr*>(e), out);
+        ExplicitCastExpr.printLiteral((ExplicitCastExpr*)e, out);
         return;
     case ImplicitCast:
-        ImplicitCastExpr.printLiteral(cast<ImplicitCastExpr*>(e), out);
+        ImplicitCastExpr.printLiteral((ImplicitCastExpr*)e, out);
         return;
     case Range:
-        RangeExpr.printLiteral(cast<RangeExpr*>(e), out);
+        RangeExpr.printLiteral((RangeExpr*)e, out);
         return;
     }
     out.print("<<kind=%d>>", e.getKind());

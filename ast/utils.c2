@@ -148,7 +148,7 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
     // create all Qualtypes for builtin-types, 1 extra for void-ptr
     builtins = stdlib.malloc((elemsof(BuiltinKind) + 1) * sizeof(QualType));
     for (u32 i=0; i<elemsof(BuiltinKind); i++) {
-        builtins[i].set(cast<Type*>(BuiltinType.create(c, cast<BuiltinKind>(i))));
+        builtins[i].set((Type*)BuiltinType.create(c, (BuiltinKind)i));
     }
 
     // create void* Type so its easy to check if a type is a void*
@@ -169,7 +169,7 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
     globals.builtinType_bitfield_sizes[BuiltinKind.USize] = wordsize * 8;
 
     for (u32 i=0; i<elemsof(BuiltinKind); i++) {
-        globals.builtinType_baseTypes[i] = cast<BuiltinKind>(i);
+        globals.builtinType_baseTypes[i] = (BuiltinKind)i;
     }
     if (wordsize == 4) {
         globals.builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int32;
@@ -263,28 +263,28 @@ public fn void setTypePublicUsed(QualType qt) {
     case Builtin:
         return;
     case Pointer:
-        PointerType* pt = cast<PointerType*>(t);
+        PointerType* pt = (PointerType*)t;
         setTypePublicUsed(pt.inner);
         return;
     case Array:
-        ArrayType* at = cast<ArrayType*>(t);
+        ArrayType* at = (ArrayType*)t;
         setTypePublicUsed(at.elem);
         return;
     case Struct:
-        StructType* st = cast<StructType*>(t);
-        d = cast<Decl*>(st.decl);
+        StructType* st = (StructType*)t;
+        d = (Decl*)st.decl;
         break;
     case Enum:
-        EnumType* et = cast<EnumType*>(t);
-        d = cast<Decl*>(et.decl);
+        EnumType* et = (EnumType*)t;
+        d = (Decl*)et.decl;
         break;
     case Function:
-        //FunctionType* ft = cast<FunctionType*>(t);
+        //FunctionType* ft = (FunctionType*)t);
         // TODO how to get from FunctionType to FunctionTypeDecl?
         return;
     case Alias:
-        AliasType* at = cast<AliasType*>(t);
-        d = cast<Decl*>(at.decl);
+        AliasType* at = (AliasType*)t;
+        d = (Decl*)at.decl;
         break;
     case Module:
         return;

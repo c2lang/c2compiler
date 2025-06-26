@@ -55,7 +55,7 @@ fn Expr* TypeExpr.instantiate(TypeExpr* e, Instantiator* inst) {
 #if AstStatistics
     Stats.addExpr(ExprKind.Type, size);
 #endif
-    return cast<Expr*>(e2);
+    return (Expr*)e2;
 }
 
 public fn TypeRef* TypeExpr.getTypeRef(TypeExpr* e) {

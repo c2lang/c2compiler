@@ -68,7 +68,7 @@ fn void Checker.check(void* arg, Decl* d) {
         break;
     case EnumType:
         if (used && !c.warnings.no_unused_enum_constant) {
-            c.checkEnum(cast<EnumTypeDecl*>(d));
+            c.checkEnum((EnumTypeDecl*)d);
         }
         break;
     case EnumConstant:
@@ -94,7 +94,7 @@ fn void Checker.checkEnum(Checker* c, EnumTypeDecl* d) {
     EnumConstantDecl** constants = d.getConstants();
     for (u32 i=0; i<num_consts; i++) {
         EnumConstantDecl* ecd = constants[i];
-        Decl* dd = cast<Decl*>(ecd);
+        Decl* dd = (Decl*)ecd;
         if (!dd.isUsed()) {
             c.diags.warn(dd.getLoc(), "unused %s '%s'", dd.getKindName(), dd.getName());
         }
@@ -102,7 +102,7 @@ fn void Checker.checkEnum(Checker* c, EnumTypeDecl* d) {
 }
 
 fn void Checker.checkStructMembers(Checker* c, Decl* d) {
-    StructTypeDecl* std = cast<StructTypeDecl*>(d);
+    StructTypeDecl* std = (StructTypeDecl*)d;
     u32 num_members = std.getNumMembers();
     Decl** members = std.getMembers();
     for (u32 i=0; i<num_members; i++) {

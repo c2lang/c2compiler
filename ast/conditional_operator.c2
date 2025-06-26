@@ -53,7 +53,7 @@ fn Expr* ConditionalOperator.instantiate(ConditionalOperator* e, Instantiator* i
                                                         e.cond.instantiate(inst),
                                                         e.lhs.instantiate(inst),
                                                         e.rhs.instantiate(inst));
-    return cast<Expr*>(o);
+    return (Expr*)o;
 }
 
 public fn Expr* ConditionalOperator.getCond(const ConditionalOperator* e) {

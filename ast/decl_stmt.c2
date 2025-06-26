@@ -50,7 +50,7 @@ fn Stmt* DeclStmt.instantiate(DeclStmt* s, Instantiator* inst) {
     DeclStmt* s2 = DeclStmt.create(inst.c, s.decl, count);
     for (u32 i = 0; i < count; i++)
         s2.decl[i] = s.decl[i].instantiate(inst);
-    return cast<Stmt*>(s2);
+    return (Stmt*)s2;
 }
 
 public fn VarDecl* DeclStmt.getDecl(const DeclStmt* d, u32 i) {

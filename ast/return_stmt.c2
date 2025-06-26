@@ -47,9 +47,9 @@ public fn ReturnStmt* ReturnStmt.create(ast_context.Context* c, SrcLoc loc, Expr
 }
 
 fn Stmt* ReturnStmt.instantiate(ReturnStmt* s, Instantiator* inst) {
-    if (!s.base.returnStmtBits.has_value) return cast<Stmt*>(s);
+    if (!s.base.returnStmtBits.has_value) return (Stmt*)s;
 
-    return cast<Stmt*>(ReturnStmt.create(inst.c, s.base.loc, s.value[0].instantiate(inst)));
+    return (Stmt*)ReturnStmt.create(inst.c, s.base.loc, s.value[0].instantiate(inst));
 }
 
 public fn Expr* ReturnStmt.getValue(const ReturnStmt* s) {

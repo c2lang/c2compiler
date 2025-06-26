@@ -56,7 +56,7 @@ fn Stmt* IfStmt.instantiate(IfStmt* s, Instantiator* inst) {
     Stmt* else2 = nil;
     if (s.base.ifStmtBits.has_else) else2 = s.else_stmt[0].instantiate(inst);
 
-    return cast<Stmt*>(IfStmt.create(inst.c, s.base.loc, cond2, then2, else2));
+    return (Stmt*)IfStmt.create(inst.c, s.base.loc, cond2, then2, else2);
 }
 
 public fn Stmt* IfStmt.getCond(const IfStmt* s) { return s.cond; }

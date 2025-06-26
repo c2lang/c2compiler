@@ -69,7 +69,7 @@ public fn IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc l
 }
 
 fn Expr* IdentifierExpr.instantiate(IdentifierExpr* e, Instantiator* inst) {
-    return cast<Expr*>(IdentifierExpr.create(inst.c, e.base.base.loc, e.name_idx));
+    return (Expr*)IdentifierExpr.create(inst.c, e.base.base.loc, e.name_idx);
 }
 
 public fn Expr* IdentifierExpr.asExpr(IdentifierExpr* e) { return &e.base; }
@@ -95,7 +95,7 @@ public fn void IdentifierExpr.setKind(IdentifierExpr* e, IdentifierKind kind) {
 }
 
 public fn IdentifierKind IdentifierExpr.getKind(const IdentifierExpr* e) {
-    return cast<IdentifierKind>(e.base.base.identifierExprBits.kind);
+    return (IdentifierKind)e.base.base.identifierExprBits.kind;
 }
 
 public fn const char* IdentifierExpr.getName(const IdentifierExpr* e) {
@@ -104,7 +104,7 @@ public fn const char* IdentifierExpr.getName(const IdentifierExpr* e) {
 }
 
 fn SrcLoc IdentifierExpr.getEndLoc(const IdentifierExpr* e) {
-    return e.base.base.loc + cast<u32>(strlen(e.getName()));
+    return e.base.base.loc + (u32)strlen(e.getName());
 }
 
 public fn u32 IdentifierExpr.getNameIdx(const IdentifierExpr* e) {

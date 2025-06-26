@@ -43,9 +43,9 @@ public fn LabelStmt* LabelStmt.create(ast_context.Context* c, u32 name, SrcLoc l
 }
 
 fn Stmt* LabelStmt.instantiate(LabelStmt* s, Instantiator* inst) {
-    if (!s.stmt) return cast<Stmt*>(s);
+    if (!s.stmt) return (Stmt*)s;
 
-    return cast<Stmt*>(LabelStmt.create(inst.c, s.name, s.base.loc, s.stmt.instantiate(inst)));
+    return (Stmt*)LabelStmt.create(inst.c, s.name, s.base.loc, s.stmt.instantiate(inst));
 }
 
 public fn void LabelStmt.setUsed(LabelStmt* s) {

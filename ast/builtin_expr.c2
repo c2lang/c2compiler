@@ -128,11 +128,11 @@ fn Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
                                              e.container[0].pointer.instantiate(inst));
         break;
     }
-    return cast<Expr*>(bi);
+    return (Expr*)bi;
 }
 
 public fn BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {
-    return cast<BuiltinExprKind>(e.base.base.builtinExprBits.kind);
+    return (BuiltinExprKind)e.base.base.builtinExprBits.kind;
 }
 
 public fn Value BuiltinExpr.getValue(const BuiltinExpr* e) { return e.value; }

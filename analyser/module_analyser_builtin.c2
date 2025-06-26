@@ -21,7 +21,7 @@ import src_loc local;
 
 fn QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
-    BuiltinExpr* b = cast<BuiltinExpr*>(e);
+    BuiltinExpr* b = (BuiltinExpr*)e;
 
     switch (b.getKind()) {
     case Sizeof:
@@ -48,7 +48,7 @@ fn QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     ma.usedPublic = false;
     QualType qt;
     if (inner.isType()) {
-        TypeExpr* te = cast<TypeExpr*>(inner);
+        TypeExpr* te = (TypeExpr*)inner;
         TypeRef* ref = te.getTypeRef();
         qt = ma.analyseTypeRef(ref);
         inner.setType(qt);
@@ -63,7 +63,7 @@ fn QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
             StructType* st = qt.getStructType();
             const StructTypeDecl* std = st.getDecl();
             if (std.isOpaque()) {
-                const Decl* d = cast<Decl*>(std);
+                const Decl* d = (Decl*)std;
                 bool is_external = ma.mod != d.getModule();
                 if (ma.curFunction && ma.curFunction.getInstanceModule() == d.getModule()) {
                     // type is local in instantiation module
@@ -133,7 +133,7 @@ fn QualType Analyser.analyseEnumMinMax(Analyser* ma, BuiltinExpr* b) {
 }
 
 fn QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
-    Expr* e = cast<Expr*>(b);
+    Expr* e = (Expr*)b;
     Expr* inner = b.getInner();
     QualType qt = ma.analyseExpr(&inner, false, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
@@ -197,7 +197,7 @@ fn Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl*
     Decl* d = nil;
 
     if (member.isIdentifier()) {
-        IdentifierExpr* i = cast<IdentifierExpr*>(member);
+        IdentifierExpr* i = (IdentifierExpr*)member;
         u32 name_idx = i.getNameIdx();
 
         d = ma.findStructMemberOffset(std, name_idx, member.getLoc(), &base_offset);
@@ -209,14 +209,14 @@ fn Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl*
         i.setKind(IdentifierKind.StructMember);
     } else {
         assert(member.isMember());
-        MemberExpr* m = cast<MemberExpr*>(member);
+        MemberExpr* m = (MemberExpr*)member;
         for (u32 i=0; i<m.getNumRefs(); i++) {
             u32 name_idx = m.getNameIdx(i);
             SrcLoc loc = m.getLoc(i);
             d = ma.findStructMemberOffset(std, name_idx, loc, &base_offset);
             if (!d) return nil;
 
-            if (d.isStructType()) std = cast<StructTypeDecl*>(d);
+            if (d.isStructType()) std = (StructTypeDecl*)d;
             d.setUsed();
             m.setDecl(d, i);
         }

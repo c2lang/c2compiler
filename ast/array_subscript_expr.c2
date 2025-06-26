@@ -53,7 +53,7 @@ fn Expr* ArraySubscriptExpr.instantiate(ArraySubscriptExpr* e, Instantiator* ins
                                                       e.base.base.arraySubscriptExprBits.src_len,
                                                       e.lhs.instantiate(inst),
                                                       e.idx.instantiate(inst));
-    return cast<Expr*>(a);
+    return (Expr*)a;
 }
 
 public fn Expr* ArraySubscriptExpr.getBase(const ArraySubscriptExpr* e) { return e.lhs; }

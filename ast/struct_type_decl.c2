@@ -80,7 +80,7 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     layout.alignment = 0;
     layout.attr_alignment = 1;
 
-    u32* member_offsets = cast<u32*>(&d.members[d.num_members]);
+    u32* member_offsets = (u32*)&d.members[d.num_members];
     if (num_members) {
         string.memcpy(d.members, members, num_members * sizeof(Decl*));
         string.memset(layout.member_offsets, 0, num_members * sizeof(u32));
@@ -114,7 +114,7 @@ public fn bool StructTypeDecl.isUnion(const StructTypeDecl* d) {
 
 fn const FunctionDecl** StructTypeDecl.getStructFunctions(const StructTypeDecl* d) {
     // TEMP const-cast until ptr-ptr -> const ptr-ptr is fixed in analyser
-    return cast<const FunctionDecl**>(d.struct_functions);
+    return (const FunctionDecl**)d.struct_functions;
 }
 
 fn u32 StructTypeDecl.getNumStructFunctions(const StructTypeDecl* d) {
@@ -214,7 +214,7 @@ public fn Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx, u3
         }
 
         if (member_name == 0  && d.isStructType()) {
-            StructTypeDecl* sub = cast<StructTypeDecl*>(d);
+            StructTypeDecl* sub = (StructTypeDecl*)d;
             d = sub.findAny(name_idx, offset);
             if (d) {
                 if (offset) *offset += s.getMemberOffset(i);
@@ -226,7 +226,7 @@ public fn Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx, u3
     // NOTE: index is only set for variables!
     if (s.base.structTypeDeclBits.is_global) {
         for (u32 i=0; i<s.num_struct_functions; i++) {
-            Decl* sf = cast<Decl*>(s.struct_functions[i]);
+            Decl* sf = (Decl*)s.struct_functions[i];
             if (sf.getNameIdx() == name_idx) return sf;
         }
     }
@@ -245,7 +245,7 @@ public fn Decl* StructTypeDecl.findMember(const StructTypeDecl* s, u32 name_idx,
 
         // search unnamed sub-structs
         if (member_name == 0 && d.isStructType()) {
-            StructTypeDecl* sub = cast<StructTypeDecl*>(d);
+            StructTypeDecl* sub = (StructTypeDecl*)d;
             d = sub.findMember(name_idx, offset);
             if (d) {
                 if (offset) *offset += s.getMemberOffset(i);

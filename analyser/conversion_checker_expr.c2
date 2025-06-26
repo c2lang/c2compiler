@@ -67,11 +67,11 @@ fn ExprWidth getExprWidth(const Expr* e) {
         qt = qt.getCanonicalType();
         if (qt.isBuiltin()) {
             BuiltinType* bi = qt.getBuiltin();
-            result.width = cast<u8>(bi.getWidth());
+            result.width = (u8)bi.getWidth();
             result.is_signed = bi.isSigned();
         } else {
             // pointer or something
-            result.width = cast<u8>(ast.getWordSize() * 8);
+            result.width = (u8)(ast.getWordSize() * 8);
             result.is_signed = true;
         }
         return result;
@@ -86,11 +86,11 @@ fn ExprWidth getExprWidth(const Expr* e) {
     case ArrayDesignatedInit:
         break;
     case BinaryOperator:
-        return getBinOpWidth(cast<BinaryOperator*>(e));
+        return getBinOpWidth((BinaryOperator*)e);
     case UnaryOperator:
-        return getUnaryOpWidth(cast<UnaryOperator*>(e));
+        return getUnaryOpWidth((UnaryOperator*)e);
     case ConditionalOperator:
-        return getCondOpWidth(cast<ConditionalOperator*>(e));
+        return getCondOpWidth((ConditionalOperator*)e);
     case Builtin:
         break;
     case ArraySubscript:
@@ -98,17 +98,17 @@ fn ExprWidth getExprWidth(const Expr* e) {
         QualType qt = e.getType();
         qt = qt.getCanonicalType();
         if (qt.isPointer()) {
-            result.width = cast<u8>(ast.getWordSize() * 8);
+            result.width = (u8)(ast.getWordSize() * 8);
             result.is_signed = false;
             return result;
         }
         assert(qt.isBuiltin());
         BuiltinType* bi = qt.getBuiltin();
-        result.width = cast<u8>(bi.getWidth());
+        result.width = (u8)bi.getWidth();
         result.is_signed = bi.isSigned();
         return result;
     case Paren:
-        const ParenExpr* p = cast<ParenExpr*>(e);
+        const ParenExpr* p = (ParenExpr*)e;
         return getExprWidth(p.getInner());
     case BitOffset:
         break;
@@ -117,14 +117,14 @@ fn ExprWidth getExprWidth(const Expr* e) {
         qt = qt.getCanonicalType();
         assert(qt.isBuiltin());
         BuiltinType* bi = qt.getBuiltin();
-        result.width = cast<u8>(bi.getWidth());
+        result.width = (u8)bi.getWidth();
         result.is_signed = bi.isSigned();
         return result;
     case ImplicitCast:
-        const ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
+        const ImplicitCastExpr* c = (ImplicitCastExpr*)e;
         return getExprWidth(c.getInner());
     case Range:
-        RangeExpr* b = cast<RangeExpr*>(e);
+        RangeExpr* b = (RangeExpr*)e;
         ExprWidth lhs = getExprWidth(b.getLHS());
         ExprWidth rhs = getExprWidth(b.getRHS());
         return ExprWidth.mergeWider(&lhs, &rhs);
@@ -152,21 +152,21 @@ fn ExprWidth getUnaryOpWidth(const UnaryOperator* u) {
         // TODO adjust for integer promotion?
         return getExprWidth(u.getInner());
     case AddrOf:
-        w.width = cast<u8>(ast.getWordSize() * 8);
+        w.width = (u8)(ast.getWordSize() * 8);
         w.is_signed = false;
         break;
     case Deref:
-        Expr* e = cast<Expr*>(u);
+        Expr* e = (Expr*)u;
         QualType qt = e.getType();
         qt = qt.getCanonicalType();
         if (qt.isPointer()) {
-            w.width = cast<u8>(ast.getWordSize() * 8);
+            w.width = (u8)(ast.getWordSize() * 8);
             w.is_signed = false;
             break;
         }
         assert(qt.isBuiltin());
         BuiltinType* bi = qt.getBuiltin();
-        w.width = cast<u8>(bi.getWidth());
+        w.width = (u8)bi.getWidth();
         w.is_signed = bi.isSigned();
         break;
     case Minus:
@@ -252,7 +252,7 @@ fn ExprWidth getTypeWidth(QualType qt) {
     assert(qt.isBuiltin());
     const BuiltinType* bi = qt.getBuiltin();
     ExprWidth result;
-    result.width = cast<u8>(bi.getWidth());
+    result.width = (u8)bi.getWidth();
     result.is_signed = bi.isSigned();
     return result;
 }

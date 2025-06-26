@@ -125,10 +125,10 @@ public fn void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
         }
         out.newline();
         if (d.isStructType()) {
-            StructTypeDecl* std = cast<StructTypeDecl*>(d);
+            StructTypeDecl* std = (StructTypeDecl*)d;
             const FunctionDecl** fds = std.getStructFunctions();
             for (u32 j=0; j<std.getNumStructFunctions(); j++) {
-                Decl* fd = cast<Decl*>(fds[j]);
+                Decl* fd = (Decl*)fds[j];
                 col = fd.isUsed() ? color.Normal : color.Grey;
                 out.color(col);
                 out.indent(6);

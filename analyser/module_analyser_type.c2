@@ -20,7 +20,7 @@ import ctv_analyser;
 import src_loc local;
 
 fn void Analyser.analyseFunctionType(Analyser* ma, Decl* d) {
-    FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
+    FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;
     FunctionDecl* fd = ftd.getDecl();
 
     ma.analyseFunction(fd);
@@ -28,7 +28,7 @@ fn void Analyser.analyseFunctionType(Analyser* ma, Decl* d) {
 
 fn void Analyser.analyseAliasType(Analyser* ma, AliasTypeDecl* a) {
     TypeRef* ref = a.getTypeRef();
-    Decl* d = cast<Decl*>(a);
+    Decl* d = (Decl*)a;
     QualType res = ma.analyseTypeRef(ref);
     if (res.isInvalid()) return;
     QualType qt = d.getType();
@@ -52,12 +52,12 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
 
     for (u32 i=0; i<num_constants; i++) {
         EnumConstantDecl* c = constants[i];
-        Decl* ecd = cast<Decl*>(c);
+        Decl* ecd = (Decl*)c;
         ecd.setCheckInProgress();
 
         c.setIndex(i);
         // check for duplicate names
-        Decl* cd = cast<Decl*>(c);
+        Decl* cd = (Decl*)c;
         u32 name_idx = cd.getNameIdx();
         for (u32 j=0; j<i; j++) {
             const Decl* other = constants[j].asDecl();
@@ -115,7 +115,7 @@ fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
             i.asDecl().setUsedPublic();
         }
 
-        ref.setPrefix(cast<Decl*>(i));
+        ref.setPrefix((Decl*)i);
         Module* mod = i.getDest();
         d = ma.scope.findSymbolInModule(mod, user.name_idx, user.loc);
     } else {
@@ -190,7 +190,7 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
         StructType* st = resolved.getStructType();
         const StructTypeDecl* std = st.getDecl();
         if (std.isOpaque()) {
-            const Decl* d = cast<Decl*>(std);
+            const Decl* d = (Decl*)std;
             bool is_external = ma.mod != d.getModule();
             if (ma.curFunction && ma.curFunction.getInstanceModule() == d.getModule()) {
                 // type is local in instantiation module
@@ -281,7 +281,7 @@ fn QualType Analyser.analyseIncrTypeRef(Analyser* ma, TypeRef* ref, u32 size) {
 
 fn bool Analyser.checkOpaque(Analyser* ma, const StructTypeDecl* std, SrcLoc loc) {
     if (std.isOpaque()) {
-        Decl* d = cast<Decl*>(std);
+        Decl* d = (Decl*)std;
         Module* other = d.getModule();
         if (other != ma.mod) {
             QualType qt = d.getType(); // lazy way to get from decl -> fullname

@@ -72,7 +72,7 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
             TypeSize member = sizeOfType(d.getType());
             if (member.align > result.align) result.align = member.align;
 
-            VarDecl* vd = d.isVariable() ? cast<VarDecl*>(d) : nil;
+            VarDecl* vd = d.isVariable() ? (VarDecl*)d : nil;
             if (vd) {
 
                 // Note: bitfield size/alignment is size of largest member type used as base
@@ -174,7 +174,7 @@ public fn TypeSize sizeOfType(QualType qt) {
     Type* t = qt.getType();
     switch (t.getKind()) {
     case Builtin:
-        const BuiltinType* bi = cast<BuiltinType*>(t);
+        const BuiltinType* bi = (BuiltinType*)t;
         // NOTE: alignment is also size
         result.size = bi.getAlignment();
         result.align = result.size;
@@ -184,20 +184,20 @@ public fn TypeSize sizeOfType(QualType qt) {
         result.align = result.size;
         break;
     case Array:
-        ArrayType* arrayType = cast<ArrayType*>(t);
+        ArrayType* arrayType = (ArrayType*)t;
         result = sizeOfType(arrayType.getElemType());
         result.size *= arrayType.getSize();
         break;
     case Struct:
         // NOTE: should already be filled in
-        StructType* st = cast<StructType*>(t);
+        StructType* st = (StructType*)t;
         StructTypeDecl* d = st.getDecl();
         assert(d.asDecl().isChecked());
         result.size = d.getSize();
         result.align = d.getAlignment();
         break;
     case Enum:
-        EnumType* et = cast<EnumType*>(t);
+        EnumType* et = (EnumType*)t;
         EnumTypeDecl* etd = et.getDecl();
         return sizeOfType(etd.getImplType());
     case Function:

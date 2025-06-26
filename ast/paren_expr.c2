@@ -41,7 +41,7 @@ public fn ParenExpr* ParenExpr.create(ast_context.Context* c, SrcLoc loc, u32 sr
 }
 
 fn Expr* ParenExpr.instantiate(ParenExpr* e, Instantiator* inst) {
-    return cast<Expr*>(ParenExpr.create(inst.c, e.base.base.loc, e.base.base.parenExprBits.src_len, e.inner.instantiate(inst)));
+    return (Expr*)ParenExpr.create(inst.c, e.base.base.loc, e.base.base.parenExprBits.src_len, e.inner.instantiate(inst));
 }
 
 public fn Expr* ParenExpr.getInner(const ParenExpr* e) { return e.inner; }

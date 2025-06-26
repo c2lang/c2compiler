@@ -52,7 +52,7 @@ public fn CallExpr* CallExpr.create(ast_context.Context* c,
     u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
     CallExpr* e = c.alloc(size);
     e.base.init(ExprKind.Call, loc, 0, 0, 1, ValType.RValue);
-    e.base.base.callExprBits.num_args = cast<u8>(num_args);
+    e.base.base.callExprBits.num_args = (u8)num_args;
     e.endLoc = endLoc;
     e.template_idx = 0;
     e.instance_ast_idx = 0;
@@ -78,10 +78,10 @@ public fn CallExpr* CallExpr.createTemplate(ast_context.Context* c,
     CallExpr* e = c.alloc(size);
     e.base.init(ExprKind.Call, loc, 0, 0, 1, ValType.RValue);
     e.base.base.callExprBits.is_template_call = 1;
-    e.base.base.callExprBits.num_args = cast<u8>(num_args);
+    e.base.base.callExprBits.num_args = (u8)num_args;
     e.endLoc = endLoc;
     e.template_idx = 0;
-    e.instance_ast_idx = cast<u16>(ast_idx);
+    e.instance_ast_idx = (u16)ast_idx;
     e.func = func;
     string.memcpy(e.args, args, num_args * sizeof(Expr*));
     TypeRef* destRef = cast<TypeRef*>(&e.args[num_args]);
@@ -108,7 +108,7 @@ fn Expr* CallExpr.instantiate(CallExpr* e, Instantiator* inst) {
 #if AstStatistics
     Stats.addExpr(ExprKind.Call, size);
 #endif
-    return cast<Expr*>(e2);
+    return (Expr*)e2;
 }
 
 public fn void CallExpr.setCallsTypeFunc(CallExpr* e) {
@@ -137,7 +137,7 @@ public fn TypeRef* CallExpr.getTemplateArg(const CallExpr* e) {
 }
 
 public fn void CallExpr.setTemplateIdx(CallExpr* e, u32 idx) {
-    e.template_idx = cast<u16>(idx);
+    e.template_idx = (u16)idx;
 }
 
 public fn u32 CallExpr.getTemplateIdx(const CallExpr* e) {

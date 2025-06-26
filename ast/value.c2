@@ -50,7 +50,7 @@ public fn void Value.setSigned(Value* v, i64 svalue) {
         v.uvalue = ~svalue + 1;
     } else {
         v.negative = false;
-        v.uvalue = cast<u64>(svalue);
+        v.uvalue = (u64)svalue;
     }
 }
 
@@ -92,7 +92,7 @@ public fn bool Value.isZero(const Value* v) {
 public fn f64 Value.toFloat(const Value* v) {
     if (v.kind == ValueKind.Integer) {
         // TODO: warn about loss of precision
-        f64 f = cast<f64>(v.uvalue);
+        f64 f = (f64)v.uvalue;
         return (v.negative) ? -f : f;
     } else {
         return v.fvalue;
@@ -101,14 +101,14 @@ public fn f64 Value.toFloat(const Value* v) {
 
 public fn u8 Value.as_u8(Value* v) {
     assert (v.kind == ValueKind.Integer);
-    u8 res = cast<u8>(v.uvalue);
+    u8 res = (u8)v.uvalue;
     if (v.negative) res = ~res + 1;
     return res;
 }
 
 public fn u16 Value.as_u16(Value* v) {
     assert (v.kind == ValueKind.Integer);
-    u16 res = cast<u16>(v.uvalue);
+    u16 res = (u16)v.uvalue;
     if (v.negative) res = ~res + 1;
     return res;
 }
@@ -116,7 +116,7 @@ public fn u16 Value.as_u16(Value* v) {
 public fn i32 Value.as_i32(Value* v) {
     i32 res = 0;
     if (v.kind == ValueKind.Integer) {
-        res = cast<i32>(v.uvalue);
+        res = (i32)v.uvalue;
         if (v.negative)
             res = ~res + 1;
     }
@@ -126,7 +126,7 @@ public fn i32 Value.as_i32(Value* v) {
 public fn u32 Value.as_u32(Value* v) {
     u32 res = 0;
     if (v.kind == ValueKind.Integer) {
-        res = cast<u32>(v.uvalue);
+        res = (u32)v.uvalue;
         if (v.negative)
             res = ~res + 1;
     }
@@ -168,12 +168,12 @@ public fn bool Value.checkRange(const Value* v, i64 min, u64 max) {
     switch (v.kind) {
     case Integer:
         if (v.negative)
-            return (v.uvalue <= cast<u64>(~min) + 1);
+            return (v.uvalue <= (u64)~min + 1);
         else
             return (v.uvalue <= max);
         break;
     case Float:
-        return (v.fvalue >= cast<f64>(min) && v.fvalue < cast<f64>(max) + 1);
+        return (v.fvalue >= (f64)min && v.fvalue < (f64)max + 1);
     }
     return false;
 }
@@ -631,7 +631,7 @@ public fn void Value.truncate(Value *orig, bool is_signed, u32 width) {
         break;
     }
     if (uvalue & sbit)
-        orig.setSigned(cast<i64>((uvalue & (sbit - 1)) - sbit));
+        orig.setSigned((i64)((uvalue & (sbit - 1)) - sbit));
     else
         orig.setUnsigned(uvalue & mask);
 }

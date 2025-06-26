@@ -113,7 +113,7 @@ public fn void initialize(const u32* indexes) {
 public fn AttrKind find(u32 name_idx) {
     // skip unused
     for (u32 i=1; i<elemsof(AttrKind); i++) {
-        if (name_idx == name_indexes[i]) return cast<AttrKind>(i);
+        if (name_idx == name_indexes[i]) return (AttrKind)i;
     }
 
     return AttrKind.Unknown;

@@ -226,8 +226,8 @@ fn bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon) {
 
 fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon) {
     // Note: lhs and rhs are not the same, otherwise ptr-check would have succeeded
-    const BuiltinType* lbuiltin = cast<BuiltinType*>(lcanon);
-    const BuiltinType* rbuiltin = cast<BuiltinType*>(rcanon);
+    const BuiltinType* lbuiltin = (BuiltinType*)lcanon;
+    const BuiltinType* rbuiltin = (BuiltinType*)rcanon;
 
     if ((*c.expr_ptr).isCtv()) {
         // TODO check value instead of type
@@ -280,8 +280,8 @@ fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon
 
 fn bool Checker.checkBuiltin2Pointer(Checker* c, const Type* lcanon, const Type* rcanon) {
     // Note: only allow usize/(u32/u64) -> void*
-    const PointerType* ptr = cast<PointerType*>(lcanon);
-    const BuiltinType* bi = cast<BuiltinType*>(rcanon);
+    const PointerType* ptr = (PointerType*)lcanon;
+    const BuiltinType* bi = (BuiltinType*)rcanon;
 
     QualType inner = ptr.getInner();
     bool ok = inner.isVoid();
@@ -300,7 +300,7 @@ fn bool Checker.checkBuiltin2Pointer(Checker* c, const Type* lcanon, const Type*
 
 fn bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Type* rcanon) {
     // Note: only allow void* -> usize/(u32/u64) / bool
-    const BuiltinType* bi = cast<BuiltinType*>(lcanon);
+    const BuiltinType* bi = (BuiltinType*)lcanon;
 
     BuiltinKind kind = bi.getKind();
     if (kind == BuiltinKind.Bool) {
@@ -308,7 +308,7 @@ fn bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Type*
         return true;
     }
 
-    const PointerType* ptr = cast<PointerType*>(rcanon);
+    const PointerType* ptr = (PointerType*)rcanon;
     QualType inner = ptr.getInner();
 
     // TODO or u32 (arch)
@@ -331,7 +331,7 @@ fn bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Type*
 
 fn bool Checker.checkPointer2Func(Checker* c, const Type* lcanon, const Type* rcanon) {
     // only allow if pointer is void*
-    const PointerType* ptr = cast<PointerType*>(rcanon);
+    const PointerType* ptr = (PointerType*)rcanon;
     QualType inner = ptr.getInner();
     if (!inner.isVoid()) {
         c.diags.error(c.loc, "incompatible pointer to function conversion '%s' to '%s'",
@@ -344,7 +344,7 @@ fn bool Checker.checkPointer2Func(Checker* c, const Type* lcanon, const Type* rc
 
 fn bool Checker.checkIntConversion(Checker* c, const BuiltinType* bi) {
     Expr* e = *c.expr_ptr;
-    const u8 wl = cast<u8>(bi.getWidth());
+    const u8 wl = (u8)bi.getWidth();
     ExprWidth w = getExprWidth(e);
     //stdio.printf("INT CONVERSION signed|width: %d %d -> %d %d\n", w.is_signed, w.width, bi.isSigned(), w.width);
 
@@ -365,7 +365,7 @@ fn bool Checker.try_to_fix_type(Checker* c) {
     Expr* e = *c.expr_ptr;
 
     if (e.isImplicitCast()) {
-        const ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
+        const ImplicitCastExpr* ic = (ImplicitCastExpr*)e;
         if (ic.isArrayToPointerDecay()) {
             e = ic.getInner();
             c.rhs = e.getType();
@@ -396,8 +396,8 @@ fn bool pointer_conversion_allowed(QualType linner, QualType rinner) {
 
 fn bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcanon) {
 
-    const PointerType* ltype = cast<PointerType*>(lcanon);
-    const PointerType* rtype = cast<PointerType*>(rcanon);
+    const PointerType* ltype = (PointerType*)lcanon;
+    const PointerType* rtype = (PointerType*)rcanon;
 /*
     if (ltype == rtype) { // this will only happen with AliasTypes
         printf("  SAME, diff quals\n");
@@ -431,7 +431,7 @@ fn bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcanon
 }
 
 fn bool Checker.checkFunc2Pointer(Checker* c, const Type* lcanon, const Type* rcanon) {
-    PointerType* pt = cast<PointerType*>(lcanon);
+    PointerType* pt = (PointerType*)lcanon;
     QualType inner = pt.getInner();
     if (inner.isVoid()) return true; // always allow conversion to 'void*'
 
@@ -441,7 +441,7 @@ fn bool Checker.checkFunc2Pointer(Checker* c, const Type* lcanon, const Type* rc
 
 fn bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcanon) {
     // Note: enum constant values can never be negative
-    const BuiltinType* bi = cast<BuiltinType*>(lcanon);
+    const BuiltinType* bi = (BuiltinType*)lcanon;
     u32 width = bi.getWidth();
     if (width == 64) return true;  // 64-bit
 
@@ -450,7 +450,7 @@ fn bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcanon
         return ctv_analyser.check(c.diags, c.lhs, *c.expr_ptr);
     } else {
         // compare impl type
-        const EnumType* et = cast<EnumType*>(rcanon);
+        const EnumType* et = (EnumType*)rcanon;
         const EnumTypeDecl* etd = et.getDecl();
         QualType impl = etd.getImplType();
 
@@ -461,9 +461,9 @@ fn bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcanon
 }
 
 fn bool Checker.checkFunc2Func(Checker* c, const Type* lcanon, const Type* rcanon) {
-    FunctionType* ftl = cast<FunctionType*>(lcanon);
+    FunctionType* ftl = (FunctionType*)lcanon;
     FunctionDecl* fdl = ftl.getDecl();
-    FunctionType* ftr = cast<FunctionType*>(rcanon);
+    FunctionType* ftr = (FunctionType*)rcanon;
     FunctionDecl* fdr = ftr.getDecl();
 
     if (fdr.getNumAutoArgs()) {
@@ -489,8 +489,8 @@ fn bool checkFunc2Func(const FunctionDecl* fdl, const FunctionDecl* fdr) {
     u32 num2 = fdr.getNumParams();
     if (num1 != num2) return false;
 
-    Decl** args1 = cast<Decl**>(fdl.getParams());
-    Decl** args2 = cast<Decl**>(fdr.getParams());
+    Decl** args1 = (Decl**)fdl.getParams();
+    Decl** args2 = (Decl**)fdr.getParams();
     for (u32 i=0; i<num1; i++) {
         Decl* a1 = args1[i];
         Decl* a2 = args2[i];
@@ -506,13 +506,13 @@ fn bool checkFunc2Func(const FunctionDecl* fdl, const FunctionDecl* fdr) {
 
 fn bool Checker.checkFunc2Builtin(Checker* c, const Type* lcanon, const Type* rcanon, bool* other_error) {
     u32 wordsize = ast.getWordSize();
-    const BuiltinType* bi = cast<BuiltinType*>(lcanon);
+    const BuiltinType* bi = (BuiltinType*)lcanon;
 
     BuiltinKind kind = bi.getKind();
     if (kind == BuiltinKind.USize) return true;
     if (kind == BuiltinKind.Bool) {
         // only allow Callback types or weak-functions
-        FunctionType* ft = cast<FunctionType*>(rcanon);
+        FunctionType* ft = (FunctionType*)rcanon;
         FunctionDecl* fd = ft.getDecl();
         if (fd.isType() || fd.hasAttrWeak()) return true; // Variable with Function type (eg callback)
 
@@ -607,7 +607,7 @@ public fn bool Checker.checkCast(Checker* c, QualType lhs, QualType rhs, SrcLoc 
 fn bool Checker.checkBuiltin2PointerCast(Checker* c, const Type* lcanon, const Type* rcanon) {
     // only allow cast from pointer-size int (u32/u64 depending on arch) to pointer
     u32 wordsize = ast.getWordSize();
-    const BuiltinType* bi = cast<BuiltinType*>(rcanon);
+    const BuiltinType* bi = (BuiltinType*)rcanon;
 
     BuiltinKind kind = bi.getKind();
     if (kind == BuiltinKind.USize) return true;
@@ -624,7 +624,7 @@ fn bool Checker.checkBuiltin2PointerCast(Checker* c, const Type* lcanon, const T
 fn bool Checker.checkPointer2BuiltinCast(Checker* c, const Type* lcanon, const Type* rcanon) {
     // only allow cast from pointer to pointer-size int (u32/u64 depending on arch)
     u32 wordsize = ast.getWordSize();
-    const BuiltinType* bi = cast<BuiltinType*>(lcanon);
+    const BuiltinType* bi = (BuiltinType*)lcanon;
 
     BuiltinKind kind = bi.getKind();
     if (kind == BuiltinKind.USize) return true;
@@ -679,7 +679,7 @@ public fn QualType get_common_arithmetic_type(QualType t1, QualType t2) {
 
     BuiltinType* bi1 = t1.getBuiltin();
     BuiltinType* bi2 = t2.getBuiltin();
-    BuiltinKind kind = cast<BuiltinKind>(ConditionalOperatorResult[bi2.getKind()][bi1.getKind()]);
+    BuiltinKind kind = (BuiltinKind)ConditionalOperatorResult[bi2.getKind()][bi1.getKind()];
     return ast.builtins[kind];
 }
 

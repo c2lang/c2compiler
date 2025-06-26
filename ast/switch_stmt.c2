@@ -65,7 +65,7 @@ fn Stmt* SwitchStmt.instantiate(SwitchStmt* s, Instantiator* inst) {
 #if AstStatistics
     Stats.addStmt(StmtKind.Switch, size);
 #endif
-    return cast<Stmt*>(s2);
+    return (Stmt*)s2;
 }
 
 public fn Expr* SwitchStmt.getCond(const SwitchStmt* s) {

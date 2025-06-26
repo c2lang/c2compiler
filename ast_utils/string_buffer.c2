@@ -70,7 +70,7 @@ public fn const char* Buf.data(const Buf* buf) {
 }
 
 public fn const u8* Buf.udata(const Buf* buf) {
-    return cast<u8*>(buf.data_);
+    return (u8*)buf.data_;
 }
 
 public fn void Buf.clear(Buf* buf) {
@@ -93,7 +93,7 @@ public fn void Buf.add1(Buf* buf, char c) {
 }
 
 public fn void Buf.add(Buf* buf, const char* text) {
-    u32 len = cast<u32>(strlen(text));
+    u32 len = (u32)strlen(text);
     buf.add2(text, len);
 }
 
@@ -133,7 +133,7 @@ public fn void Buf.print(Buf* buf, const char* format @(printf_format), ...) {
     va_start(args, format);
     i32 len = vsnprintf(tmp, sizeof(tmp), format, args);
     assert(len < sizeof(tmp));
-    buf.add2(tmp, cast<u32>(len));
+    buf.add2(tmp, (u32)len);
     va_end(args);
 }
 
@@ -142,7 +142,7 @@ public fn void Buf.vprintf(Buf* buf, const char* format, va_list args) {
     // NOTE: no growing
     i32 len = vsnprintf(tmp, sizeof(tmp), format, args);
     assert(len < sizeof(tmp));
-    buf.add2(tmp, cast<u32>(len));
+    buf.add2(tmp, (u32)len);
 }
 
 public fn void Buf.indent(Buf* buf, u32 indent) {

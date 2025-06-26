@@ -330,9 +330,9 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
 
     while (1) {
         result.init();
-        result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
+        result.loc = t.loc_start + (SrcLoc)(t.cur - t.input_start);
         result.len = 1;
-        Action act = Char_lookup[cast<u8>(*t.cur)];
+        Action act = Char_lookup[(u8)(*t.cur)];
         switch (act) {
         case INVALID:
             u32 len;
@@ -345,7 +345,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 }
                 if (t.raw_mode) {
                     result.kind = Kind.Invalid;
-                    result.len = cast<u16>(len);
+                    result.len = (u16)len;
                     string.memcpy(result.invalid, t.cur, len);
                     t.cur += len;
                     return;
@@ -704,7 +704,7 @@ fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf
     vsnprintf(t.error_msg, sizeof(t.error_msg), format, args);
     va_end(args);
 
-    result.loc = t.loc_start + cast<SrcLoc>(t.cur - t.input_start);
+    result.loc = t.loc_start + (SrcLoc)(t.cur - t.input_start);
     result.kind = Kind.Error;
     result.error_msg = t.error_msg;
     result.done = true;
@@ -719,7 +719,7 @@ fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const ch
     va_end(args);
 
     // XXX: error position should be passed separately from token start
-    result.loc = t.loc_start + cast<SrcLoc>(p - t.input_start);
+    result.loc = t.loc_start + (SrcLoc)(p - t.input_start);
     // read the rest of the pp-number token
     for (;;) {
         if ((*p == 'e' || *p == 'E' || *p == 'p' || *p == 'P') && (p[1] == '+' || p[1] == '-')) {
@@ -735,7 +735,7 @@ fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const ch
         }
     }
     t.cur = p;
-    result.len = cast<u16>((p - t.input_start) - (result.loc - t.loc_start));
+    result.len = (u16)((p - t.input_start) - (result.loc - t.loc_start));
     if (t.on_warning) t.on_warning(t.fn_arg, result.loc);
 }
 
@@ -743,22 +743,22 @@ fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     result.kind = Kind.Identifier;
     const char* start = t.cur;
     const char* end = t.cur + 1;
-    while (Identifier_char[cast<u8>(*end)]) end++;
+    while (Identifier_char[(u8)(*end)]) end++;
 
-    usize len = cast<usize>(end - start);
+    usize len = (usize)(end - start);
     if (len > constants.MaxIdentifierLen && !t.raw_mode) {
         t.error(result, "identifier too long (max %d chars)", constants.MaxIdentifierLen);
         return;
     }
     t.cur += len;
     result.name_idx = t.pool.add(start, len, true);
-    result.len = cast<u16>(len);
+    result.len = (u16)len;
 }
 
 fn u8 hex2val(char c) {
-    if (c >= '0' && c <= '9') return cast<u8>(c - '0');
-    if (c >= 'a' && c <= 'f') return cast<u8>(c - 'a' + 10);
-    return cast<u8>(c - 'A' + 10);
+    if (c >= '0' && c <= '9') return (u8)(c - '0');
+    if (c >= 'a' && c <= 'f') return (u8)(c - 'a' + 10);
+    return (u8)(c - 'A' + 10);
 }
 
 fn bool is_octal(char c) {
@@ -883,7 +883,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
 
     while (isdigit(*p)) {
         // ugly cast because u8 digit = *p++ - '0'; generates an error
-        u32 digit = cast<u32>(*p++ - '0');
+        u32 digit = (u32)(*p++ - '0');
         if (value >= max_u64 / 10 && (value > max_u64 / 10 || digit > max_u64 % 10)) {
             value = max_u64;
             overflow = true;
@@ -904,7 +904,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
 check_overflow:
     t.cur = p;
     result.int_value = value;
-    result.len = cast<u16>(p - start);
+    result.len = (u16)(p - start);
     if (overflow) {
         t.num_error(result, p, "integer literal is too large to be represented in any integer type");
         return;
@@ -954,7 +954,7 @@ fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* st
     }
     t.cur = p;
     buf[pos] = '\0';
-    result.len = cast<u16>(p - start);
+    result.len = (u16)(p - start);
     result.float_value = stdlib.strtod(buf, nil);
     return;
 too_large:
@@ -1013,7 +1013,7 @@ fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char
     t.cur = p;
     buf[pos] = '\0';
     // FIXME: do not use strtod() on platforms that do not support the syntax
-    result.len = cast<u16>(p - start);
+    result.len = (u16)(p - start);
     result.float_value = stdlib.strtod(buf, nil);
     return;
 too_large:
@@ -1184,7 +1184,7 @@ fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
         return;
     }
     t.cur += 1; // skip the closing quote
-    result.len = cast<u16>(t.cur - start);
+    result.len = (u16)(t.cur - start);
 }
 
 fn void Tokenizer.lex_raw_string_literal(Tokenizer* t, Token* result) {
@@ -1217,7 +1217,7 @@ fn void Tokenizer.lex_raw_string_literal(Tokenizer* t, Token* result) {
             // determine the indentation of the first non-blank line
             for (;; p++) {
                 for (bol = p; *p == ' ' || *p == '\t'; p++) continue;
-                indent = cast<u32>(p - bol);
+                indent = (u32)(p - bol);
                 if (*p == '\r') p++;
                 if (*p != '\n') break;
             }
@@ -1226,7 +1226,7 @@ fn void Tokenizer.lex_raw_string_literal(Tokenizer* t, Token* result) {
                 if (p == t.input_start || p[-1] == '\n') {
                     // if ``` is on its own line, it determines the indentation
                     bol = p;
-                    indent = cast<u32>(start - bol);
+                    indent = (u32)(start - bol);
                     break;
                 }
                 p--;
@@ -1252,7 +1252,7 @@ fn void Tokenizer.lex_raw_string_literal(Tokenizer* t, Token* result) {
         }
         while (*p && *p >= ' ' && *p < 0x7F && *p != '`')
             p++;
-        t.buf.add2(t.cur, cast<u32>(p - t.cur));
+        t.buf.add2(t.cur, (u32)(p - t.cur));
         t.cur = p;
         switch (*p) {
         case '\0':
@@ -1282,7 +1282,7 @@ fn void Tokenizer.lex_raw_string_literal(Tokenizer* t, Token* result) {
             u32 len = t.buf.size();
             result.text_len = len;
             result.text_idx = t.pool.add(t.buf.data(), len, true);
-            result.len = cast<u16>(t.cur - start);
+            result.len = (u16)(t.cur - start);
             return;
         default:
             if (*p >= 0x80) {
@@ -1314,7 +1314,7 @@ fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
         const char* p = t.cur;
         while (*p && *p != '\\'  && *p != '"' && *p >= ' ' && *p < 0x7F)
             p++;
-        t.buf.add2(t.cur, cast<u32>(p - t.cur));
+        t.buf.add2(t.cur, (u32)(p - t.cur));
         t.cur = p;
         switch (*p) {
         case 0:
@@ -1327,7 +1327,7 @@ fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
             u32 len = t.buf.size();
             result.text_len = len;
             result.text_idx = t.pool.add(t.buf.data(), len, true);
-            result.len = cast<u16>(t.cur - start);
+            result.len = (u16)(t.cur - start);
             return;
         case '\\':
             t.cur++;
@@ -1367,13 +1367,13 @@ fn bool Tokenizer.lex_line_comment(Tokenizer* t, Token* result) {
     }
 
     // TODO: complain about missing newline at end of file
-    u32 len = cast<u32>(end - start);
+    u32 len = (u32)(end - start);
     t.cur += len;
 
     if (t.raw_mode) {
         result.kind = Kind.LineComment;
         result.text_len = len;
-        result.len = cast<u16>(len + 2);
+        result.len = (u16)(len + 2);
         result.text_idx = t.pool.add(start, len, false);
         return true;
     }
@@ -1398,9 +1398,9 @@ fn bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
             if (t.cur[1] == '/') {
                 t.cur += 2;
                 if (t.raw_mode) {
-                    usize len = cast<usize>(t.cur - start - 2);
+                    usize len = (usize)(t.cur - start - 2);
                     result.kind = Kind.BlockComment;
-                    result.len = cast<u16>(len + 2);
+                    result.len = (u16)(len + 2);
                     result.text_idx = t.pool.add(start, len, false);
                     return true;
                 }
@@ -1423,7 +1423,7 @@ fn bool compare_word(const char* cur, const char* expect) {
         cur++;
         expect++;
     }
-    return !Identifier_char[cast<u8>(*cur)];
+    return !Identifier_char[(u8)(*cur)];
 }
 
 // return true if we pass result
@@ -1492,7 +1492,7 @@ fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, Kind kind) {
     const char* start = t.cur;
     while (*t.cur != '\0' && *t.cur != '\r' && *t.cur != '\n')
         t.cur++;
-    usize len = cast<usize>(t.cur - start);
+    usize len = (usize)(t.cur - start);
     if (len > constants.MaxErrorMsgLen) {
         t.error(result, "error msg too long (max %d bytes)", constants.MaxErrorMsgLen);
         return true;
@@ -1508,7 +1508,7 @@ fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, Kind kind) {
         // TODO: output diagnostic synchronously
         string.strcpy(t.error_msg, msg);
         result.kind = Kind.Warning;
-        result.len = cast<u16>((t.cur - t.input_start) - (result.loc - t.loc_start));
+        result.len = (u16)((t.cur - t.input_start) - (result.loc - t.loc_start));
         result.error_msg = t.error_msg;
     }
     return true;
@@ -1573,7 +1573,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
                 continue;
             case IntegerLiteral:
                 // TODO: handle signed/unsigned issues
-                val = cast<i64>(result.int_value);
+                val = (i64)(result.int_value);
                 prefix = false;
                 continue;
             case CharLiteral:

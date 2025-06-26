@@ -343,7 +343,7 @@ fn void Parser.parseOptionalAttributes(Parser* p) {
             case IntegerLiteral:
                 a.value_kind = attr.ValueKind.Number;
                 // TODO: either check overflow or make it 64-bit
-                a.value.number = cast<u32>(p.tok.int_value);
+                a.value.number = (u32)p.tok.int_value;
                 p.consumeToken();
                 break;
             default:
@@ -438,7 +438,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
                                                 &rtype,
                                                 template_name,
                                                 template_loc,
-                                                cast<VarDecl**>(params.getDecls()),
+                                                (VarDecl**)params.getDecls(),
                                                 params.size(),
                                                 is_variadic);
     } else {
@@ -447,7 +447,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
                                         is_public,
                                         &rtype,
                                         prefix,
-                                        cast<VarDecl**>(params.getDecls()),
+                                        (VarDecl**)params.getDecls(),
                                         params.size(),
                                         is_variadic);
     }
@@ -455,7 +455,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
     params.free();
 
     p.parseOptionalAttributes();
-    p.builder.applyAttributes(cast<Decl*>(f));
+    p.builder.applyAttributes((Decl*)f);
 
     if (p.is_interface && p.tok.kind == Kind.Semicolon) {
         // function without body (eg. i32 printf(..); ) is allowed

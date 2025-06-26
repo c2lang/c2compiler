@@ -61,7 +61,7 @@ fn Expr* InitListExpr.instantiate(InitListExpr* e, Instantiator* inst) {
 #if AstStatistics
     Stats.addExpr(ExprKind.InitList, size);
 #endif
-    return cast<Expr*>(e2);
+    return (Expr*)e2;
 }
 
 public fn bool InitListExpr.isArray(const InitListExpr* e) {
@@ -89,7 +89,7 @@ public fn Expr** InitListExpr.getValues(InitListExpr* e) {
 }
 
 public fn const Expr** InitListExpr.getValues2(const InitListExpr* e) {
-    return cast<const Expr**>(e.values);
+    return (const Expr**)e.values;
 }
 
 fn SrcLoc InitListExpr.getEndLoc(const InitListExpr* e) {

@@ -23,7 +23,7 @@ public fn const char* get_format(Expr* format, SrcLoc* format_loc) {
     const char* format_text = nil;
     switch (format.getKind()) {
     case StringLiteral:
-        StringLiteral* s = cast<StringLiteral*>(format);
+        StringLiteral* s = (StringLiteral*)format;
         format_text = s.getText();
         *format_loc = format.getLoc() + 1;
         break;
@@ -34,10 +34,10 @@ public fn const char* get_format(Expr* format, SrcLoc* format_loc) {
         qt = at.getElemType();
         if (!qt.isConst()) return nil;
 
-        IdentifierExpr* id = cast<IdentifierExpr*>(format);
+        IdentifierExpr* id = (IdentifierExpr*)format;
         Decl* decl = id.getDecl();
         assert(decl.isVariable());
-        VarDecl* vd = cast<VarDecl*>(decl);
+        VarDecl* vd = (VarDecl*)decl;
         Expr* initExpr = vd.getInit();
         assert(initExpr);
         return get_format(initExpr, format_loc);
@@ -48,10 +48,10 @@ public fn const char* get_format(Expr* format, SrcLoc* format_loc) {
         qt = at.getElemType();
         if (!qt.isConst()) return nil;
 
-        MemberExpr* m = cast<MemberExpr*>(format);
+        MemberExpr* m = (MemberExpr*)format;
         Decl* decl = m.getFullDecl();
         assert (decl.isVariable());
-        VarDecl* vd = cast<VarDecl*>(decl);
+        VarDecl* vd = (VarDecl*)decl;
         Expr* initExpr = vd.getInit();
         assert(initExpr);
         return get_format(initExpr, format_loc);
@@ -146,7 +146,7 @@ fn Specifier getSpecifier(const char* format, u32* len, i32 *pstars, char* c) {
         break;
     }
     *pstars = stars;
-    *len = cast<u32>(cp - format);
+    *len = (u32)(cp - format);
     return spec;
 }
 
@@ -163,7 +163,7 @@ public fn bool parseFormat(const char* format, FormatHandler handler, void* arg)
             Specifier s = getSpecifier(cp, &len, &stars, &c);
             cp += len;
             if (s != Specifier.Other) {
-                if (!handler(arg, s, cast<u32>(cp - format), stars, c))
+                if (!handler(arg, s, (u32)(cp - format), stars, c))
                     return false;
             }
             if (*cp) cp++;

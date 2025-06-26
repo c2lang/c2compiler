@@ -60,7 +60,7 @@ fn Expr* ExplicitCastExpr.instantiate(ExplicitCastExpr* e, Instantiator* inst) {
     e2.base = e.base;
     e2.inner = e.inner.instantiate(inst);
     e2.dest.instantiate(&e.dest, inst);
-    return cast<Expr*>(e2);
+    return (Expr*)e2;
 }
 
 public fn void ExplicitCastExpr.setDestType(ExplicitCastExpr* e, QualType qt) { e.dest_type = qt; }

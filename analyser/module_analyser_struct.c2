@@ -52,7 +52,7 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
     for (u32 i=0; i<count; i++) {
         Decl* member = members[i];
         if (member.isVariable()) {
-            VarDecl* vd = cast<VarDecl*>(member);
+            VarDecl* vd = (VarDecl*)member;
             // Note: dont push to stack, because can self-ref to StructType
             member.setCheckInProgress();
             ma.analyseStructMember(vd);
@@ -103,7 +103,7 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
 
             member.setChecked();
         } else if (member.isStructType()) {   // (anonymous) sub-structs
-            StructTypeDecl* sub = cast<StructTypeDecl*>(member);
+            StructTypeDecl* sub = (StructTypeDecl*)member;
             // Note: if parent is packed, so are sub-structs
             if (is_packed) sub.setPacked();
             ma.analyseStructMembers(sub);
@@ -160,7 +160,7 @@ fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVector*
         u32 name_idx = member.getNameIdx();
 
         StructTypeDecl* sub = nil;
-        if (member.isStructType()) sub = cast<StructTypeDecl*>(member);
+        if (member.isStructType()) sub = (StructTypeDecl*)member;
 
         if (name_idx == 0) {
             // can be anonymous sub-struct/union or anonymous bit-field

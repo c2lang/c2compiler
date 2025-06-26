@@ -45,7 +45,7 @@ public fn CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u3
 }
 
 public fn char CharLiteral.getValue(const CharLiteral* e) {
-    return cast<char>(e.base.base.charLiteralBits.value);
+    return (char)e.base.base.charLiteralBits.value;
 }
 
 fn SrcLoc CharLiteral.getEndLoc(const CharLiteral* e) {
@@ -62,7 +62,7 @@ fn void CharLiteral.print(const CharLiteral* e, string_buffer.Buf* out, u32 inde
 }
 
 public fn void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf* out) {
-    u8 c = cast<u8>(e.base.base.charLiteralBits.value);
+    u8 c = (u8)e.base.base.charLiteralBits.value;
 
     switch (e.base.base.charLiteralBits.radix) {
     case Radix.Octal:

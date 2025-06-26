@@ -46,7 +46,7 @@ fn Expr* BitOffsetExpr.instantiate(BitOffsetExpr* e, Instantiator* inst) {
                                             e.base.base.loc,
                                             e.lhs.instantiate(inst),
                                             e.rhs.instantiate(inst));
-    return cast<Expr*>(b);
+    return (Expr*)b;
 }
 
 public fn Expr* BitOffsetExpr.getLHS(BitOffsetExpr* e) { return e.lhs; }

@@ -109,17 +109,17 @@ fn void Stmt.init(Stmt* s, StmtKind k, SrcLoc loc) {
 fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
     switch (s.getKind()) {
     case Return:
-        return ReturnStmt.instantiate(cast<ReturnStmt*>(s), inst);
+        return ReturnStmt.instantiate((ReturnStmt*)s, inst);
     case Expr:
-        return cast<Stmt*>(Expr.instantiate(cast<Expr*>(s), inst));
+        return (Stmt*)Expr.instantiate((Expr*)s, inst);
     case If:
-        return IfStmt.instantiate(cast<IfStmt*>(s), inst);
+        return IfStmt.instantiate((IfStmt*)s, inst);
     case While:
-        return WhileStmt.instantiate(cast<WhileStmt*>(s), inst);
+        return WhileStmt.instantiate((WhileStmt*)s, inst);
     case For:
-        return ForStmt.instantiate(cast<ForStmt*>(s), inst);
+        return ForStmt.instantiate((ForStmt*)s, inst);
     case Switch:
-        return SwitchStmt.instantiate(cast<SwitchStmt*>(s), inst);
+        return SwitchStmt.instantiate((SwitchStmt*)s, inst);
     case Break:
         return s;
     case Continue:
@@ -127,17 +127,17 @@ fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
     case Fallthrough:
         return s;
     case Label:
-        return LabelStmt.instantiate(cast<LabelStmt*>(s), inst);
+        return LabelStmt.instantiate((LabelStmt*)s, inst);
     case Goto:
         return s;
     case Compound:
-        return cast<Stmt*>(CompoundStmt.instantiate(cast<CompoundStmt*>(s), inst));
+        return (Stmt*)CompoundStmt.instantiate(cast<CompoundStmt*>(s), inst);
     case Decl:
-        return DeclStmt.instantiate(cast<DeclStmt*>(s), inst);
+        return DeclStmt.instantiate((DeclStmt*)s, inst);
     case Asm:
         break;
     case Assert:
-        return AssertStmt.instantiate(cast<AssertStmt*>(s), inst);
+        return AssertStmt.instantiate((AssertStmt*)s, inst);
     }
     s.dump();
     assert(0);
@@ -145,7 +145,7 @@ fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
 }
 
 // TEMP cast needed until Analyser fixed
-public fn StmtKind Stmt.getKind(const Stmt* s) { return cast<StmtKind>(s.stmtBits.kind); }
+public fn StmtKind Stmt.getKind(const Stmt* s) { return (StmtKind)s.stmtBits.kind; }
 
 public fn bool Stmt.isReturn(const Stmt* s) {
     return s.getKind() == StmtKind.Return;
@@ -186,49 +186,49 @@ public fn void Stmt.dump(const Stmt* s) {
 fn void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
     switch (s.getKind()) {
     case Return:
-        ReturnStmt.print(cast<ReturnStmt*>(s), out, indent);
+        ReturnStmt.print((ReturnStmt*)s, out, indent);
         break;
     case Expr:
-        Expr.print(cast<Expr*>(s), out, indent);
+        Expr.print((Expr*)s, out, indent);
         break;
     case If:
-        IfStmt.print(cast<IfStmt*>(s), out, indent);
+        IfStmt.print((IfStmt*)s, out, indent);
         break;
     case While:
-        WhileStmt.print(cast<WhileStmt*>(s), out, indent);
+        WhileStmt.print((WhileStmt*)s, out, indent);
         break;
     case For:
-        ForStmt.print(cast<ForStmt*>(s), out, indent);
+        ForStmt.print((ForStmt*)s, out, indent);
         break;
     case Switch:
-        SwitchStmt.print(cast<SwitchStmt*>(s), out, indent);
+        SwitchStmt.print((SwitchStmt*)s, out, indent);
         break;
     case Break:
-        BreakStmt.print(cast<BreakStmt*>(s), out, indent);
+        BreakStmt.print((BreakStmt*)s, out, indent);
         break;
     case Continue:
-        ContinueStmt.print(cast<ContinueStmt*>(s), out, indent);
+        ContinueStmt.print((ContinueStmt*)s, out, indent);
         break;
     case Fallthrough:
-        FallthroughStmt.print(cast<FallthroughStmt*>(s), out, indent);
+        FallthroughStmt.print((FallthroughStmt*)s, out, indent);
         break;
     case Label:
-        LabelStmt.print(cast<LabelStmt*>(s), out, indent);
+        LabelStmt.print((LabelStmt*)s, out, indent);
         break;
     case Goto:
-        GotoStmt.print(cast<GotoStmt*>(s), out, indent);
+        GotoStmt.print((GotoStmt*)s, out, indent);
         break;
     case Compound:
-        CompoundStmt.print(cast<CompoundStmt*>(s), out, indent);
+        CompoundStmt.print((CompoundStmt*)s, out, indent);
         break;
     case Decl:
-        DeclStmt.print(cast<DeclStmt*>(s), out, indent);
+        DeclStmt.print((DeclStmt*)s, out, indent);
         break;
     case Asm:
-        AsmStmt.print(cast<AsmStmt*>(s), out, indent);
+        AsmStmt.print((AsmStmt*)s, out, indent);
         break;
     case Assert:
-        AssertStmt.print(cast<AssertStmt*>(s), out, indent);
+        AssertStmt.print((AssertStmt*)s, out, indent);
         break;
     }
 }

@@ -91,7 +91,7 @@ public fn u32 AST.getNameIdx(const AST* a) {
 
 public fn SrcLoc AST.getLoc(const AST* a) {
     ImportDecl** imports = a.imports.getDecls();
-    Decl* d = cast<Decl*>(imports[0]);
+    Decl* d = (Decl*)imports[0];
     return d.getLoc();
 }
 
@@ -196,7 +196,7 @@ public type VarDeclVisitor fn void (void* arg, VarDecl* d);
 public fn void AST.visitVarDecls(const AST* a, VarDeclVisitor visitor, void* arg) {
     Decl** variables = a.variables.getDecls();
     for (u32 i=0; i<a.variables.size(); i++) {
-        visitor(arg, cast<VarDecl*>(variables[i]));
+        visitor(arg, (VarDecl*)variables[i]);
     }
 }
 
@@ -216,7 +216,7 @@ public fn void AST.visitDecls(const AST* a, DeclVisitor visitor, void* arg) {
     // imports
     ImportDecl** imports = a.imports.getDecls();
     for (u32 i=0; i<a.imports.size(); i++) {
-        visitor(arg, cast<Decl*>(imports[i]));
+        visitor(arg, (Decl*)imports[i]);
     }
 
     a.visitDeclsWithoutImports(visitor, arg);
@@ -239,7 +239,7 @@ fn void AST.visitDeclsWithoutImports(const AST* a, DeclVisitor visitor, void* ar
     FunctionDecl** functions = a.functions.getDecls();
     for (u32 i=0; i<a.functions.size(); i++) {
         FunctionDecl* d = functions[i];
-        visitor(arg, cast<Decl*>(d));
+        visitor(arg, (Decl*)d);
     }
 }
 
@@ -325,7 +325,7 @@ fn void AST.setExported(AST* a) {
     }
 
     // functions
-    Decl** functions = cast<Decl**>(a.functions.getDecls());
+    Decl** functions = (Decl**)a.functions.getDecls();
     for (u32 i=0; i<a.functions.size(); i++) {
         functions[i].setExportedIfPublic();
     }

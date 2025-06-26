@@ -24,7 +24,7 @@ import string_buffer;
 import string;
 
 fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
-    SwitchStmt* sw = cast<SwitchStmt*>(s);
+    SwitchStmt* sw = (SwitchStmt*)s;
 
     ma.scope.enter(scope.Decl);
 
@@ -188,7 +188,7 @@ fn bool Analyser.analyseCaseCondition(Analyser* ma,
                 res = false;
                 continue;
             }
-            RangeExpr* re = cast<RangeExpr*>(e);
+            RangeExpr* re = (RangeExpr*)e;
             Expr* lhs = re.getLHS();
             Expr* rhs = re.getRHS();
             u32 lhs_index = 0;  // numerical case value (or string index)
@@ -213,7 +213,7 @@ fn bool Analyser.analyseCaseCondition(Analyser* ma,
                         if (index >= lhs_index && index <= rhs_index) {
                             SrcLoc duplicate = checker.find(index);
                             if (duplicate && res) {
-                                Decl* d = cast<Decl*>(ecd);
+                                Decl* d = (Decl*)ecd;
                                 ma.error(loc, "duplicate case value '%s'", d.getName());
                                 ma.note(duplicate, "previous case is here");
                                 res = false;
@@ -264,7 +264,7 @@ fn bool Analyser.analyseCaseExpr(Analyser* ma,
             }
             return false;
         }
-        IdentifierExpr* id = cast<IdentifierExpr*>(cond);
+        IdentifierExpr* id = (IdentifierExpr*)cond;
         if (!ma.checkEnumConstantCase(id, checker, etd, loc, &index, name_idxp)) return false;
     } else {
         Expr* orig = cond;
@@ -288,7 +288,7 @@ fn bool Analyser.analyseCaseExpr(Analyser* ma,
                 }
             } else
             if (orig.isStringLiteral()) {
-                StringLiteral* lit = cast<StringLiteral*>(orig);
+                StringLiteral* lit = (StringLiteral*)orig;
                 u32 len = lit.getSize() - 1;
                 if (len > 255) {
                     ma.error(cond.getLoc(), "string switch case string is loo long (max 255 bytes)");
@@ -343,14 +343,14 @@ fn bool Analyser.checkEnumConstantCase(Analyser* ma,
                                        SrcLoc loc,
                                        u32* ip,
                                        u32* name_idxp) {
-    Expr* e = cast<Expr*>(id);
+    Expr* e = (Expr*)id;
     *name_idxp = id.getNameIdx();
     EnumConstantDecl* ecd = etd.findConstant(*name_idxp);
     if (!ecd) {
         ma.error(e.getLoc(), "enum '%s' has no constant '%s'", etd.asDecl().getFullName(), id.getName());
         return false;
     }
-    Decl* d = cast<Decl*>(ecd);
+    Decl* d = (Decl*)ecd;
     d.setUsed();
     QualType qt = d.getType();
     e.setType(qt);
@@ -382,10 +382,10 @@ fn bool isTerminatingStmt(const Stmt* s, bool is_default) {
     case Return:
         return true;
     case Expr:
-        const Expr* e = cast<Expr*>(s);
+        const Expr* e = (Expr*)s;
         if (!e.isCall()) break;
         // get from CallExpr -> FunctionDecl
-        const CallExpr* c = cast<CallExpr*>(e);
+        const CallExpr* c = (CallExpr*)e;
         e = c.getFunc();
         QualType qt = e.getType();
         const FunctionType* ft = qt.getFunctionTypeOrNil();
@@ -394,7 +394,7 @@ fn bool isTerminatingStmt(const Stmt* s, bool is_default) {
         if (fd.hasAttrNoReturn()) return true;
         break;
     case If:
-        const IfStmt* is = cast<IfStmt*>(s);
+        const IfStmt* is = (IfStmt*)s;
         return isTerminatingStmt(is.getThen(), is_default)
         &&     isTerminatingStmt(is.getElse(), is_default);
     case While:
@@ -409,14 +409,14 @@ fn bool isTerminatingStmt(const Stmt* s, bool is_default) {
     case Fallthrough:
         return true;
     case Label:
-        const LabelStmt* ls = cast<LabelStmt*>(s);
+        const LabelStmt* ls = (LabelStmt*)s;
         const Stmt* stmt = ls.getStmt();
         if (!stmt) return false;
         return isTerminatingStmt(stmt, is_default);
     case Goto:
         return true;
     case Compound:
-        CompoundStmt* c = cast<CompoundStmt*>(s);
+        CompoundStmt* c = (CompoundStmt*)s;
         return isTerminatingStmt(c.getLastStmt(), is_default);
     default:
         break;

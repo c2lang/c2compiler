@@ -214,7 +214,7 @@ fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
 }
 
 public fn BuiltinKind BuiltinType.getKind(const BuiltinType* b) {
-    return cast<BuiltinKind>(b.base.builtinTypeBits.kind);
+    return (BuiltinKind)b.base.builtinTypeBits.kind;
 }
 
 // converts ISize/USize to Int64/UInt64 or Int32/UInt32 depending on arch

@@ -49,7 +49,7 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
     if (is_incremental) size += sizeof(EnumConstantDecl**);
     EnumTypeDecl* d = c.alloc(size);
     EnumType* etype = EnumType.create(c, d);
-    QualType qt = QualType.create(cast<Type*>(etype));
+    QualType qt = QualType.create((Type*)etype);
     d.base.init(DeclKind.EnumType, name, loc, is_public, qt, ast_idx);
     d.base.enumTypeDeclBits.is_incremental = is_incremental;
     d.base.enumTypeDeclBits.num_constants = num_constants;
@@ -124,7 +124,7 @@ public fn EnumConstantDecl* EnumTypeDecl.findConstant(EnumTypeDecl* d, u32 name_
     if (d.isIncremental()) constants = d.incr_constants[0];
     for (u32 i=0; i<d.getNumConstants(); i++) {
         EnumConstantDecl* ecd = constants[i];
-        Decl* ed = cast<Decl*>(ecd);
+        Decl* ed = (Decl*)ecd;
         if (ed.getNameIdx() == name_idx) return ecd;
     }
     return nil;
@@ -146,7 +146,7 @@ public fn void EnumTypeDecl.setEnumFunctions(EnumTypeDecl* d, ast_context.Contex
 /*
 public fn const FunctionDecl** EnumTypeDecl.getFunctions(const EnumTypeDecl* d) {
     // TEMP const-cast until ptr-ptr -> const ptr-ptr is fixed in analyser
-    return cast<const FunctionDecl**>(d.enum_functions);
+    return (const FunctionDecl**)d.enum_functions);
 }
 
 public fn u32 EnumTypeDecl.getNumFunctions(const EnumTypeDecl* d) {
@@ -156,7 +156,7 @@ public fn u32 EnumTypeDecl.getNumFunctions(const EnumTypeDecl* d) {
 
 public fn Decl* EnumTypeDecl.findFunction(const EnumTypeDecl* d, u32 name_idx) {
     for (u32 i=0; i<d.num_enum_functions; i++) {
-        Decl* ef = cast<Decl*>(d.enum_functions[i]);
+        Decl* ef = (Decl*)d.enum_functions[i];
         if (ef.getNameIdx() == name_idx) return ef;
     }
     return nil;

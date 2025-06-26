@@ -110,7 +110,7 @@ fn void Scope.addImports(Scope* s) {
     ast.ImportDecl** imports = s.imports.getDecls();
     for (u32 i=0; i<num_imports; i++) {
         ast.ImportDecl* id = imports[i];
-        ast.Decl* d = cast<ast.Decl*>(id);
+        ast.Decl* d = (ast.Decl*)id;
         u32 name_idx = id.getImportNameIdx();
 
         // check for clash with other imports
@@ -118,7 +118,7 @@ fn void Scope.addImports(Scope* s) {
         if (decl) {
             s.diags.error(id.getLoc(), "duplicate import name '%s'", ast.idx2name(name_idx));
             assert(decl.isImport());
-            ast.ImportDecl* other = cast<ast.ImportDecl*>(decl);
+            ast.ImportDecl* other = (ast.ImportDecl*)decl;
             s.diags.note(other.getLoc(), "previous definition is here");
             continue;
         }
@@ -161,7 +161,7 @@ public fn void Scope.exit(Scope* s, bool has_error) {
         for (u32 i=first; i<last; i++) {
             ast.Decl* d = s.stack_decls[i];
             if (!d.isUsed()) {
-                ast.VarDecl* vd = cast<ast.VarDecl*>(d);
+                ast.VarDecl* vd = (ast.VarDecl*)d;
                 // Note: params are handled by function
                 if (vd.isLocal()) s.diags.warn(d.getLoc(), "unused variable '%s'", d.getName());
             }
@@ -315,7 +315,7 @@ public fn bool Scope.checkGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
         ast.ImportDecl* id = imports[i];
         // check if it is the import itself
         if (name_idx == id.getImportNameIdx()) {
-            decl = cast<ast.Decl*>(id);
+            decl = (ast.Decl*)id;
             break;
         }
 
@@ -401,7 +401,7 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
             ast.ImportDecl* used_import = s.cache_imports[i];
 
             //ast.ImportDecl* used_import = s.findImport(decl.getModule());
-            bool external = (used_import.getDest() != s.mod) && (cast<ast.Decl*>(used_import) != decl);
+            bool external = (used_import.getDest() != s.mod) && ((ast.Decl*)used_import) != decl;
 
             if (external || usedPublic) {
                 decl.setUsedPublic();
@@ -453,7 +453,7 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
     if (ambiguous) return nil;
 
     if (decl) {
-        bool external = (used_import.getDest() != s.mod) && (cast<ast.Decl*>(used_import) != decl);
+        bool external = (used_import.getDest() != s.mod) && ((ast.Decl*)used_import) != decl;
         // mark importdecl as used (if not local)
 
         used_import.asDecl().setUsed();

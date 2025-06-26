@@ -108,11 +108,11 @@ public fn void Builder.actOnModule(Builder* b,
 
     // NOTE: make special ImportDecl to add own symbols
     ImportDecl* i = ImportDecl.create(b.context, mod_name, mod_loc, 0, 0, b.ast_idx, true);
-    Decl* d = cast<Decl*>(i);
+    Decl* d = (Decl*)i;
     d.setUsed();
     d.setChecked();
     i.setDest(b.mod);
-    d.setType(QualType.create(cast<Type*>(b.mod.getType())));
+    d.setType(QualType.create((Type*)b.mod.getType()));
     b.ast.addImport(i);
 }
 
@@ -166,7 +166,7 @@ public fn Decl* Builder.actOnAliasType(Builder* b,
     is_public |= b.is_interface;
     AliasTypeDecl* d = AliasTypeDecl.create(b.context, name, loc, is_public, b.ast_idx, ref);
     b.ast.addTypeDecl(d.asDecl());
-    Decl* dd = cast<Decl*>(d);
+    Decl* dd = (Decl*)d;
     if (b.is_interface) dd.setExternal();
     b.addSymbol(name, dd);
     return dd;
@@ -196,7 +196,7 @@ public fn Decl* Builder.actOnFunctionTypeDecl(Builder* b,
 
     FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fd);
     b.ast.addTypeDecl(d.asDecl());
-    Decl* dd = cast<Decl*>(d);
+    Decl* dd = (Decl*)d;
     if (b.is_interface) {
         dd.setExternal();
         fd.asDecl().setExternal();
@@ -295,7 +295,7 @@ public fn VarDecl* Builder.actOnFunctionParam(Builder* b,
 
 public fn Stmt* Builder.actOnDeclStmt(Builder* b, VarDecl** decl, u32 count)
 {
-    return cast<Stmt*>(DeclStmt.create(b.context, decl, count));
+    return (Stmt*)DeclStmt.create(b.context, decl, count);
 }
 
 public fn VarDecl* Builder.actOnVarDecl(Builder* b,
@@ -361,7 +361,7 @@ fn bool Builder.checkAttr(Builder* b, const Attr* a) {
 }
 
 fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
-    FunctionDecl* fd = cast<FunctionDecl*>(d);
+    FunctionDecl* fd = (FunctionDecl*)d;
 
     switch (a.kind) {
     case Export:
@@ -409,7 +409,7 @@ fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
 }
 
 fn void Builder.actOnStructAttr(Builder* b, Decl* d, const Attr* a) {
-    StructTypeDecl* std =cast<StructTypeDecl*>(d);
+    StructTypeDecl* std =(StructTypeDecl*)d;
 
     switch (a.kind) {
     case Export:
@@ -486,7 +486,7 @@ fn bool Builder.actOnTypeAttr(Builder* b, Decl* d, const Attr* a) {
 }
 
 fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
-    VarDecl* vd = cast<VarDecl*>(d);
+    VarDecl* vd = (VarDecl*)d;
 
     switch (a.kind) {
     case Export:
@@ -608,8 +608,8 @@ fn void Builder.applyAttribute(Builder* b, Decl* d, const Attr* a) {
         // check result of first, otherwise we get the same error twice
         if (!b.actOnTypeAttr(d, a)) return;
 
-        FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
-        b.applyAttribute(cast<Decl*>(ftd.getDecl()), a);
+        FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;
+        b.applyAttribute((Decl*)ftd.getDecl(), a);
         break;
     case AliasType:
         b.actOnTypeAttr(d, a);
@@ -662,7 +662,7 @@ public fn QualType Builder.actOnArrayType(Builder* b,
                                           bool has_size,
                                           u32 size) {
     ArrayType* t = ArrayType.create(b.context, elem, has_size, size);
-    QualType a = QualType.create(cast<Type*>(t));
+    QualType a = QualType.create((Type*)t);
 
     // canonical can be either self or a pointer to elem's canonical type
     QualType canon = elem.getCanonicalType();
@@ -671,7 +671,7 @@ public fn QualType Builder.actOnArrayType(Builder* b,
     } else {
         ArrayType* t2 = ArrayType.create(b.context, canon, has_size, size);
         // Note: keep same quals here, even if canonical type may be a PointerType!
-        canon = QualType.create(cast<Type*>(t2));
+        canon = QualType.create((Type*)t2);
     }
     a.setCanonicalType(canon);
 
@@ -680,7 +680,7 @@ public fn QualType Builder.actOnArrayType(Builder* b,
 
 public fn QualType Builder.actOnIncrementalArrayType(Builder* b, QualType elem) {
     ArrayType* t = ArrayType.createIncremental(b.context, elem);
-    QualType a = QualType.create(cast<Type*>(t));
+    QualType a = QualType.create((Type*)t);
 
     // canonical can be either self or a pointer to elem's canonical type
     QualType canon = elem.getCanonicalType();
@@ -689,7 +689,7 @@ public fn QualType Builder.actOnIncrementalArrayType(Builder* b, QualType elem) 
     } else {
         ArrayType* t2 = ArrayType.createIncremental(b.context, canon);
         // Note: keep same quals here, even if canonical type may be a PointerType!
-        canon = QualType.create(cast<Type*>(t2));
+        canon = QualType.create((Type*)t2);
     }
     a.setCanonicalType(canon);
 
@@ -787,7 +787,7 @@ public fn Decl* Builder.actOnEnumType(Builder* b,
                                           num_constants);
     b.ast.addTypeDecl(d.asDecl());
     b.addSymbol(name, d.asDecl());
-    return cast<Decl*>(d);
+    return (Decl*)d;
 }
 
 public fn Stmt* Builder.actOnAsmStmt(Builder* b,
@@ -802,7 +802,7 @@ public fn Stmt* Builder.actOnAsmStmt(Builder* b,
                                        ExprList* clobbers,
                                        Expr* asm_string)
 {
-    return cast<Stmt*>(AsmStmt.create(b.context,
+    return (Stmt*)AsmStmt.create(b.context,
                                       loc,
                                       is_basic, is_volatile,
                                       num_outputs, num_inputs,
@@ -810,7 +810,7 @@ public fn Stmt* Builder.actOnAsmStmt(Builder* b,
                                       constraints,
                                       exprs,
                                       clobbers,
-                                      asm_string));
+                                      asm_string);
 }
 
 public fn CompoundStmt* Builder.actOnCompoundStmt(Builder* b,
@@ -821,15 +821,15 @@ public fn CompoundStmt* Builder.actOnCompoundStmt(Builder* b,
 }
 
 public fn Stmt* Builder.actOnReturnStmt(Builder* b, SrcLoc loc, Expr* ret) {
-    return cast<Stmt*>(ReturnStmt.create(b.context, loc, ret));
+    return (Stmt*)ReturnStmt.create(b.context, loc, ret);
 }
 
 public fn Stmt* Builder.actOnIfStmt(Builder* b, SrcLoc loc, Stmt* cond, Stmt* then, Stmt* else_stmt) {
-    return cast<Stmt*>(IfStmt.create(b.context, loc, cond, then, else_stmt));
+    return (Stmt*)IfStmt.create(b.context, loc, cond, then, else_stmt);
 }
 
 public fn Stmt* Builder.actOnWhileStmt(Builder* b, SrcLoc loc, Stmt* cond, Stmt* then) {
-    return cast<Stmt*>(WhileStmt.create(b.context, loc, cond, then));
+    return (Stmt*)WhileStmt.create(b.context, loc, cond, then);
 }
 
 public fn Stmt* Builder.actOnForStmt(Builder* b,
@@ -838,7 +838,7 @@ public fn Stmt* Builder.actOnForStmt(Builder* b,
                                      Expr* cond,
                                      Expr* incr,
                                      Stmt* body) {
-    return cast<Stmt*>(ForStmt.create(b.context, loc, init, cond, incr, body));
+    return (Stmt*)ForStmt.create(b.context, loc, init, cond, incr, body);
 }
 
 public fn Stmt* Builder.actOnSwitchStmt(Builder* b,
@@ -846,7 +846,7 @@ public fn Stmt* Builder.actOnSwitchStmt(Builder* b,
                                         Expr* cond,
                                         SwitchCase** cases, u32 num_cases,
                                         bool has_default) {
-    return cast<Stmt*>(SwitchStmt.create(b.context, loc, cond, cases, num_cases, has_default));
+    return (Stmt*)SwitchStmt.create(b.context, loc, cond, cases, num_cases, has_default);
 }
 
 public fn SwitchCase* Builder.actOnCase(Builder* b,
@@ -859,27 +859,27 @@ public fn SwitchCase* Builder.actOnCase(Builder* b,
 }
 
 public fn Stmt* Builder.actOnAssertStmt(Builder* b, SrcLoc loc, Expr* inner) {
-    return cast<Stmt*>(AssertStmt.create(b.context, loc, inner));
+    return (Stmt*)AssertStmt.create(b.context, loc, inner);
 }
 
 public fn Stmt* Builder.actOnBreakStmt(Builder* b, SrcLoc loc) {
-    return cast<Stmt*>(BreakStmt.create(b.context, loc));
+    return (Stmt*)BreakStmt.create(b.context, loc);
 }
 
 public fn Stmt* Builder.actOnContinueStmt(Builder* b, SrcLoc loc) {
-    return cast<Stmt*>(ContinueStmt.create(b.context, loc));
+    return (Stmt*)ContinueStmt.create(b.context, loc);
 }
 
 public fn Stmt* Builder.actOnFallthroughStmt(Builder* b, SrcLoc loc) {
-    return cast<Stmt*>(FallthroughStmt.create(b.context, loc));
+    return (Stmt*)FallthroughStmt.create(b.context, loc);
 }
 
 public fn Stmt* Builder.actOnLabelStmt(Builder* b, u32 name, SrcLoc loc, Stmt* stmt) {
-    return cast<Stmt*>(LabelStmt.create(b.context, name, loc, stmt));
+    return (Stmt*)LabelStmt.create(b.context, name, loc, stmt);
 }
 
 public fn Stmt* Builder.actOnGotoStmt(Builder* b, u32 name, SrcLoc loc) {
-    return cast<Stmt*>(GotoStmt.create(b.context, name, loc));
+    return (Stmt*)GotoStmt.create(b.context, name, loc);
 }
 
 public fn IdentifierExpr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, u32 name) {
@@ -888,31 +888,31 @@ public fn IdentifierExpr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, u32 na
 
 public fn Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, u32 src_len, u64 value, Radix radix) {
     // TODO: pass qt?
-    return cast<Expr*>(IntegerLiteral.create(b.context, loc, src_len, value, radix));
+    return (Expr*)IntegerLiteral.create(b.context, loc, src_len, value, radix);
 }
 
 public fn Expr* Builder.actOnFloatLiteral(Builder* b, SrcLoc loc, u32 src_len, f64 value, Radix radix) {
-    return cast<Expr*>(FloatLiteral.create(b.context, loc, src_len, value, radix));
+    return (Expr*)FloatLiteral.create(b.context, loc, src_len, value, radix);
 }
 
 public fn Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u32 src_len, u8 value, Radix radix) {
-    return cast<Expr*>(CharLiteral.create(b.context, loc, src_len, value, radix));
+    return (Expr*)CharLiteral.create(b.context, loc, src_len, value, radix);
 }
 
 public fn Expr* Builder.actOnStringLiteral(Builder* b, SrcLoc loc, u32 src_len, u32 value, u32 len) {
-    return cast<Expr*>(StringLiteral.create(b.context, loc, src_len, value, len));
+    return (Expr*)StringLiteral.create(b.context, loc, src_len, value, len);
 }
 
 public fn Expr* Builder.actOnNilExpr(Builder* b, SrcLoc loc) {
-    return cast<Expr*>(NilExpr.create(b.context, loc));
+    return (Expr*)NilExpr.create(b.context, loc);
 }
 
 public fn Expr* Builder.actOnParenExpr(Builder* b, SrcLoc loc, u32 src_len, Expr* inner) {
-    return cast<Expr*>(ParenExpr.create(b.context, loc, src_len, inner));
+    return (Expr*)ParenExpr.create(b.context, loc, src_len, inner);
 }
 
 public fn Expr* Builder.actOnUnaryOperator(Builder* b, SrcLoc loc, UnaryOpcode opcode, Expr* inner) {
-    return cast<Expr*>(UnaryOperator.create(b.context, loc, opcode, inner));
+    return (Expr*)UnaryOperator.create(b.context, loc, opcode, inner);
 }
 
 public fn Expr* Builder.actOnBinaryOperator(Builder* b,
@@ -920,7 +920,7 @@ public fn Expr* Builder.actOnBinaryOperator(Builder* b,
                                             BinaryOpcode opcode,
                                             Expr* lhs,
                                             Expr* rhs) {
-    return cast<Expr*>(BinaryOperator.create(b.context, loc, opcode, lhs, rhs));
+    return (Expr*)BinaryOperator.create(b.context, loc, opcode, lhs, rhs);
 }
 
 public fn Expr* Builder.actOnConditionalOperator(Builder* b,
@@ -929,30 +929,30 @@ public fn Expr* Builder.actOnConditionalOperator(Builder* b,
                                                  Expr* cond,
                                                  Expr* lhs,
                                                  Expr* rhs) {
-    return cast<Expr*>(ConditionalOperator.create(b.context,
+    return (Expr*)ConditionalOperator.create(b.context,
                                                   questionLoc,
                                                   colonLoc,
                                                   cond,
                                                   lhs,
-                                                  rhs));
+                                                  rhs);
 }
 
 public fn Expr* Builder.actOnBooleanConstant(Builder* b, SrcLoc loc, bool value) {
-    return cast<Expr*>(BooleanLiteral.create(b.context, loc, value));
+    return (Expr*)BooleanLiteral.create(b.context, loc, value);
 }
 
 public fn Expr* Builder.actOnBuiltinExpr(Builder* b,
                                          SrcLoc loc, u32 src_len,
                                          Expr* inner,
                                          BuiltinExprKind kind) {
-    return cast<Expr*>(BuiltinExpr.create(b.context, loc, src_len, inner, kind));
+    return (Expr*)BuiltinExpr.create(b.context, loc, src_len, inner, kind);
 }
 
 public fn Expr* Builder.actOnOffsetOfExpr(Builder* b,
                                           SrcLoc loc, u32 src_len,
                                           Expr* structExpr,
                                           Expr* member) {
-    return cast<Expr*>(BuiltinExpr.createOffsetOf(b.context, loc, src_len, structExpr, member));
+    return (Expr*)BuiltinExpr.createOffsetOf(b.context, loc, src_len, structExpr, member);
 }
 
 public fn Expr* Builder.actOnToContainerExpr(Builder* b,
@@ -960,23 +960,23 @@ public fn Expr* Builder.actOnToContainerExpr(Builder* b,
                                              Expr* structExpr,
                                              Expr* member,
                                              Expr* pointer) {
-    return cast<Expr*>(BuiltinExpr.createToContainer(b.context,
+    return (Expr*)BuiltinExpr.createToContainer(b.context,
                                                      loc, src_len,
                                                      structExpr,
                                                      member,
-                                                     pointer));
+                                                     pointer);
 }
 
 public fn Expr* Builder.actOnTypeExpr(Builder* b, SrcLoc loc, u32 src_len, const TypeRefHolder* ref) {
-    return cast<Expr*>(TypeExpr.create(b.context, loc, src_len, ref));
+    return (Expr*)TypeExpr.create(b.context, loc, src_len, ref);
 }
 
 public fn Expr* Builder.actOnBitOffsetExpr(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
-    return cast<Expr*>(BitOffsetExpr.create(b.context, loc, lhs, rhs));
+    return (Expr*)BitOffsetExpr.create(b.context, loc, lhs, rhs);
 }
 
 public fn Expr* Builder.actOnArraySubscriptExpr(Builder* b, SrcLoc loc, u32 src_len, Expr* base, Expr* idx) {
-    return cast<Expr*>(ArraySubscriptExpr.create(b.context, loc, src_len, base, idx));
+    return (Expr*)ArraySubscriptExpr.create(b.context, loc, src_len, base, idx);
 }
 
 public fn Expr* Builder.actOnCallExpr(Builder* b,
@@ -984,7 +984,7 @@ public fn Expr* Builder.actOnCallExpr(Builder* b,
                                       Expr* func,
                                       Expr** args,
                                       u32 num_args) {
-    return cast<Expr*>(CallExpr.create(b.context, loc, endLoc, func, args, num_args));
+    return (Expr*)CallExpr.create(b.context, loc, endLoc, func, args, num_args);
 }
 
 public fn Expr* Builder.actOnTemplateCallExpr(Builder* b,
@@ -993,22 +993,22 @@ public fn Expr* Builder.actOnTemplateCallExpr(Builder* b,
                                               Expr** args,
                                               u32 num_args,
                                               const TypeRefHolder* ref) {
-    return cast<Expr*>(CallExpr.createTemplate(b.context, loc, endLoc, func, args, num_args, b.ast_idx, ref));
+    return (Expr*)CallExpr.createTemplate(b.context, loc, endLoc, func, args, num_args, b.ast_idx, ref);
 }
 
 public fn Expr* Builder.actOnExplicitCast(Builder* b,
                                           SrcLoc loc, u32 src_len,
                                           const TypeRefHolder* ref,
                                           Expr* inner, bool c_style) {
-    return cast<Expr*>(ExplicitCastExpr.create(b.context, loc, src_len, ref, inner, c_style));
+    return (Expr*)ExplicitCastExpr.create(b.context, loc, src_len, ref, inner, c_style);
 }
 
 public fn Expr* Builder.actOnMemberExpr(Builder* b, Expr* base, const Ref* refs, u32 refcount) {
-    return cast<Expr*>(MemberExpr.create(b.context, base, refs, refcount));
+    return (Expr*)MemberExpr.create(b.context, base, refs, refcount);
 }
 
 public fn Expr* Builder.actOnRange(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
-    return cast<Expr*>(RangeExpr.create(b.context, loc, lhs, rhs));
+    return (Expr*)RangeExpr.create(b.context, loc, lhs, rhs);
 }
 
 public fn Expr* Builder.actOnInitList(Builder* b,
@@ -1016,21 +1016,21 @@ public fn Expr* Builder.actOnInitList(Builder* b,
                                       SrcLoc endLoc,
                                       Expr** values,
                                       u32 num_values) {
-    return cast<Expr*>(InitListExpr.create(b.context, loc, endLoc, values, num_values));
+    return (Expr*)InitListExpr.create(b.context, loc, endLoc, values, num_values);
 }
 
 public fn Expr* Builder.actOnFieldDesignatedInit(Builder* b,
                                                  SrcLoc loc,
                                                  u32 field,
                                                  Expr* initValue) {
-    return cast<Expr*>(FieldDesignatedInitExpr.create(b.context, loc, field, initValue));
+    return (Expr*)FieldDesignatedInitExpr.create(b.context, loc, field, initValue);
 }
 
 public fn Expr* Builder.actOnArrayDesignatedInit(Builder* b,
                                                  SrcLoc loc,
                                                  Expr* designator,
                                                  Expr* initValue) {
-    return cast<Expr*>(ArrayDesignatedInitExpr.create(b.context, loc, designator, initValue));
+    return (Expr*)ArrayDesignatedInitExpr.create(b.context, loc, designator, initValue);
 }
 
 public fn void Builder.actOnStaticAssert(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
@@ -1044,7 +1044,7 @@ public fn void Builder.insertImplicitCast(Builder* b,
                                           Expr** e_ptr,
                                           QualType qt) {
     Expr* inner = *e_ptr;
-    Expr* ic = cast<Expr*>(ImplicitCastExpr.create(b.context, inner.getLoc(), kind, inner));
+    Expr* ic = (Expr*)ImplicitCastExpr.create(b.context, inner.getLoc(), kind, inner);
     ic.setType(qt);
     *e_ptr = ic;
 }

@@ -24,7 +24,7 @@ const char[] DiagStaticThoughVar = "cannot access static type-function through v
 
 fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
-    MemberExpr* m =cast<MemberExpr*>(e);
+    MemberExpr* m =(MemberExpr*)e;
 
     SrcLoc baseLoc = 0;
     ValType valtype = ValType.NValue;
@@ -74,7 +74,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
             // Deref pointer here for casting to real types
             const Type* t = canon.getTypeOrNil();
             if (is_ptr) {
-                PointerType* pt = cast<PointerType*>(t);
+                PointerType* pt = (PointerType*)t;
                 QualType inner = pt.getInner();
                 inner_const = inner.isConst();
                 t = inner.getTypeOrNil();
@@ -85,7 +85,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
             case Struct:
                 //stdio.printf("STRUCT BASE (ptr %d, const %d, inner const %d)\n", is_ptr, baseType.isConst(), inner_const);
                 // TODO use valType (if ValType.NValue then Foo.x)
-                StructType* st = cast<StructType*>(t);
+                StructType* st = (StructType*)t;
                 StructTypeDecl* std = st.getDecl();
                 d = ma.analyseStructMemberAccess(std, name_idx, loc, valtype, side, &ck);
                 if (!d) return QualType_Invalid;
@@ -105,7 +105,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 break;
             case Enum:
                 //stdio.printf("ENUM BASE  (type: %d)\n", valtype == ValType.NValue);
-                EnumType* et = cast<EnumType*>(t);
+                EnumType* et = (EnumType*)t;
                 EnumTypeDecl* etd = et.getDecl();
 
                 // check if constant/enum-function (by first casing)
@@ -133,20 +133,20 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                             return QualType_Invalid;
                         }
                     }
-                    d = cast<Decl*>(ecd);
+                    d = (Decl*)ecd;
                     if (!d.isChecked()) {
                         ma.error(loc, "circular definition using enum constant '%s'", d.getName());
                         return QualType_Invalid;
                     }
                     // no need to update baseType
                 } else {    // search for enum-function
-                    d = cast<Decl*>(etd);
+                    d = (Decl*)etd;
                     Decl* ef = etd.findFunction(name_idx);
                     if (!ef) {
                         ma.error(loc, "enum '%s' has no function '%s'", d.getFullName(), m.getLastMemberName());
                         return QualType_Invalid;
                     }
-                    //FunctionDecl* fd = cast<FunctionDecl*>(ef);
+                    //FunctionDecl* fd = (FunctionDecl*)ef);
                     // Note: not always CallExpr here, but use CallKind enum since same meaning
                     ck = valtype == ValType.NValue ? CallKind.StaticTypeFunc : CallKind.TypeFunc;
                     d = ef;
@@ -160,7 +160,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 break;
             case Module:
                 //stdio.printf("MODULE BASE\n");
-                ModuleType* mt = cast<ModuleType*>(t);
+                ModuleType* mt = (ModuleType*)t;
                 d = ma.scope.findSymbolInModule(mt.getModule(), name_idx, loc);
                 if (!d) {
                     ma.has_error = true;
@@ -217,7 +217,7 @@ fn Decl* Analyser.analyseStructMemberAccess(Analyser* ma, StructTypeDecl* std, u
     }
 
     if (d.isFunction()) {
-        FunctionDecl* fd = cast<FunctionDecl*>(d);
+        FunctionDecl* fd = (FunctionDecl*)d;
         CallKind callkind = fd.getCallKind();
         assert(callkind != CallKind.Normal);
         switch (valtype) {
@@ -267,7 +267,7 @@ fn TypeKind Analyser.analyseBaseType(Analyser* ma, QualType baseType) {
     const Type* t = baseType.getTypeOrNil();
     // 'deref' pointer once
     if (t.isPointerType()) {
-        PointerType* pt = cast<PointerType*>(t);
+        PointerType* pt = (PointerType*)t;
         baseType = pt.getInner();
         t = baseType.getTypeOrNil();
     }

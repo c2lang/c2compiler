@@ -122,12 +122,12 @@ public fn u32 Decl.getGenIdx(const Decl* d) {
 }
 
 // TEMP cast needed until Analyser fixed
-public fn DeclKind Decl.getKind(const Decl* d) { return cast<DeclKind>(d.declBits.kind); }
+public fn DeclKind Decl.getKind(const Decl* d) { return (DeclKind)d.declBits.kind; }
 
-public fn DeclCheckState Decl.getCheckState(const Decl* d) { return cast<DeclCheckState>(d.declBits.check_state); }
+public fn DeclCheckState Decl.getCheckState(const Decl* d) { return (DeclCheckState)d.declBits.check_state; }
 /*
 public fn const char* Decl.getCheckStateName(const Decl* d) {
-    return declCheckState_names[cast<DeclCheckState>(d.declBits.check_state)];
+    return declCheckState_names[(DeclCheckState)d.declBits.check_state)];
 }
 */
 
@@ -149,7 +149,7 @@ public fn bool Decl.isExported(const Decl* d) { return d.declBits.attr_export; }
 // Only local VarDecls are non global
 public fn bool Decl.isGlobal(const Decl* d) {
     if (!d.isVarDecl()) return true;
-    const VarDecl* vd = cast<VarDecl*>(d);
+    const VarDecl* vd = (VarDecl*)d;
     return vd.isGlobal() || vd.isStructMember();
 }
 
@@ -314,7 +314,7 @@ public fn const char* Decl.getFullName(const Decl* d) {
 
     switch (d.getKind()) {
     case Function:
-        const FunctionDecl* fd = cast<FunctionDecl*>(d);
+        const FunctionDecl* fd = (FunctionDecl*)d;
         if (fd.hasPrefix()) {
             stdio.snprintf(tmp, tmp_size, "%s.%s.%s", modname, fd.getPrefixName(), d.getName());
         } else {
@@ -328,7 +328,7 @@ public fn const char* Decl.getFullName(const Decl* d) {
         QualType qt = d.getType();
         EnumType* et = qt.getEnumType();
         EnumTypeDecl* etd = et.getDecl();
-        Decl* ed = cast<Decl*>(etd);
+        Decl* ed = (Decl*)etd;
         stdio.snprintf(tmp, tmp_size, "%s.%s.%s", modname, ed.getName(), d.getName());
         break;
     default:
@@ -342,28 +342,28 @@ public fn const char* Decl.getFullName(const Decl* d) {
 fn void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
     switch (d.getKind()) {
     case Function:
-        FunctionDecl.print(cast<FunctionDecl*>(d), out, indent);
+        FunctionDecl.print((FunctionDecl*)d, out, indent);
         break;
     case Import:
-        ImportDecl.print(cast<ImportDecl*>(d), out, indent);
+        ImportDecl.print((ImportDecl*)d, out, indent);
         break;
     case StructType:
-        StructTypeDecl.print(cast<StructTypeDecl*>(d), out, indent);
+        StructTypeDecl.print((StructTypeDecl*)d, out, indent);
         break;
     case EnumType:
-        EnumTypeDecl.print(cast<EnumTypeDecl*>(d), out, indent);
+        EnumTypeDecl.print((EnumTypeDecl*)d, out, indent);
         break;
     case EnumConstant:
-        EnumConstantDecl.print(cast<EnumConstantDecl*>(d), out, indent);
+        EnumConstantDecl.print((EnumConstantDecl*)d, out, indent);
         break;
     case FunctionType:
-        FunctionTypeDecl.print(cast<FunctionTypeDecl*>(d), out, indent);
+        FunctionTypeDecl.print((FunctionTypeDecl*)d, out, indent);
         break;
     case AliasType:
-        AliasTypeDecl.print(cast<AliasTypeDecl*>(d), out, indent);
+        AliasTypeDecl.print((AliasTypeDecl*)d, out, indent);
         break;
     case Variable:
-        VarDecl.print(cast<VarDecl*>(d), out, indent);
+        VarDecl.print((VarDecl*)d, out, indent);
         break;
     }
 }

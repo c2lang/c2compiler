@@ -105,7 +105,7 @@ fn Expr* MemberExpr.instantiate(MemberExpr* e, Instantiator* inst) {
     string.memcpy(e2, e, size);
     if (base) e2.refs[0].expr = base.instantiate(inst);
 
-    return cast<Expr*>(e2);
+    return (Expr*)e2;
 }
 
 public fn bool MemberExpr.hasExpr(const MemberExpr* e) {
@@ -122,7 +122,7 @@ public fn void MemberExpr.setConversion(MemberExpr* e, MemberConversion c) {
 }
 
 public fn MemberConversion MemberExpr.getConversion(const MemberExpr* e) {
-    return cast<MemberConversion>(e.base.base.memberExprBits.conversion);
+    return (MemberConversion)e.base.base.memberExprBits.conversion;
 }
 
 fn const char* MemberExpr.getName(const MemberExpr* e, u32 ref_idx) {
@@ -143,7 +143,7 @@ public fn u32 MemberExpr.getNameIdx(const MemberExpr* e, u32 ref_idx) {
     if (e.base.base.memberExprBits.num_decls > ref_idx) {
         Decl* d = ref.decl;
         if (d.isImport()) {
-            const ImportDecl* id = cast<ImportDecl*>(d);
+            const ImportDecl* id = (ImportDecl*)d;
             u32 alias_idx = id.getAliasNameIdx();
             if (alias_idx) return alias_idx;
         }
@@ -173,7 +173,7 @@ public fn Ref MemberExpr.getRef(const MemberExpr* e, u32 ref_idx) {
 }
 
 public fn IdentifierKind MemberExpr.getKind(const MemberExpr* e) {
-    return cast<IdentifierKind>(e.base.base.memberExprBits.kind);
+    return (IdentifierKind)e.base.base.memberExprBits.kind;
 }
 
 public fn void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) {
@@ -251,7 +251,7 @@ public fn SrcLoc MemberExpr.getLastLoc(const MemberExpr* e) {
 
 fn SrcLoc MemberExpr.getEndLoc(const MemberExpr* e) {
     u32 last = e.getNumRefs() - 1;
-    return e.getLoc(last) + cast<u32>(string.strlen(e.getName(last)));
+    return e.getLoc(last) + (u32)string.strlen(e.getName(last));
 }
 
 public fn QualType MemberExpr.getBaseType(const MemberExpr* m) {

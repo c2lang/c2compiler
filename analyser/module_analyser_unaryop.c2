@@ -21,19 +21,19 @@ import src_loc local;
 fn VarDecl* getVarDecl(const Expr* e) {
     Decl* d;
     if (e.isIdentifier()) {
-        IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        IdentifierExpr* i = (IdentifierExpr*)e;
         d = i.getDecl();
     } else {
-        MemberExpr* m = cast<MemberExpr*>(e);
+        MemberExpr* m = (MemberExpr*)e;
         d = m.getFullDecl();
     }
-    if (d.isVariable()) return cast<VarDecl*>(d);
+    if (d.isVariable()) return (VarDecl*)d;
     return nil;
 }
 
 fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
-    UnaryOperator* u = cast<UnaryOperator*>(e);
+    UnaryOperator* u = (UnaryOperator*)e;
 
     bool need_rvalue = true;
 
@@ -102,14 +102,14 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
             // Fix &a[b] as ctc if a is ctc and b is ctv
             // a[b] should be ctc in this case, but C does not accept it because of separate compilation
             // TODO: handle constant 2D and 3D arrays
-            ArraySubscriptExpr* e1 = cast<ArraySubscriptExpr*>(inner);
+            ArraySubscriptExpr* e1 = (ArraySubscriptExpr*)inner;
             if (e1.getBase().isCtc() && e1.getIndex().isCtv())
                 e.setCtc();
         } else
         if (inner.getKind() == ExprKind.UnaryOperator) {
             // Fix &*a as ctc if a is ctc
             // *a should be ctc in this case, but C does not accept it because of separate compilation
-            UnaryOperator* e1 = cast<UnaryOperator*>(inner);
+            UnaryOperator* e1 = (UnaryOperator*)inner;
             if (e1.getOpcode() == UnaryOpcode.Deref)
                 e.copyCtcFlags(e1.getInner());
         }
@@ -211,7 +211,7 @@ fn IdentifierKind getInnerExprAddressOf(Expr* e) {
     case Nil:
         break;
     case Identifier:
-        IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        IdentifierExpr* i = (IdentifierExpr*)e;
         return i.getKind();
     case Type:
     case Call:
@@ -222,7 +222,7 @@ fn IdentifierKind getInnerExprAddressOf(Expr* e) {
     case BinaryOperator:
         break;
     case UnaryOperator:
-        UnaryOperator* e1 = cast<UnaryOperator*>(e);
+        UnaryOperator* e1 = (UnaryOperator*)e;
         if (e1.getOpcode() == UnaryOpcode.Deref) {
             // TODO check for 2D or 3D arrays
             return IdentifierKind.Var;  // &*e is OK
@@ -233,7 +233,7 @@ fn IdentifierKind getInnerExprAddressOf(Expr* e) {
     case Builtin:
         break;
     case ArraySubscript:
-        ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+        ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
         // a[b] is an LValue if not an array itself and if b is not a BitOffset
         // TODO: reject if a[b] is itself an array
         Expr* index = a.getIndex();
@@ -241,19 +241,19 @@ fn IdentifierKind getInnerExprAddressOf(Expr* e) {
             return IdentifierKind.Var;
         break;
     case Member:
-        MemberExpr* m = cast<MemberExpr*>(e);
+        MemberExpr* m = (MemberExpr*)e;
         return m.getKind();
     case Paren:
-        ParenExpr* p = cast<ParenExpr*>(e);
+        ParenExpr* p = (ParenExpr*)e;
         return getInnerExprAddressOf(p.getInner());
     case BitOffset:
         return IdentifierKind.Unresolved;
     case ExplicitCast:
-        ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
+        ExplicitCastExpr* c = (ExplicitCastExpr*)e;
         // TODO: this seems incorrect, casts should not produce LValues
         return getInnerExprAddressOf(c.getInner());
     case ImplicitCast:
-        ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
+        ImplicitCastExpr* c = (ImplicitCastExpr*)e;
         // TODO: this seems incorrect, casts should not produce LValues
         return getInnerExprAddressOf(c.getInner());
     case Range:

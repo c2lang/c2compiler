@@ -29,7 +29,7 @@ fn Stmt* Parser.parseStmt(Parser* p) {
     case Identifier:
         return p.parseDeclOrStmt();
     case LBrace:
-        return cast<Stmt*>(p.parseCompoundStmt());
+        return (Stmt*)p.parseCompoundStmt();
     case RBrace:
         p.error("expected stmt");
         break;

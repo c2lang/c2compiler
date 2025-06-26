@@ -83,7 +83,7 @@ public fn ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcL
 }
 
 public fn ImplicitCastKind ImplicitCastExpr.getKind(const ImplicitCastExpr* e) {
-    return cast<ImplicitCastKind>(e.base.base.implicitCastBits.kind);
+    return (ImplicitCastKind)e.base.base.implicitCastBits.kind;
 }
 
 public fn bool ImplicitCastExpr.isArrayToPointerDecay(const ImplicitCastExpr* e) {

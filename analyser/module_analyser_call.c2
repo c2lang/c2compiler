@@ -28,7 +28,7 @@ const char[] NoteDeclaredHere = "'%s' is defined here";
 
 fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
-    CallExpr* call = cast<CallExpr*>(e);
+    CallExpr* call = (CallExpr*)e;
     Expr** func = call.getFunc2();
     Expr* origFn = call.getFunc();  // store here to avoid the likely inserted FunctionPointerDecay cast
     QualType qt = ma.analyseExpr(func, true, RHS);
@@ -82,9 +82,9 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     if (origFn.isMember()) {
         // TODO check that call matches function (static or not)
         // Note: use origFn to avoid the added FunctionPointerDecay cast
-        m = cast<MemberExpr*>(origFn);
+        m = (MemberExpr*)origFn;
         // if MemberExpr is SSF (Foo.next), but dest fn is SF or vice versa, give error
-        Decl* fdd = cast<Decl*>(fd);
+        Decl* fdd = (Decl*)fd;
         switch (fd.getCallKind()) {
         case Invalid:
             assert(0);  // cannot come here?
@@ -321,7 +321,7 @@ fn void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr**
     // if format is StringLiteral or vardecl of type char[], it will wrapped in ArrayToPointerDecay
     // otherwise it's a VarDecl of type (const) char* we cannot check and report this as an error
     if (!format.isImplicitCast()) goto not_constant;
-    ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(format);
+    ImplicitCastExpr* ic = (ImplicitCastExpr*)format;
     if (!ic.isArrayToPointerDecay()) goto not_constant;
     format = ic.getInner();
 
@@ -369,7 +369,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
         StructType* st = templateType.getStructTypeOrNil();
         if (st) {
             StructTypeDecl* std = st.getDecl();
-            Decl* d = cast<Decl*>(std);
+            Decl* d = (Decl*)std;
             used_opaque = (std.isOpaque() && d.getModule() != ma.mod);
         }
         Instantiator inst = {
@@ -382,7 +382,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
             .on_error = Analyser.opaque_callback,
         };
         instance = fd.instantiate(&inst);
-        Decl* d = cast<Decl*>(instance);
+        Decl* d = (Decl*)instance;
         ma.analyseFunction(instance);
         if (ma.has_error) return nil;
         d.setChecked();
@@ -415,7 +415,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
 }
 
 fn QualType Analyser.analysePureCallExpr(Analyser* ma, Expr* e) {
-    CallExpr* call = cast<CallExpr*>(e);
+    CallExpr* call = (CallExpr*)e;
     Expr** func = call.getFunc2();
     Expr* origFn = call.getFunc();  // store here to avoid the likely inserted FunctionPointerDecay cast
     QualType qt = ma.analyseExpr(func, true, RHS);

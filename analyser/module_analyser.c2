@@ -187,10 +187,10 @@ fn void Analyser.collectTypeFunctions(Analyser* ma) {
     for (u32 i=0; i<type_fn_decls.count; i++) {
         const sf_list.Info* info = &type_fn_decls.data[i];
         if (info.decl.isStructType()) {
-            StructTypeDecl* fd = cast<StructTypeDecl*>(info.decl);
+            StructTypeDecl* fd = (StructTypeDecl*)info.decl;
             fd.setStructFunctions(ma.context, info.functions.getDecls(), info.functions.size());
         } else {
-            EnumTypeDecl* etd = cast<EnumTypeDecl*>(info.decl);
+            EnumTypeDecl* etd = (EnumTypeDecl*)info.decl;
             etd.setEnumFunctions(ma.context, info.functions.getDecls(), info.functions.size());
         }
     }
@@ -228,7 +228,7 @@ fn void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
     // check if incremental array/enum
     if (d.isVariable()) {
         // Note: type has not been analysed yet, only use TypeRef
-        VarDecl* vd = cast<VarDecl*>(d);
+        VarDecl* vd = (VarDecl*)d;
         TypeRef* ref = vd.getTypeRef();
         if (!ref.isIncrArray()) {
             ma.error(entry.loc, "'%s' is not an incremental array", ast.idx2name(name));
@@ -243,7 +243,7 @@ fn void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
         vd.setInit(init_expr);
     } else if (d.isEnum()) {
         // dont analyse yet, just check if Identifier and convert to EnumConstantDecl
-        EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
+        EnumTypeDecl* etd = (EnumTypeDecl*)d;
         if (!etd.isIncremental()) {
             ma.error(entry.loc, "'%s' is not an incremental enum", ast.idx2name(name));
             ma.note(d.getLoc(), "'%s' is defined here", ast.idx2name(name));
@@ -259,7 +259,7 @@ fn void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
                 return;
             }
         }
-        etd.setIncrConstants(ma.context, cast<IdentifierExpr**>(values), num_values);
+        etd.setIncrConstants(ma.context, (IdentifierExpr**)values, num_values);
     } else {
         ma.error(entry.loc, "'%s' is not an incremental array/enum", ast.idx2name(name));
         ma.note(d.getLoc(), "'%s' is defined here", ast.idx2name(name));
@@ -268,7 +268,7 @@ fn void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
 
 fn void Analyser.handleImport(void* arg, ast.ImportDecl* id) {
     Analyser* ma = arg;
-    Decl* d = cast<Decl*>(id);
+    Decl* d = (Decl*)id;
     if (!d.isUsedPublic()) return;
 
     Module* dest = id.getDest();
@@ -343,7 +343,7 @@ fn void Analyser.deleteScope(void* /*arg*/, AST* a) {
 fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
     Analyser* ma = arg;
     Ref* prefix = fd.getPrefix();
-    Decl* d = cast<Decl*>(fd);
+    Decl* d = (Decl*)fd;
     assert(prefix);
     u32 prefix_name_idx = prefix.name_idx;
 
@@ -395,7 +395,7 @@ fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
     prefix.decl = ma.type_fn_decls.getDecl(index);
     // Note: no need to check for enum constants, since they always start with Capital case
     if (prefix.decl.isStructType()) {
-        StructTypeDecl* std = cast<StructTypeDecl*>(prefix.decl);
+        StructTypeDecl* std = (StructTypeDecl*)prefix.decl;
         Decl* match = std.findMember(d.getNameIdx(), nil);
         if (match) {
             ma.error(match.getLoc(), "member '%s' conflicts with type-function '%s'", match.getName(), d.getFullName());
@@ -410,7 +410,7 @@ fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
 fn void Analyser.analyseFunctionProto(void* arg, FunctionDecl* d) {
     Analyser* ma = arg;
 
-    ma.analyseGlobalDecl(cast<Decl*>(d));
+    ma.analyseGlobalDecl((Decl*)d);
 }
 
 fn void Analyser.analyseFunctionBodies(void* arg, FunctionDecl* d) {
@@ -441,15 +441,15 @@ fn bool Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
 
     switch (d.getKind()) {
     case Function:
-        ma.analyseFunction(cast<FunctionDecl*>(d));
+        ma.analyseFunction((FunctionDecl*)d);
         break;
     case Import:
         break;
     case StructType:
-        ma.analyseStructType(cast<StructTypeDecl*>(d));
+        ma.analyseStructType((StructTypeDecl*)d);
         break;
     case EnumType:
-        ma.analyseEnumType(cast<EnumTypeDecl*>(d));
+        ma.analyseEnumType((EnumTypeDecl*)d);
         break;
     case EnumConstant:
         assert(0);
@@ -458,10 +458,10 @@ fn bool Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
         ma.analyseFunctionType(d);
         break;
     case AliasType:
-        ma.analyseAliasType(cast<AliasTypeDecl*>(d));
+        ma.analyseAliasType((AliasTypeDecl*)d);
         break;
     case Variable:
-        ma.analyseGlobalVarDecl(cast<VarDecl*>(d));
+        ma.analyseGlobalVarDecl((VarDecl*)d);
         break;
     }
 
@@ -480,7 +480,7 @@ fn void Analyser.handleTypeDecl(void* arg, Decl* d) {
 fn void Analyser.handleStaticAssert(void* arg, StaticAssert* d) {
     Analyser* ma = arg;
 
-    StaticAssert* sa = cast<StaticAssert*>(d);
+    StaticAssert* sa = (StaticAssert*)d;
     Expr* lhs = sa.getLhs();
     Expr* rhs = sa.getRhs();
 
@@ -530,7 +530,7 @@ fn void Analyser.checkName(Analyser* ma, Decl* d, bool is_constant) {
 }
 
 fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
-    Decl* d = cast<Decl*>(v);
+    Decl* d = (Decl*)v;
 
     // Note: d.getType() is 0 here! (use refType)
     TypeRef* ref = v.getTypeRef();
@@ -541,7 +541,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
     if (ref.isIncrArray()) {
         u32 size = 0;
         if (init_expr) {
-            InitListExpr* ile = cast<InitListExpr*>(init_expr);
+            InitListExpr* ile = (InitListExpr*)init_expr;
             size = ile.getNumValues();
         }
         res = ma.analyseIncrTypeRef(ref, size);
@@ -593,7 +593,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
 }
 
 fn void Analyser.checkVarDeclAttributes(Analyser* ma, VarDecl* v) {
-    Decl* d = cast<Decl*>(v);
+    Decl* d = (Decl*)v;
     QualType qt = d.getType();
     if (qt.isConst() && qt.isBuiltin()) {
         if (v.hasAttrWeak()) {
@@ -673,7 +673,7 @@ type MainMarker struct {
 
 fn void findMainFunction(void* arg, FunctionDecl* fd) {
     MainMarker* m = (arg);
-    Decl* d = cast<Decl*>(fd);
+    Decl* d = (Decl*)fd;
     if (d.getNameIdx() == m.name_idx) {
         if (m.main) {
             //ma.error(d.getLoc(), "duplicate main function");

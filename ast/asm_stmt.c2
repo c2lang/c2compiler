@@ -63,14 +63,14 @@ public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
     s.base.init(StmtKind.Asm, loc);
     s.base.asmStmtBits.is_basic = is_basic;
     s.base.asmStmtBits.is_volatile = is_volatile;
-    s.num_outputs = cast<u8>(num_outputs);
-    s.num_inputs = cast<u8>(num_inputs);
-    s.num_constraints = cast<u8>(constraints.size());
-    s.num_exprs = cast<u8>(exprs.size());
-    s.num_clobbers = cast<u8>(clobbers.size());
-    s.asm_string = cast<StringLiteral*>(str);
+    s.num_outputs = (u8)num_outputs;
+    s.num_inputs = (u8)num_inputs;
+    s.num_constraints = (u8)constraints.size();
+    s.num_exprs = (u8)exprs.size();
+    s.num_clobbers = (u8)clobbers.size();
+    s.asm_string = (StringLiteral*)str;
 
-    u8* tail = cast<u8*>(s.constraints);
+    u8* tail = (u8*)s.constraints;
     if (constraints.size()) {
         u32 sz = constraints.size() * sizeof(Expr*);
         string.memcpy(tail, constraints.getExprs(), sz);
@@ -99,7 +99,7 @@ public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
 
 fn Stmt* AsmStmt.instantiate(AsmStmt* s, Instantiator* inst) @(unused) {
     // TODO
-    return cast<Stmt*>(s);
+    return (Stmt*)s;
 }
 
 public fn bool AsmStmt.isVolatile(const AsmStmt* s) {
@@ -131,28 +131,28 @@ public fn StringLiteral* AsmStmt.getString(const AsmStmt* s) {
 }
 
 public fn const Expr** AsmStmt.getConstraints(const AsmStmt* s) {
-    return cast<const Expr**>(s.constraints);
+    return (const Expr**)s.constraints;
 }
 
 public fn Expr** AsmStmt.getExprs(const AsmStmt* s) {
-    u8* tail = cast<u8*>(s.constraints);
+    u8* tail = (u8*)s.constraints;
     tail += s.num_constraints * sizeof(Expr*);
-    return cast<Expr**>(tail);
+    return (Expr**)tail;
 }
 
 public fn Expr** AsmStmt.getClobbers(const AsmStmt* s) {
-    u8* tail = cast<u8*>(s.constraints);
+    u8* tail = (u8*)s.constraints;
     tail += s.num_constraints * sizeof(Expr*);
     tail += s.num_exprs * sizeof(Expr*);
-    return cast<Expr**>(tail);
+    return (Expr**)tail;
 }
 
 public fn u32* AsmStmt.getNames(const AsmStmt* s) {
-    u8* tail = cast<u8*>(s.constraints);
+    u8* tail = (u8*)s.constraints;
     tail += s.num_constraints * sizeof(Expr*);
     tail += s.num_exprs * sizeof(Expr*);
     tail += s.num_clobbers * sizeof(Expr*);
-    return cast<u32*>(tail);
+    return (u32*)tail;
 }
 
 fn void AsmStmt.print(const AsmStmt* s, string_buffer.Buf* out, u32 indent) {
@@ -176,7 +176,7 @@ fn void AsmStmt.print(const AsmStmt* s, string_buffer.Buf* out, u32 indent) {
                 out.space();
             }
             out.color(col_Value);
-            const StringLiteral* sl = cast<StringLiteral*>(constraints[i]);
+            const StringLiteral* sl = (StringLiteral*)constraints[i];
             sl.printLiteral(out);
             out.newline();
             const Expr* e = exprs[i];
@@ -199,7 +199,7 @@ fn void AsmStmt.print(const AsmStmt* s, string_buffer.Buf* out, u32 indent) {
                 out.space();
             }
             out.color(col_Value);
-            const StringLiteral* sl = cast<StringLiteral*>(constraints[i+s.num_outputs]);
+            const StringLiteral* sl = (StringLiteral*)constraints[i+s.num_outputs];
             sl.printLiteral(out);
             out.newline();
             const Expr* e = exprs[i+s.num_outputs];

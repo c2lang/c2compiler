@@ -25,7 +25,7 @@ fn bool hasReturn(const Stmt* s) {
         case Return:
             return true;
         case If:
-            const IfStmt* i = cast<IfStmt*>(s);
+            const IfStmt* i = (IfStmt*)s;
             if (!hasReturn(i.getThen())) return false;
             const Stmt* e = i.getElse();
             if (e && hasReturn(e)) return true;
@@ -41,12 +41,12 @@ fn bool hasReturn(const Stmt* s) {
             break;
         case Label:
             // TODO
-            const LabelStmt* ls = cast<LabelStmt*>(s);
+            const LabelStmt* ls = (LabelStmt*)s;
             const Stmt* lss = ls.getStmt();
             if (!lss) return false;
             return hasReturn(lss);
         case Compound:
-            const CompoundStmt* cs = cast<CompoundStmt*>(s);
+            const CompoundStmt* cs = (CompoundStmt*)s;
             const Stmt* last = cs.getLastStmt();
             if (!last) return false;
             return hasReturn(last);
@@ -68,8 +68,8 @@ fn void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
         break;
     case Expr:
         // TODO need a different set, since this one uses the Stack of Globals
-        ma.analyseExpr(cast<Expr**>(&s), false, 0);
-        Expr* e = cast<Expr*>(s);
+        ma.analyseExpr((Expr**)&s, false, 0);
+        Expr* e = (Expr*)s;
         if (checkEffect && !e.hasEffect()) ma.errorRange(e.getLoc(), e.getRange(), "expression without effect");
         break;
     case If:
@@ -105,7 +105,7 @@ fn void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
         break;
     case Compound:
         ma.scope.enter(scope.Decl);
-        ma.analyseCompoundStmt(cast<CompoundStmt*>(s));
+        ma.analyseCompoundStmt((CompoundStmt*)s);
         ma.scope.exit(ma.has_error);
         break;
     case Decl:
@@ -138,7 +138,7 @@ fn void Analyser.analyseFallthroughStmt(Analyser* ma, Stmt* s) {
 }
 
 fn void Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
-    LabelStmt* ls = cast<LabelStmt*>(s);
+    LabelStmt* ls = (LabelStmt*)s;
     u32 name = ls.getNameIdx();
 
     Label* label = ma.labels.find(name);
@@ -161,7 +161,7 @@ fn void Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
 }
 
 fn void Analyser.analyseGotoStmt(Analyser* ma, Stmt* s) {
-    GotoStmt* gs = cast<GotoStmt*>(s);
+    GotoStmt* gs = (GotoStmt*)s;
     u32 name = gs.getNameIdx();
 
     Label* label = ma.labels.find(name);
@@ -189,7 +189,7 @@ fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_ass
     if (s.isDecl()) {
         QualType qt = ma.analyseDeclStmt(s);
         if (qt.isValid()) {
-            DeclStmt* ds = cast<DeclStmt*>(s);
+            DeclStmt* ds = (DeclStmt*)s;
             VarDecl* vd = ds.getDecl(0);
             if (!vd.getInit()) {
                 ma.error(vd.asDecl().getLoc(), "variable declaration in condition must have an initializer");
@@ -200,9 +200,9 @@ fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_ass
     }
 
     assert(s.isExpr());
-    QualType qt = ma.analyseExpr(cast<Expr**>(s_ptr), true, RHS);
+    QualType qt = ma.analyseExpr((Expr**)s_ptr, true, RHS);
     Expr* e = cast<Expr*>(*s_ptr);
-    if (qt.isValid()) ma.checker.check(builtins[BuiltinKind.Bool], qt, cast<Expr**>(s_ptr), e.getLoc());
+    if (qt.isValid()) ma.checker.check(builtins[BuiltinKind.Bool], qt, (Expr**)s_ptr, e.getLoc());
     e = cast<Expr*>(*s_ptr);    // re-read in case of ImplicitCast insertions
 
     if (check_assign && e.isAssignment()) {
@@ -213,7 +213,7 @@ fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_ass
 }
 
 fn void Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
-    IfStmt* i = cast<IfStmt*>(s);
+    IfStmt* i = (IfStmt*)s;
     ma.scope.enter(scope.Decl);
 
     ma.analyseCondition(i.getCond2(), true);
@@ -234,7 +234,7 @@ done:
 }
 
 fn void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
-    ForStmt* f = cast<ForStmt*>(s);
+    ForStmt* f = (ForStmt*)s;
 
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl | scope.Control);
     Stmt** init = f.getInit2();
@@ -262,7 +262,7 @@ done:
 }
 
 fn void Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
-    WhileStmt* w = cast<WhileStmt*>(s);
+    WhileStmt* w = (WhileStmt*)s;
     ma.scope.enter(scope.Decl);
     ma.analyseCondition(w.getCond2(), true);
     if (ma.has_error) goto done;
@@ -276,7 +276,7 @@ done:
 
 fn QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
     QualType qt = QualType_Invalid;
-    DeclStmt* ds = cast<DeclStmt*>(s);
+    DeclStmt* ds = (DeclStmt*)s;
     u32 count = ds.getDeclCount();
     for (u32 i = 0; i < count; i++)
         qt = ma.analyseDecl(ds.getDecl(i));
@@ -284,7 +284,7 @@ fn QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
 }
 
 fn QualType Analyser.analyseDecl(Analyser* ma, VarDecl* vd) {
-    Decl* d = cast<Decl*>(vd);
+    Decl* d = (Decl*)vd;
 
     // Note: d.getType() is 0 here! (use refType)
     TypeRef* ref = vd.getTypeRef();
@@ -346,7 +346,7 @@ fn QualType Analyser.analyseDecl(Analyser* ma, VarDecl* vd) {
 }
 
 fn void Analyser.analyseAsmStmt(Analyser* ma, Stmt* s) {
-    AsmStmt* a = cast<AsmStmt*>(s);
+    AsmStmt* a = (AsmStmt*)s;
 
     u32 num_exprs = a.getNumExprs();
     Expr** exprs = a.getExprs();
@@ -368,7 +368,7 @@ fn void Analyser.analyseAsmStmt(Analyser* ma, Stmt* s) {
 }
 
 fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
-    AssertStmt* a = cast<AssertStmt*>(s);
+    AssertStmt* a = (AssertStmt*)s;
     QualType qt = ma.analyseExpr(a.getInner2(), true, RHS);
     if (qt.isInvalid()) return;
 
@@ -377,7 +377,7 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
 }
 
 fn void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
-    ReturnStmt* r = cast<ReturnStmt*>(s);
+    ReturnStmt* r = (ReturnStmt*)s;
 
     Expr** arg = r.getValue2();
 
@@ -408,14 +408,14 @@ fn void Analyser.checkReturnAddrOfLocal(Analyser* ma, Expr* arg) {
     //checks for: return &a;
     if (!(*arg).isUnaryOp()) return;
 
-    UnaryOperator* uo = cast<UnaryOperator*>(arg);
+    UnaryOperator* uo = (UnaryOperator*)arg;
     Expr* inner = uo.getInner();
     if (!inner.isIdentifier()) return;
-    IdentifierExpr* id = cast<IdentifierExpr*>(inner);
+    IdentifierExpr* id = (IdentifierExpr*)inner;
     Decl* d = id.getDecl();
     assert(d);
     if (!d.isVarDecl()) return;
-    VarDecl* vd = cast<VarDecl*>(d);
+    VarDecl* vd = (VarDecl*)d;
 
     if ((vd.isLocal() && !vd.hasLocalQualifier()) || vd.isParameter()) {
         ma.error(arg.getLoc(), "function returns address of local variable");

@@ -44,7 +44,7 @@ const char*[] typeKind_names = {
 static_assert(elemsof(TypeKind), elemsof(typeKind_names));
 
 type TypeBits struct {
-    u32 kind : 8;
+    TypeKind kind : 8;
 }
 const u32 NumTypeBits = 8;
 
@@ -66,8 +66,7 @@ fn void Type.init(Type* t, TypeKind k) {
     t.canonicalType.ptr = 0;
 }
 
-// TEMP cast needed until Analyser fixed
-public fn TypeKind Type.getKind(const Type* t) { return cast<TypeKind>(t.typeBits.kind); }
+public fn TypeKind Type.getKind(const Type* t) { return t.typeBits.kind; }
 
 /*
 public fn bool Type.hasCanonicalType(const Type* t) {
@@ -120,20 +119,20 @@ public fn void Type.dump(const Type* t) @(unused) {
 fn u32 Type.getAlignment(const Type* t) {
     switch (t.getKind()) {
     case Builtin:
-        const BuiltinType* bi =  cast<BuiltinType*>(t);
+        const BuiltinType* bi =  (BuiltinType*)t;
         return bi.getAlignment();
     case Pointer:
         break;
     case Array:
-        const ArrayType* at =  cast<ArrayType*>(t);
+        const ArrayType* at =  (ArrayType*)t;
         QualType elem = at.getElemType();
         return elem.getAlignment();
     case Struct:
-        const StructType* s = cast<StructType*>(t);
+        const StructType* s = (StructType*)t;
         const StructTypeDecl* std = s.getDecl();
         return std.getAlignment();
     case Enum:
-        const EnumType * e = cast<EnumType*>(t);
+        const EnumType * e = (EnumType*)t;
         const EnumTypeDecl* etd = e.getDecl();
         QualType it = etd.getImplType();
         return it.getTypeOrNil().getAlignment();
@@ -152,25 +151,25 @@ fn u32 Type.getAlignment(const Type* t) {
 fn u32 Type.getSize(const Type* t, bool deref_ptr) {
     switch (t.getKind()) {
     case Builtin:
-        const BuiltinType* bi =  cast<BuiltinType*>(t);
+        const BuiltinType* bi =  (BuiltinType*)t;
         return bi.getAlignment();   // note: alignment is size
     case Pointer:
         if (deref_ptr) {
-            const PointerType* pt = cast<PointerType*>(t);
+            const PointerType* pt = (PointerType*)t;
             QualType inner = pt.getInner();
             return inner.getSize(deref_ptr);
         }
         break;
     case Array:
-        const ArrayType* at =  cast<ArrayType*>(t);
+        const ArrayType* at =  (ArrayType*)t;
         QualType elem = at.getElemType();
         return at.getSize() * elem.getSize(false);
     case Struct:
-        const StructType* s = cast<StructType*>(t);
+        const StructType* s = (StructType*)t;
         const StructTypeDecl* std = s.getDecl();
         return std.getSize();
     case Enum:
-        const EnumType * e = cast<EnumType*>(t);
+        const EnumType * e = (EnumType*)t;
         const EnumTypeDecl* etd = e.getDecl();
         QualType it = etd.getImplType();
         return it.getTypeOrNil().getSize(false);
@@ -190,28 +189,28 @@ fn void Type.print(const Type* t, string_buffer.Buf* out) {
     out.color(col_Type);
     switch (t.getKind()) {
     case Builtin:
-        BuiltinType.print(cast<BuiltinType*>(t), out);
+        BuiltinType.print((BuiltinType*)t, out);
         break;
     case Pointer:
-        PointerType.print(cast<PointerType*>(t), out);
+        PointerType.print((PointerType*)t, out);
         break;
     case Array:
-        ArrayType.print(cast<ArrayType*>(t), out);
+        ArrayType.print((ArrayType*)t, out);
         break;
     case Struct:
-        StructType.print(cast<StructType*>(t), out);
+        StructType.print((StructType*)t, out);
         break;
     case Enum:
-        EnumType.print(cast<EnumType*>(t), out);
+        EnumType.print((EnumType*)t, out);
         break;
     case Function:
-        FunctionType.print(cast<FunctionType*>(t), out);
+        FunctionType.print((FunctionType*)t, out);
         break;
     case Alias:
-        AliasType.print(cast<AliasType*>(t), out);
+        AliasType.print((AliasType*)t, out);
         break;
     case Module:
-        ModuleType.print(cast<ModuleType*>(t), out);
+        ModuleType.print((ModuleType*)t, out);
         break;
     }
 }
@@ -219,28 +218,28 @@ fn void Type.print(const Type* t, string_buffer.Buf* out) {
 fn void Type.fullPrint(const Type* t, string_buffer.Buf* out, u32 indent) {
     switch (t.getKind()) {
     case Builtin:
-        BuiltinType.fullPrint(cast<BuiltinType*>(t), out, indent);
+        BuiltinType.fullPrint((BuiltinType*)t, out, indent);
         break;
     case Pointer:
-        PointerType.fullPrint(cast<PointerType*>(t), out, indent);
+        PointerType.fullPrint((PointerType*)t, out, indent);
         break;
     case Array:
-        ArrayType.fullPrint(cast<ArrayType*>(t), out, indent);
+        ArrayType.fullPrint((ArrayType*)t, out, indent);
         break;
     case Struct:
-        StructType.fullPrint(cast<StructType*>(t), out, indent);
+        StructType.fullPrint((StructType*)t, out, indent);
         break;
     case Enum:
-        EnumType.fullPrint(cast<EnumType*>(t), out, indent);
+        EnumType.fullPrint((EnumType*)t, out, indent);
         break;
     case Function:
-        FunctionType.fullPrint(cast<FunctionType*>(t), out, indent);
+        FunctionType.fullPrint((FunctionType*)t, out, indent);
         break;
     case Alias:
-        AliasType.fullPrint(cast<AliasType*>(t), out, indent);
+        AliasType.fullPrint((AliasType*)t, out, indent);
         break;
     case Module:
-        ModuleType.fullPrint(cast<ModuleType*>(t), out, indent);
+        ModuleType.fullPrint((ModuleType*)t, out, indent);
         break;
     }
     out.indent(indent);

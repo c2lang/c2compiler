@@ -85,7 +85,7 @@ fn Type* PointerPool.getPointer(PointerPool* p, QualType qt) {
     Type* ptr = slot.ptrs[quals];
     if (ptr) return ptr;
 
-    ptr = cast<Type*>(PointerType.create(p.context, qt));
+    ptr = (Type*)PointerType.create(p.context, qt);
     slot.ptrs[quals] = ptr;
     return ptr;
 }

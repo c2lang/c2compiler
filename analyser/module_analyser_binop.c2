@@ -144,7 +144,7 @@ fn QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualType
     BuiltinType* bl = lcanon.getBuiltinTypeOrNil();
     BuiltinType* br = rcanon.getBuiltinTypeOrNil();
     if (!bl || !br || lcanon.isVoid() || lcanon.isVoid()) {
-        Expr* e = cast<Expr*>(b);
+        Expr* e = (Expr*)b;
         ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
     }
@@ -165,7 +165,7 @@ fn QualType Analyser.checkBinopLogical(Analyser* ma, BinaryOperator* b, QualType
     ok &= ma.checker.check(builtins[BuiltinKind.Bool], rhs, b.getRHS2(), b.getRHS().getLoc());
     if (ok) return builtins[BuiltinKind.Bool];
 
-    Expr* e = cast<Expr*>(b);
+    Expr* e = (Expr*)b;
     ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
     return QualType_Invalid;
 }
@@ -204,7 +204,7 @@ fn QualType Analyser.checkBinopAddSubAssign(Analyser* ma, BinaryOperator* b, Qua
     case 0: // cannot happen
         break;
     case 1: // invalid
-        Expr* e = cast<Expr*>(b);
+        Expr* e = (Expr*)b;
         ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
     case 2: // builtin - builtin
@@ -264,7 +264,7 @@ fn QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualType
     case 0: // cannot happen
         break;
     case 1: // invalid
-        Expr* e = cast<Expr*>(b);
+        Expr* e = (Expr*)b;
         ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
     case 2: // builtin + builtin
@@ -335,7 +335,7 @@ fn QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType
     case 0: // cannot happen
         break;
     case 1: // invalid
-        Expr* e = cast<Expr*>(b);
+        Expr* e = (Expr*)b;
         ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
     case 2: // builtin - builtin
@@ -356,7 +356,7 @@ fn QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType
         QualType t1 = pt1.getInner();
         QualType t2 = pt2.getInner();
         if (t1.getTypeOrNil() != t2.getTypeOrNil() || t1.isVoid() || t2.isVoid()) {
-            Expr* e = cast<Expr*>(b);
+            Expr* e = (Expr*)b;
             ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
             return QualType_Invalid;
         }
@@ -368,7 +368,7 @@ fn QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType
         // Result will be CTV
         return ast.builtins[BuiltinKind.Int32];
     }
-    Expr* e = cast<Expr*>(b);
+    Expr* e = (Expr*)b;
     ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
     return QualType_Invalid;
 }
@@ -403,7 +403,7 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvComparision = {
 fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
     QualType lcanon = lhs.getCanonicalType();
     QualType rcanon = rhs.getCanonicalType();
-    Expr* e = cast<Expr*>(b);
+    Expr* e = (Expr*)b;
     assert(lcanon.isValid());
     assert(rcanon.isValid());
 
@@ -459,7 +459,7 @@ fn QualType Analyser.checkPointerFuncComparison(Analyser* ma, BinaryOperator* b,
     assert(lcanon.isPointer());
     PointerType* pt = lcanon.getPointerType();
     QualType inner = pt.getInner();
-    Expr* e = cast<Expr*>(b);
+    Expr* e = (Expr*)b;
     if (!inner.isVoid()) {
         ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
@@ -477,7 +477,7 @@ fn QualType Analyser.checkPointerFuncComparison(Analyser* ma, BinaryOperator* b,
 
 fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
-    BinaryOperator* b = cast<BinaryOperator*>(e);
+    BinaryOperator* b = (BinaryOperator*)e;
     BinaryOpcode opcode = b.getOpcode();
 
     bool need_lhs_rvalue = true;

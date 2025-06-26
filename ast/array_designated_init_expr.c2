@@ -46,7 +46,7 @@ fn Expr* ArrayDesignatedInitExpr.instantiate(ArrayDesignatedInitExpr* e, Instant
                                                                 e.base.base.loc,
                                                                 e.designator.instantiate(inst),
                                                                 e.initValue.instantiate(inst));
-    return cast<Expr*>(f);
+    return (Expr*)f;
 }
 
 public fn Expr* ArrayDesignatedInitExpr.getDesignator(const ArrayDesignatedInitExpr* e) {
