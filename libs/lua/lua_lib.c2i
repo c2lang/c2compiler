@@ -3,37 +3,37 @@ module lua_lib;
 import c2 local;
 import lua local;
 
-fn c_int luaopen_base(State *L);
+fn i32 luaopen_base(State *L);
 
-const c_char[] LUA_COLIBNAME = "coroutine";
-fn c_int luaopen_coroutine(State *L);
+const char[] LUA_COLIBNAME = "coroutine";
+fn i32 luaopen_coroutine(State *L);
 
-const c_char[] LUA_TABLIBNAME = "table";
-fn c_int luaopen_table(State *L);
+const char[] LUA_TABLIBNAME = "table";
+fn i32 luaopen_table(State *L);
 
-const c_char[] LUA_IOLIBNAME = "io";
-fn c_int luaopen_io(State *L);
+const char[] LUA_IOLIBNAME = "io";
+fn i32 luaopen_io(State *L);
 
-const c_char[] LUA_OSLIBNAME = "os";
-fn c_int luaopen_os(State *L);
+const char[] LUA_OSLIBNAME = "os";
+fn i32 luaopen_os(State *L);
 
-const c_char[] LUA_STRINGLIBNAME = "string";
-fn c_int luaopen_string(State *L);
+const char[] LUA_STRINGLIBNAME = "string";
+fn i32 luaopen_string(State *L);
 
-const c_char[] LUA_UTF8LIBNAME = "utf8";
-fn c_int luaopen_utf8(State *L);
+const char[] LUA_UTF8LIBNAME = "utf8";
+fn i32 luaopen_utf8(State *L);
 
-const c_char[] LUA_BITLIBNAME = "bit32";
-fn c_int luaopen_bit32(State *L);
+const char[] LUA_BITLIBNAME = "bit32";
+fn i32 luaopen_bit32(State *L);
 
-const c_char[] LUA_MATHLIBNAME = "math";
-fn c_int luaopen_math(State *L);
+const char[] LUA_MATHLIBNAME = "math";
+fn i32 luaopen_math(State *L);
 
-const c_char[] LUA_DBLIBNAME = "debug";
-fn c_int luaopen_debug(State *L);
+const char[] LUA_DBLIBNAME = "debug";
+fn i32 luaopen_debug(State *L);
 
-const c_char[] LUA_LOADLIBNAME = "package";
-fn c_int luaopen_package(State *L);
+const char[] LUA_LOADLIBNAME = "package";
+fn i32 luaopen_package(State *L);
 
 // open all previous libraries
 fn void luaL_openlibs(State* L);

@@ -50,7 +50,7 @@ type Integer c_int @(cname="lua_integer");
 type Unsigned LUA_UNSIGNED @(cname="lua_Unsigned");
 type KContext LUA_KCONTEXT @(cname="lua_KContext");
 
-type CFunction fn c_int (State *L) @(cname="lua_CFunction");
+type CFunction fn i32 (State *L) @(cname="lua_CFunction");
 
 type KFunction fn c_int (State *L, c_int status, KContext ctx) @(cname="lua_KFunction");
 

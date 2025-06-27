@@ -154,7 +154,11 @@ fn void Generator.createMakefile(Generator* gen,
                     continue;
             }
             if (c.isStaticLib()) {
-                out.print(" -L%s/%s", c.getPath(), triplet);
+                if (gen.targetInfo.sys == target_info.System.Darwin) {
+                    out.print(" -L/opt/homebrew/lib");
+                } else {
+                    out.print(" -L%s/%s", c.getPath(), triplet);
+                }
                 // special case for static libc
                 if (c.getNameIdx() == libc_name) out.add(" --static");
             }
