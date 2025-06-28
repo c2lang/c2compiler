@@ -33,7 +33,7 @@ static_assert(32, sizeof(FunctionTypeDecl));
 static_assert(32, sizeof(VarDecl));
 static_assert(40, sizeof(EnumConstantDecl));
 static_assert(40, sizeof(ImportDecl));
-static_assert(40, sizeof(StructTypeDecl));
+static_assert(48, sizeof(StructTypeDecl));
 static_assert(80, sizeof(FunctionDecl));
 
 static_assert(8, sizeof(Stmt));

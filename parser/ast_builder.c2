@@ -249,6 +249,10 @@ public fn VarDecl* Builder.actOnStructMember(Builder* b,
                                       bitfield);
 }
 
+public fn FieldInitInfo* Builder.actOnFieldInitInfo(Builder* b, StructTypeDecl* std) {
+    return std.createFieldInfo(b.context);
+}
+
 public fn Decl* Builder.actOnGlobalVarDecl(Builder* b,
                                             u32 name,
                                             SrcLoc loc,

@@ -542,8 +542,6 @@ fn void Generator.on_ast(void* arg, AST* a) {
 fn void Generator.on_module(void* arg, Module* m) {
     if (!m.isUsed()) return;
 
-    Generator* gen = arg;
-
     m.visitASTs(Generator.on_ast, arg);
 }
 

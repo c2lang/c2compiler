@@ -51,6 +51,7 @@ type VarDeclBits struct {
 public type VarDecl struct @(opaque) {
     Decl base;
     TypeRef typeRef;    // Note: variable size due to tail allocs!
+    // TODO wrap loc + init in VarDeclInit (less offset issues)
     //SrcLoc[0] assignLoc; // only present if init is present, followed by 4 bytes padding
     //Expr*[0] init;    // also for bitfields, tail-allocated, position changes
 }

@@ -297,17 +297,64 @@ fn bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* siz
     return true;
 }
 
+type FillInfo struct {
+    FieldInitInfo* fii;
+    u32 member_idx; // virtual index (same for union members)
+    u32 idx;    // index into fields
+}
+
+fn void fillFieldInfo(StructTypeDecl* std, FillInfo* fi, u32 base_offset) {
+    bool isStruct = std.isStruct();
+    Decl** members = std.getMembers();
+    const u32* offsets = std.getMemberOffsets();
+    for (u32 i=0; i<std.getNumMembers(); i++) {
+        Decl* d = members[i];
+        FieldInitField* f = &fi.fii.fields[fi.idx];
+        f.member_idx = fi.member_idx;
+
+        u32 member_name = d.getNameIdx();
+        u32 offset = base_offset + offsets[i];
+        if (member_name == 0) {
+            StructTypeDecl* sub = (StructTypeDecl*)d;
+            fillFieldInfo(sub, fi, offset);
+        } else {
+            f.name_idx = member_name;
+            f.offset = offset;
+            f.decl = members[i];
+            if (isStruct) fi.member_idx++; // stays the same for unions
+            fi.idx++;
+        }
+    }
+    if (!isStruct) fi.member_idx++;
+}
+
+fn const FieldInitInfo* Analyser.getFieldInfo(Analyser* ma, StructTypeDecl* std) {
+    if (std.hasFieldInfo()) return std.getFieldInfo();
+
+    FieldInitInfo* fii = ma.builder.actOnFieldInitInfo(std);
+    FillInfo fi = { .fii = fii };
+    fillFieldInfo(std, &fi, 0);
+    fii.num_indexes = fi.member_idx + 1;
+
+#if 0
+    std.asDecl().dump();
+    printf("FIELDS (%d / %d)\n", fii.num_fields, fii.num_indexes);
+    for (u32 i=0; i<fii.num_fields; i++) {
+        const FieldInitField* fif = &fii.fields[i];
+        printf("  [%2d] %8s  %2d  %2d\n", i, ma.astPool.idx2str(fif.name_idx), fif.offset, fif.member_idx);
+    }
+#endif
+    return fii;
+}
+
 fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitListExpr* ile, QualType expectedType) {
     ile.setHasDesignators();
 
+    const FieldInitInfo* fii = ma.getFieldInfo(std);
+    StructFieldInitChecker checker.init(fii.num_indexes);
+
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
-
-    const u32 num_members = std.getNumMembers();
-    Decl** members = std.getMembers();
-
-    StructFieldInitChecker checker.init(num_members);
-
     for (u32 i=0; i<numValues; i++) {
         Expr* value = values[i];
         if (value.isArrayDesignatedInit()) {
@@ -322,14 +369,19 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
         FieldDesignatedInitExpr* fdi = (FieldDesignatedInitExpr*)value;
         u32 field_name = fdi.getField();
         u32 offset = 0;
-        Decl* member = ma.findStructMember(std, field_name, value.getLoc(), &offset, false);
-        if (!member) goto out;
+
+        const FieldInitField* fif = fii.find(field_name);
+        if (!fif) {
+            ma.memberError(field_name, value.getLoc(), std);
+            goto out;
+        }
+        Decl* member = fif.decl;
 
         fdi.setMemberOffset(offset);
         fdi.setDecl(member);
         member.setUsed();
 
-        SrcLoc prev = checker.add(offset, value.getLoc());
+        SrcLoc prev = checker.add(fif.member_idx, value.getLoc());
         if (prev) {
             ma.error(value.getLoc(), "duplicate initialization of field '%s'", fdi.getFieldName());
             ma.note(prev, "previous initialization is here");
@@ -404,32 +456,4 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
     e.setType(expectedType);
     return true;
 }
-
-/*
-fn bool Analyser.checkFieldDesignators(Analyser* ma, InitListExpr* ile, init_checker.Checker* checker) {
-    u32 numValues = ile.getNumValues();
-    Expr** values = ile.getValues();
-
-    for (u32 i=0; i<numValues; i++) {
-        Expr* value = values[i];
-        if (!value.isFieldDesignatedInit()) {
-            ma.error(value.getLoc(), "mixing field designators with non-field designators");
-            return false;
-        }
-        FieldDesignatedInitExpr* fdi = (FieldDesignatedInitExpr*)value;
-        SrcLoc loc = value.getLoc();
-        u32 field = fdi.getField();
-
-        SrcLoc duplicate = checker.find(field);
-        if (duplicate) {
-            ma.error(loc, "duplicate initialization of field '%s'", fdi.getFieldName());
-            ma.note(duplicate, "previous initialization is here");
-            return false;
-        } else {
-            checker.add(field, loc);
-        }
-    }
-    return true;
-}
-*/
 

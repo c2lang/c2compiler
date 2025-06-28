@@ -17,55 +17,25 @@ module module_analyser;
 
 import src_loc local;
 
-import string;
 import stdlib;
 
-type FieldInit struct {
-    u32 offset;
-    SrcLoc loc;
-}
-
 type StructFieldInitChecker struct {
-    FieldInit* inits;
-    u32 num_inits;
-    u32 max_inits;
+    SrcLoc* inits;
 }
 
-fn void StructFieldInitChecker.init(StructFieldInitChecker* c, u32 max) {
-    c.num_inits = 0;
-    c.max_inits = max;
-    c.inits = nil;
-    c.resize(max);
-}
-
-fn void StructFieldInitChecker.resize(StructFieldInitChecker* c, u32 max) {
-    FieldInit* inits = stdlib.malloc(max * sizeof(FieldInit));
-    c.max_inits = max;
-    if (c.num_inits) string.memcpy(inits, c.inits, c.num_inits * sizeof(FieldInit));
-    if (c.inits) stdlib.free(c.inits);
-    c.inits = inits;
-}
-
-fn SrcLoc StructFieldInitChecker.add(StructFieldInitChecker* c, u32 offset, SrcLoc loc) {
-    SrcLoc prev = c.find(offset);
-    if (prev) return prev;
-
-    if (c.num_inits == c.max_inits) c.resize(c.max_inits * 2);
-
-    c.inits[c.num_inits].offset = offset;
-    c.inits[c.num_inits].loc = loc;
-    c.num_inits++;
-    return 0;
-}
-
-fn SrcLoc StructFieldInitChecker.find(const StructFieldInitChecker* c, u32 offset) {
-    for (u32 i=0; i<c.num_inits; i++) {
-        if (c.inits[i].offset == offset) return c.inits[i].loc;
-    }
-    return 0;
+fn void StructFieldInitChecker.init(StructFieldInitChecker* c, u32 capacity) {
+    c.inits = stdlib.calloc(capacity, sizeof(SrcLoc));
 }
 
 fn void StructFieldInitChecker.free(StructFieldInitChecker* c) {
     stdlib.free(c.inits);
 }
+
+fn SrcLoc StructFieldInitChecker.add(StructFieldInitChecker* c, u32 idx, SrcLoc loc) {
+    if (c.inits[idx]) return c.inits[idx];
+
+    c.inits[idx] = loc;
+    return 0;
+}
+
 

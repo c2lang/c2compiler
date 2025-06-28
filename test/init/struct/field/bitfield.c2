@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    i32 a : 10;
+    i32 b : 20;
+    i32 c : 2;
+}
+
+Foo[] f = {
+    { 1, 2, 3 },
+    { .a = 10, .b = 20, .c = 1 },
+}

@@ -29,7 +29,32 @@ type StructTypeDeclBits struct {
     u32 attr_opaque : 1;
     u32 attr_notypedef : 1;
     u32 size_analysed : 1;  // set when sizeof/offsetof is used (also set in (anonymous) substructs)
+    u32 has_field_info : 1;
 }
+
+public type FieldInitInfo struct {
+    u32 num_fields;     // fields[num_fields]
+    u32 num_indexes;    // number of different indexes (unions use 1)
+    FieldInitField[0] fields;
+}
+static_assert(8, sizeof(FieldInitInfo));
+
+public type FieldInitField struct {
+    u32 name_idx;
+    u32 offset;
+    u32 member_idx; // used during analysis to detect duplicate inits, same for anonymous sub-union members
+    // 4 bytes pad
+    Decl* decl;    // can point to anonymous sub-struct members as well
+}
+static_assert(24, sizeof(FieldInitField));
+
+public fn const FieldInitField* FieldInitInfo.find(const FieldInitInfo* fi, u32 name) {
+    for (u32 i=0; i<fi.num_fields; i++) {
+        if (fi.fields[i].name_idx == name) return &fi.fields[i];
+    }
+    return nil;
+}
+
 
 type StructLayout struct {
     u32 size;
@@ -43,6 +68,7 @@ public type StructTypeDecl struct @(opaque) {
     u32 num_members;
     u32 num_struct_functions;
     FunctionDecl** struct_functions;
+    FieldInitInfo* field_info;  // set lazily
     Decl*[0] members;   // tail-allocated
     //StructLayout layout[0]; // tail-allocated
 }
@@ -74,6 +100,7 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     d.num_members = num_members;
     d.num_struct_functions = 0;
     d.struct_functions = nil;
+    d.field_info = nil;
 
     StructLayout* layout = d.getLayoutPtr();
     layout.size = 0;
@@ -203,6 +230,7 @@ public fn void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.
     d.num_struct_functions = count;
 }
 
+// TODO make this function more efficient, since it is used a lot
 public fn Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx, u32* offset) {
     for (u32 i=0; i<s.getNumMembers(); i++) {
         Decl* d = s.members[i];
@@ -256,6 +284,39 @@ public fn Decl* StructTypeDecl.findMember(const StructTypeDecl* s, u32 name_idx,
     return nil;
 }
 
+public fn FieldInitInfo* StructTypeDecl.createFieldInfo(StructTypeDecl* d, ast_context.Context* c) {
+    d.base.structTypeDeclBits.has_field_info = true;
+    u32 count = d.getDesigMemberCount();
+    d.field_info = c.alloc(sizeof(FieldInitInfo) + count * sizeof(FieldInitField));
+    d.field_info.num_fields = count;
+    // Note: Fields are not initialized here
+    return d.field_info;
+}
+
+public fn const FieldInitInfo* StructTypeDecl.getFieldInfo(const StructTypeDecl* d) {
+    return d.field_info;
+}
+
+// also count anonymous sub-structs/union members
+fn u32 StructTypeDecl.getDesigMemberCount(const StructTypeDecl* d) {
+    u32 count = d.num_members;
+
+    for (u32 i=0; i<d.getNumMembers(); i++) {
+        Decl* m = d.members[i];
+        u32 member_name = m.getNameIdx();
+        if (member_name == 0) {
+            assert(m.isStructType());
+            StructTypeDecl* sub = (StructTypeDecl*)m;
+            count += sub.getDesigMemberCount() -1; // remove anonymous struct/union itself
+        }
+    }
+    return count;
+}
+
+public fn bool StructTypeDecl.hasFieldInfo(const StructTypeDecl* d) {
+    return d.base.structTypeDeclBits.has_field_info;
+}
+
 fn void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     d.base.printKind(out, indent, true);
     d.base.printBits(out);
@@ -288,6 +349,10 @@ fn void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u3
         out.color(col_Calc);
         out.print("offset=%d\n", d.getMemberOffset(i));
         d.members[i].print(out, indent + 1);
+    }
+
+    if (d.base.structTypeDeclBits.has_field_info) {
+        // TODO dump optionally
     }
 }
 
