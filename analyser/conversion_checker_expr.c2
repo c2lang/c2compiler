@@ -23,19 +23,17 @@ type ExprWidth struct {
     bool is_signed;
 }
 
-fn ExprWidth ExprWidth.mergeSmaller(ExprWidth* w1, ExprWidth* w2) {
+fn ExprWidth ExprWidth.mergeSmaller(ExprWidth w1, ExprWidth w2) {
     ExprWidth result;
-    if (w2.width < w1.width) result.width = w2.width;
-    else result.width = w1.width;
-    result.is_signed = w1.is_signed || w2.is_signed;
+    result.width = (w1.width < w2.width) ? w1.width : w2.width;
+    result.is_signed = w1.is_signed | w2.is_signed;
     return result;
 }
 
-fn ExprWidth ExprWidth.mergeWider(ExprWidth* w1, ExprWidth* w2) {
+fn ExprWidth ExprWidth.mergeWider(ExprWidth w1, ExprWidth w2) {
     ExprWidth result;
-    if (w2.width > w1.width) result.width = w2.width;
-    else result.width = w1.width;
-    result.is_signed = w1.is_signed || w2.is_signed;
+    result.width = (w1.width > w2.width) ? w1.width : w2.width;
+    result.is_signed = w1.is_signed | w2.is_signed;
     return result;
 }
 
@@ -44,13 +42,8 @@ fn ExprWidth getExprWidth(const Expr* e) {
 
     if (e.isCtv()) {
         Value v = ctv_analyser.get_value(e);
-        if (v.isNegative()) {
-            result.width = v.getWidth();
-            result.is_signed = true;
-        } else {
-            result.width = v.getWidth();
-            result.is_signed = false;
-        }
+        result.width = v.getWidth();
+        result.is_signed = v.isNegative();
         return result;
     }
 
@@ -63,26 +56,13 @@ fn ExprWidth getExprWidth(const Expr* e) {
     case Nil:
         break;
     case Identifier:
-        QualType qt = e.getType();
-        qt = qt.getCanonicalType();
-        if (qt.isBuiltin()) {
-            BuiltinType* bi = qt.getBuiltin();
-            result.width = (u8)bi.getWidth();
-            result.is_signed = bi.isSigned();
-        } else {
-            // pointer or something
-            result.width = (u8)(ast.getWordSize() * 8);
-            result.is_signed = true;
-        }
-        return result;
+        return getTypeWidth(e.getType());
     case Type:
         break;
     case Call:
         return getTypeWidth(e.getType());
     case InitList:
-        break;
     case FieldDesignatedInit:
-        break;
     case ArrayDesignatedInit:
         break;
     case BinaryOperator:
@@ -92,34 +72,21 @@ fn ExprWidth getExprWidth(const Expr* e) {
     case ConditionalOperator:
         return getCondOpWidth((ConditionalOperator*)e);
     case Builtin:
+        // TODO ToContainer -> width = 64
         break;
     case ArraySubscript:
+        // TODO BitOffset -> specific width
+        fallthrough;
     case Member:
-        QualType qt = e.getType();
-        qt = qt.getCanonicalType();
-        if (qt.isPointer()) {
-            result.width = (u8)(ast.getWordSize() * 8);
-            result.is_signed = false;
-            return result;
-        }
-        assert(qt.isBuiltin());
-        BuiltinType* bi = qt.getBuiltin();
-        result.width = (u8)bi.getWidth();
-        result.is_signed = bi.isSigned();
-        return result;
+        return getTypeWidth(e.getType());
     case Paren:
         const ParenExpr* p = (ParenExpr*)e;
         return getExprWidth(p.getInner());
     case BitOffset:
         break;
     case ExplicitCast:
-        QualType qt = e.getType();
-        qt = qt.getCanonicalType();
-        assert(qt.isBuiltin());
-        BuiltinType* bi = qt.getBuiltin();
-        result.width = (u8)bi.getWidth();
-        result.is_signed = bi.isSigned();
-        return result;
+        // TODO: explicit cast may reduce signed values
+        return getTypeWidth(e.getType());
     case ImplicitCast:
         const ImplicitCastExpr* c = (ImplicitCastExpr*)e;
         return getExprWidth(c.getInner());
@@ -127,7 +94,7 @@ fn ExprWidth getExprWidth(const Expr* e) {
         RangeExpr* b = (RangeExpr*)e;
         ExprWidth lhs = getExprWidth(b.getLHS());
         ExprWidth rhs = getExprWidth(b.getRHS());
-        return ExprWidth.mergeWider(&lhs, &rhs);
+        return ExprWidth.mergeWider(lhs, rhs);
     }
 
     e.dump();
@@ -138,7 +105,7 @@ fn ExprWidth getExprWidth(const Expr* e) {
 fn ExprWidth getCondOpWidth(const ConditionalOperator* c) {
     ExprWidth lhs = getExprWidth(c.getLHS());
     ExprWidth rhs = getExprWidth(c.getRHS());
-    return ExprWidth.mergeWider(&lhs, &rhs);
+    return ExprWidth.mergeWider(lhs, rhs);
 }
 
 fn ExprWidth getUnaryOpWidth(const UnaryOperator* u) {
@@ -157,18 +124,7 @@ fn ExprWidth getUnaryOpWidth(const UnaryOperator* u) {
         break;
     case Deref:
         Expr* e = (Expr*)u;
-        QualType qt = e.getType();
-        qt = qt.getCanonicalType();
-        if (qt.isPointer()) {
-            w.width = (u8)(ast.getWordSize() * 8);
-            w.is_signed = false;
-            break;
-        }
-        assert(qt.isBuiltin());
-        BuiltinType* bi = qt.getBuiltin();
-        w.width = (u8)bi.getWidth();
-        w.is_signed = bi.isSigned();
-        break;
+        return getTypeWidth(e.getType());
     case Minus:
         w = getExprWidth(u.getInner());
         // TODO modify width?
@@ -192,37 +148,36 @@ fn ExprWidth getBinOpWidth(const BinaryOperator* b) {
     case Multiply:
         break;
     case Divide:
-        break;
+        return getExprWidth(b.getLHS());
     case Remainder:
-        // TODO special
-        break;
+        return getExprWidth(b.getRHS());
     case Add:
-        break;
     case Subtract:
         break;
     case ShiftLeft:
-        break;
+        ExprWidth result = getExprWidth(b.getLHS());
+        if (result.width < 31) { result.width = 31; result.is_signed = true; }
+        return result;
     case ShiftRight:
-        break;
+        return getExprWidth(b.getLHS());
     case LessThan:
     case GreaterThan:
     case LessEqual:
     case GreaterEqual:
     case Equal:
     case NotEqual:
-        ExprWidth result = { 1, 0 };
+        ExprWidth result = { .width = 1, .is_signed = false };
         return result;
     case And:
         ExprWidth l = getExprWidth(b.getLHS());
         ExprWidth r = getExprWidth(b.getRHS());
-        return ExprWidth.mergeSmaller(&l, &r);
+        return ExprWidth.mergeSmaller(l, r);
     case Xor:
-        break;
     case Or:
         break;
     case LAnd:
     case LOr:
-        ExprWidth result = { 1, 0 };
+        ExprWidth result = { .width = 1, .is_signed = false };
         return result;
     case Assign:
     case MulAssign:
@@ -235,25 +190,28 @@ fn ExprWidth getBinOpWidth(const BinaryOperator* b) {
     case AndAssign:
     case XorAssign:
     case OrAssign:
+        // TODO: refine this
         return getExprWidth(b.getLHS());
     }
 
     ExprWidth lhs = getExprWidth(b.getLHS());
     ExprWidth rhs = getExprWidth(b.getRHS());
-    return ExprWidth.mergeWider(&lhs, &rhs);
+    return ExprWidth.mergeWider(lhs, rhs);
 }
 
 fn ExprWidth getTypeWidth(QualType qt) {
-    if (qt.isPointer()) {
-        // TODO or 32
-        ExprWidth result = { .width = 64, .is_signed = false };
+    qt = qt.getCanonicalType();
+    if (qt.isEnum()) {
+        EnumType* et = qt.getEnumType();
+        qt = et.getImplType();
+    }
+    if (qt.isBuiltin()) {
+        const BuiltinType* bi = qt.getBuiltin();
+        ExprWidth result = { .width = cast<u8>(bi.getWidth()), .is_signed = bi.isSigned() };
         return result;
     }
-    assert(qt.isBuiltin());
-    const BuiltinType* bi = qt.getBuiltin();
-    ExprWidth result;
-    result.width = (u8)bi.getWidth();
-    result.is_signed = bi.isSigned();
+    // pointer or something
+    ExprWidth result = { .width = (u8)(ast.getWordSize() * 8), .is_signed = false };
     return result;
 }
 

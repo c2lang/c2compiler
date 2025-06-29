@@ -22,29 +22,27 @@ import src_loc local;
 type Limit struct {
     i64 min_val;
     u64 max_val;
-    const char* min_str;
-    const char* max_str;
 }
 
 const Limit[] Limits = {
     // 1 - Bool
-    {           0,          1,           "0",          "1" },
+    { 0, 1 },
     // 7 - Char/Int8
-    {        -128,        127,        "-128",        "127" },
+    { -128, 127 },
     // 8 - UInt8
-    {           0,        255,           "0",        "255" },
+    { 0, 255 },
     // 15 - Int16
-    {      -32768,      32767,      "-32768",      "32767" },
+    { -32768, 32767 },
     // 16 - UInt16
-    {           0,      65535,           "0",      "65535" },
+    { 0, 65535 },
     // 31 - Int32
-    { -2147483647-1, 2147483647, "-2147483648", "2147483647" },
+    { -2147483647-1, 2147483647 },
     // 32 - UInt32
-    {          0,  4294967295,           "0", "4294967295" },
+    { 0, 4294967295 },
     // 63 - Int64
-    { -9223372036854775807-1, 9223372036854775807, "-9223372036854775808", "9223372036854775807" },
+    { -9223372036854775807-1, 9223372036854775807 },
     // 64 - UInt64
-    {                   0,  18446744073709551615, "0", "18446744073709551615" },
+    { 0, 18446744073709551615 },
 }
 
 fn const Limit* getLimit(u32 width) {
@@ -63,7 +61,11 @@ fn const Limit* getLimit(u32 width) {
     return nil;
 }
 
-
+#if 1
+public fn Value get_value(const Expr* e) {
+    return ast.evalExpr(e);
+}
+#else
 public fn Value get_value(const Expr* e) {
     Value result = { };
 
@@ -75,20 +77,16 @@ public fn Value get_value(const Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
         const IntegerLiteral* i = (IntegerLiteral*)e;
-        result.setUnsigned(i.getValue());
-        break;
+        return i.getValue();
     case FloatLiteral:
         const FloatLiteral* f = (FloatLiteral*)e;
-        result.setFloat(f.getValue());
-        break;
+        return f.getValue();
     case BooleanLiteral:
         const BooleanLiteral* b = (BooleanLiteral*)e;
-        result.setUnsigned(b.getValue());
-        break;
+        return b.getValue();
     case CharLiteral:
         const CharLiteral* c = (CharLiteral*)e;
-        result.setUnsigned((u8)c.getValue());
-        break;
+        return c.getValue();
     case StringLiteral:
         assert(0);
         break;
@@ -114,9 +112,8 @@ public fn Value get_value(const Expr* e) {
         return !v.isZero() ? get_value(c.getLHS()) : get_value(c.getRHS());
     case Builtin:
         const BuiltinExpr* bi = (BuiltinExpr*)e;
-        result = bi.getValue();
-        break;
-    case ArraySubscript:  // a[high:low}, both included
+        return bi.getValue();
+    case ArraySubscript:  // a[high:low], both included
         // note: can be CTV if BitOffsetExpr
         ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
 
@@ -147,33 +144,7 @@ public fn Value get_value(const Expr* e) {
     case ExplicitCast:
         const ExplicitCastExpr* i = (ExplicitCastExpr*)e;
         result = get_value(i.getInner());
-        QualType qt = e.getType();
-        qt = qt.getCanonicalType();
-        if (qt.isEnum())
-            qt = qt.getEnum().getImplType();
-        assert(qt.isBuiltin());
-        BuiltinType* bi = qt.getBuiltin();
-        if (qt.isFloat()) {
-            if (result.isDecimal())
-                result.setFloat(result.toFloat());
-            if (bi.getWidth() == 32) {
-                result.setFloat((f32)result.toFloat());
-            }
-        } else
-        if (qt.isBool()) {
-            result.setUnsigned(!result.isZero());
-        } else {
-            if (!result.isDecimal()) {
-                // TODO: check for overflow
-                if (bi.isSigned()) {
-                    result.setSigned((i64)result.toFloat());
-                } else {
-                    result.setUnsigned((u64)result.toFloat());
-                }
-            }
-            result.truncate(bi.isSigned(), bi.getWidth());
-        }
-        break;
+        return result.castAs(e.getType());
     case ImplicitCast:
         const ImplicitCastExpr* i = (ImplicitCastExpr*)e;
         return get_value(i.getInner());
@@ -187,12 +158,10 @@ public fn Value get_value(const Expr* e) {
 
 fn Value get_decl_value(const Decl* d) {
     assert(d);
-    Value result = { };
     switch (d.getKind()) {
     case EnumConstant:
         const EnumConstantDecl* ecd = (EnumConstantDecl*)d;
-        result = ecd.getValue();
-        break;
+        return ecd.getValue();
     case Variable:
         const VarDecl* vd = (VarDecl*)d;
         const Expr* initval = vd.getInit();
@@ -202,7 +171,7 @@ fn Value get_decl_value(const Decl* d) {
         assert(0);
         break;
     }
-    return result;
+    return Value.error("not a constant value");
 }
 
 fn Value get_unaryop_value(const UnaryOperator* e) {
@@ -275,23 +244,17 @@ fn Value get_binaryop_value(const BinaryOperator* e) {
         result = left.right_shift(&right);
         break;
     case LessThan:
-        result.setUnsigned(left.is_less(&right));
-        break;
+        return Value.createBool(left.is_less(&right));
     case GreaterThan:
-        result.setUnsigned(left.is_greater(&right));
-        break;
+        return Value.createBool(left.is_greater(&right));
     case LessEqual:
-        result.setUnsigned(left.is_less_equal(&right));
-        break;
+        return Value.createBool(left.is_less_equal(&right));
     case GreaterEqual:
-        result.setUnsigned(left.is_greater_equal(&right));
-        break;
+        return Value.createBool(left.is_greater_equal(&right));
     case Equal:
-        result.setUnsigned(left.is_equal(&right));
-        break;
+        return Value.createBool(left.is_equal(&right));
     case NotEqual:
-        result.setUnsigned(!left.is_equal(&right));
-        break;
+        return Value.createBool(!left.is_equal(&right));
     case And:
         result = left.and(&right);
         break;
@@ -323,6 +286,7 @@ fn Value get_binaryop_value(const BinaryOperator* e) {
     }
     return result;
 }
+#endif
 
 public fn bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
     QualType canon = qt.getCanonicalType();
@@ -332,6 +296,10 @@ public fn bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
 
     Value value = ctv_analyser.get_value((e));
 
+    if (value.kind == ValueKind.Error) {
+        diags.errorRange(e.getLoc(), e.getRange(), "%s", value.error_msg);
+        return false;
+    }
     return checkRange(diags, qt, &value, 0, e);
 }
 
@@ -351,13 +319,13 @@ public fn bool checkRange(diagnostics.Diags* diags, QualType qt, Value* value, S
     const Limit* limit = getLimit(width);
 
     if (!value.checkRange(limit.min_val, limit.max_val)) {
+        SrcRange range = { 0, 0 };
         if (e) {
-            diags.errorRange(e.getLoc(), e.getRange(), "constant value %s out-of-bounds for type '%s', range [%s, %s]",
-                value.str(), qt.diagNameBare(), limit.min_str, limit.max_str);
-        } else {
-            diags.error(loc, "constant value %s out-of-bounds for type '%s', range [%s, %s]",
-                value.str(), qt.diagNameBare(), limit.min_str, limit.max_str);
+            loc = e.getLoc();
+            range = e.getRange();
         }
+        diags.errorRange(loc, range, "constant value %s out-of-bounds for type '%s', range [%d, %d]",
+                         value.str(), qt.diagNameBare(), limit.min_val, limit.max_val);
         return false;
     }
     return true;

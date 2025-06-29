@@ -170,6 +170,9 @@ executable c2c
     $use dl dynamic
 
     (ast)
+
+    ast/ast_evaluator.c2
+
     (yaml)
 
     ast_utils/c2_prec.c2
@@ -248,7 +251,6 @@ executable c2c
     generator/c/c_generator.c2
     generator/c/c_generator_call.c2
     generator/c/c_generator_expr.c2
-    generator/c/c_generator_pure_call.c2
     generator/c/c_generator_special.c2
     generator/c/c_generator_stmt.c2
     generator/c/c_generator_trace.c2

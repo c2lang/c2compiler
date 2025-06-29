@@ -1,0 +1,594 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import dlfcn local;
+import stdio local;
+
+const u32 Max_depth = 100;
+const u32 Max_complexity = 1000000;
+
+type Evaluator struct {
+    Evaluator* prev;
+    FunctionDecl* fd;
+    u32 depth;
+    u32 complexity;
+    u32 num_args;
+    Value result;
+    // TODO: tail allocate if more than 16 arguments?
+    Value[16] args;
+}
+
+fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
+    switch (e.getKind()) {
+    case IntegerLiteral:
+        const IntegerLiteral* i = cast<IntegerLiteral*>(e);
+        return i.getValue();
+    case FloatLiteral:
+        const FloatLiteral* f = cast<FloatLiteral*>(e);
+        return f.getValue();
+    case BooleanLiteral:
+        const BooleanLiteral* b = cast<BooleanLiteral*>(e);
+        return b.getValue();
+    case CharLiteral:
+        const CharLiteral* c = cast<CharLiteral*>(e);
+        return c.getValue();
+    case StringLiteral:
+        assert(0);
+        break;
+    case Nil:
+        break;
+    case Identifier:
+        const IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        return eval.get_decl_value(i.getDecl());
+    case Type:
+        // should not happen
+        break;
+    case Call:
+        const CallExpr* c = cast<CallExpr*>(e);
+        return eval.eval_call(c);
+    case InitList:
+    case FieldDesignatedInit:
+    case ArrayDesignatedInit:
+        // should not happen
+        break;
+    case BinaryOperator:
+        return eval.get_binaryop_value(cast<BinaryOperator*>(e));
+    case UnaryOperator:
+        return eval.get_unaryop_value(cast<UnaryOperator*>(e));
+    case ConditionalOperator:
+        ConditionalOperator* c = cast<ConditionalOperator*>(e);
+        Value v = eval.get_value(c.getCond());
+        if (v.isError()) return v;
+        return eval.get_value(!v.isZero() ? c.getLHS() : c.getRHS());
+    case Builtin:
+        const BuiltinExpr* bi = cast<BuiltinExpr*>(e);
+        return bi.getValue();
+    case ArraySubscript:  // a[high:low], both included
+        // note: can be CTV if BitOffsetExpr
+        ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+
+        Expr* index = a.getIndex();
+        if (!index.isBitOffset()) break;
+
+        Value result = eval.get_value(a.getBase());
+        // Dont allow negative/float
+        assert(result.isDecimal() && !result.isNegative());
+        BitOffsetExpr* bo = cast<BitOffsetExpr*>(index);
+        Value high = eval.get_value(bo.getLHS());
+        Value low = eval.get_value(bo.getRHS());
+        Value width = high.minus(&low);
+        width.incr();
+        // calculate result = (base >> low) & bitmask(width))
+        result = result.right_shift(&low);
+        result.mask(width.as_u32());
+        return result;
+    case Member:
+        const MemberExpr* m = cast<MemberExpr*>(e);
+        return eval.get_decl_value(m.getFullDecl());
+    case Paren:
+        const ParenExpr* p = cast<ParenExpr*>(e);
+        return eval.get_value(p.getInner());
+    case BitOffset:
+        assert(0); // TODO
+        break;
+    case ExplicitCast:
+        const ExplicitCastExpr* i = cast<ExplicitCastExpr*>(e);
+        Value result = eval.get_value(i.getInner());
+        return result.castAs(e.getType());
+    case ImplicitCast:
+        const ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
+        return eval.get_value(i.getInner());
+    case Range:
+        assert(0);
+        break;
+    }
+    return Value.error("expression is not constant");
+}
+
+fn Value Evaluator.get_binaryop_value(Evaluator* eval, const BinaryOperator* e) {
+    // TODO: Do not evaluate left for Assign
+    Value left = eval.get_value(e.getLHS());
+    if (left.isError())
+        return left;
+
+    // Note: we take the signed/unsigned rvalue depending on whether the lhs value is signed.
+    // this is not completely correct
+
+    BinaryOpcode op = e.getOpcode();
+    Value right;
+    if (!(op >= BinaryOpcode.LAnd && op <= BinaryOpcode.LOr))
+        right = eval.get_value(e.getRHS());
+
+    switch (op) {
+    case Multiply:
+        return left.multiply(&right);
+    case Divide:
+        return left.divide(&right);
+    case Remainder:
+        return left.remainder(&right);
+    case Add:
+        return left.add(&right);
+    case Subtract:
+        return left.minus(&right);
+    case ShiftLeft:
+        return left.left_shift(&right);
+    case ShiftRight:
+        return left.right_shift(&right);
+    case LessThan:
+        return Value.createBool(left.is_less(&right));
+    case GreaterThan:
+        return Value.createBool(left.is_greater(&right));
+    case LessEqual:
+        return Value.createBool(left.is_less_equal(&right));
+    case GreaterEqual:
+        return Value.createBool(left.is_greater_equal(&right));
+    case Equal:
+        return Value.createBool(left.is_equal(&right));
+    case NotEqual:
+        return Value.createBool(!left.is_equal(&right));
+    case And:
+        return left.and(&right);
+    case Xor:
+        return left.xor(&right);
+    case Or:
+        return left.or(&right);
+    case LAnd:
+        if (left.isZero())
+            return Value.createBool(0);
+        right = eval.get_value(e.getRHS());
+        return right.toBool();
+    case LOr:
+        if (!left.isZero())
+            return Value.createBool(1);
+        right = eval.get_value(e.getRHS());
+        return right.toBool();
+    case Assign:
+    case MulAssign:
+    case DivAssign:
+    case RemAssign:
+    case AddAssign:
+    case SubAssign:
+    case ShlAssign:
+    case ShrAssign:
+    case AndAssign:
+    case XorAssign:
+    case OrAssign:
+        assert(0);
+        break;
+    }
+    return Value.error("unsupported operator");
+}
+
+fn Value Evaluator.get_unaryop_value(Evaluator* eval, const UnaryOperator* e) {
+    const Expr* inner = e.getInner();
+    Value res2 = eval.get_value(inner);
+
+    switch (e.getOpcode()) {
+    case PostInc:
+    case PostDec:
+    case PreInc:
+    case PreDec:
+        // should not happen
+        break;
+    case AddrOf:
+    case Deref:
+        // Allowed?
+        break;
+    case Plus:
+        return res2;
+    case Minus:
+        return res2.negate();
+    case Not:
+        return res2.bitnot();
+    case LNot:
+        return res2.lnot();
+    }
+    return Value.error("unsupported operator");
+}
+
+fn Value Evaluator.get_decl_value(Evaluator* eval, const Decl* d) {
+    assert(d);
+    switch (d.getKind()) {
+    case EnumConstant:
+        const EnumConstantDecl* ecd = cast<EnumConstantDecl*>(d);
+        return ecd.getValue();
+    case Variable:
+        const VarDecl* vd = cast<VarDecl*>(d);
+        switch (vd.getKind()) {
+        case GlobalVar:
+        case LocalVar:
+            const Expr* initval = vd.getInit();
+            if (!initval)
+                break;
+            return eval.get_value(initval);
+        case FunctionParam:
+            u32 off = vd.getOffset();
+            assert(off < eval.num_args);
+            return eval.args[off];
+        case StructMember:
+            break;
+        }
+        return Value.error("variable cannot be evaluated");
+    default:
+        assert(0);
+        break;
+    }
+    return Value.error("not a constant value");
+}
+
+type FunII fn i32 (i32 a);
+type FunDD fn i64 (f64 a);
+
+type Fun union {
+    void* address;
+    FunII funII;
+    FunDD funDD;
+}
+
+fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
+    if (caller.depth > Max_depth) {
+        return Value.error("recursion too deep");
+    }
+    if (caller.complexity > Max_complexity) {
+        return Value.error("expression too complex");
+    }
+
+    // evaluate the function call as a number
+    u32 num_args = c.getNumArgs();
+    // Should be Expr* const* args = c.getArgs();
+    Expr** args = (cast<CallExpr*>(c)).getArgs();
+
+    //Expr* func = c.getFunc();
+    FunctionDecl* fd = expr2function(c.getFunc());
+    // Note: numParams will be the same as num_args because pure functions are not vararg
+
+    // Create a new stack frame and link it to the caller's
+    // TODO: handle Stack frames as separate allocated objects
+    Evaluator eval;
+
+    if (num_args > elemsof(eval.args)) {
+        return Value.error("too many arguments in pure function evaluation");
+    }
+    eval.prev = caller;
+    eval.fd = fd;
+    eval.num_args = num_args;
+    eval.depth = caller.depth + 1;
+    eval.complexity = caller.complexity + 1;
+
+    //VarDecl** params = fd.getParams();
+
+    for (u32 i = 0; i < num_args; i++) {
+        // TODO: pass actual parameter type
+        //Decl* d = cast<Decl*>(params[i]);
+        Value v = caller.get_value(args[i]);
+        if (v.isError())
+            return v;
+        eval.args[i] = v;
+    }
+    CompoundStmt* body = fd.getBody();
+    if (body) {
+        Cont cont = body.eval(&eval);
+        caller.complexity = eval.complexity;
+        switch (cont) {
+        case Normal:
+            return Value.error("pure function did not return anything");
+        case Continue:
+        case Break:
+        case Goto:
+            break;
+        case Abort:
+            if (!eval.result.isError())
+                break;
+            fallthrough;
+        case Return:
+        case Error:
+            return eval.result;
+        }
+    } else {
+        // Support external functions such as ctype.isalpha, math.sin...
+        // cache symbol address using dlsym(RTLD_DEFAULT, fd.getCName())
+        // dispatch function call depending on function prototype
+        Fun fun = { .address = fd.getAddress() };
+        if (!fun.address) {
+            const char* cname = fd.getCName();
+            if (!cname) return Value.error("no function name");
+            fun.address = dlsym(RTLD_DEFAULT, cname);
+            if (fun.address) {
+                //fprintf(stderr, "address of %s is %p\n", cname, fun.address);
+                fd.setAddress(fun.address);
+            } else {
+                return Value.error("function not found");
+            }
+        }
+        if (fun.address) {
+            VarDecl** params = fd.getParams();
+            if (num_args == 1) {
+                Decl* d = cast<Decl*>(params[0]);
+                QualType qt1 = d.getType();
+                QualType rt = fd.getRType();
+                qt1 = qt1.getCanonicalType();
+                rt = rt.getCanonicalType();
+                if (rt.isInteger() && qt1.isInteger()) {
+                    //fprintf(stderr, "calling funII at %p\n", cname, fun.address);
+                    return Value.createSigned(fun.funII(eval.args[0].as_i32()));
+                }
+                if (rt.isFloat() && qt1.isFloat()) {
+                    //fprintf(stderr, "calling funDD at %p\n", cname, fun.address);
+                    return Value.createFloat(fun.funDD(eval.args[0].toFloat()));
+                }
+                printf("function prototype not supported");
+                qt1.dump_full();
+                rt.dump_full();
+                return Value.error("function prototype not supported");
+            }
+        }
+    }
+    return Value.error("pure function evaluation error");
+}
+
+fn FunctionDecl* expr2function(Expr* e) {
+    switch (e.getKind()) {
+    case Identifier:
+        IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        return cast<FunctionDecl*>(i.getDecl());
+    case Member:
+        MemberExpr* m = cast<MemberExpr*>(e);
+        return cast<FunctionDecl*>(m.getFullDecl());
+    case ImplicitCast:
+        ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
+        return expr2function(ic.getInner());
+    default:
+        assert(0);
+        break;
+    }
+    return nil;
+}
+
+public fn Value evalExpr(const Expr* e) {
+    Evaluator top = {};
+    return top.get_value(e);
+}
+
+// Evaluating a statement returns a continuation
+type Cont enum u8 {
+    Normal,     // default continuation
+    Continue,   // continue statement
+    Break,      // break statement
+    Return,     // return with or without value
+    Goto,       // goto statement (unsupported yet)
+    Abort,      // abort invoked (eg: assert)
+    Error,      // evaluation error (eg: overflow, complexity, stack overflow)
+    //Throw,
+}
+
+fn Cont Evaluator.error(Evaluator* sf, const char* msg) {
+    sf.result = Value.error(msg);
+    return Cont.Abort;
+}
+
+fn Cont Stmt.eval(Stmt* s, Evaluator* sf) {
+    sf.complexity++;
+    switch (s.getKind()) {
+    case Return:      return (cast<ReturnStmt*>(s)).eval(sf);
+    case Expr:        return (cast<Expr*>(s)).eval(sf);
+    case If:          return (cast<IfStmt*>(s)).eval(sf);
+    case While:       return (cast<WhileStmt*>(s)).eval(sf);
+    case For:         return (cast<ForStmt*>(s)).eval(sf);
+    case Switch:      return (cast<SwitchStmt*>(s)).eval(sf);
+    case Break:       return (cast<BreakStmt*>(s)).eval(sf);
+    case Continue:    return (cast<ContinueStmt*>(s)).eval(sf);
+    case Fallthrough: return (cast<FallthroughStmt*>(s)).eval(sf);
+    case Label:       return (cast<LabelStmt*>(s)).eval(sf);
+    case Goto:        return (cast<GotoStmt*>(s)).eval(sf);
+    case Compound:    return (cast<CompoundStmt*>(s)).eval(sf);
+    case Decl:        return (cast<DeclStmt*>(s)).eval(sf);
+    case Asm:         return (cast<AsmStmt*>(s)).eval(sf);
+    case Assert:      return (cast<AssertStmt*>(s)).eval(sf);
+    }
+    return Cont.Abort;
+}
+
+fn Cont ReturnStmt.eval(ReturnStmt* r, Evaluator* sf) {
+    Expr* e = r.getValue();
+    if (e) {
+        sf.result = sf.get_value(e);
+        if (sf.result.isError())
+            return Cont.Error;
+        return Cont.Return;
+    } else {
+        sf.error("void return");
+        return Cont.Return;
+    }
+}
+
+fn Cont Expr.eval(Expr* e, Evaluator* sf) {
+    sf.result = sf.get_value(e);
+    if (sf.result.isError())
+        return Cont.Error;
+    else
+        return Cont.Normal;
+}
+
+fn Cont IfStmt.eval(IfStmt* s, Evaluator* sf) {
+    Stmt* cond = s.getCond();
+    Expr* e = nil;
+    if (cond.isExpr()) {
+        e = cast<Expr*>(cond);
+    } else
+    if (cond.isDecl()) {
+        e = (cast<DeclStmt*>(cond)).getDecl(0).getInit();
+        // TODO initialisation must assign value
+    }
+    if (!e)
+        return Cont.Abort;
+    sf.result = sf.get_value(e);
+    if (sf.result.isError())
+        return Cont.Error;
+    if (!sf.result.isZero()) {
+        return s.getThen().eval(sf);
+    } else {
+        Stmt* s1 = s.getElse();
+        if (s1) return s1.eval(sf);
+        return Cont.Normal;
+    }
+}
+
+fn Cont WhileStmt.eval(WhileStmt* s, Evaluator* sf) {
+    for (;;) {
+        Stmt* cond = s.getCond();
+        Expr* e = nil;
+        if (cond.isExpr()) {
+            e = cast<Expr*>(cond);
+        } else
+        if (cond.isDecl()) {
+            e = (cast<DeclStmt*>(cond)).getDecl(0).getInit();
+            // TODO initialisation must assign value
+        }
+        if (!e)
+            return Cont.Abort;
+        sf.result = sf.get_value(e);
+        if (sf.result.isError())
+            return Cont.Error;
+        if (sf.result.isZero())
+            return Cont.Normal;
+        Cont cont = s.getBody().eval(sf);
+        switch (cont) {
+        case Normal:
+        case Continue:
+            break;
+        case Break:
+            return Cont.Normal;
+        case Return:
+        case Goto:
+        case Abort:
+        case Error:
+            return cont;
+        }
+    }
+    return Cont.Abort;
+}
+
+fn Cont ForStmt.eval(ForStmt* s, Evaluator* sf) {
+    Stmt* s1 = s.getInit();
+    Expr* e;
+    Cont cont;
+    if (s1) {
+        cont = s1.eval(sf);
+        if (cont != Cont.Normal)
+            return cont;
+    }
+    for (;;) {
+        e = s.getCond();
+        if (e) {
+            sf.result = sf.get_value(e);
+            if (sf.result.isError())
+                return Cont.Error;
+            if (sf.result.isZero())
+                return Cont.Normal;
+        }
+        cont = s.getBody().eval(sf);
+        switch (cont) {
+        case Normal:
+        case Continue:
+            break;
+        case Break:
+            return Cont.Normal;
+        case Return:
+        case Goto:
+        case Abort:
+        case Error:
+            return cont;
+        }
+        e = s.getCont();
+        if (e) {
+            sf.result = sf.get_value(e);
+            if (sf.result.isError())
+                return Cont.Error;
+        }
+    }
+    return Cont.Abort;
+}
+
+fn Cont SwitchStmt.eval(SwitchStmt* s, Evaluator* sf) {
+    // TODO support numerical switch statements
+    return sf.error("switch not supported");
+}
+
+fn Cont BreakStmt.eval(BreakStmt* s, Evaluator* sf) { return Cont.Break; }
+fn Cont ContinueStmt.eval(ContinueStmt* s, Evaluator* sf) { return Cont.Continue; }
+fn Cont FallthroughStmt.eval(FallthroughStmt* s, Evaluator* sf) { return Cont.Normal; }
+
+fn Cont LabelStmt.eval(LabelStmt* s, Evaluator* sf) {
+    Stmt* s1 = s.getStmt();
+    return s1 ? s1.eval(sf) : Cont.Normal;
+}
+
+fn Cont GotoStmt.eval(GotoStmt* s, Evaluator* sf) {
+    // TODO: cannot easily support this if goto target is not reachable as an ancestors' sibling
+    return sf.error("goto not supported");
+}
+
+fn Cont CompoundStmt.eval(CompoundStmt* body, Evaluator* sf) {
+    u32 count = body.getCount();
+    Stmt** stmts = body.getStmts();
+    for (i32 i = 0; i < count; i++) {
+        Cont cont = stmts[i].eval(sf);
+        if (cont != Cont.Normal)
+            return cont;
+    }
+    return Cont.Normal;
+}
+
+fn Cont DeclStmt.eval(DeclStmt* s, Evaluator* sf) {
+    return sf.error("declarations not supported");
+}
+
+fn Cont AsmStmt.eval(AsmStmt* s, Evaluator* sf) {
+    return sf.error("asm not supported");
+}
+
+fn Cont AssertStmt.eval(AssertStmt* s, Evaluator* sf) {
+    Expr* e = s.getInner();
+    sf.result = sf.get_value(e);
+    if (sf.result.isError())
+        return Cont.Error;
+    if (sf.result.isZero()) {
+        // TODO assertion string should be computed at parse time
+        return sf.error("assertion failed");
+    }
+    return Cont.Normal;
+}

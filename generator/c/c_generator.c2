@@ -16,13 +16,13 @@
 module c_generator;
 
 import ast local;
+import diagnostics;
 import build_file;
 import build_target;
 import c2i_generator;
 import component;
 import constants;
 import console;
-import ctv_analyser;
 import dep_finder;
 import file_utils;
 import linked_list;
@@ -69,6 +69,7 @@ type Generator struct {
     const char* results_dir;
     const char* output_dir;     // output/<target>
     const char* cgen_dir;       // output/<target>/cgen
+    diagnostics.Diags *diags;
     source_mgr.SourceMgr* sm;
     const build_file.Info* build_info;
     const target_info.Info* targetInfo;
@@ -81,6 +82,7 @@ type Generator struct {
 
     // set during generation
     bool cur_external;  // whether current component is external
+    u32 need_const_expr;
     FunctionDecl* cur_function; // needed for assert
     const char* mod_name; // set per module
     string_list.List imports;  // used to filter out duplicate imports (from different ASTs)
@@ -142,7 +144,7 @@ fn void Generator.freeFragment(Generator* gen, Fragment* f) {
 
 
 fn void Generator.emitCtv(Generator* /*gen*/, string_buffer.Buf* out, const Expr* e) {
-    Value val = ctv_analyser.get_value(e);
+    Value val = ast.evalExpr(e);
     out.print("%s", val.str());
 }
 
@@ -515,6 +517,12 @@ fn bool emitAsDefine(const VarDecl* vd) {
     return false;
 }
 
+fn void Generator.emitConstExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
+    gen.need_const_expr++;
+    gen.emitExpr(out, e);
+    gen.need_const_expr--;
+}
+
 fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl* d) {
     VarDecl* vd = cast<VarDecl*>(d);
 
@@ -525,12 +533,7 @@ fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl
         out.add("#define ");
         gen.emitCName(out, d);
         out.space();
-        Expr* ie = vd.getInit();
-        if (ie.isCall()) {
-            gen.emitPureFunctionCall(out, ie);
-        } else {
-            gen.emitExpr(out, ie);
-        }
+        gen.emitConstExpr(out, vd.getInit());
         out.newline();
         return true;
     }
@@ -572,15 +575,11 @@ fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl
         gen.emitSectionAttr(out, section);
     }
 
-    Expr* ie = vd.getInit();
     if (!gen.cur_external) {
         out.add(" = ");
+        Expr* ie = vd.getInit();
         if (ie) {
-            if (ie.isCall()) {
-                gen.emitPureFunctionCall(out, ie);
-            } else {
-                gen.emitExpr(out, ie);
-            }
+            gen.emitConstExpr(out, ie);
         } else {
             // auto-initialize
             gen.emitAutoInit(out, qt);
@@ -612,6 +611,16 @@ fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl
     }
 
     return false;    // put this part in .c file
+}
+
+fn bool Generator.emitExprValue(Generator* gen, string_buffer.Buf* out, Expr* e) {
+    Value result = ast.evalExpr(e);
+    if (result.kind == ValueKind.Error) {
+        gen.diags.errorRange(e.getLoc(), e.getRange(), "%s", result.error_msg);
+        return false;
+    }
+    out.add(result.str());
+    return true;
 }
 
 fn void Generator.emitSectionAttr(Generator* gen, string_buffer.Buf* out, const char* name) {
@@ -1141,6 +1150,7 @@ fn void Generator.init(Generator* gen,
                        build_target.Kind kind,
                        const char* results_dir,       // output/<target>/
                        const char* output_dir,        // output/<target>/cgen/
+                       diagnostics.Diags *diags,
                        source_mgr.SourceMgr* sm,
                        const build_file.Info* build_info,
                        Decl* mainFunc)
@@ -1151,6 +1161,7 @@ fn void Generator.init(Generator* gen,
     gen.target_kind = kind;
     gen.results_dir = results_dir;
     gen.output_dir = output_dir;
+    gen.diags = diags;
     gen.sm = sm;
     gen.build_info = build_info;
     gen.mainFunc = mainFunc;
@@ -1196,6 +1207,7 @@ public fn void generate(string_pool.Pool* astPool,
                         const char* target,
                         build_target.Kind kind,
                         const char* output_dir,
+                        diagnostics.Diags *diags,
                         source_mgr.SourceMgr* sm,
                         const build_file.Info* build_info,
                         const target_info.Info* targetInfo,
@@ -1216,7 +1228,7 @@ public fn void generate(string_pool.Pool* astPool,
     }
 
     Generator gen;
-    gen.init(astPool, target, kind, output_dir, dir, sm, build_info, mainFunc);
+    gen.init(astPool, target, kind, output_dir, dir, diags, sm, build_info, mainFunc);
     gen.auxPool = auxPool;
     gen.enable_asserts = enable_asserts;
     gen.fast_build = fast_build;

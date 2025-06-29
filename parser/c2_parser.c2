@@ -485,6 +485,7 @@ fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public) 
     // VarDeclList args
     while (p.tok.kind != Kind.RParen) {
         VarDecl* decl = p.parseParamDecl(is_public);
+        decl.setOffset(params.count);  // set argument number
         params.add(decl.asDecl());
 
         if (p.tok.kind != Kind.Comma) break;

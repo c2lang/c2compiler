@@ -147,10 +147,6 @@ fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
 // TEMP cast needed until Analyser fixed
 public fn StmtKind Stmt.getKind(const Stmt* s) { return (StmtKind)s.stmtBits.kind; }
 
-public fn bool Stmt.isReturn(const Stmt* s) {
-    return s.getKind() == StmtKind.Return;
-}
-
 public fn bool Stmt.isExpr(const Stmt* s) {
     return s.getKind() == StmtKind.Expr;
 }
