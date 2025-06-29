@@ -57,7 +57,7 @@ public fn Buf* create(u32 capacity, bool use_colors, u32 indent_step) {
     return buf.init(nil, capacity, true, use_colors, indent_step);
 }
 
-fn void Buf.deinit(Buf* buf) {
+public fn void Buf.deinit(Buf* buf) {
     if (buf.own) free(buf.data_);
     buf.data_ = nil;
 }

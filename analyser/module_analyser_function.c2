@@ -220,7 +220,7 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
 
 // Analyse a function body using a new analyser/scope
 fn bool Analyser.analyseFunctionBody2(Analyser* ma, FunctionDecl* fd, Module* mod) {
-    Analyser* analyser = create(ma.diags, ma.context, ma.astPool, ma.builder, ma.allmodules, ma.warnings, false);
+    Analyser* analyser = ma.clone();
     analyser.setMod(mod);
     scope.Scope* tmpScope = scope.create(ma.allmodules,
                                          ma.diags,

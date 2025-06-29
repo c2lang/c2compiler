@@ -377,6 +377,7 @@ fn Stmt* Parser.parseAssertStmt(Parser* p) {
     Expr* inner = p.parseExpr();
     p.expectAndConsume(RParen);
     p.expectAndConsume(Semicolon);
+    if (p.has_asserts) p.addImplicitImport(p.c2_assert_idx, false);
     return p.builder.actOnAssertStmt(loc, inner);
 }
 

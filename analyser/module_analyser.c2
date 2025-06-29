@@ -54,7 +54,11 @@ public type Analyser struct @(opaque) {
     // variables below differs per run
     Module* mod;
     bool usedPublic;    // set to false during function body analysis or during non-public analysis
+    bool has_asserts;
     bool check_only;
+
+    u32 c2_assert_idx;
+    u32 c2_assert_fail_idx;
 
     // collect type-functions
     u32 prefix_cache_name;
@@ -90,7 +94,7 @@ public fn Analyser* create(diagnostics.Diags* diags,
                              ast_builder.Builder* builder,
                              module_list.List* allmodules,
                              const warning_flags.Flags* warnings,
-                             bool check_only)
+                             bool has_asserts, bool check_only)
 {
     Analyser* ma = stdlib.calloc(1, sizeof(Analyser));
     ma.diags = diags;
@@ -100,10 +104,31 @@ public fn Analyser* create(diagnostics.Diags* diags,
     ma.builder = builder;
     ma.allmodules = allmodules;
     ma.warnings = warnings;
+    ma.has_asserts = has_asserts;
     ma.check_only = check_only;
     /* zero initialization is OK for ma.labels and ma.init_checkers */
     ma.min_idx = astPool.addStr("min", true);
     ma.max_idx = astPool.addStr("max", true);
+    ma.c2_assert_idx = astPool.addStr("c2_assert", true);
+    ma.c2_assert_fail_idx = astPool.addStr("c2_assert_fail", true);
+    return ma;
+}
+
+fn Analyser* Analyser.clone(Analyser* org) {
+    Analyser* ma = stdlib.calloc(1, sizeof(Analyser));
+    ma.diags = org.diags;
+    ma.checker.init(org.diags, org.builder);
+    ma.context = org.context;
+    ma.astPool = org.astPool;
+    ma.builder = org.builder;
+    ma.allmodules = org.allmodules;
+    ma.warnings = org.warnings;
+    ma.has_asserts = org.has_asserts;
+    ma.check_only = org.check_only;
+    ma.min_idx = org.min_idx;
+    ma.max_idx = org.max_idx;
+    ma.c2_assert_idx = org.c2_assert_idx;
+    ma.c2_assert_fail_idx = org.c2_assert_fail_idx;
     return ma;
 }
 

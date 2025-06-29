@@ -195,6 +195,10 @@ fn void Compiler.build(Compiler* c,
         c.target.setNoBuild();
     }
 
+    if (c.opts.check_only) {
+        c.target.disableAsserts();
+    }
+
     diags.setWarningAsError(target.getWarnings().are_errors);
     c.diags.clear();
 
@@ -286,7 +290,8 @@ fn void Compiler.build(Compiler* c,
                                 c.astPool,
                                 c.builder,
                                 &c.kwinfo,
-                                target.getFeatures());
+                                c.target.getFeatures(),
+                                c.target.hasAsserts());
 
     ast.initialize(c.context, c.astPool, c.targetInfo.intWidth / 8, color.useColor());
 
@@ -296,6 +301,7 @@ fn void Compiler.build(Compiler* c,
                                         c.builder,
                                         &c.allmodules,
                                         c.target.getWarnings(),
+                                        c.target.hasAsserts(),
                                         c.opts.check_only);
 
     if (opts.show_libs) {
