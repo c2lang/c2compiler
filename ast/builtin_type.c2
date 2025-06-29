@@ -56,6 +56,10 @@ const char*[] builtinType_names = {
 }
 static_assert(elemsof(BuiltinKind), elemsof(builtinType_names));
 
+fn const char* BuiltinKind.str(BuiltinKind kind) {
+    return builtinType_names[kind];
+}
+
 const bool[] BuiltinType_promotable = {
     [BuiltinKind.Char] = true,
     [BuiltinKind.Int8] = true,
