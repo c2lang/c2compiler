@@ -9,6 +9,8 @@ type Enum enum u32 {
     A, B
 }
 
+type Ptr void*;
+
 type Func fn void(i32);
 
 fn void test1(void* a) {
@@ -24,5 +26,12 @@ fn void test2(void* a) {
 fn void test3(void* a) {
     Func b = cast<Func>(a);
     Func b1 = (Func)(a);
+}
+
+fn void test4(void* a) {
+    Ptr b = cast<Ptr>(a);
+    Ptr b1 = (Ptr)(a);
+    b = cast<Ptr>(&a);
+    b1 = (Ptr)&a;
 }
 
