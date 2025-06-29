@@ -42,6 +42,12 @@ fn void test4(u64 a) {
 fn void test5(i32 a) {
     i32 b = cast<Alias>(a);
     i32 b1 = (Alias)(a);
+    i32 b2 = (Alias)a;
+    i32 b3 = (Alias)+a;
+    i32 b4 = (Alias)-a;
+    i32 b5 = (Alias)*&a;
+    i32 b6 = (Alias)~a;
+    i32 b7 = (Alias)!a;
 }
 
 fn void test6(i32 a) {
