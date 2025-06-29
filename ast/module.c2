@@ -31,6 +31,7 @@ public type Module struct @(opaque) {
     bool is_direct; // otherwise indirectly loaded via library.
     bool is_exported;
     bool is_loaded; // the file(s) parsed. For external libs
+    bool is_builtin; // builtin module for CName control
     ModuleType* mt;
 
     ast.AST** files;
@@ -51,6 +52,16 @@ public fn Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_ex
     m.is_internal = false;
     m.is_direct = is_direct;
     m.is_loaded = false;
+    m.is_builtin = false;
+    if (is_external) {
+        const char* name = idx2name(name_idx);
+        for (BuiltinKind kind = BuiltinKind.min; kind <= BuiltinKind.max; kind++) {
+            if (!string.strcmp(name, kind.str())) {
+                m.is_builtin = true;
+                break;
+            }
+        }
+    }
     m.resizeFiles(1);
     m.symbols.init(16);
     m.instances.init();
@@ -78,6 +89,8 @@ public fn bool Module.isExternal(const Module* m) { return m.is_external; }
 
 public fn void Module.setLoaded(Module* m) { m.is_loaded = true; }
 public fn bool Module.isLoaded(const Module* m) { return m.is_loaded; }
+
+public fn bool Module.isBuiltin(const Module* m) { return m.is_builtin; }
 
 public fn void Module.setExported(Module* m) {
     m.is_exported = true;
