@@ -527,16 +527,18 @@ fn Expr* Parser.parseParenExpr(Parser* p) {
         TypeRefHolder ref.init();
         p.parseTypeSpecifier(&ref, true, has_brackets);
         p.expectAndConsume(Kind.RParen);
+        Expr* expr;
         if (p.tok.kind == Kind.LBrace) {
             // compound literal
-            p.error("Compound literals are not supported");
+            expr = p.parseInitList();
         } else {
             // C cast expression
-            if (has_brackets) p.error("array types are not allowed here");
-            Expr* expr = p.parseCastExpr(false, false);
-            u32 src_len = p.prev_loc - loc;
-            return p.builder.actOnExplicitCast(loc, src_len, &ref, expr, true);
+            if (has_brackets)
+                p.error("cast to array type is invalid");
+            expr = p.parseCastExpr(false, false);
         }
+        u32 src_len = p.prev_loc - loc;
+        return p.builder.actOnExplicitCast(loc, src_len, &ref, expr, true);
     }
 
     Expr* res = p.parseExpr();
