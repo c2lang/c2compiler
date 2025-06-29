@@ -77,6 +77,7 @@ const char*[] attr_names = {
     "pure",
     "auto_file",
     "auto_line",
+    "auto_func",
 }
 
 

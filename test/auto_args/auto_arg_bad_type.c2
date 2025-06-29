@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+// These errors occur at analyse time
+fn void log5(u32 line @(auto_file)) {    // @error{attribute 'auto_file' requires a parameter of type 'const char*'}
+}
+
+fn void log6(const char* line @(auto_line)) {    // @error{attribute 'auto_line' requires a parameter of type 'u32'}
+}
+
+fn void log7(u32 line @(auto_func)) {    // @error{attribute 'auto_func' requires a parameter of type 'const char*'}
+}

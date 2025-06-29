@@ -97,6 +97,7 @@ public fn u32 QualType.getBitFieldWidth(const QualType* qt) {
         return bi.getBitfieldSize();
     }
     if (t.isEnumType()) {
+        // TODO return bits needed for max value to allow use in bitfields
         EnumType* et = (EnumType*)t;
         QualType impl = et.getImplType();
         return impl.getBitFieldWidth();

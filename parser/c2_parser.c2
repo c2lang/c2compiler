@@ -384,6 +384,7 @@ fn void Parser.parseParamOptionalAttributes(Parser* p, VarDecl* d) {
 
     p.expectAndConsume(Kind.LParen);
 
+    bool has_error = false;
     while (1) {
         p.expectIdentifier();
         u32 attr_id = p.tok.name_idx;
@@ -393,9 +394,9 @@ fn void Parser.parseParamOptionalAttributes(Parser* p, VarDecl* d) {
         if (p.tok.kind == Kind.Equal) {
             p.error("a parameter attribute cannot have a value");
         }
-
-        p.builder.actOnParamAttr(d, attr_id, loc);
-
+        if (!has_error) {
+            has_error = !p.builder.actOnParamAttr(d, attr_id, loc);
+        }
         if (p.tok.kind != Kind.Comma) break;
         p.consumeToken();
     }

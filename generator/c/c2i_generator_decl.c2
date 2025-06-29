@@ -69,6 +69,7 @@ fn void Generator.emitVarDecl(Generator* gen, const Decl* d, u32 indent) {
     if (v.hasAutoAttr()) {
         if (v.hasAttrAutoFile()) out.add(" @(auto_file)");
         if (v.hasAttrAutoLine()) out.add(" @(auto_line)");
+        if (v.hasAttrAutoFunc()) out.add(" @(auto_func)");
     }
     // Note: dont add ';' because it could also be a function argument
 }
