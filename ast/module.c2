@@ -29,6 +29,7 @@ public type Module struct @(opaque) {
     bool is_external;
     bool is_internal; // currently only for c2 module
     bool is_direct; // otherwise indirectly loaded via library.
+    bool is_foreign; // module identifiers are not mangled
     bool is_exported;
     bool is_loaded; // the file(s) parsed. For external libs
     ModuleType* mt;
@@ -48,6 +49,7 @@ public fn Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_ex
     m.mt = ModuleType.create(c, m);
     m.name_idx = name_idx;
     m.is_external = is_external;
+    m.is_foreign = is_external;    // default for external modules
     m.is_internal = false;
     m.is_direct = is_direct;
     m.is_loaded = false;
@@ -75,6 +77,9 @@ public fn void Module.setInternal(Module* m) @(unused) { m.is_internal = true; }
 public fn bool Module.isInternal(const Module* m) { return m.is_internal; }
 
 public fn bool Module.isExternal(const Module* m) { return m.is_external; }
+
+public fn void Module.setForeign(Module* m, bool is_foreign) { m.is_foreign = is_foreign; }
+public fn bool Module.isForeign(const Module* m) { return m.is_foreign; }
 
 public fn void Module.setLoaded(Module* m) { m.is_loaded = true; }
 public fn bool Module.isLoaded(const Module* m) { return m.is_loaded; }

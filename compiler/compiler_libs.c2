@@ -113,7 +113,9 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
     for (u32 i=0; i<mods.length(); i++) {
         u32 mod_name = mods.get_idx(i);
         ast.Module* m = comp.getOrAddModule(mod_name);
-        if (!m) {
+        if (m) {
+            m.setForeign(comp.getForeign());
+        } else {
             m = c.allmodules.find(mod_name);
             Component* other = c.find_component(m);
             assert(other);
@@ -146,6 +148,20 @@ fn bool Compiler.has_component(Compiler* c, u32 name) {
         if (comp.getNameIdx() == name) return true;
     }
     return false;
+}
+
+fn bool Compiler.addLibFile(Compiler* c, const char* libname, const char* filename) {
+    char[512] dirname;
+    char[512] fullname;
+
+    if (c.find_lib(libname, dirname)) {
+        stdio.snprintf(fullname, elemsof(fullname), "%s/%s", dirname, filename);
+        c.target.addFile(c.auxPool.addStr(fullname, true), 0);
+        return true;
+    } else {
+        console.error("c2c: find library file %s/%s", libname, filename);
+        return false;
+    }
 }
 
 fn bool Compiler.find_lib(const Compiler* c, const char* libname, char* fullpath) {

@@ -59,6 +59,13 @@ fn QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
         if (qt.isInvalid()) return QualType_Invalid;
 
         // TODO extract to function
+        if (qt.isArray()) {
+            const ArrayType* at = qt.getArrayTypeOrNil();
+            if (at && !at.hasSize()) {
+                ma.error(inner.getLoc(), "sizeof cannot be used on arrays of unknown length");
+                return QualType_Invalid;
+            }
+        }
         if (qt.isStruct()) {
             StructType* st = qt.getStructType();
             const StructTypeDecl* std = st.getDecl();
@@ -95,6 +102,10 @@ fn QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
 
     const ArrayType* at = qt.getArrayTypeOrNil();
     if (at) {
+        if (!at.hasSize()) {
+            ma.error(inner.getLoc(), "elemsof cannot be used on arrays of unknown length");
+            return QualType_Invalid;
+        }
         b.setUValue(at.getSize());
         return builtins[BuiltinKind.UInt32];
     }

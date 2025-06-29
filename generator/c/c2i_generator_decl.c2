@@ -74,16 +74,15 @@ fn void Generator.emitVarDecl(Generator* gen, const Decl* d, u32 indent) {
 }
 
 fn void Generator.emitTypeRef(Generator* gen, const TypeRef* ref) {
-    // Note: arrays are converted to pointers
     const Decl* d = ref.getUserDecl();
-    bool is_external = false;
-    if (d) is_external = (d.getModule() != gen.mod);
+    bool is_external = d && d.getModule() != gen.mod;
 
-    // On globals print arrays as pointers, on inline function bodies, print as [..]
+    // TODO print the actual array sizes instead of expressions
     if (gen.in_body) {
         ref.printLiteral2(gen.out, is_external, print_expr, gen);
     } else {
-        ref.printLiteral(gen.out, is_external, true);
+        // TODO add the actual array size for incremental arrays
+        ref.printLiteral(gen.out, is_external);
     }
 }
 

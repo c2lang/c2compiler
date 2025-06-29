@@ -1,0 +1,136 @@
+module c2_trace;
+
+import c2_trace_tables local;
+import stdio local;
+import stdlib local;
+import string local;
+
+fn bool match_name(const char *name, const char *pattern) {
+    for (;;) {
+        char c1, c2;
+        while ((c1 = *name++) == (c2 = *pattern++)) {
+            if (!c1) return true;
+        }
+        if (c2 == '?') {
+            if (c1) continue;
+            return false;
+        }
+        if (c2 == '*') {
+            c2 = *pattern++;
+            if (!c2 || c2 == ',' || c2 == ';') return true;
+            for (; c1; c1 = *name++) {
+                if (c1 == c2 && match_name(name, pattern)) return true;
+            }
+            return false;
+        }
+        return (!c1 && (c2 == ',' || c2 == ';'));
+    }
+    return false;
+}
+
+fn bool match_pattern(const char *name, const char *pattern) {
+    if (!pattern || !*pattern) return true;
+    for (const char *p = pattern; *p;) {
+        if (match_name(name, p)) return true;
+        char c;
+        while ((c = *p++) != 0 && c != ',' && c != ';') continue;
+        if (c != ',') break;
+    }
+    return false;
+}
+
+fn i32 cmp_funcs(const void *a, const void *b) {
+    const c2_trace_t *aa = a;
+    const c2_trace_t *bb = b;
+    const c2_func_t *fa = &c2_func_data[aa.callee_idx];
+    const c2_func_t *fb = &c2_func_data[bb.callee_idx];
+    if (fa.count != fb.count)
+        return fa.count < fb.count ? 1 : -1;
+    if (fa != fb)
+        return strcmp(fa.funcname, fb.funcname);
+    return (aa.count < bb.count) - (aa.count > bb.count);
+}
+
+fn i32 cmp_calls(const void *a, const void *b) {
+    const c2_trace_t *aa = a;
+    const c2_trace_t *bb = b;
+    return (aa.count < bb.count) - (aa.count > bb.count);
+}
+
+fn void list_calls() @(destructor, unused) {
+    const char *p = getenv("C2_TRACE");
+    const char *pattern = nil;
+    const char *filename = nil;
+    const char *caller = nil;
+    if (!p || !*p) return;
+    u32 min = 1, min2 = 1;
+    i32 pos = 0, mode = 3, fd = 1, indent = 2;
+    for (; *p; p += pos) {
+        for (pos = 0;;) {
+            sscanf(p, " min%*1[=]%n%u", &pos, &min);
+            if (pos) break;
+            sscanf(p, " min2%*1[=]%n%u", &pos, &min2);
+            if (pos) break;
+            sscanf(p, " indent%*1[=]%n%u", &pos, &indent);
+            if (pos) break;
+            sscanf(p, " mode%*1[=]%n%d", &pos, &mode);
+            if (pos) break;
+            sscanf(p, " fd%*1[=]%n%d", &pos, &fd);
+            if (pos) break;
+            sscanf(p, " name%*1[=]%n", &pos);
+            if (pos) { pattern = p + pos; break; }
+            sscanf(p, " filename%*1[=]%n", &pos);
+            if (pos) { filename = p + pos; break; }
+            sscanf(p, " caller%*1[=]%n", &pos);
+            if (pos) { caller = p + pos; break; }
+            sscanf(p, "%*[^;=]%*1[=]%n", &pos);
+            break;
+        }
+        if (!pos) pattern = p;
+        while (p[pos] && p[pos++] != ';') continue;
+    }
+    if (!mode) return;
+    u32 *counts = c2_trace_counts;
+    c2_trace_t* data = c2_trace_data;
+    u32 n = c2_trace_length;
+    for (u32 i = 0; i < n; i++) {
+        c2_trace_t *cp = &data[i];
+        if (match_pattern(c2_func_data[cp.callee_idx].funcname, pattern)
+        &&  match_pattern(c2_filenames[cp.filename_idx], filename)
+        &&  match_pattern(c2_func_data[cp.caller_idx].funcname, caller)) {
+            cp.count = counts[i];
+            c2_func_data[cp.callee_idx].count += counts[i];
+        }
+    }
+    if (mode == 2) {
+        qsort(data, n, sizeof(c2_trace_t), cmp_calls);
+        indent = 0;
+        min2 = min;
+    } else {
+        qsort(data, n, sizeof(c2_trace_t), cmp_funcs);
+    }
+    c2_func_t *last = nil;
+    i32 show = 0;
+    for (u32 i = 0; i < n; i++) {
+        c2_trace_t *cp = &data[i];
+        c2_func_t *func = &c2_func_data[cp.callee_idx];
+        u32 count1 = func.count;
+        u32 count2 = cp.count;
+        if (count1 < min) continue;
+        if (func != last) {
+            show = mode & 2;
+            if (mode & 1) {
+                dprintf(fd, "%.*s%s: %d call%.*s\n", show, "\n",
+                        func.funcname, count1, count1 != 1, "s");
+            }
+            last = func;
+        }
+        if (show && count2 >= min2) {
+            dprintf(fd, "%*s%s:%d:%d: %s: %d call%.*s from %s\n",
+                    indent, "",
+                    c2_filenames[cp.filename_idx], cp.line, cp.column,
+                    func.funcname, count2, count2 != 1, "s",
+                    c2_func_data[cp.caller_idx].funcname);
+        }
+    }
+}
