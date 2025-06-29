@@ -300,7 +300,7 @@ fn void Generator.writeCalls(Generator* gen, string_buffer.Buf* out) {
                 if (pos) { filename = p + pos; break; }
                 sscanf(p, " caller%*1[=]%n", &pos);
                 if (pos) { caller = p + pos; break; }
-                sscanf(p, "%*[^;=]%*1[=]%n%", &pos);
+                sscanf(p, "%*[^;=]%*1[=]%n", &pos);
                 break;
             }
             if (!pos) pattern = p;
