@@ -54,7 +54,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
             assert(func.getKind() == ExprKind.Member);
             MemberExpr* m = cast<MemberExpr*>(func);
             dest = m.getFullDecl();
-            if (gen.trace_calls) {
+            if (gen.trace_calls && !gen.no_trace) {
                 out.print("(c2_trace_counts[%d]++, ",
                           gen.addCall(dest.getFullName(), call.getStartLoc()));
                 gen.emitCNameMod(out, dest, dest.getModule());
@@ -78,7 +78,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
                 gen.emitMemberExprBase(out, func);
             }
         } else {
-            bool no_trace = false;
+            bool no_trace = gen.no_trace;
             // can be Member or Identifier
             if (func.getKind() == ExprKind.Identifier) {
                 IdentifierExpr* i = cast<IdentifierExpr*>(func);

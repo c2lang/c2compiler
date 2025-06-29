@@ -199,6 +199,8 @@ fn component.Kind target2compKind(build_target.Kind k) {
     return component.Kind.Executable;
 }
 
+const char[] C2_trace @(embed="libs/trace/c2_trace.c2");
+
 fn void Compiler.build(Compiler* c,
                          string_pool.Pool* auxPool,
                          source_mgr.SourceMgr* sm,
@@ -296,6 +298,8 @@ fn void Compiler.build(Compiler* c,
     if (opts.msan) c.addFeature("__MSAN__", "1");
     if (opts.ubsan) c.addFeature("__UBSAN__", "1");
 
+    target.addLib(c.auxPool.add("c2", 2, true), false);
+
     c.parser = c2_parser.create(sm,
                                 diags,
                                 c.astPool,
@@ -362,13 +366,21 @@ fn void Compiler.build(Compiler* c,
         const build_target.File* f = target.getFile(j);
         i32 file_id = sm.open(f.name, f.loc, true);
         if (file_id == -1) return;   // note: error already printed
-
         console.debug("parsing %s", sm.getFileName(file_id));
-
         c.parser.parse(file_id, false, false);
-
         sm.close(file_id);
     }
+    if (c.opts.trace_calls) {
+        // TODO: avoid duplicating source
+        string_buffer.Buf* buf = string_buffer.create(elemsof(C2_trace), false, 0);
+        buf.add2(C2_trace, elemsof(C2_trace) - 1);
+        i32 file_id = sm.addGenerated(buf, c.auxPool.addStr("libs/trace/c2_trace.c2", true));
+        if (file_id == -1) return;   // note: error already printed
+        console.debug("parsing %s", sm.getFileName(file_id));
+        c.parser.parse(file_id, false, false);
+        sm.close(file_id);
+    }
+
     u64 t1_end = utils.now();
     console.log_time("parsing", t1_end - t1_start);
     if (!c.diags.isOk()) return;
