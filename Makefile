@@ -15,12 +15,15 @@ ifdef DEBUG
 C2FLAGS+= --fast
 endif
 
+C2C_DIRS:= {analyser,analyser_utils,ast,ast_utils,common,compiler,generator,ir,libs,parser}
+C2C_DEPS:= $(wildcard $(C2C_DIRS)/*.c2* $(C2C_DIRS)/*/*.c2*) recipe.txt Makefile
+
 all: $(C2C)
 
 c2c: $(C2C)
 	@$(C2C) --version
 
-$(C2C): output/bootstrap/bootstrap
+$(C2C): output/bootstrap/bootstrap $(C2C_DEPS)
 	@echo "---- running (bootstrapped$(C2FLAGS)) c2c ----"
 	@output/bootstrap/bootstrap c2c $(C2FLAGS) --fast --noplugins
 	@mv output/c2c/c2c output/bootstrap/c2c
@@ -40,7 +43,7 @@ msan:;	@$(MAKE) -B MSAN=1
 ubsan:;	@$(MAKE) -B UBSAN=1
 debug:;	@$(MAKE) -B DEBUG=1
 
-output/tester/tester: tools/tester/*.c2 $(C2C)
+output/tester/tester: tools/tester/*.c2 $(C2C_DEPS) $(C2C)
 	@$(C2C) tester
 
 rebuild-bootstrap: $(C2C)
@@ -62,12 +65,13 @@ test: output/tester/tester
 testv: output/tester/tester
 	@output/tester/tester -v test
 
-output/c2c_trace/c2c_trace:
+output/c2c_trace/c2c_trace: $(C2C_DEPS)
 	$(C2C) c2c --trace-calls -o c2c_trace --fast
 
-
-trace: $(C2C) output/c2c_trace/c2c_trace
+trace_calls: $(C2C) output/c2c_trace/c2c_trace
 	C2_TRACE="min=10;min2=1;mode=3;name=*;fd=2" output/c2c_trace/c2c_trace c2c --test 2> output/c2c/calls
+
+trace: trace_calls
 	cat output/c2c/calls
 
 alloc_trace: $(C2C) output/c2c_trace/c2c_trace
@@ -75,10 +79,12 @@ alloc_trace: $(C2C) output/c2c_trace/c2c_trace
 	cat output/c2c/calls
 
 errors:
-	@( grep -n 'error:' `find . -name build.log` | sed -E 's/build.log:[0-9]+://' ; true )
+	@( grep -n 'error:' `find output -name build.log` | sed -E 's/build.log:[0-9]+://' ; true )
 
 warnings:
-	@( grep -n '[[]-W' `find . -name build.log` | sed -E 's/build.log:[0-9]+://' ; true )
+	@( grep -n '[[]-W' `find output -name build.log` | sed -E 's/build.log:[0-9]+://' ; true )
+
+rebuild: clean all test trace_calls warnings
 
 clean:
 	rm -rf output

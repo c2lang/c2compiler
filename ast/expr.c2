@@ -527,7 +527,7 @@ fn void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
 public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     switch (e.getKind()) {
     case IntegerLiteral:
-        IntegerLiteral.printLiteral((IntegerLiteral*)e, out);
+        IntegerLiteral.printLiteral((IntegerLiteral*)e, out, false);
         return;
     case FloatLiteral:
         FloatLiteral.printLiteral((FloatLiteral*)e, out);

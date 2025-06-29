@@ -97,7 +97,7 @@ fn void abort() @(noreturn);
 type AtExitFn fn void();
 fn c_int atexit(AtExitFn __func);
 fn c_int at_quick_exit(AtExitFn __func);
-type OnExitFn fn void(c_int, void*);
+type OnExitFn fn void(i32, void*);
 fn c_int on_exit(OnExitFn __func, void* __arg);
 fn void exit(c_int __status) @(noreturn);
 fn void _exit(c_int __status) @(noreturn);
@@ -117,7 +117,7 @@ fn c_int system(const c_char* __command);
 fn c_char* realpath(const c_char* __name, c_char* __resolved);
 fn c_char* mktemp(c_char* __template);
 
-type StdlibCompareFn fn c_int(const void*, const void*) @(cname="__compar_fn_t");
+type StdlibCompareFn fn i32(const void*, const void*) @(cname="__compar_fn_t");
 fn void* bsearch(const void* __key, const void* __base, c_size __nmemb, c_size __size, StdlibCompareFn __compar);
 fn void qsort(void* __base, c_size __nmemb, c_size __size, StdlibCompareFn __compar);
 

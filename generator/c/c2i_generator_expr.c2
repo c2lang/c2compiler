@@ -22,7 +22,7 @@ fn void Generator.emitExpr(Generator* gen, const Expr* e) {
     string_buffer.Buf* out = gen.out;
     switch (e.getKind()) {
     case IntegerLiteral:
-        IntegerLiteral.printLiteral(cast<IntegerLiteral*>(e), out);
+        IntegerLiteral.printLiteral(cast<IntegerLiteral*>(e), out, false);
         return;
     case FloatLiteral:
         FloatLiteral.printLiteral(cast<FloatLiteral*>(e), out);

@@ -4,14 +4,14 @@ import c2 local;
 
 /* special values for the module handle */
 #if SYSTEM_LINUX
-const usize RTLD_NEXT      = cast<u64>(-1);
-const usize RTLD_DEFAULT   = cast<u64>(0);
+const usize RTLD_NEXT      = (void*)(usize)(-1);
+const usize RTLD_DEFAULT   = (void*)(usize)(0);
 #else
-const usize RTLD_NEXT      = cast<u64>(-1);	/* Search subsequent objects. */
-const usize RTLD_DEFAULT   = cast<u64>(-2);	/* Use default search algorithm. */
-const usize RTLD_SELF      = cast<u64>(-3);	/* Search the caller itself. */
+const usize RTLD_NEXT      = (void*)(usize)(-1);	/* Search subsequent objects. */
+const usize RTLD_DEFAULT   = (void*)(usize)(-2);	/* Use default search algorithm. */
+const usize RTLD_SELF      = (void*)(usize)(-3);	/* Search the caller itself. */
 #if SYSTEM_DARWIN
-const usize RTLD_MAIN_ONLY = cast<u64>(-5);
+const usize RTLD_MAIN_ONLY = (void*)(usize)(-5);
 #endif
 #endif
 

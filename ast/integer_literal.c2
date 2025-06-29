@@ -94,15 +94,18 @@ fn void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, u3
     e.base.printTypeBits(out);
     out.color(col_Value);
     out.space();
-    e.printLiteral(out);
+    e.printLiteral(out, false);
     out.newline();
 }
 
-public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffer.Buf* out) {
+public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffer.Buf* out, bool c_style) {
     switch (e.base.base.integerLiteralBits.radix) {
     case Radix.Default:
         out.print("%d", e.val);
-        if (e.val > 4294967295) out.add1('l');
+        if (c_style) {
+            if (e.val > 9223372036854775807) out.add1('u');
+            if (e.val > 4294967295) out.add1('l');
+        }
         break;
     case Radix.Hex:
         out.print("0x%x", e.val);

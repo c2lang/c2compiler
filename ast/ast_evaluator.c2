@@ -565,7 +565,7 @@ fn Cont GotoStmt.eval(GotoStmt* s, Evaluator* sf) {
 fn Cont CompoundStmt.eval(CompoundStmt* body, Evaluator* sf) {
     u32 count = body.getCount();
     Stmt** stmts = body.getStmts();
-    for (i32 i = 0; i < count; i++) {
+    for (u32 i = 0; i < count; i++) {
         Cont cont = stmts[i].eval(sf);
         if (cont != Cont.Normal)
             return cont;
