@@ -924,6 +924,11 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok, bool* bracke
             case PlusPlus:   // ambiguous: (x)++
             case MinusMinus: // ambiguous: (x)--
             case LParen:     // ambiguous: (func)(args)
+            case Amp:        // ambiguous: (func)&b
+            case Plus:       // ambiguous: (func)+b
+            case Minus:      // ambiguous: (func)-b
+            case Star:       // ambiguous: (func)*b
+                // for ambiguous combinations, rely on identifier case
                 // (A)(...) is a cast, (a)(...) is a function call
                 if (is_lower)
                     return 0;
