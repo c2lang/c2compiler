@@ -100,6 +100,7 @@ public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffe
     switch (e.base.base.integerLiteralBits.radix) {
     case Radix.Default:
         out.print("%d", e.val);
+        if (e.val > 9223372036854775807) out.add1('u');
         if (e.val > 4294967295) out.add1('l');
         break;
     case Radix.Hex:
