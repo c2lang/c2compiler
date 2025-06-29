@@ -1,0 +1,14 @@
+module c2_assert;
+
+import stdio local;
+import stdlib local;
+
+public fn i32 c2_assert_fail(const char* filename @(auto_file),
+                             u32 line @(auto_line),
+                             const char* funcname @(auto_func),
+                             const char* condstr)
+{
+    dprintf(2, "%s:%d: function %s: Assertion failed: %s\n", filename, line, funcname, condstr);
+    abort();
+    return 0;
+}

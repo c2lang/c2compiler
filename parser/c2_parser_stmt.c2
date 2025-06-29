@@ -21,6 +21,7 @@ import constants local;
 import token local;
 import src_loc local;
 import string_list;
+import string_buffer;
 
 fn Stmt* Parser.parseStmt(Parser* p) {
     // TODO use Jump Table (combined one for multiple purposes?)
@@ -387,10 +388,31 @@ fn Stmt* Parser.parseAssertStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
     p.expectAndConsume(LParen);
+    SrcLoc eloc = p.tok.loc;
     Expr* inner = p.parseExpr();
+    u32 elen = p.prev_loc - eloc;
     p.expectAndConsume(RParen);
+    u32 loc_end = p.prev_loc;
     p.expectAndConsume(Semicolon);
-    return p.builder.actOnAssertStmt(loc, inner);
+
+    Expr* call = nil;
+    if (p.has_asserts) {
+        // add c2_assert.fail func designator
+        p.addImplicitImport(p.c2_assert_idx, false);
+        Expr* func = p.builder.actOnMemberExpr(nil, p.c2_assert_idx, 6, loc, p.c2_assert_fail_idx);
+
+        // encode expression as a string
+        string_buffer.Buf* buf = p.tokenizer.buf;
+        buf.clear();
+        inner.printLiteral(buf);
+        u32 msg_len = buf.size();
+        u32 msg_idx = p.pool.add(buf.data(), msg_len, true);
+        Expr* arg = p.builder.actOnStringLiteral(eloc, elen, msg_idx, msg_len);
+
+        // create call expression `assert.fail("expression")
+        call = p.builder.actOnCallExpr(loc, loc_end, func, &arg, 1);
+    }
+    return p.builder.actOnAssertStmt(loc, inner, call);
 }
 
 fn Stmt* Parser.parseBreakStmt(Parser* p) {
