@@ -150,6 +150,20 @@ fn bool Compiler.has_component(Compiler* c, u32 name) {
     return false;
 }
 
+fn bool Compiler.addLibFile(Compiler* c, const char* libname, const char* filename) {
+    char[512] dirname;
+    char[512] fullname;
+
+    if (c.find_lib(libname, dirname)) {
+        stdio.snprintf(fullname, elemsof(fullname), "%s/%s", dirname, filename);
+        c.target.addFile(c.auxPool.addStr(fullname, true), 0);
+        return true;
+    } else {
+        console.error("c2c: find library file %s/%s", libname, filename);
+        return false;
+    }
+}
+
 fn bool Compiler.find_lib(const Compiler* c, const char* libname, char* fullpath) {
     for (u32 i=0; i<c.libdirs.length(); i++) {
         const char* dirname = c.libdirs.get(i);
