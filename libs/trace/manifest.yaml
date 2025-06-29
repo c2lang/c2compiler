@@ -1,0 +1,11 @@
+
+info:
+#    name: "C2 trace library"
+#    this should be a "source" library
+    language: c2
+    type: library
+    kinds:
+        - static
+
+modules:
+#    - c2_trace.c2
