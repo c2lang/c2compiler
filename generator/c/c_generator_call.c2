@@ -137,6 +137,9 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
                 if (vd.hasAttrAutoLine()) {
                     out.print("%d", loc.line);
                 }
+                if (vd.hasAttrAutoFunc()) {
+                    out.print("\"%s\"", gen.cur_function.asDecl().getFullName());
+                }
                 needs_comma = true;
                 func_index++;
                 continue;
