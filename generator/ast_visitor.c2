@@ -218,6 +218,8 @@ fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
     case Assert:
         AssertStmt* a = (AssertStmt*)s;
         v.handleExpr(a.getInner());
+        Expr* call = a.getCall();
+        if (call) v.handleExpr(call);
         break;
     }
 }
