@@ -176,183 +176,189 @@ fn void Generator.writeCalls(Generator* gen, string_buffer.Buf* out) {
     }
     out.add("};\n\n");
 
-    const char[] begin =
-        ```c
-        struct c2_func_t {
-            unsigned count;
-            unsigned short filename_idx;
-            unsigned short line;
-            const char *funcname;
-        };
-        static struct c2_func_t c2_func_data[] = {
-        ```;
-    out.add(begin);
+    out.add(
+    ```c
+    struct c2_func_t {
+        unsigned count;
+        unsigned short filename_idx;
+        unsigned short line;
+        const char *funcname;
+    };
+    static struct c2_func_t c2_func_data[] = {
+    ```);
     // TODO: store function definition location
     n = gen.funcnames.length();
     for (u32 i = 0; i < n; i++) {
         out.print("    { 0, 0, 0, \"%s\" },\n", gen.funcnames.get(i));
     }
-    out.add("};\n\n");
+    out.add(
+    ```c
+    };
 
-    out.add("struct c2_trace_t {\n"
-            "    unsigned count;\n"
-            "    unsigned char filename_idx;\n"
-            "    unsigned char column;\n"
-            "    unsigned short line;\n"
-            "    unsigned short caller_idx;\n"
-            "    unsigned short callee_idx;\n"
-            "};\n"
-            "static struct c2_trace_t c2_trace_data[] = {\n"
-            );
+    struct c2_trace_t {
+        unsigned count;
+        unsigned char filename_idx;
+        unsigned char column;
+        unsigned short line;
+        unsigned short caller_idx;
+        unsigned short callee_idx;
+    };
+    static struct c2_trace_t c2_trace_data[] = {
+    ```);
     for (u32 i = 0; i < gen.calls.count; i++) {
         out.print("    { 0, %d, %d, %d, %d, %d },\n",
                   gen.calls.array[i].filename_idx, gen.calls.array[i].column, gen.calls.array[i].line,
                   gen.calls.array[i].caller_idx, gen.calls.array[i].callee_idx);
     }
-    out.add("};\n\n");
 
-    out.add("static const unsigned c2_trace_length = sizeof(c2_trace_data) / sizeof(c2_trace_data[0]);\n"
-            "unsigned c2_trace_counts[sizeof(c2_trace_data) / sizeof(c2_trace_data[0])];\n\n"
-            );
-    out.add("char *getenv(const char *);\n"
-            "int dprintf(int fd, const char *format, ...);\n"
-            "int strcmp(const char *s1, const char *s2);\n"
-            "typedef unsigned long size_t;\n"
-            "void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));\n"
-            "int sscanf(const char *, const char *, ...);\n\n"
-            );
-    out.add("static int c2_match_name(const char *name, const char *pattern) {\n"
-            "    for (;;) {\n"
-            "        char c1, c2;\n"
-            "        while ((c1 = *name++) == (c2 = *pattern++)) {\n"
-            "            if (!c1) return 1;\n"
-            "        }\n"
-            "        if (c2 == '?') {\n"
-            "            if (c1) continue;\n"
-            "            return 0;\n"
-            "        }\n"
-            "        if (c2 == '*') {\n"
-            "            c2 = *pattern++;\n"
-            "            if (!c2 || c2 == ',' || c2 == ';') return 1;\n"
-            "            for (; c1; c1 = *name++) {\n"
-            "                if (c1 == c2 && c2_match_name(name, pattern)) return 1;\n"
-            "            }\n"
-            "            return 0;\n"
-            "        }\n"
-            "        return (!c1 && (c2 == ',' || c2 == ';'));\n"
-            "    }\n"
-            "}\n\n"
-            );
-    out.add("static int c2_match_pattern(const char *name, const char *pattern) {\n"
-            "    if (!pattern || !*pattern) return 1;\n"
-            "    for (const char *p = pattern; *p;) {\n"
-            "        if (c2_match_name(name, p)) return 1;\n"
-            "        char c;\n"
-            "        while ((c = *p++) != 0 && c != ',' && c != ';') continue;\n"
-            "        if (c != ',') break;\n"
-            "    }\n"
-            "    return 0;\n"
-            "}\n\n"
-            );
-    out.add("static int c2_cmp_funcs(const void *a, const void *b) {\n"
-            "    const struct c2_trace_t *aa = a;\n"
-            "    const struct c2_trace_t *bb = b;\n"
-            "    struct c2_func_t *fa = &c2_func_data[aa->callee_idx];\n"
-            "    struct c2_func_t *fb = &c2_func_data[bb->callee_idx];\n"
-            "    if (fa->count != fb->count) return fa->count < fb->count ? 1 : -1;\n"
-            "    if (fa != fb) return strcmp(fa->funcname, fb->funcname);\n"
-            "    return (aa->count < bb->count) - (aa->count > bb->count);\n"
-            "}\n\n"
-            );
-    out.add("static int c2_cmp_calls(const void *a, const void *b) {\n"
-            "    const struct c2_trace_t *aa = a;\n"
-            "    const struct c2_trace_t *bb = b;\n"
-            "    return (aa->count < bb->count) - (aa->count > bb->count);\n"
-            "}\n\n"
-            );
-    out.add("void __attribute__((destructor)) c2_trace_calls(void) {\n"
-            "    const char *p = getenv(\"C2_TRACE\");\n"
-            "    const char *pattern = 0;\n"
-            "    const char *filename = 0;\n"
-            "    const char *caller = 0;\n"
-            "    if (!p || !*p) return;\n"
-            "    unsigned min = 1, min2 = 1;\n"
-            "    int pos = 0, mode = 3, fd = 1, indent = 2;\n"
-            "    for (; *p; p += pos) {\n"
-            "        for (pos = 0;;) {\n"
-            "            sscanf(p, \" min%*1[=]%n%u\", &pos, &min);\n"
-            "            if (pos) break;\n"
-            "            sscanf(p, \" min2%*1[=]%n%u\", &pos, &min2);\n"
-            "            if (pos) break;\n"
-            "            sscanf(p, \" indent%*1[=]%n%u\", &pos, &indent);\n"
-            "            if (pos) break;\n"
-            "            sscanf(p, \" mode%*1[=]%n%d\", &pos, &mode);\n"
-            "            if (pos) break;\n"
-            "            sscanf(p, \" fd%*1[=]%n%d\", &pos, &fd);\n"
-            "            if (pos) break;\n"
-            "            sscanf(p, \" name%*1[=]%n\", &pos);\n"
-            "            if (pos) { pattern = p + pos; break; }\n"
-            "            sscanf(p, \" filename%*1[=]%n\", &pos);\n"
-            "            if (pos) { filename = p + pos; break; }\n"
-            "            sscanf(p, \" caller%*1[=]%n\", &pos);\n"
-            "            if (pos) { caller = p + pos; break; }\n"
-            "            sscanf(p, \"%*[^;=]%*1[=]%n%\", &pos);\n"
-            "            break;\n"
-            "        }\n"
-            "        if (!pos) pattern = p;\n"
-            "        while (p[pos] && p[pos++] != ';') continue;\n"
-            "    }\n"
-            "    if (!mode) return;\n"
-            "    unsigned *counts = c2_trace_counts;\n"
-            "    struct c2_trace_t* data = c2_trace_data;\n"
-            "    unsigned n = c2_trace_length;\n"
-            "    for (unsigned i = 0; i < n; i++) {\n"
-            "        struct c2_trace_t *cp = &data[i];\n"
-            "        if (c2_match_pattern(c2_func_data[cp->callee_idx].funcname, pattern)\n"
-            "        &&  c2_match_pattern(c2_filenames[cp->filename_idx], filename)\n"
-            "        &&  c2_match_pattern(c2_func_data[cp->caller_idx].funcname, caller)) {\n"
-            "            cp->count = counts[i];\n"
-            "            c2_func_data[cp->callee_idx].count += counts[i];\n"
-            "        }\n"
-            "    }\n"
-            "    if (mode == 2) {\n"
-            "        qsort(data, n, sizeof(*data), c2_cmp_calls);\n"
-            "        indent = 0;\n"
-            "        min2 = min;\n"
-            "    } else {\n"
-            "        qsort(data, n, sizeof(*data), c2_cmp_funcs);\n"
-            "    }\n"
-            "    struct c2_func_t *last = 0;\n"
-            "    int show = 0;\n"
-            "    for (unsigned i = 0; i < n; i++) {\n"
-            "        struct c2_trace_t *cp = &data[i];\n"
-            "        struct c2_func_t *func = &c2_func_data[cp->callee_idx];\n"
-            "        unsigned count1 = func->count;\n"
-            "        unsigned count2 = cp->count;\n"
-            "        if (count1 < min) continue;\n"
-            "        if (func != last) {\n"
-            "            show = mode & 2;\n"
-            "            if (mode & 1) {\n"
-            "                dprintf(fd, \"%.*s%s: %u call%.*s\\n\", show, \"\\n\",\n"
-            "                        func->funcname, count1, count1 != 1, \"s\");\n"
-            "            }\n"
-            "            last = func;\n"
-            "        }\n"
-            "        if (show && count2 >= min2) {\n"
-            "            dprintf(fd, \"%*s%s:%d:%d: %s: %u call%.*s from %s\\n\",\n"
-            "                    indent, \"\",\n"
-            "                    c2_filenames[cp->filename_idx], cp->line, cp->column,\n"
-            "                    func->funcname, count2, count2 != 1, \"s\",\n"
-            "                    c2_func_data[cp->caller_idx].funcname);\n"
-            "        }\n"
-            "    }\n"
-            "}\n"
-            );
+    out.add(
+    ```c
+    };
+
+    static const unsigned c2_trace_length = sizeof(c2_trace_data) / sizeof(c2_trace_data[0]);
+    unsigned c2_trace_counts[sizeof(c2_trace_data) / sizeof(c2_trace_data[0])];
+
+    char *getenv(const char *);
+    int dprintf(int fd, const char *format, ...);
+    int strcmp(const char *s1, const char *s2);
+    typedef unsigned long size_t;
+    void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));
+    int sscanf(const char *, const char *, ...);
+
+    static int c2_match_name(const char *name, const char *pattern) {
+        for (;;) {
+            char c1, c2;
+            while ((c1 = *name++) == (c2 = *pattern++)) {
+                if (!c1) return 1;
+            }
+            if (c2 == '?') {
+                if (c1) continue;
+                return 0;
+            }
+            if (c2 == '*') {
+                c2 = *pattern++;
+                if (!c2 || c2 == ',' || c2 == ';') return 1;
+                for (; c1; c1 = *name++) {
+                    if (c1 == c2 && c2_match_name(name, pattern)) return 1;
+                }
+                return 0;
+            }
+            return (!c1 && (c2 == ',' || c2 == ';'));
+        }
+    }
+
+    static int c2_match_pattern(const char *name, const char *pattern) {
+        if (!pattern || !*pattern) return 1;
+        for (const char *p = pattern; *p;) {
+            if (c2_match_name(name, p)) return 1;
+            char c;
+            while ((c = *p++) != 0 && c != ',' && c != ';') continue;
+            if (c != ',') break;
+        }
+        return 0;
+    }
+
+    static int c2_cmp_funcs(const void *a, const void *b) {
+        const struct c2_trace_t *aa = a;
+        const struct c2_trace_t *bb = b;
+        struct c2_func_t *fa = &c2_func_data[aa->callee_idx];
+        struct c2_func_t *fb = &c2_func_data[bb->callee_idx];
+        if (fa->count != fb->count) return fa->count < fb->count ? 1 : -1;
+        if (fa != fb) return strcmp(fa->funcname, fb->funcname);
+        return (aa->count < bb->count) - (aa->count > bb->count);
+    }
+
+    static int c2_cmp_calls(const void *a, const void *b) {
+        const struct c2_trace_t *aa = a;
+        const struct c2_trace_t *bb = b;
+        return (aa->count < bb->count) - (aa->count > bb->count);
+    }
+
+    void __attribute__((destructor)) c2_trace_calls(void) {
+        const char *p = getenv("C2_TRACE");
+        const char *pattern = 0;
+        const char *filename = 0;
+        const char *caller = 0;
+        if (!p || !*p) return;
+        unsigned min = 1, min2 = 1;
+        int pos = 0, mode = 3, fd = 1, indent = 2;
+        for (; *p; p += pos) {
+            for (pos = 0;;) {
+                sscanf(p, " min%*1[=]%n%u", &pos, &min);
+                if (pos) break;
+                sscanf(p, " min2%*1[=]%n%u", &pos, &min2);
+                if (pos) break;
+                sscanf(p, " indent%*1[=]%n%u", &pos, &indent);
+                if (pos) break;
+                sscanf(p, " mode%*1[=]%n%d", &pos, &mode);
+                if (pos) break;
+                sscanf(p, " fd%*1[=]%n%d", &pos, &fd);
+                if (pos) break;
+                sscanf(p, " name%*1[=]%n", &pos);
+                if (pos) { pattern = p + pos; break; }
+                sscanf(p, " filename%*1[=]%n", &pos);
+                if (pos) { filename = p + pos; break; }
+                sscanf(p, " caller%*1[=]%n", &pos);
+                if (pos) { caller = p + pos; break; }
+                sscanf(p, "%*[^;=]%*1[=]%n%", &pos);
+                break;
+            }
+            if (!pos) pattern = p;
+            while (p[pos] && p[pos++] != ';') continue;
+        }
+        if (!mode) return;
+        unsigned *counts = c2_trace_counts;
+        struct c2_trace_t* data = c2_trace_data;
+        unsigned n = c2_trace_length;
+        for (unsigned i = 0; i < n; i++) {
+            struct c2_trace_t *cp = &data[i];
+            if (c2_match_pattern(c2_func_data[cp->callee_idx].funcname, pattern)
+            &&  c2_match_pattern(c2_filenames[cp->filename_idx], filename)
+            &&  c2_match_pattern(c2_func_data[cp->caller_idx].funcname, caller)) {
+                cp->count = counts[i];
+                c2_func_data[cp->callee_idx].count += counts[i];
+            }
+        }
+        if (mode == 2) {
+            qsort(data, n, sizeof(*data), c2_cmp_calls);
+            indent = 0;
+            min2 = min;
+        } else {
+            qsort(data, n, sizeof(*data), c2_cmp_funcs);
+        }
+        struct c2_func_t *last = 0;
+        int show = 0;
+        for (unsigned i = 0; i < n; i++) {
+            struct c2_trace_t *cp = &data[i];
+            struct c2_func_t *func = &c2_func_data[cp->callee_idx];
+            unsigned count1 = func->count;
+            unsigned count2 = cp->count;
+            if (count1 < min) continue;
+            if (func != last) {
+                show = mode & 2;
+                if (mode & 1) {
+                    dprintf(fd, "%.*s%s: %u call%.*s\n", show, "\n",
+                            func->funcname, count1, count1 != 1, "s");
+                }
+                last = func;
+            }
+            if (show && count2 >= min2) {
+                dprintf(fd, "%*s%s:%d:%d: %s: %u call%.*s from %s\n",
+                        indent, "",
+                        c2_filenames[cp->filename_idx], cp->line, cp->column,
+                        func->funcname, count2, count2 != 1, "s",
+                        c2_func_data[cp->caller_idx].funcname);
+            }
+        }
+    }
+    ```);
 }
 
 fn void Generator.writeCallExterns(Generator* gen, string_buffer.Buf* out) {
-    out.add("extern unsigned c2_trace_counts[];\n"
-            "extern void c2_trace_calls(void);\n"
-            "extern int atexit(void (*func)(void));\n"
-            );
+    out.add(
+    ```c
+    extern unsigned c2_trace_counts[];
+    extern void c2_trace_calls(void);
+    extern int atexit(void (*func)(void));
+    ```);
 }
