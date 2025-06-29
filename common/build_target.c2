@@ -100,7 +100,7 @@ public type File struct {
 }
 
 public type Target struct @(opaque) {
-    u32 name_idx;       // into aux pool
+    u32 name_idx;       // index into auxPool
     SrcLoc loc;
     warning_flags.Flags warnings;
     Kind kind;

@@ -105,7 +105,7 @@ fn void Generator.createMakefile(Generator* gen,
             if (!m.isExternal() && m.isUsed()) out.print(" %s.o", m.getName());
         }
         if (gen.trace_calls) {
-            out.add(" build.o");
+            out.add(" c2_trace_tables.o");
         }
         out.newline();
     } else {

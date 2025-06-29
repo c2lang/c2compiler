@@ -1,0 +1,26 @@
+module c2_trace_tables;
+
+type c2_func_t struct {
+    u32 count;
+    u16 filename_idx;
+    u16 line;
+    const char *funcname;
+}
+
+c2_func_t[] c2_func_data;
+
+type c2_trace_t struct {
+    u32 count;
+    u8 filename_idx;
+    u8 column;
+    u16 line;
+    u16 caller_idx;
+    u16 callee_idx;
+}
+
+c2_trace_t[] c2_trace_data;
+const char*[] c2_filenames;
+
+u32 c2_trace_length;
+u32[] c2_trace_counts;
+
