@@ -20,6 +20,7 @@ import index_list;
 import instr_inserter;
 import lookup_table;
 import string_pool;
+import usage_counter;
 
 import stdlib;
 import string;
@@ -54,6 +55,7 @@ public type Context struct @(opaque) {
     instr_inserter.InstrInserter inserter;
     bit_array.BitArray active_blocks;
     CopyList copies;
+    usage_counter.Counter usage;
 }
 
 public fn Context* create() {
@@ -71,10 +73,12 @@ public fn Context* create() {
     c.revlist.create(256);
     c.inserter.create();
     c.copies.init(1024);
+    c.usage.init(1024);
     return c;
 }
 
 public fn void Context.free(Context* c) {
+    c.usage.free();
     c.copies.free();
     c.inserter.free();
     c.revlist.free();
@@ -699,6 +703,13 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     c.eliminateCopies(fi2);
     //c.dump_function(fi2, name);
     if (print) c.print_function(id, fi2, "after eliminate copies");
+
+
+    //c.propagateConstants(fi2);
+    //if (print) c.print_function(id, fi2, "after propagate constants");
+    c.fillUsage(fi2);
+    //if (print) c.print_function(id, fi2, "after fill usage");
+
 
     c.removeNone(fi2);
     if (print) c.print_function(id, fi2, "after remove none");

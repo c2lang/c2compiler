@@ -1,0 +1,57 @@
+module usage_counter;
+
+import c2;
+import stdlib local;
+import string local;
+import stdio; // only for dump
+
+// Usage 1 means only produces a temp (so can be removed if no side effects)
+public type Counter struct {
+    u32 count;
+    u32 capacity;
+    u8* counts;
+}
+
+public fn void Counter.init(Counter* c, u32 cap) {
+    c.count = 0;
+    c.capacity = 0;
+    c.counts = nil;
+    c.resize(cap);
+}
+
+public fn void Counter.free(Counter* c) {
+    free(c.counts);
+}
+
+fn void Counter.resize(Counter* c, u32 cap) {
+    if (c.counts) free(c.counts);
+    // Note: does not memcpy, since will not be resized during adds
+    c.counts = malloc(cap * sizeof(u8));
+}
+
+public fn void Counter.clear(Counter* c, u32 cap) {
+    if (cap > c.capacity) c.resize(cap);
+    c.count = cap;
+    memset(c.counts, 0, cap);
+}
+
+public fn void Counter.incr(Counter* c, u32 idx) {
+    //assert(c.counts[idx] != u8.max);  // u8
+    assert(c.counts[idx] != c2.max_u8);
+    c.counts[idx]++;
+}
+
+/*
+public fn bool Counter.decr(Counter* c, u32 idx) {
+    c.counts[idx]--;
+    return c.counts[idx] != 0;
+}
+*/
+
+public fn void Counter.dump(const Counter* c) @(unused) {
+    stdio.printf("Usage counter (%d)\n", c.count);
+    for (u32 i=0; i<c.count; i++) {
+        stdio.printf("  [%3d] %d\n", i, c.counts[i]);
+    }
+}
+

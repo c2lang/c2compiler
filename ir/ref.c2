@@ -63,6 +63,10 @@ fn bool Ref.isSlot(const Ref* r) {
     return r.kind == RefKind.Slot;
 }
 
+fn bool Ref.isConstant(const Ref* r) @(unused) {
+    return r.kind >= RefKind.Value && r.kind <= RefKind.Double;
+}
+
 fn bool Ref.isRefList(const Ref* r) {
     return r.kind == RefKind.RefList;
 }

@@ -380,6 +380,54 @@ fn void Context.eliminateCopies(Context* c, FunctionInfo* fi) {
     }
 }
 
+fn void Context.fillUsage(Context* c, FunctionInfo* fi) {
+    c.usage.clear(fi.instructions.getCount());
+
+    // Usage: counter both usage and if it has a result.
+    // count 0 means: has no result, (of course) not used
+    // count 1 means: has result, not used (could still have side effects)
+    // count 2+ means: used
+    Instr* all = fi.instructions.get(0);
+    for (u32 i=0; i<fi.instructions.getCount(); i++) {
+        Instr* is = &all[i];
+        if (is.hasResult()) c.usage.incr(i);
+        if (is.isPhi()) {
+            PhiClause* clauses = fi.phis.get(is.phi_clauses.start);
+            for (u32 p=0; p<is.phi_clauses.count; p++) {
+                Ref* r = &clauses[p].ref;
+                if (r.isTemp()) c.usage.incr(r.value);
+            }
+        } else {
+            Ref* r = &is.args[0];
+            if (r.isTemp()) c.usage.incr(r.value);
+            r = &is.args[1];
+            if (r.isTemp()) c.usage.incr(r.value);
+        }
+    }
+}
+
+#if 0
+// return true if changed
+fn bool Context.propagateConstants(Context* c, FunctionInfo* fi) {
+    // look for add x, y where x, y are both constants, replace with copy
+    bool changed = false;
+
+    c.dump_function(fi, "temp");
+    Instr* all = fi.instructions.get(0);
+    for (u32 i=0; i<fi.instructions.getCount(); i++) {
+        Instr* instr = &all[i];
+        if (!instr.isArithmetic()) continue;
+        if (!instr.args[0].isConstant()) continue;
+        if (!instr.args[1].isConstant()) continue;
+
+        // only 17 matches in c2c!
+        changed = true;
+    }
+
+    return changed;
+}
+#endif
+
 fn void Context.removeNone(Context* c, FunctionInfo* fi) {
     c.inserter.clear();
     c.fixup_function(fi);

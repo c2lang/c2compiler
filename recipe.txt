@@ -292,6 +292,7 @@ executable c2c
     ir/ref.c2
     ir/ref_list.c2
     ir/types.c2
+    ir/usage_counter.c2
 end
 
 executable c2tags

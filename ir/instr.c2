@@ -118,6 +118,11 @@ fn bool Instr.isCopy(const Instr* i) {
     return k == InstrKind.Copy;
 }
 
+fn bool Instr.isArithmetic(const Instr* i) @(unused) {
+    InstrKind k = i.getKind();
+    return k >= InstrKind.Add && k <= InstrKind.Shl;
+}
+
 fn bool Instr.isLoad(const Instr* i) {
     InstrKind k = i.getKind();
     return k >= InstrKind.Load1 && k <= InstrKind.Load8;

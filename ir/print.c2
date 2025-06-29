@@ -542,9 +542,9 @@ fn void dump_function_info(string_buffer.Buf* out, const FunctionInfo* info) @(u
     const Instr* instr = info.instructions.get(0);
     for (u32 i=0; i<info.instructions.getCount(); i++) {
         const Instr* r = &instr[i];
-        out.print("    [%3d] %7s", i, r.getKindName());
+        out.print("    [%3d] %c  %7s", i, r.hasResult() ? 'r' : ' ', r.getKindName());
         if (r.isPhi()) {
-            out.print("  clauses: start %d  count %d", r.phi_clauses.start, r.phi_clauses.count);
+            out.print("  clauses %d-%d", r.phi_clauses.start, r.phi_clauses.start + r.phi_clauses.count - 1);
         } else {
             out.print("  %8s %3d  ", r.args[0].getKindName(), r.args[0].value);
             out.print("  %8s %3d", r.args[01].getKindName(), r.args[1].value);
@@ -605,20 +605,24 @@ public fn void Context.dump(const Context* c) @(unused) {
     }
     out.newline();
 
-    out.print("constants: (%d)\n", c.constants.getCount());
-    for (u32 i=0; i<c.constants.getCount(); i++) {
-        const Constant* con = c.constants.get(i);
-        // TODO need to know type, for now print as ivalue
-        out.print("  [%2d] %d\n", i, con.ivalue);
+    if (c.constants.getCount()) {
+        out.print("constants: (%d)\n", c.constants.getCount());
+        for (u32 i=0; i<c.constants.getCount(); i++) {
+            const Constant* con = c.constants.get(i);
+            // TODO need to know type, for now print as ivalue
+            out.print("  [%2d] %d\n", i, con.ivalue);
+        }
+        out.newline();
     }
-    out.newline();
 
-    out.print("init values: (%d)\n", c.init_values.getCount());
-    for (u32 i=0; i<c.init_values.getCount(); i++) {
-        const InitValue* v = c.init_values.get(i);
-        out.print("  [%2d] %6s  %d\n", i, v.getKindName(), v.value);
+    if (c.init_values.getCount()) {
+        out.print("init values: (%d)\n", c.init_values.getCount());
+        for (u32 i=0; i<c.init_values.getCount(); i++) {
+            const InitValue* v = c.init_values.get(i);
+            out.print("  [%2d] %6s  %d\n", i, v.getKindName(), v.value);
+        }
+        out.newline();
     }
-    out.newline();
 
     stdio.puts(out.data());
     out.free();
