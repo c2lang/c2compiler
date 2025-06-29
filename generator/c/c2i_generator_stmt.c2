@@ -207,23 +207,10 @@ fn void Generator.emitStmt(Generator* gen, ast.Stmt* s, u32 indent, bool newline
         //gen.emitAsmStmt(cast<AsmStmt*>(s), indent);
         break;
     case Assert:
-#if 0
-        // TODO: generate actual assert statement?
         AssertStmt* a = cast<AssertStmt*>(s);
-        source_mgr.Location loc = gen.sm.getLocation(a.getLoc());
-        const char* funcname = gen.cur_function.asDecl().getFullName();
-
-        out.add("(");
-        Expr* inner = a.getInner();
-        gen.emitExpr(out, inner);
-        out.print(") || c2_assert(\"%s\", %d, \"%s\", \"", loc.filename, loc.line, funcname);
-        // encode expression as a string
-        string_buffer.Buf* str = string_buffer.create(128, false, 0);
-        inner.printLiteral(str);
-        out.encodeBytes(str.data(), str.size(), '"');
-        str.free();
-        out.add("\");\n");
-#endif
+        out.add("assert(");
+        gen.emitExpr(a.getInner());
+        out.add(");\n");
         break;
     }
 }
