@@ -99,6 +99,9 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
             if (v.hasAttrAutoLine() && !ref.isU32()) {  // check for 'u32'
                 ma.error(ref.getLoc(), "attribute 'auto_line' requires a parameter of type 'u32'");
             }
+            if (v.hasAttrAutoFunc() && !ref.isConstCharPtr()) { // check for 'const char *'
+                ma.error(ref.getLoc(), "attribute 'auto_func' requires a parameter of type 'const char*'");
+            }
         }
 
         if (v.hasPrintfFormat()) {

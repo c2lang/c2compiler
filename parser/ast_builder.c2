@@ -523,7 +523,7 @@ fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
     }
 }
 
-public fn void Builder.actOnParamAttr(Builder* b,
+public fn bool Builder.actOnParamAttr(Builder* b,
                                       VarDecl* d,
                                       u32 name,
                                       SrcLoc loc)
@@ -531,22 +531,33 @@ public fn void Builder.actOnParamAttr(Builder* b,
     AttrKind kind = attr.find(name);
     switch (kind) {
     case Unknown:
+        // TODO should be a warning
         b.diags.error(loc, "unknown attribute '%s'", ast.idx2name(name));
-        break;
+        return false;
     case PrintfFormat:
         d.setPrintfFormat();
-        break;
+        return true;
     case AutoFile:
+        if (d.hasAutoAttr()) goto invalid;
         d.setAttrAutoFile();
-        break;
+        return true;
     case AutoLine:
+        if (d.hasAutoAttr()) goto invalid;
         d.setAttrAutoLine();
-        break;
+        return true;
+    case AutoFunc:
+        if (d.hasAutoAttr()) goto invalid;
+        d.setAttrAutoFunc();
+        return true;
+    invalid:
+        b.diags.error(loc, "invalid combination of attributes");
+        return false;
     default:
         b.diags.error(loc, "attribute '%s' cannot be applied to function parameters",
-            ast.idx2name(name));
-        break;
+                      ast.idx2name(name));
+        return false;
     }
+    return false;
 }
 
 public fn void Builder.actOnAttr(Builder* b, attr.Attr* a) {
