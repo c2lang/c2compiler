@@ -157,10 +157,13 @@ fn void Generator.emitCNameMod(Generator* /*gen*/, string_buffer.Buf* out, const
         const char* cname = d.getCName();
         if (cname) {
             out.add(cname);
-        } else {
-            out.add(d.getName());
+            return;
         }
-        return;
+        QualType qt = d.getType();
+        if (!qt.isConst()) {
+            out.add(d.getName());
+            return;
+        }
     }
     out.add(mod.getName());
     out.add1('_');

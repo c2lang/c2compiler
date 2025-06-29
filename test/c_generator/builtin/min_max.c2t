@@ -1,0 +1,151 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+fn void foo_char() {
+    char min = char.min;
+    char max = char.max;
+}
+
+fn void foo_i8() {
+    i8 min = i8.min;
+    i8 max = i8.max;
+}
+
+fn void foo_i16() {
+    i16 min = i16.min;
+    i16 max = i16.max;
+}
+
+fn void foo_i32() {
+    i32 min = i32.min;
+    i32 max = i32.max;
+}
+
+fn void foo_i64() {
+    i64 min = i64.min;
+    i64 max = i64.max;
+}
+
+fn void foo_isize() {
+    isize min = isize.min;
+    isize max = isize.max;
+}
+
+fn void foo_u8() {
+    u8 min = u8.min;
+    u8 max = u8.max;
+}
+
+fn void foo_u16() {
+    u16 min = u16.min;
+    u16 max = u16.max;
+}
+
+fn void foo_u32() {
+    u32 min = u32.min;
+    u32 max = u32.max;
+}
+
+fn void foo_u64() {
+    u64 min = u64.min;
+    u64 max = u64.max;
+}
+
+fn void foo_usize() {
+    usize min = usize.min;
+    usize max = usize.max;
+}
+
+fn void foo_f32() {
+    f32 min = f32.min;
+    f32 max = f32.max;
+}
+
+fn void foo_f64() {
+    f64 min = f64.min;
+    f64 max = f64.max;
+}
+
+// @expect{atleast, cgen/build.c}
+
+static void test_foo_char(void)
+{
+   char min = char_min;
+   char max = char_max;
+}
+
+static void test_foo_i8(void)
+{
+   int8_t min = i8_min;
+   int8_t max = i8_max;
+}
+
+static void test_foo_i16(void)
+{
+   int16_t min = i16_min;
+   int16_t max = i16_max;
+}
+
+static void test_foo_i32(void)
+{
+   int32_t min = i32_min;
+   int32_t max = i32_max;
+}
+
+static void test_foo_i64(void)
+{
+   int64_t min = i64_min;
+   int64_t max = i64_max;
+}
+
+static void test_foo_isize(void)
+{
+   ssize_t min = isize_min;
+   ssize_t max = isize_max;
+}
+
+static void test_foo_u8(void)
+{
+   uint8_t min = u8_min;
+   uint8_t max = u8_max;
+}
+
+static void test_foo_u16(void)
+{
+   uint16_t min = u16_min;
+   uint16_t max = u16_max;
+}
+
+static void test_foo_u32(void)
+{
+   uint32_t min = u32_min;
+   uint32_t max = u32_max;
+}
+
+static void test_foo_u64(void)
+{
+   uint64_t min = u64_min;
+   uint64_t max = u64_max;
+}
+
+static void test_foo_usize(void)
+{
+   size_t min = usize_min;
+   size_t max = usize_max;
+}
+
+static void test_foo_f32(void)
+{
+   float min = f32_min;
+   float max = f32_max;
+}
+
+static void test_foo_f64(void)
+{
+   double min = f64_min;
+   double max = f64_max;
+}
