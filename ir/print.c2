@@ -56,7 +56,7 @@ type PrintHelper struct {
 }
 
 fn void PrintHelper.init(PrintHelper* ph, const Context* c) {
-    ph.out = string_buffer.create(16*1024, useColor(), 2);
+    ph.out = string_buffer.create(64*1024, useColor(), 2);
 
     // TODO print name of module
 
@@ -120,7 +120,7 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
     const Context* c = ph.c;
 
     if (!info) return;  // external symbol
-    //ph.c.dump_function(info, c.pool.idx2str(s.name));
+    //dump_function(info, c.pool.idx2str(s.name));
 
     ph.blocks = &info.blocks;
     ph.cur_info = info;
@@ -224,7 +224,7 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
 }
 
 fn void Context.print_function(const Context* c,
-                               SymbolId id,
+                               const Symbol* symbol,
                                const FunctionInfo* info,
                                const char* version) @(unused) {
     PrintHelper ph.init(c);
@@ -232,7 +232,7 @@ fn void Context.print_function(const Context* c,
     ph.out.add("------ ");
     ph.out.add(version);
     ph.out.add(" ------\n");
-    ph.print_func(c.symbols.get(id), info);
+    ph.print_func(symbol, info);
 
     ph.print();
     ph.free();
@@ -517,7 +517,7 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
 }
 
 
-fn void Context.dump_function(const Context* c, const FunctionInfo* info, const char* name) @(unused) {
+fn void dump_function(const FunctionInfo* info, const char* name) @(unused) {
     string_buffer.Buf* out = string_buffer.create(16*1024, false, 1);
     out.print("function %s:\n", name);
     dump_function_info(out, info);

@@ -94,3 +94,21 @@ fn Type FunctionInfo.getArg(const FunctionInfo* fi, u32 idx) {
     return cast<Type>(value);
 }
 
+fn Ref FunctionInfo.addPhiInstr(FunctionInfo* fi, const PhiCache* cache) {
+    Ref out.init(RefKind.Temp, fi.instructions.getCount());
+
+    u32 phi_start = fi.phis.addCache(cache);
+    Instr* ii = fi.instructions.add();
+    ii.initPhi(phi_start, cache.getCount());
+
+    // mark all source blocks as phi_source
+    const PhiClause* clauses = cache.getClauses();
+    for (u32 i=0; i<cache.getCount(); i++) {
+        BlockId blk_id = clauses[i].src;
+        Block* b = fi.blocks.get(blk_id);
+        b.phi_source = 1;
+    }
+
+    return out;
+}
+

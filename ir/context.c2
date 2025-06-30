@@ -28,6 +28,34 @@ import string;
 import stdio;
 #endif
 
+type Tools struct {
+    lookup_table.Table conversion;
+    SlotCollector collector;
+    RevList revlist;
+    instr_inserter.InstrInserter inserter;
+    bit_array.BitArray active_blocks;
+    CopyList copies;
+    usage_counter.Counter usage;
+}
+
+fn void Tools.init(Tools* t) {
+    t.conversion.init(64);
+    t.collector.create();
+    t.revlist.create(256);
+    t.inserter.create();
+    t.copies.init(1024);
+    t.usage.init(1024);
+}
+
+fn void Tools.free(Tools* t) {
+    t.usage.free();
+    t.copies.free();
+    t.inserter.free();
+    t.revlist.free();
+    t.collector.free();
+    t.conversion.free();
+}
+
 public type Context struct @(opaque) {
     // context stuff
     string_pool.Pool* pool;
@@ -35,6 +63,7 @@ public type Context struct @(opaque) {
     SymbolList symbols;
     InitValueList init_values;
 
+    // TODO extract to Builder builder
     // builder stuff, used during function generation (extract to builder?)
     bool in_block;
     u32 slot_idx;
@@ -45,17 +74,12 @@ public type Context struct @(opaque) {
     u32 blk_start_instr;    // used to note starting instruction
     bool block_terminated;
 
-    // only used during function generation / optimization
+    // used during both function generation and optimization
     index_list.List block_order;
-    lookup_table.Table conversion;
     FunctionInfo* tmp_info;
 
-    SlotCollector collector;
-    RevList revlist;
-    instr_inserter.InstrInserter inserter;
-    bit_array.BitArray active_blocks;
-    CopyList copies;
-    usage_counter.Counter usage;
+    // only used during optimization
+    Tools tools;
 }
 
 public fn Context* create() {
@@ -66,23 +90,14 @@ public fn Context* create() {
     c.init_values.init(128);
 
     c.block_order.init(64);
-    c.conversion.init(64);
-
     c.tmp_info = FunctionInfo.create(32, 64, 32);
-    c.collector.create();
-    c.revlist.create(256);
-    c.inserter.create();
-    c.copies.init(1024);
-    c.usage.init(1024);
+
+    c.tools.init();
     return c;
 }
 
 public fn void Context.free(Context* c) {
-    c.usage.free();
-    c.copies.free();
-    c.inserter.free();
-    c.revlist.free();
-    c.collector.free();
+    c.tools.free();
     for (u32 i=1; i<c.symbols.getCount(); i++) {
         const Symbol* s = c.symbols.get(i);
         if (s.is_function && s.f.info) {
@@ -90,7 +105,6 @@ public fn void Context.free(Context* c) {
         }
     }
     c.tmp_info.free();
-    c.conversion.free();
     c.block_order.free();
 
     c.init_values.free();
@@ -558,25 +572,24 @@ public fn void Context.setCase(Context* c, CaseId case_id, u32 value, BlockId bl
 
 fn void Context.finalizeFunction(Context* c, SymbolId id) {
     // prune unused blocks and flatten blocks with only a jmp instruction
-    Symbol* s = c.symbols.get(id);
-    //Function* f = c.functions.get(id);
+    Tools* t = &c.tools;
+    Symbol* symbol = c.symbols.get(id);
+
     u32 num_blocks = c.tmp_info.blocks.getCount();
     c.tmp_info.num_slots = cast<u16>(c.slot_idx);
 
-    const char* name = c.pool.idx2str(s.name);
+    const char* name = c.pool.idx2str(symbol.name);
     bool print = false;
     //print = true;
 
-    //c.dump_function(c.tmp_info, name);
-    // causes crash
-    if (print) c.print_function(id, c.tmp_info, "after generation");
+    //dump_function(c.tmp_info, name);
+    if (print) c.print_function(symbol, c.tmp_info, "after generation");
 
     // prune unused and empty blocks, possible convert jmp_if to jmp
-    c.checkDest(0);
+    checkDest(c.tmp_info, 0);
 
-    //c.dump_function(c.tmp_info, name);
-    // causes crash
-    if (print) c.print_function(id, c.tmp_info, "after check dest");
+    //dump_function(c.tmp_info, name);
+    if (print) c.print_function(symbol, c.tmp_info, "after check dest");
 
     // move used blocks to new list, drop unused blocks
 
@@ -590,13 +603,13 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     const u32* order = c.block_order.getFrom(0);
     assert(num_blocks == c.block_order.getCount());
     u32 blk_count = 0;
-    c.conversion.clear(num_blocks);   // NOTE: potentially large memset
+    t.conversion.clear(num_blocks);   // NOTE: potentially large memset
     for (u32 i=0; i<num_blocks; i++) {
         BlockId bid = order[i];
         const Block* b = c.tmp_info.blocks.get(bid);
         if (!b.used) continue;
         fi2.blocks.copy(b);
-        c.conversion.set(bid, blk_count);
+        t.conversion.set(bid, blk_count);
         //stdio.printf("BLOCK MOVE %d -> %d\n", bid, blk_count);
         blk_count++;
     }
@@ -604,12 +617,12 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     // convert block dests (old -> new)
     Block* new_blks = fi2.blocks.get(0);
 #if 0
-    if (c.conversion.get(0) != 0) {
-        c.dump_function(c.tmp_info, name);
-        c.conversion.dump();
+    if (t.conversion.get(0) != 0) {
+        dump_function(c.tmp_info, name);
+        t.conversion.dump();
     }
 #endif
-    assert(c.conversion.get(0) == 0);   // block 0 should never move
+    assert(t.conversion.get(0) == 0);   // block 0 should never move
     for (u32 i=0; i<blk_count; i++) {
         Block* b = &new_blks[i];
         if (b.end_with_switch) {
@@ -617,20 +630,20 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
             u32 num_cases = b.dests[1];
             for (u32 j=0; j<num_cases; j++) {
                 Case* cs = c.tmp_info.cases.get(case_id+j);
-                cs.block = c.conversion.get(cs.block);
+                cs.block = t.conversion.get(cs.block);
             }
         } else {
-            b.dests[0] = c.conversion.get(b.dests[0]);
-            b.dests[1] = c.conversion.get(b.dests[1]);
+            b.dests[0] = t.conversion.get(b.dests[0]);
+            b.dests[1] = t.conversion.get(b.dests[1]);
         }
     }
     // also update block ids in phi clauses
     for (u32 i=0; i<c.tmp_info.phis.getCount(); i++) {
         PhiClause* pc = c.tmp_info.phis.get(i);
-        pc.src = c.conversion.get(pc.src);
+        pc.src = t.conversion.get(pc.src);
     }
 
-    //c.dump_function(c.tmp_info, name);
+    //dump_function(c.tmp_info, name);
 
     // Note: for now just copy all refs
     // TODO remove unused refs
@@ -647,7 +660,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     // convert Ref.Temp to new index since intermediate blocks/instructions could have been removed
     const Instr* i_old = c.tmp_info.instructions.get(0);
     //stdio.printf("INSTR COUNT %d\n", c.tmp_info.instructions.getCount());
-    c.conversion.clear(c.tmp_info.instructions.getCount());
+    t.conversion.clear(c.tmp_info.instructions.getCount());
     u32 i_index = 0;
     for (u32 i=0; i<blk_count; i++) {
         Block* b = &new_blks[i];
@@ -658,17 +671,17 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
         for (u32 j=i_start; j<i_start+i_count; j++) {
             Instr* is = fi2.instructions.add();
             is.copy(&i_old[j]);
-            c.conversion.set(j, i_index);
+            t.conversion.set(j, i_index);
             Ref* r = &is.args[0];
-            if (r.isTemp()) r.value = c.conversion.get(r.value);
+            if (r.isTemp()) r.value = t.conversion.get(r.value);
             r = &is.args[1];
-            if (r.isTemp()) r.value = c.conversion.get(r.value);
+            if (r.isTemp()) r.value = t.conversion.get(r.value);
             else if (r.isRefList()) { // can only occur on args[1]
                 Ref* refs = fi2.refs.get(r.value);
                 u32 idx = 0;
                 while (1) {
                     Ref* r2 = &refs[idx];
-                    if (r2.isTemp()) r2.value = c.conversion.get(r2.value);
+                    if (r2.isTemp()) r2.value = t.conversion.get(r2.value);
                     if (!r2.isValid()) break;
                     idx++;
                 }
@@ -680,39 +693,39 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     // update refs used inside Phi instructions
     for (u32 i=0; i<fi2.phis.getCount(); i++) {
         PhiClause* pc = fi2.phis.get(i);
-        if (pc.ref.isTemp()) pc.ref.value = c.conversion.get(pc.ref.value);
+        if (pc.ref.isTemp()) pc.ref.value = t.conversion.get(pc.ref.value);
     }
 
-    s.f.info = fi2;
+    symbol.f.info = fi2;
     c.tmp_info.clear();
     c.block_order.clear();
 
-    //c.dump_function(fi2, name);
+    //dump_function(fi2, name);
     //c.generate_graphviz(fi2, name);
-    if (print) c.print_function(id, fi2, "after reorder");
+    if (print) c.print_function(symbol, fi2, "after reorder");
 
-    c.create_ssa(id, fi2, name, print);
+    c.create_ssa(symbol, fi2, name, print);
 
-    if (print) c.print_function(id, fi2, "after create SSA");
+    if (print) c.print_function(symbol, fi2, "after create SSA");
 
-    if (c.inserter.needsFixup()) {
-        c.fixup_function(fi2);
-        if (print) c.print_function(id, fi2, "after fixup");
+    if (t.inserter.needsFixup()) {
+        c.tools.fixup_function(fi2);
+        if (print) c.print_function(symbol, fi2, "after fixup");
     }
 
-    c.eliminateCopies(fi2);
-    //c.dump_function(fi2, name);
-    if (print) c.print_function(id, fi2, "after eliminate copies");
+    t.eliminateCopies(fi2);
+    //dump_function(fi2, name);
+    if (print) c.print_function(symbol, fi2, "after eliminate copies");
 
 
     //c.propagateConstants(fi2);
-    //if (print) c.print_function(id, fi2, "after propagate constants");
-    c.fillUsage(fi2);
-    //if (print) c.print_function(id, fi2, "after fill usage");
+    //if (print) c.print_function(symbol, fi2, "after propagate constants");
+    t.fillUsage(fi2);
+    //if (print) c.print_function(symbol, fi2, "after fill usage");
 
 
-    c.removeNone(fi2);
-    if (print) c.print_function(id, fi2, "after remove none");
+    t.removeNone(fi2);
+    if (print) c.print_function(symbol, fi2, "after remove none");
 }
 
 fn bool empty_block(const Block* b, const InstrList* instructions) {
@@ -729,8 +742,8 @@ fn bool empty_block(const Block* b, const InstrList* instructions) {
 }
 
 // uses tmp_info! TODO could also just use cur_info (points to current)
-fn BlockId Context.checkDest(Context* c, BlockId id) {
-    Block* b = c.tmp_info.blocks.get(id);
+fn BlockId checkDest(FunctionInfo* fi, BlockId id) {
+    Block* b = fi.blocks.get(id);
 
     if (b.checked) {
         if (b.used) return id;  // avoid circular loops
@@ -744,8 +757,8 @@ fn BlockId Context.checkDest(Context* c, BlockId id) {
         CaseId case_id = b.dests[0];
         u32 num_cases = b.dests[1];
         for (u32 i=0; i<num_cases; i++) {
-            Case* cs = c.tmp_info.cases.get(case_id+i);
-            BlockId new_blk = c.checkDest(cs.block);
+            Case* cs = fi.cases.get(case_id+i);
+            BlockId new_blk = checkDest(fi, cs.block);
             if (cs.block != new_blk) cs.block = new_blk;
         }
         return id;
@@ -756,8 +769,8 @@ fn BlockId Context.checkDest(Context* c, BlockId id) {
         return id;
     }
 
-    if (!b.phi_source && id != 0 && empty_block(b, &c.tmp_info.instructions)) {
-        BlockId new_blk = c.checkDest(b.dests[0]);
+    if (!b.phi_source && id != 0 && empty_block(b, &fi.instructions)) {
+        BlockId new_blk = checkDest(fi, b.dests[0]);
         if (new_blk == id) {
             b.used = true;
             b.dests[0] = id;    // create circular loop
@@ -770,15 +783,15 @@ fn BlockId Context.checkDest(Context* c, BlockId id) {
 
     b.used = true;
     if (b.dests[0]) {
-        b.dests[0] = c.checkDest(b.dests[0]);
+        b.dests[0] = checkDest(fi, b.dests[0]);
     }
     if (b.dests[1]) {
-        b.dests[1] = c.checkDest(b.dests[1]);
+        b.dests[1] = checkDest(fi, b.dests[1]);
     }
 
     if (b.dests[0] == b.dests[1]) {
         // both jumps go to same dest, convert cmp + jmp_if -> jmp
-        Instr* last = c.tmp_info.instructions.get(b.instr.start + b.instr.count -1);
+        Instr* last = fi.instructions.get(b.instr.start + b.instr.count -1);
         Ref ref.init(RefKind.JmpDest, id);
         last.init1(InstrKind.Jmp, ref);
         b.dests[1] = 0;
