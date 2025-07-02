@@ -24,6 +24,7 @@ import yaml;
 
 import stdlib;
 import stdio local;
+import string local;
 
 fn const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
     const yaml.Node* node = parser.findNode(path);
@@ -69,6 +70,10 @@ fn bool getYamlInfo(yaml.Parser* parser,
     }
 
     comp.setKind(kind_static, kind_dynamic);
+
+    const char* language = parser.getScalarValue("info.language");
+    // component is foreign unless language is specified as c2 or native
+    comp.setForeign(!language || (strcasecmp(language, "c2") && strcasecmp(language, "native")));
 
     iter = parser.getNodeChildIter(modulesNode);
     while (!iter.done()) {

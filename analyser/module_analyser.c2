@@ -563,7 +563,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
                 return;
             }
         } else {
-            if (!init_expr) {
+            if (!init_expr && !d.isExternal()) {
                 ma.error(d.getLoc(), "array-type variable '%s' needs an explicit size or an initializer", d.getFullName());
                 return;
             }

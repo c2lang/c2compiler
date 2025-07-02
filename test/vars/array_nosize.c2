@@ -1,6 +1,17 @@
+// @warnings{no-unused}
 module test;
+
+import c2_test;
 
 fn void test1() {
     i32[] a;    // @error{array-type variable 'a' needs an explicit size or an initializer}
+}
+
+fn void test2() {
+    u32 count = elemsof(c2_test.test_array);    // @error{elemsof cannot be used on arrays of unknown length}
+}
+
+fn void test3() {
+    u32 size = sizeof(c2_test.test_array);    // @error{sizeof cannot be used on arrays of unknown length}
 }
 

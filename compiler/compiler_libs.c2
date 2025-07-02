@@ -113,7 +113,9 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
     for (u32 i=0; i<mods.length(); i++) {
         u32 mod_name = mods.get_idx(i);
         ast.Module* m = comp.getOrAddModule(mod_name);
-        if (!m) {
+        if (m) {
+            m.setForeign(comp.getForeign());
+        } else {
             m = c.allmodules.find(mod_name);
             Component* other = c.find_component(m);
             assert(other);

@@ -187,9 +187,9 @@ fn void Generator.emitStmt(Generator* gen, ast.Stmt* s, u32 indent, bool newline
             VarDecl* vd = ds.getDecl(i);
             Decl* d = cast<Decl*>(vd);
 
-            //if (vd.hasLocalQualifier()) out.add("local ");
             if (i == 0) {
-                gen.emitTypeRef(vd.getTypeRef());
+                if (vd.hasLocalQualifier()) out.add("local ");
+                gen.emitType(d.getType());
             } else {
                 out.add1(',');
             }

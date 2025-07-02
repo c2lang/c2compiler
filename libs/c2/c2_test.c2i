@@ -1,0 +1,4 @@
+module c2_test;
+
+// array declaration with unknown length
+char[] test_array;

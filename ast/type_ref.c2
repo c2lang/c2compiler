@@ -332,7 +332,7 @@ public fn Expr** TypeRef.getArray2(TypeRef* r, u32 idx) {
     return &arrays[idx];
 }
 
-public fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool print_prefix, bool decay) {
+fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool print_prefix) {
     if (r.isConst()) out.add("const ");
     if (r.isVolatile()) out.add("volatile ");
 
@@ -350,25 +350,18 @@ public fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bo
 
     for (u32 i=0; i<r.flags.num_ptrs; i++) out.add1('*');
 
-    // note: convert arrays into pointers
-    if (r.flags.incr_array) out.add("*");
+    if (r.flags.incr_array) out.add("[+]");
 
-    if (decay) {
-        // TODO: this seems incorrect: char[10][10] does not decay as char**
-        for (u32 i = 0; i < r.flags.num_arrays; i++) {
-            out.add("*");
-        }
-    } else {
-        for (u32 i = 0; i < r.flags.num_arrays; i++) {
-            out.add1('[');
-            const Expr* a = r.getArray(i);
-            // note: a can be nil, when[]
-            if (a) a.printLiteral(out);
-            out.add1(']');
-        }
+    for (u32 i = 0; i < r.flags.num_arrays; i++) {
+        out.add1('[');
+        const Expr* a = r.getArray(i);
+        // note: a can be nil, when[]
+        if (a) a.printLiteral(out);
+        out.add1(']');
     }
 }
 
+#if 0
 public type ExprPrinter fn void(void* arg, const Expr* e, string_buffer.Buf* out);
 
 // Prints arrays as arrays
@@ -390,16 +383,22 @@ public fn void TypeRef.printLiteral2(const TypeRef* r, string_buffer.Buf* out, b
 
     for (u32 i=0; i<r.flags.num_ptrs; i++) out.add1('*');
 
-    if (r.flags.incr_array) out.add("*");
+    if (r.flags.incr_array) out.add("[+]");
 
     for (u32 i=0; i<r.flags.num_arrays; i++) {
         out.add1('[');
         const Expr* a = r.getArray(i);
         // note: a can be nil, when[]
-        if (a) print_expr(arg, a, out);
+        if (a) {
+            if (print_expr)
+                print_expr(arg, a, out);
+            else
+                a.printLiteral(out);
+        }
         out.add1(']');
     }
 }
+#endif
 
 fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
     // eg. const test.Foo*[10]

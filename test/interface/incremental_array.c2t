@@ -17,12 +17,12 @@ public const u32 Size = elemsof(b);
 // @expect{complete, aa.c2i}
 module aa;
 
-i32* b;
+i32[3] b;
 
 const u32 Size = 3;
 
 // @expect{atleast, aa.h}
-extern int32_t* aa_b;
+extern int32_t aa_b[3];
 
 #define aa_Size 3
 

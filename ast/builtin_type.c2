@@ -248,7 +248,7 @@ fn bool BuiltinType.isVoid(const BuiltinType* b) {
     return b.base.builtinTypeBits.kind == BuiltinKind.Void;
 }
 
-fn const char* BuiltinType.kind2str(const BuiltinType* b) {
+public fn const char* BuiltinType.kind2str(const BuiltinType* b) {
     return builtinType_names[b.getKind()];
 }
 

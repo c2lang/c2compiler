@@ -30,7 +30,7 @@ import test2;
 const u32 Max = 3;
 
 fn void myfunc(const test2.Point* p) {
-   test2.Point[Max] points;
+   test2.Point[3] points;
    points[1] = *p;
 }
 
