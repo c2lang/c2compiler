@@ -1,7 +1,7 @@
 
 info:
 #    name: "C2 library"
-    language: c2
+    language: c
     type: library
     kinds:
         - static
@@ -22,3 +22,4 @@ modules:
     - f32
     - f64
     - varargs
+    - c2_test
