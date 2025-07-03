@@ -1398,7 +1398,7 @@ const char[] C2_strswitch =
             for (unsigned i = 0;; i++) {
                 if (i == len) {
                     if (s1[i] == '\0')
-                        goto done;
+                        return idx;
                     break;
                 }
                 if (s1[i] != s2[i])
@@ -1407,7 +1407,6 @@ const char[] C2_strswitch =
             s2 += len;
             idx++;
         }
-    done:
         return idx;
     }
     ```;

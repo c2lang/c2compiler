@@ -29,6 +29,13 @@ fn void test2(char* str) {
     }
 }
 
+fn void test3(char* str) {
+    switch (str) {
+    case "\n":
+        break;
+    }
+}
+
 public fn i32 main(i32 argc, const char** argv) {
     return 0;
 }
@@ -59,8 +66,16 @@ static int32_t test_test1(char* str)
 
 static void test_test2(char* str)
 {
-   switch (c2_strswitch(str,nil)) {
+   switch (c2_strswitch(str, "")) {
    case 0: // nil
+      break;
+   }
+}
+
+static void test_test3(char* str)
+{
+   switch (c2_strswitch(str, "\001\n")) {
+   case 2: // "\n"
       break;
    }
 }

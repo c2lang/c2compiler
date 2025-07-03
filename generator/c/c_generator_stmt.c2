@@ -344,7 +344,7 @@ fn void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
     if (sw.isString()) {
         out.add("switch (c2_strswitch(");
         gen.emitExpr(out, sw.getCond());
-        out.add(",");
+        out.add1(',');
         bool has_s2 = false;
         for (u32 i = 0; i < num_cases; i++) {
             SwitchCase* c = cases[i];
@@ -359,9 +359,13 @@ fn void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
                 continue;
             if (e.isStringLiteral()) {
                 StringLiteral* lit = cast<StringLiteral*>(e);
-                const char *p = lit.getText();
-                if (*p) {
-                    out.print(" \"\\%03o%s\"", (lit.getSize() - 1) & 0xFF, p);
+                const char *str = lit.getText();
+                u32 slen = (lit.getSize() - 1) & 0xFF;
+                if (slen) {
+                    // only encode non emty strings, empty string has index 1
+                    out.print(" \"\\%03o", slen);
+                    out.encodeBytes(str, slen, '"');
+                    out.add1('"');
                     has_s2 = true;
                 }
             } else {
@@ -369,7 +373,7 @@ fn void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
                 assert(0);
             }
         }
-        if (!has_s2) out.add("nil");
+        if (!has_s2) out.add(" \"\"");
         out.add(")) {\n");
 
         u32 lab = 2;
@@ -411,14 +415,16 @@ fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) 
             } else
             if (e.isStringLiteral()) {
                 StringLiteral* lit = cast<StringLiteral*>(e);
-                const char *p = lit.getText();
-                if (*p) {
-                    out.print("%d:", *lab);
-                    out.print(" // \"%s\"", p);
+                const char *str = lit.getText();
+                u32 slen = (lit.getSize() - 1) & 0xFF;
+                u32 num = 1;
+                if (slen) {
+                    num = *lab;
                     *lab += 1;
-                } else {
-                    out.add("1: // \"\"");
                 }
+                out.print("%d: // \"", num);
+                out.encodeBytes(str, slen, '"');
+                out.add1('"');
             } else {
                 e.dump();
                 assert(0);
