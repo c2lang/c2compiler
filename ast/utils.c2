@@ -114,6 +114,7 @@ public type Globals struct @(opaque) {
 #if AstStatistics
     Stats stats;
 #endif
+    const char*[15] colors;
 }
 
 // The only globals for AST are here, since they must be set explicitly for plugins!!
@@ -124,11 +125,25 @@ public QualType* builtins;
 public fn Globals* getGlobals() { return globals; }
 
 // only used by plugins
-public fn void setGlobals(Globals* g) @(unused){
+public fn void setGlobals(Globals* g) @(unused) {
     globals = g;
     attr.initialize(g.attr_name_indexes);
+    col_Normal     = g.colors[0];
+    col_Error      = g.colors[1];
+    col_Warning    = g.colors[2];
+    col_Keyword    = g.colors[3];
+    col_Identifier = g.colors[4];
+    col_Literal    = g.colors[5];
+    col_Comment    = g.colors[6];
+    col_Stmt       = g.colors[7];
+    col_Decl       = g.colors[8];
+    col_Expr       = g.colors[9];
+    col_Attr       = g.colors[10];
+    col_Template   = g.colors[11];
+    col_Type       = g.colors[12];
+    col_Value      = g.colors[13];
+    col_Calc       = g.colors[14];
 }
-
 
 // wordsize in bytes, must NOT be called from Plugin!
 public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, bool use_color) {
@@ -181,6 +196,22 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
 
     attr.register(astPool, globals.attr_name_indexes);
     attr.initialize(globals.attr_name_indexes);
+
+    globals.colors[0]  = col_Normal     = color.getConfigColor("normal", color.Normal);
+    globals.colors[1]  = col_Error      = color.getConfigColor("error", color.Red);
+    globals.colors[2]  = col_Warning    = color.getConfigColor("warning", color.Yellow);
+    globals.colors[3]  = col_Keyword    = color.getConfigColor("keyword", color.Green);
+    globals.colors[4]  = col_Identifier = color.getConfigColor("identifier", color.Cyan);
+    globals.colors[5]  = col_Literal    = color.getConfigColor("literal", color.Cyan);
+    globals.colors[6]  = col_Comment    = color.getConfigColor("comment", color.Cyan);
+    globals.colors[7]  = col_Stmt       = color.getConfigColor("ast.stmt", color.Bmagenta);
+    globals.colors[8]  = col_Decl       = color.getConfigColor("ast.decl", color.Bgreen);
+    globals.colors[9]  = col_Expr       = color.getConfigColor("ast.expr", color.Bmagenta);
+    globals.colors[10] = col_Attr       = color.getConfigColor("ast.attr", color.Blue);
+    globals.colors[11] = col_Template   = color.getConfigColor("ast.template", color.Green);
+    globals.colors[12] = col_Type       = color.getConfigColor("ast.type", color.Green);
+    globals.colors[13] = col_Value      = color.getConfigColor("ast.value", color.Bcyan);
+    globals.colors[14] = col_Calc       = color.getConfigColor("ast.calc", color.Yellow);    // all calculated values
 }
 
 public fn void deinit(bool print_stats) {
@@ -196,6 +227,7 @@ public fn void deinit(bool print_stats) {
     globals.string_types.clear();
     stdlib.free(globals);
     stdlib.free(builtins);
+    // TODO: free allocated config colors
 }
 
 public fn u32 getWordSize() {
@@ -297,17 +329,22 @@ public fn QualType getNativeType() {
     return builtins[kind];
 }
 
+public const char* col_Normal = color.Normal;
+public const char* col_Error = color.Red;
+public const char* col_Warning = color.Yellow;
+public const char* col_Keyword = color.Green;
+public const char* col_Identifier = color.Cyan;
+public const char* col_Literal = color.Cyan;
+public const char* col_Comment = color.Cyan;
+
 const char* col_Stmt = color.Bmagenta;
 const char* col_Decl = color.Bgreen;
 const char* col_Expr = color.Bmagenta;
 const char* col_Attr = color.Blue;
 const char* col_Template = color.Green;
-//const char* col_Cast = color.Red;
 const char* col_Type = color.Green;
 const char* col_Value = color.Bcyan;
-const char* col_Error = color.Red;
 const char* col_Calc = color.Yellow;    // all calculated value
-const char* col_Normal = color.Normal;
 
 public type AttrHandlerFn fn bool (void* arg, Decl* d, const attr.Attr* a);
 
