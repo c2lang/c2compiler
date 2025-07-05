@@ -751,6 +751,8 @@ fn Value Value.castAs(const Value* v, QualType qt) {
     qt = qt.getCanonicalType();
     if (qt.isEnum())
         qt = qt.getEnum().getImplType();
+    if (qt.isPointer())
+        return result;
     assert(qt.isBuiltin());
     BuiltinType* bi = qt.getBuiltin();
     switch (result.kind) {  // @@@
