@@ -1,9 +1,15 @@
 // @warnings{no-unused}
 module test;
 
-fn void log1(u32 line @(auto_line, auto_file)) {    // @error{attribute 'auto_file' requires a parameter of type 'const char*'}
+// These errors occur at parse time
+fn void log1(u32 line @(auto_line, auto_file)) {    // @error{invalid combination of attributes}
 }
 
-fn void log2(const char* line @(auto_line, auto_file)) {    // @error{attribute 'auto_line' requires a parameter of type 'u32'}
+fn void log2(const char* line @(auto_line, auto_file)) {    // @error{invalid combination of attributes}
 }
 
+fn void log3(const char* line @(auto_file, auto_func)) {    // @error{invalid combination of attributes}
+}
+
+fn void log4(const char* line @(auto_file, auto_line, auto_func)) {    // @error{invalid combination of attributes}
+}
