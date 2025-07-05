@@ -17,8 +17,6 @@ module ir_generator;
 
 import ast local;
 import ir local;
-//import ir_gen_locals local;
-//import ctv_analyser;
 
 fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     const MemberExpr* m = cast<MemberExpr*>(e);
@@ -48,21 +46,6 @@ fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) 
 
     assert(kind == IdentifierKind.StructMember);
 next:
-    {}
-#if 0
-    if (m.hasExpr()) {
-        const Expr* base = m.getExprBase();
-        base.dump();
-    }
-    for (u32 i=0; i<m.getNumRefs(); i++) {
-        Decl* d = m.getDecl(i);
-        QualType qt = d.getType();
-        bool needs_deref = qt.isPointer();
-        stdio.printf("REF[%d/%d] %d\n", i, m.getNumRefs(), needs_deref);
-        d.dump();
-    }
-#endif
-
     // base
     ir.Ref base_ref;
     QualType base_type;
@@ -105,9 +88,15 @@ next:
         }
         assert(dd);
 
-        if (offset != 0) {
-            ir.Ref offset_ref = c.addIntegerConstant(offset);
-            base_ref = c.addBinaryInstr(InstrKind.Add, base_ref, offset_ref);
+        if (dd.isBitfield()) {
+            // TODO should know if LHS/RHS (or both) for bitfield
+            //dd.dump();
+            // TODO need offset + size + base-type
+        } else {
+            if (offset != 0) {
+                ir.Ref offset_ref = c.addIntegerConstant(offset);
+                base_ref = c.addBinaryInstr(InstrKind.Add, base_ref, offset_ref);
+            }
         }
 
         base_type = d.getType();

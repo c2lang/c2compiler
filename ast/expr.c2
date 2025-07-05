@@ -335,6 +335,12 @@ public fn void Expr.copyValType(Expr* e, const Expr* other) {
     e.base.exprBits.valtype = other.base.exprBits.valtype;
 }
 
+public fn bool Expr.isBitfield(const Expr* e) {
+    if (!e.isMember()) return false;
+    const MemberExpr* m = (MemberExpr*)e;
+    return m.isBitfield();
+}
+
 public fn SrcLoc Expr.getLoc(const Expr* e) { return e.base.loc; }
 
 public fn SrcLoc Expr.getStartLoc(const Expr* e) {

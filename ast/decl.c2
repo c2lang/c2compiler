@@ -155,6 +155,12 @@ public fn bool Decl.isGlobal(const Decl* d) {
     return vd.isGlobal() || vd.isStructMember();
 }
 
+public fn bool Decl.isBitfield(const Decl* d) {
+    if (!d.isVarDecl()) return false;
+    const VarDecl* vd = (VarDecl*)d;
+    return vd.isBitField();
+}
+
 public fn void Decl.setAttrUnused(Decl* d) { d.declBits.attr_unused = 1; }
 
 public fn bool Decl.hasAttrUnused(const Decl* d) { return d.declBits.attr_unused; }

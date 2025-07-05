@@ -39,6 +39,7 @@ type MemberExprBits struct {
     u32 is_static_sf : 1;
     u32 is_const_base : 1;
     u32 conversion : 2; // MemberConversion
+    u32 is_bitfield : 1;
 }
 
 /*
@@ -194,6 +195,14 @@ public fn bool MemberExpr.isTypeFunc(const MemberExpr* e) {
     return e.base.base.memberExprBits.is_struct_func;
 }
 
+public fn void MemberExpr.setBitfield(MemberExpr* e) {
+    e.base.base.memberExprBits.is_bitfield = 1;
+}
+
+fn bool MemberExpr.isBitfield(const MemberExpr* e) {
+    return e.base.base.memberExprBits.is_bitfield;
+}
+
 public fn void MemberExpr.setIsStaticTypeFunc(MemberExpr* e) {
     e.base.base.memberExprBits.is_static_sf = 1;
 }
@@ -279,6 +288,7 @@ fn void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent
     else out.color(col_Attr);
     out.add(identifierKind_names[kind]);
     out.color(col_Attr);
+    if (e.isBitfield()) out.add(" bitfield");
     if (e.isTypeFunc()) out.add(" TF");
     if (e.isStaticTypeFunc()) out.add(" STF");
     if (e.isConstBase()) out.add(" const-base");

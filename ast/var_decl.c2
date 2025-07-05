@@ -163,6 +163,12 @@ public fn bool VarDecl.isGlobal(const VarDecl* d) {
     return d.getKind() == VarDeclKind.GlobalVar;
 }
 
+fn bool VarDecl.isBitField(const VarDecl* d) {
+    VarDeclKind k = d.getKind();
+    if (k != VarDeclKind.StructMember) return false;
+    return d.base.varDeclBits.has_init_or_bitfield;
+}
+
 public fn bool VarDecl.isLocal(const VarDecl* d) {
     return d.getKind() == VarDeclKind.LocalVar;
 }
