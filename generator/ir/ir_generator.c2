@@ -125,7 +125,7 @@ fn const char* Generator.createSymbolName(Generator* gen, const Decl* d) {
     string_buffer.Buf* out = gen.name_buf;
     out.clear();
 
-    if (d.isExternal()) {
+    if (d.isExternal() && d.getModule().isForeign()) {
         const char* cname = d.getCName();
         if (cname) {
             out.add(cname);

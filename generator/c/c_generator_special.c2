@@ -162,7 +162,10 @@ fn void Generator.createMakefile(Generator* gen,
                 // special case for static libc
                 if (c.getNameIdx() == libc_name) out.add(" --static");
             }
-            if (linkname) out.print(" -l%s", linkname);
+            if (linkname) {
+                out.print(" -L../../%s", linkname);
+                out.print(" -l%s", linkname);
+            }
         }
         out.add(" $(LDFLAGS2)\n");
         out.newline();
@@ -186,7 +189,7 @@ fn void Generator.createMakefile(Generator* gen,
         out.print("../%s: $(objects) $(headers)\n", target_name);
 
         if (gen.targetInfo.sys == target_info.System.Darwin) {
-            out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s $(LDFLAGS2)\n", target_name);
+            out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o $$(dirname $$(pwd))/%s $(LDFLAGS2)\n", target_name);
         } else {
             out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n",
                 target_name, target_name);

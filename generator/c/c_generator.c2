@@ -153,7 +153,7 @@ fn void Generator.emitCName(Generator* gen, string_buffer.Buf* out, const Decl* 
 }
 
 fn void Generator.emitCNameMod(Generator* /*gen*/, string_buffer.Buf* out, const Decl* d, Module* mod) {
-    if (d.isExternal()) {
+    if (d.isExternal() && d.getModule().isForeign()) {
         const char* cname = d.getCName();
         if (cname) {
             out.add(cname);
@@ -264,17 +264,6 @@ const char*[] builtinType_cnames = {
 
 static_assert(elemsof(BuiltinKind), elemsof(builtinType_cnames));
 
-fn void Generator.emitGlobalVarTypePre(Generator* gen, string_buffer.Buf* out, QualType qt) {
-    if (gen.cur_external && qt.isArray()) {
-        // convert to pointer
-        ArrayType* at = cast<ArrayType*>(qt.getType());
-        gen.emitGlobalVarTypePre(out, at.getElemType());
-        out.add1('*');
-    } else {
-        gen.emitTypePre(out, qt);
-    }
-}
-
 fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType qt) {
     Decl* decl = nil;
 
@@ -322,12 +311,6 @@ fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType q
     }
 
     gen.emitCNameMod(out, decl, decl.getModule());
-}
-
-fn void Generator.emitGlobalVarTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
-    if (!qt.isArray()) return;
-    if (gen.cur_external) return;
-    gen.emitTypePost(out, qt);
 }
 
 fn void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
@@ -526,10 +509,29 @@ fn void Generator.emitConstExpr(Generator* gen, string_buffer.Buf* out, Expr* e)
     gen.need_const_expr--;
 }
 
+fn void Generator.emitGlobalVarDeclCommon(Generator* gen, string_buffer.Buf* out, Decl* d) {
+    const char* cdef = d.getCDef();
+    if (cdef) {
+        out.add(cdef);
+    } else {
+        QualType qt = d.getType();
+        gen.emitTypePre(out, qt);
+        out.space();
+        gen.emitCName(out, d);
+        gen.emitTypePost(out, qt);
+    }
+    VarDecl* vd = cast<VarDecl*>(d);
+    if (vd.hasAttrWeak()) out.add(" __attribute__((weak))");
+
+    const char* section = d.getSection();
+    if (section) {
+        out.space();
+        gen.emitSectionAttr(out, section);
+    }
+}
+
 fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl* d) {
     VarDecl* vd = cast<VarDecl*>(d);
-
-    QualType qt = d.getType();
 
     // emit 'simple'-constants as a defines
     if (emitAsDefine(vd)) {
@@ -554,65 +556,37 @@ fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl
     */
 
     bool emit_header = gen.fast_build && d.isPublic();
+    if (emit_header) {
+        // generate extern declaration to header file
+        Fragment* f = gen.getFragment();
+        f.buf.add("extern ");
+        gen.emitGlobalVarDeclCommon(f.buf, d);
+        f.buf.add(";\n");
+        gen.addFragment(f, true);
+    }
 
     if (gen.cur_external) {
+        // generate extern declaration for interface file
         out.add("extern ");
-    } else {
+        gen.emitGlobalVarDeclCommon(out, d);
+        out.add(";\n");
+        return false;    // put this part in .c file
+    }
+
+    if (!d.isExternal()) {
+        // generate definition to c file
         if (!d.isExported() && !emit_header) out.add("static ");
-    }
-
-    const char* cdef = d.getCDef();
-    if (cdef) {
-        out.add(cdef);
-    } else {
-        gen.emitGlobalVarTypePre(out, qt);
-        out.space();
-        gen.emitCName(out, d);
-        gen.emitGlobalVarTypePost(out, qt);
-    }
-    if (vd.hasAttrWeak()) out.add(" __attribute__((weak))");
-
-    const char* section = d.getSection();
-    if (section) {
-        out.space();
-        gen.emitSectionAttr(out, section);
-    }
-
-    if (!gen.cur_external) {
+        gen.emitGlobalVarDeclCommon(out, d);
         out.add(" = ");
         Expr* ie = vd.getInit();
         if (ie) {
             gen.emitConstExpr(out, ie);
         } else {
-            // auto-initialize
-            gen.emitAutoInit(out, qt);
+            // auto-initialize (only required for embedded targets)
+            gen.emitAutoInit(out, d.getType());
         }
+        out.add(";\n\n");
     }
-    out.add(";\n\n");
-
-    if (emit_header) {
-        Fragment* f = gen.getFragment();
-        out = f.buf;
-
-        out.add("extern ");
-        if (cdef) {
-            out.add(cdef);
-        } else {
-            gen.emitGlobalVarTypePre(out, qt);
-            out.space();
-            gen.emitCName(out, d);
-            gen.emitGlobalVarTypePost(out, qt);
-        }
-        if (vd.hasAttrWeak()) out.add(" __attribute__((weak))");
-
-        if (section) {
-            out.space();
-            gen.emitSectionAttr(out, section);
-        }
-        out.add(";\n");
-        gen.addFragment(f, true);
-    }
-
     return false;    // put this part in .c file
 }
 
@@ -682,6 +656,7 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
         string_buffer.Buf* out = gen.getBuf(d.isPublic());
         gen.gen_func_proto(fd, out);
         if (fd.isInline()) {
+            d.setGenerated();  // for recursive inline functions
             out.newline();
             string_buffer.Buf* saved = gen.out;
             gen.out = out;
