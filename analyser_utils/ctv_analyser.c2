@@ -43,10 +43,13 @@ const Limit[] Limits = {
     { -9223372036854775807-1, 9223372036854775807 },
     // 64 - UInt64
     { 0, 18446744073709551615 },
+    // 0 - Void
+    { 1, 0 },
 }
 
 fn const Limit* getLimit(u32 width) {
     switch (width) {
+    case 0: return &Limits[9];
     case 1: return &Limits[0];
     case 7: return &Limits[1];
     case 8: return &Limits[2];
