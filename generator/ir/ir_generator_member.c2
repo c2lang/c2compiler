@@ -1,0 +1,117 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir_generator;
+
+import ast local;
+import ir local;
+//import ir_gen_locals local;
+//import ctv_analyser;
+
+fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) {
+    const MemberExpr* m = cast<MemberExpr*>(e);
+    Context* c = gen.ctx;
+
+    u32 tail = 0;
+
+    IdentifierKind kind = m.getKind();
+    if (kind == IdentifierKind.Var || kind == IdentifierKind.Function) {
+        // TODO handle struct function (Analyser will have checked that it's followed by call)
+        if (m.isTypeFunc()) {
+            // only emit base part, not last
+            tail = 1;
+            goto next;
+        }
+
+        if (m.hasExpr()) {
+            // TODO can be <expr>.<type_func> or <expr>.a.<type_func>
+            //e.dump();
+            goto next;
+        }
+        assert(!m.hasExpr());
+        Decl* d = m.getFullDecl();
+        gen.emitSymbol(result, d);
+        return;
+    }
+
+    assert(kind == IdentifierKind.StructMember);
+next:
+    {}
+#if 0
+    if (m.hasExpr()) {
+        const Expr* base = m.getExprBase();
+        base.dump();
+    }
+    for (u32 i=0; i<m.getNumRefs(); i++) {
+        Decl* d = m.getDecl(i);
+        QualType qt = d.getType();
+        bool needs_deref = qt.isPointer();
+        stdio.printf("REF[%d/%d] %d\n", i, m.getNumRefs(), needs_deref);
+        d.dump();
+    }
+#endif
+
+    // base
+    ir.Ref base_ref;
+    QualType base_type;
+    u32 idx = 0;
+    if (m.hasExpr()) {
+        const Expr* base = m.getExprBase();
+        gen.emitExpr(&base_ref, base);
+        base_type = base.getType();
+    } else {
+        Decl* base = m.getDecl(idx);
+        if (base.isImport()) {  // skip module prefix
+            idx++;
+            base = m.getDecl(idx);
+        }
+        idx++;
+        assert(base.isVarDecl());
+        gen.emitVarDecl(&base_ref, base);
+        base_type = base.getType();
+    }
+
+    // member (a.b.c.etc)
+    u32 numrefs = m.getNumRefs();
+    numrefs -= tail;
+    for (u32 i=idx; i<numrefs; i++) {
+        if (base_type.isPointer()) { // insert load to de-ref
+            base_ref = c.addLoadInstr(ir.Type.I32, base_ref);
+            base_type = base_type.getPointerBaseType();
+        }
+
+        assert(base_type.isStruct());
+        const StructType* st = base_type.getStructType();
+        const StructTypeDecl* std = st.getDecl();
+
+        Decl* d = m.getDecl(i);
+
+        u32 offset = 0;
+        Decl* dd = std.findMember(d.getNameIdx(), &offset);
+        if (!dd) {
+            e.dump();
+        }
+        assert(dd);
+
+        if (offset != 0) {
+            ir.Ref offset_ref = c.addIntegerConstant(offset);
+            base_ref = c.addBinaryInstr(InstrKind.Add, base_ref, offset_ref);
+        }
+
+        base_type = d.getType();
+    }
+    *result = base_ref;
+}
+

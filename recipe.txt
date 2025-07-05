@@ -265,6 +265,7 @@ executable c2c
     generator/ir/ir_generator_binop.c2
     generator/ir/ir_generator_call.c2
     generator/ir/ir_generator_expr.c2
+    generator/ir/ir_generator_member.c2
     generator/ir/ir_generator_stmt.c2
     generator/ir/ir_generator_switch.c2
     generator/ir/ir_generator_locals.c2
