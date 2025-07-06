@@ -22,10 +22,10 @@ struct test_Point_ {
     int32_t x;
 };
 
-typedef enum {
+typedef int8_t test_State;
+enum test_State {
   test_State_A,
   test_State_B,
   test_State_C,
-  _test_State_max = 255
-} __attribute__((packed)) test_State;
+};
 

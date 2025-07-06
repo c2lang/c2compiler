@@ -27,12 +27,12 @@ const u32 Size = 3;
 
 // @expect{atleast, aa.h}
 
-typedef enum {
+typedef uint8_t aa_Enum;
+enum aa_Enum {
    aa_Enum_A,
    aa_Enum_B,
    aa_Enum_C,
-   _aa_Enum_max = 255
-} __attribute__((packed)) aa_Enum;
+};
 
 #define aa_Size 3
 

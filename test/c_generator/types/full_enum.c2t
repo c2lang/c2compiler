@@ -21,12 +21,12 @@ fn void test1() {
 
 // @expect{atleast, cgen/build.c}
 
-typedef enum {
+typedef uint8_t file1_State;
+enum file1_State {
     file1_State_A,
     file1_State_B,
     file1_State_C,
-    _file1_State_max = 255
-} __attribute__((packed)) file1_State;
+};
 
 static void file2_test1(void);
 
