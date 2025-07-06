@@ -51,12 +51,12 @@ fn void test3() {
 
 // @expect{atleast, cgen/build.c}
 
-typedef enum {
+typedef uint8_t test_Foo;
+enum test_Foo {
    test_Foo_A,
    test_Foo_B,
    test_Foo_C,
-   _test_Foo_max = 255
-} __attribute__((packed)) test_Foo;
+};
 
 static void test_Foo_func1(test_Foo f);
 static void test_Foo_func2(const test_Foo f);

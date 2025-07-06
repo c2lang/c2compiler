@@ -197,7 +197,16 @@ fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, const Dec
 
 fn void Generator.emitEnum(Generator* gen, string_buffer.Buf* out, Decl* d) {
     EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
-    out.add("typedef enum {\n");
+
+    // typedef enum types to their implementation type
+    out.add("typedef ");
+    gen.emitTypePre(out, etd.getImplType());
+    out.space();
+    gen.emitCName(out, d);
+    out.add(";\n");
+    out.add("enum ");
+    gen.emitCName(out, d);
+    out.add(" {\n");
     // set generated, otherwise constant self-ref goes wrong
     d.setGenerated();
     u32 num_constants = etd.getNumConstants();
@@ -218,30 +227,7 @@ fn void Generator.emitEnum(Generator* gen, string_buffer.Buf* out, Decl* d) {
         }
         out.add(",\n");
     }
-    // add max to ensure size is ok
-    QualType implType = etd.getImplType();
-    const BuiltinType* bi = implType.getBuiltin();
-    out.indent(1);
-    out.print("_%s_%s_max = ", gen.mod_name, d.getName());
-    switch (bi.getAlignment()) {
-    case 1:
-        out.add("255");
-        break;
-    case 2:
-        out.add("65535");
-        break;
-    case 4:
-        out.add("4294967295");
-        break;
-    case 8:
-        out.add("18446744073709551615");
-        break;
-    }
-    out.newline();
-
-    out.add("} __attribute__((packed)) ");
-    gen.emitCName(out, d);
-    out.add(";\n\n");
+    out.add("};\n\n");
 }
 
 const char*[] builtinType_cnames = {
