@@ -64,9 +64,7 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
     }
 
     QualType t = ma.analyseExpr(u.getInner2(), need_rvalue, side);
-    if (t.isInvalid()) {
-        return QualType_Invalid;
-    }
+    if (t.isInvalid()) return QualType_Invalid;
 
     e = *e_ptr; // re-read in case of ImplicitCast insertions
     Expr* inner = u.getInner();
@@ -112,6 +110,10 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
             UnaryOperator* e1 = (UnaryOperator*)inner;
             if (e1.getOpcode() == UnaryOpcode.Deref)
                 e.copyCtcFlags(e1.getInner());
+        }
+        if (inner.isBitfield()) {
+            ma.error(e.getLoc(), "cannot take address of bit-field");
+            return QualType_Invalid;
         }
         break;
     case Deref:

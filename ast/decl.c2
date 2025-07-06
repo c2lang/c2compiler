@@ -60,7 +60,7 @@ const char*[] declKind_names = {
 static_assert(elemsof(DeclKind), elemsof(declKind_names));
 
 type DeclBits struct {
-    u32 kind : 8;
+    u32 kind : 4;
     u32 check_state : 2;
     u32 is_public : 1;
     u32 is_used : 1;
@@ -73,7 +73,7 @@ type DeclBits struct {
     u32 has_gen_idx : 1;
 }
 
-const u32 NumDeclBits = 19;  // should match bitfields above
+const u32 NumDeclBits = 15;  // should match bitfields above
 
 public type Decl struct @(opaque) {
     union {
@@ -92,7 +92,7 @@ public type Decl struct @(opaque) {
     }
     u32 name_idx;
     u16 ast_idx;    // into globals.ast_list, 0 means nil
-    u16 offset;
+    u16 offset; // for struct members? TODO move to VarDecl tail info
     QualType qt;
 }
 

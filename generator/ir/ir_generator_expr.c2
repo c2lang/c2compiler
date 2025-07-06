@@ -20,22 +20,7 @@ import ir local;
 import ir_gen_locals local;
 import ctv_analyser;
 
-#if 0
 fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
-    result.kind = 15;
-    //result.value = 99999;
-    gen.emitExprInternal(result, e);
-    //if (result.kind == 15 || result.value == 99999) {
-    if (result.kind == 15) {
-        e.dump();
-    }
-    assert(result.kind != 15);
-    //assert(result.value != 99999);
-}
-fn void Generator.emitExprInternal(Generator* gen, ir.Ref* result, const Expr* e) {
-#else
-fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
-#endif
     if (e.isCtv()) {
         Value v = ctv_analyser.get_value(e);
         // TEMP as u32 TODO

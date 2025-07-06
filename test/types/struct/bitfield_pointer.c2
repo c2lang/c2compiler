@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    u8 a: 3;
+    u8 b : 2;
+}
+
+fn void test1(Foo* f) {
+    u8* ptr = &f.a;     // @error{cannot take address of bit-field}
+}
+

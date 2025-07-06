@@ -16,7 +16,9 @@
 module ir_generator;
 
 import ast local;
+import bit_utils;
 import ir local;
+import ctv_analyser local;
 
 fn void Generator.emitBinaryOperator(Generator* gen, ir.Ref* result, const Expr* e) {
     const BinaryOperator* b = cast<BinaryOperator*>(e);
@@ -50,10 +52,16 @@ fn void Generator.emitBinaryOperator(Generator* gen, ir.Ref* result, const Expr*
         gen.emitLogicalOr(result, e);
         return;
     case Assign:
+        // special case is needed because setting Bitfield is not a simple store
+        Expr* lhs = b.getLHS();
+        if (lhs.isBitfield()) {
+            gen.emitBitfieldAssign(result, lhs, b.getRHS());
+            return;
+        }
         ir.Ref src;
         gen.emitExpr(&src, b.getRHS());
         ir.Ref dest;
-        gen.emitExpr(&dest, b.getLHS());
+        gen.emitExpr(&dest, lhs);
         // TODO get type (from either side, should be same by now)
         gen.ctx.addStoreInstr(ir.Type.I32, src, dest);
         *result = src;
@@ -160,7 +168,7 @@ fn void Generator.emitLogicalAnd(Generator* gen, ir.Ref* result, const Expr* e) 
     ir.Ref zero;
     zero.init(RefKind.Value, 0);
 
-    ir.Ref cond1 = gen.ctx.addBinaryInstr(InstrKind.CmpNe, left, zero);
+    ir.Ref cond1 = c.addBinaryInstr(InstrKind.CmpNe, left, zero);
 
     BlockId true_blk = c.createBlock(BlockKind.AndTrue);
     BlockId join_blk = c.createBlock(BlockKind.LogicJoin);
@@ -175,7 +183,7 @@ fn void Generator.emitLogicalAnd(Generator* gen, ir.Ref* result, const Expr* e) 
     // TODO check for CTV
     gen.emitExpr(&right, b.getRHS());
 
-    ir.Ref cond2 = gen.ctx.addBinaryInstr(InstrKind.CmpNe, right, zero);
+    ir.Ref cond2 = c.addBinaryInstr(InstrKind.CmpNe, right, zero);
     c.addJmpInstr(join_blk);
 
     c.endBlock();
@@ -322,5 +330,58 @@ fn void Generator.emitOpAssign(Generator* gen, ir.Ref* result, const Expr* e) {
     right = gen.ctx.addBinaryInstr(k, left_val, right);
     gen.ctx.addStoreInstr(t, right, left);
     *result = right;
+}
+
+fn void Generator.emitBitfieldAssign(Generator* gen, ir.Ref* result, const Expr* lhs, const Expr* rhs) {
+    ir.Context* c = gen.ctx;
+
+    //assert(lhs.isMember());
+    const MemberExpr* m = (MemberExpr*)lhs;
+    const Decl* d = m.getFullDecl();
+    //assert(d.isVarDecl());
+    const VarDecl* vd = (VarDecl*)d;
+    const Expr* bitfield = vd.getBitfield();
+    // TODO already convert to IntegerLiteral (if not already) in analyser?
+    Value val = ctv_analyser.get_value(bitfield);
+    u32 width = val.as_u32();
+    u32 mask = bit_utils.get_mask32(width); // TEMP u32
+    u32 bit_offset = 0; // TODO get bitfield-offset
+
+    // TODO get base_type, (u8/u16/u32/u64/ etc)
+
+    // TODO handle signed
+
+    ir.Ref src;
+    gen.emitExpr(&src, rhs);
+
+    bool allBitsSet = false;
+    if (rhs.isCtv()) {
+        // check if all bits are set
+        // allBitsSet = true;
+        // TODO
+    } else {
+        // TEMP as u32
+        ir.Ref mask_ref = c.addIntegerConstant(mask);
+        // and with bitsize
+        src = c.addBinaryInstr(InstrKind.And, src, mask_ref);
+    }
+    *result = src;
+
+    ir.Ref base;
+    // TODO need without load
+    gen.emitMemberExpr(&base, lhs);
+
+    ir.Ref dest = base;
+    if (!allBitsSet) {
+        ir.Ref mask_ref = c.addIntegerConstant(~(mask << bit_offset));
+        dest = c.addBinaryInstr(InstrKind.And, base, mask_ref);
+    }
+    if (bit_offset) {
+        ir.Ref offset_ref = c.addIntegerConstant(bit_offset);
+        src = c.addBinaryInstr(InstrKind.Shl, src, offset_ref);
+    }
+    dest = c.addBinaryInstr(InstrKind.Or, dest, src);
+    // TODO fix store, need base without load
+    gen.ctx.addStoreInstr(ir.Type.I32, dest, base);
 }
 

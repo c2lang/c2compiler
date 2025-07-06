@@ -16,7 +16,6 @@
 module size_analyser;
 
 import ast local;
-import ctv_analyser local;
 
 public type TypeSize struct {
     u32 size;
@@ -61,34 +60,29 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
             TypeSize member = sizeOfType(d.getType());
             // TODO handle un-packed sub-structs?
             //printf("  @%03u member %s   size %d  align %d (bitfield %d/%d)\n", result.size, d.getName(), member.size, member.align, member.bitfield_size, member.bitfield_width);
-            //=if (vd) { vd.setOffset(result.size);
+            //if (vd) { vd.setOffset(result.size);
             s.setMemberOffset(i, result.size);
             result.size += member.size;
         }
     } else {
         for (u32 i=0; i<num_members; i++) {
             Decl* d = members[i];
+            //printf("FIELD[%d]  size %d align %d  bit %d / %d\n", i, result.size, result.align, result.bitfield_size, result.bitfield_width);
             // Note: doesn't analyze the bit-field
             TypeSize member = sizeOfType(d.getType());
             if (member.align > result.align) result.align = member.align;
 
             VarDecl* vd = d.isVariable() ? (VarDecl*)d : nil;
+            BitFieldLayout* bit_layout = nil;
             if (vd) {
-
                 // Note: bitfield size/alignment is size of largest member type used as base
-                const Expr* bitfield = vd.getBitfield();
-                if (bitfield) {
-                    Value value = get_value(bitfield);
-                    member.bitfield_size = value.as_u32();
+                bit_layout = vd.getBitfieldLayout();
+                if (bit_layout) {
+                    // Note: bit_layout.bit_width was already set in analyser
+                    member.bitfield_size = bit_layout.bit_width;
                     member.bitfield_width = member.size * 8;
                     member.size = 0;
                     member.align = 0;   // calculate at end
-/*
-                    // NOTE: should already been checked!
-                    if (member.bitfield_size > member.bitfield_width) {
-                        error: width of anonymous bit-field (11 bits) exceeds the width of its qt (8 bits)
-                    }
-*/
                 }
             }
             if (result.bitfield_width && member.align != 0) {   // no bitfield anymore, finalize last one
@@ -113,28 +107,31 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
             }
             //const char* name = d.getName();
             //printf("  @%03u member %s   size %d  align %d (bitfield %d/%d)\n", result.size, name ? name : "(nil)", member.size, member.align, member.bitfield_size, member.bitfield_width);
-            s.setMemberOffset(i, result.size);
 
-            if (member.bitfield_width) {
+            s.setMemberOffset(i, result.size);
+            if (bit_layout) {
                 //printf("    bit-fields %d / %d\n", result.bitfield_size, result.bitfield_width);
                 u32 total_bitsize = result.bitfield_size + member.bitfield_size;
                 if (total_bitsize > member.bitfield_width) {
-                    //printf("    new field\n");
                     u32 bytesize = (result.bitfield_size + 7) / 8;
+                    //printf("    new field (bytesize %d)\n", bytesize);
                     member.align = bytesize;
                     if (bytesize > 1) {
                         u32 rest = result.size % bytesize;
                         if (rest != 0) {
                             u32 pad = member.align - rest;
-                            //printf("  @%03u pad %d\n", result.size, pad);
+                            //printf("  @%03d pad %d\n", result.size, pad);
                             result.size += pad;
                         }
                     }
                     result.size += bytesize;
+                    s.setMemberOffset(i, result.size);  // update from above
+                    // Note: keep bit_layout.bit_offset at 0
                     //if (bytesize > result.align) result.align = bytesize;
                     result.bitfield_size = member.bitfield_size;
                     result.bitfield_width = member.bitfield_width;
                 } else {
+                    bit_layout.bit_offset = (u8)result.bitfield_size;
                     result.bitfield_size = total_bitsize;
                     result.bitfield_width = member.bitfield_width;
                 }

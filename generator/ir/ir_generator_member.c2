@@ -16,8 +16,10 @@
 module ir_generator;
 
 import ast local;
+import bit_utils;
 import ir local;
 
+// NOTE: should not be used for LHS bitfields!
 fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     const MemberExpr* m = cast<MemberExpr*>(e);
     Context* c = gen.ctx;
@@ -70,8 +72,10 @@ next:
     u32 numrefs = m.getNumRefs();
     numrefs -= tail;
     for (u32 i=idx; i<numrefs; i++) {
-        if (base_type.isPointer()) { // insert load to de-ref
-            base_ref = c.addLoadInstr(ir.Type.I32, base_ref);
+        // for final only load if conversion is set?
+        // First add offset, then deref!, also should not have to do this here anymore!
+        bool is_pointer = base_type.isPointer();
+        if (is_pointer) {
             base_type = base_type.getPointerBaseType();
         }
 
@@ -88,15 +92,28 @@ next:
         }
         assert(dd);
 
+        if (offset != 0) {
+            ir.Ref offset_ref = c.addIntegerConstant(offset);
+            base_ref = c.addBinaryInstr(InstrKind.Add, base_ref, offset_ref);
+        }
+
+        if (is_pointer && i+1 < numrefs) {
+            // DONT refer last, will be de-reffed by LToRValue Conversion
+            base_ref = c.addLoadInstr(ir.Type.I32, base_ref);
+        }
+
         if (dd.isBitfield()) {
-            // TODO should know if LHS/RHS (or both) for bitfield
-            //dd.dump();
-            // TODO need offset + size + base-type
-        } else {
-            if (offset != 0) {
-                ir.Ref offset_ref = c.addIntegerConstant(offset);
-                base_ref = c.addBinaryInstr(InstrKind.Add, base_ref, offset_ref);
+            // NOTE: only for RHS
+            const VarDecl* vd = (VarDecl*)d;
+            const BitFieldLayout* layout = vd.getBitfieldLayout();
+            u32 mask = bit_utils.get_mask32(layout.bit_width); // TEMP u32
+            // generate: (base_ref >> offset) & mask
+            if (layout.bit_offset) {
+                ir.Ref shift_ref = c.addIntegerConstant(layout.bit_offset);
+                base_ref = c.addBinaryInstr(InstrKind.Shr, base_ref, shift_ref);
             }
+            ir.Ref mask_ref = c.addIntegerConstant(mask);
+            base_ref = c.addBinaryInstr(InstrKind.And, base_ref, mask_ref);
         }
 
         base_type = d.getType();
