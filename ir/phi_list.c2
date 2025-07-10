@@ -37,7 +37,7 @@ fn void PhiList.init(PhiList* l) {
 }
 
 fn void PhiList.free(PhiList* l) {
-    if (l.clauses) free(cast<void*>(l.clauses));
+    if (l.clauses) free(l.clauses);
 }
 
 fn void PhiList.resize(PhiList* l, u32 extra) {

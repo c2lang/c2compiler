@@ -33,7 +33,7 @@ fn void InstrList.init(InstrList* l, u32 initial_size) {
 }
 
 fn void InstrList.free(InstrList* l) {
-    if (l.instrs) stdlib.free(cast<void*>(l.instrs));
+    if (l.instrs) stdlib.free(l.instrs);
 }
 
 fn Instr* InstrList.add(InstrList* l) {

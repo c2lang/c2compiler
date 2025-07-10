@@ -32,7 +32,7 @@ fn void BlockList.init(BlockList* l, u32 initial_size) {
 }
 
 fn void BlockList.free(BlockList* l) {
-    if (l.blocks) stdlib.free(cast<void*>(l.blocks));
+    if (l.blocks) stdlib.free(l.blocks);
 }
 
 fn void BlockList.resize(BlockList* l, u32 cap) {

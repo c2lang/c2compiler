@@ -202,7 +202,6 @@ public fn void AST.visitVarDecls(const AST* a, VarDeclVisitor visitor, void* arg
 
 public type StaticAssertVisitor fn void (void* arg, StaticAssert* d);
 
-
 public fn void AST.visitStaticAsserts(AST* a, StaticAssertVisitor visitor, void* arg) @(unused) {
     StaticAssert** asserts = a.static_asserts.get();
     for (u32 i=0; i<a.static_asserts.getCount(); i++) {

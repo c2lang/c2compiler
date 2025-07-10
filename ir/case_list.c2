@@ -40,7 +40,7 @@ fn void CaseList.init(CaseList* l) {
 }
 
 fn void CaseList.free(CaseList* l) {
-    if (l.cases) stdlib.free(cast<void*>(l.cases));
+    if (l.cases) stdlib.free(l.cases);
 }
 
 fn void CaseList.resize(CaseList* l, u32 extra, bool copy) {

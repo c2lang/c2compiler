@@ -53,7 +53,7 @@ fn void SymbolList.init(SymbolList* l, u32 initial_size) {
 }
 
 fn void SymbolList.free(SymbolList* l) {
-    if (l.symbols) stdlib.free(cast<void*>(l.symbols));
+    if (l.symbols) stdlib.free(l.symbols);
 }
 
 fn void SymbolList.resize(SymbolList* l, u32 cap) {

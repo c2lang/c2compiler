@@ -233,8 +233,7 @@ public fn u32 TypeRef.getMaxSizeNoArray() {
 */
 
 fn void* TypeRef.getPointerAfter(const TypeRef* r) {
-    u8* ptr = cast<u8*>(r) + sizeof(TypeRef) + r.getExtraSize();
-    return ptr;
+    return (u8*)r + sizeof(TypeRef) + r.getExtraSize();
 }
 
 public fn bool TypeRef.isConst(const TypeRef* r) {
