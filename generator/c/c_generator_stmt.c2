@@ -397,10 +397,12 @@ fn void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
 
 fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) {
     string_buffer.Buf* out = gen.out;
+    const char* brace = "";
+    if (c.hasDecls()) brace = " {";
 
     if (c.isDefault()) {
         out.indent(indent);
-        out.add("default:");
+        out.print("default:%s\n", brace);
     } else {
         out.indent(indent);
         out.add("case ");
@@ -411,7 +413,7 @@ fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) 
                 e = ic.getInner();
             }
             if (e.isNil()) {
-                out.add("0: // nil");
+                out.print("0:%s // nil\n", brace);
             } else
             if (e.isStringLiteral()) {
                 StringLiteral* lit = cast<StringLiteral*>(e);
@@ -422,9 +424,9 @@ fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) 
                     num = *lab;
                     *lab += 1;
                 }
-                out.print("%d: // \"", num);
+                out.print("%d:%s // \"", num, brace);
                 out.encodeBytes(str, slen, '"');
-                out.add1('"');
+                out.add("\"\n");
             } else {
                 e.dump();
                 assert(0);
@@ -441,12 +443,9 @@ fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) 
                 //       individual cases or generate alternative code
                 gen.emitExpr(out, c.getCond(i));
             }
-            out.add1(':');
+            out.print(":%s\n", brace);
         }
     }
-
-    if (c.hasDecls()) out.add(" {");
-    out.newline();
 
     const u32 num_stmts = c.getNumStmts();
     if (num_stmts == 0) {
@@ -464,4 +463,3 @@ fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) 
         out.add("}\n");
     }
 }
-
