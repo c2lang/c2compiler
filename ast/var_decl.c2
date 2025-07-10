@@ -230,7 +230,7 @@ public fn SrcLoc VarDecl.getAssignLoc(const VarDecl* d) {
     if (d.base.varDeclBits.has_init_or_bitfield) {
         void* tail = d.typeRef.getPointerAfter();
         if (d.isStructMember()) {
-            BitFieldInfo* info = (BitFieldInfo*)tail;
+            BitFieldInfo* info = tail;
             return info.loc;
         } else {
             VarDeclInit* init = tail;
@@ -250,7 +250,7 @@ public fn Expr* VarDecl.getInit(const VarDecl* d) {
     if (d.base.varDeclBits.has_init_or_bitfield) {
         void* tail = d.typeRef.getPointerAfter();
         if (d.isStructMember()) {
-            BitFieldInfo* info = (BitFieldInfo*)tail;
+            BitFieldInfo* info = tail;
             return info.expr;
         } else {
             VarDeclInit* init = tail;

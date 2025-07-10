@@ -672,7 +672,7 @@ type MainMarker struct {
 }
 
 fn void findMainFunction(void* arg, FunctionDecl* fd) {
-    MainMarker* m = (arg);
+    MainMarker* m = arg;
     Decl* d = (Decl*)fd;
     if (d.getNameIdx() == m.name_idx) {
         if (m.main) {

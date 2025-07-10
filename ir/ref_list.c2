@@ -30,7 +30,7 @@ public fn void RefList.init(RefList* l, u32 initial_size) {
 }
 
 public fn void RefList.free(RefList* l) {
-    if (l.refs) stdlib.free(cast<void*>(l.refs));
+    if (l.refs) stdlib.free(l.refs);
 }
 
 fn void RefList.resize(RefList* l, u32 cap) {

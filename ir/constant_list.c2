@@ -33,7 +33,7 @@ fn void ConstantList.init(ConstantList* l, u32 initial_size) {
 }
 
 fn void ConstantList.free(ConstantList* l) {
-    if (l.constants) stdlib.free(cast<void*>(l.constants));
+    if (l.constants) stdlib.free(l.constants);
 }
 
 fn u32 ConstantList.add(ConstantList* l, const Constant* c) {

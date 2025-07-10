@@ -30,7 +30,7 @@ fn void InitValueList.init(InitValueList* l, u32 initial_size) {
 }
 
 fn void InitValueList.free(InitValueList* l) {
-    if (l.values) stdlib.free(cast<void*>(l.values));
+    if (l.values) stdlib.free(l.values);
 }
 
 fn void InitValueList.resize(InitValueList* l, u32 cap) {
