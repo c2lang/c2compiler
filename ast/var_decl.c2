@@ -122,7 +122,6 @@ public fn VarDecl* VarDecl.createStructMember(ast_context.Context* c,
     VarDecl* d = c.alloc(size);
     d.base.init(DeclKind.Variable, name, loc, is_public, QualType_Invalid, ast_idx);
     d.base.varDeclBits.kind = VarDeclKind.StructMember;
-
     if (name == 0) d.base.setUsed();  // set unnamed member to used
     d.typeRef.init(ref);
     if (bitfield) {
@@ -157,16 +156,14 @@ fn VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
     vd2.typeRef.instantiate(&vd.typeRef, inst);
 
     if (vd.base.varDeclBits.has_init_or_bitfield) {
-        void* tail1 = vd.typeRef.getPointerAfter();
-        void* tail2 = vd2.typeRef.getPointerAfter();
         if (vd.isStructMember()) {
-            BitFieldInfo* info1 = (BitFieldInfo*)tail1;
-            BitFieldInfo* info2 = (BitFieldInfo*)tail2;
+            BitFieldInfo* info1 = vd.typeRef.getPointerAfter();
+            BitFieldInfo* info2 = vd2.typeRef.getPointerAfter();
             info2.loc = info1.loc;
             info2.expr = info1.expr.instantiate(inst);
         } else {
-            VarDeclInit* init1 = tail1;
-            VarDeclInit* init2 = tail2;
+            VarDeclInit* init1 = vd.typeRef.getPointerAfter();
+            VarDeclInit* init2 = vd2.typeRef.getPointerAfter();
             init2.loc = init1.loc;
             init2.expr = init1.expr.instantiate(inst);
         }

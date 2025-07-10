@@ -80,7 +80,7 @@ public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, u3
 }
 
 public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* typeExpr, Expr* member) {
-    const u32 size  =sizeof(BuiltinExpr) + sizeof(OffsetOfData);
+    const u32 size = sizeof(BuiltinExpr) + sizeof(OffsetOfData);
     BuiltinExpr* e = c.alloc(size);
     e.base.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
     e.base.base.builtinExprBits.kind = BuiltinExprKind.OffsetOf;
@@ -101,6 +101,7 @@ public fn BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, Src
     e.base.base.builtinExprBits.kind = BuiltinExprKind.ToContainer;
     e.base.base.builtinExprBits.src_len = src_len;
     e.inner = typeExpr;
+    e.value.setUnsigned(0);
     e.container[0].member = member;
     e.container[0].pointer = pointer;
 #if AstStatistics

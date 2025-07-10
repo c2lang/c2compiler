@@ -102,6 +102,7 @@ public fn EnumConstantDecl** EnumTypeDecl.getConstants(EnumTypeDecl* d) {
 }
 
 public fn void EnumTypeDecl.setIncrConstants(EnumTypeDecl* d, ast_context.Context* c, IdentifierExpr** constants, u32 count) {
+    assert(count);
     const u32 size = count * sizeof(EnumConstantDecl*);
     EnumConstantDecl** decls = c.alloc(size);
 
@@ -137,7 +138,7 @@ public fn EnumConstantDecl* EnumTypeDecl.getConstant(const EnumTypeDecl* d, u32 
 
 public fn void EnumTypeDecl.setEnumFunctions(EnumTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u32 count) {
     const u32 size = count * sizeof(FunctionDecl*);
-    void* dest = c.alloc(size);
+    FunctionDecl** dest = c.alloc(size);
     string.memcpy(dest, funcs, size);
     d.enum_functions = dest;
     d.num_enum_functions = count;

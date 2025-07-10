@@ -37,8 +37,8 @@ public fn InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc loc, 
     u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);
     InitListExpr* e = c.alloc(size);
     e.base.init(ExprKind.InitList, loc, 0, 0, 0, ValType.RValue);
-    e.num_values = num_values;
     e.endLoc = endLoc;
+    e.num_values = num_values;
     if (num_values) {
         string.memcpy(e.values, values, num_values * sizeof(Expr*));
     }
@@ -53,8 +53,8 @@ fn Expr* InitListExpr.instantiate(InitListExpr* e, Instantiator* inst) {
     u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);
     InitListExpr* e2 = inst.c.alloc(size);
     e2.base = e.base;
-    e2.num_values = num_values;
     e2.endLoc = e.endLoc;
+    e2.num_values = num_values;
     for (u32 i=0; i<num_values; i++) {
         e2.values[i] = e.values[i].instantiate(inst);
     }

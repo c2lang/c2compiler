@@ -21,6 +21,7 @@ import src_loc local;
 
 public type StaticAssert struct @(opaque) {
     u32 ast_idx;    // into globals.ast_list, 0 means nil
+    u32 loc;
     Expr* lhs;
     Expr* rhs;
 }
@@ -33,6 +34,7 @@ public fn StaticAssert* StaticAssert.create(ast_context.Context* c,
 {
     StaticAssert* d = c.alloc(sizeof(StaticAssert));
     d.ast_idx = ast_idx;
+    d.loc = loc;
     d.lhs = lhs;
     d.rhs = rhs;
 #if AstStatistics

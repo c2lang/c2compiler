@@ -71,18 +71,18 @@ public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
     s.asm_string = (StringLiteral*)str;
 
     u8* tail = (u8*)s.constraints;
-    if (constraints.size()) {
-        u32 sz = constraints.size() * sizeof(Expr*);
+    if (s.num_constraints) {
+        u32 sz = s.num_constraints * sizeof(Expr*);
         string.memcpy(tail, constraints.getExprs(), sz);
         tail += sz;
     }
-    if (exprs.size()) {
-        u32 sz = exprs.size() * sizeof(Expr*);
+    if (s.num_exprs) {
+        u32 sz = s.num_exprs * sizeof(Expr*);
         string.memcpy(tail, exprs.getExprs(), sz);
         tail += sz;
     }
-    if (clobbers.size()) {
-        u32 sz = clobbers.size() * sizeof(Expr*);
+    if (s.num_clobbers) {
+        u32 sz = s.num_clobbers * sizeof(Expr*);
         string.memcpy(tail, clobbers.getExprs(), sz);
         tail += sz;
     }
