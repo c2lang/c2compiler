@@ -351,6 +351,7 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
     ile.setHasDesignators();
 
     const FieldInitInfo* fii = ma.getFieldInfo(std);
+    // TODO get from global stack, dont allocate+free
     StructFieldInitChecker checker.init(fii.num_indexes);
 
     u32 numValues = ile.getNumValues();
@@ -368,7 +369,6 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
 
         FieldDesignatedInitExpr* fdi = (FieldDesignatedInitExpr*)value;
         u32 field_name = fdi.getField();
-        u32 offset = 0;
 
         const FieldInitField* fif = fii.find(field_name);
         if (!fif) {
@@ -377,7 +377,7 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
         }
         Decl* member = fif.decl;
 
-        fdi.setMemberOffset(offset);
+        fdi.setMemberOffset(fif.offset);
         fdi.setDecl(member);
         member.setUsed();
 
@@ -419,7 +419,7 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
     }
 
     // only allow none or all fields to use Designators
-    const bool haveDesignators = (values[0].isFieldDesignatedInit());
+    const bool haveDesignators = values[0].isFieldDesignatedInit();
 
     if (!haveDesignators && std.isUnion()) {
         ma.error(values[0].getLoc(), "union member initializer needs field designator");

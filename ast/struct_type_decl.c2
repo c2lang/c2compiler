@@ -351,8 +351,20 @@ fn void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u3
         d.members[i].print(out, indent + 1);
     }
 
+#if 1
     if (d.base.structTypeDeclBits.has_field_info) {
-        // TODO dump optionally
+        assert(d.field_info);
+        out.indent(indent + 1);
+        out.color(col_Calc);
+        const FieldInitInfo* fif = d.field_info;
+        out.print("field info (%d fields, %d indexes)\n", fif.num_fields, fif.num_indexes);
+        for (u32 i=0; i<fif.num_fields; i++) {
+            const FieldInitField* f = &fif.fields[i];
+            out.indent(indent + 2);
+            out.print("%s  offset=%d  member_idx=%d", idx2name(f.name_idx), f.offset, f.member_idx);
+            out.newline();
+        }
     }
+#endif
 }
 
