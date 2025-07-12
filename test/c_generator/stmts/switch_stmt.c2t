@@ -39,6 +39,22 @@ fn void test2(i32 i) {
     }
 }
 
+fn void test3(i32 i) {
+    switch (i) {
+    case 0:
+        break;
+    case 1:
+        i32 a = 10;
+        break;
+    case 2: {
+        i32 b = 20;
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 public fn i32 main(i32 argc, const char** argv) {
     i32 a = 0;
     switch (a) {
@@ -87,6 +103,26 @@ static void test_test2(int32_t i)
             break;
         }
     }
+}
+
+
+static void test_test3(int32_t i)
+{
+   switch (i) {
+   case 0:
+      break;
+   case 1: {
+      int32_t a = 10;
+      break;
+   }
+   case 2:
+   {
+      int32_t b = 20;
+      break;
+   }
+   default:
+      break;
+   }
 }
 
 int32_t main(int32_t argc, const char** argv)
