@@ -5,23 +5,23 @@
 // @file{file1}
 module test;
 
-char* a = " ";
-char* b = "a\rb";
-char* c = "a\tb";
-char* d = "a\nb";
-char* e = "a\0b";
-char* f = "a'b";
-char* g = "a\"b";
-char* h = "a\\b";
+const char* a = " ";
+const char* b = "a\rb";
+const char* c = "a\tb";
+const char* d = "a\nb";
+const char* e = "a\0b";
+const char* f = "a'b";
+const char* g = "a\"b";
+const char* h = "a\\b";
 
 // @expect{atleast, cgen/build.c}
 
-static char* test_a = " ";
-static char* test_b = "a\rb";
-static char* test_c = "a\tb";
-static char* test_d = "a\nb";
-static char* test_e = "a\0b";
-static char* test_f = "a'b";
-static char* test_g = "a\"b";
-static char* test_h = "a\\b";
+static const char* test_a = " ";
+static const char* test_b = "a\rb";
+static const char* test_c = "a\tb";
+static const char* test_d = "a\nb";
+static const char* test_e = "a\0b";
+static const char* test_f = "a'b";
+static const char* test_g = "a\"b";
+static const char* test_h = "a\\b";
 

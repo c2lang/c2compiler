@@ -8,14 +8,14 @@ module test1;
 // const with inits
 public const char[] AAA = "aaa";
 public const char[4] BBB = "bbb";
-public const char* ccc = "ccc";
+//public const char* ccc = "ccc";
 
 // non-const with inits
 public char[] ddd = "ddd";
 public char[4] eee = "eee";
-public char* fff = "fff";
+public const char* fff = "fff";
 
-// 'const' without init
+// 'const' without init (actually non-const)
 public const char* ggg;
 
 // non-const without init
@@ -32,10 +32,9 @@ static const char test1_AAA[4] = "aaa";
 
 static const char test1_BBB[4] = "bbb";
 
-static const char* test1_ccc = "ccc";
 static char test1_ddd[4] = "ddd";
 static char test1_eee[4] = "eee";
-static char* test1_fff = "fff";
+static const char* test1_fff = "fff";
 static const char* test1_ggg = NULL;
 static char test1_hhh[3] = { };
 static char* test1_iii = NULL;

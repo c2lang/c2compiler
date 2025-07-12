@@ -6,7 +6,7 @@ fn void test1() {
 }
 
 fn void test2() {
-    "foo" = "bar";  // @error{array type 'char[4]' is not assignable}
+    "foo" = "bar";  // @error{array type 'const char[4]' is not assignable}
 }
 
 fn void test3() {

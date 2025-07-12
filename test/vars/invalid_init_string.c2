@@ -2,21 +2,21 @@
 module test;
 
 fn void test1() {
-    i32 a = "foo";  // @error{invalid type conversion from 'char[4]' to 'i32'}
+    i32 a = "foo";  // @error{invalid type conversion from 'const char[4]' to 'i32'}
 }
 
 fn void test2() {
-    i32* a = "foo";  // @error{invalid type conversion from 'char[4]' to 'i32*'}
+    i32* a = "foo";  // @error{invalid type conversion from 'const char[4]' to 'i32*'}
 }
 
 fn void test3() {
-    i8* a = "foo";  // @error{invalid type conversion from 'char[4]' to 'i8*'}
+    i8* a = "foo";  // @error{invalid type conversion from 'const char[4]' to 'i8*'}
 }
 
 type Number i32;
 
 fn void test4() {
-    Number a = "foo";  // @error{invalid type conversion from 'char[4]' to '(alias)test.Number => i32'}
+    Number a = "foo";  // @error{invalid type conversion from 'const char[4]' to '(alias)test.Number => i32'}
 }
 
 fn void test5() {

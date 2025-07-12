@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-char* a = "AAA";
-u8* b = "BBB";
-i8* c = "CCC"; // @error{invalid type conversion from 'char[4]' to 'i8*'}
-
+const char* a = "AAA";
+const u8* b = "BBB";
+const i8* c = "CCC"; // @error{invalid type conversion from 'const char[4]' to 'const i8*'}
+char* d = "CCC"; // @error{pointer conversion discards const qualifier}

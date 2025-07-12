@@ -2,7 +2,7 @@
 module test;
 
 type S struct {
-    u8* cp;
+    const u8* cp;
     i32 a;
 }
 
