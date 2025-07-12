@@ -271,14 +271,14 @@ type Event union @(cname="SDL_Event") {
 #if 0
     SDL_CommonEvent common;                 /**< Common event data */
     SDL_DisplayEvent display;               /**< Display event data */
-    SDL_WindowEvent window;                 /**< Window event data */
 #endif
+    WindowEvent window;                     /**< Window event data */
     KeyboardEvent key;                      /**< Keyboard event data */
     TextEditingEvent edit;                  /**< Text editing event data */
     TextInputEvent text;                    /**< Text input event data */
     MouseMotionEvent motion;                /**< Mouse motion event data */
     MouseButtonEvent button;                /**< Mouse button event data */
-    MouseWheelEvent wheel;              /**< Mouse wheel event data */
+    MouseWheelEvent wheel;                  /**< Mouse wheel event data */
 #if 0
     SDL_JoyAxisEvent jaxis;                 /**< Joystick axis event data */
     SDL_JoyBallEvent jball;                 /**< Joystick ball event data */
@@ -316,6 +316,45 @@ type Event union @(cname="SDL_Event") {
     */
     //u8 padding[sizeof(void *) <= 8 ? 56 : sizeof(void *) == 16 ? 64 : 3 * sizeof(void *)];
     u8[56] padding;
+}
+
+type WindowEventId enum u8 {
+    NONE,           /**< Never used */
+    SHOWN,          /**< Window has been shown */
+    HIDDEN,         /**< Window has been hidden */
+    EXPOSED,        /**< Window has been exposed and should be
+                         redrawn */
+    MOVED,          /**< Window has been moved to data1, data2
+                     */
+    RESIZED,        /**< Window has been resized to data1xdata2 */
+    SIZE_CHANGED,   /**< The window size has changed, either as
+                         a result of an API call or through the
+                         system or user changing the window size. */
+    MINIMIZED,      /**< Window has been minimized */
+    MAXIMIZED,      /**< Window has been maximized */
+    RESTORED,       /**< Window has been restored to normal size
+                         and position */
+    ENTER,          /**< Window has gained mouse focus */
+    LEAVE,          /**< Window has lost mouse focus */
+    FOCUS_GAINED,   /**< Window has gained keyboard focus */
+    FOCUS_LOST,     /**< Window has lost keyboard focus */
+    CLOSE,          /**< The window manager requests that the window be closed */
+    TAKE_FOCUS,     /**< Window is being offered a focus (should SetWindowInputFocus() on itself or a subwindow, or ignore) */
+    HIT_TEST,       /**< Window had a hit test that wasn't SDL_HITTEST_NORMAL. */
+    ICCPROF_CHANGED,/**< The ICC profile of the window's display has changed. */
+    DISPLAY_CHANGED /**< Window has been moved to display data1. */
+}
+
+type WindowEvent struct {
+    u32 type_;        /**< ::SDL_WINDOWEVENT */
+    u32 timestamp;   /**< In milliseconds, populated using SDL_GetTicks() */
+    u32 windowID;    /**< The associated window */
+    WindowEventId event;        /**< ::SDL_WindowEventID */
+    u8 padding1;
+    u8 padding2;
+    u8 padding3;
+    i32 data1;       /**< event dependent data */
+    i32 data2;       /**< event dependent data */
 }
 
 type KeyboardEvent struct {
