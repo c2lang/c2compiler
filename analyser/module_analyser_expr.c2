@@ -306,6 +306,16 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
 }
 
 fn bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft, const char* msg, SrcLoc loc) {
+    if (!assignee.isLValue()) {
+        ma.errorRange(assignee.getLoc(), assignee.getRange(), "lvalue required as %s", msg);
+        return false;
+    }
+
+    if (tleft.isArray()) {
+        ma.error(loc, "array type '%s' is not assignable", tleft.diagName());
+        return false;
+    }
+
     if (tleft.isConst()) {
         //assignee.dump();
         if (assignee.isIdentifier()) {
@@ -339,16 +349,6 @@ fn bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft, c
             }
         }
         ma.error(loc, "cannot assign to variable with const-qualified type '%s'", tleft.diagName());
-        return false;
-    }
-
-    if (!assignee.isLValue()) {
-        ma.errorRange(assignee.getLoc(), assignee.getRange(), "lvalue required as %s", msg);
-        return false;
-    }
-
-    if (tleft.isArray()) {
-        ma.error(loc, "array type '%s' is not assignable", tleft.diagName());
         return false;
     }
 

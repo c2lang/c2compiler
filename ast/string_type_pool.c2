@@ -70,7 +70,11 @@ fn QualType StringTypePool.get(StringTypePool* p, u32 len) {
     // Note: re-use char[x] existing types
     for (u32 i=0; i<p.count; i++) {
         StringTypeSlot* s = &p.slots[i];
-        if (s.len == len) return QualType.create(s.type_);
+        if (s.len == len) {
+            QualType qt = QualType.create(s.type_);
+            qt.setConst();
+            return qt;
+        }
     }
     if (p.count == p.capacity) p.resize(p.capacity * 2);
 
@@ -81,6 +85,7 @@ fn QualType StringTypePool.get(StringTypePool* p, u32 len) {
     p.count++;
     QualType qt = QualType.create(t);
     t.setCanonicalType(qt);
+    qt.setConst();
     return qt;
 }
 
