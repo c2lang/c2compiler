@@ -244,10 +244,10 @@ executable c2c
 
     generator/ast_visitor.c2
     generator/ast_visitor_expr.c2
-    generator/c/c2i_generator.c2
-    generator/c/c2i_generator_decl.c2
-    generator/c/c2i_generator_expr.c2
-    generator/c/c2i_generator_stmt.c2
+    generator/c2i/c2i_generator.c2
+    generator/c2i/c2i_generator_decl.c2
+    generator/c2i/c2i_generator_expr.c2
+    generator/c2i/c2i_generator_stmt.c2
     generator/c/c_generator.c2
     generator/c/c_generator_call.c2
     generator/c/c_generator_expr.c2

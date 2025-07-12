@@ -196,6 +196,7 @@ public fn u32 CallExpr.getNumArgs(const CallExpr* e) {
     return e.base.base.callExprBits.num_args;
 }
 
+// TODO: should be Expr* const* CallExpr.getArgs(const CallExpr* e)
 public fn Expr** CallExpr.getArgs(CallExpr* e) {
     return e.args;
 }

@@ -16,53 +16,73 @@
 module c2i_generator;
 
 import ast local;
+import component;
 import console;
 import file_utils;
 import string_buffer;
 import string_list;
+import string_pool;
 
 type Generator struct {
+    string_pool.Pool* astPool;
     string_buffer.Buf* out;
+    const char* output_dir;
     string_list.List imports;  // used to filter out duplicate imports (from different ASTs)
     Module* mod;
+    const char* mod_name;
     bool in_body;
 }
 
-public fn void generate(const char* output_dir,
-                        ast.Module* mod)
+public fn void generate(string_pool.Pool* astPool, const char* output_dir, component.List* comps)
 {
-    Generator gen = {
-        .out = string_buffer.create(256*1024, false, 3),
-        .mod = mod,
-        .in_body = false,
+    Generator gen = {}
+    gen.astPool = astPool;
+    gen.out = string_buffer.create(64*1024, false, 3);
+    gen.output_dir = output_dir;
+
+    component.Component* mainComp = comps.getLast();
+
+    // generate external components
+    for (u32 i=0; i<comps.size(); i++) {
+        component.Component* c = comps.get(i);
+        c.visitModules(Generator.on_module, &gen);
     }
+    // generate main module
+    mainComp.visitModules(Generator.on_module, &gen);
+    gen.out.free();
+}
+
+fn void Generator.on_module(void* arg, Module* m) {
+    if (!m.isUsed() || !m.isExported()) return;
+
+    Generator* gen = arg;
+    gen.out.clear();
+    gen.mod = m;
+    gen.mod_name = m.getName();
+    gen.in_body = false;
     gen.imports.init(nil);  // note: cannot get string values! (not needed)
 
     // module
-    gen.out.print("module %s;\n\n", mod.getName());
+    gen.out.print("module %s;\n\n", gen.mod_name);
 
     // imports
-    mod.visitImports(on_import, &gen);
+    m.visitImports(on_import, gen);
     if (gen.imports.length()) gen.out.newline();
 
     // public decls
-    mod.visitDecls(on_decl, &gen);
+    m.visitDecls(on_decl, gen);
 
-    gen.write(output_dir);
-    gen.out.free();
-    gen.imports.free();
-}
-
-fn void Generator.write(Generator* gen, const char* output_dir) {
-    file_utils.File file.init_ext(output_dir, gen.mod.getName(), ".c2i");
+    file_utils.File file.init_ext(gen.output_dir, gen.mod_name, ".c2i");
     if (!file.write(gen.out.udata(), gen.out.size())) {
         console.error("cannot write to %s: %s", file.path, file.getError());
     }
+
+    gen.imports.free();
 }
 
 fn void on_import(void* arg, ImportDecl* i) {
     Generator* gen = arg;
-    Decl* d = cast<Decl*>(i);
+    Decl* d = (Decl*)i;
 
     if (!d.isUsedPublic()) return;
 
@@ -80,6 +100,5 @@ fn void on_decl(void* arg, Decl* d) {
     if (!d.isPublic()) return;
     if (d.isImport()) return;
 
-    gen.emitDecl(d);
+    gen.emitGlobalDecl(d);
 }
-

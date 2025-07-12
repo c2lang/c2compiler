@@ -49,13 +49,13 @@ fn Expr* BitOffsetExpr.instantiate(BitOffsetExpr* e, Instantiator* inst) {
     return (Expr*)b;
 }
 
-public fn Expr* BitOffsetExpr.getLHS(BitOffsetExpr* e) { return e.lhs; }
+public fn Expr* BitOffsetExpr.getLHS(const BitOffsetExpr* e) { return e.lhs; }
 public fn Expr** BitOffsetExpr.getLHS2(BitOffsetExpr* e) { return &e.lhs; }
 
-public fn Expr* BitOffsetExpr.getRHS(BitOffsetExpr* e) { return e.rhs; }
+public fn Expr* BitOffsetExpr.getRHS(const BitOffsetExpr* e) { return e.rhs; }
 public fn Expr** BitOffsetExpr.getRHS2(BitOffsetExpr* e) { return &e.rhs; }
 
-public fn void BitOffsetExpr.setWidth( BitOffsetExpr* e, u8 width) {
+public fn void BitOffsetExpr.setWidth(BitOffsetExpr* e, u8 width) {
     e.base.base.bitOffsetBits.width = width;
 }
 

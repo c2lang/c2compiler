@@ -1,0 +1,297 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module c2i_generator;
+
+import ast local;
+import string_buffer;
+
+fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
+    string_buffer.Buf* out = gen.out;
+
+    if (newline) out.indent(indent);
+
+    switch (s.getKind()) {
+    case Return:
+        out.add("return");
+        ReturnStmt* r = cast<ReturnStmt*>(s);
+        ast.Expr* val = r.getValue();
+        if (val) {
+            out.space();
+            gen.emitExpr(out, val);
+        }
+        if (!out.endsWith('}')) out.add1(';');
+        out.newline();
+        break;
+    case Expr:
+        gen.emitExpr(out, cast<Expr*>(s));
+        if (newline) {
+            if (!out.endsWith('}')) out.add1(';');
+            out.newline();
+        }
+        break;
+    case If:
+        IfStmt* i = cast<IfStmt*>(s);
+        out.add("if (");
+        gen.emitStmt(i.getCond(), 0, false);
+        out.add(") ");
+        Stmt* thenStmt = i.getThen();
+        gen.emitStmt(thenStmt, indent, false);
+        if (!thenStmt.isCompound()) {
+            if (!out.endsWith('\n')) {
+                if (!out.endsWith('}')) out.add1(';');
+            }
+        }
+        Stmt* elseStmt = i.getElse();
+        if (elseStmt) {
+            if (thenStmt.isCompound()) {
+                out.space();
+            } else {
+                if (!out.endsWith('\n')) out.newline();
+                out.indent(indent);
+            }
+            out.add("else ");
+            gen.emitStmt(elseStmt, indent, false);
+            if (!elseStmt.isCompound()) {
+                if (!out.endsWith('\n')) {
+                    if (!out.endsWith('}')) out.add1(';');
+                }
+            }
+        }
+        if (!out.endsWith('\n')) out.newline();
+        break;
+    case While:
+        WhileStmt* w = cast<WhileStmt*>(s);
+        out.add("while (");
+        gen.emitStmt(w.getCond(), 0, false);
+        out.add(") ");
+        Stmt* body = w.getBody();
+        gen.emitStmt(body, indent, false);
+        if (!body.isCompound()) {
+            if (!out.endsWith('\n')) {
+                if (!out.endsWith('}')) out.add1(';');
+            }
+        }
+        if (!out.endsWith('\n')) out.newline();
+        break;
+    case For:
+        ForStmt* f = cast<ForStmt*>(s);
+        out.add("for (");
+        Stmt* initStmt = f.getInit();
+        if (initStmt) {
+            gen.emitStmt(initStmt, 0, false);
+        }
+        out.add1(';');
+        if (f.getCond()) {
+            out.space();
+            gen.emitExpr(out, f.getCond());
+        }
+        out.add1(';');
+        Expr* cont = f.getCont();
+        if (cont) {
+            out.space();
+            gen.emitExpr(out, cont);
+        }
+        out.add(") ");
+        Stmt* body = f.getBody();
+        gen.emitStmt(body, indent, false);
+        if (!body.isCompound()) {
+            if (!out.endsWith('\n')) {
+                if (!out.endsWith('}')) out.add1(';');
+            }
+        }
+        if (!out.endsWith('\n')) out.newline();
+        break;
+    case Switch:
+        gen.emitSwitchStmt(cast<SwitchStmt*>(s), indent);
+        break;
+    case Break:
+        out.add("break;\n");
+        break;
+    case Continue:
+        out.add("continue;\n");
+        break;
+    case Fallthrough:
+        out.add("fallthrough;\n");
+        break;
+    case Label:
+        out.unindent();
+        LabelStmt* ls = cast<LabelStmt*>(s);
+        Stmt* stmt = ls.getStmt();
+        out.add(ls.getName());
+        out.add1(':');
+        out.newline();
+        if (stmt) {
+            gen.emitStmt(stmt, indent, true);
+        }
+        break;
+    case Goto:
+        GotoStmt* g = cast<GotoStmt*>(s);
+        out.add("goto ");
+        out.add(g.getName());
+        out.add(";\n");
+        break;
+    case Compound:
+        CompoundStmt* c = cast<CompoundStmt*>(s);
+        // TODO: no newline if empty block?
+        out.add("{\n");
+        u32 count = c.getCount();
+        Stmt** stmts = c.getStmts();
+        for (u32 i=0; i<count; i++) {
+            gen.emitStmt(stmts[i], indent+1, true);
+        }
+
+        out.indent(indent);
+        out.add1('}');
+        if (newline) out.newline();
+        break;
+    case Decl:
+        DeclStmt* ds = cast<DeclStmt*>(s);
+        u32 count = ds.getDeclCount();
+        bool first = true;
+        for (u32 i = 0; i < count; i++) {
+            gen.emitVarDecl(out, ds.getDecl(i), first);
+            first = false;
+        }
+        if (newline) {
+            if (!out.endsWith('}')) out.add1(';');
+            out.newline();
+        }
+        break;
+    case Asm:
+        gen.emitAsmStmt(cast<AsmStmt*>(s), indent);
+        break;
+    case Assert:
+        AssertStmt* a = cast<AssertStmt*>(s);
+        out.add("assert(");
+        gen.emitExpr(out, a.getInner());
+        out.add(");\n");
+        break;
+    }
+}
+
+fn void emitAsmPart(string_buffer.Buf* out, bool multi_line, u32 indent) {
+    if (multi_line) {
+        out.newline();
+        out.indent(indent);
+    } else {
+        out.space();
+    }
+    out.add(": ");
+}
+
+fn void Generator.emitAsmOperand(Generator* gen, u32 name, const Expr* c, Expr* e) {
+    string_buffer.Buf* out = gen.out;
+    if (name) {
+        out.print("[%s] ", gen.astPool.idx2str(name));
+    }
+    const StringLiteral* cs = cast<StringLiteral*>(c);
+    cs.printLiteral(out);
+    out.add(" (");
+    gen.emitExpr(out, e);
+    out.rparen();
+}
+
+fn void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
+    string_buffer.Buf* out = gen.out;
+
+    out.add("asm ");
+    if (a.isVolatile()) out.add("volatile ");
+
+    out.lparen();
+    StringLiteral* str = a.getString();
+    str.printLiteral(out);
+
+    u32 num_outputs = a.getNumOutputs();
+    u32 num_inputs = a.getNumInputs();
+    u32 num_clobbers = a.getNumClobbers();
+    bool multi_line = false;
+    if ((num_outputs + num_inputs + num_clobbers) > 4 || num_clobbers != 0) multi_line = true;
+
+    if (num_outputs + num_inputs + num_clobbers) {
+        u32* names = a.getNames();
+        const Expr** constraints = a.getConstraints();
+        Expr** exprs = a.getExprs();
+        // outputs
+        emitAsmPart(out, multi_line, indent);
+        for (u32 i=0; i<num_outputs; i++) {
+            if (i!=0) out.add(", ");
+            gen.emitAsmOperand(names[i], constraints[i], exprs[i]);
+        }
+        // inputs
+        if (num_inputs | num_clobbers) {
+            emitAsmPart(out, multi_line, indent);
+            for (u32 i=0; i<num_inputs; i++) {
+                if (i!=0) out.add(", ");
+                u32 idx = i + num_outputs;
+                gen.emitAsmOperand(names[idx], constraints[idx], exprs[idx]);
+            }
+        }
+        // clobbers
+        if (num_clobbers) {
+            Expr** clobbers = a.getClobbers();
+            emitAsmPart(out, multi_line, indent);
+            for (u32 i=0; i<num_clobbers; i++) {
+                if (i!=0) out.add(", ");
+                StringLiteral* l = cast<StringLiteral*>(clobbers[i]);
+                l.printLiteral(out);
+            }
+        }
+    }
+
+    out.rparen();
+    out.add(";\n");
+}
+
+fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
+    string_buffer.Buf* out = gen.out;
+
+    out.add("switch (");
+    gen.emitExpr(out, sw.getCond());
+    out.add(") {\n");
+
+    const u32 num_cases = sw.getNumCases();
+    SwitchCase** cases = sw.getCases();
+    for (u32 i = 0; i < num_cases; i++) {
+        gen.emitCase(cases[i], indent, nil);
+    }
+    out.indent(indent);
+    out.add("}\n");
+}
+
+fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) {
+    string_buffer.Buf* out = gen.out;
+
+    out.indent(indent);
+    if (c.isDefault()) {
+        out.print("default:\n");
+    } else {
+        out.add("case ");
+        u32 num_conds = c.getNumConds();
+        for (u32 i = 0; i < num_conds; i++) {
+            if (i) out.add(", ");
+            gen.emitExpr(out, c.getCond(i));
+        }
+        out.print(":\n");
+    }
+
+    const u32 num_stmts = c.getNumStmts();
+    if (num_stmts) {
+        Stmt** stmts = c.getStmts();
+        for (u32 i=0; i<num_stmts; i++) {
+            gen.emitStmt(stmts[i], indent+1, true);
+        }
+    }
+}

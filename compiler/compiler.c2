@@ -23,6 +23,7 @@ import build_file;
 import build_target;
 import c2_parser;
 import c_generator;
+import c2i_generator;
 import color;
 import component;
 import console;
@@ -473,6 +474,14 @@ fn void Compiler.build(Compiler* c,
     // mark toplevel components
     component.Component* mainComp = c.components.getLast();
     generator_utils.mark_used(mainComp, &c.allmodules, c.opts.test_mode);
+
+    if (c.target.getExports().length()) {
+        console.debug("generating C2 interfaces");
+        u64 gen3 = utils.now();
+        c2i_generator.generate(c.astPool, info.output_dir, &c.components);
+        u64 gen4 = utils.now();
+        console.log_time("C2i generation", gen4 - gen3);
+    }
 
     // NOTE: only 1 backend can consume the AST, since it might change the AST in backend-specific ways
 

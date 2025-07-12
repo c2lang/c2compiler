@@ -34,6 +34,7 @@ public fn void List.init(List* l, string_pool.Pool* pool) {
 
 public fn void List.free(List* l) {
     stdlib.free(l.indexes);
+    l.indexes = nil;
 }
 
 public fn void List.clear(List* l) {

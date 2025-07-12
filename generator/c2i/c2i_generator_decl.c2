@@ -18,60 +18,89 @@ module c2i_generator;
 import ast local;
 import string_buffer;
 
-fn void Generator.emitDecl(Generator* gen, Decl* d) {
-    string_buffer.Buf* out = gen.out;
+fn void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, const Decl* d) {
+    VarDecl* v = cast<VarDecl*>(d);
 
+    gen.emitType(out, d.getType());
+    out.space();
+    if (d.getName()) out.add(d.getName());
+
+    QualType qt = d.getType();
+    bool semi = true;
+    if (qt.isConst() && v.getInit()) {
+        Expr* initExpr = v.getInit();
+        out.add(" = ");
+        gen.emitExpr(out, initExpr);
+        if (out.endsWith('}')) semi = false;
+    }
+
+    if (semi) out.add1(';');
+    out.newline();
+}
+
+fn void Generator.emitVarDecl(Generator* gen, string_buffer.Buf* out, const VarDecl* vd, bool first) {
+    Decl* d = cast<Decl*>(vd);
+
+    if (first) {
+        if (vd.hasLocalQualifier()) out.add("local ");
+        gen.emitType(out, d.getType());
+    } else {
+        out.add1(',');
+    }
+    Expr* bitfield = vd.getBitfield();
+    if (bitfield) {
+        out.add(" : ");
+        gen.emitExpr(out, bitfield);
+    }
+    out.space();
+    const Expr* ie = vd.getInit();
+    if (vd.hasInitCall()) {
+        gen.emitExpr(out, ie);
+    } else {
+        if (d.getName()) {
+            out.add(d.getName());
+            if (ie) {
+                out.add(" = ");
+                gen.emitExpr(out, ie);
+            }
+        }
+        if (vd.hasAutoAttr()) {
+            if (vd.hasAttrAutoFile()) out.add(" @(auto_file)");
+            if (vd.hasAttrAutoLine()) out.add(" @(auto_line)");
+            if (vd.hasAttrAutoFunc()) out.add(" @(auto_func)");
+        }
+    }
+}
+
+fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
+    string_buffer.Buf* out = gen.out;
     switch (d.getKind()) {
     case Function:
-        gen.emitFunctionDecl(d, false);
+        gen.emitFunctionDecl(out, d, false);
         break;
     case Import:
+        // TODO: might need these
         break;
     case StructType:
-        gen.emitStructTypeDecl(d, 0);
+        gen.emitStruct(out, d, 0);
         break;
     case EnumType:
-        gen.emitEnumType(d);
+        gen.emitEnumType(out, d);
         break;
     case EnumConstant:
         assert(0);
         break;
     case FunctionType:
-        gen.emitFunctionTypeDecl(d);
+        gen.emitFunctionTypeDecl(out, d);
         break;
     case AliasType:
-        gen.emitAliasTypeDecl(d);
+        gen.emitAliasTypeDecl(out, d);
         break;
     case Variable:
-        gen.emitVarDecl(d, 0);
-        out.add(";\n");
+        gen.emitGlobalVarDecl(out, d);
         break;
     }
     out.newline();
-}
-
-fn void Generator.emitVarDecl(Generator* gen, const Decl* d, u32 indent) {
-    string_buffer.Buf* out = gen.out;
-    VarDecl* v = cast<VarDecl*>(d);
-
-    out.indent(indent);
-    gen.emitType(d.getType());
-    out.space();
-    if (d.getName()) out.add(d.getName());
-
-    QualType qt = d.getType();
-    if (qt.isConst() && v.getInit()) {
-        Expr* initExpr = v.getInit();
-        out.add(" = ");
-        gen.emitExpr(initExpr);
-    }
-
-    if (v.hasAutoAttr()) {
-        if (v.hasAttrAutoFile()) out.add(" @(auto_file)");
-        if (v.hasAttrAutoLine()) out.add(" @(auto_line)");
-        if (v.hasAttrAutoFunc()) out.add(" @(auto_func)");
-    }
-    // Note: dont add ';' because it could also be a function argument
 }
 
 fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, Decl* d) {
@@ -86,7 +115,7 @@ fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, Decl* d) 
             FunctionDecl* fd = cast<FunctionDecl*>(d);
             Ref* prefix = fd.getPrefix();
             if (prefix) {
-                out.add(ast.idx2name(prefix.name_idx));
+                out.add(gen.astPool.idx2str(prefix.name_idx));
                 out.add1('.');
             }
         }
@@ -157,31 +186,12 @@ fn void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualType 
     gen.emitTypePost(out, at.getElemType());
 }
 
-fn void Generator.emitType(Generator* gen, QualType qt) {
-    gen.emitTypePre(gen.out, qt);
-    gen.emitTypePost(gen.out, qt);
+fn void Generator.emitType(Generator* gen, string_buffer.Buf* out, QualType qt) {
+    gen.emitTypePre(out, qt);
+    gen.emitTypePost(out, qt);
 }
 
-#if 0
-fn void Generator.emitTypeRef(Generator* gen, const TypeRef* ref) {
-    const Decl* d = ref.getUserDecl();
-    bool is_external = d && d.getModule() != gen.mod;
-
-    if (gen.in_body) {
-        ref.printLiteral2(gen.out, is_external, print_expr, gen);
-    } else {
-        ref.printLiteral(gen.out, is_external);
-    }
-}
-
-fn void print_expr(void* arg, const Expr* e, string_buffer.Buf* out) {
-    Generator* gen = arg;
-    gen.emitExpr(e);
-}
-#endif
-
-fn void Generator.emitEnumType(Generator* gen, const Decl* d) {
-    string_buffer.Buf* out = gen.out;
+fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, const Decl* d) {
     EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
 
     out.print("type %s enum ", d.getName());
@@ -189,27 +199,27 @@ fn void Generator.emitEnumType(Generator* gen, const Decl* d) {
     implType.print(out);
     out.add(" {\n");
 
+    u32 num_constants = etd.getNumConstants();
     EnumConstantDecl** constants = etd.getConstants();
-    for (u32 i=0; i<etd.getNumConstants(); i++) {
+    for (u32 i = 0; i < num_constants; i++) {
         EnumConstantDecl* ecd = constants[i];
         out.indent(1);
         out.add(ecd.asDecl().getName());
         Expr* initExpr = ecd.getInit();
         if (initExpr) {
             out.add (" = ");
-            gen.emitExpr(initExpr);
+            gen.emitExpr(out, initExpr);
         }
         out.add(",\n");
     }
     out.add("}\n");
 }
 
-fn void Generator.emitFunctionDecl(Generator* gen, const Decl* d, bool as_type) {
-    string_buffer.Buf* out = gen.out;
+fn void Generator.emitFunctionDecl(Generator* gen, string_buffer.Buf* out, const Decl* d, bool as_type) {
     FunctionDecl* fd = cast<FunctionDecl*>(d);
 
     if (!as_type) out.add("fn ");
-    gen.emitType(fd.getRType());
+    gen.emitType(out, fd.getRType());
     if (!as_type) {
         out.space();
         const char* prefix = fd.getPrefixName();
@@ -225,7 +235,7 @@ fn void Generator.emitFunctionDecl(Generator* gen, const Decl* d, bool as_type) 
     u32 num_params = fd.getNumParams();
     for (u32 i=0; i<num_params; i++) {
         if (i != 0) out.add(", ");
-        gen.emitVarDecl(cast<Decl*>(params[i]), 0);
+        gen.emitVarDecl(out, params[i], true);
     }
     if (fd.isVariadic()) {
         if (num_params) out.add(", ");
@@ -244,140 +254,60 @@ fn void Generator.emitFunctionDecl(Generator* gen, const Decl* d, bool as_type) 
     }
 }
 
-fn void Generator.emitFunctionTypeDecl(Generator* gen, const Decl* d) {
-    string_buffer.Buf* out = gen.out;
+fn void Generator.emitFunctionTypeDecl(Generator* gen, string_buffer.Buf* out, const Decl* d) {
     const FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
     out.print("type %s fn ", d.getName());
-    gen.emitFunctionDecl(cast<Decl*>(ftd.getDecl()), true);
+    gen.emitFunctionDecl(out, cast<Decl*>(ftd.getDecl()), true);
 }
 
-fn void Generator.emitAliasTypeDecl(Generator* gen, const Decl* d) {
-    string_buffer.Buf* out = gen.out;
+fn void Generator.emitAliasTypeDecl(Generator* gen, string_buffer.Buf* out, const Decl* d) {
     AliasTypeDecl* a = cast<AliasTypeDecl*>(d);
     out.print("type %s ", d.getName());
     QualType qt = a.asDecl().getType();
-    gen.emitType(qt.getCanonicalType());
+    gen.emitType(out, qt.getCanonicalType());
     out.add(";\n");
 }
 
-fn void Generator.emitStructTypeDecl(Generator* gen, const Decl* d, u32 indent) {
-    string_buffer.Buf* out = gen.out;
+fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
+    if (d.isVariable()) {
+        out.indent(indent);
+        gen.emitVarDecl(out, cast<VarDecl*>(d), true);
+        if (!out.endsWith('}')) out.add1(';');
+        out.newline();
+    } else {
+        assert(d.isStructType());
+        gen.emitStruct(out, d, indent);
+    }
+}
+
+fn void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, const Decl* d, u32 indent) {
     StructTypeDecl* std = cast<StructTypeDecl*>(d);
-    out.indent(indent);
     if (indent == 0) {
         out.add("type ");
         out.add(d.getName());
         if (std.isStruct()) out.add(" struct");
         else out.add(" union");
     } else {
+        out.indent(indent);
         if (std.isStruct()) out.add("struct");
         else out.add("union");
-        if (d.getNameIdx()) out.print(" %s", d.getName());
+        if (d.getNameIdx()) {
+            out.space();
+            out.add(d.getName());
+        }
     }
     if (std.isOpaque()) {
         out.add(" @(opaque) {}\n");
     } else {
         out.add(" {\n");
 
+        u32 num_members = std.getNumMembers();
         Decl** members = std.getMembers();
-        for (u32 i=0; i<std.getNumMembers(); i++) {
-            const Decl* m = members[i];
-            if (m.isStructType()) {
-                gen.emitStructTypeDecl(m, indent+1);
-            } else {
-                assert(m.isVariable());
-                gen.emitVarDecl(m, indent+1);
-                out.add(";\n");
-            }
+        for (u32 i=0; i<num_members; i++) {
+            gen.emitStructMember(out, members[i], indent+1);
         }
 
         out.indent(indent);
         out.add("}\n");
     }
 }
-
-fn void Generator.emitMember(Generator* gen, const Expr* e) {
-    string_buffer.Buf* out = gen.out;
-    const MemberExpr* m = cast<MemberExpr*>(e);
-    const Expr* base = m.getExprBase();
-    if (base) {
-        gen.emitExpr(base);
-    }
-    for (u32 i=0; i<m.getNumRefs(); i++) {
-        if (i != 0 || base) out.add1('.');
-        Ref r = m.getRef(i);
-        if (i == 0 && r.decl.getModule() != gen.mod) {
-            out.add(r.decl.getFullName());
-        } else {
-            out.add(r.decl.getName());
-        }
-    }
-}
-
-#if 0
-fn void Generator.emitCtv(Generator* /*gen*/, string_buffer.Buf* out, const Expr* e) {
-    Value val = ctv_analyser.get_value(e);
-    out.print("%s", val.str());
-}
-#endif
-
-#if 0
-fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
-    if (d.isVariable()) {
-        VarDecl* vd = cast<VarDecl*>(d);
-        if (!vd.isGlobal()) {
-            out.add(d.getName());
-            return;
-        }
-    }
-    //gen.emitCNameMod(out, d, d.getModule());
-}
-
-fn void Generator.emitEnum(Generator* gen, Decl* d) {
-    EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
-    out.add("typedef enum {\n");
-    u32 num_constants = etd.getNumConstants();
-    EnumConstantDecl** decls = etd.getConstants();
-    for (u32 i=0; i<num_constants; i++) {
-        EnumConstantDecl* ecd = decls[i];
-        out.indent(1);
-        out.add(gen.mod_name);
-        out.add1('_');
-        out.add(d.getName());
-        out.add1('_');
-        out.add(ecd.asDecl().getName());
-        Expr* ie = ecd.getInit();
-        ecd.asDecl().setGenerated();
-        if (ie) {
-            out.add(" = ");
-            gen.emitExpr(out, ie);
-        }
-        out.add(",\n");
-    }
-    // add max to ensure size is ok
-    QualType implType = etd.getImplType();
-    const BuiltinType* bi = implType.getBuiltin();
-    out.indent(1);
-    out.print("_%s_%s_max = ", gen.mod_name, d.getName());
-    switch (bi.getAlignment()) {
-    case 1:
-        out.add("255");
-        break;
-    case 2:
-        out.add("65535");
-        break;
-    case 4:
-        out.add("4294967295");
-        break;
-    case 8:
-        out.add("18446744073709551615");
-        break;
-    }
-    out.newline();
-
-    out.add("} __attribute__((packed)) ");
-    //gen.emitCName(out, d);
-    out.add(";\n\n");
-}
-#endif
-

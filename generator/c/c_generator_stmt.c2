@@ -92,7 +92,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
             if (!out.endsWith('\n')) out.add1(';');
         }
 
-        Stmt* elseStmt =  i.getElse();
+        Stmt* elseStmt = i.getElse();
         if (elseStmt) {
             if (thenStmt.isCompound()) {
                 out.space();
@@ -143,7 +143,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         Stmt* body = w.getBody();
         gen.emitStmt(body, indent, false);
         if (!body.isCompound()) {
-            out.add1(';');
+            if (!out.endsWith('\n')) out.add1(';');
         }
         out.newline();
         if (is_decl) {
@@ -174,12 +174,12 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         Stmt* body = f.getBody();
         gen.emitStmt(body, indent, false);
         if (!body.isCompound()) {
-            out.add1(';');
+            if (!out.endsWith('\n')) out.add1(';');
         }
         out.newline();
         break;
     case Switch:
-        gen.emitSwitchStmt(s, indent);
+        gen.emitSwitchStmt(cast<SwitchStmt*>(s), indent);
         break;
     case Break:
         out.add("break;\n");
@@ -191,8 +191,9 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         out.add("fallthrough;\n");
         break;
     case Label:
+        out.unindent();
         LabelStmt* ls = cast<LabelStmt*>(s);
-        ast.Stmt* stmt = ls.getStmt();
+        Stmt* stmt = ls.getStmt();
         out.add(ls.getName());
         out.add1(':');
         if (!stmt || stmt.isDecl()) {
@@ -211,9 +212,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         break;
     case Compound:
         CompoundStmt* c = cast<CompoundStmt*>(s);
-
         out.add("{\n");
-
         u32 count = c.getCount();
         Stmt** stmts = c.getStmts();
         for (u32 i=0; i<count; i++) {
@@ -269,7 +268,6 @@ fn void emitAsmPart(string_buffer.Buf* out, bool multi_line, u32 indent) {
     out.add(": ");
 }
 
-
 fn void Generator.emitAsmOperand(Generator* gen, u32 name, const Expr* c, Expr* e) {
     string_buffer.Buf* out = gen.out;
     if (name) {
@@ -280,7 +278,6 @@ fn void Generator.emitAsmOperand(Generator* gen, u32 name, const Expr* c, Expr* 
     out.add(" (");
     gen.emitExpr(out, e);
     out.rparen();
-
 }
 
 fn void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
@@ -334,10 +331,9 @@ fn void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
     out.add(";\n");
 }
 
-fn void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
+fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
     string_buffer.Buf* out = gen.out;
 
-    SwitchStmt* sw = cast<SwitchStmt*>(s);
     const u32 num_cases = sw.getNumCases();
     SwitchCase** cases = sw.getCases();
 
@@ -397,14 +393,12 @@ fn void Generator.emitSwitchStmt(Generator* gen, Stmt* s, u32 indent) {
 
 fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) {
     string_buffer.Buf* out = gen.out;
-    const char* brace = "";
-    if (c.hasDecls()) brace = " {";
+    const char* brace = c.hasDecls() ? " {" : "";
 
+    out.indent(indent);
     if (c.isDefault()) {
-        out.indent(indent);
         out.print("default:%s\n", brace);
     } else {
-        out.indent(indent);
         out.add("case ");
         if (lab) {  /* string case */
             Expr* e = c.getCond(0);

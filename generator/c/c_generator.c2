@@ -19,7 +19,6 @@ import ast local;
 import diagnostics;
 import build_file;
 import build_target;
-import c2i_generator;
 import component;
 import constants;
 import console;
@@ -197,7 +196,7 @@ fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, const Dec
     gen.emitCNameMod(out, d, d.getModule());
 }
 
-fn void Generator.emitEnum(Generator* gen, string_buffer.Buf* out, Decl* d) {
+fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, Decl* d) {
     EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
 
     // typedef enum types to their implementation type
@@ -395,13 +394,12 @@ fn void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, u3
         else out.add("union ");
         gen.emitCName(out, d);
         if (!std.hasAttrNoTypeDef()) out.add1('_'); // either generate 'struct stat_' or 'struct stat'
-        out.add(" {\n");
     } else {
         out.indent(indent);
         if (std.isStruct()) out.add("struct");
         else out.add("union");
-        out.add(" {\n");
     }
+    out.add(" {\n");
 
     u32 num_members = std.getNumMembers();
     Decl** members = std.getMembers();
@@ -691,7 +689,7 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
         break;
     case EnumType:
         Fragment* f = gen.getFragment();
-        gen.emitEnum(f.buf, d);
+        gen.emitEnumType(f.buf, d);
         gen.addFragment(f, d.isPublic());
         break;
     case EnumConstant:
@@ -987,7 +985,7 @@ fn void Generator.emitHeaderDecl(Generator* gen, Decl* d) {
         gen.emitStruct(out, d, 0);
         break;
     case EnumType:
-        gen.emitEnum(out, d);
+        gen.emitEnumType(out, d);
         break;
     case EnumConstant:
         assert(0);
@@ -1013,8 +1011,6 @@ fn void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     gen.imports.clear();
     gen.header.clear();
     gen.decls.clear();
-
-    c2i_generator.generate(gen.results_dir, m);
 
     string_buffer.Buf* hdr = gen.header;
     add_gen_warning(hdr);

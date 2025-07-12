@@ -1,0 +1,171 @@
+// @recipe lib static
+    $warnings no-unused
+    $backend c
+    $export test1
+
+// @file{test1}
+module test1;
+
+public fn i32 test_fn(const char* format, ...) @(inline) {
+    const char* p;
+    if (const char *q = format) {
+    }
+    if (format) {
+    }
+    if (format) {
+    } else {
+    }
+    if (format) {
+        p = format;
+    }
+    if (format) {
+        p = format;
+    } else {
+        p = format;
+    }
+    if (format) p = format;
+    if (format) p = format;
+    else p = format;
+    while (const char *q = format) {
+    }
+    while (format) {
+    }
+    while (format) {
+        continue;
+    }
+    while (format) continue;
+    for (;;) {
+    }
+    for (;;) break;
+    for (;;) {
+        break;
+    }
+    for (u32 i = 0; format[i]; i++) {
+        break;
+    }
+    goto next;
+next:
+    {
+        if (format) goto next1;
+    next1:
+        if (format) {
+            goto next2;
+        }
+    next2:
+    }
+    return 1 + 1;
+}
+
+// @expect{complete, test1.c2i}
+module test1;
+
+fn i32 test_fn(const char* format, ...) {
+   const char* p;
+   if (const char* q = format) {
+   }
+   if (format) {
+   }
+   if (format) {
+   } else {
+   }
+   if (format) {
+      p = format;
+   }
+   if (format) {
+      p = format;
+   } else {
+      p = format;
+   }
+   if (format) p = format;
+   if (format) p = format;
+   else p = format;
+   while (const char* q = format) {
+   }
+   while (format) {
+   }
+   while (format) {
+      continue;
+   }
+   while (format) continue;
+   for (;;) {
+   }
+   for (;;) break;
+   for (;;) {
+      break;
+   }
+   for (u32 i = 0; format[i]; i++) {
+      break;
+   }
+   goto next;
+next:
+   {
+      if (format) goto next1;
+   next1:
+      if (format) {
+         goto next2;
+      }
+   next2:
+   }
+   return 1 + 1;
+}
+
+// @expect{atleast, test1.h}
+
+static inline
+int32_t test1_test_fn(const char* format, ...)
+{
+  const char* p;
+  {
+    const char* q = format;
+    if (q) {
+    }
+  }
+  if (format) {
+  }
+  if (format) {
+  } else {
+  }
+  if (format) {
+      p = format;
+  }
+  if (format) {
+      p = format;
+  } else {
+      p = format;
+  }
+  if (format) p = format;
+  if (format) p = format;
+  else p = format;
+  {
+    const char* q;
+    while ((q = format)) {
+    }
+  }
+  while (format) {
+  }
+  while (format) {
+      continue;
+  }
+  while (format) continue;
+  for (;;) {
+  }
+  for (;;) break;
+  for (;;) {
+      break;
+  }
+  for (uint32_t i = 0; format[i]; i++) {
+    break;
+  }
+  goto next;
+next:
+  {
+    if (format) goto next1;
+  next1:
+    if (format) {
+      goto next2;
+    }
+  next2:;
+  }
+  return (1 + 1);
+}
+

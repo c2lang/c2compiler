@@ -126,7 +126,8 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         out.rparen();
         break;
     case BitOffset:
-        // TODO
+        // Already handled in ArraySubscript
+        assert(0);
         break;
     case ExplicitCast:
         ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);

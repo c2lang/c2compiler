@@ -297,7 +297,7 @@ public fn void VarDecl.setInitCall(VarDecl* d, bool has_init_call) {
     d.base.varDeclBits.has_init_call = has_init_call;
 }
 
-public fn bool VarDecl.hasInitCall(VarDecl* d) {
+public fn bool VarDecl.hasInitCall(const VarDecl* d) {
     return d.base.varDeclBits.has_init_call;
 }
 
