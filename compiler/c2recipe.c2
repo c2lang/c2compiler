@@ -22,9 +22,6 @@ import build_target;
 
 import stdlib;
 import string;
-#if RecipeDebug
-import stdio;
-#endif
 
 public type Recipe struct @(opaque) {
     string_pool.Pool* pool;
@@ -88,18 +85,4 @@ public fn build_target.Target* Recipe.getTarget(const Recipe* r, u32 idx) {
 public fn const build_target.PluginList* Recipe.getPlugins(const Recipe* r) {
     return &r.plugins;
 }
-
-#if RecipeDebug
-public fn void Recipe.dump(const Recipe* r) {
-    stdio.printf("Recipe:\n");
-    for (u32 i=0; i<r.num_targets; i++) {
-        const Target* t = r.targets[i];
-        stdio.printf("  target %s\n", t.name);
-        for (u32 j=0; j<t.num_files; j++) {
-            File* f = &t.files[j];
-            stdio.printf("    %s\n", f.name);
-        }
-    }
-}
-#endif
 

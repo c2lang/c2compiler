@@ -160,7 +160,6 @@ executable c2c
     $backend c
 #    $backend ir
 #    $disable-asserts
-#    $config RecipeDebug
 #    $config DumpTokens
 #    $config PrintGenerated
 #    $config DebugIr
