@@ -2,6 +2,6 @@
 module test;
 
 type A struct {
-    u8 : 11;        // @error{width of anonymous bit-field (11 bits) exceeds the width of its type (8 bits)}
+    u8 : 11;        // @error{width of unnamed bit-field (11 bits) exceeds the width of its type (8 bits)}
 }
 

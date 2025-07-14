@@ -62,8 +62,12 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
                 // canonical must be builtin type/enum
                 QualType qt = member.getType();
                 u32 type_width = qt.getBitFieldWidth();
+                const char* name = vd.getName();
                 if (type_width == 0) {
-                    ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "bit-field '%s' has invalid type", vd.getName());
+                    if (name)
+                        ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "bit-field '%s' has invalid type", name);
+                    else
+                        ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "unnamed bit-field has invalid type");
                     return;
                 }
 
@@ -76,30 +80,41 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
                 }
                 Value value = ctv_analyser.get_value(bitfield);
                 if (value.isZero()) {
-                    ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "zero width for bit-field '%s'", vd.getName());
+                    if (name)
+                        ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "zero width for bit-field '%s'", name);
+                    else
+                    if (d.isUnion())
+                        ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "zero width bit-field not allowed in union");
+                    // keep going
+                }
+                if (value.isNegative()) {
+                    if (name)
+                        ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "bit-field '%s' has negative width", name);
+                    else
+                        ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "unnamed bit-field has negative width");
                     // keep going
                 }
                 u32 field_width = value.as_u32();
                 vd.setBitfieldWidth((u8)field_width);
 
                 if (qt.isEnum() && field_width < type_width) {
-                    ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "bit-field '%s' has insufficient bits for enum '%s'", vd.getName(), qt.diagName());
+                    if (name)
+                        ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "bit-field '%s' has insufficient bits for enum '%s'", name, qt.diagName());
+                    else
+                        ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "unnamed bit-field has insufficient bits for enum '%s'", qt.diagName());
                     return;
                 }
 
                 if (field_width > type_width) {
-                    const char* name = vd.getName();
                     if (name) {
                         ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "width of bit-field '%s' (%d bits) exceeds the width of its type (%d bit%s)",
                             name, field_width, type_width, type_width > 1 ? "s" : "");
                     } else {
-                        ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "width of anonymous bit-field (%d bits) exceeds the width of its type (%d bit%s)",
+                        ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "width of unnamed bit-field (%d bits) exceeds the width of its type (%d bit%s)",
                             field_width, type_width, type_width > 1 ? "s" : "");
                     }
                     return;
                 }
-                // width of bit-field 'i' (17 bits) exceeds the width of its type (16 bits)
-                // width of anonymous bit-field (17 bits) exceeds the width of its type (16 bits)
             }
 
             member.setChecked();
