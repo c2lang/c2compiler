@@ -17,151 +17,156 @@ module size_analyser;
 
 import ast local;
 
+//import stdio local;
+//import string local;
+
 public type TypeSize struct {
     u32 size;
     u32 align;
-    u32 bitfield_size;      // u8 field : 3; .  size = 3    Node: size in bits
-    u32 bitfield_width;     // u8 field : 3; . width = 8    Note: width in bits (8/16/32/64)
 }
 
 fn TypeSize sizeOfUnion(StructTypeDecl* s) {
-    TypeSize result = { 0, 1, 0, 0 };
-    //bool packed = s.isPacked();
-    result.align = s.getAttrAlignment();
+    bool packed = s.isPacked();
+    u32 max_size = 0;
+    u32 max_align = s.getAttrAlignment();
+    if (!max_align) max_align = 1;
     //printf("SIZEOF  UNION %s packed=%d  aligned=%d\n", s.getName(), packed, alignment);
-    // TODO handle packed
 
     u32 num_members = s.getNumMembers();
     Decl** members = s.getMembers();
-    for (u32 i=0; i<num_members; i++) {
+    for (u32 i = 0; i < num_members; i++) {
         Decl* d = members[i];
-        TypeSize m_size = sizeOfType(d.getType());
+        TypeSize member = sizeOfType(d.getType());
         // TODO handle un-packed sub-structs
-        if (m_size.size > result.size) result.size = m_size.size;
-        if (m_size.align > result.align) result.align = m_size.align;
+        u32 size = member.size;     // byte size of the current member
+        u32 align = member.align;   // alignment for the current member
+        if (packed) align = 1;
+        if (d.isVariable()) {
+            // Note: bitfield size/alignment is size of largest named member type used as base
+            VarDecl* vd = (VarDecl*)d;
+            BitFieldLayout* bit_layout = vd.getBitfieldLayout();
+            if (bit_layout) {
+                // Note: bit_layout.bit_width was already set in analyser
+                u32 bit_size = bit_layout.bit_width;
+                // In PCC layout only named bit-fields influence the alignment
+                if (packed) size = (bit_size + 7) / 8;
+                if (!d.getNameIdx()) align = 1;
+            }
+        }
+        if (max_align < align) max_align = align;
+        if (max_size < size) max_size = size;
     }
-    return result;
+    return { .size = max_size, .align = max_align };
 }
 
 public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
     if (s.isUnion()) return sizeOfUnion(s);
 
-    // TODO refactor to struct we can pass along and do operations on (like end-bitfield)
-    TypeSize result = { 0, 1, 0, 0 };
-
     bool packed = s.isPacked();
-    result.align = s.getAttrAlignment();
-    //printf("SIZEOF STRUCT %s packed=%d  aligned=%d\n", s.asDecl().getName(), packed, result.align);
+    u32 max_align = s.getAttrAlignment();
+    if (!max_align) max_align = 1;
+    u32 pos = 0;       // byte position of the next member
+    u32 bit_pos = 0;   // bit offset of the next bitfield member
+    //const char* name = s.asDecl().getName();
+    //if (!name) name = "";
+    //bool trace = false;   // patch with actual filter based on name
+    //if (trace) printf("Layout struct %s  packed=%d  aligned=%d {\n", name, packed, max_align);
     u32 num_members = s.getNumMembers();
     Decl** members = s.getMembers();
-    if (packed) {
-        for (u32 i=0; i<num_members; i++) {
-            Decl* d = members[i];
-            TypeSize member = sizeOfType(d.getType());
-            // TODO handle un-packed sub-structs?
-            //printf("  @%03u member %s   size %d  align %d (bitfield %d/%d)\n", result.size, d.getName(), member.size, member.align, member.bitfield_size, member.bitfield_width);
-            //if (vd) { vd.setOffset(result.size);
-            s.setMemberOffset(i, result.size);
-            result.size += member.size;
+    for (u32 i = 0; i < num_members; i++) {
+        Decl* d = members[i];
+        // Note: doesn't analyze the bit-field
+        TypeSize member = sizeOfType(d.getType());
+        // TODO handle un-packed sub-structs
+        u32 size = member.size;     // byte size of the current member
+        u32 align = member.align;   // alignment for the current member
+        if (packed) align = 1;
+
+        BitFieldLayout* bit_layout = nil;
+        if (d.isVariable()) {
+            // Note: bitfield size/alignment is size of largest named member type used as base
+            VarDecl* vd = (VarDecl*)d;
+            bit_layout = vd.getBitfieldLayout();
         }
-    } else {
-        for (u32 i=0; i<num_members; i++) {
-            Decl* d = members[i];
-            //printf("FIELD[%d]  size %d align %d  bit %d / %d\n", i, result.size, result.align, result.bitfield_size, result.bitfield_width);
-            // Note: doesn't analyze the bit-field
-            TypeSize member = sizeOfType(d.getType());
-            if (member.align > result.align) result.align = member.align;
-
-            VarDecl* vd = d.isVariable() ? (VarDecl*)d : nil;
-            BitFieldLayout* bit_layout = nil;
-            if (vd) {
-                // Note: bitfield size/alignment is size of largest member type used as base
-                bit_layout = vd.getBitfieldLayout();
-                if (bit_layout) {
-                    // Note: bit_layout.bit_width was already set in analyser
-                    member.bitfield_size = bit_layout.bit_width;
-                    member.bitfield_width = member.size * 8;
-                    member.size = 0;
-                    member.align = 0;   // calculate at end
-                }
-            }
-            if (result.bitfield_width && member.align != 0) {   // no bitfield anymore, finalize last one
-                // TODO end last bitfield, add size etc
-                //printf("    end bitfield\n");
-                u32 bytesize = (result.bitfield_size + 7) / 8;
-                // TODO padding
-                result.size += bytesize;
-                if (bytesize > result.align) result.align = bytesize;
-                //printf("    setting bitfields size %d  align %d\n", result.size, result.align);
-                result.bitfield_width = 0;
-                result.bitfield_size = 0;
-            }
-            if (member.align > 1) {
-                if (member.align > result.align) result.align = member.align;
-                u32 rest = result.size % member.align;
-                if (rest != 0) {
-                    u32 pad = member.align - rest;
-                    //printf("  @%03u pad %d\n", result.size, pad);
-                    result.size += pad;
-                }
-            }
-            //const char* name = d.getName();
-            //printf("  @%03u member %s   size %d  align %d (bitfield %d/%d)\n", result.size, name ? name : "(nil)", member.size, member.align, member.bitfield_size, member.bitfield_width);
-
-            s.setMemberOffset(i, result.size);
-            if (bit_layout) {
-                //printf("    bit-fields %d / %d\n", result.bitfield_size, result.bitfield_width);
-                u32 total_bitsize = result.bitfield_size + member.bitfield_size;
-                if (total_bitsize > member.bitfield_width) {
-                    u32 bytesize = (result.bitfield_size + 7) / 8;
-                    //printf("    new field (bytesize %d)\n", bytesize);
-                    member.align = bytesize;
-                    if (bytesize > 1) {
-                        u32 rest = result.size % bytesize;
-                        if (rest != 0) {
-                            u32 pad = member.align - rest;
-                            //printf("  @%03d pad %d\n", result.size, pad);
-                            result.size += pad;
-                        }
-                    }
-                    result.size += bytesize;
-                    s.setMemberOffset(i, result.size);  // update from above
-                    // Note: keep bit_layout.bit_offset at 0
-                    //if (bytesize > result.align) result.align = bytesize;
-                    result.bitfield_size = member.bitfield_size;
-                    result.bitfield_width = member.bitfield_width;
-                } else {
-                    bit_layout.bit_offset = (u8)result.bitfield_size;
-                    result.bitfield_size = total_bitsize;
-                    result.bitfield_width = member.bitfield_width;
-                }
+        //if (trace) {
+        //    name = d.getName();
+        //    printf("    FIELD[%d]  name=%s size=%d pos=%d bit_pos=%d", i, name ? name : "", size, pos, bit_pos);
+        //}
+        if (bit_layout) {
+            /* A bit-field: layout is more complicated.  there are two options:
+               PCC (GCC) compatible and MS compatible (ignored for now0.
+               In GCC layout a bit-field is placed adjacent to the preceding bit-fields, except if:
+               - it has zero-width
+               - an individual alignment was given
+               - it would overflow its base type container and there is no packing
+             */
+            // Note: bit_layout.bit_width was already set in analyser
+            u32 bit_size = bit_layout.bit_width;
+            // In PCC layout only named bitfields influence the alignment
+            if (!d.getNameIdx()) align = 1;
+            if (max_align < align) max_align = align;
+            //if (trace) printf("  bitfield bit_size=%d align=%d", bit_size, align);
+            if (bit_size == 0) {
+                // complete current storage unit
+                pos += (bit_pos + 7) / 8;
+                // align for this member using the original type alignment because
+                // packing does not affect zero-width bitfields
+                pos = (pos + member.align - 1) & -member.align;
+                //if (trace) printf(" -> new unit  offset=%d bit_offset=0\n", pos);
+                // Note: keep bit_layout.bit_offset at 0
+                bit_pos = 0;
             } else {
-                result.size += member.size;
+                u32 a8 = align * 8;
+                u32 ofs = ((pos * 8 + bit_pos) % a8 + bit_size + a8 - 1) / a8;
+                //if (trace) printf(" ofs=%d", ofs);
+                if (ofs > size / align && !packed) {
+                    // complete current storage unit
+                    pos += (bit_pos + 7) / 8;
+                    // align for this member
+                    pos = (pos + align - 1) & -align;
+                    //if (trace) printf(" -> new unit  offset=%d bit_offset=0\n", pos);
+                    // Note: keep bit_layout.bit_offset at 0
+                    bit_pos = bit_size;
+                } else {
+                    // skip storage units
+                    while (bit_pos >= a8) {
+                        pos += align;
+                        bit_pos -= a8;
+                    }
+                    bit_layout.bit_offset = (u8)bit_pos;
+                    //if (trace) printf(" -> offset=%d bit_offset=%d\n", pos, bit_pos);
+                    bit_pos += bit_size;
+                }
+                // in pcc mode, long long bitfields have type int if they fit
+                if (size == 8 && bit_size <= 32) size = 4;
             }
-            //printf("  . size %d  align %d bitfield (%d/%d)\n", result.size, result.align, result.bitfield_size, result.bitfield_width);
+            s.setMemberOffset(i, pos);
+        } else {
+            //if (trace) printf(" align=%d", align);
+            if (max_align < align) max_align = align;
+            // no bitfield anymore, finalize last one
+            pos += (bit_pos + 7) / 8;
+            bit_pos = 0;
+            // align for this member
+            pos = (pos + align - 1) & -align;
+            //if (trace) printf(" -> offset=%d\n", pos);
+            s.setMemberOffset(i, pos);
+            pos += size;
         }
-        if (result.bitfield_width) {
-            //printf("  done, bit-fields %d / %d\n", result.bitfield_size, result.bitfield_width);
-            u32 bytesize = (result.bitfield_size + 7) / 8;
-            // TODO padding before
-            result.size += bytesize;
-            //if (bytesize > result.align) result.align = bytesize;
-            //printf("    setting size %d  align %d\n", result.size, result.align);
-        }
-        u32 rest = result.size % result.align;
-        if (rest != 0) {
-            u32 pad = result.align - rest;
-            //printf("  @%03u pad %d\n", result.size, pad);
-            result.size += pad;
-        }
+        //if (trace) printf("  // pos=%d bit_pos=%d max_align=%d\n", pos, bit_pos, max_align);
     }
-    //printf("  . FINAL size %d  align %d\n", result.size, result.align);
-    return result;
+    //if (trace) printf("}  done  pos=%d bit_pos=%d\n", pos, bit_pos);
+    // complete the last bitfield if any
+    pos += (bit_pos + 7) / 8;
+    // pad structure for required alignment
+    pos = (pos + max_align - 1) & -max_align;
+    //if (trace) printf("  final size %d  align %d\n", pos, max_align);
+    return { .size = pos, .align = max_align };
 }
 
 public fn TypeSize sizeOfType(QualType qt) {
 
-    TypeSize result = { 0, 1, 0, 0 };
+    TypeSize result = { 0, 1, };
 
     if (qt.isInvalid()) return result;
 

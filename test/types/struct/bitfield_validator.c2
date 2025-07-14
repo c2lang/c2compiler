@@ -1,0 +1,1160 @@
+// @warnings{no-unused}
+module test;
+
+import stdio local;
+import string local;
+
+const u8 A8 = 0xAA;
+const u8 F5 = 0x1F;
+const u8 F6 = 0x3F;
+const u8 F8 = 0xFF;
+const u16 F9 = 0x1FF;
+const u16 F16 = 0xFFFF;
+const u32 F24 = 0xFFFFFF;
+const u32 F32 = 0xFFFFFFFF;
+const u64 F64 = 0xFFFFFFFFFFFFFFFF;
+
+type S__b1 struct { u8 : 1; }
+type S__w1 struct { u16 : 1; }
+type S__d1 struct { u32 : 1; }
+type S__q1 struct { u64 : 1; }
+type S__b1_p struct @(packed) { u8 : 1; }
+type S__w1_p struct @(packed) { u16 : 1; }
+type S__d1_p struct @(packed) { u32 : 1; }
+type S__q1_p struct @(packed) { u64 : 1; }
+
+static_assert(1, sizeof(S__b1));
+static_assert(1, sizeof(S__w1));
+static_assert(1, sizeof(S__d1));
+static_assert(1, sizeof(S__q1));
+static_assert(1, sizeof(S__b1_p));
+static_assert(1, sizeof(S__w1_p));
+static_assert(1, sizeof(S__d1_p));
+static_assert(1, sizeof(S__q1_p));
+
+type S_b1 struct { u8 m : 1; }
+type S_w1 struct { u16 m : 1; }
+type S_d1 struct { u32 m : 1; }
+type S_q1 struct { u64 m : 1; }
+type S_b1_p struct @(packed) { u8 m : 1; }
+type S_w1_p struct @(packed) { u16 m : 1; }
+type S_d1_p struct @(packed) { u32 m : 1; }
+type S_q1_p struct @(packed) { u64 m : 1; }
+
+static_assert(1, sizeof(S_b1));
+static_assert(2, sizeof(S_w1));
+static_assert(4, sizeof(S_d1));
+static_assert(8, sizeof(S_q1));
+static_assert(1, sizeof(S_b1_p));
+static_assert(1, sizeof(S_w1_p));
+static_assert(1, sizeof(S_d1_p));
+static_assert(1, sizeof(S_q1_p));
+
+#if 1
+type S_b1_b0_b1 struct { u8 m : 1; u8 : 0; u8 b : 1; }
+type S_w1_w0_w1 struct { u16 m : 1; u16 : 0; u16 b : 1; }
+type S_d1_d0_d1 struct { u32 m : 1; u32 : 0; u32 b : 1; }
+type S_q1_q0_q1 struct { u64 m : 1; u64 : 0; u64 b : 1; }
+type S_b1_b0_b1_p struct @(packed) { u8 m : 1; u8 : 0; u8 b : 1; }
+type S_w1_w0_w1_p struct @(packed) { u16 m : 1; u16 : 0; u16 b : 1; }
+type S_d1_d0_d1_p struct @(packed) { u32 m : 1; u32 : 0; u32 b : 1; }
+type S_q1_q0_q1_p struct @(packed) { u64 m : 1; u64 : 0; u64 b : 1; }
+
+static_assert(2, sizeof(S_b1_b0_b1));
+static_assert(4, sizeof(S_w1_w0_w1));
+static_assert(8, sizeof(S_d1_d0_d1));
+static_assert(16, sizeof(S_q1_q0_q1));
+static_assert(2, sizeof(S_b1_b0_b1_p));
+static_assert(3, sizeof(S_w1_w0_w1_p));
+static_assert(5, sizeof(S_d1_d0_d1_p));
+static_assert(9, sizeof(S_q1_q0_q1_p));
+#endif
+
+type S_b1_b_b1 struct { u8 a : 1; u8 m; u8 b : 1; }
+type S_w1_b_w1 struct { u16 a : 1; u8 m; u16 b : 1; }
+type S_d1_b_d1 struct { u32 a : 1; u8 m; u32 b : 1; }
+type S_q1_b_q1 struct { u64 a : 1; u8 m; u64 b : 1; }
+type S_b1_b_b1_p struct @(packed) { u8 a : 1; u8 m; u8 b : 1; }
+type S_w1_b_w1_p struct @(packed) { u16 a : 1; u8 m; u16 b : 1; }
+type S_d1_b_d1_p struct @(packed) { u32 a : 1; u8 m; u32 b : 1; }
+type S_q1_b_q1_p struct @(packed) { u64 a : 1; u8 m; u64 b : 1; }
+
+static_assert(3, sizeof(S_b1_b_b1));
+static_assert(4, sizeof(S_w1_b_w1));
+static_assert(4, sizeof(S_d1_b_d1));
+static_assert(8, sizeof(S_q1_b_q1));
+static_assert(3, sizeof(S_b1_b_b1_p));
+static_assert(3, sizeof(S_w1_b_w1_p));
+static_assert(3, sizeof(S_d1_b_d1_p));
+static_assert(3, sizeof(S_q1_b_q1_p));
+
+type S_b1_b_b1_b_b1 struct { u8 a : 1; u8 m; u8 b : 1; u8 n; u8 c : 1; }
+type S_w1_b_w1_b_w1 struct { u16 a : 1; u8 m; u16 b : 1; u8 n; u16 c : 1; }
+type S_d1_b_d1_b_d1 struct { u32 a : 1; u8 m; u32 b : 1; u8 n; u32 c : 1; }
+type S_q1_b_q1_b_q1 struct { u64 a : 1; u8 m; u64 b : 1; u8 n; u64 c : 1; }
+type S_b1_b_b1_b_b1_p struct @(packed) { u8 a : 1; u8 m; u8 b : 1; u8 n; u8 c : 1; }
+type S_w1_b_w1_b_w1_p struct @(packed) { u16 a : 1; u8 m; u16 b : 1; u8 n; u16 c : 1; }
+type S_d1_b_d1_b_d1_p struct @(packed) { u32 a : 1; u8 m; u32 b : 1; u8 n; u32 c : 1; }
+type S_q1_b_q1_b_q1_p struct @(packed) { u64 a : 1; u8 m; u64 b : 1; u8 n; u64 c : 1; }
+
+static_assert(5, sizeof(S_b1_b_b1_b_b1));
+static_assert(6, sizeof(S_w1_b_w1_b_w1));
+static_assert(8, sizeof(S_d1_b_d1_b_d1));
+static_assert(8, sizeof(S_q1_b_q1_b_q1));
+static_assert(5, sizeof(S_b1_b_b1_b_b1_p));
+static_assert(5, sizeof(S_w1_b_w1_b_w1_p));
+static_assert(5, sizeof(S_d1_b_d1_b_d1_p));
+static_assert(5, sizeof(S_q1_b_q1_b_q1_p));
+
+type S_b_b struct { u8 a; u8 m; }
+type S_b_w struct { u8 a; u16 m; }
+type S_b_d struct { u8 a; u32 m; }
+type S_b_q struct { u8 a; u64 m; }
+type S_b_b_p struct @(packed) { u8 a; u8 m; }
+type S_b_w_p struct @(packed) { u8 a; u16 m; }
+type S_b_d_p struct @(packed) { u8 a; u32 m; }
+type S_b_q_p struct @(packed) { u8 a; u64 m; }
+
+static_assert(2, sizeof(S_b_b));
+static_assert(4, sizeof(S_b_w));
+static_assert(8, sizeof(S_b_d));
+static_assert(16, sizeof(S_b_q));
+static_assert(2, sizeof(S_b_b_p));
+static_assert(3, sizeof(S_b_w_p));
+static_assert(5, sizeof(S_b_d_p));
+static_assert(9, sizeof(S_b_q_p));
+
+type S_b_b_b struct { u8 a; u8 m; u8 b; }
+type S_b_w_b struct { u8 a; u16 m; u8 b; }
+type S_b_d_b struct { u8 a; u32 m; u8 b; }
+type S_b_q_b struct { u8 a; u64 m; u8 b; }
+type S_b_b_b_p struct @(packed) { u8 a; u8 m; u8 b; }
+type S_b_w_b_p struct @(packed) { u8 a; u16 m; u8 b; }
+type S_b_d_b_p struct @(packed) { u8 a; u32 m; u8 b; }
+type S_b_q_b_p struct @(packed) { u8 a; u64 m; u8 b; }
+
+static_assert(3, sizeof(S_b_b_b));
+static_assert(6, sizeof(S_b_w_b));
+static_assert(12, sizeof(S_b_d_b));
+static_assert(24, sizeof(S_b_q_b));
+static_assert(3, sizeof(S_b_b_b_p));
+static_assert(4, sizeof(S_b_w_b_p));
+static_assert(6, sizeof(S_b_d_b_p));
+static_assert(10, sizeof(S_b_q_b_p));
+
+type S_b_b1 struct { u8 a; u8 m : 1; }
+type S_b_w1 struct { u8 a; u16 m : 1; }
+type S_b_d1 struct { u8 a; u32 m : 1; }
+type S_b_q1 struct { u8 a; u64 m : 1; }
+type S_b_b1_p struct @(packed) { u8 a; u8 m : 1; }
+type S_b_w1_p struct @(packed) { u8 a; u16 m : 1; }
+type S_b_d1_p struct @(packed) { u8 a; u32 m : 1; }
+type S_b_q1_p struct @(packed) { u8 a; u64 m : 1; }
+
+static_assert(2, sizeof(S_b_b1));
+static_assert(2, sizeof(S_b_w1));
+static_assert(4, sizeof(S_b_d1));
+static_assert(8, sizeof(S_b_q1));
+static_assert(2, sizeof(S_b_b1_p));
+static_assert(2, sizeof(S_b_w1_p));
+static_assert(2, sizeof(S_b_d1_p));
+static_assert(2, sizeof(S_b_q1_p));
+
+type S_b1_b1 struct { u8 a : 1; u8 m : 1; }
+type S_b1_w1 struct { u8 a : 1; u16 m : 1; }
+type S_b1_d1 struct { u8 a : 1; u32 m : 1; }
+type S_b1_q1 struct { u8 a : 1; u64 m : 1; }
+type S_b1_b1_p struct @(packed) { u8 a : 1; u8 m : 1; }
+type S_b1_w1_p struct @(packed) { u8 a : 1; u16 m : 1; }
+type S_b1_d1_p struct @(packed) { u8 a : 1; u32 m : 1; }
+type S_b1_q1_p struct @(packed) { u8 a : 1; u64 m : 1; }
+
+static_assert(1, sizeof(S_b1_b1));
+static_assert(2, sizeof(S_b1_w1));
+static_assert(4, sizeof(S_b1_d1));
+static_assert(8, sizeof(S_b1_q1));
+static_assert(1, sizeof(S_b1_b1_p));
+static_assert(1, sizeof(S_b1_w1_p));
+static_assert(1, sizeof(S_b1_d1_p));
+static_assert(1, sizeof(S_b1_q1_p));
+
+type S_b_b1_b struct { u8 a; u8 m : 1; u8 b; }
+type S_b_w1_b struct { u8 a; u16 m : 1; u8 b; }
+type S_b_d1_b struct { u8 a; u32 m : 1; u8 b; }
+type S_b_q1_b struct { u8 a; u64 m : 1; u8 b; }
+type S_b_b1_b_p struct @(packed) { u8 a; u8 m : 1; u8 b; }
+type S_b_w1_b_p struct @(packed) { u8 a; u16 m : 1; u8 b; }
+type S_b_d1_b_p struct @(packed) { u8 a; u32 m : 1; u8 b; }
+type S_b_q1_b_p struct @(packed) { u8 a; u64 m : 1; u8 b; }
+
+static_assert(3, sizeof(S_b_b1_b));
+static_assert(4, sizeof(S_b_w1_b));
+static_assert(4, sizeof(S_b_d1_b));
+static_assert(8, sizeof(S_b_q1_b));
+static_assert(3, sizeof(S_b_b1_b_p));
+static_assert(3, sizeof(S_b_w1_b_p));
+static_assert(3, sizeof(S_b_d1_b_p));
+static_assert(3, sizeof(S_b_q1_b_p));
+
+type S_b1_b1_b1 struct { u8 a : 1; u8 m : 1; u8 b : 1; }
+type S_b1_w1_b1 struct { u8 a : 1; u16 m : 1; u8 b : 1; }
+type S_b1_d1_b1 struct { u8 a : 1; u32 m : 1; u8 b : 1; }
+type S_b1_q1_b1 struct { u8 a : 1; u64 m : 1; u8 b : 1; }
+type S_b1_b1_b1_p struct @(packed) { u8 a : 1; u8 m : 1; u8 b : 1; }
+type S_b1_w1_b1_p struct @(packed) { u8 a : 1; u16 m : 1; u8 b : 1; }
+type S_b1_d1_b1_p struct @(packed) { u8 a : 1; u32 m : 1; u8 b : 1; }
+type S_b1_q1_b1_p struct @(packed) { u8 a : 1; u64 m : 1; u8 b : 1; }
+
+static_assert(1, sizeof(S_b1_b1_b1));
+static_assert(2, sizeof(S_b1_w1_b1));
+static_assert(4, sizeof(S_b1_d1_b1));
+static_assert(8, sizeof(S_b1_q1_b1));
+static_assert(1, sizeof(S_b1_b1_b1_p));
+static_assert(1, sizeof(S_b1_w1_b1_p));
+static_assert(1, sizeof(S_b1_d1_b1_p));
+static_assert(1, sizeof(S_b1_q1_b1_p));
+
+type S_b5_b5_b5 struct { u8 a : 5; u8 m : 5; u8 b : 5; }
+type S_b5_w5_b5 struct { u8 a : 5; u16 m : 5; u8 b : 5; }
+type S_b5_d5_b5 struct { u8 a : 5; u32 m : 5; u8 b : 5; }
+type S_b5_q5_b5 struct { u8 a : 5; u64 m : 5; u8 b : 5; }
+type S_b5_b5_b5_p struct @(packed) { u8 a : 5; u8 m : 5; u8 b : 5; }
+type S_b5_w5_b5_p struct @(packed) { u8 a : 5; u16 m : 5; u8 b : 5; }
+type S_b5_d5_b5_p struct @(packed) { u8 a : 5; u32 m : 5; u8 b : 5; }
+type S_b5_q5_b5_p struct @(packed) { u8 a : 5; u64 m : 5; u8 b : 5; }
+
+static_assert(3, sizeof(S_b5_b5_b5));
+static_assert(2, sizeof(S_b5_w5_b5));
+static_assert(4, sizeof(S_b5_d5_b5));
+static_assert(8, sizeof(S_b5_q5_b5));
+static_assert(2, sizeof(S_b5_b5_b5_p));
+static_assert(2, sizeof(S_b5_w5_b5_p));
+static_assert(2, sizeof(S_b5_d5_b5_p));
+static_assert(2, sizeof(S_b5_q5_b5_p));
+
+type S_d24 struct { u32 m : 24; }
+type S_d24_p struct @(packed) { u32 m : 24; }
+type S_d24_d24 struct { u32 a : 24; u32 m : 24; }
+type S_d24_d24_p struct @(packed) { u32 a : 24; u32 m : 24; }
+type S_d24_d24_d24 struct { u32 a : 24; u32 m : 24; u32 b : 24; }
+type S_d24_d24_d24_p struct @(packed) { u32 a : 24; u32 m : 24; u32 b : 24; }
+type S_d24_d24_d24_d24 struct { u32 a : 24; u32 m : 24; u32 b : 24; u32 c : 24; }
+type S_d24_d24_d24_d24_p struct @(packed) { u32 a : 24; u32 m : 24; u32 b : 24; u32 c : 24; }
+type S_b_d24 struct { u8 a; u32 m : 24; }
+type S_b_d24_p struct @(packed) { u8 a; u32 m : 24; }
+type S_b_d24_b struct { u8 a; u32 m : 24; u8 b; }
+type S_b_d24_b_p struct @(packed) { u8 a; u32 m : 24; u8 b; }
+
+static_assert(4, sizeof(S_d24));
+static_assert(3, sizeof(S_d24_p));
+static_assert(8, sizeof(S_d24_d24));
+static_assert(6, sizeof(S_d24_d24_p));
+static_assert(12, sizeof(S_d24_d24_d24));
+static_assert(9, sizeof(S_d24_d24_d24_p));
+static_assert(16, sizeof(S_d24_d24_d24_d24));
+static_assert(12, sizeof(S_d24_d24_d24_d24_p));
+static_assert(4, sizeof(S_b_d24));
+static_assert(4, sizeof(S_b_d24_p));
+static_assert(8, sizeof(S_b_d24_b));
+static_assert(5, sizeof(S_b_d24_b_p));
+
+type S_d9 struct { u32 m : 9; }
+type S_d9_p struct @(packed) { u32 m : 9; }
+type S_b_d9 struct { u8 a; u32 m : 9; }
+type S_b_d9_p struct @(packed) { u8 a; u32 m : 9; }
+type S_b_d9_b struct { u8 a; u32 m : 9; u8 b; }
+type S_b_d9_b_p struct @(packed) { u8 a; u32 m : 9; u8 b; }
+
+static_assert(4, sizeof(S_d9));
+static_assert(2, sizeof(S_d9_p));
+static_assert(4, sizeof(S_b_d9));
+static_assert(3, sizeof(S_b_d9_p));
+static_assert(4, sizeof(S_b_d9_b));
+static_assert(4, sizeof(S_b_d9_b_p));
+
+type U_b1 union { u8 m : 1; }
+type U_w1 union { u16 m : 1; }
+type U_d1 union { u32 m : 1; }
+type U_q1 union { u64 m : 1; }
+type U_b1_p union @(packed) { u8 m : 1; }
+type U_w1_p union @(packed) { u16 m : 1; }
+type U_d1_p union @(packed) { u32 m : 1; }
+type U_q1_p union @(packed) { u64 m : 1; }
+
+static_assert(1, sizeof(U_b1));
+static_assert(2, sizeof(U_w1));
+static_assert(4, sizeof(U_d1));
+static_assert(8, sizeof(U_q1));
+static_assert(1, sizeof(U_b1_p));
+static_assert(1, sizeof(U_w1_p));
+static_assert(1, sizeof(U_d1_p));
+static_assert(1, sizeof(U_q1_p));
+
+#if ZERO_BITFIELD_UNION
+type U_b1_b0_b1 union { u8 m : 1; u8 : 0; u8 b : 1; }
+type U_w1_w0_w1 union { u16 m : 1; u16 : 0; u16 b : 1; }
+type U_d1_d0_d1 union { u32 m : 1; u32 : 0; u32 b : 1; }
+type U_q1_q0_q1 union { u64 m : 1; u64 : 0; u64 b : 1; }
+type U_b1_b0_b1_p union @(packed) { u8 m : 1; u8 : 0; u8 b : 1; }
+type U_w1_w0_w1_p union @(packed) { u16 m : 1; u16 : 0; u16 b : 1; }
+type U_d1_d0_d1_p union @(packed) { u32 m : 1; u32 : 0; u32 b : 1; }
+type U_q1_q0_q1_p union @(packed) { u64 m : 1; u64 : 0; u64 b : 1; }
+
+static_assert(2, sizeof(U_b1_b0_b1));
+static_assert(4, sizeof(U_w1_w0_w1));
+static_assert(8, sizeof(U_d1_d0_d1));
+static_assert(8, sizeof(U_q1_q0_q1));
+static_assert(2, sizeof(U_b1_b0_b1_p));
+static_assert(2, sizeof(U_w1_w0_w1_p));
+static_assert(2, sizeof(U_d1_d0_d1_p));
+static_assert(2, sizeof(U_q1_q0_q1_p));
+#endif
+
+type U_b1_b_b1 union { u8 a : 1; u8 m; u8 b : 1; }
+type U_w1_b_w1 union { u16 a : 1; u8 m; u16 b : 1; }
+type U_d1_b_d1 union { u32 a : 1; u8 m; u32 b : 1; }
+type U_q1_b_q1 union { u64 a : 1; u8 m; u64 b : 1; }
+type U_b1_b_b1_p union @(packed) { u8 a : 1; u8 m; u8 b : 1; }
+type U_w1_b_w1_p union @(packed) { u16 a : 1; u8 m; u16 b : 1; }
+type U_d1_b_d1_p union @(packed) { u32 a : 1; u8 m; u32 b : 1; }
+type U_q1_b_q1_p union @(packed) { u64 a : 1; u8 m; u64 b : 1; }
+
+static_assert(1, sizeof(U_b1_b_b1));
+static_assert(2, sizeof(U_w1_b_w1));
+static_assert(4, sizeof(U_d1_b_d1));
+static_assert(8, sizeof(U_q1_b_q1));
+static_assert(1, sizeof(U_b1_b_b1_p));
+static_assert(1, sizeof(U_w1_b_w1_p));
+static_assert(1, sizeof(U_d1_b_d1_p));
+static_assert(1, sizeof(U_q1_b_q1_p));
+
+type U_b1_b_b1_b_b1 union { u8 a : 1; u8 m; u8 b : 1; u8 n; u8 c : 1; }
+type U_w1_b_w1_b_w1 union { u16 a : 1; u8 m; u16 b : 1; u8 n; u16 c : 1; }
+type U_d1_b_d1_b_d1 union { u32 a : 1; u8 m; u32 b : 1; u8 n; u32 c : 1; }
+type U_q1_b_q1_b_q1 union { u64 a : 1; u8 m; u64 b : 1; u8 n; u64 c : 1; }
+type U_b1_b_b1_b_b1_p union @(packed) { u8 a : 1; u8 m; u8 b : 1; u8 n; u8 c : 1; }
+type U_w1_b_w1_b_w1_p union @(packed) { u16 a : 1; u8 m; u16 b : 1; u8 n; u16 c : 1; }
+type U_d1_b_d1_b_d1_p union @(packed) { u32 a : 1; u8 m; u32 b : 1; u8 n; u32 c : 1; }
+type U_q1_b_q1_b_q1_p union @(packed) { u64 a : 1; u8 m; u64 b : 1; u8 n; u64 c : 1; }
+
+static_assert(1, sizeof(U_b1_b_b1_b_b1));
+static_assert(2, sizeof(U_w1_b_w1_b_w1));
+static_assert(4, sizeof(U_d1_b_d1_b_d1));
+static_assert(8, sizeof(U_q1_b_q1_b_q1));
+static_assert(1, sizeof(U_b1_b_b1_b_b1_p));
+static_assert(1, sizeof(U_w1_b_w1_b_w1_p));
+static_assert(1, sizeof(U_d1_b_d1_b_d1_p));
+static_assert(1, sizeof(U_q1_b_q1_b_q1_p));
+
+type U_b_b union { u8 a; u8 m; }
+type U_b_w union { u8 a; u16 m; }
+type U_b_d union { u8 a; u32 m; }
+type U_b_q union { u8 a; u64 m; }
+type U_b_b_p union @(packed) { u8 a; u8 m; }
+type U_b_w_p union @(packed) { u8 a; u16 m; }
+type U_b_d_p union @(packed) { u8 a; u32 m; }
+type U_b_q_p union @(packed) { u8 a; u64 m; }
+
+static_assert(1, sizeof(U_b_b));
+static_assert(2, sizeof(U_b_w));
+static_assert(4, sizeof(U_b_d));
+static_assert(8, sizeof(U_b_q));
+static_assert(1, sizeof(U_b_b_p));
+static_assert(2, sizeof(U_b_w_p));
+static_assert(4, sizeof(U_b_d_p));
+static_assert(8, sizeof(U_b_q_p));
+
+type U_b_b_b union { u8 a; u8 m; u8 b; }
+type U_b_w_b union { u8 a; u16 m; u8 b; }
+type U_b_d_b union { u8 a; u32 m; u8 b; }
+type U_b_q_b union { u8 a; u64 m; u8 b; }
+type U_b_b_b_p union @(packed) { u8 a; u8 m; u8 b; }
+type U_b_w_b_p union @(packed) { u8 a; u16 m; u8 b; }
+type U_b_d_b_p union @(packed) { u8 a; u32 m; u8 b; }
+type U_b_q_b_p union @(packed) { u8 a; u64 m; u8 b; }
+
+static_assert(1, sizeof(U_b_b_b));
+static_assert(2, sizeof(U_b_w_b));
+static_assert(4, sizeof(U_b_d_b));
+static_assert(8, sizeof(U_b_q_b));
+static_assert(1, sizeof(U_b_b_b_p));
+static_assert(2, sizeof(U_b_w_b_p));
+static_assert(4, sizeof(U_b_d_b_p));
+static_assert(8, sizeof(U_b_q_b_p));
+
+type U_b_b1 union { u8 a; u8 m : 1; }
+type U_b_w1 union { u8 a; u16 m : 1; }
+type U_b_d1 union { u8 a; u32 m : 1; }
+type U_b_q1 union { u8 a; u64 m : 1; }
+type U_b_b1_p union @(packed) { u8 a; u8 m : 1; }
+type U_b_w1_p union @(packed) { u8 a; u16 m : 1; }
+type U_b_d1_p union @(packed) { u8 a; u32 m : 1; }
+type U_b_q1_p union @(packed) { u8 a; u64 m : 1; }
+
+static_assert(1, sizeof(U_b_b1));
+static_assert(2, sizeof(U_b_w1));
+static_assert(4, sizeof(U_b_d1));
+static_assert(8, sizeof(U_b_q1));
+static_assert(1, sizeof(U_b_b1_p));
+static_assert(1, sizeof(U_b_w1_p));
+static_assert(1, sizeof(U_b_d1_p));
+static_assert(1, sizeof(U_b_q1_p));
+
+type U_b1_b1 union { u8 a : 1; u8 m : 1; }
+type U_b1_w1 union { u8 a : 1; u16 m : 1; }
+type U_b1_d1 union { u8 a : 1; u32 m : 1; }
+type U_b1_q1 union { u8 a : 1; u64 m : 1; }
+type U_b1_b1_p union @(packed) { u8 a : 1; u8 m : 1; }
+type U_b1_w1_p union @(packed) { u8 a : 1; u16 m : 1; }
+type U_b1_d1_p union @(packed) { u8 a : 1; u32 m : 1; }
+type U_b1_q1_p union @(packed) { u8 a : 1; u64 m : 1; }
+
+static_assert(1, sizeof(U_b1_b1));
+static_assert(2, sizeof(U_b1_w1));
+static_assert(4, sizeof(U_b1_d1));
+static_assert(8, sizeof(U_b1_q1));
+static_assert(1, sizeof(U_b1_b1_p));
+static_assert(1, sizeof(U_b1_w1_p));
+static_assert(1, sizeof(U_b1_d1_p));
+static_assert(1, sizeof(U_b1_q1_p));
+
+type U_b_b1_b union { u8 a; u8 m : 1; u8 b; }
+type U_b_w1_b union { u8 a; u16 m : 1; u8 b; }
+type U_b_d1_b union { u8 a; u32 m : 1; u8 b; }
+type U_b_q1_b union { u8 a; u64 m : 1; u8 b; }
+type U_b_b1_b_p union @(packed) { u8 a; u8 m : 1; u8 b; }
+type U_b_w1_b_p union @(packed) { u8 a; u16 m : 1; u8 b; }
+type U_b_d1_b_p union @(packed) { u8 a; u32 m : 1; u8 b; }
+type U_b_q1_b_p union @(packed) { u8 a; u64 m : 1; u8 b; }
+
+static_assert(1, sizeof(U_b_b1_b));
+static_assert(2, sizeof(U_b_w1_b));
+static_assert(4, sizeof(U_b_d1_b));
+static_assert(8, sizeof(U_b_q1_b));
+static_assert(1, sizeof(U_b_b1_b_p));
+static_assert(1, sizeof(U_b_w1_b_p));
+static_assert(1, sizeof(U_b_d1_b_p));
+static_assert(1, sizeof(U_b_q1_b_p));
+
+type U_b1_b1_b1 union { u8 a : 1; u8 m : 1; u8 b : 1; }
+type U_b1_w1_b1 union { u8 a : 1; u16 m : 1; u8 b : 1; }
+type U_b1_d1_b1 union { u8 a : 1; u32 m : 1; u8 b : 1; }
+type U_b1_q1_b1 union { u8 a : 1; u64 m : 1; u8 b : 1; }
+type U_b1_b1_b1_p union @(packed) { u8 a : 1; u8 m : 1; u8 b : 1; }
+type U_b1_w1_b1_p union @(packed) { u8 a : 1; u16 m : 1; u8 b : 1; }
+type U_b1_d1_b1_p union @(packed) { u8 a : 1; u32 m : 1; u8 b : 1; }
+type U_b1_q1_b1_p union @(packed) { u8 a : 1; u64 m : 1; u8 b : 1; }
+
+static_assert(1, sizeof(U_b1_b1_b1));
+static_assert(2, sizeof(U_b1_w1_b1));
+static_assert(4, sizeof(U_b1_d1_b1));
+static_assert(8, sizeof(U_b1_q1_b1));
+static_assert(1, sizeof(U_b1_b1_b1_p));
+static_assert(1, sizeof(U_b1_w1_b1_p));
+static_assert(1, sizeof(U_b1_d1_b1_p));
+static_assert(1, sizeof(U_b1_q1_b1_p));
+
+type U_b5_b5_b5 union { u8 a : 5; u8 m : 5; u8 b : 5; }
+type U_b5_w5_b5 union { u8 a : 5; u16 m : 5; u8 b : 5; }
+type U_b5_d5_b5 union { u8 a : 5; u32 m : 5; u8 b : 5; }
+type U_b5_q5_b5 union { u8 a : 5; u64 m : 5; u8 b : 5; }
+type U_b5_b5_b5_p union @(packed) { u8 a : 5; u8 m : 5; u8 b : 5; }
+type U_b5_w5_b5_p union @(packed) { u8 a : 5; u16 m : 5; u8 b : 5; }
+type U_b5_d5_b5_p union @(packed) { u8 a : 5; u32 m : 5; u8 b : 5; }
+type U_b5_q5_b5_p union @(packed) { u8 a : 5; u64 m : 5; u8 b : 5; }
+
+static_assert(1, sizeof(U_b5_b5_b5));
+static_assert(2, sizeof(U_b5_w5_b5));
+static_assert(4, sizeof(U_b5_d5_b5));
+static_assert(8, sizeof(U_b5_q5_b5));
+static_assert(1, sizeof(U_b5_b5_b5_p));
+static_assert(1, sizeof(U_b5_w5_b5_p));
+static_assert(1, sizeof(U_b5_d5_b5_p));
+static_assert(1, sizeof(U_b5_q5_b5_p));
+
+type U_d24 union { u32 m : 24; }
+type U_d24_p union @(packed) { u32 m : 24; }
+type U_d24_d24 union { u32 a : 24; u32 m : 24; }
+type U_d24_d24_p union @(packed) { u32 a : 24; u32 m : 24; }
+type U_d24_d24_d24 union { u32 a : 24; u32 m : 24; u32 b : 24; }
+type U_d24_d24_d24_p union @(packed) { u32 a : 24; u32 m : 24; u32 b : 24; }
+type U_d24_d24_d24_d24 union { u32 a : 24; u32 m : 24; u32 b : 24; u32 c : 24; }
+type U_d24_d24_d24_d24_p union @(packed) { u32 a : 24; u32 m : 24; u32 b : 24; u32 c : 24; }
+type U_b_d24 union { u8 a; u32 m : 24; }
+type U_b_d24_p union @(packed) { u8 a; u32 m : 24; }
+type U_b_d24_b union { u8 a; u32 m : 24; u8 b; }
+type U_b_d24_b_p union @(packed) { u8 a; u32 m : 24; u8 b; }
+
+static_assert(4, sizeof(U_d24));
+static_assert(3, sizeof(U_d24_p));
+static_assert(4, sizeof(U_d24_d24));
+static_assert(3, sizeof(U_d24_d24_p));
+static_assert(4, sizeof(U_d24_d24_d24));
+static_assert(3, sizeof(U_d24_d24_d24_p));
+static_assert(4, sizeof(U_d24_d24_d24_d24));
+static_assert(3, sizeof(U_d24_d24_d24_d24_p));
+static_assert(4, sizeof(U_b_d24));
+static_assert(3, sizeof(U_b_d24_p));
+static_assert(4, sizeof(U_b_d24_b));
+static_assert(3, sizeof(U_b_d24_b_p));
+
+type U_d9 union { u32 m : 9; }
+type U_d9_p union @(packed) { u32 m : 9; }
+type U_b_d9 union { u8 a; u32 m : 9; }
+type U_b_d9_p union @(packed) { u8 a; u32 m : 9; }
+type U_b_d9_b union { u8 a; u32 m : 9; u8 b; }
+type U_b_d9_b_p union @(packed) { u8 a; u32 m : 9; u8 b; }
+
+static_assert(4, sizeof(U_d9));
+static_assert(2, sizeof(U_d9_p));
+static_assert(4, sizeof(U_b_d9));
+static_assert(2, sizeof(U_b_d9_p));
+static_assert(4, sizeof(U_b_d9_b));
+static_assert(2, sizeof(U_b_d9_b_p));
+
+type BlockKind enum u8 { Unspecified, AA = A8, }
+type BlockId u32;
+type Index struct { u32 start; u32 count; }
+type Block struct {
+    BlockKind kind : 8 ;   // BlockKind
+    u32 used : 1;
+    u32 checked : 1;    // can be used during various passes
+    u32 end_with_switch : 1;
+    u32 phi_source : 1;
+    u32 end_block : 1;  // ends with exit/ret, no successors
+    BlockId[2] dests;   // used if not 0 (2 u8)
+    Index instr;        // index into FuncInfo.instructions (2 u32)
+}
+static_assert(20, sizeof(Block));
+
+u8 dump;
+
+fn i32 dump_hex(u8 b) {
+    return printf(" %02X", b);
+}
+
+fn i32 dump_bin(u8 b) {
+    switch (b) {
+    case 0x00:
+    case 0xAA:
+    case 0xFF:
+        return dump_hex(b);
+    }
+    putchar(' ');
+    for (u32 i = 0; i < 8; i++)
+        putchar('0' + ((b >> i) & 1));
+    return 9;
+}
+
+u32 nvals;
+char **vals;
+
+fn bool filter_name(const char* name) {
+    if (!name || !nvals) return true;
+    if (!strncmp(name, "sizeof(", 7)) name += 7;
+    if (!strncmp(name, "offsetof(", 9)) name += 9;
+    const char* end = name;
+    while (*end && *end != ',' && *end != ')') end++;
+    for (u32 i = 0; i < nvals; i++) {
+        if (match_name(name, end, vals[i])) return true;
+    }
+    return false;
+}
+
+fn bool match_name(const char *name, const char *end, const char *pattern) {
+    for (;;) {
+        char c1;
+        char c2;
+        while ((c1 = (name < end) ? *name++ : '\0') == (c2 = *pattern++)) {
+            if (!c2) return true;
+        }
+        if (c2 == '?') {
+            if (c1) continue;
+        } else
+        if (c2 == '*') {
+            c2 = *pattern++;
+            if (!c2) return true;
+            for (; c1; c1 = (name < end) ? *name++ : '\0') {
+                if (c1 == c2 && match_name(name, end, pattern)) return true;
+            }
+        }
+        break;
+    }
+    return false;
+}
+
+fn void check(const char* s, usize a, u8* p1, u8* p2) {
+    local bool header;
+    usize b = (usize)(p2 - p1);
+
+    if (!filter_name(s)) return;
+
+    if (dump) {
+        if (*s == 's') {
+            printf("%28.*s:", (i32)(strlen(s) - 8), s + 7);
+            for (usize i = 0; i < b; i++) {
+                if (dump == 16) dump_hex(p1[i]);
+                else dump_bin(p1[i]);
+            }
+            printf("\n");
+        }
+        return;
+    }
+    if (s) {
+        if (a == b) return;
+        if (!header) {
+            header = true;
+            printf("+------------------------------+----+----+\n");
+            printf("|          expression          | C2 |  C |\n");
+            printf("+------------------------------+----+----+\n");
+        }
+        printf("| %28s | %2d | %2d |\n", s, a, b);
+    } else {
+        if (header) {
+            printf("+------------------------------+----+----+\n");
+        }
+    }
+}
+
+public fn i32 main(i32 argc, char **argv) {
+    i32 i;
+    for (i = 1; i < argc; i++) {
+        if (!strcmp(argv[i], "-d")) dump = 16;
+        else if (!strcmp(argv[i], "-b")) dump = 2;
+        else break;
+    }
+    nvals = (u32)(argc - i);
+    vals = argv + i;
+
+    S__b1[2] s__b1 = {{ }};
+    S__w1[2] s__w1 = {{ }};
+    S__d1[2] s__d1 = {{ }};
+    S__q1[2] s__q1 = {{ }};
+    S__b1_p[2] s__b1_p = {{ }};
+    S__w1_p[2] s__w1_p = {{ }};
+    S__d1_p[2] s__d1_p = {{ }};
+    S__q1_p[2] s__q1_p = {{ }};
+
+    S_b1[2] s_b1 = {{ 1 }};
+    S_w1[2] s_w1 = {{ 1 }};
+    S_d1[2] s_d1 = {{ 1 }};
+    S_q1[2] s_q1 = {{ 1 }};
+    S_b1_p[2] s_b1_p = {{ 1 }};
+    S_w1_p[2] s_w1_p = {{ 1 }};
+    S_d1_p[2] s_d1_p = {{ 1 }};
+    S_q1_p[2] s_q1_p = {{ 1 }};
+
+#if 1
+    S_b1_b0_b1[2] s_b1_b0_b1 = {{ 1, 1 }};
+    S_w1_w0_w1[2] s_w1_w0_w1 = {{ 1, 1 }};
+    S_d1_d0_d1[2] s_d1_d0_d1 = {{ 1, 1 }};
+    S_q1_q0_q1[2] s_q1_q0_q1 = {{ 1, 1 }};
+    S_b1_b0_b1_p[2] s_b1_b0_b1_p = {{ 1, 1 }};
+    S_w1_w0_w1_p[2] s_w1_w0_w1_p = {{ 1, 1 }};
+    S_d1_d0_d1_p[2] s_d1_d0_d1_p = {{ 1, 1 }};
+    S_q1_q0_q1_p[2] s_q1_q0_q1_p = {{ 1, 1 }};
+#endif
+
+    S_b1_b_b1[2] s_b1_b_b1 = {{ 1, 0, 1 }};
+    S_w1_b_w1[2] s_w1_b_w1 = {{ 1, 0, 1 }};
+    S_d1_b_d1[2] s_d1_b_d1 = {{ 1, 0, 1 }};
+    S_q1_b_q1[2] s_q1_b_q1 = {{ 1, 0, 1 }};
+    S_b1_b_b1_p[2] s_b1_b_b1_p = {{ 1, 0, 1 }};
+    S_w1_b_w1_p[2] s_w1_b_w1_p = {{ 1, 0, 1 }};
+    S_d1_b_d1_p[2] s_d1_b_d1_p = {{ 1, 0, 1 }};
+    S_q1_b_q1_p[2] s_q1_b_q1_p = {{ 1, 0, 1 }};
+
+    S_b1_b_b1_b_b1[2] s_b1_b_b1_b_b1 = {{ 1, 0, 1, 0, 1 }};
+    S_w1_b_w1_b_w1[2] s_w1_b_w1_b_w1 = {{ 1, 0, 1, 0, 1 }};
+    S_d1_b_d1_b_d1[2] s_d1_b_d1_b_d1 = {{ 1, 0, 1, 0, 1 }};
+    S_q1_b_q1_b_q1[2] s_q1_b_q1_b_q1 = {{ 1, 0, 1, 0, 1 }};
+    S_b1_b_b1_b_b1_p[2] s_b1_b_b1_b_b1_p = {{ 1, 0, 1, 0, 1 }};
+    S_w1_b_w1_b_w1_p[2] s_w1_b_w1_b_w1_p = {{ 1, 0, 1, 0, 1 }};
+    S_d1_b_d1_b_d1_p[2] s_d1_b_d1_b_d1_p = {{ 1, 0, 1, 0, 1 }};
+    S_q1_b_q1_b_q1_p[2] s_q1_b_q1_b_q1_p = {{ 1, 0, 1, 0, 1 }};
+
+    S_b_b[2] s_b_b = {{ 0, F8 }};
+    S_b_w[2] s_b_w = {{ 0, F16 }};
+    S_b_d[2] s_b_d = {{ 0, F32 }};
+    S_b_q[2] s_b_q = {{ 0, F64 }};
+    S_b_b_p[2] s_b_b_p = {{ 0, F8 }};
+    S_b_w_p[2] s_b_w_p = {{ 0, F16 }};
+    S_b_d_p[2] s_b_d_p = {{ 0, F32 }};
+    S_b_q_p[2] s_b_q_p = {{ 0, F64 }};
+
+    S_b_b_b[2] s_b_b_b = {{ 0, F8, A8 }};
+    S_b_w_b[2] s_b_w_b = {{ 0, F16, A8 }};
+    S_b_d_b[2] s_b_d_b = {{ 0, F32, A8 }};
+    S_b_q_b[2] s_b_q_b = {{ 0, F64, A8 }};
+    S_b_b_b_p[2] s_b_b_b_p = {{ 0, F8, A8 }};
+    S_b_w_b_p[2] s_b_w_b_p = {{ 0, F16, A8 }};
+    S_b_d_b_p[2] s_b_d_b_p = {{ 0, F32, A8 }};
+    S_b_q_b_p[2] s_b_q_b_p = {{ 0, F64, A8 }};
+
+    S_b_b1[2] s_b_b1 = {{ 0, 1 }};
+    S_b_w1[2] s_b_w1 = {{ 0, 1 }};
+    S_b_d1[2] s_b_d1 = {{ 0, 1 }};
+    S_b_q1[2] s_b_q1 = {{ 0, 1 }};
+    S_b_b1_p[2] s_b_b1_p = {{ 0, 1 }};
+    S_b_w1_p[2] s_b_w1_p = {{ 0, 1 }};
+    S_b_d1_p[2] s_b_d1_p = {{ 0, 1 }};
+    S_b_q1_p[2] s_b_q1_p = {{ 0, 1 }};
+
+    S_b1_b1[2] s_b1_b1 = {{ 0, 1 }};
+    S_b1_w1[2] s_b1_w1 = {{ 0, 1 }};
+    S_b1_d1[2] s_b1_d1 = {{ 0, 1 }};
+    S_b1_q1[2] s_b1_q1 = {{ 0, 1 }};
+    S_b1_b1_p[2] s_b1_b1_p = {{ 0, 1 }};
+    S_b1_w1_p[2] s_b1_w1_p = {{ 0, 1 }};
+    S_b1_d1_p[2] s_b1_d1_p = {{ 0, 1 }};
+    S_b1_q1_p[2] s_b1_q1_p = {{ 0, 1 }};
+
+    S_b_b1_b[2] s_b_b1_b = {{ 0, 1, A8 }};
+    S_b_w1_b[2] s_b_w1_b = {{ 0, 1, A8 }};
+    S_b_d1_b[2] s_b_d1_b = {{ 0, 1, A8 }};
+    S_b_q1_b[2] s_b_q1_b = {{ 0, 1, A8 }};
+    S_b_b1_b_p[2] s_b_b1_b_p = {{ 0, 1, A8 }};
+    S_b_w1_b_p[2] s_b_w1_b_p = {{ 0, 1, A8 }};
+    S_b_d1_b_p[2] s_b_d1_b_p = {{ 0, 1, A8 }};
+    S_b_q1_b_p[2] s_b_q1_b_p = {{ 0, 1, A8 }};
+
+    S_b1_b1_b1[2] s_b1_b1_b1 = {{ 1, 0, 1 }};
+    S_b1_w1_b1[2] s_b1_w1_b1 = {{ 1, 0, 1 }};
+    S_b1_d1_b1[2] s_b1_d1_b1 = {{ 1, 0, 1 }};
+    S_b1_q1_b1[2] s_b1_q1_b1 = {{ 1, 0, 1 }};
+    S_b1_b1_b1_p[2] s_b1_b1_b1_p = {{ 1, 0, 1 }};
+    S_b1_w1_b1_p[2] s_b1_w1_b1_p = {{ 1, 0, 1 }};
+    S_b1_d1_b1_p[2] s_b1_d1_b1_p = {{ 1, 0, 1 }};
+    S_b1_q1_b1_p[2] s_b1_q1_b1_p = {{ 1, 0, 1 }};
+
+    S_b5_b5_b5[2] s_b5_b5_b5 = {{ F5, 0, F5 }};
+    S_b5_w5_b5[2] s_b5_w5_b5 = {{ F5, 0, F5 }};
+    S_b5_d5_b5[2] s_b5_d5_b5 = {{ F5, 0, F5 }};
+    S_b5_q5_b5[2] s_b5_q5_b5 = {{ F5, 0, F5 }};
+    S_b5_b5_b5_p[2] s_b5_b5_b5_p = {{ F5, 0, F5 }};
+    S_b5_w5_b5_p[2] s_b5_w5_b5_p = {{ F5, 0, F5 }};
+    S_b5_d5_b5_p[2] s_b5_d5_b5_p = {{ F5, 0, F5 }};
+    S_b5_q5_b5_p[2] s_b5_q5_b5_p = {{ F5, 0, F5 }};
+
+    S_d24[2] s_d24 = {{ F24 }};
+    S_d24_p[2] s_d24_p = {{ F24 }};
+    S_d24_d24[2] s_d24_d24 = {{ F24, F24 }};
+    S_d24_d24_p[2] s_d24_d24_p = {{ F24, F24 }};
+    S_d24_d24_d24[2] s_d24_d24_d24 = {{ F24, F24, F24 }};
+    S_d24_d24_d24_p[2] s_d24_d24_d24_p = {{ F24, F24, F24 }};
+    S_d24_d24_d24_d24[2] s_d24_d24_d24_d24 = {{ F24, F24, F24, F24 }};
+    S_d24_d24_d24_d24_p[2] s_d24_d24_d24_d24_p = {{ F24, F24, F24, F24 }};
+    S_b_d24[2] s_b_d24 = {{ 0, F24 }};
+    S_b_d24_p[2] s_b_d24_p = {{ 0, F24 }};
+    S_b_d24_b[2] s_b_d24_b = {{ 0, F24, A8 }};
+    S_b_d24_b_p[2] s_b_d24_b_p = {{ 0, F24, A8 }};
+
+    S_d9[2] s_d9 = {{ F9 }};
+    S_d9_p[2] s_d9_p = {{ F9 }};
+    S_b_d9[2] s_b_d9 = {{ 0, F9 }};
+    S_b_d9_p[2] s_b_d9_p = {{ 0, F9 }};
+    S_b_d9_b[2] s_b_d9_b = {{ 0, F9, A8 }};
+    S_b_d9_b_p[2] s_b_d9_b_p = {{ 0, F9, A8 }};
+
+    check("sizeof(S__b1)", sizeof(S__b1), (u8*)&s__b1[0], (u8*)&s__b1[1]);
+    check("sizeof(S__w1)", sizeof(S__w1), (u8*)&s__w1[0], (u8*)&s__w1[1]);
+    check("sizeof(S__d1)", sizeof(S__d1), (u8*)&s__d1[0], (u8*)&s__d1[1]);
+    check("sizeof(S__q1)", sizeof(S__q1), (u8*)&s__q1[0], (u8*)&s__q1[1]);
+    check("sizeof(S__b1_p)", sizeof(S__b1_p), (u8*)&s__b1_p[0], (u8*)&s__b1_p[1]);
+    check("sizeof(S__w1_p)", sizeof(S__w1_p), (u8*)&s__w1_p[0], (u8*)&s__w1_p[1]);
+    check("sizeof(S__d1_p)", sizeof(S__d1_p), (u8*)&s__d1_p[0], (u8*)&s__d1_p[1]);
+    check("sizeof(S__q1_p)", sizeof(S__q1_p), (u8*)&s__q1_p[0], (u8*)&s__q1_p[1]);
+
+    check("sizeof(S_b1)", sizeof(S_b1), (u8*)&s_b1[0], (u8*)&s_b1[1]);
+    check("sizeof(S_w1)", sizeof(S_w1), (u8*)&s_w1[0], (u8*)&s_w1[1]);
+    check("sizeof(S_d1)", sizeof(S_d1), (u8*)&s_d1[0], (u8*)&s_d1[1]);
+    check("sizeof(S_q1)", sizeof(S_q1), (u8*)&s_q1[0], (u8*)&s_q1[1]);
+    check("sizeof(S_b1_p)", sizeof(S_b1_p), (u8*)&s_b1_p[0], (u8*)&s_b1_p[1]);
+    check("sizeof(S_w1_p)", sizeof(S_w1_p), (u8*)&s_w1_p[0], (u8*)&s_w1_p[1]);
+    check("sizeof(S_d1_p)", sizeof(S_d1_p), (u8*)&s_d1_p[0], (u8*)&s_d1_p[1]);
+    check("sizeof(S_q1_p)", sizeof(S_q1_p), (u8*)&s_q1_p[0], (u8*)&s_q1_p[1]);
+
+#if 1
+    check("sizeof(S_b1_b0_b1)", sizeof(S_b1_b0_b1), (u8*)&s_b1_b0_b1[0], (u8*)&s_b1_b0_b1[1]);
+    check("sizeof(S_w1_w0_w1)", sizeof(S_w1_w0_w1), (u8*)&s_w1_w0_w1[0], (u8*)&s_w1_w0_w1[1]);
+    check("sizeof(S_d1_d0_d1)", sizeof(S_d1_d0_d1), (u8*)&s_d1_d0_d1[0], (u8*)&s_d1_d0_d1[1]);
+    check("sizeof(S_q1_q0_q1)", sizeof(S_q1_q0_q1), (u8*)&s_q1_q0_q1[0], (u8*)&s_q1_q0_q1[1]);
+    check("sizeof(S_b1_b0_b1_p)", sizeof(S_b1_b0_b1_p), (u8*)&s_b1_b0_b1_p[0], (u8*)&s_b1_b0_b1_p[1]);
+    check("sizeof(S_w1_w0_w1_p)", sizeof(S_w1_w0_w1_p), (u8*)&s_w1_w0_w1_p[0], (u8*)&s_w1_w0_w1_p[1]);
+    check("sizeof(S_d1_d0_d1_p)", sizeof(S_d1_d0_d1_p), (u8*)&s_d1_d0_d1_p[0], (u8*)&s_d1_d0_d1_p[1]);
+    check("sizeof(S_q1_q0_q1_p)", sizeof(S_q1_q0_q1_p), (u8*)&s_q1_q0_q1_p[0], (u8*)&s_q1_q0_q1_p[1]);
+#endif
+
+    check("sizeof(S_b1_b_b1)", sizeof(S_b1_b_b1), (u8*)&s_b1_b_b1[0], (u8*)&s_b1_b_b1[1]);
+    check("sizeof(S_w1_b_w1)", sizeof(S_w1_b_w1), (u8*)&s_w1_b_w1[0], (u8*)&s_w1_b_w1[1]);
+    check("sizeof(S_d1_b_d1)", sizeof(S_d1_b_d1), (u8*)&s_d1_b_d1[0], (u8*)&s_d1_b_d1[1]);
+    check("sizeof(S_q1_b_q1)", sizeof(S_q1_b_q1), (u8*)&s_q1_b_q1[0], (u8*)&s_q1_b_q1[1]);
+    check("sizeof(S_b1_b_b1_p)", sizeof(S_b1_b_b1_p), (u8*)&s_b1_b_b1_p[0], (u8*)&s_b1_b_b1_p[1]);
+    check("sizeof(S_w1_b_w1_p)", sizeof(S_w1_b_w1_p), (u8*)&s_w1_b_w1_p[0], (u8*)&s_w1_b_w1_p[1]);
+    check("sizeof(S_d1_b_d1_p)", sizeof(S_d1_b_d1_p), (u8*)&s_d1_b_d1_p[0], (u8*)&s_d1_b_d1_p[1]);
+    check("sizeof(S_q1_b_q1_p)", sizeof(S_q1_b_q1_p), (u8*)&s_q1_b_q1_p[0], (u8*)&s_q1_b_q1_p[1]);
+
+    check("sizeof(S_b1_b_b1_b_b1)", sizeof(S_b1_b_b1_b_b1), (u8*)&s_b1_b_b1_b_b1[0], (u8*)&s_b1_b_b1_b_b1[1]);
+    check("sizeof(S_w1_b_w1_b_w1)", sizeof(S_w1_b_w1_b_w1), (u8*)&s_w1_b_w1_b_w1[0], (u8*)&s_w1_b_w1_b_w1[1]);
+    check("sizeof(S_d1_b_d1_b_d1)", sizeof(S_d1_b_d1_b_d1), (u8*)&s_d1_b_d1_b_d1[0], (u8*)&s_d1_b_d1_b_d1[1]);
+    check("sizeof(S_q1_b_q1_b_q1)", sizeof(S_q1_b_q1_b_q1), (u8*)&s_q1_b_q1_b_q1[0], (u8*)&s_q1_b_q1_b_q1[1]);
+    check("sizeof(S_b1_b_b1_b_b1_p)", sizeof(S_b1_b_b1_b_b1_p), (u8*)&s_b1_b_b1_b_b1_p[0], (u8*)&s_b1_b_b1_b_b1_p[1]);
+    check("sizeof(S_w1_b_w1_b_w1_p)", sizeof(S_w1_b_w1_b_w1_p), (u8*)&s_w1_b_w1_b_w1_p[0], (u8*)&s_w1_b_w1_b_w1_p[1]);
+    check("sizeof(S_d1_b_d1_b_d1_p)", sizeof(S_d1_b_d1_b_d1_p), (u8*)&s_d1_b_d1_b_d1_p[0], (u8*)&s_d1_b_d1_b_d1_p[1]);
+    check("sizeof(S_q1_b_q1_b_q1_p)", sizeof(S_q1_b_q1_b_q1_p), (u8*)&s_q1_b_q1_b_q1_p[0], (u8*)&s_q1_b_q1_b_q1_p[1]);
+
+    check("sizeof(S_b_b)", sizeof(S_b_b), (u8*)&s_b_b[0], (u8*)&s_b_b[1]);
+    check("sizeof(S_b_w)", sizeof(S_b_w), (u8*)&s_b_w[0], (u8*)&s_b_w[1]);
+    check("sizeof(S_b_d)", sizeof(S_b_d), (u8*)&s_b_d[0], (u8*)&s_b_d[1]);
+    check("sizeof(S_b_q)", sizeof(S_b_q), (u8*)&s_b_q[0], (u8*)&s_b_q[1]);
+    check("sizeof(S_b_b_p)", sizeof(S_b_b_p), (u8*)&s_b_b_p[0], (u8*)&s_b_b_p[1]);
+    check("sizeof(S_b_w_p)", sizeof(S_b_w_p), (u8*)&s_b_w_p[0], (u8*)&s_b_w_p[1]);
+    check("sizeof(S_b_d_p)", sizeof(S_b_d_p), (u8*)&s_b_d_p[0], (u8*)&s_b_d_p[1]);
+    check("sizeof(S_b_q_p)", sizeof(S_b_q_p), (u8*)&s_b_q_p[0], (u8*)&s_b_q_p[1]);
+
+    check("sizeof(S_b_b1)", sizeof(S_b_b1), (u8*)&s_b_b1[0], (u8*)&s_b_b1[1]);
+    check("sizeof(S_b_w1)", sizeof(S_b_w1), (u8*)&s_b_w1[0], (u8*)&s_b_w1[1]);
+    check("sizeof(S_b_d1)", sizeof(S_b_d1), (u8*)&s_b_d1[0], (u8*)&s_b_d1[1]);
+    check("sizeof(S_b_q1)", sizeof(S_b_q1), (u8*)&s_b_q1[0], (u8*)&s_b_q1[1]);
+    check("sizeof(S_b_b1_p)", sizeof(S_b_b1_p), (u8*)&s_b_b1_p[0], (u8*)&s_b_b1_p[1]);
+    check("sizeof(S_b_w1_p)", sizeof(S_b_w1_p), (u8*)&s_b_w1_p[0], (u8*)&s_b_w1_p[1]);
+    check("sizeof(S_b_d1_p)", sizeof(S_b_d1_p), (u8*)&s_b_d1_p[0], (u8*)&s_b_d1_p[1]);
+    check("sizeof(S_b_q1_p)", sizeof(S_b_q1_p), (u8*)&s_b_q1_p[0], (u8*)&s_b_q1_p[1]);
+
+    check("sizeof(S_b1_b1)", sizeof(S_b1_b1), (u8*)&s_b1_b1[0], (u8*)&s_b1_b1[1]);
+    check("sizeof(S_b1_w1)", sizeof(S_b1_w1), (u8*)&s_b1_w1[0], (u8*)&s_b1_w1[1]);
+    check("sizeof(S_b1_d1)", sizeof(S_b1_d1), (u8*)&s_b1_d1[0], (u8*)&s_b1_d1[1]);
+    check("sizeof(S_b1_q1)", sizeof(S_b1_q1), (u8*)&s_b1_q1[0], (u8*)&s_b1_q1[1]);
+    check("sizeof(S_b1_b1_p)", sizeof(S_b1_b1_p), (u8*)&s_b1_b1_p[0], (u8*)&s_b1_b1_p[1]);
+    check("sizeof(S_b1_w1_p)", sizeof(S_b1_w1_p), (u8*)&s_b1_w1_p[0], (u8*)&s_b1_w1_p[1]);
+    check("sizeof(S_b1_d1_p)", sizeof(S_b1_d1_p), (u8*)&s_b1_d1_p[0], (u8*)&s_b1_d1_p[1]);
+    check("sizeof(S_b1_q1_p)", sizeof(S_b1_q1_p), (u8*)&s_b1_q1_p[0], (u8*)&s_b1_q1_p[1]);
+
+    check("sizeof(S_b_b_b)", sizeof(S_b_b_b), (u8*)&s_b_b_b[0], (u8*)&s_b_b_b[1]);
+    check("sizeof(S_b_w_b)", sizeof(S_b_w_b), (u8*)&s_b_w_b[0], (u8*)&s_b_w_b[1]);
+    check("sizeof(S_b_d_b)", sizeof(S_b_d_b), (u8*)&s_b_d_b[0], (u8*)&s_b_d_b[1]);
+    check("sizeof(S_b_q_b)", sizeof(S_b_q_b), (u8*)&s_b_q_b[0], (u8*)&s_b_q_b[1]);
+    check("sizeof(S_b_b_b_p)", sizeof(S_b_b_b_p), (u8*)&s_b_b_b_p[0], (u8*)&s_b_b_b_p[1]);
+    check("sizeof(S_b_w_b_p)", sizeof(S_b_w_b_p), (u8*)&s_b_w_b_p[0], (u8*)&s_b_w_b_p[1]);
+    check("sizeof(S_b_d_b_p)", sizeof(S_b_d_b_p), (u8*)&s_b_d_b_p[0], (u8*)&s_b_d_b_p[1]);
+    check("sizeof(S_b_q_b_p)", sizeof(S_b_q_b_p), (u8*)&s_b_q_b_p[0], (u8*)&s_b_q_b_p[1]);
+
+    check("sizeof(S_b_b1_b)", sizeof(S_b_b1_b), (u8*)&s_b_b1_b[0], (u8*)&s_b_b1_b[1]);
+    check("sizeof(S_b_w1_b)", sizeof(S_b_w1_b), (u8*)&s_b_w1_b[0], (u8*)&s_b_w1_b[1]);
+    check("sizeof(S_b_d1_b)", sizeof(S_b_d1_b), (u8*)&s_b_d1_b[0], (u8*)&s_b_d1_b[1]);
+    check("sizeof(S_b_q1_b)", sizeof(S_b_q1_b), (u8*)&s_b_q1_b[0], (u8*)&s_b_q1_b[1]);
+    check("sizeof(S_b_b1_b_p)", sizeof(S_b_b1_b_p), (u8*)&s_b_b1_b_p[0], (u8*)&s_b_b1_b_p[1]);
+    check("sizeof(S_b_w1_b_p)", sizeof(S_b_w1_b_p), (u8*)&s_b_w1_b_p[0], (u8*)&s_b_w1_b_p[1]);
+    check("sizeof(S_b_d1_b_p)", sizeof(S_b_d1_b_p), (u8*)&s_b_d1_b_p[0], (u8*)&s_b_d1_b_p[1]);
+    check("sizeof(S_b_q1_b_p)", sizeof(S_b_q1_b_p), (u8*)&s_b_q1_b_p[0], (u8*)&s_b_q1_b_p[1]);
+
+    check("sizeof(S_b1_b1_b1)", sizeof(S_b1_b1_b1), (u8*)&s_b1_b1_b1[0], (u8*)&s_b1_b1_b1[1]);
+    check("sizeof(S_b1_w1_b1)", sizeof(S_b1_w1_b1), (u8*)&s_b1_w1_b1[0], (u8*)&s_b1_w1_b1[1]);
+    check("sizeof(S_b1_d1_b1)", sizeof(S_b1_d1_b1), (u8*)&s_b1_d1_b1[0], (u8*)&s_b1_d1_b1[1]);
+    check("sizeof(S_b1_q1_b1)", sizeof(S_b1_q1_b1), (u8*)&s_b1_q1_b1[0], (u8*)&s_b1_q1_b1[1]);
+    check("sizeof(S_b1_b1_b1_p)", sizeof(S_b1_b1_b1_p), (u8*)&s_b1_b1_b1_p[0], (u8*)&s_b1_b1_b1_p[1]);
+    check("sizeof(S_b1_w1_b1_p)", sizeof(S_b1_w1_b1_p), (u8*)&s_b1_w1_b1_p[0], (u8*)&s_b1_w1_b1_p[1]);
+    check("sizeof(S_b1_d1_b1_p)", sizeof(S_b1_d1_b1_p), (u8*)&s_b1_d1_b1_p[0], (u8*)&s_b1_d1_b1_p[1]);
+    check("sizeof(S_b1_q1_b1_p)", sizeof(S_b1_q1_b1_p), (u8*)&s_b1_q1_b1_p[0], (u8*)&s_b1_q1_b1_p[1]);
+
+    check("sizeof(S_b5_b5_b5)", sizeof(S_b5_b5_b5), (u8*)&s_b5_b5_b5[0], (u8*)&s_b5_b5_b5[1]);
+    check("sizeof(S_b5_w5_b5)", sizeof(S_b5_w5_b5), (u8*)&s_b5_w5_b5[0], (u8*)&s_b5_w5_b5[1]);
+    check("sizeof(S_b5_d5_b5)", sizeof(S_b5_d5_b5), (u8*)&s_b5_d5_b5[0], (u8*)&s_b5_d5_b5[1]);
+    check("sizeof(S_b5_q5_b5)", sizeof(S_b5_q5_b5), (u8*)&s_b5_q5_b5[0], (u8*)&s_b5_q5_b5[1]);
+    check("sizeof(S_b5_b5_b5_p)", sizeof(S_b5_b5_b5_p), (u8*)&s_b5_b5_b5_p[0], (u8*)&s_b5_b5_b5_p[1]);
+    check("sizeof(S_b5_w5_b5_p)", sizeof(S_b5_w5_b5_p), (u8*)&s_b5_w5_b5_p[0], (u8*)&s_b5_w5_b5_p[1]);
+    check("sizeof(S_b5_d5_b5_p)", sizeof(S_b5_d5_b5_p), (u8*)&s_b5_d5_b5_p[0], (u8*)&s_b5_d5_b5_p[1]);
+    check("sizeof(S_b5_q5_b5_p)", sizeof(S_b5_q5_b5_p), (u8*)&s_b5_q5_b5_p[0], (u8*)&s_b5_q5_b5_p[1]);
+
+    check("offsetof(S_b_b_b, b)", offsetof(S_b_b_b, b), (u8*)&s_b_b_b[0], (u8*)&s_b_b_b[0].b);
+    check("offsetof(S_b_w_b, b)", offsetof(S_b_w_b, b), (u8*)&s_b_w_b[0], (u8*)&s_b_w_b[0].b);
+    check("offsetof(S_b_d_b, b)", offsetof(S_b_d_b, b), (u8*)&s_b_d_b[0], (u8*)&s_b_d_b[0].b);
+    check("offsetof(S_b_q_b, b)", offsetof(S_b_q_b, b), (u8*)&s_b_q_b[0], (u8*)&s_b_q_b[0].b);
+    check("offsetof(S_b_b_b_p, b)", offsetof(S_b_b_b_p, b), (u8*)&s_b_b_b_p[0], (u8*)&s_b_b_b_p[0].b);
+    check("offsetof(S_b_w_b_p, b)", offsetof(S_b_w_b_p, b), (u8*)&s_b_w_b_p[0], (u8*)&s_b_w_b_p[0].b);
+    check("offsetof(S_b_d_b_p, b)", offsetof(S_b_d_b_p, b), (u8*)&s_b_d_b_p[0], (u8*)&s_b_d_b_p[0].b);
+    check("offsetof(S_b_q_b_p, b)", offsetof(S_b_q_b_p, b), (u8*)&s_b_q_b_p[0], (u8*)&s_b_q_b_p[0].b);
+
+    check("offsetof(S_b_b1_b, b)", offsetof(S_b_b1_b, b), (u8*)&s_b_b1_b[0], (u8*)&s_b_b1_b[0].b);
+    check("offsetof(S_b_w1_b, b)", offsetof(S_b_w1_b, b), (u8*)&s_b_w1_b[0], (u8*)&s_b_w1_b[0].b);
+    check("offsetof(S_b_d1_b, b)", offsetof(S_b_d1_b, b), (u8*)&s_b_d1_b[0], (u8*)&s_b_d1_b[0].b);
+    check("offsetof(S_b_q1_b, b)", offsetof(S_b_q1_b, b), (u8*)&s_b_q1_b[0], (u8*)&s_b_q1_b[0].b);
+    check("offsetof(S_b_b1_b_p, b)", offsetof(S_b_b1_b_p, b), (u8*)&s_b_b1_b_p[0], (u8*)&s_b_b1_b_p[0].b);
+    check("offsetof(S_b_w1_b_p, b)", offsetof(S_b_w1_b_p, b), (u8*)&s_b_w1_b_p[0], (u8*)&s_b_w1_b_p[0].b);
+    check("offsetof(S_b_d1_b_p, b)", offsetof(S_b_d1_b_p, b), (u8*)&s_b_d1_b_p[0], (u8*)&s_b_d1_b_p[0].b);
+    check("offsetof(S_b_q1_b_p, b)", offsetof(S_b_q1_b_p, b), (u8*)&s_b_q1_b_p[0], (u8*)&s_b_q1_b_p[0].b);
+
+    check("sizeof(S_d24)", sizeof(S_d24), (u8*)&s_d24[0], (u8*)&s_d24[1]);
+    check("sizeof(S_d24_p)", sizeof(S_d24_p), (u8*)&s_d24_p[0], (u8*)&s_d24_p[1]);
+    check("sizeof(S_d24_d24)", sizeof(S_d24_d24), (u8*)&s_d24_d24[0], (u8*)&s_d24_d24[1]);
+    check("sizeof(S_d24_d24_p)", sizeof(S_d24_d24_p), (u8*)&s_d24_d24_p[0], (u8*)&s_d24_d24_p[1]);
+    check("sizeof(S_d24_d24_d24)", sizeof(S_d24_d24_d24), (u8*)&s_d24_d24_d24[0], (u8*)&s_d24_d24_d24[1]);
+    check("sizeof(S_d24_d24_d24_p)", sizeof(S_d24_d24_d24_p), (u8*)&s_d24_d24_d24_p[0], (u8*)&s_d24_d24_d24_p[1]);
+    check("sizeof(S_d24_d24_d24_d24)", sizeof(S_d24_d24_d24_d24), (u8*)&s_d24_d24_d24_d24[0], (u8*)&s_d24_d24_d24_d24[1]);
+    check("sizeof(S_d24_d24_d24_d24_p)", sizeof(S_d24_d24_d24_d24_p), (u8*)&s_d24_d24_d24_d24_p[0], (u8*)&s_d24_d24_d24_d24_p[1]);
+    check("sizeof(S_b_d24)", sizeof(S_b_d24), (u8*)&s_b_d24[0], (u8*)&s_b_d24[1]);
+    check("sizeof(S_b_d24_p)", sizeof(S_b_d24_p), (u8*)&s_b_d24_p[0], (u8*)&s_b_d24_p[1]);
+    check("sizeof(S_b_d24_b)", sizeof(S_b_d24_b), (u8*)&s_b_d24_b[0], (u8*)&s_b_d24_b[1]);
+    check("sizeof(S_b_d24_b_p)", sizeof(S_b_d24_b_p), (u8*)&s_b_d24_b_p[0], (u8*)&s_b_d24_b_p[1]);
+    check("offsetof(S_b_d24_b, b)", offsetof(S_b_d24_b, b), (u8*)&s_b_d24_b[0], (u8*)&s_b_d24_b[0].b);
+    check("offsetof(S_b_d24_b_p, b)", offsetof(S_b_d24_b_p, b), (u8*)&s_b_d24_b_p[0], (u8*)&s_b_d24_b_p[0].b);
+
+    check("sizeof(S_d9)", sizeof(S_d9), (u8*)&s_d9[0], (u8*)&s_d9[1]);
+    check("sizeof(S_d9_p)", sizeof(S_d9_p), (u8*)&s_d9_p[0], (u8*)&s_d9_p[1]);
+    check("sizeof(S_b_d9)", sizeof(S_b_d9), (u8*)&s_b_d9[0], (u8*)&s_b_d9[1]);
+    check("sizeof(S_b_d9_p)", sizeof(S_b_d9_p), (u8*)&s_b_d9_p[0], (u8*)&s_b_d9_p[1]);
+    check("sizeof(S_b_d9_b)", sizeof(S_b_d9_b), (u8*)&s_b_d9_b[0], (u8*)&s_b_d9_b[1]);
+    check("sizeof(S_b_d9_b_p)", sizeof(S_b_d9_b_p), (u8*)&s_b_d9_b_p[0], (u8*)&s_b_d9_b_p[1]);
+    check("offsetof(S_b_d9_b, b)", offsetof(S_b_d9_b, b), (u8*)&s_b_d9_b[0], (u8*)&s_b_d9_b[0].b);
+    check("offsetof(S_b_d9_b_p, b)", offsetof(S_b_d9_b_p, b), (u8*)&s_b_d9_b_p[0], (u8*)&s_b_d9_b_p[0].b);
+
+    U_b1[2] u_b1 = {{ .m = 1 }};
+    U_w1[2] u_w1 = {{ .m = 1 }};
+    U_d1[2] u_d1 = {{ .m = 1 }};
+    U_q1[2] u_q1 = {{ .m = 1 }};
+    U_b1_p[2] u_b1_p = {{ .m = 1 }};
+    U_w1_p[2] u_w1_p = {{ .m = 1 }};
+    U_d1_p[2] u_d1_p = {{ .m = 1 }};
+    U_q1_p[2] u_q1_p = {{ .m = 1 }};
+
+#if ZERO_BITFIELD_UNION
+    U_b1_b0_b1[2] u_b1_b0_b1 = {{ .m = 1 }};
+    U_w1_w0_w1[2] u_w1_w0_w1 = {{ .m = 1 }};
+    U_d1_d0_d1[2] u_d1_d0_d1 = {{ .m = 1 }};
+    U_q1_q0_q1[2] u_q1_q0_q1 = {{ .m = 1 }};
+    U_b1_b0_b1_p[2] u_b1_b0_b1_p = {{ .m = 1 }};
+    U_w1_w0_w1_p[2] u_w1_w0_w1_p = {{ .m = 1 }};
+    U_d1_d0_d1_p[2] u_d1_d0_d1_p = {{ .m = 1 }};
+    U_q1_q0_q1_p[2] u_q1_q0_q1_p = {{ .m = 1 }};
+#endif
+
+    U_b1_b_b1[2] u_b1_b_b1 = {{ .m = 1 }};
+    U_w1_b_w1[2] u_w1_b_w1 = {{ .m = 1 }};
+    U_d1_b_d1[2] u_d1_b_d1 = {{ .m = 1 }};
+    U_q1_b_q1[2] u_q1_b_q1 = {{ .m = 1 }};
+    U_b1_b_b1_p[2] u_b1_b_b1_p = {{ .m = 1 }};
+    U_w1_b_w1_p[2] u_w1_b_w1_p = {{ .m = 1 }};
+    U_d1_b_d1_p[2] u_d1_b_d1_p = {{ .m = 1 }};
+    U_q1_b_q1_p[2] u_q1_b_q1_p = {{ .m = 1 }};
+
+    U_b1_b_b1_b_b1[2] u_b1_b_b1_b_b1 = {{ .m = 1 }};
+    U_w1_b_w1_b_w1[2] u_w1_b_w1_b_w1 = {{ .m = 1 }};
+    U_d1_b_d1_b_d1[2] u_d1_b_d1_b_d1 = {{ .m = 1 }};
+    U_q1_b_q1_b_q1[2] u_q1_b_q1_b_q1 = {{ .m = 1 }};
+    U_b1_b_b1_b_b1_p[2] u_b1_b_b1_b_b1_p = {{ .m = 1 }};
+    U_w1_b_w1_b_w1_p[2] u_w1_b_w1_b_w1_p = {{ .m = 1 }};
+    U_d1_b_d1_b_d1_p[2] u_d1_b_d1_b_d1_p = {{ .m = 1 }};
+    U_q1_b_q1_b_q1_p[2] u_q1_b_q1_b_q1_p = {{ .m = 1 }};
+
+    U_b_b[2] u_b_b = {{ .m = F8 }};
+    U_b_w[2] u_b_w = {{ .m = F16 }};
+    U_b_d[2] u_b_d = {{ .m = F32 }};
+    U_b_q[2] u_b_q = {{ .m = F64 }};
+    U_b_b_p[2] u_b_b_p = {{ .m = F8 }};
+    U_b_w_p[2] u_b_w_p = {{ .m = F16 }};
+    U_b_d_p[2] u_b_d_p = {{ .m = F32 }};
+    U_b_q_p[2] u_b_q_p = {{ .m = F64 }};
+
+    U_b_b_b[2] u_b_b_b = {{ .m = F8 }};
+    U_b_w_b[2] u_b_w_b = {{ .m = F16 }};
+    U_b_d_b[2] u_b_d_b = {{ .m = F32 }};
+    U_b_q_b[2] u_b_q_b = {{ .m = F64 }};
+    U_b_b_b_p[2] u_b_b_b_p = {{ .m = F8 }};
+    U_b_w_b_p[2] u_b_w_b_p = {{ .m = F16 }};
+    U_b_d_b_p[2] u_b_d_b_p = {{ .m = F32 }};
+    U_b_q_b_p[2] u_b_q_b_p = {{ .m = F64 }};
+
+    U_b_b1[2] u_b_b1 = {{ .m = 1 }};
+    U_b_w1[2] u_b_w1 = {{ .m = 1 }};
+    U_b_d1[2] u_b_d1 = {{ .m = 1 }};
+    U_b_q1[2] u_b_q1 = {{ .m = 1 }};
+    U_b_b1_p[2] u_b_b1_p = {{ .m = 1 }};
+    U_b_w1_p[2] u_b_w1_p = {{ .m = 1 }};
+    U_b_d1_p[2] u_b_d1_p = {{ .m = 1 }};
+    U_b_q1_p[2] u_b_q1_p = {{ .m = 1 }};
+
+    U_b1_b1[2] u_b1_b1 = {{ .m = 1 }};
+    U_b1_w1[2] u_b1_w1 = {{ .m = 1 }};
+    U_b1_d1[2] u_b1_d1 = {{ .m = 1 }};
+    U_b1_q1[2] u_b1_q1 = {{ .m = 1 }};
+    U_b1_b1_p[2] u_b1_b1_p = {{ .m = 1 }};
+    U_b1_w1_p[2] u_b1_w1_p = {{ .m = 1 }};
+    U_b1_d1_p[2] u_b1_d1_p = {{ .m = 1 }};
+    U_b1_q1_p[2] u_b1_q1_p = {{ .m = 1 }};
+
+    U_b_b1_b[2] u_b_b1_b = {{ .m = 1 }};
+    U_b_w1_b[2] u_b_w1_b = {{ .m = 1 }};
+    U_b_d1_b[2] u_b_d1_b = {{ .m = 1 }};
+    U_b_q1_b[2] u_b_q1_b = {{ .m = 1 }};
+    U_b_b1_b_p[2] u_b_b1_b_p = {{ .m = 1 }};
+    U_b_w1_b_p[2] u_b_w1_b_p = {{ .m = 1 }};
+    U_b_d1_b_p[2] u_b_d1_b_p = {{ .m = 1 }};
+    U_b_q1_b_p[2] u_b_q1_b_p = {{ .m = 1 }};
+
+    U_b1_b1_b1[2] u_b1_b1_b1 = {{ .m = 1 }};
+    U_b1_w1_b1[2] u_b1_w1_b1 = {{ .m = 1 }};
+    U_b1_d1_b1[2] u_b1_d1_b1 = {{ .m = 1 }};
+    U_b1_q1_b1[2] u_b1_q1_b1 = {{ .m = 1 }};
+    U_b1_b1_b1_p[2] u_b1_b1_b1_p = {{ .m = 1 }};
+    U_b1_w1_b1_p[2] u_b1_w1_b1_p = {{ .m = 1 }};
+    U_b1_d1_b1_p[2] u_b1_d1_b1_p = {{ .m = 1 }};
+    U_b1_q1_b1_p[2] u_b1_q1_b1_p = {{ .m = 1 }};
+
+    U_b5_b5_b5[2] u_b5_b5_b5 = {{ .m = F5 }};
+    U_b5_w5_b5[2] u_b5_w5_b5 = {{ .m = F5 }};
+    U_b5_d5_b5[2] u_b5_d5_b5 = {{ .m = F5 }};
+    U_b5_q5_b5[2] u_b5_q5_b5 = {{ .m = F5 }};
+    U_b5_b5_b5_p[2] u_b5_b5_b5_p = {{ .m = F5 }};
+    U_b5_w5_b5_p[2] u_b5_w5_b5_p = {{ .m = F5 }};
+    U_b5_d5_b5_p[2] u_b5_d5_b5_p = {{ .m = F5 }};
+    U_b5_q5_b5_p[2] u_b5_q5_b5_p = {{ .m = F5 }};
+
+    U_d24[2] u_d24 = {{ .m = F24 }};
+    U_d24_p[2] u_d24_p = {{ .m = F24 }};
+    U_d24_d24[2] u_d24_d24 = {{ .m = F24 }};
+    U_d24_d24_p[2] u_d24_d24_p = {{ .m = F24 }};
+    U_d24_d24_d24[2] u_d24_d24_d24 = {{ .m = F24 }};
+    U_d24_d24_d24_p[2] u_d24_d24_d24_p = {{ .m = F24 }};
+    U_d24_d24_d24_d24[2] u_d24_d24_d24_d24 = {{ .m = F24 }};
+    U_d24_d24_d24_d24_p[2] u_d24_d24_d24_d24_p = {{ .m = F24 }};
+    U_b_d24[2] u_b_d24 = {{ .m = F24 }};
+    U_b_d24_p[2] u_b_d24_p = {{ .m = F24 }};
+    U_b_d24_b[2] u_b_d24_b = {{ .m = F24 }};
+    U_b_d24_b_p[2] u_b_d24_b_p = {{ .m = F24 }};
+
+    U_d9[2] u_d9 = {{ .m = F9 }};
+    U_d9_p[2] u_d9_p = {{ .m = F9 }};
+    U_b_d9[2] u_b_d9 = {{ .m = F9 }};
+    U_b_d9_p[2] u_b_d9_p = {{ .m = F9 }};
+    U_b_d9_b[2] u_b_d9_b = {{ .m = F9 }};
+    U_b_d9_b_p[2] u_b_d9_b_p = {{ .m = F9 }};
+
+    check("sizeof(U_b1)", sizeof(U_b1), (u8*)&u_b1[0], (u8*)&u_b1[1]);
+    check("sizeof(U_w1)", sizeof(U_w1), (u8*)&u_w1[0], (u8*)&u_w1[1]);
+    check("sizeof(U_d1)", sizeof(U_d1), (u8*)&u_d1[0], (u8*)&u_d1[1]);
+    check("sizeof(U_q1)", sizeof(U_q1), (u8*)&u_q1[0], (u8*)&u_q1[1]);
+    check("sizeof(U_b1_p)", sizeof(U_b1_p), (u8*)&u_b1_p[0], (u8*)&u_b1_p[1]);
+    check("sizeof(U_w1_p)", sizeof(U_w1_p), (u8*)&u_w1_p[0], (u8*)&u_w1_p[1]);
+    check("sizeof(U_d1_p)", sizeof(U_d1_p), (u8*)&u_d1_p[0], (u8*)&u_d1_p[1]);
+    check("sizeof(U_q1_p)", sizeof(U_q1_p), (u8*)&u_q1_p[0], (u8*)&u_q1_p[1]);
+
+#if ZERO_BITFIELD_UNION
+    check("sizeof(U_b1_b0_b1)", sizeof(U_b1_b0_b1), (u8*)&u_b1_b0_b1[0], (u8*)&u_b1_b0_b1[1]);
+    check("sizeof(U_w1_w0_w1)", sizeof(U_w1_w0_w1), (u8*)&u_w1_w0_w1[0], (u8*)&u_w1_w0_w1[1]);
+    check("sizeof(U_d1_d0_d1)", sizeof(U_d1_d0_d1), (u8*)&u_d1_d0_d1[0], (u8*)&u_d1_d0_d1[1]);
+    check("sizeof(U_q1_q0_q1)", sizeof(U_q1_q0_q1), (u8*)&u_q1_q0_q1[0], (u8*)&u_q1_q0_q1[1]);
+    check("sizeof(U_b1_b0_b1_p)", sizeof(U_b1_b0_b1_p), (u8*)&u_b1_b0_b1_p[0], (u8*)&u_b1_b0_b1_p[1]);
+    check("sizeof(U_w1_w0_w1_p)", sizeof(U_w1_w0_w1_p), (u8*)&u_w1_w0_w1_p[0], (u8*)&u_w1_w0_w1_p[1]);
+    check("sizeof(U_d1_d0_d1_p)", sizeof(U_d1_d0_d1_p), (u8*)&u_d1_d0_d1_p[0], (u8*)&u_d1_d0_d1_p[1]);
+    check("sizeof(U_q1_q0_q1_p)", sizeof(U_q1_q0_q1_p), (u8*)&u_q1_q0_q1_p[0], (u8*)&u_q1_q0_q1_p[1]);
+#endif
+
+    check("sizeof(U_b1_b_b1)", sizeof(U_b1_b_b1), (u8*)&u_b1_b_b1[0], (u8*)&u_b1_b_b1[1]);
+    check("sizeof(U_w1_b_w1)", sizeof(U_w1_b_w1), (u8*)&u_w1_b_w1[0], (u8*)&u_w1_b_w1[1]);
+    check("sizeof(U_d1_b_d1)", sizeof(U_d1_b_d1), (u8*)&u_d1_b_d1[0], (u8*)&u_d1_b_d1[1]);
+    check("sizeof(U_q1_b_q1)", sizeof(U_q1_b_q1), (u8*)&u_q1_b_q1[0], (u8*)&u_q1_b_q1[1]);
+    check("sizeof(U_b1_b_b1_p)", sizeof(U_b1_b_b1_p), (u8*)&u_b1_b_b1_p[0], (u8*)&u_b1_b_b1_p[1]);
+    check("sizeof(U_w1_b_w1_p)", sizeof(U_w1_b_w1_p), (u8*)&u_w1_b_w1_p[0], (u8*)&u_w1_b_w1_p[1]);
+    check("sizeof(U_d1_b_d1_p)", sizeof(U_d1_b_d1_p), (u8*)&u_d1_b_d1_p[0], (u8*)&u_d1_b_d1_p[1]);
+    check("sizeof(U_q1_b_q1_p)", sizeof(U_q1_b_q1_p), (u8*)&u_q1_b_q1_p[0], (u8*)&u_q1_b_q1_p[1]);
+
+    check("sizeof(U_b1_b_b1_b_b1)", sizeof(U_b1_b_b1_b_b1), (u8*)&u_b1_b_b1_b_b1[0], (u8*)&u_b1_b_b1_b_b1[1]);
+    check("sizeof(U_w1_b_w1_b_w1)", sizeof(U_w1_b_w1_b_w1), (u8*)&u_w1_b_w1_b_w1[0], (u8*)&u_w1_b_w1_b_w1[1]);
+    check("sizeof(U_d1_b_d1_b_d1)", sizeof(U_d1_b_d1_b_d1), (u8*)&u_d1_b_d1_b_d1[0], (u8*)&u_d1_b_d1_b_d1[1]);
+    check("sizeof(U_q1_b_q1_b_q1)", sizeof(U_q1_b_q1_b_q1), (u8*)&u_q1_b_q1_b_q1[0], (u8*)&u_q1_b_q1_b_q1[1]);
+    check("sizeof(U_b1_b_b1_b_b1_p)", sizeof(U_b1_b_b1_b_b1_p), (u8*)&u_b1_b_b1_b_b1_p[0], (u8*)&u_b1_b_b1_b_b1_p[1]);
+    check("sizeof(U_w1_b_w1_b_w1_p)", sizeof(U_w1_b_w1_b_w1_p), (u8*)&u_w1_b_w1_b_w1_p[0], (u8*)&u_w1_b_w1_b_w1_p[1]);
+    check("sizeof(U_d1_b_d1_b_d1_p)", sizeof(U_d1_b_d1_b_d1_p), (u8*)&u_d1_b_d1_b_d1_p[0], (u8*)&u_d1_b_d1_b_d1_p[1]);
+    check("sizeof(U_q1_b_q1_b_q1_p)", sizeof(U_q1_b_q1_b_q1_p), (u8*)&u_q1_b_q1_b_q1_p[0], (u8*)&u_q1_b_q1_b_q1_p[1]);
+
+    check("sizeof(U_b_b)", sizeof(U_b_b), (u8*)&u_b_b[0], (u8*)&u_b_b[1]);
+    check("sizeof(U_b_w)", sizeof(U_b_w), (u8*)&u_b_w[0], (u8*)&u_b_w[1]);
+    check("sizeof(U_b_d)", sizeof(U_b_d), (u8*)&u_b_d[0], (u8*)&u_b_d[1]);
+    check("sizeof(U_b_q)", sizeof(U_b_q), (u8*)&u_b_q[0], (u8*)&u_b_q[1]);
+    check("sizeof(U_b_b_p)", sizeof(U_b_b_p), (u8*)&u_b_b_p[0], (u8*)&u_b_b_p[1]);
+    check("sizeof(U_b_w_p)", sizeof(U_b_w_p), (u8*)&u_b_w_p[0], (u8*)&u_b_w_p[1]);
+    check("sizeof(U_b_d_p)", sizeof(U_b_d_p), (u8*)&u_b_d_p[0], (u8*)&u_b_d_p[1]);
+    check("sizeof(U_b_q_p)", sizeof(U_b_q_p), (u8*)&u_b_q_p[0], (u8*)&u_b_q_p[1]);
+
+    check("sizeof(U_b_b1)", sizeof(U_b_b1), (u8*)&u_b_b1[0], (u8*)&u_b_b1[1]);
+    check("sizeof(U_b_w1)", sizeof(U_b_w1), (u8*)&u_b_w1[0], (u8*)&u_b_w1[1]);
+    check("sizeof(U_b_d1)", sizeof(U_b_d1), (u8*)&u_b_d1[0], (u8*)&u_b_d1[1]);
+    check("sizeof(U_b_q1)", sizeof(U_b_q1), (u8*)&u_b_q1[0], (u8*)&u_b_q1[1]);
+    check("sizeof(U_b_b1_p)", sizeof(U_b_b1_p), (u8*)&u_b_b1_p[0], (u8*)&u_b_b1_p[1]);
+    check("sizeof(U_b_w1_p)", sizeof(U_b_w1_p), (u8*)&u_b_w1_p[0], (u8*)&u_b_w1_p[1]);
+    check("sizeof(U_b_d1_p)", sizeof(U_b_d1_p), (u8*)&u_b_d1_p[0], (u8*)&u_b_d1_p[1]);
+    check("sizeof(U_b_q1_p)", sizeof(U_b_q1_p), (u8*)&u_b_q1_p[0], (u8*)&u_b_q1_p[1]);
+
+    check("sizeof(U_b1_b1)", sizeof(U_b1_b1), (u8*)&u_b1_b1[0], (u8*)&u_b1_b1[1]);
+    check("sizeof(U_b1_w1)", sizeof(U_b1_w1), (u8*)&u_b1_w1[0], (u8*)&u_b1_w1[1]);
+    check("sizeof(U_b1_d1)", sizeof(U_b1_d1), (u8*)&u_b1_d1[0], (u8*)&u_b1_d1[1]);
+    check("sizeof(U_b1_q1)", sizeof(U_b1_q1), (u8*)&u_b1_q1[0], (u8*)&u_b1_q1[1]);
+    check("sizeof(U_b1_b1_p)", sizeof(U_b1_b1_p), (u8*)&u_b1_b1_p[0], (u8*)&u_b1_b1_p[1]);
+    check("sizeof(U_b1_w1_p)", sizeof(U_b1_w1_p), (u8*)&u_b1_w1_p[0], (u8*)&u_b1_w1_p[1]);
+    check("sizeof(U_b1_d1_p)", sizeof(U_b1_d1_p), (u8*)&u_b1_d1_p[0], (u8*)&u_b1_d1_p[1]);
+    check("sizeof(U_b1_q1_p)", sizeof(U_b1_q1_p), (u8*)&u_b1_q1_p[0], (u8*)&u_b1_q1_p[1]);
+
+    check("sizeof(U_b_b_b)", sizeof(U_b_b_b), (u8*)&u_b_b_b[0], (u8*)&u_b_b_b[1]);
+    check("sizeof(U_b_w_b)", sizeof(U_b_w_b), (u8*)&u_b_w_b[0], (u8*)&u_b_w_b[1]);
+    check("sizeof(U_b_d_b)", sizeof(U_b_d_b), (u8*)&u_b_d_b[0], (u8*)&u_b_d_b[1]);
+    check("sizeof(U_b_q_b)", sizeof(U_b_q_b), (u8*)&u_b_q_b[0], (u8*)&u_b_q_b[1]);
+    check("sizeof(U_b_b_b_p)", sizeof(U_b_b_b_p), (u8*)&u_b_b_b_p[0], (u8*)&u_b_b_b_p[1]);
+    check("sizeof(U_b_w_b_p)", sizeof(U_b_w_b_p), (u8*)&u_b_w_b_p[0], (u8*)&u_b_w_b_p[1]);
+    check("sizeof(U_b_d_b_p)", sizeof(U_b_d_b_p), (u8*)&u_b_d_b_p[0], (u8*)&u_b_d_b_p[1]);
+    check("sizeof(U_b_q_b_p)", sizeof(U_b_q_b_p), (u8*)&u_b_q_b_p[0], (u8*)&u_b_q_b_p[1]);
+
+    check("sizeof(U_b_b1_b)", sizeof(U_b_b1_b), (u8*)&u_b_b1_b[0], (u8*)&u_b_b1_b[1]);
+    check("sizeof(U_b_w1_b)", sizeof(U_b_w1_b), (u8*)&u_b_w1_b[0], (u8*)&u_b_w1_b[1]);
+    check("sizeof(U_b_d1_b)", sizeof(U_b_d1_b), (u8*)&u_b_d1_b[0], (u8*)&u_b_d1_b[1]);
+    check("sizeof(U_b_q1_b)", sizeof(U_b_q1_b), (u8*)&u_b_q1_b[0], (u8*)&u_b_q1_b[1]);
+    check("sizeof(U_b_b1_b_p)", sizeof(U_b_b1_b_p), (u8*)&u_b_b1_b_p[0], (u8*)&u_b_b1_b_p[1]);
+    check("sizeof(U_b_w1_b_p)", sizeof(U_b_w1_b_p), (u8*)&u_b_w1_b_p[0], (u8*)&u_b_w1_b_p[1]);
+    check("sizeof(U_b_d1_b_p)", sizeof(U_b_d1_b_p), (u8*)&u_b_d1_b_p[0], (u8*)&u_b_d1_b_p[1]);
+    check("sizeof(U_b_q1_b_p)", sizeof(U_b_q1_b_p), (u8*)&u_b_q1_b_p[0], (u8*)&u_b_q1_b_p[1]);
+
+    check("sizeof(U_b1_b1_b1)", sizeof(U_b1_b1_b1), (u8*)&u_b1_b1_b1[0], (u8*)&u_b1_b1_b1[1]);
+    check("sizeof(U_b1_w1_b1)", sizeof(U_b1_w1_b1), (u8*)&u_b1_w1_b1[0], (u8*)&u_b1_w1_b1[1]);
+    check("sizeof(U_b1_d1_b1)", sizeof(U_b1_d1_b1), (u8*)&u_b1_d1_b1[0], (u8*)&u_b1_d1_b1[1]);
+    check("sizeof(U_b1_q1_b1)", sizeof(U_b1_q1_b1), (u8*)&u_b1_q1_b1[0], (u8*)&u_b1_q1_b1[1]);
+    check("sizeof(U_b1_b1_b1_p)", sizeof(U_b1_b1_b1_p), (u8*)&u_b1_b1_b1_p[0], (u8*)&u_b1_b1_b1_p[1]);
+    check("sizeof(U_b1_w1_b1_p)", sizeof(U_b1_w1_b1_p), (u8*)&u_b1_w1_b1_p[0], (u8*)&u_b1_w1_b1_p[1]);
+    check("sizeof(U_b1_d1_b1_p)", sizeof(U_b1_d1_b1_p), (u8*)&u_b1_d1_b1_p[0], (u8*)&u_b1_d1_b1_p[1]);
+    check("sizeof(U_b1_q1_b1_p)", sizeof(U_b1_q1_b1_p), (u8*)&u_b1_q1_b1_p[0], (u8*)&u_b1_q1_b1_p[1]);
+
+    check("sizeof(U_b5_b5_b5)", sizeof(U_b5_b5_b5), (u8*)&u_b5_b5_b5[0], (u8*)&u_b5_b5_b5[1]);
+    check("sizeof(U_b5_w5_b5)", sizeof(U_b5_w5_b5), (u8*)&u_b5_w5_b5[0], (u8*)&u_b5_w5_b5[1]);
+    check("sizeof(U_b5_d5_b5)", sizeof(U_b5_d5_b5), (u8*)&u_b5_d5_b5[0], (u8*)&u_b5_d5_b5[1]);
+    check("sizeof(U_b5_q5_b5)", sizeof(U_b5_q5_b5), (u8*)&u_b5_q5_b5[0], (u8*)&u_b5_q5_b5[1]);
+    check("sizeof(U_b5_b5_b5_p)", sizeof(U_b5_b5_b5_p), (u8*)&u_b5_b5_b5_p[0], (u8*)&u_b5_b5_b5_p[1]);
+    check("sizeof(U_b5_w5_b5_p)", sizeof(U_b5_w5_b5_p), (u8*)&u_b5_w5_b5_p[0], (u8*)&u_b5_w5_b5_p[1]);
+    check("sizeof(U_b5_d5_b5_p)", sizeof(U_b5_d5_b5_p), (u8*)&u_b5_d5_b5_p[0], (u8*)&u_b5_d5_b5_p[1]);
+    check("sizeof(U_b5_q5_b5_p)", sizeof(U_b5_q5_b5_p), (u8*)&u_b5_q5_b5_p[0], (u8*)&u_b5_q5_b5_p[1]);
+
+    check("sizeof(U_d24)", sizeof(U_d24), (u8*)&u_d24[0], (u8*)&u_d24[1]);
+    check("sizeof(U_d24_p)", sizeof(U_d24_p), (u8*)&u_d24_p[0], (u8*)&u_d24_p[1]);
+    check("sizeof(U_d24_d24)", sizeof(U_d24_d24), (u8*)&u_d24_d24[0], (u8*)&u_d24_d24[1]);
+    check("sizeof(U_d24_d24_p)", sizeof(U_d24_d24_p), (u8*)&u_d24_d24_p[0], (u8*)&u_d24_d24_p[1]);
+    check("sizeof(U_d24_d24_d24)", sizeof(U_d24_d24_d24), (u8*)&u_d24_d24_d24[0], (u8*)&u_d24_d24_d24[1]);
+    check("sizeof(U_d24_d24_d24_p)", sizeof(U_d24_d24_d24_p), (u8*)&u_d24_d24_d24_p[0], (u8*)&u_d24_d24_d24_p[1]);
+    check("sizeof(U_d24_d24_d24_d24)", sizeof(U_d24_d24_d24_d24), (u8*)&u_d24_d24_d24_d24[0], (u8*)&u_d24_d24_d24_d24[1]);
+    check("sizeof(U_d24_d24_d24_d24_p)", sizeof(U_d24_d24_d24_d24_p), (u8*)&u_d24_d24_d24_d24_p[0], (u8*)&u_d24_d24_d24_d24_p[1]);
+    check("sizeof(U_b_d24)", sizeof(U_b_d24), (u8*)&u_b_d24[0], (u8*)&u_b_d24[1]);
+    check("sizeof(U_b_d24_p)", sizeof(U_b_d24_p), (u8*)&u_b_d24_p[0], (u8*)&u_b_d24_p[1]);
+    check("sizeof(U_b_d24_b)", sizeof(U_b_d24_b), (u8*)&u_b_d24_b[0], (u8*)&u_b_d24_b[1]);
+    check("sizeof(U_b_d24_b_p)", sizeof(U_b_d24_b_p), (u8*)&u_b_d24_b_p[0], (u8*)&u_b_d24_b_p[1]);
+
+    check("sizeof(U_d9)", sizeof(U_d9), (u8*)&u_d9[0], (u8*)&u_d9[1]);
+    check("sizeof(U_d9_p)", sizeof(U_d9_p), (u8*)&u_d9_p[0], (u8*)&u_d9_p[1]);
+    check("sizeof(U_b_d9)", sizeof(U_b_d9), (u8*)&u_b_d9[0], (u8*)&u_b_d9[1]);
+    check("sizeof(U_b_d9_p)", sizeof(U_b_d9_p), (u8*)&u_b_d9_p[0], (u8*)&u_b_d9_p[1]);
+    check("sizeof(U_b_d9_b)", sizeof(U_b_d9_b), (u8*)&u_b_d9_b[0], (u8*)&u_b_d9_b[1]);
+    check("sizeof(U_b_d9_b_p)", sizeof(U_b_d9_b_p), (u8*)&u_b_d9_b_p[0], (u8*)&u_b_d9_b_p[1]);
+
+    Block[2] block = {{ AA, 1, 0, 1, 0, 1, { 0xDEADBEEF, 0xBABEFACE }, { 0xDEADBEEF, 0xBABEFACE }}};
+
+    check("sizeof(Block)", sizeof(Block), (u8*)&block[0], (u8*)&block[1]);
+
+    check(nil, 0, nil, nil);
+
+    return 0;
+}

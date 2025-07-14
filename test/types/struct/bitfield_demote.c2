@@ -6,5 +6,5 @@ type A struct {
     u16 : 2;
     u8 : 1;
 }
-static_assert(2, sizeof(A));
+static_assert(1, sizeof(A));
 

@@ -17,7 +17,7 @@ type B struct {
     }
     u16 : 1;
 }
-static_assert(6, sizeof(B));
+static_assert(3, sizeof(B));
 
 type C struct {
     u32 : 1;
@@ -26,5 +26,5 @@ type C struct {
     }
     u32 : 1;
 }
-static_assert(12, sizeof(C));
+static_assert(3, sizeof(C));
 
