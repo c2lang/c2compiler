@@ -38,7 +38,8 @@ static_assert(elemsof(VarDeclKind), elemsof(varDeclNames));
 type VarDeclBits struct {
     u32 : NumDeclBits;
     u32 kind : 3;
-    u32 has_init_or_bitfield : 1;   // bitfield is struct-member
+    u32 is_bitfield : 1;   // bitfield is struct-member
+    u32 has_init : 1;      // global and local variables
     u32 has_local : 1; // local variables only
     u32 has_init_call : 1; // local variables only
     u32 attr_weak : 1; // globals only
@@ -64,7 +65,7 @@ static_assert(16, sizeof(BitFieldInfo));
 type VarDeclInit struct {
     Expr* expr;
     SrcLoc loc;
-    // u16 pad
+    // u32 pad
 }
 static_assert(16, sizeof(VarDeclInit));
 
@@ -96,7 +97,7 @@ public fn VarDecl* VarDecl.create(ast_context.Context* c,
     d.base.varDeclBits.kind = kind;
     d.typeRef.init(ref);
     if (initValue) {
-        d.base.varDeclBits.has_init_or_bitfield = 1;
+        d.base.varDeclBits.has_init = 1;
         VarDeclInit* init = d.typeRef.getPointerAfter();
         init.expr = initValue;
         init.loc = assignLoc;
@@ -125,7 +126,7 @@ public fn VarDecl* VarDecl.createStructMember(ast_context.Context* c,
     if (name == 0) d.base.setUsed();  // set unnamed member to used
     d.typeRef.init(ref);
     if (bitfield) {
-        d.base.varDeclBits.has_init_or_bitfield = 1;
+        d.base.varDeclBits.is_bitfield = 1;
         BitFieldInfo* info = d.typeRef.getPointerAfter();
         info.expr = bitfield;
         info.loc = loc;
@@ -142,31 +143,25 @@ fn VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
 {
     bool matches = vd.typeRef.matchesTemplate(inst.template_name);
     u32 extra = matches ? inst.ref.getExtraSize() : vd.typeRef.getExtraSize();
-    if (vd.base.varDeclBits.has_init_or_bitfield) {
-        if (vd.isStructMember()) {
-            extra += sizeof(BitFieldInfo);
-        } else {
-            extra += sizeof(VarDeclInit);
-        }
-    }
+    if (vd.base.varDeclBits.has_init) extra += sizeof(VarDeclInit);
+    if (vd.base.varDeclBits.is_bitfield) extra += sizeof(BitFieldInfo);
     u32 size = sizeof(VarDecl) + extra;
     size = (size + 7) & ~0x7; // round to 8-byte (temp)
     VarDecl* vd2 = inst.c.alloc(size);
     vd2.base = vd.base;
     vd2.typeRef.instantiate(&vd.typeRef, inst);
 
-    if (vd.base.varDeclBits.has_init_or_bitfield) {
-        if (vd.isStructMember()) {
-            BitFieldInfo* info1 = vd.typeRef.getPointerAfter();
-            BitFieldInfo* info2 = vd2.typeRef.getPointerAfter();
-            info2.loc = info1.loc;
-            info2.expr = info1.expr.instantiate(inst);
-        } else {
-            VarDeclInit* init1 = vd.typeRef.getPointerAfter();
-            VarDeclInit* init2 = vd2.typeRef.getPointerAfter();
-            init2.loc = init1.loc;
-            init2.expr = init1.expr.instantiate(inst);
-        }
+    if (vd.base.varDeclBits.has_init) {
+        VarDeclInit* init1 = vd.typeRef.getPointerAfter();
+        VarDeclInit* init2 = vd2.typeRef.getPointerAfter();
+        init2.loc = init1.loc;
+        init2.expr = init1.expr.instantiate(inst);
+    }
+    if (vd.base.varDeclBits.is_bitfield) {
+        BitFieldInfo* info1 = vd.typeRef.getPointerAfter();
+        BitFieldInfo* info2 = vd2.typeRef.getPointerAfter();
+        info2.loc = info1.loc;
+        info2.expr = info1.expr.instantiate(inst);
     }
 #if AstStatistics
     Stats.addDecl(DeclKind.Variable, size);
@@ -198,12 +193,6 @@ public fn bool VarDecl.isGlobal(const VarDecl* d) {
     return d.getKind() == VarDeclKind.GlobalVar;
 }
 
-fn bool VarDecl.isBitField(const VarDecl* d) {
-    VarDeclKind k = d.getKind();
-    if (k != VarDeclKind.StructMember) return false;
-    return d.base.varDeclBits.has_init_or_bitfield;
-}
-
 public fn bool VarDecl.isLocal(const VarDecl* d) {
     return d.getKind() == VarDeclKind.LocalVar;
 }
@@ -214,6 +203,10 @@ public fn bool VarDecl.isParameter(const VarDecl* d) {
 
 fn bool VarDecl.isStructMember(const VarDecl* d) {
     return d.getKind() == VarDeclKind.StructMember;
+}
+
+fn bool VarDecl.isBitField(const VarDecl* d) {
+    return d.base.varDeclBits.is_bitfield;
 }
 
 public fn bool VarDecl.isAddrUsed(const VarDecl* d) {
@@ -227,65 +220,44 @@ public fn void VarDecl.setAddrUsed(VarDecl* d) {
 public fn TypeRef* VarDecl.getTypeRef(VarDecl* d) { return &d.typeRef; }
 
 public fn SrcLoc VarDecl.getAssignLoc(const VarDecl* d) {
-    if (d.base.varDeclBits.has_init_or_bitfield) {
-        void* tail = d.typeRef.getPointerAfter();
-        if (d.isStructMember()) {
-            BitFieldInfo* info = tail;
-            return info.loc;
-        } else {
-            VarDeclInit* init = tail;
-            return init.loc;
-        }
+    if (d.base.varDeclBits.has_init) {
+        VarDeclInit* init = d.typeRef.getPointerAfter();
+        return init.loc;
     }
     return 0;
 }
 
-/*
+#if 0
 public fn bool VarDecl.hasInit(const VarDecl* d) {
-    return d.base.varDeclBits.has_init_or_bitfield;
+    return d.base.varDeclBits.has_init;
 }
-*/
+#endif
 
 public fn Expr* VarDecl.getInit(const VarDecl* d) {
-    if (d.base.varDeclBits.has_init_or_bitfield) {
-        void* tail = d.typeRef.getPointerAfter();
-        if (d.isStructMember()) {
-            BitFieldInfo* info = tail;
-            return info.expr;
-        } else {
-            VarDeclInit* init = tail;
-            return init.expr;
-        }
+    if (d.base.varDeclBits.has_init) {
+        VarDeclInit* init = d.typeRef.getPointerAfter();
+        return init.expr;
     }
     return nil;
 }
 
 public fn Expr** VarDecl.getInit2(VarDecl* d) {
-    if (d.base.varDeclBits.has_init_or_bitfield) {
-        void* tail = d.typeRef.getPointerAfter();
-        if (d.isStructMember()) {
-            BitFieldInfo* info = tail;
-            return &info.expr;
-        } else {
-            VarDeclInit* init = tail;
-            return &init.expr;
-        }
+    if (d.base.varDeclBits.has_init) {
+        VarDeclInit* init = d.typeRef.getPointerAfter();
+        return &init.expr;
     }
     return nil;
 }
 
 // Note: can ONLY be done for incremental arrays (since init is tail allocated)
 public fn  void VarDecl.setInit(VarDecl* d, Expr* initValue) {
-    d.base.varDeclBits.has_init_or_bitfield = 1;
-    Expr** i = d.getInit2();
-    *i = initValue;
+    d.base.varDeclBits.has_init = 1;
+    VarDeclInit* init = d.typeRef.getPointerAfter();
+    init.expr = initValue;
 }
 
 fn BitFieldInfo* VarDecl.getBitFieldInfo(const VarDecl* d) {
-    if (d.isStructMember() && d.base.varDeclBits.has_init_or_bitfield) {
-        u8* tail = d.typeRef.getPointerAfter();
-        return (BitFieldInfo*)tail;
-    }
+    if (d.base.varDeclBits.is_bitfield) return d.typeRef.getPointerAfter();
     return nil;
 }
 
@@ -369,8 +341,7 @@ fn void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     out.color(col_Attr);
     VarDeclKind k = d.getKind();
     out.add(varDeclNames[k]);
-    bool has_init_or_bitfield = d.base.varDeclBits.has_init_or_bitfield;
-    if (k == VarDeclKind.StructMember && has_init_or_bitfield) {
+    if (d.base.varDeclBits.is_bitfield) {
         BitFieldLayout* layout = d.getBitfieldLayout();
         out.print(" bitfield(%d, %d)", layout.bit_offset, layout.bit_width);
     }
@@ -387,7 +358,7 @@ fn void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     d.base.printName(out);
     out.newline();
 
-    if (has_init_or_bitfield) {
+    if (d.base.varDeclBits.has_init) {
         Expr* i = d.getInit();
         i.print(out, indent + 1);
     }

@@ -206,11 +206,11 @@ fn IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
         break;
     case Variable:
         VarDecl* vd = (VarDecl*)d;
-        QualType t = vd.asDecl().getType();
         if (vd.isGlobal() || vd.hasLocalQualifier()) e.setCtc();
         e.setLValue();
-        const Expr* init_ = vd.getInit();
-        if (init_ && t.isConst() && init_.isCtv()) e.setCtv();
+        const Expr* init = vd.getInit();
+        QualType t = d.getType();
+        if (init && t.isConst() && init.isCtv()) e.setCtv();
         switch (vd.getKind()) {
         case GlobalVar:
         case LocalVar:

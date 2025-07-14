@@ -25,6 +25,10 @@ public fn const char* get_format(Expr* format, SrcLoc* format_loc) {
     case StringLiteral:
         StringLiteral* s = (StringLiteral*)format;
         format_text = s.getText();
+        // set location to first character of string literal
+        // this works for simple strings only: multi-strings, raw strings,
+        // strings with escape sequences may show an incorrect position for
+        // format specifier errors.
         *format_loc = format.getLoc() + 1;
         break;
     case Identifier:
