@@ -113,7 +113,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
                 name = p.tok.name_idx;
                 loc = p.tok.loc;
 
-                if (!checkName(p.pool.idx2str(name), p.is_interface)) {
+                if (!p.checkName(name, p.is_interface)) {
                     p.error("a struct/union member name must start with a lower case character");
                 }
                 p.consumeToken();
@@ -145,7 +145,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
                     name = p.tok.name_idx;
                     loc = p.tok.loc;
 
-                    if (!checkName(p.pool.idx2str(name), p.is_interface)) {
+                    if (!p.checkName(name, p.is_interface)) {
                         p.error("a struct/union member name must start with a lower case character");
                     }
                     p.consumeToken();

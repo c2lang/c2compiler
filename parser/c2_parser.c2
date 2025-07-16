@@ -250,7 +250,7 @@ fn void Parser.parseImports(Parser* p) {
             alias_name = p.tok.name_idx;
             alias_loc = p.tok.loc;
 
-            if (!checkName(p.pool.idx2str(alias_name), false)) {
+            if (!p.checkName(alias_name, false)) {
                 p.error("a module name must start with a lower case character");
             }
             p.consumeToken();
@@ -413,7 +413,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
         p.consumeToken();
     }
 
-    if (!checkName(p.pool.idx2str(func_name), p.is_interface)) {
+    if (!p.checkName(func_name, p.is_interface)) {
         p.tok.loc = func_loc;   // reset to correct value for error
         p.error("a function name must start with a lower case character");
     }
@@ -519,7 +519,7 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
     if (p.tok.kind == Kind.Identifier) {
         name = p.tok.name_idx;
 
-        if (!checkName(p.pool.idx2str(name), p.is_interface)) {
+        if (!p.checkName(name, p.is_interface)) {
             p.error("a parameter name must start with a lower case character");
         }
         p.consumeToken();
@@ -839,10 +839,8 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
     fputs(out.data(), stdout);
 }
 
-fn bool checkName(const char* name, bool is_interface) {
+fn bool Parser.checkName(Parser* p, u32 name_idx, bool is_interface) {
     if (is_interface) return true;
-    char c = name[0];
-    if (islower(c)) return true;
-    return false;
+    const char* name = p.pool.idx2str(name_idx);
+    return islower(name[0]);
 }
-
