@@ -29,7 +29,6 @@ type StructTypeDeclBits struct {
     u32 attr_opaque : 1;
     u32 attr_notypedef : 1;
     u32 size_analysed : 1;  // set when sizeof/offsetof is used (also set in (anonymous) substructs)
-    u32 has_field_info : 1;
 }
 
 public type FieldInitInfo struct {
@@ -285,7 +284,6 @@ public fn Decl* StructTypeDecl.findMember(const StructTypeDecl* s, u32 name_idx,
 }
 
 public fn FieldInitInfo* StructTypeDecl.createFieldInfo(StructTypeDecl* d, ast_context.Context* c) {
-    d.base.structTypeDeclBits.has_field_info = true;
     u32 count = d.getDesigMemberCount();
     d.field_info = c.alloc(sizeof(FieldInitInfo) + count * sizeof(FieldInitField));
     d.field_info.num_fields = count;
@@ -314,7 +312,7 @@ fn u32 StructTypeDecl.getDesigMemberCount(const StructTypeDecl* d) {
 }
 
 public fn bool StructTypeDecl.hasFieldInfo(const StructTypeDecl* d) {
-    return d.base.structTypeDeclBits.has_field_info;
+    return d.field_info != nil;
 }
 
 fn void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u32 indent) {
@@ -352,8 +350,7 @@ fn void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u3
     }
 
 #if 1
-    if (d.base.structTypeDeclBits.has_field_info) {
-        assert(d.field_info);
+    if (d.field_info) {
         out.indent(indent + 1);
         out.color(col_Calc);
         const FieldInitInfo* fif = d.field_info;

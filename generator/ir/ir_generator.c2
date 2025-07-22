@@ -294,9 +294,7 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         u32 num_values = ile.getNumValues();
         if (num_values == 0) {   // { }
             gen.ctx.addInitZero(size);
-            break;
-        }
-        if (ile.isArray()) {
+        } else if (ile.isArray()) {
             gen.emitArrayInit(e);
         } else {
             gen.emitStructInit(e);
