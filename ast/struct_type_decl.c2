@@ -230,7 +230,7 @@ public fn void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.
 }
 
 // TODO make this function more efficient, since it is used a lot
-public fn Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx, u32* offset) {
+public fn Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx) {
     u32 num_members = s.getNumMembers();
     u32 count = num_members;
     for (u32 i=0; i<num_members; i++) {
@@ -238,15 +238,13 @@ public fn Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx, u3
         u32 member_name = d.getNameIdx();
 
         if (member_name == name_idx) {
-            if (offset) *offset += s.getMemberOffset(i);
             return d;
         }
 
         if (member_name == 0  && d.isStructType()) {
             StructTypeDecl* sub = (StructTypeDecl*)d;
-            d = sub.findAny(name_idx, offset);
+            d = sub.findAny(name_idx);
             if (d) {
-                if (offset) *offset += s.getMemberOffset(i);
                 return d;
             }
         }

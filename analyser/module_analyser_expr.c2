@@ -544,11 +544,9 @@ fn void Analyser.memberError(Analyser* ma, u32 name_idx, SrcLoc loc, StructTypeD
 fn Decl* Analyser.findStructMember(Analyser* ma,
                                    StructTypeDecl* s,
                                    u32 name_idx,
-                                   SrcLoc loc,
-                                   u32* offset,
-                                   bool allow_funcs) {
-    Decl* d = s.findAny(name_idx, offset);
-    if (!d || (!allow_funcs && d.isFunction())) {
+                                   SrcLoc loc) {
+    Decl* d = s.findAny(name_idx);
+    if (!d) {
         ma.memberError(name_idx, loc, s);
         return nil;
     }
