@@ -231,7 +231,9 @@ public fn void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.
 
 // TODO make this function more efficient, since it is used a lot
 public fn Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx, u32* offset) {
-    for (u32 i=0; i<s.getNumMembers(); i++) {
+    u32 num_members = s.getNumMembers();
+    u32 count = num_members;
+    for (u32 i=0; i<num_members; i++) {
         Decl* d = s.members[i];
         u32 member_name = d.getNameIdx();
 
@@ -261,7 +263,8 @@ public fn Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx, u3
 }
 
 public fn Decl* StructTypeDecl.findMember(const StructTypeDecl* s, u32 name_idx, u32* offset) {
-    for (u32 i=0; i<s.getNumMembers(); i++) {
+    u32 count = s.getNumMembers();
+    for (u32 i=0; i<count; i++) {
         Decl* d = s.members[i];
         u32 member_name = d.getNameIdx();
 
@@ -300,7 +303,7 @@ public fn const FieldInitInfo* StructTypeDecl.getFieldInfo(const StructTypeDecl*
 fn u32 StructTypeDecl.getDesigMemberCount(const StructTypeDecl* d) {
     u32 count = d.num_members;
 
-    for (u32 i=0; i<d.getNumMembers(); i++) {
+    for (u32 i=0; i<d.num_members; i++) {
         Decl* m = d.members[i];
         u32 member_name = m.getNameIdx();
         if (member_name == 0) {
