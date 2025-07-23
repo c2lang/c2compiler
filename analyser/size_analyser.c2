@@ -94,7 +94,7 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
         //}
         if (bit_layout) {
             /* A bit-field: layout is more complicated.  there are two options:
-               PCC (GCC) compatible and MS compatible (ignored for now0.
+               PCC (GCC) compatible and MS compatible (ignored for now).
                In GCC layout a bit-field is placed adjacent to the preceding bit-fields, except if:
                - it has zero-width
                - an individual alignment was given
