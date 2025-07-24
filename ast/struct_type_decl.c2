@@ -228,7 +228,6 @@ public fn void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.
     d.num_struct_functions = count;
 }
 
-// TODO make this function more efficient, since it is used a lot
 public fn Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx) {
     u32 num_members = s.getNumMembers();
     u32 count = num_members;
@@ -295,7 +294,7 @@ public fn const FieldInitInfo* StructTypeDecl.getFieldInfo(const StructTypeDecl*
     return d.field_info;
 }
 
-// also count anonymous sub-structs/union members
+// also counts anonymous sub-structs/union members
 fn u32 StructTypeDecl.getDesigMemberCount(const StructTypeDecl* d) {
     u32 count = d.num_members;
 
@@ -303,9 +302,11 @@ fn u32 StructTypeDecl.getDesigMemberCount(const StructTypeDecl* d) {
         Decl* m = d.members[i];
         u32 member_name = m.getNameIdx();
         if (member_name == 0) {
-            assert(m.isStructType());
-            StructTypeDecl* sub = (StructTypeDecl*)m;
-            count += sub.getDesigMemberCount() -1; // remove anonymous struct/union itself
+            count--;
+            if (m.isStructType()) {
+                StructTypeDecl* sub = (StructTypeDecl*)m;
+                count += sub.getDesigMemberCount();
+            }
         }
     }
     return count;
