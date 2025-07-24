@@ -107,6 +107,9 @@ fn void Visitor.handleVarDecl(Visitor* v, VarDecl* d) {
 
     Expr* init_expr = d.getInit();
     if (init_expr) v.handleExpr(init_expr);
+
+    Expr* bitfield = d.getBitfield();
+    if (bitfield) v.handleExpr(bitfield);
 }
 
 fn void Visitor.handleTypeRef(Visitor* v, const TypeRef* r) {
