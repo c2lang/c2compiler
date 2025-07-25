@@ -55,11 +55,14 @@ fn void CopyList.clear(CopyList* l) {
 fn void CopyList.add(CopyList* l, u32 idx, Ref ref) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
 
-    CopyInfo* info = &l.copies[l.count];
+    // if ref is already a copy, replace with that dest (only for temps)
+    if (ref.isTemp()) {
+        Ref* copy = l.find(ref.value);
+        if (copy) ref = *copy;
+    }
+    CopyInfo* info = &l.copies[l.count++];
     info.instr_idx = idx;
     info.ref = ref;
-    l.count++;
-
 }
 
 fn Ref* CopyList.find(CopyList* l, u32 idx) {

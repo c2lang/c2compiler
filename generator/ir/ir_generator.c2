@@ -579,13 +579,6 @@ fn void Generator.collectLocals(Generator* gen, const FunctionDecl* fd) {
     VarDecl** fn_params = fd.getParams();
     u32 num_params = fd.getNumParams();
     gen.locals.skipSlots(num_params);
-    // Q: dont assign slots here but in IrContext?
-
-    //for (u32 i=0; i<num_params; i++) {
-    //    gen.addLocalVar(fn_params[i]);
-    //}
-    // TODO handle varargs, how?
-
     gen.collectLocalVars(cast<Stmt*>(fd.getBody()));
 }
 

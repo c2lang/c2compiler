@@ -15,6 +15,8 @@
 
 module ir;
 
+import stdio;
+
 public type RefKind enum u8 {
     None,
     Slot,      // slot_idx
@@ -28,6 +30,24 @@ public type RefKind enum u8 {
     Float,     // constant_idx
     Double,    // constant_idx
     Text,      // idx into string pool, for comment
+}
+
+fn const char* RefKind.str(RefKind k) {
+    switch (k) {
+    case None:      return "none";
+    case Slot:      return "slot";
+    case Temp:      return "temp";
+    case Param:     return "param";
+    case JmpDest:   return "jmp_dest";
+    case RefList:   return "ref_list";
+    case Symbol:    return "symbol";
+    case Value:     return "value";
+    case Integer:   return "integer";
+    case Float:     return "float";
+    case Double:    return "double";
+    case Text:      return "text";
+    }
+    return nil;
 }
 
 public type Ref struct {
@@ -72,20 +92,14 @@ fn bool Ref.isRefList(const Ref* r) {
 }
 
 fn const char* Ref.getKindName(const Ref* r) {
-    switch (r.getKind()) {
-    case None:      return "none";
-    case Slot:      return "slot";
-    case Temp:      return "temp";
-    case Param:     return "param";
-    case JmpDest:   return "jmp_dest";
-    case RefList:   return "ref_list";
-    case Symbol:    return "symbol";
-    case Value:     return "value";
-    case Integer:   return "integer";
-    case Float:     return "float";
-    case Double:    return "double";
-    case Text:      return "text";
-    }
-    return "?";
+    return r.getKind().str();
 }
 
+fn const char* Ref.str(const Ref* r) @(unused) {
+    local char[4][24] buf;
+    local u32 idx;
+    idx = (idx+1) % 4;
+    char* tmp = buf[idx++];
+    stdio.sprintf(tmp, "%s %d", r.getKind().str(), r.value);
+    return tmp;
+}

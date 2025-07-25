@@ -1,0 +1,14 @@
+module test;
+
+fn i32 swap(i32 a, i32 b) {
+    i32 tmp = a;
+    a = b;
+    b = tmp;
+    return a * 2 + b;
+}
+
+public fn i32 main() {
+    return swap(1, 3);
+}
+
+

@@ -34,6 +34,7 @@ const char* col_Value = color.Magenta;
 const char* col_Data = color.Bcyan;
 const char* col_Slot = color.Bcyan;
 const char* col_Temp = color.Bgreen;
+const char* col_Param = color.Cyan;
 const char* col_Type = color.Green;
 const char* col_Comment = color.Grey;
 const char* col_Fixup = color.Bred;
@@ -153,7 +154,7 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
         Type t = info.getArg(i);
         out.add(t.str());
         out.space();
-        out.color(col_Temp);
+        out.color(col_Param);
         out.print("%%%d", i);
         out.color(color.Normal);
     }
@@ -458,7 +459,7 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
 #endif
         break;
     case Param:
-        out.color(col_Temp);
+        out.color(col_Param);
         out.print("%%%d", r.value);
 #if DebugIr
         out.color(color.Grey);

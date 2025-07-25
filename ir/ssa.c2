@@ -316,10 +316,12 @@ fn void Tools.eliminateCopies(Tools* t, FunctionInfo* fi) {
 
     // Note: the filling could be done in previous loop already!
     Instr* all = fi.instructions.get(0);
+    // TODO should be done for each basic block individually? (loops)
     for (u32 i=0; i<fi.instructions.getCount(); i++) {
         Instr* instr = &all[i];
         if (instr.isCopy()) {
             t.copies.add(i, instr.args[0]);
+            //printf("add %d   %s\n", i, instr.args[0].str());
             // TODO also check if args is already in list for nested copies
             instr.clear();
         } else {
@@ -329,19 +331,28 @@ fn void Tools.eliminateCopies(Tools* t, FunctionInfo* fi) {
                     Ref* r = &clauses[j].ref;
                     if (r.isTemp()) {
                         Ref* copy = t.copies.find(r.value);
-                        if (copy) *r = *copy;
+                        if (copy) {
+                            //printf("replace %s with %s\n", r.str(), copy.str());
+                            *r = *copy;
+                        }
                     }
                 }
             } else {
                 Ref* r = &instr.args[0];
                 if (r.isTemp()) {
                     Ref* copy = t.copies.find(r.value);
-                    if (copy) instr.args[0] = *copy;
+                    if (copy) {
+                        //printf("replace %s with %s\n", r.str(), copy.str());
+                        instr.args[0] = *copy;
+                    }
                 }
                 r = &instr.args[1];
                 if (r.isTemp()) {
                     Ref* copy = t.copies.find(r.value);
-                    if (copy) instr.args[1] = *copy;
+                    if (copy) {
+                        //printf("replace %s with %s\n", r.str(), copy.str());
+                        instr.args[1] = *copy;
+                    }
                 } else if (r.isRefList()) { // can only occur on args[1]
                     Ref* refs = fi.refs.get(r.value);
                     u32 idx = 0;
@@ -349,7 +360,10 @@ fn void Tools.eliminateCopies(Tools* t, FunctionInfo* fi) {
                         Ref* r2 = &refs[idx];
                         if (r2.isTemp()) {
                             Ref* copy = t.copies.find(r2.value);
-                            if (copy) refs[idx] = *copy;
+                            if (copy) {
+                                //printf("replace %s with %s\n", refs[idx].str(), copy.str());
+                                refs[idx] = *copy;
+                            }
                         }
                         if (!r2.isValid()) break;
                         idx++;
