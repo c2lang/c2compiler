@@ -37,6 +37,10 @@ public fn void List.init(List* l) {
     l.capacity = elemsof(l.stack);
 }
 
+public fn void List.clear(List* l) {
+    l.count = 0;
+}
+
 public fn void List.add(List* l, Stmt* s) {
     if (l.count == l.capacity) {
         l.capacity *= 2;

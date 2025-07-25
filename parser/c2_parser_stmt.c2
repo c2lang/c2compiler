@@ -218,7 +218,7 @@ fn Stmt* Parser.parseDeclOrStmt(Parser* p) {
 fn CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
     p.expectAndConsume(Kind.LBrace);
 
-    stmt_list.List stmts.init();   // TODO register somewhere to free memory on error (register handler?)
+    stmt_list.List* stmts = p.getStmtList();
 
     while (p.tok.kind != Kind.RBrace) {
         stmts.add(p.parseStmt());
@@ -228,7 +228,7 @@ fn CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
     p.expectAndConsume(Kind.RBrace);
 
     CompoundStmt* s = p.builder.actOnCompoundStmt(endLoc, stmts.getData(), stmts.size());
-    stmts.free();
+    p.putStmtList();
 
     return s;
 }

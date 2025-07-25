@@ -91,8 +91,7 @@ fn SwitchCase* Parser.parseCase(Parser* p, bool is_default) {
     }
     p.expectAndConsume(Kind.Colon);
 
-    // TODO: potential memory leak on error
-    stmt_list.List stmts.init();
+    stmt_list.List* stmts = p.getStmtList();
 
     bool more = true;
     while (more) {
@@ -110,7 +109,7 @@ fn SwitchCase* Parser.parseCase(Parser* p, bool is_default) {
 
     SwitchCase* s = p.builder.actOnCase(loc, is_default, conds.getData(), conds.size(), stmts.getData(), stmts.size());
     conds.free();
-    stmts.free();
+    p.putStmtList();
     return s;
 }
 
