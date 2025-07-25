@@ -127,8 +127,7 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
         }
     }
 
-    size_analyser.TypeSize info = size_analyser.sizeOfStruct(d);
-    d.setSizeAlignment(info.size, info.align);
+    size_analyser.sizeOfStruct(d);
 }
 
 fn void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {

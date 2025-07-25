@@ -25,7 +25,7 @@ public type TypeSize struct {
     u32 align;
 }
 
-fn TypeSize sizeOfUnion(StructTypeDecl* s) {
+fn void sizeOfUnion(StructTypeDecl* s) {
     bool packed = s.isPacked();
     u32 max_size = 0;
     u32 max_align = s.getAttrAlignment();
@@ -56,11 +56,16 @@ fn TypeSize sizeOfUnion(StructTypeDecl* s) {
         if (max_align < align) max_align = align;
         if (max_size < size) max_size = size;
     }
-    return { .size = max_size, .align = max_align };
+    StructLayout* layout = s.getLayout();
+    layout.size = max_size;
+    layout.alignment = max_align;
 }
 
-public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
-    if (s.isUnion()) return sizeOfUnion(s);
+public fn void sizeOfStruct(StructTypeDecl* s) {
+    if (s.isUnion()) {
+        sizeOfUnion(s);
+        return;
+    }
 
     bool packed = s.isPacked();
     u32 max_align = s.getAttrAlignment();
@@ -73,15 +78,19 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
     //if (trace) printf("Layout struct %s  packed=%d  aligned=%d {\n", name, packed, max_align);
     u32 num_members = s.getNumMembers();
     Decl** members = s.getMembers();
+    StructLayout* layout = s.getLayout();
+
     for (u32 i = 0; i < num_members; i++) {
         Decl* d = members[i];
         // Note: doesn't analyze the bit-field
         TypeSize member = sizeOfType(d.getType());
+        StructMemberLayout* ml = &layout.members[i];
         // TODO handle un-packed sub-structs
         u32 size = member.size;     // byte size of the current member
         u32 align = member.align;   // alignment for the current member
         if (packed) align = 1;
 
+        ml.size = size;
         BitFieldLayout* bit_layout = nil;
         if (d.isVariable()) {
             // Note: bitfield size/alignment is size of largest named member type used as base
@@ -100,6 +109,9 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
                - an individual alignment was given
                - it would overflow its base type container and there is no packing
              */
+            ml.is_bitfield = true;
+            ml.bitfield_width = bit_layout.bit_width;
+
             // Note: bit_layout.bit_width was already set in analyser
             u32 bit_size = bit_layout.bit_width;
             // In PCC layout only named bitfields influence the alignment
@@ -134,13 +146,14 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
                         bit_pos -= a8;
                     }
                     bit_layout.bit_offset = (u8)bit_pos;
+                    ml.bitfield_offset = (u8)bit_pos;
                     //if (trace) printf(" -> offset=%d bit_offset=%d\n", pos, bit_pos);
                     bit_pos += bit_size;
                 }
                 // in pcc mode, long long bitfields have type int if they fit
                 if (size == 8 && bit_size <= 32) size = 4;
             }
-            s.setMemberOffset(i, pos);
+            ml.offset = pos;
         } else {
             //if (trace) printf(" align=%d", align);
             if (max_align < align) max_align = align;
@@ -150,7 +163,7 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
             // align for this member
             pos = (pos + align - 1) & -align;
             //if (trace) printf(" -> offset=%d\n", pos);
-            s.setMemberOffset(i, pos);
+            ml.offset = pos;
             pos += size;
         }
         //if (trace) printf("  // pos=%d bit_pos=%d max_align=%d\n", pos, bit_pos, max_align);
@@ -161,7 +174,8 @@ public fn TypeSize sizeOfStruct(StructTypeDecl* s) {
     // pad structure for required alignment
     pos = (pos + max_align - 1) & -max_align;
     //if (trace) printf("  final size %d  align %d\n", pos, max_align);
-    return { .size = pos, .align = max_align };
+    layout.size = pos;
+    layout.alignment = max_align;
 }
 
 public fn TypeSize sizeOfType(QualType qt) {

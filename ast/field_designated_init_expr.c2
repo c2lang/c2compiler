@@ -22,13 +22,15 @@ import src_loc local;
 type FieldDesignatorBits struct {
     u32 : NumExprBits;
     u32 is_bitfield : 1;
-    u32 bitfield_len : 7; // 0 - 64
+    u32 bitfield_width : 7;
+    u32 bitfield_offset : 6;
 }
 
 public type FieldDesignatedInitExpr struct @(opaque) {
     Expr base;
-    u32 field;
+    u32 field;  // name of field
     u32 member_offset; // offset, if in anonymous sub-struct, offset from outer struct
+    // padding
     Expr* initValue;
     Decl* decl; // set during analysis
 }
@@ -90,9 +92,29 @@ fn SrcLoc FieldDesignatedInitExpr.getEndLoc(const FieldDesignatedInitExpr* e) {
     return e.initValue.getEndLoc();
 }
 
+public fn bool FieldDesignatedInitExpr.isBitfield(const FieldDesignatedInitExpr* e) {
+    return e.base.base.fieldDesignatorBits.is_bitfield;
+}
+
+public fn void FieldDesignatedInitExpr.setBitFieldInfo(FieldDesignatedInitExpr* e, u8 offset, u8 width) {
+    FieldDesignatorBits* bits = & e.base.base.fieldDesignatorBits;
+    bits.is_bitfield = true;
+    bits.bitfield_offset = offset;
+    bits.bitfield_width = width;
+}
+
+public fn u8 FieldDesignatedInitExpr.getBitFieldOffset(const FieldDesignatedInitExpr* e) {
+    return (u8)e.base.base.fieldDesignatorBits.bitfield_offset;
+}
+
+public fn u8 FieldDesignatedInitExpr.getBitFieldWidth(const FieldDesignatedInitExpr* e) {
+    return (u8)e.base.base.fieldDesignatorBits.bitfield_width;
+}
+
 fn void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
+    if (e.isBitfield()) out.print(" bitfield(%d, %d)", e.getBitFieldOffset(), e.getBitFieldWidth());
     out.color(col_Value);
     out.print(" %s", idx2name(e.field));
     if (!e.decl) {

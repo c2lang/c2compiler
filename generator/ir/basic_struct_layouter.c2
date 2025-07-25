@@ -16,50 +16,76 @@
 module ir_generator;
 
 import ast;
+import ctv_analyser;
+
 type BasicStructLayouter struct {
     Generator* gen;
-    ast.StructTypeDecl* std;
-    u32 cur_idx;
+    const ast.StructLayout* layout;
     u32 cur_offset;
-    const u32* offsets;
-    ast.Decl** members;
+    u32 bitfield_base_size;
+    u64 bitfield_value;
 }
 
 fn void BasicStructLayouter.init(BasicStructLayouter* l,
                                      Generator* gen,
-                                     ast.StructTypeDecl* std) {
+                                     const ast.StructLayout* layout) {
     l.gen = gen;
-    l.std = std;
+    l.layout = layout;
     l.cur_offset = 0;
-    l.offsets = std.getMemberOffsets();
-    l.members = std.getMembers();
+    l.bitfield_value = 0;
+    l.bitfield_base_size = 0;
 }
 
 // Note: idx must be in order, without skipping members (may stop before end)
 fn void BasicStructLayouter.add(BasicStructLayouter* l,
                                  u32 idx,
-                                 const ast.Expr* value) {
+                                 const ast.Expr* e) {
+    const ast.StructMemberLayout* ml = &l.layout.members[idx];
 
-    //emit padding before + value
-    ast.Decl* member = l.members[idx];
-    ast.QualType qt = member.getType();
-    u32 size = qt.getSize(false);
-    u32 offset = l.offsets[idx];
-    if (offset != l.cur_offset) {
-        u32 pad = offset - l.cur_offset;
-        l.gen.ctx.addInitZero(pad);
+    u32 offset = ml.offset;
+    u32 pad = offset - l.cur_offset;
+    if (pad) {
+        if (l.bitfield_base_size) {
+            pad -= l.bitfield_base_size;
+            l.flushBitfield();
+        }
+        if (pad) l.gen.ctx.addInitZero(pad);
     }
-    // NOTE value could be initListExpr for substructs/arrays
-    l.gen.emitInit(value, size);
-    l.cur_offset = offset+size;
+
+    if (ml.is_bitfield) {
+        l.bitfield_base_size = ml.size;
+        if (e.isCtv()) {
+            ast.Value value = ctv_analyser.get_value(e);
+            value.mask(ml.bitfield_width);
+            value.left_shift2(ml.bitfield_offset);
+            u64 v = value.as_u64();
+            l.bitfield_value |= v;
+        } else {
+            assert(0);  // TODO
+        }
+    } else {
+        // NOTE value could be initListExpr for substructs/arrays
+        l.gen.emitInit(e, ml.size);
+        l.cur_offset = offset + ml.size;
+    }
+}
+
+fn void BasicStructLayouter.flushBitfield(BasicStructLayouter* l) {
+    l.gen.emitBitfield((u8)l.bitfield_base_size, l.bitfield_value);
+    l.bitfield_value = 0;
+    l.cur_offset += l.bitfield_base_size;
+    l.bitfield_base_size = 0;
 }
 
 fn void BasicStructLayouter.finalize(BasicStructLayouter* l) {
-    // emit final padding
-    u32 size = l.std.getSize();
-    if (l.cur_offset != size) {
-        u32 pad = size - l.cur_offset;
-        l.gen.ctx.addInitZero(pad);
+    u32 pad = l.layout.size - l.cur_offset;
+    if (l.bitfield_base_size) {
+        pad -= l.bitfield_base_size;
+        l.flushBitfield();
     }
+
+    // emit final padding
+    if (pad) l.gen.ctx.addInitZero(pad);
 }
+
 

@@ -216,12 +216,12 @@ public fn void Context.addInitZero(Context* c, u32 size) {
     v.init(InitValueKind.Zero, size);
 }
 
-public fn void Context.addInitValueU8(Context* c, u32 value) {
+public fn void Context.addInitValueU8(Context* c, u8 value) {
     InitValue* v = c.init_values.add();
     v.init(InitValueKind.Byte, value);
 }
 
-public fn void Context.addInitValueU16(Context* c, u32 value) {
+public fn void Context.addInitValueU16(Context* c, u16 value) {
     InitValue* v = c.init_values.add();
     v.init(InitValueKind.Short, value);
 }

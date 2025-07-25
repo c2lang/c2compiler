@@ -353,21 +353,19 @@ fn void Generator.emitStructInit(Generator* gen, const Expr* e) {
     QualType qt = e.getType();
     StructType* st = qt.getStructType();
     StructTypeDecl* std = st.getDecl();
-    const u32 num_members = std.getNumMembers();
-    Decl** members = std.getMembers();
 
     if (ile.hasDesignators()) {
-        // TODO have a pool of these? (for sub-structs)
+        // TODO have a stack of FieldStructLayouters? (for sub-structs)
         FieldStructLayouter layouter;
-        layouter.init(gen, std);
+        layouter.init(gen, std.getSize(), std.getDesigMemberCount());
         for (u32 i=0; i<num_values; i++) {
             FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(values[i]);
-            layouter.add(fdi.getMemberOffset(), fdi.getInit());
+            layouter.add(fdi.getMemberOffset(), fdi.isBitfield(), fdi.getBitFieldOffset(), fdi.getBitFieldWidth(), fdi.getInit());
         }
         layouter.finalize();
     } else {
         BasicStructLayouter layouter;
-        layouter.init(gen, std);
+        layouter.init(gen, std.getLayout());
         for (u32 i=0; i<num_values; i++) layouter.add(i, values[i]);
         layouter.finalize();
     }
@@ -710,5 +708,25 @@ fn BlockId Generator.getLabelBlock(Generator* gen, u32 label_idx) {
         gen.labels.add(label_idx, b_id);
     }
     return b_id;
+}
+
+fn void Generator.emitBitfield(Generator* gen, u8 size, u64 value) {
+    switch (size) {
+    case 1:
+        gen.ctx.addInitValueU8((u8)value);
+        break;
+    case 2:
+        gen.ctx.addInitValueU16((u16)value);
+        break;
+    case 4:
+        gen.ctx.addInitValueU32((u32)value);
+        break;
+    case 8:
+        gen.ctx.addInitValueU64(value);
+        break;
+    default:
+        assert(0);
+        break;
+    }
 }
 

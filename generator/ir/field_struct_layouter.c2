@@ -16,14 +16,19 @@
 module ir_generator;
 
 import ast;
+import ctv_analyser;
 
 import stdlib;
 import string;
 
 type FieldInit struct {
     u32 offset;
+    u32 is_bitfield : 1;
+    u32 bit_offset : 6;
+    u32 bit_width : 7;
     ast.Expr* expr;
 }
+static_assert(16, sizeof(FieldInit));
 
 type FieldStructLayouter struct {
     Generator* gen;
@@ -36,12 +41,13 @@ type FieldStructLayouter struct {
 
 fn void FieldStructLayouter.init(FieldStructLayouter* l,
                                      Generator* gen,
-                                     ast.StructTypeDecl* std) {
+                                     u32 struct_size,
+                                     u32 num_members) {
     l.gen = gen;
-    l.size = std.getSize();
+    l.size = struct_size;
     l.num_inits = 0;
     l.inits = nil;
-    l.resize(std.getNumMembers());
+    l.resize(num_members);
 }
 
 fn void FieldStructLayouter.resize(FieldStructLayouter* l, u32 max) {
@@ -54,10 +60,28 @@ fn void FieldStructLayouter.resize(FieldStructLayouter* l, u32 max) {
 
 fn void FieldStructLayouter.add(FieldStructLayouter* l,
                                 u32 offset,
+                                bool is_bitfield,
+                                u8 bit_offset,
+                                u8 bit_width,
                                 ast.Expr* value) {
     if (l.num_inits == l.max_inits) l.resize(l.max_inits * 2);
 
-    FieldInit init = { offset, value };
+
+#if 0
+    // UNTIL fixed in bootstrap
+    FieldInit init = { .offset=offset,
+                       .is_bitfield=is_bitfield,
+                       .bit_offset = bit_offset,
+                       .bit_width = bit_width,
+                       .expr=value };
+#else
+    FieldInit init;
+    init.offset=offset;
+    init.is_bitfield=is_bitfield;
+    init.bit_offset = bit_offset;
+    init.bit_width = bit_width;
+    init.expr=value;
+#endif
     if (l.num_inits == 0) {
         l.inits[0] = init;
         l.num_inits = 1;
@@ -78,21 +102,69 @@ fn void FieldStructLayouter.add(FieldStructLayouter* l,
 
 fn void FieldStructLayouter.finalize(FieldStructLayouter* l) {
     u32 cur_offset = 0;
+    bool have_bitfield = false;
+    u8 bitfield_size = 0;   // in bytes of whole field
+    u64 bitfield_value = 0; // will be downsized to correct size later
+
     for (u32 i=0; i<l.num_inits; i++) {
         const FieldInit* fi = &l.inits[i];
-        ast.QualType qt = fi.expr.getType();
+        const ast.Expr* e = fi.expr;
+        ast.QualType qt = e.getType();
         u32 size = qt.getSize(false);
 
-        if (cur_offset != fi.offset) {
-            u32 pad = fi.offset - cur_offset;
+        u32 pad = fi.offset - cur_offset;
+        if (pad) {
+            //printf("FIELD offset %d -> %d\n", cur_offset, fi.offset);
+            if (have_bitfield) {
+                //printf("  outstanding bitfield\n");
+                l.gen.emitBitfield(bitfield_size, bitfield_value);
+                cur_offset += bitfield_size;
+                pad -= bitfield_size;
+                have_bitfield = false;
+                bitfield_value = 0;
+                bitfield_size = 0;
+                if (!pad) goto field;
+            }
+            assert(fi.offset > cur_offset);
+            //printf("PAD1 %d\n", pad);
             l.gen.ctx.addInitZero(pad);
+            cur_offset = fi.offset;
         }
-        cur_offset = fi.offset + size;
-        l.gen.emitInit(fi.expr, size);
+field:
+
+        if (fi.is_bitfield) {
+            have_bitfield = true;
+            bitfield_size = (u8)size;
+
+            //printf("BITFIELD(%d, %d) size %d\n", fi.bit_offset, fi.bit_width, bitfield_size);
+
+            if (e.isCtv()) {
+                ast.Value value = ctv_analyser.get_value(e);
+                value.mask(fi.bit_width);
+                value.left_shift2(fi.bit_offset);
+                u64 v = value.as_u64();
+                bitfield_value |= v;
+                //printf("  Value 0x%x  => %x\n", v, bitfield_value);
+            } else {
+                assert(0);  // TODO
+            }
+        } else {
+            l.gen.emitInit(e, size);
+            cur_offset = fi.offset + size;
+        }
     }
+
+    if (have_bitfield) {
+        //printf("END flush bitfield (%d)\n", bitfield_size);
+        l.gen.emitBitfield(bitfield_size, bitfield_value);
+        cur_offset += bitfield_size;
+    }
+
     // emit final padding
     if (cur_offset != l.size) {
+        assert(l.size > cur_offset);
         u32 pad = l.size - cur_offset;
+        //printf("PAD2 %d (size %d off %d)\n", pad, l.size, cur_offset);
         l.gen.ctx.addInitZero(pad);
     }
 

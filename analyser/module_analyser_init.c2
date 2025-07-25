@@ -306,20 +306,37 @@ type FillInfo struct {
 fn void fillFieldInfo(StructTypeDecl* std, FillInfo* fi, u32 base_offset) {
     bool isStruct = std.isStruct();
     Decl** members = std.getMembers();
-    const u32* offsets = std.getMemberOffsets();
-    for (u32 i=0; i<std.getNumMembers(); i++) {
+    const StructLayout* layout = std.getLayout();
+    const u32 num_members = std.getNumMembers();
+    for (u32 i=0; i<num_members; i++) {
         Decl* d = members[i];
         FieldInitField* f = &fi.fii.fields[fi.idx];
         f.member_idx = fi.member_idx;
 
         u32 member_name = d.getNameIdx();
-        u32 offset = base_offset + offsets[i];
+        u32 offset = base_offset + layout.members[i].offset;
         if (member_name == 0) {
-            StructTypeDecl* sub = (StructTypeDecl*)d;
-            fillFieldInfo(sub, fi, offset);
+            if (d.isStructType()) {
+                StructTypeDecl* sub = (StructTypeDecl*)d;
+                fillFieldInfo(sub, fi, offset);
+            }
         } else {
+            BitFieldLayout* bit_layout = nil;
+            if (d.isVariable()) {
+                VarDecl* vd = (VarDecl*)d;
+                bit_layout = vd.getBitfieldLayout();
+            }
             f.name_idx = member_name;
             f.offset = offset;
+            if (bit_layout) {
+                f.is_bitfield = true;
+                f.bitfield_offset = bit_layout.bit_offset;
+                f.bitfield_width = bit_layout.bit_width;
+            } else {
+                f.is_bitfield = false;
+                f.bitfield_offset = 0;
+                f.bitfield_width = 0;
+            }
             f.decl = members[i];
             if (isStruct) fi.member_idx++; // stays the same for unions
             fi.idx++;
@@ -391,6 +408,11 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
         bool ok = ma.analyseInitExpr(fdi.getInit2(), member.getType(), fdi.getInit().getLoc());
         if (!ok) goto out;
         value.setType(fdi.getInit().getType());
+        if (fif.is_bitfield) {
+            fdi.setBitFieldInfo((u8)fif.bitfield_offset, (u8)fif.bitfield_width);
+
+            // TODO check CTV value with bitfield width
+        }
     }
 
     expectedType.clearQuals();

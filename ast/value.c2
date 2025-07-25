@@ -398,6 +398,19 @@ fn Value Value.remainder(const Value* v1, const Value* v2) {
     return result;
 }
 
+public fn void Value.left_shift2(Value* v, u32 shift) {
+    // TODO: check for overflow
+    if (v.negative) {
+        v.uvalue = ~v.uvalue + 1;
+        v.uvalue <<= shift;
+        v.uvalue = ~v.uvalue + 1;
+        if (v.uvalue == 0)
+            v.negative = false;
+    } else {
+        v.uvalue <<= shift;
+    }
+}
+
 fn Value Value.left_shift(const Value* v1, const Value* v2) {
     Value result = *v1;
     result.overflow |= v2.overflow;
@@ -407,16 +420,7 @@ fn Value Value.left_shift(const Value* v1, const Value* v2) {
         case Integer:
             if (!v2.negative) {
                 u8 shift = v2.uvalue & 63;
-                // TODO: check for overflow
-                if (result.negative) {
-                    result.uvalue = ~result.uvalue + 1;
-                    result.uvalue <<= shift;
-                    result.uvalue = ~result.uvalue + 1;
-                    if (result.uvalue == 0)
-                        result.negative = false;
-                } else {
-                    result.uvalue <<= shift;
-                }
+                result.left_shift2(shift);
             }
             break;
         case Float:
@@ -647,7 +651,7 @@ fn bool Value.is_greater_equal(const Value* v1, const Value* v2) {
     return false;
 }
 
-fn void Value.mask(Value* v, u32 width) {
+public fn void Value.mask(Value* v, u32 width) {
     if (v.negative) {
         v.uvalue = ~v.uvalue + 1;
         v.negative = false;
