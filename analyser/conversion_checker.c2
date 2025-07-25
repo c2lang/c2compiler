@@ -21,8 +21,6 @@ import diagnostics;
 import ctv_analyser;
 import src_loc local;
 
-import stdio local;
-
 //  0 = cannot happen (mostly Module/Alias type)
 //  1 = Not allowed
 //  2 = Builtin -> Builtin
@@ -106,6 +104,7 @@ const u8[elemsof(BuiltinKind)][elemsof(BuiltinKind)] BuiltinConversions = {
 public type Checker struct {
     diagnostics.Diags* diags;
     ast_builder.Builder* builder;
+    BuiltinKind native_kind;
 
     // changes every check
     SrcLoc loc;
@@ -117,12 +116,19 @@ public type Checker struct {
 public fn void Checker.init(Checker* c, diagnostics.Diags* diags, ast_builder.Builder* builder) {
     c.diags = diags;
     c.builder = builder;
+    c.native_kind = ast.getNativeKind();
+    // leave other fields uninitialized
 }
 
-public fn bool Checker.check(Checker* c, QualType lhs,  QualType rhs, Expr** e_ptr, SrcLoc loc) {
+fn bool Checker.conversionError(Checker* c, const char* msg) {
+    c.diags.error(c.loc, "%s '%s' to '%s'", msg, c.rhs.diagName(), c.lhs.diagName());
+    return false;
+}
+
+public fn bool Checker.check(Checker* c, QualType lhs, QualType rhs, Expr** e_ptr, SrcLoc loc) {
     assert(lhs.ptr);
     assert(rhs.ptr);
-    assert (!(*e_ptr).isNValue());
+    assert(!(*e_ptr).isNValue());
 
     QualType t1 = lhs.getCanonicalType();
     QualType t2 = rhs.getCanonicalType();
@@ -141,6 +147,7 @@ public fn bool Checker.check(Checker* c, QualType lhs,  QualType rhs, Expr** e_p
     if (lcanon == rcanon) {
         //u32 lquals = lhs.getQuals();
         //u32 rquals = rhs.getQuals();
+        // TODO: check constness of pointed thing instead of that of pointer
         if (lcanon.getKind() == TypeKind.Pointer && rhs.isConst() && !lhs.isConst()) {
             // TODO volatile discard?
             c.diags.error(loc, "conversion discards const qualifier");
@@ -169,8 +176,7 @@ fn bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon) {
         assert(0);
         return false;
     case 1: // not allowed
-        c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
-        return false;
+        return c.conversionError("invalid type conversion from");
     case 2: //  2 = Builtin -> Builtin
         return c.checkBuiltins(lcanon, rcanon);
     case 3: //  3 = Builtin -> Pointer (only if usize/u64/u32)
@@ -188,11 +194,9 @@ fn bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon) {
         assert(0);
         return false;
     case 8: //  8 = Array -> Array
-        c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
-        return false;
+        return c.conversionError("invalid type conversion from");
     case 9: //  9 = Struct -> Struct
-        c.diags.error(c.loc, "conversion between struct of different types ('%s' to '%s')", c.rhs.diagName(), c.lhs.diagName());
-        return false;
+        return c.conversionError("conversion between struct of different types:");
     case 10: // 10 = Enum -> Builtin (check range)
         return c.checkEnum2Int(lcanon, rcanon);
     case 11: // Func -> Pointer (void* or Func*)
@@ -200,22 +204,11 @@ fn bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon) {
     case 12: // Func -> Func
         return c.checkFunc2Func(lcanon, rcanon);
     case 13: // Builtin -> Enum
-        c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
-        return false;
-    case 14: // Enum -> Enum
-        // is not allowed, since the ptr check already filters out the allowed ones
-        c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
-        return false;
+    case 14: // Enum -> Enum (not allowed, since the ptr check already filters out the allowed ones)
     case 15: // Builtin -> Func
-        c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
-        return false;
+        return c.conversionError("invalid type conversion from");
     case 16: // Function -> Builtin
-        bool other = false;
-        bool ok = c.checkFunc2Builtin(lcanon, rcanon, &other);
-        if (!ok && !other) {
-            c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
-        }
-        return ok;
+        return c.checkFunc2Builtin(lcanon, rcanon, false);
     default:
         c.diags.note(c.loc, "TODO CONVERSION  %d)", res);
         return false;
@@ -237,7 +230,7 @@ fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon
     u8 res = BuiltinConversions[rbuiltin.getKind()][lbuiltin.getKind()];
     switch (res) {
     case 0:     // should not happen
-        printf("BUILTIN SHOULD NOT HAPPEN (%d - %d)\n", lcanon.getKind(), rcanon.getKind());
+        c.diags.error(c.loc, "BUILTIN SHOULD NOT HAPPEN (%d - %d)\n", lcanon.getKind(), rcanon.getKind());
         assert(0);
         return false;
     case 1:     // ok, needs conversion
@@ -245,28 +238,30 @@ fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon
         c.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, c.expr_ptr, c.lhs);
         break;
     case 2:     // incompatible
-        c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
-        return false;
+        return c.conversionError("invalid type conversion from");
     case 3:     // sign-conversion
         if (c.checkIntConversion(lbuiltin)) {
             c.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, c.expr_ptr, c.lhs);
         } else {
-            c.diags.error(c.loc, "implicit conversion changes signedness: '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+            // TODO: is this just a warning?
+            c.conversionError("implicit conversion changes signedness:");
         }
         break;
     case 4:     // loss of integer-precision
         if (c.checkIntConversion(lbuiltin)) {
             c.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, c.expr_ptr, c.lhs);
         } else {
-            Expr* e = *c.expr_ptr;
-            c.diags.errorRange(c.loc, e.getRange(), "implicit conversion loses integer precision: '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+            // TODO: is this just a warning?
+            c.conversionError("implicit conversion loses integer precision:");
         }
         break;
     case 5:     // float -> integer
-        c.diags.error(c.loc, "implicit conversion turns floating-point number into integer: '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        // TODO: is this just a warning?
+        c.conversionError("implicit conversion turns floating-point number into integer:");
         break;
     case 6:     // loss of FP-precision
-        c.diags.error(c.loc, "implicit conversion loses floating-point precision: '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+        // TODO: is this just a warning?
+        c.conversionError("implicit conversion loses floating-point precision:");
         break;
     case 7:     // ok, no conversion needed
         break;
@@ -289,11 +284,8 @@ fn bool Checker.checkBuiltin2Pointer(Checker* c, const Type* lcanon, const Type*
     BuiltinKind kind = bi.getKind();
     // TODO or u32
     ok &= (kind == BuiltinKind.USize || kind == BuiltinKind.UInt64);
-
     if (!ok) {
-        c.diags.error(c.loc, "incompatible integer to pointer conversion: '%s' to '%s'",
-                c.rhs.diagName(), c.lhs.diagName());
-        return false;
+        return c.conversionError("incompatible integer to pointer conversion:");
     }
     return true;
 }
@@ -317,12 +309,10 @@ fn bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Type*
 
     if (!ok) {
         if (c.try_to_fix_type()) {
-            c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+            return c.conversionError("invalid type conversion from");
         } else {
-            c.diags.error(c.loc, "incompatible pointer to integer conversion: '%s' to '%s'",
-                    c.rhs.diagName(), c.lhs.diagName());
+            return c.conversionError("incompatible pointer to integer conversion:");
         }
-        return false;
     }
 
     c.builder.insertImplicitCast(ImplicitCastKind.PointerToInteger, c.expr_ptr, builtins[BuiltinKind.USize]);
@@ -334,9 +324,7 @@ fn bool Checker.checkPointer2Func(Checker* c, const Type* lcanon, const Type* rc
     const PointerType* ptr = (PointerType*)rcanon;
     QualType inner = ptr.getInner();
     if (!inner.isVoid()) {
-        c.diags.error(c.loc, "incompatible pointer to function conversion '%s' to '%s'",
-                c.rhs.diagName(), c.lhs.diagName());
-        return false;
+        return c.conversionError("incompatible pointer to function conversion");
     }
     c.builder.insertImplicitCast(ImplicitCastKind.BitCast, c.expr_ptr, c.lhs);
     return true;
@@ -411,11 +399,10 @@ fn bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcanon
 
     if (!pointer_conversion_allowed(linner, rinner)) {
         if (c.try_to_fix_type()) {
-            c.diags.error(c.loc, "invalid type conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+            return c.conversionError("invalid type conversion from");
         } else {
-            c.diags.error(c.loc, "invalid pointer conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
+            return c.conversionError("invalid pointer conversion from");
         }
-        return false;
     }
 
     // Note: no need to fully compare, since otherwise the pointers above would have been the same
@@ -435,8 +422,7 @@ fn bool Checker.checkFunc2Pointer(Checker* c, const Type* lcanon, const Type* rc
     QualType inner = pt.getInner();
     if (inner.isVoid()) return true; // always allow conversion to 'void*'
 
-    c.diags.error(c.loc, "invalid pointer conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
-    return false;
+    return c.conversionError("invalid pointer conversion from");
 }
 
 fn bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcanon) {
@@ -473,8 +459,7 @@ fn bool Checker.checkFunc2Func(Checker* c, const Type* lcanon, const Type* rcano
 
     if (!checkFunc2Func(fdl, fdr)) {
         // TODO report exact location
-        c.diags.error(c.loc, "invalid function conversion from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
-        return false;
+        return c.conversionError("invalid function conversion from");
     }
     return true;
 }
@@ -504,8 +489,7 @@ fn bool checkFunc2Func(const FunctionDecl* fdl, const FunctionDecl* fdr) {
     return true;
 }
 
-fn bool Checker.checkFunc2Builtin(Checker* c, const Type* lcanon, const Type* rcanon, bool* other_error) {
-    u32 wordsize = ast.getWordSize();
+fn bool Checker.checkFunc2Builtin(Checker* c, const Type* lcanon, const Type* rcanon, bool explicit) {
     const BuiltinType* bi = (BuiltinType*)lcanon;
 
     BuiltinKind kind = bi.getKind();
@@ -518,14 +502,17 @@ fn bool Checker.checkFunc2Builtin(Checker* c, const Type* lcanon, const Type* rc
 
         // TODO not always comparision (bool b = test1);
         c.diags.error(c.loc, "comparison of function '%s' will always be true", fd.asDecl().getFullName());
-        *other_error = true;
         return false;
     }
 
-    if (wordsize == 4 && kind == BuiltinKind.UInt32) return true;
-    if (wordsize == 8 && kind == BuiltinKind.UInt64) return true;
+    if (kind == c.native_kind) return true;
 
-    return false;
+    if (explicit) {
+        c.diags.error(c.loc, "pointers may only be cast to integer type '%s'", c.native_kind.str());
+        return false;
+    } else {
+        return c.conversionError("invalid type conversion from");
+    }
 }
 
 public fn bool Checker.checkCast(Checker* c, QualType lhs, QualType rhs, SrcLoc lhsLoc, SrcLoc rhsLoc) {
@@ -551,8 +538,7 @@ public fn bool Checker.checkCast(Checker* c, QualType lhs, QualType rhs, SrcLoc 
         assert(0);
         return false;
     case 1: // not allowed
-        c.diags.error(c.loc, "invalid cast from '%s' to '%s'", c.rhs.diagName(), c.lhs.diagName());
-        return false;
+        return c.conversionError("invalid cast from");
     case 2: //  2 = Builtin -> Builtin
         // Allow all, except to/from void
         return true;
@@ -589,13 +575,7 @@ public fn bool Checker.checkCast(Checker* c, QualType lhs, QualType rhs, SrcLoc 
     case 15: // Builtin -> Func
         return c.checkBuiltin2PointerCast(lcanon, rcanon);
     case 16: // Func -> Builtin
-        bool other = false;
-        bool ok = c.checkFunc2Builtin(lcanon, rcanon, &other);
-        if (!ok && !other) {
-            QualType valid = ast.getNativeType();
-            c.diags.error(c.loc, "pointers may only be cast to integer type '%s'", valid.diagName());
-        }
-        return ok;
+        return c.checkFunc2Builtin(lcanon, rcanon, true);
     default:
         c.diags.note(c.loc, "TODO CONVERSION  %d)", res);
         return false;
@@ -606,34 +586,28 @@ public fn bool Checker.checkCast(Checker* c, QualType lhs, QualType rhs, SrcLoc 
 
 fn bool Checker.checkBuiltin2PointerCast(Checker* c, const Type* lcanon, const Type* rcanon) {
     // only allow cast from pointer-size int (u32/u64 depending on arch) to pointer
-    u32 wordsize = ast.getWordSize();
     const BuiltinType* bi = (BuiltinType*)rcanon;
 
     BuiltinKind kind = bi.getKind();
     if (kind == BuiltinKind.USize) return true;
     // Note: we dont allow cast from pointer to bool! (implicit conversion is ok)
-    if (wordsize == 4 && kind == BuiltinKind.UInt32) return true;
-    if (wordsize == 8 && kind == BuiltinKind.UInt64) return true;
+    if (kind == c.native_kind) return true;
 
-    QualType valid = ast.getNativeType();
-    c.diags.error(c.loc, "only integers of type '%s' may be cast to a pointer", valid.diagName());
+    c.diags.error(c.loc, "only integers of type '%s' may be cast to a pointer", c.native_kind.str());
 
     return false;
 }
 
 fn bool Checker.checkPointer2BuiltinCast(Checker* c, const Type* lcanon, const Type* rcanon) {
     // only allow cast from pointer to pointer-size int (u32/u64 depending on arch)
-    u32 wordsize = ast.getWordSize();
     const BuiltinType* bi = (BuiltinType*)lcanon;
 
     BuiltinKind kind = bi.getKind();
     if (kind == BuiltinKind.USize) return true;
     // Note: we dont allow cast from pointer to bool! (implicit conversion is ok)
-    if (wordsize == 4 && kind == BuiltinKind.UInt32) return true;
-    if (wordsize == 8 && kind == BuiltinKind.UInt64) return true;
+    if (kind == c.native_kind) return true;
 
-    QualType valid = getNativeType();
-    c.diags.error(c.loc, "pointers may only be cast to integer type '%s'", valid.diagName());
+    c.diags.error(c.loc, "pointers may only be cast to integer type '%s'", c.native_kind.str());
 
     return false;
 }

@@ -193,6 +193,10 @@ const u32[] BuiltinType_bitfield_sizes = {
 }
 static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_bitfield_sizes));
 
+public fn const char* BuiltinKind.str(BuiltinKind kind) {
+    return builtinType_names[kind];
+}
+
 type BuiltinTypeBits struct {
     u32 : NumTypeBits;
     u32 kind : 4;
