@@ -292,9 +292,8 @@ public fn void setTypePublicUsed(QualType qt) {
     if (d) d.setUsedPublic();
 }
 
-public fn QualType getNativeType() {
-    BuiltinKind kind = globals.wordsize == 8 ? BuiltinKind.UInt64 : BuiltinKind.UInt32;
-    return builtins[kind];
+public fn BuiltinKind getNativeKind() {
+    return globals.wordsize == 8 ? BuiltinKind.UInt64 : BuiltinKind.UInt32;
 }
 
 const char* col_Stmt = color.Bmagenta;

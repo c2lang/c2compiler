@@ -207,7 +207,7 @@ fn ExprWidth getTypeWidth(QualType qt) {
     }
     if (qt.isBuiltin()) {
         const BuiltinType* bi = qt.getBuiltin();
-        ExprWidth result = { .width = cast<u8>(bi.getWidth()), .is_signed = bi.isSigned() };
+        ExprWidth result = { .width = (u8)(bi.getWidth()), .is_signed = bi.isSigned() };
         return result;
     }
     // pointer or something
