@@ -1,0 +1,26 @@
+// @warnings{no-unused}
+module test;
+
+const u32 C = 8;
+
+public type Foo struct {
+    u16 a;
+    u8  b: 1;
+    u8 : 2;
+    u8 c : 3;
+    i8 d : 2;
+}
+
+const Foo[] F = {
+    { .b = 0, .c = 7, .d = -1 },
+    { .b = 2, .c = 8, .d = -1 },  // @error{constant value 2 out-of-bounds for bitfield, range [0, 1]}
+    { .b = 1, .c = 8, .d = -1 },  // @error{constant value 8 out-of-bounds for bitfield, range [0, 7]}
+    { .b = 1, .c = 0, .d = -3 },  // @error{constant value -3 out-of-bounds for bitfield, range [-2, 1]}
+
+    { 12345, 1, 6, 5, -1 },   // @error{constant value 6 out-of-bounds for bitfield, range [0, 3]}
+    { 12345, 1, 3, -5, -1 },  // @error{constant value -5 out-of-bounds for bitfield, range [0, 7]}
+    { 12345, 1, 3, C, -1 },   // @error{constant value 8 out-of-bounds for bitfield, range [0, 7]}
+    { 12345, 1, 3, 5, -3 },   // @error{constant value -3 out-of-bounds for bitfield, range [-2, 1]}
+    { 12345, 1, 3, 0, 0, 0 },   // @error{excess initializer elements in struct}
+}
+

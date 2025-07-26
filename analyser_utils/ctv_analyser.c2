@@ -24,6 +24,22 @@ type Limit struct {
     u64 max_val;
 }
 
+fn void Limit.setBitfield(Limit* l, u8 width, bool is_signed) {
+    u64 w2 = width;
+    if (is_signed) {
+        w2--;
+        // TODO 63 bit case incorrect?
+        l.min_val = -1 * (i64)(1 << w2);
+        l.max_val = (1 << w2) -1;
+    } else {
+        l.min_val = 0;
+        // FIX after bootstrap update
+        //if (width == 64) l.max_val = u64.max;
+        if (width == 64) l.max_val = 18446744073709551615;
+        else l.max_val = (1 << w2) -1;
+    }
+}
+
 const Limit[] Limits = {
     // 1 - Bool
     { 0, 1 },
@@ -304,6 +320,22 @@ public fn bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
         return false;
     }
     return checkRange(diags, qt, &value, 0, e);
+}
+
+public fn bool checkBitfield(diagnostics.Diags* diags, u8 bitfield_width, bool bitfield_signed, const Expr* e) {
+    Value value = ctv_analyser.get_value((e));
+    if (value.kind == ValueKind.Error) {
+        diags.errorRange(e.getLoc(), e.getRange(), "%s", value.error_msg);
+        return false;
+    }
+    Limit limit.setBitfield(bitfield_width, bitfield_signed);
+
+    if (!value.checkRange(limit.min_val, limit.max_val)) {
+        diags.errorRange(e.getLoc(), e.getRange(), "constant value %s out-of-bounds for bitfield, range [%d, %d]",
+                         value.str(), limit.min_val, limit.max_val);
+        return false;
+    }
+    return true;
 }
 
 // Expr* e can be nil

@@ -22,7 +22,8 @@ import ast local;
 
 public type TypeSize struct {
     u32 size;
-    u32 align;
+    u32 align : 31;
+    u32 is_signed : 1;
 }
 
 fn void sizeOfUnion(StructTypeDecl* s) {
@@ -111,6 +112,7 @@ public fn void sizeOfStruct(StructTypeDecl* s) {
              */
             ml.is_bitfield = true;
             ml.bitfield_width = bit_layout.bit_width;
+            ml.bitfield_signed = (u8)member.is_signed;
 
             // Note: bit_layout.bit_width was already set in analyser
             u32 bit_size = bit_layout.bit_width;
@@ -180,7 +182,7 @@ public fn void sizeOfStruct(StructTypeDecl* s) {
 
 public fn TypeSize sizeOfType(QualType qt) {
 
-    TypeSize result = { 0, 1, };
+    TypeSize result = { 0, 1, 0 };
 
     if (qt.isInvalid()) return result;
 
@@ -194,6 +196,7 @@ public fn TypeSize sizeOfType(QualType qt) {
         // NOTE: alignment is also size
         result.size = bi.getAlignment();
         result.align = result.size;
+        result.is_signed = bi.isSigned();
         break;
     case Pointer:
         result.size = pointerSize;

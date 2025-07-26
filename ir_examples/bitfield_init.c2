@@ -3,7 +3,7 @@ module test;
 public type Design struct {
     u16 bla;
     u8 stackable : 1;
-    u8 unnamed : 2;
+    u8 : 2;
     u8 rarity : 3;
 }
 
@@ -11,7 +11,7 @@ const Design[] Designs = {
     { .stackable=1, .rarity=5, .bla=12345 },
     { .rarity=5, .stackable=1, .bla=12345 },
     { .bla=12345, .rarity=5, .stackable=1 },
-    { 12345, 1, 5, },
+    { 12345, 1, 6, 5, },    // error
 }
 
 public fn i32 main() {

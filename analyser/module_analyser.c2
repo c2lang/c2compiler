@@ -582,7 +582,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
             ma.checkStack[ma.checkIndex-1].usedPublic = false;
             ma.usedPublic = false;
         }
-        ma.analyseInitExpr(v.getInit2(), res, v.getAssignLoc());
+        ma.analyseInitExpr(v.getInit2(), res, v.getAssignLoc(), false);
     } else {
         if (res.isConstant()) {
             ma.error(d.getLoc(), "constant variable '%s' must be initialized", d.getFullName());

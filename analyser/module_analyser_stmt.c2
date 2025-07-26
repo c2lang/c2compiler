@@ -309,7 +309,7 @@ fn QualType Analyser.analyseDecl(Analyser* ma, VarDecl* vd) {
     Expr** initExpr = vd.getInit2();
     bool has_init_call = vd.hasInitCall();
     if (!has_init_call && initExpr) {
-        ma.analyseInitExpr(initExpr, res, vd.getAssignLoc());
+        ma.analyseInitExpr(initExpr, res, vd.getAssignLoc(), false);
         if (vd.hasLocalQualifier()) {
             Expr* e = vd.getInit();
             if (!e.isCtc()) {
@@ -396,7 +396,7 @@ fn void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
         }
     }
     if (arg) {
-        if (!ma.analyseInitExpr(arg, ma.curFunction.getRType(), (*arg).getLoc()))
+        if (!ma.analyseInitExpr(arg, ma.curFunction.getRType(), (*arg).getLoc(), false))
             return;
         QualType qt = (*arg).getType();
 

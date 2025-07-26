@@ -20,54 +20,57 @@ import ctv_analyser;
 import init_checker;
 import src_loc local;
 
-fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType, SrcLoc assignLoc) {
+fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType, SrcLoc assignLoc, bool is_bitfield) {
     Expr* e = *e_ptr;
-    if (e.isInitList()) {
-        return ma.analyseInitListExpr((InitListExpr*)e, expectedType);
-    }
 
-    if (e.isStringLiteral()) {
-        // could be (const) char* x = "text" OR (const) char[] x = "text";
-        // check array case for overflow
-        // when doing char[] a = "abc" -> string is not an LValue
-        // when doing char*  a = "abc" -> string is lvalue (so insert ArrayToPointerDecay)
-        ArrayType* at = expectedType.getArrayTypeOrNil();
-        if (at) {
-            // check that element type is char/i8/u8
-            QualType elem = at.getElemType();
-            if (elem.getTypeOrNil() != builtins[BuiltinKind.Char].getTypeOrNil()
-            &&  elem.getTypeOrNil() != builtins[BuiltinKind.Int8].getTypeOrNil()
-            &&  elem.getTypeOrNil() != builtins[BuiltinKind.UInt8].getTypeOrNil()) {
-                ma.errorRange(assignLoc, e.getRange(), "cannot initialize array of '%s' with a string literal", elem.diagName());
-                return false;
-            }
+    if (!is_bitfield) {
+        if (e.isInitList()) {
+            return ma.analyseInitListExpr((InitListExpr*)e, expectedType);
+        }
 
-            QualType st = e.getType();
-            ArrayType* at2 = st.getArrayType();
-            u32 rhs_len = at2.getSize();
-            if (at.hasSize()) {
-                u32 lhs_len = at.getSize();
-                if (rhs_len > lhs_len) {
-                    ma.errorRange(assignLoc, e.getRange(), "initializer-string for char array is too long");
+        if (e.isStringLiteral()) {
+            // could be (const) char* x = "text" OR (const) char[] x = "text";
+            // check array case for overflow
+            // when doing char[] a = "abc" -> string is not an LValue
+            // when doing char*  a = "abc" -> string is lvalue (so insert ArrayToPointerDecay)
+            ArrayType* at = expectedType.getArrayTypeOrNil();
+            if (at) {
+                // check that element type is char/i8/u8
+                QualType elem = at.getElemType();
+                if (elem.getTypeOrNil() != builtins[BuiltinKind.Char].getTypeOrNil()
+                &&  elem.getTypeOrNil() != builtins[BuiltinKind.Int8].getTypeOrNil()
+                &&  elem.getTypeOrNil() != builtins[BuiltinKind.UInt8].getTypeOrNil()) {
+                    ma.errorRange(assignLoc, e.getRange(), "cannot initialize array of '%s' with a string literal", elem.diagName());
                     return false;
                 }
-            } else {
-                at.setSize(rhs_len);
-            }
-            e.setRValue();
-        } else {
-            // need to add ArrayToPointerDecay (otherwise checker can get arrays)
-            QualType qt = ma.analyseExpr(e_ptr, true, RHS);
-            // TODO check qt?
-            e = *e_ptr;
-            if (!ma.checker.check(expectedType, e.getType(), e_ptr, assignLoc)) return false;
-        }
-        return true;
-    }
 
-    if (expectedType.isArray()) {
-        ma.error(assignLoc, "array initializer must be an initializer list");
-        return false;
+                QualType st = e.getType();
+                ArrayType* at2 = st.getArrayType();
+                u32 rhs_len = at2.getSize();
+                if (at.hasSize()) {
+                    u32 lhs_len = at.getSize();
+                    if (rhs_len > lhs_len) {
+                        ma.errorRange(assignLoc, e.getRange(), "initializer-string for char array is too long");
+                        return false;
+                    }
+                } else {
+                    at.setSize(rhs_len);
+                }
+                e.setRValue();
+            } else {
+                // need to add ArrayToPointerDecay (otherwise checker can get arrays)
+                QualType qt = ma.analyseExpr(e_ptr, true, RHS);
+                // TODO check qt?
+                e = *e_ptr;
+                if (!ma.checker.check(expectedType, e.getType(), e_ptr, assignLoc)) return false;
+            }
+            return true;
+        }
+
+        if (expectedType.isArray()) {
+            ma.error(assignLoc, "array initializer must be an initializer list");
+            return false;
+        }
     }
 
     if (e.isCall() && ma.globalScope()) {
@@ -84,13 +87,17 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
     if (res.isInvalid()) return false;
     e = *e_ptr; // re-read since ImplicitCasts could have been inserted
 
-    // TODO Canonical?
-    if (e.isCtv() && expectedType.isBuiltin() && !res.isPointer()) {
-        // TODO not correct since conversion might be to something else?
-        if (expectedType.isBool()) return true;
-        if (!ctv_analyser.check(ma.diags, expectedType, e)) return false;
-        e.setType(expectedType);
-        return true;
+    if (e.isCtv()) {
+        if (is_bitfield) return true;
+
+        // TODO Canonical?
+        if (expectedType.isBuiltin() && !res.isPointer()) {
+            // TODO not correct since conversion might be to something else?
+            if (expectedType.isBool()) return true;
+            if (!ctv_analyser.check(ma.diags, expectedType, e)) return false;
+            e.setType(expectedType);
+            return true;
+        }
     }
 
     if (!ma.checker.check(expectedType, res, e_ptr, assignLoc)) return false;
@@ -165,7 +172,7 @@ fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expe
     if (val.isInitList()) {
         return ma.analyseInitListExpr((InitListExpr*)val, expectedType);
     }
-    bool ok = ma.analyseInitExpr(ad.getInit2(), expectedType, val.getLoc());
+    bool ok = ma.analyseInitExpr(ad.getInit2(), expectedType, val.getLoc(), false);
     if (!ok) return false;
 
     if (!ma.curFunction) {
@@ -214,7 +221,7 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
             have_designators = true;
             continue;
         }
-        ok &= ma.analyseInitExpr(&values[i], et, values[i].getLoc());
+        ok &= ma.analyseInitExpr(&values[i], et, values[i].getLoc(), false);
         ctc &= values[i].isCtc();
     }
     current_index = numValues;   // TODO also keep track of ArrayDesignatedInit
@@ -308,13 +315,15 @@ fn void fillFieldInfo(StructTypeDecl* std, FillInfo* fi, u32 base_offset) {
     Decl** members = std.getMembers();
     const StructLayout* layout = std.getLayout();
     const u32 num_members = std.getNumMembers();
+
     for (u32 i=0; i<num_members; i++) {
         Decl* d = members[i];
         FieldInitField* f = &fi.fii.fields[fi.idx];
         f.member_idx = fi.member_idx;
+        const StructMemberLayout* ml = &layout.members[i];
 
         u32 member_name = d.getNameIdx();
-        u32 offset = base_offset + layout.members[i].offset;
+        u32 offset = base_offset + ml.offset;
         if (member_name == 0) {
             if (d.isStructType()) {
                 StructTypeDecl* sub = (StructTypeDecl*)d;
@@ -328,15 +337,10 @@ fn void fillFieldInfo(StructTypeDecl* std, FillInfo* fi, u32 base_offset) {
             }
             f.name_idx = member_name;
             f.offset = offset;
-            if (bit_layout) {
-                f.is_bitfield = true;
-                f.bitfield_offset = bit_layout.bit_offset;
-                f.bitfield_width = bit_layout.bit_width;
-            } else {
-                f.is_bitfield = false;
-                f.bitfield_offset = 0;
-                f.bitfield_width = 0;
-            }
+            f.is_bitfield = ml.is_bitfield;
+            f.bitfield_offset = ml.bitfield_offset;
+            f.bitfield_width = ml.bitfield_width;
+            f.bitfield_signed = ml.bitfield_signed;
             f.decl = members[i];
             if (isStruct) fi.member_idx++; // stays the same for unions
             fi.idx++;
@@ -405,13 +409,15 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
             goto out;
         }
 
-        bool ok = ma.analyseInitExpr(fdi.getInit2(), member.getType(), fdi.getInit().getLoc());
+        bool ok = ma.analyseInitExpr(fdi.getInit2(), member.getType(), fdi.getInit().getLoc(), fif.is_bitfield);
         if (!ok) goto out;
-        value.setType(fdi.getInit().getType());
-        if (fif.is_bitfield) {
-            fdi.setBitFieldInfo((u8)fif.bitfield_offset, (u8)fif.bitfield_width);
 
-            // TODO check CTV value with bitfield width
+        Expr* inner = fdi.getInit();
+        value.setType(inner.getType());
+        if (fif.is_bitfield) {
+            if (inner.isCtv() && !ctv_analyser.checkBitfield(ma.diags, fif.bitfield_width, fif.bitfield_signed, inner)) return false;
+
+            fdi.setBitFieldInfo((u8)fif.bitfield_offset, (u8)fif.bitfield_width);
         }
     }
 
@@ -455,9 +461,19 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
     const u32 num_members = std.getNumMembers();
     Decl** members = std.getMembers();
 
+    const StructLayout* layout = std.getLayout();
+    u32 member_idx = 0;
     for (u32 i=0; i<numValues; i++) {
         Expr* value = values[i];
-        if (i >= num_members) {
+
+        const StructMemberLayout* ml = &layout.members[member_idx];
+        // skip bitfields with size 0
+        while (ml.is_bitfield && ml.bitfield_width == 0 && member_idx < num_members) {
+            member_idx++;
+            ml = &layout.members[member_idx];
+        }
+
+        if (member_idx >= num_members) {
             ma.error(value.getLoc(), "excess initializer elements in struct");
             return false;
         }
@@ -469,9 +485,16 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
             ma.error(value.getLoc(), "mixing field designators with non-field designators");
             return false;
         }
-        members[i].setUsed();
-        bool ok = ma.analyseInitExpr(&values[i], members[i].getType(), values[i].getLoc());
+        members[member_idx].setUsed();
+
+        bool ok = ma.analyseInitExpr(&values[i], members[member_idx].getType(), values[i].getLoc(), ml.is_bitfield);
         if (!ok) return false;
+
+        if (ml.is_bitfield && value.isCtv()) {
+            if (!ctv_analyser.checkBitfield(ma.diags, ml.bitfield_width, ml.bitfield_signed, value)) return false;
+        }
+
+        member_idx++;
     }
 
     expectedType.clearQuals();
