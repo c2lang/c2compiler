@@ -88,25 +88,7 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
     case Compound:
         CompoundStmt* c = cast<CompoundStmt*>(s);
         const u32 num_stmts = c.getCount();
-        Stmt** stmts = c.getStmts();
-        for (u32 i=0; i<num_stmts; i++) {
-            bool reachable = gen.emitStmt(stmts[i]);
-            if (!reachable) {
-                i++;
-                // can still contain a label
-                while (i<num_stmts) {
-                    Stmt* s2 = stmts[i];
-                    if (s2.isLabel()) {
-                        const LabelStmt* l = cast<LabelStmt*>(s2);
-                        if (l.isUsed()) {
-                            i--;
-                            break;
-                        }
-                    }
-                    i++;
-                }
-            }
-        }
+        gen.emitStmts(c.getStmts(), c.getCount());
         return true;
     case Decl:
         const DeclStmt* ds = cast<DeclStmt*>(s);

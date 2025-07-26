@@ -110,12 +110,27 @@ fn bool Generator.emitSwitchCase(Generator* gen,
     if (num_stmts == 0) {
         // TODO handle empty cases (just jump to next) (dont create a separate block, change num_cases)
     } else {
-        Stmt** stmts = sc.getStmts();
-
-        for (u32 j=0; j<num_stmts; j++) {
-            if (!gen.emitStmt(stmts[j])) break;
-        }
+        gen.emitStmts(sc.getStmts(), num_stmts);
     }
     return sc.hasFallthrough();
+}
+
+fn void Generator.emitStmts(Generator* gen, Stmt** stmts, u32 num_stmts) {
+    u32 i = 0;
+    while (i<num_stmts) {
+        if (gen.emitStmt(stmts[i])) {
+            i++;
+        } else {
+            i++;
+            // skip dead code until a used-label
+            while (i<num_stmts) {
+                if (stmts[i].isLabel()) {
+                    const LabelStmt* l = cast<LabelStmt*>(stmts[i]);
+                    if (l.isUsed()) break;
+                }
+                i++;
+            }
+        }
+    }
 }
 
