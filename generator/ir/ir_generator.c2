@@ -360,7 +360,10 @@ fn void Generator.emitStructInit(Generator* gen, const Expr* e) {
         layouter.init(gen, std.getSize(), std.getDesigMemberCount());
         for (u32 i=0; i<num_values; i++) {
             FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(values[i]);
-            layouter.add(fdi.getMemberOffset(), fdi.isBitfield(), fdi.getBitFieldOffset(), fdi.getBitFieldWidth(), fdi.getInit());
+            const FieldInitField* fif = fdi.getMemberInfo();
+            if (!fif.isZeroSizeBitfield()) {
+                layouter.add(fif, fdi.getInit());
+            }
         }
         layouter.finalize();
     } else {

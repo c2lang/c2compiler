@@ -19,20 +19,11 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-type FieldDesignatorBits struct {
-    u32 : NumExprBits;
-    u32 is_bitfield : 1;
-    u32 bitfield_width : 7;
-    u32 bitfield_offset : 6;
-}
-
 public type FieldDesignatedInitExpr struct @(opaque) {
     Expr base;
-    u32 field;  // name of field
-    u32 member_offset; // offset, if in anonymous sub-struct, offset from outer struct
-    // padding
+    u32 field_name;
     Expr* initValue;
-    Decl* decl; // set during analysis
+    const FieldInitField* fif; // set during analysis
 }
 
 public fn FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Context* c,
@@ -42,10 +33,9 @@ public fn FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Co
 {
     FieldDesignatedInitExpr* e = c.alloc(sizeof(FieldDesignatedInitExpr));
     e.base.init(ExprKind.FieldDesignatedInit, loc, 0, 0, 0, ValType.RValue);
-    e.field = field;
-    e.member_offset = 0;
+    e.field_name = field;
     e.initValue = initValue;
-    e.decl = nil;
+    e.fif = nil;
 #if AstStatistics
     Stats.addExpr(ExprKind.FieldDesignatedInit, sizeof(FieldDesignatedInitExpr));
 #endif
@@ -53,15 +43,15 @@ public fn FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Co
 }
 
 fn Expr* FieldDesignatedInitExpr.instantiate(FieldDesignatedInitExpr* e, Instantiator* inst) {
-    return (Expr*)FieldDesignatedInitExpr.create(inst.c, e.base.base.loc, e.field, e.initValue.instantiate(inst));
+    return (Expr*)FieldDesignatedInitExpr.create(inst.c, e.base.base.loc, e.field_name, e.initValue.instantiate(inst));
 }
 
 public fn u32 FieldDesignatedInitExpr.getField(const FieldDesignatedInitExpr* e) {
-    return e.field;
+    return e.field_name;
 }
 
 public fn const char* FieldDesignatedInitExpr.getFieldName(const FieldDesignatedInitExpr* e) {
-    return idx2name(e.field);
+    return idx2name(e.field_name);
 }
 
 public fn Expr* FieldDesignatedInitExpr.getInit(const FieldDesignatedInitExpr* e) {
@@ -72,57 +62,36 @@ public fn Expr** FieldDesignatedInitExpr.getInit2(FieldDesignatedInitExpr* e) {
     return &e.initValue;
 }
 
-public fn void FieldDesignatedInitExpr.setDecl(FieldDesignatedInitExpr* e, Decl* d) {
-    e.decl = d;
-}
-
-public fn Decl* FieldDesignatedInitExpr.getDecl(const FieldDesignatedInitExpr* e) @(unused) {
-    return e.decl;
-}
-
-public fn u32 FieldDesignatedInitExpr.getMemberOffset(const FieldDesignatedInitExpr* e) @(unused) {
-    return e.member_offset;
-}
-
-public fn void FieldDesignatedInitExpr.setMemberOffset(FieldDesignatedInitExpr* e, u32 idx) {
-    e.member_offset = idx;
-}
-
 fn SrcLoc FieldDesignatedInitExpr.getEndLoc(const FieldDesignatedInitExpr* e) {
     return e.initValue.getEndLoc();
 }
 
-public fn bool FieldDesignatedInitExpr.isBitfield(const FieldDesignatedInitExpr* e) {
-    return e.base.base.fieldDesignatorBits.is_bitfield;
+public fn void FieldDesignatedInitExpr.setMemberInfo(FieldDesignatedInitExpr* e, const FieldInitField* fif) {
+    e.fif = fif;
 }
 
-public fn void FieldDesignatedInitExpr.setBitFieldInfo(FieldDesignatedInitExpr* e, u8 offset, u8 width) {
-    FieldDesignatorBits* bits = & e.base.base.fieldDesignatorBits;
-    bits.is_bitfield = true;
-    bits.bitfield_offset = offset;
-    bits.bitfield_width = width;
+public fn const FieldInitField* FieldDesignatedInitExpr.getMemberInfo(const FieldDesignatedInitExpr* e) {
+    return e.fif;
 }
 
-public fn u8 FieldDesignatedInitExpr.getBitFieldOffset(const FieldDesignatedInitExpr* e) {
-    return (u8)e.base.base.fieldDesignatorBits.bitfield_offset;
-}
-
-public fn u8 FieldDesignatedInitExpr.getBitFieldWidth(const FieldDesignatedInitExpr* e) {
-    return (u8)e.base.base.fieldDesignatorBits.bitfield_width;
+public fn Decl* FieldDesignatedInitExpr.getDecl(const FieldDesignatedInitExpr* e) {
+    if (e.fif) return e.fif.decl;
+    return nil;
 }
 
 fn void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
-    if (e.isBitfield()) out.print(" bitfield(%d, %d)", e.getBitFieldOffset(), e.getBitFieldWidth());
     out.color(col_Value);
-    out.print(" %s", idx2name(e.field));
-    if (!e.decl) {
+    out.print(" %s", e.getFieldName());
+
+    out.space();
+    if (e.fif) {
+        e.fif.print(out);
+    } else {
         out.color(col_Error);
-        out.add(" ??");
+        out.add("??");
     }
-    out.color(col_Calc);
-    out.print(" %d", e.member_offset);
 
     out.newline();
     e.initValue.print(out, indent + 1);

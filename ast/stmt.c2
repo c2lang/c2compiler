@@ -84,7 +84,6 @@ public type Stmt struct @(opaque) {
         CallExprBits callExprBits;
         CharLiteralBits charLiteralBits;
         ExplicitCastExprBits explicitCastExprBits;
-        FieldDesignatorBits fieldDesignatorBits;
         FloatLiteralBits floatLiteralBits;
         IdentifierExprBits identifierExprBits;
         ImplicitCastBits implicitCastBits;

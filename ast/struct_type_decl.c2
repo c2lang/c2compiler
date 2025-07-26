@@ -46,10 +46,24 @@ public type FieldInitField struct {
     u8 bitfield_width;
     u8 is_bitfield : 1;
     u8 bitfield_signed : 1;
+    u8 bitfield_base_size : 4;  // 1/2/4/8
     // 1 byte padding
     Decl* decl;    // can point to anonymous sub-struct members as well
 }
 static_assert(24, sizeof(FieldInitField));
+
+public fn bool FieldInitField.isZeroSizeBitfield(const FieldInitField* f) {
+    return f.is_bitfield && f.bitfield_width == 0;
+}
+
+fn void FieldInitField.print(const FieldInitField* f, string_buffer.Buf* out) {
+    out.color(col_Calc);
+    out.print("offset=%d  idx=%d", f.offset, f.member_idx);
+    if (f.is_bitfield) {
+        out.print(" bitfield(%d, %d, %d %d)", f.bitfield_offset, f.bitfield_width, f.bitfield_signed, f.bitfield_base_size);
+    }
+}
+
 
 public fn const FieldInitField* FieldInitInfo.find(const FieldInitInfo* fi, u32 name) {
     // TODO split in names array and rest array? for better cache coherency
@@ -365,10 +379,10 @@ fn void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u3
         for (u32 i=0; i<fif.num_fields; i++) {
             const FieldInitField* f = &fif.fields[i];
             out.indent(indent + 2);
-            out.print("%s  offset=%d  member_idx=%d", idx2name(f.name_idx), f.offset, f.member_idx);
-            if (f.is_bitfield) {
-                out.print(" bitfield(%d, %d, %d)", f.bitfield_offset, f.bitfield_width, f.bitfield_signed);
-            }
+            out.color(col_Value);
+            out.add(idx2name(f.name_idx));
+            out.space();
+            f.print(out);
             out.newline();
         }
     }

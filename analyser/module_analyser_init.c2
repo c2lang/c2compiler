@@ -342,6 +342,7 @@ fn void fillFieldInfo(StructTypeDecl* std, FillInfo* fi, u32 base_offset) {
             f.bitfield_width = ml.bitfield_width;
             f.bitfield_signed = ml.bitfield_signed;
             f.decl = members[i];
+            f.bitfield_base_size  = (u8)ml.size;
             if (isStruct) fi.member_idx++; // stays the same for unions
             fi.idx++;
         }
@@ -398,9 +399,8 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
         }
         Decl* member = fif.decl;
 
-        fdi.setMemberOffset(fif.offset);
-        fdi.setDecl(member);
-        member.setUsed();
+        fdi.setMemberInfo(fif);
+        //member.setUsed(); // dont set member used just by being initialized
 
         SrcLoc prev = checker.add(fif.member_idx, value.getLoc());
         if (prev) {
@@ -414,10 +414,8 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
 
         Expr* inner = fdi.getInit();
         value.setType(inner.getType());
-        if (fif.is_bitfield) {
-            if (inner.isCtv() && !ctv_analyser.checkBitfield(ma.diags, fif.bitfield_width, fif.bitfield_signed, inner)) return false;
-
-            fdi.setBitFieldInfo((u8)fif.bitfield_offset, (u8)fif.bitfield_width);
+        if (fif.is_bitfield && inner.isCtv()) {
+            if (!ctv_analyser.checkBitfield(ma.diags, fif.bitfield_width, fif.bitfield_signed, inner)) return false;
         }
     }
 
