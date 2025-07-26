@@ -538,25 +538,23 @@ public fn bool Builder.actOnParamAttr(Builder* b,
         d.setPrintfFormat();
         return true;
     case AutoFile:
-        if (d.hasAutoAttr()) goto invalid;
+        if (d.hasAutoAttr()) break;
         d.setAttrAutoFile();
         return true;
     case AutoLine:
-        if (d.hasAutoAttr()) goto invalid;
+        if (d.hasAutoAttr()) break;
         d.setAttrAutoLine();
         return true;
     case AutoFunc:
-        if (d.hasAutoAttr()) goto invalid;
+        if (d.hasAutoAttr()) break;
         d.setAttrAutoFunc();
         return true;
-    invalid:
-        b.diags.error(loc, "invalid combination of attributes");
-        return false;
     default:
         b.diags.error(loc, "attribute '%s' cannot be applied to function parameters",
                       ast.idx2name(name));
         return false;
     }
+    b.diags.error(loc, "invalid combination of attributes");
     return false;
 }
 

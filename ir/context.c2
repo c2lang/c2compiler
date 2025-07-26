@@ -564,7 +564,7 @@ fn Ref Context.addComment2(Context* c, const char* text, FunctionInfo* info) {
 
 public fn CaseId Context.addSwitchInstr(Context* c, Ref cond, u32 num_cases) {
 #if DebugIr
-    stdio.printf("  switch (%d)\n", after, num_cases);
+    stdio.printf("  switch (%d)\n", num_cases);
 #endif
     CaseId case_id = c.b.tmp_info.cases.reserve(num_cases);
 
