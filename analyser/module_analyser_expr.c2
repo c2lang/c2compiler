@@ -470,7 +470,7 @@ fn QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* ba
     bool rvalid = ma.analyseBitOffsetIndex(bo.getRHS2(), canon, &rval);
 
     if (lvalid && rvalid) {
-        if (!rval.is_less(&lval)) {
+        if (lval.is_less(&rval)) {
             ma.error(e.getLoc(), "left bitoffset index is smaller than right index");
             return QualType_Invalid;
         }

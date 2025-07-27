@@ -15,3 +15,7 @@ fn void test2() {
     b = a[2:Index];     // @error{left bitoffset index is smaller than right index}
 }
 
+fn bool u8_topbit(u8 v) { return v[7:7]; }
+fn bool u16_topbit(u16 v) { return v[15:15]; }
+fn bool u32_topbit(u32 v) { return v[31:31]; }
+fn bool u64_topbit(u64 v) { return v[63:63]; }
