@@ -24,60 +24,25 @@ type Limit struct {
     u64 max_val;
 }
 
-fn void Limit.setBitfield(Limit* l, u8 width, bool is_signed) {
-    u64 w2 = width;
+fn void Limit.init2(Limit* l, u32 width, bool is_signed) {
     if (is_signed) {
-        w2--;
-        // TODO 63 bit case incorrect?
-        l.min_val = -1 * (i64)(1 << w2);
-        l.max_val = (1 << w2) -1;
+        i64 max_val = (i64)0x7FFFFFFFFFFFFFFF >> (64 - width);
+        l.min_val = -max_val - 1;
+        l.max_val = (u64)max_val;
     } else {
         l.min_val = 0;
-        // FIX after bootstrap update
-        //if (width == 64) l.max_val = u64.max;
-        if (width == 64) l.max_val = 18446744073709551615;
-        else l.max_val = (1 << w2) -1;
+        l.max_val = (u64)0xFFFFFFFFFFFFFFFF >> (64 - width);
     }
 }
 
-const Limit[] Limits = {
-    // 1 - Bool
-    { 0, 1 },
-    // 7 - Char/Int8
-    { -128, 127 },
-    // 8 - UInt8
-    { 0, 255 },
-    // 15 - Int16
-    { -32768, 32767 },
-    // 16 - UInt16
-    { 0, 65535 },
-    // 31 - Int32
-    { -2147483647-1, 2147483647 },
-    // 32 - UInt32
-    { 0, 4294967295 },
-    // 63 - Int64
-    { -9223372036854775807-1, 9223372036854775807 },
-    // 64 - UInt64
-    { 0, 18446744073709551615 },
-    // 0 - Void
-    { 1, 0 },
-}
-
-fn const Limit* getLimit(u32 width) {
-    switch (width) {
-    case 0: return &Limits[9];
-    case 1: return &Limits[0];
-    case 7: return &Limits[1];
-    case 8: return &Limits[2];
-    case 15: return &Limits[3];
-    case 16: return &Limits[4];
-    case 31: return &Limits[5];
-    case 32: return &Limits[6];
-    case 63: return &Limits[7];
-    case 64: return &Limits[8];
+fn void Limit.init1(Limit* l, u32 width) {
+    if (width <= 1) {  // Bool and Void;
+        l.max_val = width;
+        l.min_val = 1 - width;
+    } else {
+        bool is_signed = width & 1;
+        l.init2(width + is_signed, is_signed);
     }
-    assert(0);
-    return nil;
 }
 
 #if 1
@@ -328,7 +293,7 @@ public fn bool checkBitfield(diagnostics.Diags* diags, u8 bitfield_width, bool b
         diags.errorRange(e.getLoc(), e.getRange(), "%s", value.error_msg);
         return false;
     }
-    Limit limit.setBitfield(bitfield_width, bitfield_signed);
+    Limit limit.init2(bitfield_width, bitfield_signed);
 
     if (!value.checkRange(limit.min_val, limit.max_val)) {
         diags.errorRange(e.getLoc(), e.getRange(), "constant value %s out-of-bounds for bitfield, range [%d, %d]",
@@ -346,12 +311,10 @@ public fn bool checkRange(diagnostics.Diags* diags, QualType qt, Value* value, S
     if (e && e.isTilde()) return true;
 
     BuiltinType* bi = canon.getBuiltin();
-    u32 width = bi.getWidth();
-    //if (width == 64) return true;  // 64-bit
     // TODO: check float32 range
     if (bi.getKind() == BuiltinKind.Float32 || bi.getKind() == BuiltinKind.Float64) return true;
 
-    const Limit* limit = getLimit(width);
+    Limit limit.init1(bi.getWidth());
 
     if (!value.checkRange(limit.min_val, limit.max_val)) {
         SrcRange range = { 0, 0 };
