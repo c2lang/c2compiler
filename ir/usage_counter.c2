@@ -10,6 +10,11 @@ public type Counter struct {
     u32 count;
     u32 capacity;
     u8* counts;
+    u32 max_idx;
+
+    u32[64] work_queue; // TODO make re-sizeable
+    u32 queue_head;
+    u32 queue_count;
 }
 
 public fn void Counter.init(Counter* c, u32 cap) {
@@ -17,6 +22,9 @@ public fn void Counter.init(Counter* c, u32 cap) {
     c.capacity = 0;
     c.counts = nil;
     c.resize(cap);
+    c.max_idx = 0;
+    c.queue_head = 0;
+    c.queue_count = 0;
 }
 
 public fn void Counter.free(Counter* c) {
@@ -32,26 +40,61 @@ fn void Counter.resize(Counter* c, u32 cap) {
 public fn void Counter.clear(Counter* c, u32 cap) {
     if (cap > c.capacity) c.resize(cap);
     c.count = cap;
+    // TODO could be costly
     memset(c.counts, 0, cap);
+    c.max_idx = 0;
+    c.queue_head = 0;
+    c.queue_count = 0;
 }
 
 public fn void Counter.incr(Counter* c, u32 idx) {
     //assert(c.counts[idx] != u8.max);  // u8
     assert(c.counts[idx] != c2.max_u8);
     c.counts[idx]++;
+    if (idx > c.max_idx) c.max_idx = idx;
 }
 
-/*
-public fn bool Counter.decr(Counter* c, u32 idx) {
+public fn void Counter.decr(Counter* c, u32 idx) {
     c.counts[idx]--;
-    return c.counts[idx] != 0;
+    if (c.counts[idx] == 1) {
+        // add to work_queue if not already in
+        u32 pos = c.queue_head;
+        for (u32 i=0; i<c.queue_count; i++) {
+            if (c.work_queue[pos] == idx) return; // already in
+            pos = (pos + 1) % elemsof(c.work_queue);
+        }
+        assert(c.queue_count != elemsof(c.work_queue));
+        c.work_queue[pos] = idx;
+        c.queue_count++;
+    }
 }
-*/
+
+public fn bool Counter.hasWork(const Counter* c) {
+    return c.queue_count != 0;
+}
+
+public fn void Counter.fillQueue(Counter* c) {
+    u32 i = c.max_idx;
+    while (i != c2.max_u32) {
+        if (c.counts[i] == 1) {
+            assert(c.queue_count != elemsof(c.work_queue));
+            // fill linearly since it starts empty
+            c.work_queue[c.queue_count++] = i;
+        }
+        i--;
+    }
+}
+
+public fn u32 Counter.popHead(Counter* c) {
+    u32 idx = c.work_queue[c.queue_head];
+    c.queue_head = (c.queue_head + 1) % elemsof(c.work_queue);
+    c.queue_count--;
+    return idx;
+}
 
 public fn void Counter.dump(const Counter* c) @(unused) {
-    stdio.printf("Usage counter (%d)\n", c.count);
-    for (u32 i=0; i<c.count; i++) {
-        stdio.printf("  [%3d] %d\n", i, c.counts[i]);
+    for (u32 i=0; i<=c.max_idx; i++) {
+        if (c.counts[i] != 0) stdio.printf("  [%3d] %d\n", i, c.counts[i]);
     }
 }
 

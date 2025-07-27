@@ -374,6 +374,11 @@ fn void Tools.eliminateCopies(Tools* t, FunctionInfo* fi) {
     }
 }
 
+
+fn void Tools.checkRef(Tools* t, Ref r) {
+    if (r.isTemp()) t.usage.incr(r.value);
+}
+
 fn void Tools.fillUsage(Tools* t, FunctionInfo* fi) {
     t.usage.clear(fi.instructions.getCount());
 
@@ -381,22 +386,56 @@ fn void Tools.fillUsage(Tools* t, FunctionInfo* fi) {
     // count 0 means: has no result, (of course) not used
     // count 1 means: has result, not used (could still have side effects)
     // count 2+ means: used
+
     Instr* all = fi.instructions.get(0);
     for (u32 i=0; i<fi.instructions.getCount(); i++) {
         Instr* is = &all[i];
         if (is.hasResult()) t.usage.incr(i);
-        if (is.isPhi()) {
+
+        switch (is.getKind()) {
+        case Call:
+            // TODO check if call with side effects.
+            // TEMP do extra incr then so it will not be pruned (could be void, so incr twice)
+            t.usage.incr(i);
+            t.usage.incr(i);
+            t.checkRef(is.args[0]);
+            t.checkRef(is.args[1]);
+            if (is.args[1].isRefList()) {
+                const Ref* refs = fi.refs.get(is.args[1].value);
+                u32 j = 0;
+                while (refs[j].kind != RefKind.None) {
+                    t.checkRef(refs[j]);
+                    j++;
+                }
+            }
+            break;
+        case Switch:
+            t.checkRef(is.args[0]);
+            break;
+        case Phi:
             PhiClause* clauses = fi.phis.get(is.phi_clauses.start);
             for (u32 p=0; p<is.phi_clauses.count; p++) {
-                Ref* r = &clauses[p].ref;
-                if (r.isTemp()) t.usage.incr(r.value);
+                t.checkRef(clauses[p].ref);
             }
-        } else {
-            Ref* r = &is.args[0];
-            if (r.isTemp()) t.usage.incr(r.value);
-            r = &is.args[1];
-            if (r.isTemp()) t.usage.incr(r.value);
+            break;
+        default:
+            t.checkRef(is.args[0]);
+            t.checkRef(is.args[1]);
+            break;
         }
+    }
+
+    //t.usage.dump();
+    t.usage.fillQueue();
+
+    while (t.usage.hasWork()) {
+        u32 i = t.usage.popHead();
+        Instr* is = &all[i];
+        Ref* r = &is.args[0];
+        if (r.isTemp()) t.usage.decr(r.value);
+        r = &is.args[1];
+        if (r.isTemp()) t.usage.decr(r.value);
+        is.clear();
     }
 }
 

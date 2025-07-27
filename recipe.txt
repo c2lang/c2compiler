@@ -9,7 +9,6 @@ set common
     common/build_target.c2
     common/component.c2
     common/console.c2
-    common/constants.c2
     common/diagnostics.c2
     common/file/reader.c2
     common/file/writer.c2
@@ -30,6 +29,7 @@ set ast
     ast_utils/attr.c2
     ast_utils/attr_table.c2
     ast_utils/color.c2
+    ast_utils/constants.c2
     ast_utils/context.c2
     ast_utils/number_radix.c2
     ast_utils/src_loc.c2
@@ -135,7 +135,6 @@ set yaml
 end
 
 set refs
-    common/constants.c2
     common/linked_list.c2
     common/quicksort.c2
     common/utils.c2
@@ -313,6 +312,8 @@ executable c2tags
 
     (refs)
 
+    ast_utils/constants.c2
+
     tools/c2tags.c2
 end
 
@@ -320,6 +321,8 @@ executable c2rename
     $warnings no-unused
     $backend c
     $config RadixTreeValue
+
+    ast_utils/constants.c2
 
     common/file/reader.c2
     common/file/writer.c2
@@ -343,9 +346,9 @@ executable tester
 #    $config TesterDebug
 
     ast_utils/color.c2
+    ast_utils/constants.c2
     ast_utils/string_buffer.c2
 
-    common/constants.c2
     common/file/reader.c2
     common/file/writer.c2
     common/string_utils.c2
@@ -363,12 +366,12 @@ executable c2cat
 	$backend c
 
     ast_utils/color.c2
+    ast_utils/constants.c2
     ast_utils/number_radix.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
     ast_utils/string_pool.c2
 
-    common/constants.c2
     common/file/reader.c2
     common/string_list.c2
     common/utf8.c2
@@ -392,12 +395,12 @@ executable c2loc
 	$backend c
 
     ast_utils/color.c2
+    ast_utils/constants.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
     ast_utils/string_pool.c2
 
     common/build_target.c2
-    common/constants.c2
     common/file/reader.c2
     common/library_list.c2
     common/source_mgr.c2
