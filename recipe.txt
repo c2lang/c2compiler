@@ -285,6 +285,7 @@ executable c2c
     ir/instr.c2
     ir/instr_inserter.c2
     ir/instr_kind.c2
+    ir/register_alloc.c2
     ir/slot_collector.c2
     ir/ssa.c2
     ir/symbol_list.c2

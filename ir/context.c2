@@ -741,6 +741,12 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
 
     t.removeNone(fi2);
     if (print) c.print_function(symbol, fi2, "after remove none");
+
+    t.allocateRegisters(fi2);
+
+    // leave SSA (eliminate Phis)
+    // generate Instruction
+    // ..
 }
 
 fn bool empty_block(const Block* b, const InstrList* instructions) {

@@ -63,9 +63,15 @@ public fn void InstrInserter.free(InstrInserter* ii) {
 public fn void InstrInserter.add(InstrInserter* ii, u32 location, u32 instr_idx) {
     if (ii.count == ii.capacity) ii.resize(ii.capacity * 2);
 
-    InstrInsertion* ins = &ii.ins[ii.count++];
-    ins.location = location;
-    ins.instr_idx = instr_idx;
+    u32 idx = ii.count;
+    while (idx > 0) {
+        if (ii.ins[idx-1].location <= location) break;
+        ii.ins[idx] = ii.ins[idx-1];
+        idx--;
+    }
+    ii.ins[idx].location = location;
+    ii.ins[idx].instr_idx = instr_idx;
+    ii.count++;
 }
 
 public fn void InstrInserter.start(InstrInserter* ii) {
@@ -87,7 +93,7 @@ public fn bool InstrInserter.needsFixup(const InstrInserter* ii) {
     return ii.count != 0;
 }
 
-fn void InstrInserter.dump(const InstrInserter* ii) @(unused) {
+public fn void InstrInserter.dump(const InstrInserter* ii) @(unused) {
     printf("Insertions:\n");
     for (u32 i=0; i<ii.count; i++) {
         const InstrInsertion* ins = &ii.ins[i];

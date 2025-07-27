@@ -31,7 +31,8 @@ const char* col_Symbol = color.Bblue;
 const char* col_Attr = color.Bmagenta;
 const char* col_Unknown = color.Yellow;
 const char* col_Value = color.Magenta;
-const char* col_Data = color.Bcyan;
+const char* col_Register = color.Cyan;
+const char* col_Data = color.Bgreen;
 const char* col_Slot = color.Bcyan;
 const char* col_Temp = color.Bgreen;
 const char* col_Param = color.Cyan;
@@ -512,9 +513,12 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
         out.color(col_Block);
         out.add(ph.c.pool.idx2str(r.value));
         break;
+    case Register:
+        out.color(col_Register);
+        out.print("R%d", r.value);
+        break;
     }
     out.color(color.Normal);
-
 }
 
 

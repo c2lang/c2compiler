@@ -30,6 +30,7 @@ public type RefKind enum u8 {
     Float,     // constant_idx
     Double,    // constant_idx
     Text,      // idx into string pool, for comment
+    Register,  // nr (0,1,..)
 }
 
 fn const char* RefKind.str(RefKind k) {
@@ -46,6 +47,7 @@ fn const char* RefKind.str(RefKind k) {
     case Float:     return "float";
     case Double:    return "double";
     case Text:      return "text";
+    case Register:  return "register";
     }
     return nil;
 }
