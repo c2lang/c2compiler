@@ -182,24 +182,27 @@ public fn u64 Value.as_u64(Value* v) {
 }
 
 public fn u8 Value.getWidth(const Value* v) {
-    if (v.kind != ValueKind.Integer)
+    if (v.kind != ValueKind.Integer) {
+        // TODO: handle f32 vs f64? all constant floating point
+        //       computations are currently performed as double
         return 64;
-    //TODO find faster way
-    u64 value = v.negative ? v.uvalue - 1 : v.uvalue;
-    if (value <= 65535) {
-        if (value <= 255) {
-            if (value <= 127) return 7;
-            else return 8;
+    }
+    // TODO: check if this poses problems, possibly use 1 instead
+    if (v.uvalue == 0) return 0;
+    // Return actual bitwidth of integer value including sign bit
+    u64 value = v.uvalue - v.negative;
+    u32 width = v.negative;
+    //TODO use 64 - value.leading_zeros() + v.negative;
+    if (value) {
+        width += 1;
+        for (u32 shift = 32; shift; shift >>= 1) {
+            if (value >= ((u64)1 << shift)) {
+                value >>= shift;
+                width += shift;
+            }
         }
-        if (value <= 32767) return 15;
-        else return 16;
     }
-    if (value <= 4294967295) {
-        if (value <= 2147483647) return 31;
-        else return 32;
-    }
-    if (value <= 9223372036854775807) return 63;
-    return 64;
+    return (u8)width;
 }
 
 public fn bool Value.checkRange(const Value* v, i64 min, u64 max) {
@@ -663,45 +666,20 @@ public fn void Value.mask(Value* v, u32 width) {
     }
 }
 
-fn void Value.truncate(Value *orig, bool is_signed, u32 width) {
+fn void Value.truncate(Value *orig, u32 width, bool is_signed) {
     assert(orig.isDecimal());
-    // TODO signed, for now only take uvalue
     u64 uvalue = orig.as_u64();
-    u64 mask = 1;
-    u64 sbit = 0;
-    switch (width) {
-    case 1:
-        uvalue = (uvalue != 0) ? 1 : 0;
-        break;
-    case 7:
-        sbit = 0x80;
-        fallthrough;
-    case 8:
-        mask = 0xFF;
-        break;
-    case 15:
-        sbit = 0x8000;
-        fallthrough;
-    case 16:
-        mask = 0xFFFF;
-        break;
-    case 31:
-        sbit = 0x80000000;
-        fallthrough;
-    case 32:
-        mask = 0xFFFFFFFF;
-        break;
-    case 63:
-        sbit = 0x8000000000000000;
-        fallthrough;
-    case 64:
-        mask = 0xFFFFFFFFFFFFFFFF;
-        break;
-    }
-    if (uvalue & sbit)
-        orig.setSigned((i64)((uvalue & (sbit - 1)) - sbit));
-    else
+    if (is_signed) {
+        u64 sbit = (u64)1 << (width - 1);
+        u64 mask = sbit - 1;
+        if (uvalue & sbit)
+            orig.setSigned((i64)((uvalue & mask) - sbit));
+        else
+            orig.setUnsigned(uvalue & mask);
+    } else {
+        u64 mask = (u64)~(u64)0 >> (64 - width);
         orig.setUnsigned(uvalue & mask);
+    }
 }
 
 public fn void Value.incr(Value* v) {
@@ -752,6 +730,8 @@ public fn void Value.decr(Value* v) {
 fn Value Value.castAs(const Value* v, QualType qt) {
     Value result = *v;
 
+    if (result.kind == Error)
+        return result;
     qt = qt.getCanonicalType();
     if (qt.isEnum())
         qt = qt.getEnum().getImplType();
@@ -759,24 +739,25 @@ fn Value Value.castAs(const Value* v, QualType qt) {
         return result;
     assert(qt.isBuiltin());
     BuiltinType* bi = qt.getBuiltin();
+    u32 width = bi.getWidth();
     switch (result.kind) {  // @@@
     case Integer:
         if (qt.isFloat()) {
             result.setFloat(result.toFloat());
-            if (bi.getWidth() == 32) {
-                result.setFloat(cast<f32>(result.toFloat()));
+            if (width == 32) {
+                result.fvalue = (f32)result.fvalue;
             }
         } else
         if (qt.isBool()) {
             result.setUnsigned(!result.isZero());
         } else {
-            result.truncate(bi.isSigned(), bi.getWidth());
+            result.truncate(width, bi.isSigned());
         }
         break;
     case Float:
         if (qt.isFloat()) {
-            if (bi.getWidth() == 32) {
-                result.setFloat(cast<f32>(result.fvalue));
+            if (width == 32) {
+                result.fvalue = (f32)result.fvalue;
             }
         } else
         if (qt.isBool()) {
@@ -784,11 +765,11 @@ fn Value Value.castAs(const Value* v, QualType qt) {
         } else {
             // TODO: check for overflow
             if (bi.isSigned()) {
-                result.setSigned(cast<i64>(result.fvalue));
+                result.setSigned((i64)result.fvalue);
             } else {
-                result.setUnsigned(cast<u64>(result.fvalue));
+                result.setUnsigned((u64)result.fvalue);
             }
-            result.truncate(bi.isSigned(), bi.getWidth());
+            result.truncate(width, bi.isSigned());
         }
         break;
     default:

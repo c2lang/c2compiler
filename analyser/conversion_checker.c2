@@ -333,20 +333,17 @@ fn bool Checker.checkPointer2Func(Checker* c, const Type* lcanon, const Type* rc
 
 fn bool Checker.checkIntConversion(Checker* c, const BuiltinType* bi) {
     Expr* e = *c.expr_ptr;
-    const u8 wl = (u8)bi.getWidth();
+    u32 wl = bi.getWidth();
     ExprWidth w = getExprWidth(e);
     //stdio.printf("INT CONVERSION signed|width: %d %d -> %d %d\n", w.is_signed, w.width, bi.isSigned(), w.width);
 
-    // dont allowd signed -> unsigned
-    // allow unsigned X -> signed X for same widths
-    if (w.is_signed == bi.isSigned()) {
-        return (w.width <= wl);
-    } else {
-        // allow unsigned -> signed only if it gets bigger (eg. u16 fits in i32)
+    if (w.is_signed != bi.isSigned()) {
+        // dont allow signed -> unsigned: fully defined but requires explicit cast in c2
         if (w.is_signed) return false;
-        return w.width <= wl;
+        // allow unsigned -> signed only if value is preserved (eg. u16 fits in i32)
+        return w.width < wl;
     }
-    return false;
+    return w.width <= wl;
 }
 
 // Note: try to fix array type that has been decayed to a pointer
@@ -428,6 +425,7 @@ fn bool Checker.checkFunc2Pointer(Checker* c, const Type* lcanon, const Type* rc
 
 fn bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcanon) {
     // Note: enum constant values can never be negative
+    // TODO check if negative enum values are rejected
     const BuiltinType* bi = (BuiltinType*)lcanon;
     u32 width = bi.getWidth();
     if (width == 64) return true;  // 64-bit

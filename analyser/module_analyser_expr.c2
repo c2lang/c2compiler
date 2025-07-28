@@ -523,6 +523,7 @@ fn bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType base
         return false;
     }
 
+    // accept shifting 1 << 31
     if (val.as_u64() >= base_bi.getWidth()) {
         ma.errorRange(e.getLoc(), e.getRange(), "bitoffset index value '%s' too large for type '%s'", val.str(), baseType.diagName());
         return false;

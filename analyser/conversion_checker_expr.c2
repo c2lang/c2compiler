@@ -32,6 +32,12 @@ fn ExprWidth ExprWidth.mergeSmaller(ExprWidth w1, ExprWidth w2) {
 
 fn ExprWidth ExprWidth.mergeWider(ExprWidth w1, ExprWidth w2) {
     ExprWidth result;
+    if (w1.is_signed != w2.is_signed) {
+        // increase unsigned width to account for sign bit
+        // this allows 'i8 b = some_i8 + 100;' and rejects 'i8 b = some_i8 + 200;'
+        if (w1.is_signed && w2.width < 32) w2.width += 1;
+        if (w2.is_signed && w1.width < 32) w1.width += 1;
+    }
     result.width = (w1.width > w2.width) ? w1.width : w2.width;
     result.is_signed = w1.is_signed | w2.is_signed;
     return result;
@@ -156,9 +162,11 @@ fn ExprWidth getBinOpWidth(const BinaryOperator* b) {
         break;
     case ShiftLeft:
         ExprWidth result = getExprWidth(b.getLHS());
-        if (result.width < 31) { result.width = 31; result.is_signed = true; }
+        // TODO handle constant RHS and int promotion
+        if (result.width < 32) { result.width = 32; result.is_signed = true; }
         return result;
     case ShiftRight:
+        // TODO handle constant RHS
         return getExprWidth(b.getLHS());
     case LessThan:
     case GreaterThan:

@@ -24,24 +24,14 @@ type Limit struct {
     u64 max_val;
 }
 
-fn void Limit.init2(Limit* l, u32 width, bool is_signed) {
+fn void Limit.init(Limit* l, u32 width, bool is_signed) {
     if (is_signed) {
         i64 max_val = (i64)0x7FFFFFFFFFFFFFFF >> (64 - width);
         l.min_val = -max_val - 1;
         l.max_val = (u64)max_val;
     } else {
         l.min_val = 0;
-        l.max_val = (u64)0xFFFFFFFFFFFFFFFF >> (64 - width);
-    }
-}
-
-fn void Limit.init1(Limit* l, u32 width) {
-    if (width <= 1) {  // Bool and Void;
-        l.max_val = width;
-        l.min_val = 1 - width;
-    } else {
-        bool is_signed = width & 1;
-        l.init2(width + is_signed, is_signed);
+        l.max_val = (u64)~(u64)0 >> (64 - width);
     }
 }
 
@@ -293,7 +283,7 @@ public fn bool checkBitfield(diagnostics.Diags* diags, u8 bitfield_width, bool b
         diags.errorRange(e.getLoc(), e.getRange(), "%s", value.error_msg);
         return false;
     }
-    Limit limit.init2(bitfield_width, bitfield_signed);
+    Limit limit.init(bitfield_width, bitfield_signed);
 
     if (!value.checkRange(limit.min_val, limit.max_val)) {
         diags.errorRange(e.getLoc(), e.getRange(), "constant value %s out-of-bounds for bitfield, range [%d, %d]",
@@ -314,7 +304,7 @@ public fn bool checkRange(diagnostics.Diags* diags, QualType qt, Value* value, S
     // TODO: check float32 range
     if (bi.getKind() == BuiltinKind.Float32 || bi.getKind() == BuiltinKind.Float64) return true;
 
-    Limit limit.init1(bi.getWidth());
+    Limit limit.init(bi.getWidth(), bi.isSigned());
 
     if (!value.checkRange(limit.min_val, limit.max_val)) {
         SrcRange range = { 0, 0 };

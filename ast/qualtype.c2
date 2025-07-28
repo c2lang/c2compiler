@@ -94,7 +94,7 @@ public fn u32 QualType.getBitFieldWidth(const QualType* qt) {
     const Type* t = canon.getTypeOrNil();
     if (t.isBuiltinType()) {
         BuiltinType* bi = (BuiltinType*)t;
-        return bi.getBitfieldSize();
+        return bi.getWidth();
     }
     if (t.isEnumType()) {
         // TODO return bits needed for max value to allow use in bitfields
