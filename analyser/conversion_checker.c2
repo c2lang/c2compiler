@@ -66,6 +66,7 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] Conversions = {
 //  5 = float -> integer
 //  6 = loss of FP-precision
 //  7 = ok, no conversion needed (eg. char -> u8, isize -> i64, i32 -> bool)
+// No need to adjust for 32-bit as ISize and USize are converted before the lookup
 const u8[elemsof(BuiltinKind)][elemsof(BuiltinKind)] BuiltinConversions = {
     //  Char   Int8   Int16  Int32  Int64  UInt8  UInt16 UInt32 UInt64 Flt32  Flt64  ISize  USize  Bool  Void
     //  1      2      3      4      5      6      7      8      9      10     11     12     13     14    15
@@ -74,19 +75,19 @@ const u8[elemsof(BuiltinKind)][elemsof(BuiltinKind)] BuiltinConversions = {
     // Int8 ->
     {   3,     0,     1,     1,     1,     3,     3,     3,     3,     1,     1,     1,     3,     7,    2  },
     // Int16 ->
-    {   4,     4,     0,     1,     1,     3,     3,     3,     3,     1,     1,     1,     3,     7,    2  },
+    {   4,     4,     0,     1,     1,     4,     3,     3,     3,     1,     1,     1,     3,     7,    2  },
     // Int32 ->
-    {   4,     4,     4,     0,     1,     3,     3,     3,     3,     1,     1,     1,     3,     7,    2  },
+    {   4,     4,     4,     7,     1,     4,     4,     3,     3,     1,     1,     1,     3,     7,    2  },
     // Int64 ->
-    {   4,     4,     4,     4,     0,     3,     3,     3,     3,     1,     1,     7,     3,     7,    2  },
+    {   4,     4,     4,     4,     7,     4,     4,     4,     3,     1,     1,     7,     3,     7,    2  },
     // UInt8 ->
-    {   1,     3,     3,     3,     3,     0,     1,     1,     1,     1,     1,     3,     1,     7,    2  },
+    {   1,     3,     1,     1,     1,     0,     1,     1,     1,     1,     1,     3,     1,     7,    2  },
     // UInt16 ->
-    {   4,     4,     3,     3,     3,     4,     0,     1,     1,     1,     1,     3,     1,     7,    2  },
+    {   4,     4,     3,     1,     1,     4,     0,     1,     1,     1,     1,     3,     1,     7,    2  },
     // UInt32 ->
-    {   4,     4,     4,     3,     3,     4,     4,     0,     1,     1,     1,     3,     1,     7,    2  },
+    {   4,     4,     4,     3,     1,     4,     4,     7,     1,     1,     1,     3,     1,     7,    2  },
     // UInt64 ->
-    {   4,     4,     4,     4,     3,     4,     4,     4,     0,     1,     1,     3,     7,     7,    2  },
+    {   4,     4,     4,     4,     3,     4,     4,     4,     7,     1,     1,     3,     7,     7,    2  },
     // Flt32 ->
     {   5,     5,     5,     5,     5,     5,     5,     5,     5,     0,     1,     5,     5,     2,    2  },
     // Flt64 ->
@@ -227,7 +228,7 @@ fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon
         return true;
     }
 
-    u8 res = BuiltinConversions[rbuiltin.getKind()][lbuiltin.getKind()];
+    u8 res = BuiltinConversions[rbuiltin.getBaseKind()][lbuiltin.getBaseKind()];
     switch (res) {
     case 0:     // should not happen
         c.diags.error(c.loc, "BUILTIN SHOULD NOT HAPPEN (%d - %d)\n", lcanon.getKind(), rcanon.getKind());
@@ -613,6 +614,7 @@ fn bool Checker.checkPointer2BuiltinCast(Checker* c, const Type* lcanon, const T
 }
 
 // Just takes smallest type, dont promote both sides to i32
+// No need to adjust for 32-bit as ISize and USize are converted before the lookup
 const u8[elemsof(BuiltinKind)][elemsof(BuiltinKind)] ConditionalOperatorResult = {
     //  Char   Int8   Int16  Int32  Int64  UInt8  UInt16 UInt32 UInt64 Flt32 Flt64  ISize  USize  Bool  Void
     //  0      1      2      3      4      5      6      7      8      9     10     11     12     13     14
@@ -653,7 +655,7 @@ public fn QualType get_common_arithmetic_type(QualType t1, QualType t2) {
 
     BuiltinType* bi1 = t1.getBuiltin();
     BuiltinType* bi2 = t2.getBuiltin();
-    BuiltinKind kind = (BuiltinKind)ConditionalOperatorResult[bi2.getKind()][bi1.getKind()];
+    BuiltinKind kind = (BuiltinKind)ConditionalOperatorResult[bi2.getBaseKind()][bi1.getBaseKind()];
     return ast.builtins[kind];
 }
 
@@ -668,6 +670,7 @@ public fn QualType get_common_arithmetic_type(QualType t1, QualType t2) {
      6 error,
 */
 // See ISO/IEC 9899:201x 6.3.1
+// No need to adjust for 32-bit as ISize and USize are converted before the lookup
 const u8[elemsof(BuiltinKind)][elemsof(BuiltinKind)] UsualArithmeticConversions = {
     //  Char   Int8   Int16  Int32  Int64  UInt8  UInt16 UInt32 UInt64 Flt32 Flt64  ISize  USize  Bool  Void
     //  0      1      2      3      4      5      6      7      8      9     10     11     12     13     14

@@ -136,6 +136,7 @@ const bool[] BuiltinType_integer = {
 }
 static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_integer));
 
+// Default builtin type sizes (adjusted for 32-bit in globals)
 const u32[] BuiltinType_default_sizes = {
     [BuiltinKind.Char] = 1,
     [BuiltinKind.Int8] = 1,
@@ -148,13 +149,14 @@ const u32[] BuiltinType_default_sizes = {
     [BuiltinKind.UInt64] = 8,
     [BuiltinKind.Float32] = 4,
     [BuiltinKind.Float64] = 8,
-    [BuiltinKind.ISize] = 8,       // ISize <- need to change for ARCH
-    [BuiltinKind.USize] = 8,       // USize <- need to change for ARCH
+    [BuiltinKind.ISize] = 8,       // adjusted in global
+    [BuiltinKind.USize] = 8,       // adjusted in global
     [BuiltinKind.Bool] = 1,
     [BuiltinKind.Void] = 0,
 }
 static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_default_sizes));
 
+// Default builtin type widths (adjusted for 32-bit in globals)
 const u32[] BuiltinType_default_widths = {
     [BuiltinKind.Char] = 8,
     [BuiltinKind.Int8] = 7,
@@ -167,13 +169,14 @@ const u32[] BuiltinType_default_widths = {
     [BuiltinKind.UInt64] = 64,
     [BuiltinKind.Float32] = 0,
     [BuiltinKind.Float64] = 0,
-    [BuiltinKind.ISize] = 63, // ISize <- need to change for ARCH
-    [BuiltinKind.USize] = 64, // USize <- need to change for ARCH
+    [BuiltinKind.ISize] = 63, // adjusted in global
+    [BuiltinKind.USize] = 64, // adjusted in global
     [BuiltinKind.Bool] = 1,
     [BuiltinKind.Void] = 0,
 }
 static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_default_widths));
 
+// Default builtin bitfield widths (adjusted for 32-bit in globals)
 const u32[] BuiltinType_bitfield_sizes = {
     [BuiltinKind.Char] = 8,
     [BuiltinKind.Int8] = 8,
@@ -186,8 +189,8 @@ const u32[] BuiltinType_bitfield_sizes = {
     [BuiltinKind.UInt64] = 64,
     [BuiltinKind.Float32] = 0,
     [BuiltinKind.Float64] = 0,
-    [BuiltinKind.ISize] = 64,       // ISize <- need to change for ARCH
-    [BuiltinKind.USize] = 64,       // USize <- need to change for ARCH
+    [BuiltinKind.ISize] = 64,       // adjusted in global
+    [BuiltinKind.USize] = 64,       // adjusted in global
     [BuiltinKind.Bool] = 1,
     [BuiltinKind.Void] = 0,
 }

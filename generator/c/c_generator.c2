@@ -1325,11 +1325,9 @@ const char[] C_types =
     typedef unsigned short uint16_t;
     typedef signed int int32_t;
     typedef unsigned int uint32_t;
-    // FIXME: these should be target dependent
-    typedef signed long int64_t;
-    typedef unsigned long uint64_t;
-    typedef long ssize_t;
-    typedef unsigned long size_t;
+    ```;
+const char[] C_defines =
+    ```c
     #define true 1
     #define false 0
 
@@ -1378,6 +1376,33 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
     out.add(Include_guard1);
     out.add(Warning_control);
     out.add(C_types);
+    if (ast.getWordSize() == 4) {
+        // ILP32 (32-bit int, long and pointers)
+        out.add(```c
+                typedef signed long long int64_t;
+                typedef unsigned long long uint64_t;
+                typedef signed long ssize_t;
+                typedef unsigned long size_t;
+                ```);
+    } else {
+        // LP64 (64-bit long and pointers)
+        out.add(```c
+                typedef signed long int64_t;
+                typedef unsigned long uint64_t;
+                typedef signed long ssize_t;
+                typedef unsigned long size_t;
+                ```);
+#if 0
+        // TODO support LLP64 (64-bit long long and pointers, but 32-bit long)
+        out.add(```c
+                typedef signed long long int64_t;
+                typedef unsigned long long uint64_t;
+                typedef signed long long ssize_t;
+                typedef unsigned long long size_t;
+                ```);
+#endif
+    }
+    out.add(C_defines);
 #if 1
     // __builtin_offsetof is supported by gcc and clang and is necessary
     // for -fsanitary=undefined to prevent null pointer arithmetics warnings.
