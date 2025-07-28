@@ -443,20 +443,23 @@ fn void Tools.removeUnused(Tools* t, FunctionInfo* fi) {
 }
 
 #if 0
+fn bool Tools.propagateConstants(Tools* t, FunctionInfo* fi) {
 // return true if changed
-fn bool Context.propagateConstants(Context* c, FunctionInfo* fi) {
     // look for add x, y where x, y are both constants, replace with copy
     bool changed = false;
+    u32 matches = 0;
 
-    dump_function(fi, "temp");
     Instr* all = fi.instructions.get(0);
     for (u32 i=0; i<fi.instructions.getCount(); i++) {
         Instr* instr = &all[i];
         if (!instr.isArithmetic()) continue;
+
         if (!instr.args[0].isConstant()) continue;
         if (!instr.args[1].isConstant()) continue;
 
-        // only 17 matches in c2c!
+        matches++;
+        printf("MATCH %d  %d\n", i, matches);
+        // only 29 matches in c2c!
         changed = true;
     }
 

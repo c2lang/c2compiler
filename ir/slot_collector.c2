@@ -40,6 +40,11 @@ type BlockIndex struct {
     u16 wr_count;
 }
 
+type StaticSlot struct {
+    u16 slot;
+    u32 temp_idx;
+}
+
 type SlotCollector struct {
     u32 read_idx;
     u32 write_idx;
@@ -50,6 +55,10 @@ type SlotCollector struct {
     WriteSlotAccess* writes2;
     BlockIndex* indexes;
     FunctionInfo* info;
+    // TEMP hardcoded limit
+    u32 num_static_slots;
+    // static slots are slots used outside load/store and cannot be removed
+    StaticSlot[32] static_slots;
 }
 
 const u32 SlotMax = 1024;
@@ -78,15 +87,62 @@ fn void SlotCollector.free(SlotCollector* c) {
     stdlib.free(c.reads);
 }
 
+fn void SlotCollector.addStaticSlot(SlotCollector* c, u16 slot) {
+    for (u32 i=0; i<c.num_static_slots; i++) {
+        if (c.static_slots[i].slot == slot) return;
+    }
+    assert(c.num_static_slots < elemsof(c.static_slots));
+    c.static_slots[c.num_static_slots].slot = slot;
+    c.static_slots[c.num_static_slots].temp_idx = 0;
+    c.num_static_slots++;
+}
+
+fn StaticSlot* SlotCollector.getStaticSlot(SlotCollector* c, u16 slot) {
+    for (u32 i=0; i<c.num_static_slots; i++) {
+        if (c.static_slots[i].slot == slot) return &c.static_slots[i];
+    }
+    return nil;
+}
+
+fn void SlotCollector.checkStaticSlots(SlotCollector* c, FunctionInfo* info) {
+    // find all slots used outside load/stores, dont remove those
+    // also convert slot x -> temp y for non-removed allocs
+
+    Instr* instrs = c.info.instructions.get(0);
+    u32 count = c.info.instructions.getCount();
+    for (u32 i=0; i<count; i++) {
+        const Instr* ii = &instrs[i];
+
+        if (ii.isLoadStore()) continue;
+
+        if (ii.isCall()) {
+            if (ii.args[1].isRefList()) {
+                Ref* refs = c.info.refs.get(ii.args[1].value);
+                u32 r = 0;
+                while (refs[r].kind != RefKind.None) {
+                    if (refs[r].isSlot()) c.addStaticSlot((u16)refs[r].value);
+                    r++;
+                }
+            }
+
+        } else if (ii.isPhi()) {
+            // TODO later
+        } else {
+            if (ii.args[0].isSlot()) c.addStaticSlot((u16)ii.args[0].value);
+            if (ii.args[1].isSlot()) c.addStaticSlot((u16)ii.args[1].value);
+        }
+    }
+}
+
 fn void SlotCollector.fill(SlotCollector* c, FunctionInfo* info) {
     c.read_idx = 0;
     c.write_idx = 0;
     c.num_writes = 0;
     c.num_blocks = info.blocks.getCount();
     c.info = info;
+    c.num_static_slots = 0;
 
-    // find all slots used outside load/stores, dont remove those
-    // also convert slot x -> temp y for non-removed allocs
+    c.checkStaticSlots(info);
 
     for (u32 i=0; i<c.num_blocks; i++) {
         c.checkBlock(i);
@@ -120,10 +176,17 @@ fn const WriteSlotAccess* SlotCollector.findWrite(const SlotCollector* c, BlockI
     return nil;
 }
 
-fn void SlotCollector.checkRef(const SlotCollector* c, Ref* r, u32 start) {
+fn void SlotCollector.checkRef(SlotCollector* c, Ref* r, u32 start) {
     if (!r.isSlot()) return;
 
     u16 slot = cast<u16>(r.value);
+    const StaticSlot* s = c.getStaticSlot(slot);
+    if (s) {
+        r.kind = RefKind.Temp;
+        r.value = s.temp_idx;
+        return;
+    }
+
     // check for writes
     for (u32 i=start; i<c.write_idx; i++) {
         if (c.writes[i].slot == slot) {
@@ -154,6 +217,7 @@ fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
     bi.rd_start = cast<u16>(c.read_idx);
     bi.wr_start = cast<u16>(c.write_idx);
 
+    u16 alloc_slot = 0;
     // for each block, trace reads-after-write, replace Sx with Temp
 
     Instr* ii = c.info.instructions.get(b.instr.start);
@@ -257,15 +321,20 @@ fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
         case Alloc8:
             // check if used outside load/store (eg in add for array index)
             // only remove if only used as load/store (eg. can be a register)
-            // TODO could mark this in earlier pass
-            cur.clear();
-            if (i + 1 < b.instr.count) {
-                Instr* next = &ii[i+1];
-                if (next.isComment()) {
-                    next.clear();
-                    i++;
+            StaticSlot* s = c.getStaticSlot(alloc_slot);
+            if (s) {
+                s.temp_idx = i;
+            } else {
+                cur.clear();
+                if (i + 1 < b.instr.count) {
+                    Instr* next = &ii[i+1];
+                    if (next.isComment()) {
+                        next.clear();
+                        i++;
+                    }
                 }
             }
+            alloc_slot++;
             break;
         case Call:
             if (cur.args[1].isRefList()) {

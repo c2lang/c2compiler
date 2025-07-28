@@ -738,9 +738,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     t.removeUnused(fi2);
     //if (print) c.print_function(symbol, fi2, "after remove unused");
 
-    // propagate constants
-    // also do simple optimizations: remove add 0, mult 1, mult 0, etc
-    // TODO
+    //t.propagateConstants(fi2);
 
     t.removeNone(fi2);
     if (print) c.print_function(symbol, fi2, "after remove none");

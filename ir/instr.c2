@@ -123,6 +123,16 @@ fn bool Instr.isArithmetic(const Instr* i) @(unused) {
     return k >= InstrKind.Add && k <= InstrKind.Shl;
 }
 
+fn bool Instr.isLoadStore(const Instr* i) @(unused) {
+    InstrKind k = i.getKind();
+    return k >= InstrKind.Load1 && k <= InstrKind.Store8;
+}
+
+fn bool Instr.isCall(const Instr* i) {
+    InstrKind k = i.getKind();
+    return k == InstrKind.Call;
+}
+
 fn bool Instr.isPhi(const Instr* i) {
     InstrKind k = i.getKind();
     return k == InstrKind.Phi;

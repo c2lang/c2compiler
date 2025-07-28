@@ -412,7 +412,6 @@ type Context struct {
     const build_target.PluginList* pl;
     compiler.PluginHandler pluginHandler;
     u32 plugins_feature;
-
 }
 
 fn void Context.init(Context* c) {
