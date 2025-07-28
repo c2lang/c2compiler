@@ -503,10 +503,10 @@ public fn Ref Context.addStackSlot(Context* c, u32 align, Ref size) {
     u32 idx = c.b.slot_idx;
     c.b.slot_idx++;
     assert(c.b.slot_idx < 65536); // to fit in u16
+    // TODO use Temp (or convert after SSA creation)
+    //Ref out.init(RefKind.Temp, c.b.tmp_info.instructions.getCount());
     Ref out.init(RefKind.Slot, idx);
     Instr* i = c.b.tmp_info.instructions.add();
-
-    // TODO pass instr idx (global)
 
     InstrKind kind;
     switch (align) {
@@ -604,7 +604,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     checkDest(c.b.tmp_info, 0);
 
     //dump_function(c.b.tmp_info, name);
-    if (print) c.print_function(symbol, c.b.tmp_info, "after check dest");
+    //if (print) c.print_function(symbol, c.b.tmp_info, "after check dest");
 
     // move used blocks to new list, drop unused blocks
 
@@ -717,6 +717,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
 
     //dump_function(fi2, name);
     //c.generate_graphviz(fi2, name);
+    // TODO only print if changed
     if (print) c.print_function(symbol, fi2, "after reorder");
 
     c.create_ssa(symbol, fi2, name, print);
@@ -732,12 +733,14 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     //dump_function(fi2, name);
     if (print) c.print_function(symbol, fi2, "after eliminate copies");
 
-
     //c.propagateConstants(fi2);
     //if (print) c.print_function(symbol, fi2, "after propagate constants");
-    t.fillUsage(fi2);
-    //if (print) c.print_function(symbol, fi2, "after fill usage");
+    t.removeUnused(fi2);
+    //if (print) c.print_function(symbol, fi2, "after remove unused");
 
+    // propagate constants
+    // also do simple optimizations: remove add 0, mult 1, mult 0, etc
+    // TODO
 
     t.removeNone(fi2);
     if (print) c.print_function(symbol, fi2, "after remove none");

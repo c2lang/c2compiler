@@ -130,9 +130,9 @@ fn void Context.create_ssa(Context* c, const Symbol* symbol, FunctionInfo* fi, c
     t.revlist.build(fi);
     t.active_blocks.reset(num_blocks);
 
-    if (print) c.print_function(symbol, fi, "after collector.fill");
     //t.collector.dump();
     //t.revlist.dump();
+    if (print) c.print_function(symbol, fi, "after collector.fill");
 
     /*
         Algorithm for PHI insertion
@@ -314,60 +314,63 @@ fn void Tools.eliminateCopies(Tools* t, FunctionInfo* fi) {
     // otherwise mark in prev run and apply here
     t.copies.clear();
 
+    // Needs 2 loops, one to fill copylist, remove copies, 2nd to replace
     // Note: the filling could be done in previous loop already!
+
     Instr* all = fi.instructions.get(0);
-    // TODO should be done for each basic block individually? (loops)
+
     for (u32 i=0; i<fi.instructions.getCount(); i++) {
         Instr* instr = &all[i];
         if (instr.isCopy()) {
             t.copies.add(i, instr.args[0]);
             //printf("add %d   %s\n", i, instr.args[0].str());
-            // TODO also check if args is already in list for nested copies
             instr.clear();
+        }
+    }
+    for (u32 i=0; i<fi.instructions.getCount(); i++) {
+        Instr* instr = &all[i];
+        if (instr.isPhi()) {
+            PhiClause* clauses = fi.phis.get(instr.phi_clauses.start);
+            for (u32 j=0; j<instr.phi_clauses.count; j++) {
+                Ref* r = &clauses[j].ref;
+                if (r.isTemp()) {
+                    Ref* copy = t.copies.find(r.value);
+                    if (copy) {
+                        //printf("replace %s with %s\n", r.str(), copy.str());
+                        *r = *copy;
+                    }
+                }
+            }
         } else {
-            if (instr.isPhi()) {
-                PhiClause* clauses = fi.phis.get(instr.phi_clauses.start);
-                for (u32 j=0; j<instr.phi_clauses.count; j++) {
-                    Ref* r = &clauses[j].ref;
-                    if (r.isTemp()) {
-                        Ref* copy = t.copies.find(r.value);
+            Ref* r = &instr.args[0];
+            if (r.isTemp()) {
+                Ref* copy = t.copies.find(r.value);
+                if (copy) {
+                    //printf("replace %s with %s\n", r.str(), copy.str());
+                    instr.args[0] = *copy;
+                }
+            }
+            r = &instr.args[1];
+            if (r.isTemp()) {
+                Ref* copy = t.copies.find(r.value);
+                if (copy) {
+                    //printf("replace %s with %s\n", r.str(), copy.str());
+                    instr.args[1] = *copy;
+                }
+            } else if (r.isRefList()) { // can only occur on args[1]
+                Ref* refs = fi.refs.get(r.value);
+                u32 idx = 0;
+                while (1) {
+                    Ref* r2 = &refs[idx];
+                    if (r2.isTemp()) {
+                        Ref* copy = t.copies.find(r2.value);
                         if (copy) {
-                            //printf("replace %s with %s\n", r.str(), copy.str());
-                            *r = *copy;
+                            //printf("replace %s with %s\n", refs[idx].str(), copy.str());
+                            refs[idx] = *copy;
                         }
                     }
-                }
-            } else {
-                Ref* r = &instr.args[0];
-                if (r.isTemp()) {
-                    Ref* copy = t.copies.find(r.value);
-                    if (copy) {
-                        //printf("replace %s with %s\n", r.str(), copy.str());
-                        instr.args[0] = *copy;
-                    }
-                }
-                r = &instr.args[1];
-                if (r.isTemp()) {
-                    Ref* copy = t.copies.find(r.value);
-                    if (copy) {
-                        //printf("replace %s with %s\n", r.str(), copy.str());
-                        instr.args[1] = *copy;
-                    }
-                } else if (r.isRefList()) { // can only occur on args[1]
-                    Ref* refs = fi.refs.get(r.value);
-                    u32 idx = 0;
-                    while (1) {
-                        Ref* r2 = &refs[idx];
-                        if (r2.isTemp()) {
-                            Ref* copy = t.copies.find(r2.value);
-                            if (copy) {
-                                //printf("replace %s with %s\n", refs[idx].str(), copy.str());
-                                refs[idx] = *copy;
-                            }
-                        }
-                        if (!r2.isValid()) break;
-                        idx++;
-                    }
+                    if (!r2.isValid()) break;
+                    idx++;
                 }
             }
         }
@@ -379,7 +382,7 @@ fn void Tools.checkRef(Tools* t, Ref r) {
     if (r.isTemp()) t.usage.incr(r.value);
 }
 
-fn void Tools.fillUsage(Tools* t, FunctionInfo* fi) {
+fn void Tools.removeUnused(Tools* t, FunctionInfo* fi) {
     t.usage.clear(fi.instructions.getCount());
 
     // Usage: counter both usage and if it has a result.

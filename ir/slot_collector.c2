@@ -61,6 +61,7 @@ fn BlockIndex* SlotCollector.getBlock(const SlotCollector* c, BlockId blk_id) {
 fn void SlotCollector.create(SlotCollector* c) {
     memset(c, 0, sizeof(SlotCollector));
     // TEMP hardcoded max
+
     c.reads = stdlib.malloc(SlotMax * sizeof(ReadSlotAccess));
     c.writes = stdlib.malloc(SlotMax * sizeof(WriteSlotAccess));
     c.writes2 = stdlib.malloc(SlotMax * sizeof(WriteSlotAccess));
@@ -83,6 +84,9 @@ fn void SlotCollector.fill(SlotCollector* c, FunctionInfo* info) {
     c.num_writes = 0;
     c.num_blocks = info.blocks.getCount();
     c.info = info;
+
+    // find all slots used outside load/stores, dont remove those
+    // also convert slot x -> temp y for non-removed allocs
 
     for (u32 i=0; i<c.num_blocks; i++) {
         c.checkBlock(i);
@@ -116,13 +120,33 @@ fn const WriteSlotAccess* SlotCollector.findWrite(const SlotCollector* c, BlockI
     return nil;
 }
 
+fn void SlotCollector.checkRef(const SlotCollector* c, Ref* r, u32 start) {
+    if (!r.isSlot()) return;
+
+    u16 slot = cast<u16>(r.value);
+    // check for writes
+    for (u32 i=start; i<c.write_idx; i++) {
+        if (c.writes[i].slot == slot) {
+            // replace slot-ref with write-ref
+            *r = c.writes[i].ref;
+            return;
+        }
+    }
+}
+
 fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
     /*
-        Algorithm:
-        - store first read per slot in block (if not after write)
-        - store last write per slot
-        - replace slot writes with None
-        - replace slot read with last write
+        Algorithm, for each block:
+        - store last store per slot, replace slots (if we have a write)
+            replace with copy:
+                    store8 %1, s0  ->  %12 = copy %1
+                    last write s0: %12
+        - store first load per slot in block (if not after write)
+        - replace slot read with last write (or leave)
+        - replace slot writes with with write+copy (or leave)
+
+        After this step on all blocks, re-visit all blocks:
+        - recurse into reads/writes
     */
     Block* b = c.info.blocks.get(blk_id);
     BlockIndex* bi = &c.indexes[blk_id];
@@ -135,29 +159,37 @@ fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
     Instr* ii = c.info.instructions.get(b.instr.start);
     for (u32 i=0; i<b.instr.count; i++) {
         Instr* cur = &ii[i];
-        if (!cur.isLoadOrStoreAlloc()) continue;
 
         u16 idx = cast<u16>(b.instr.start + i);
 
-        bool found = false;
-        if (cur.isLoad()) {
+        switch(cur.getKind()) {
+        case Load1:
+        case Load2:
+        case Load4:
+        case Load8:
             if (!cur.args[0].isSlot()) continue;
+
+            // if non-removed alloc slot, replace with Temp
 
             // convert to Copy
             cur.instrBits.kind = InstrKind.Copy;
 
+            // TODO could use bit-vector for reads/writes
+            bool found = false;
             u16 slot = cast<u16>(cur.args[0].value);
             //printf("[%d] load %d (%s %d)\n", i, slot, cur.args[0].getKindName(), cur.args[0].value);
             // ignore if already written here. Cannot use findWrite yet!
             for (u32 j=bi.wr_start; j<c.write_idx; j++) {
                 if (c.writes[j].slot == slot) {
-                    found = true;
                     // replace slot-ref with write-ref
                     cur.args[0] = c.writes[j].ref;
+                    found = true;
                     break;
                 }
             }
             if (found) continue;
+
+            // for reads without a write this block, just convert to copy <slot> and leave for later
 
             // only capture first read
             for (u32 j=bi.rd_start; j<c.read_idx; j++) {
@@ -173,19 +205,24 @@ fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
             ra.done = 0;
             ra.slot = slot;
             ra.instr_idx = idx;
-        } else if (cur.isAlloc()) {
-            cur.clear();
-            if (i + 1 < b.instr.count) {
-                Instr* next = &ii[i+1];
-                if (next.isComment()) {
-                    next.clear();
-                    i++;
-                }
-            }
-        } else {
+            break;
+        case Store1:
+        case Store2:
+        case Store4:
+        case Store8:
             if (!cur.args[1].isSlot()) continue;
 
+            // if non-removed alloc slot, replace with Temp
+
             u16 slot = cast<u16>(cur.args[1].value);
+
+            // convert into Copy, convert Slot to Temp, store that as last write
+            cur.instrBits.kind = InstrKind.Copy;
+            cur.instrBits.has_result = 1;
+            cur.args[1].kind = RefKind.None;
+            cur.args[1].value = 0;
+
+
             WriteSlotAccess* wa = nil;
             // overwrite if already written (track last write)
             for (u32 j=bi.wr_start; j<c.write_idx; j++) {
@@ -201,10 +238,9 @@ fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
                 wa.slot = slot;
                 c.num_writes++;
             }
-
-            wa.ref = cur.args[0];
+            wa.ref = { RefKind.Temp, idx };
             //printf("[%d] store %d (%s %d)\n", i, slot, wa.ref.getKindName(), wa.ref.value);
-
+#if 0
             cur.clear();
             if (i + 1 < b.instr.count) {
                 Instr* next = &ii[i+1];
@@ -213,6 +249,39 @@ fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
                     i++;
                 }
             }
+#endif
+            break;
+        case Alloc1:
+        case Alloc2:
+        case Alloc4:
+        case Alloc8:
+            // check if used outside load/store (eg in add for array index)
+            // only remove if only used as load/store (eg. can be a register)
+            // TODO could mark this in earlier pass
+            cur.clear();
+            if (i + 1 < b.instr.count) {
+                Instr* next = &ii[i+1];
+                if (next.isComment()) {
+                    next.clear();
+                    i++;
+                }
+            }
+            break;
+        case Call:
+            if (cur.args[1].isRefList()) {
+                Ref* refs = c.info.refs.get(cur.args[1].value);
+                u32 r = 0;
+                while (refs[r].kind != RefKind.None) {
+                    c.checkRef(&refs[r], bi.wr_start);
+                    r++;
+                }
+            }
+            break;
+        // TODO can phi (from ternary operator) have Slot Refs?
+        default:
+            c.checkRef(&cur.args[0], bi.wr_start);
+            c.checkRef(&cur.args[0], bi.wr_start);
+            break;
         }
     }
 
