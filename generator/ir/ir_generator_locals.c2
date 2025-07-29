@@ -19,7 +19,6 @@ import ir;
 
 import stdlib;
 import string;
-import stdio local;
 
 public type StackVar struct {
     ir.Ref ref;        // never changes
@@ -30,7 +29,6 @@ public type StackVar struct {
     u32 align;
 */
     u32 size;
-    const ast.VarDecl* vd;  // only needed to print name
 }
 
 public type Locals struct {
@@ -64,16 +62,11 @@ fn void Locals.resize(Locals* l, u32 capacity) {
     l.vars = vars2;
 }
 
-public fn void Locals.skipSlots(Locals* l, u32 amount) {
-    l.index += amount;
-}
-
 // NOTE: type may be char, but size 12 for char[12]
 public fn void Locals.add(Locals* l, ast.VarDecl* vd, u32 width, u32 align, u32 size, ir.Ref slot, ir.Type ir_type) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
 
     StackVar* var = &l.vars[l.count];
-    var.vd = vd;
     var.ref = slot;
     var.ir_type = ir_type;
     var.size = size;
@@ -93,14 +86,5 @@ public fn StackVar* Locals.find(const Locals* l, const ast.VarDecl* vd) {
     assert(d.hasGenIdx());
     u32 idx = d.getGenIdx();
     return &l.vars[idx];
-}
-
-public fn void Locals.dump(const Locals* l) @(unused) {
-    printf("Locals %d/%d last %d\n", l.count, l.capacity, l.index);
-    for (u32 i=0; i<l.count; i++) {
-        const StackVar* v = &l.vars[i];
-        //printf("  [%2d] slot %d  s %d a %d %s  %s\n", i, v.slot.value, v.size, v.align, v.ir_type.str(), v.vd.getName());
-        printf("  [%2d] slot %d  %s  %s\n", i, v.ref.value, v.ir_type.str(), v.vd.getName());
-    }
 }
 

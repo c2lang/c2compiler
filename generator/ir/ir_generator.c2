@@ -66,9 +66,10 @@ fn void Generator.init(Generator* gen,
                        const char* target,
                        const char* output_dir,
                        bool enable_asserts,
-                       bool print) {
+                       bool print,
+                       bool print_all) {
     string.memset(gen, 0, sizeof(Generator));
-    gen.ctx = ir.create();
+    gen.ctx = ir.create(print_all);
     gen.labels.init();
     gen.target = target;
     gen.output_dir = output_dir;
@@ -468,24 +469,33 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     u32 num_params = fd.getNumParams();
     VarDecl** params = fd.getParams();
     ir.Ref[constants.MaxCallArgs] param_refs;
+    // first add all %x = param
     for (u32 i=0; i<num_params; i++) {
         VarDecl* v = params[i];
         ir.Type t2 = gen.type2irtype(v.asDecl().getType());
-        gen.addLocalVar(v);
-        c.addFuncArg(t2);
-        param_refs[i].init(RefKind.Param, i+1);
+        param_refs[i] = c.addFuncArg(t2);
         // TODO pass-by-value structs can be turned into pointer or 1-2 words
+#if 0
+        // NOTE: not cleanup up during unused removal pass
+        // only if debugging
+        // params may be unnamed
+        const char* name = v.asDecl().getName();
+        string_buffer.Buf* out = gen.name_buf;
+        out.clear();
+        if (name) out.add(name);
+        else out.add("(unnamed)");
+        gen.ctx.addComment(out.data());
+#endif
+    }
+    for (u32 i=0; i<num_params; i++) {
+        VarDecl* v = params[i];
+        gen.addLocalVar(v);
     }
     //if (d.isPublic()) out.add("export "); // TEMP not if single file, unless main
 
-    // TODO add module name, except for main
-
     // generate a map for all locals, allocate stack slots. Also define 'local' locals
-    gen.collectLocals(fd);
-    //gen.locals.dump();
+    gen.collectLocalVars(cast<Stmt*>(fd.getBody()));
 
-    // TODO need to know instr start
-    //u32 instr_start = c.getInstrStart();
     // create stores for params
     for (u32 i=0; i<num_params; i++) {
         VarDecl* v = params[i];
@@ -550,7 +560,8 @@ public fn void generate(const char* target,
                         component.List* comps,
                         source_mgr.SourceMgr* sm,
                         bool enable_asserts,
-                        bool print) {
+                        bool print,
+                        bool print_all) {
     char[constants.Max_path] ir_dir;
     stdio.sprintf(ir_dir, "%s/ir", output_dir);
     i32 err = file_utils.create_directory(ir_dir);
@@ -560,7 +571,7 @@ public fn void generate(const char* target,
     }
 
     Generator gen;
-    gen.init(sm, target, ir_dir, enable_asserts, print);
+    gen.init(sm, target, ir_dir, enable_asserts, print, print_all);
 
     // TODO: also need to generate inline functions from libs -> check body/not
     // We only need to generate the main component
@@ -576,13 +587,6 @@ public fn void generate(const char* target,
     //gen.write(ir_dir, QBE_Filename);
 
     gen.free();
-}
-
-fn void Generator.collectLocals(Generator* gen, const FunctionDecl* fd) {
-    VarDecl** fn_params = fd.getParams();
-    u32 num_params = fd.getNumParams();
-    gen.locals.skipSlots(num_params);
-    gen.collectLocalVars(cast<Stmt*>(fd.getBody()));
 }
 
 fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
@@ -607,14 +611,17 @@ fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
     // TODO dont pass type again, since doing duplicate work with above code (with+align)
     ir.Type ir_type = gen.type2irtype(qt);
     gen.locals.add(vd, width, align, size, slot, ir_type);
+#if 1
+    // only if debugging
     // params may be unnamed
     const char* name = vd.asDecl().getName();
     string_buffer.Buf* out = gen.name_buf;
     out.clear();
     out.print("s%d ", slot.value);
-    if (name) out.add(vd.asDecl().getName());
+    if (name) out.add(name);
     else out.add("(unnamed)");
     gen.ctx.addComment(out.data());
+#endif
 }
 
 fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {

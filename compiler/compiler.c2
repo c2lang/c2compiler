@@ -76,6 +76,7 @@ public type Options struct {
     bool print_reports;
     bool show_libs;
     bool print_ir;
+    bool print_all_ir;
     bool trace_calls;
     bool asan;
     bool msan;
@@ -517,7 +518,8 @@ fn void Compiler.build(Compiler* c,
                               &c.components,
                               c.sm,
                               c.target.hasAsserts(),
-                              c.opts.print_ir);
+                              c.opts.print_ir,
+                              c.opts.print_all_ir);
         u64 gen4 = utils.now();
         console.log_time("IR generation", gen4 - gen3);
         break;

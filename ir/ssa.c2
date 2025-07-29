@@ -118,7 +118,7 @@ fn u8 RevList.getRev(const RevList* r, u32 idx) {
 }
 
 
-fn void Context.create_ssa(Context* c, const Symbol* symbol, FunctionInfo* fi, const char* name, bool print) {
+fn void Context.create_ssa(Context* c, const Symbol* symbol, FunctionInfo* fi, const char* name) {
     //printf("create SSA %s\n", name);
     Tools* t = &c.tools;
     const u32 num_blocks = fi.blocks.getCount();
@@ -132,7 +132,7 @@ fn void Context.create_ssa(Context* c, const Symbol* symbol, FunctionInfo* fi, c
 
     //t.collector.dump();
     //t.revlist.dump();
-    if (print) c.print_function(symbol, fi, "after collector.fill");
+    if (c.print_all) c.print_function(symbol, fi, "after collector.fill");
 
     /*
         Algorithm for PHI insertion

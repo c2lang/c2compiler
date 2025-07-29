@@ -21,6 +21,8 @@ type InstrBits struct {
     InstrKind kind : 8;
     u32 type_ : 4;  // resulting type if any
     u32 has_result : 1;
+    u32 has_register : 1;
+    u32 register_nr : 6;    // might need more for spilling
 }
 
 type Instr struct {
@@ -40,6 +42,13 @@ static_assert(12, sizeof(Instr));
 fn void Instr.init0(Instr* i, InstrKind k) {
     memset(i, 0, sizeof(Instr));
     i.instrBits.kind = k;
+}
+
+// instructions with result, no args (eg param)
+fn void Instr.init0b(Instr* i, InstrKind k) {
+    memset(i, 0, sizeof(Instr));
+    i.instrBits.kind = k;
+    i.instrBits.has_result = true;
 }
 
 fn void Instr.initPhi(Instr* i, u32 clause_start, u32 num_clauses) {
@@ -92,6 +101,14 @@ fn InstrKind Instr.getKind(const Instr* i) {
 
 fn bool Instr.hasResult(const Instr* i) {
     return i.instrBits.has_result;
+}
+
+fn bool Instr.hasRegister(const Instr* i) {
+    return i.instrBits.has_register;
+}
+
+fn u32 Instr.getRegister(const Instr* i) {
+    return i.instrBits.register_nr;
 }
 
 fn void Instr.clear(Instr* i) {

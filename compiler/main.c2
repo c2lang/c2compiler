@@ -195,6 +195,7 @@ const char[] Usage_help =
     "  --fast            do fast, un-optimized build\n"
     "  --help            print this help\n"
     "  --help-recipe     print the recipe syntax\n"
+    "  --I2              use IR backend and print generated IR (all versions)\n"
     "  --noplugins       do not use plugins\n"
     "  --showlibs        print available libraries\n"
     "  --showplugins     print available plugins\n"
@@ -217,6 +218,10 @@ fn void missing_arg(const char* option) {
 fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts, Options* opts) {
     const char* arg = argv[i];
     switch (arg+2) {
+    case "I2":
+        opts.use_ir_backend = true;
+        comp_opts.print_all_ir = true;
+        break;
     case "check":
         comp_opts.check_only = true;
         break;

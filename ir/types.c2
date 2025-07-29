@@ -30,7 +30,7 @@ public type Type enum u8 {
 }
 static_assert(elemsof(Type) < 16, 1);
 
-public fn const char* Type.str(Type t) {
+fn const char* Type.str(Type t) {
     switch (t) {
     case None:  return "none";
     case I8:    return "i8";

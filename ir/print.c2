@@ -35,7 +35,6 @@ const char* col_Register = color.Cyan;
 const char* col_Data = color.Bcyan;
 const char* col_Slot = color.Bcyan;
 const char* col_Temp = color.Bgreen;
-const char* col_Param = color.Cyan;
 const char* col_Type = color.Green;
 const char* col_Comment = color.Grey;
 const char* col_Fixup = color.Bred;
@@ -129,8 +128,8 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
 
     string_buffer.Buf* out = ph.out;
 
-    u8 num_args = info.num_args;
-    ph.resetTemps(num_args, info.instructions.getCount());
+    // Always start temps at 1
+    ph.resetTemps(1, info.instructions.getCount());
 
     if (s.is_external) {
         out.color(col_Attr);
@@ -149,14 +148,11 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
     out.color(col_Symbol);
     out.print(" %s(", c.pool.idx2str(s.name));
     // Note: start at 1, because entry 0 is return type
-    for (u32 i=1; i<num_args; i++) {
+    for (u32 i=1; i<info.num_args; i++) {
         if (i != 1) out.add(", ");
         out.color(col_Type);
         Type t = info.getArg(i);
         out.add(t.str());
-        out.space();
-        out.color(col_Param);
-        out.print("%%%d", i);
         out.color(color.Normal);
     }
     out.add(") {");
@@ -363,9 +359,14 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
     }
 
     if (i.hasResult()) {
-        out.color(col_Temp);
-        u32 temp_nr = ph.findTemp(ph.blk_instr_start + blk_instr_idx);
-        out.print("%%%d", temp_nr);
+        if (i.hasRegister()) {
+            out.color(col_Slot);
+            out.print("R%d", i.getRegister());
+        } else {
+            out.color(col_Temp);
+            u32 temp_nr = ph.findTemp(ph.blk_instr_start + blk_instr_idx);
+            out.print("%%%d", temp_nr);
+        }
 
         out.color(color.Normal);
         out.add(" = ");
@@ -459,14 +460,10 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
         out.print("(T%d)", r.value);
 #endif
         break;
-    case Param:
-        out.color(col_Param);
-        out.print("%%%d", r.value);
 #if DebugIr
         out.color(color.Grey);
         out.print("(P%d)", r.value);
 #endif
-        break;
     case JmpDest:
         assert(ph.cur_block);
         const Block* b = ph.cur_block;

@@ -37,6 +37,7 @@ type Tools struct {
     CopyList copies;
     usage_counter.Counter usage;
 }
+static_assert(728, sizeof(Tools));
 
 fn void Tools.init(Tools* t) {
     t.conversion.init(64);
@@ -92,9 +93,11 @@ public type Context struct @(opaque) {
 
     // only used during optimization
     Tools tools;
+
+    bool print_all;
 }
 
-public fn Context* create() {
+public fn Context* create(bool print) {
     Context* c = stdlib.calloc(1, sizeof(Context));
     c.pool = string_pool.create(2*1024, 256);
     c.constants.init(128);
@@ -104,6 +107,7 @@ public fn Context* create() {
     c.b.init();
 
     c.tools.init();
+    c.print_all = print;
     return c;
 }
 
@@ -264,8 +268,14 @@ public fn void Context.setFunctionReturnType(Context* c, Type t) {
     c.b.tmp_info.setReturnType(t);
 }
 
-public fn void Context.addFuncArg(Context* c, Type t) {
+public fn Ref Context.addFuncArg(Context* c, Type t) {
     c.b.tmp_info.addArg(t);
+
+    u32 idx = c.b.tmp_info.instructions.getCount();
+    Instr* i = c.b.tmp_info.instructions.add();
+    i.init0b(InstrKind.Param);
+    Ref ref.init(RefKind.Temp, idx);
+    return ref;
 }
 
 public fn u32 Context.addCallArgs(Context* c, const RefList* refs) {
@@ -594,11 +604,9 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     c.b.tmp_info.num_slots = cast<u16>(c.b.slot_idx);
 
     const char* name = c.pool.idx2str(symbol.name);
-    bool print = false;
-    //print = true;
 
     //dump_function(c.b.tmp_info, name);
-    if (print) c.print_function(symbol, c.b.tmp_info, "after generation");
+    if (c.print_all) c.print_function(symbol, c.b.tmp_info, "after generation");
 
     // prune unused and empty blocks, possible convert jmp_if to jmp
     checkDest(c.b.tmp_info, 0);
@@ -718,34 +726,34 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     //dump_function(fi2, name);
     //c.generate_graphviz(fi2, name);
     // TODO only print if changed
-    if (print) c.print_function(symbol, fi2, "after reorder");
+    if (c.print_all && fi2.blocks.getCount() > 1) c.print_function(symbol, fi2, "after reorder");
 
-    c.create_ssa(symbol, fi2, name, print);
+    c.create_ssa(symbol, fi2, name);
 
-    if (print) c.print_function(symbol, fi2, "after create SSA");
+    if (fi2.blocks.getCount() > 1 && c.print_all) c.print_function(symbol, fi2, "after create SSA");
 
     if (t.inserter.needsFixup()) {
         c.tools.fixup_function(fi2);
-        if (print) c.print_function(symbol, fi2, "after fixup");
+        if (c.print_all) c.print_function(symbol, fi2, "after fixup");
     }
 
     t.eliminateCopies(fi2);
     //dump_function(fi2, name);
-    if (print) c.print_function(symbol, fi2, "after eliminate copies");
+    if (c.print_all) c.print_function(symbol, fi2, "after eliminate copies");
 
     //c.propagateConstants(fi2);
-    //if (print) c.print_function(symbol, fi2, "after propagate constants");
+    //if (c.print_all) c.print_function(symbol, fi2, "after propagate constants");
     t.removeUnused(fi2);
     //if (print) c.print_function(symbol, fi2, "after remove unused");
 
     //t.propagateConstants(fi2);
 
     t.removeNone(fi2);
-    if (print) c.print_function(symbol, fi2, "after remove none");
+    if (c.print_all) c.print_function(symbol, fi2, "after remove none");
 
     t.allocateRegisters(fi2);
+    // leave SSA (eliminate Phis, combine with registerAlloc)
 
-    // leave SSA (eliminate Phis)
     // generate Instruction
     // ..
 }

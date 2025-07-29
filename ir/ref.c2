@@ -21,7 +21,6 @@ public type RefKind enum u8 {
     None,
     Slot,      // slot_idx
     Temp,      // temp_idx (already resolved)
-    Param,     // for functions, index into args
     JmpDest,   // for jmp/jmp_if, value is cur BlockId
     RefList,   // for calls, index into refs
     Symbol,    // index into symbols
@@ -38,7 +37,6 @@ fn const char* RefKind.str(RefKind k) {
     case None:      return "none";
     case Slot:      return "slot";
     case Temp:      return "temp";
-    case Param:     return "param";
     case JmpDest:   return "jmp_dest";
     case RefList:   return "ref_list";
     case Symbol:    return "symbol";
