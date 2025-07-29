@@ -758,43 +758,34 @@ fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer
     VarDecl** params = fd.getParams();
     u32 num_params = fd.getNumParams();
 
-    bool has_attr = false;
     const char* section = d.getSection();
     if (section) {
-        has_attr = true;
         gen.emitSectionAttr(out, section);
         out.space();
     }
     if (fd.hasAttrInline()) {
-        if (has_attr) out.space();
         // Note: inline functions are always static
         //out.add("__inline__ ");
         out.add("static inline ");
-        has_attr = true;
     }
     if (fd.hasAttrWeak()) {
-        //if (has_attr) out.space();
         out.add("__attribute__((weak)) ");
-        has_attr = true;
     }
     if (fd.hasAttrConstructor()) {
-        //if (has_attr) out.space();
         out.add("__attribute__((constructor)) ");
-        has_attr = true;
     }
     if (fd.hasAttrDestructor()) {
-        //if (has_attr) out.space();
         out.add("__attribute__((destructor)) ");
-        has_attr = true;
     }
 
     u8 printf_arg = fd.getAttrPrintf();
     if (printf_arg) {
-        //if (has_attr) out.space();
         out.print("__attribute__((__format__(printf, %d, %d))) ", printf_arg, num_params +1);
-        has_attr = true;
     }
-    if (has_attr) out.newline();
+    if (out.endsWith(' ')) {
+        out.trim(1);
+        out.newline();
+    }
 
     if (d == gen.mainFunc) {
         out.add("int32_t main");

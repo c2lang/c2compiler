@@ -160,8 +160,7 @@ public fn void Buf.indent(Buf* buf, u32 indent) {
 }
 
 public fn bool Buf.endsWith(const Buf* buf, char c) {
-    if (buf.size_ && buf.data_[buf.size_-1] == c) return true;
-    return false;
+    return (buf.size_ && buf.data_[buf.size_-1] == c);
 }
 
 fn void Buf.resize(Buf* buf, u32 capacity) {
@@ -243,6 +242,10 @@ public fn void Buf.encodeHex(Buf* buf, const u8* data, u32 len) @(unused) {
     }
     *cp = 0;
     buf.size_ += len * 3 - 1;
+}
+
+public fn void Buf.trim(Buf* buf, u32 len) @(unused) {
+    buf.size_ = (buf.size_ >= len) ? buf.size_ - len : 0;
 }
 
 public fn void Buf.resetToLastNewline(Buf* buf) @(unused) {
