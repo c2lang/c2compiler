@@ -80,7 +80,6 @@ public fn void write(const char* dir, component.Component* c, const char* filena
     c.visitModules(on_module, out);
 
     char[constants.Max_path] fullname;
-    // TODO use stringbuf for this
     stdio.snprintf(fullname, elemsof(fullname), "%s/%s", dir, filename);
     file_utils.Writer writer;
     if (!writer.write(fullname, out.data(), out.size())) {

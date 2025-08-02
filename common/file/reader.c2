@@ -26,11 +26,29 @@ u8 empty;
 
 const i32 Err_not_a_file = 2001;
 const i32 Err_read_error = 2002;
+const i32 Err_too_large = 2003;
 
 public type Reader struct {
     u8* region;
     u32 size;
     i32 error;
+}
+
+fn isize read2(i32 hd, void* data, usize len) {
+    u8* p = data;
+    isize total_read = 0;
+    while (len > 0) {
+        isize nread = read(hd, p, len);
+        if (nread >= 0) {
+            total_read += nread;
+            p += nread;
+            len -= nread;
+        } else {
+            if (errno != EINTR)
+                return -1;
+        }
+    }
+    return total_read;
 }
 
 public fn bool Reader.open(Reader* file, const char* filename) {
@@ -57,29 +75,28 @@ public fn bool Reader.open(Reader* file, const char* filename) {
         return false;
     }
 
-    u32 size = cast<u32>(statbuf.st_size);
-    u8* region;
-
-    if (size == 0) {
-        region = &empty;
-    } else {
-        region = stdlib.malloc(size + 1);
-        // TODO: handle chunked or interrupted I/O
-        i64 numread = read(fd, region, size);
-        if (numread < 0) {
-            file.error = errno;
-            stdlib.free(region);
-            close(fd);
-            return false;
-        }
-        if (numread != size) {
-            file.error = Err_read_error;
-            stdlib.free(region);
-            close(fd);
-            return false;
-        }
-        region[size] = '\0';
+    u32 size = (u32)statbuf.st_size;
+    if (size != statbuf.st_size) {
+        file.error = Err_too_large;
+        close(fd);
+        return false;
     }
+
+    u8* region = stdlib.malloc(size + 1);
+    i64 numread = read2(fd, region, size);
+    if (numread < 0) {
+        file.error = errno;
+        stdlib.free(region);
+        close(fd);
+        return false;
+    }
+    if (numread != size) {
+        file.error = Err_read_error;
+        stdlib.free(region);
+        close(fd);
+        return false;
+    }
+    region[size] = '\0';
     file.region = region;
     file.size = size;
     close(fd);
@@ -118,6 +135,9 @@ public fn const char* Reader.getError(const Reader* file) @(unused) {
         break;
     case Err_read_error:
         msg = "read error";
+        break;
+    case Err_too_large:
+        msg = "file too large";
         break;
     default:
         msg = strerror(file.error);

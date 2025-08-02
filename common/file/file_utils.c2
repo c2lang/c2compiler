@@ -16,44 +16,30 @@
 module file_utils;
 
 import c_errno local;
-import libc_fcntl local;
-import string local;
 import sys_stat local;
-import unistd local;
 
 // returns 0 on success, errno on failure
 public fn i32 create_directory(const char* path) {
-    i32 fd = openat(AT_FDCWD, ".", O_RDONLY);
-    if (fd == -1) return errno;
-
-    char[256] tmp;
-    const char* cp = path;
-    i32 errno_ = 0;
-    if (*cp == '/') {
-        cp++;
-        if (chdir("/")) errno_ = errno;
-    }
-    while (!errno_ && *cp) {
-        const char* slash = strchr(cp, '/');
-        if (slash) {
-            usize len = cast<usize>(slash - cp);
-            assert(len < elemsof(tmp));
-            memcpy(tmp, cp, len);
-            tmp[len] = '\0';
-            cp = slash + 1;
-            if (!len) continue; // ignore // and trailing slash
-            if ((mkdir(tmp, 0777) && errno != EEXIST) || chdir(tmp)) {
-                errno_ = errno;
+    char[512] tmp;
+    char *p = tmp;
+    if (*path == '/') *p++ = *path++;
+    for (;;) {
+        char c = *path++;
+        // ignore duplicate and trailing slashes
+        if (c == '/' && (p[-1] == '/' || *path == '\0')) continue;
+        // create subdirectory chain if needed
+        if (c == '/' || c == '\0') {
+            *p = '\0';
+            if (mkdir(tmp, 0777) && errno != EEXIST)
+                return errno;
+            if (c == '\0')
                 break;
-            }
-        } else {
-            if (mkdir(cp, 0777) && errno != EEXIST) errno_ = errno;
-            break;
         }
+        if (p > &tmp[elemsof(tmp) - 2])
+            return ENAMETOOLONG;
+        *p++ = c;
     }
-    fchdir(fd);
-    close(fd);
-    return errno_;
+    return 0;
 }
 
 public fn bool exists(const char* filename) {

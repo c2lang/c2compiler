@@ -170,10 +170,10 @@ fn void init(void* arg, plugin_info.Info* info) {
         exit(EXIT_FAILURE);
     }
 
-    file_utils.Writer outfile;
     char[constants.Max_path] fullname;
     stdio.sprintf(fullname, "%s/%s", info.output_dir, "loadfile.c2");
     console.debug("load_file: writing %s (%d bytes)", fullname, out.size());
+    file_utils.Writer outfile;
     if (!outfile.write(fullname, out.udata(), out.size())) {
         console.error("load_file: cannot write to %s: %s", fullname, outfile.getError());
         exit(EXIT_FAILURE);
