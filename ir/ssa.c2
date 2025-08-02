@@ -153,7 +153,8 @@ fn void Context.create_ssa(Context* c, const Symbol* symbol, FunctionInfo* fi, c
             return ref
     */
     u32 indent = 1;
-    PhiCache results.init();
+    PhiCache results.init();    // TODO dont create + free for every function
+
     // Note: block 0 will usually never have reads, but can have after optimizations with loops
     for (u32 i = 0; i < num_blocks; i++) {
         u32 blk_id = i;
@@ -528,7 +529,9 @@ fn void Tools.fixup_function(Tools* t, FunctionInfo* fi) {
             if (is.isPhi()) {
                 PhiClause* clauses = fi.phis.get(is.phi_clauses.start);
                 for (u32 p=0; p<is.phi_clauses.count; p++) {
-                    Ref* r = &clauses[p].ref;
+                    PhiClause* pc = &clauses[p];
+                    pc.dest_idx = t.conversion.get(pc.dest_idx);
+                    Ref* r = &pc.ref;
                     if (r.isTemp()) r.value = t.conversion.get(r.value);
                 }
             } else {

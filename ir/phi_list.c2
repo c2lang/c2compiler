@@ -20,9 +20,10 @@ import stdlib local;
 
 type PhiClause struct {
     BlockId src;
+    u32 dest_idx;   // = TempRef value
     Ref ref;
 }
-static_assert(8, sizeof(PhiClause));
+static_assert(12, sizeof(PhiClause));
 
 type PhiList struct {
     u32 count;
@@ -48,21 +49,25 @@ fn void PhiList.resize(PhiList* l, u32 extra) {
     l.clauses = clauses2;
 }
 
-fn void PhiList.add(PhiList* l, BlockId src, Ref ref) {
+fn void PhiList.add(PhiList* l, u32 dest, BlockId src, Ref ref) {
     if (l.count == l.capacity) l.resize(2);
     PhiClause* c = &l.clauses[l.count++];
     c.src = src;
+    c.dest_idx = dest;
     c.ref = ref;
 }
 
-fn u32 PhiList.addCache(PhiList* l, const PhiCache* cache) {
+fn u32 PhiList.addCache(PhiList* l, u32 dest, const PhiCache* cache) {
     u32 extra = cache.getCount();
     if (l.count + extra >= l.capacity) l.resize(extra);
 
     u32 start = l.count;
     const PhiClause* src = cache.getClauses();
-    memcpy(&l.clauses[l.count], src, extra * sizeof(PhiClause));
-    l.count += extra;
+    for (u32 i=0; i<extra; i++) {
+        l.clauses[l.count] = src[i];
+        l.clauses[l.count].dest_idx = dest;
+        l.count++;
+    }
     return start;
 }
 
@@ -142,6 +147,7 @@ fn void PhiCache.add(PhiCache* c, BlockId blk_id, Ref ref) {
     }
     c.count++;
     clause.src = blk_id;
+    clause.dest_idx = 0;    // will be set on insertion
     clause.ref = ref;
 }
 

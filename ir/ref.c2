@@ -75,6 +75,11 @@ fn bool Ref.isValid(const Ref* r) {
     return r.kind != RefKind.None;
 }
 
+fn void Ref.setRegister(Ref* r, u32 value) {
+    r.kind = RefKind.Register;
+    r.value = value;
+}
+
 fn bool Ref.isTemp(const Ref* r) {
     return r.kind == RefKind.Temp;
 }

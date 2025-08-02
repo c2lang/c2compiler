@@ -15,34 +15,57 @@
 
 module ir;
 
+import interference_graph local;
+
 import stdlib;
+import string;
 import stdio local;
 
 // TEMP here
-type LiveVector struct  {
-    u32 count;
-    u32 cap;
-    u32* temps;
+type LiveIndex struct {
+    u16 start;  // in temps array
+    u16 count;
 }
 
-fn void LiveVector.init(LiveVector* v) {
+type LiveVector struct  {
+    u32 count;  // total count
+    u32 start; // where current blocks temps start
+    u32 cap;
+    u32 index_cap;
+    u32* temps;
+    LiveIndex* indexes;  // block-id is index
+
+    // TEMP HERE, should be placed in tools and created once
+    InterferenceGraph* interferences;
+}
+
+fn void LiveVector.init(LiveVector* v, u32 num_blocks) {
     v.count = 0;
-    v.cap = 32;
+    v.start = 0;
+    v.cap = 128;
     v.temps = stdlib.malloc(v.cap * sizeof(u32));
+
+    v.index_cap = num_blocks;
+    v.indexes = stdlib.malloc(v.index_cap*sizeof(LiveIndex));
+
+    // TODO this should be re-used between functions (also LiveVector)
+    v.interferences = interference_graph.create(16*1024, 1024);
 }
 
 fn void LiveVector.free(LiveVector* v) {
+    v.interferences.free();
     stdlib.free(v.temps);
 }
 
 fn void LiveVector.add(LiveVector* v, u32 idx) {
     //printf("add %d\n", idx);
-    for (u32 i=0; i<v.count; i++) {
+    for (u32 i=v.start; i<v.count; i++) {
         if (v.temps[i] == idx) return;    // already in, ignore
     }
     // Note: interferes with all other vars in there
-    for (u32 i=0; i<v.count; i++) {
-        //printf("  interferes with %d\n", v.temps[i]);
+    for (u32 i=v.start; i<v.count; i++) {
+        v.interferences.add((u16)idx, (u16)v.temps[i]);
+        //printf("  %d interferes with %d\n", idx, v.temps[i]);
     }
     assert(v.count < v.cap);
     v.temps[v.count] = idx;
@@ -51,7 +74,7 @@ fn void LiveVector.add(LiveVector* v, u32 idx) {
 
 fn void LiveVector.remove(LiveVector* v, u32 idx) {
     //printf("remove %d\n", idx);
-    for (u32 i=0; i<v.count; i++) {
+    for (u32 i=v.start; i<v.count; i++) {
         if (v.temps[i] == idx) {    // swap with last
             v.count--;
             if (i != v.count) v.temps[i] = v.temps[v.count];
@@ -61,57 +84,186 @@ fn void LiveVector.remove(LiveVector* v, u32 idx) {
     //printf("  not found\n");
 }
 
+fn void LiveVector.store(LiveVector* v, u32 blk_id) {
+    LiveIndex* idx = &v.indexes[blk_id];
+    idx.start = (u16)v.start;
+    idx.count = (u16)(v.count - v.start);
+    v.start = v.count;
+    //printf("STORE B%d  %d  %d\n", blk_id, idx.start, idx.count);
+}
+
+fn void LiveVector.copy(LiveVector* v, u32 blk_id) {
+    const LiveIndex* src = &v.indexes[blk_id];
+    //printf("COPY %d (%d %d)\n", blk_id, src.start, src.count);
+    assert(v.count + src.count < v.cap);
+    string.memcpy(&v.temps[v.count], &v.temps[src.start], src.count * sizeof(u32));
+    v.count += src.count;
+}
+
+fn void LiveVector.merge(LiveVector* v, u32 blk_id) {
+    const LiveIndex* src = &v.indexes[blk_id];
+    //printf("MERGE %d (%d %d)\n", blk_id, src.start, src.count);
+    u32 last = src.start + src.count;
+    for (u32 i = src.start; i < last; i++) v.add(v.temps[i]);
+}
+
 fn void LiveVector.dump(const LiveVector* v) @(unused) {
     printf("Live: ");
-    for (u32 i=0; i<v.count; i++) {
+    for (u32 i=v.start; i<v.count; i++) {
         printf(" %d", v.temps[i]);
     }
     printf("\n");
 }
 
 fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
-    // Need to know:
-    // how many registers available
-    // locations of params (%1, %2, etc)
-    // or just assign virtual regs: R0, R1?
-    // also need to know return register?
+    LiveVector v.init(fi.blocks.getCount());
 
-    // create interference graph.
-    LiveVector v.init();
+    Block* blocks = fi.blocks.get(0);
+    for (u32 i=0; i<fi.blocks.getCount(); i++) {
+        blocks[i].checked = false;
+    }
 
-    // Start from Block 0:
-    // for each successor Block:
-    //    - if a loop back, just get phi vars? (LATER, for now assume no loops)
-    //    - get LiveIn for each child, merge into own start vector
-    // for all instructions bottom -> top
-    // use lineair algorithm below
-    // store results (if multiple rev blocks?), so no need to do again
-    // return LiveIn
+    // TODO can manually allocate registers to params here already (R0..Rx)
+    // that would still be ISA independent
 
-    // TEMP assume single point of return (so 1 end node)
-    // TEMP just assume 1 block
-    // start at bottom
+    t.checkBlockReg(0, fi, &v);
+
+    //v.interferences.dump(false);
+    v.interferences.allocate();
+
+    // replace temps with registers
+    const u8* regmap = v.interferences.getRegs();
+    u32 num_instr = fi.instructions.getCount();
     Instr* instrs = fi.instructions.get(0);
-    i32 i = (i32)fi.instructions.getCount() - 1;
-    while (i >= 0) {
-        const Instr* ii = &instrs[i];
-        // TODO use hash function to indicate interference? (easy to check)
-        // TEMP ignore phi instructions + calls
-        if (ii.hasResult()) {
-            // remove from list
-            v.remove((u32)i);
+    for (u32 i=0; i<num_instr; i++) {
+        Instr* ii = &instrs[i];
+        if (ii.hasResult()) ii.setReg(regmap[i]);
+
+        if (ii.isPhi()) {
+            // Note: there should be no phi instructions anymore!!
+        } else if (ii.isCall()) {
+            if (ii.args[1].isRefList()) {
+                Ref* refs = fi.refs.get(ii.args[1].value);
+                u32 idx = 0;
+                while (1) {
+                    Ref* r2 = &refs[idx];
+                    if (r2.isTemp()) r2.setRegister(regmap[r2.value]);
+                    if (!r2.isValid()) break;
+                    idx++;
+                }
+            }
+        } else {
+            if (ii.args[0].isTemp()) {
+                ii.args[0].setRegister(regmap[ii.args[0].value]);
+            }
+            if (ii.args[1].isTemp()) {
+                ii.args[1].setRegister(regmap[ii.args[1].value]);
+            }
         }
-        if (ii.args[0].isTemp()) {
-            v.add(ii.args[0].value);
-        }
-        if (ii.args[1].isTemp()) {
-            v.add(ii.args[1].value);
-        }
-        //printf("[%d] ", i);
-        //v.dump();
-        i--;
     }
 
     v.free();
+}
+
+fn void Tools.checkBlockReg(Tools* t, u32 blk_id, FunctionInfo* fi, LiveVector* v) {
+    //printf("CHECK B%d\n", blk_id);
+    Block* b = fi.blocks.get(blk_id);
+
+    // algoritm:
+    // 1. get LiveIn from successors
+    // 2. merge these into own LiveOut
+    // 3. if phi-block, add Phi clauses to LiveOut
+    // 4. iterate all instructions bottom -> top, checking for interference
+    // 5. store LiveIn in LiveVector, mark is done
+
+    // step 0 - check if already checked, return results
+    if (b.checked) return;
+
+    // step 1 - get LiveIn from successors
+    // TEST since blocks are ordered, back jumps are loops. These are already handled by phi.
+    // so try ignoring them.
+    if (b.dests[0] > blk_id) {
+        t.checkBlockReg(b.dests[0], fi, v);
+    }
+    if (b.dests[1] > blk_id) {
+        t.checkBlockReg(b.dests[1], fi, v);
+    }
+
+    // 2. merge these into own start-set
+    if (b.dests[0] > blk_id) v.copy(b.dests[0]);
+    if (b.dests[1] > blk_id) v.merge(b.dests[1]);
+
+    //printf("  B%d successors: ", blk_id); v.dump();
+
+    // step 3 - add phi-clauses
+    if (b.phi_source) {
+        // avoid Lost-copy problem, by checking dependencies between Phi operations
+        // Brigg's algorithm:
+        // - if there is a copy dest = src, where src is not used as dest in any unprocessed copy, emit it
+        //      (and remove from list)
+        // - Else, select a cycle (e.g., a := b, b := a) → use a temporary to break it:
+        //     t = a; a = b; b = t;
+        // Note: need to add instruction and add to Interference graph
+        // TODO also add copy instructions
+
+        //printf("B%d phi source\n", blk_id);
+        const PhiClause* clauses = fi.phis.get(0);
+        u32 num_clauses = fi.phis.getCount();
+        for (u32 i=0; i<num_clauses; i++) {
+            const PhiClause* c = &clauses[i];
+            if (c.src == blk_id) {
+                //printf("  B%d remove phi %d\n", blk_id, c.dest_idx);
+                v.remove(c.dest_idx);
+                if (c.ref.isTemp()) {
+                    //printf("  B%d add phi clause %d\n", blk_id, c.ref.value);
+                    v.add(c.ref.value);
+                }
+            }
+        }
+    }
+
+    // step 4 - iterate all instructions bottom -> top
+    Instr* instrs = fi.instructions.get(0);
+    assert(b.instr.count);
+    u32 first = b.instr.start;
+    u32 last = b.instr.start + b.instr.count - 1;
+    u32 i = last;
+    while (1) {
+        const Instr* ii = &instrs[i];
+
+        if (ii.isPhi()) {
+            v.interferences.enable((u16)i);
+        } else {
+            if (ii.hasResult()) {
+                v.remove(i);
+                v.interferences.enable((u16)i);
+            }
+
+            if (ii.isCall()) {
+                if (ii.args[1].isRefList()) {
+                    Ref* refs = fi.refs.get(ii.args[1].value);
+                    u32 idx = 0;
+                    while (1) {
+                        Ref* r2 = &refs[idx];
+                        if (r2.isTemp()) v.add(r2.value);
+                        if (!r2.isValid()) break;
+                        idx++;
+                    }
+                }
+            } else {
+                if (ii.args[0].isTemp()) v.add(ii.args[0].value);
+                if (ii.args[1].isTemp()) v.add(ii.args[1].value);
+            }
+            //printf("[%d] ", i);
+            //v.dump();
+        }
+        if (i == first) break;
+        i--;
+    }
+    //printf("B%d LiveIn ", blk_id); v.dump();
+
+    // 5. store in LiveVector, mark is done
+    v.store(blk_id);
+    b.checked = true;
 }
 

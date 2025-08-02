@@ -31,7 +31,7 @@ const char* col_Symbol = color.Bblue;
 const char* col_Attr = color.Bmagenta;
 const char* col_Unknown = color.Yellow;
 const char* col_Value = color.Magenta;
-const char* col_Register = color.Cyan;
+const char* col_Register = color.Bgreen;
 const char* col_Data = color.Bcyan;
 const char* col_Slot = color.Bcyan;
 const char* col_Temp = color.Bgreen;
@@ -360,8 +360,8 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
 
     if (i.hasResult()) {
         if (i.hasRegister()) {
-            out.color(col_Slot);
-            out.print("R%d", i.getRegister());
+            out.color(col_Register);
+            out.print("r%d", i.getRegister());
         } else {
             out.color(col_Temp);
             u32 temp_nr = ph.findTemp(ph.blk_instr_start + blk_instr_idx);
@@ -416,13 +416,14 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
         const PhiClause* clauses = ph.cur_info.phis.get(i.phi_clauses.start);
         for (u32 j=0; j<i.phi_clauses.count; j++) {
             if (j != 0) out.add(", ");
-            u32 blk_id = clauses[j].src;
+            const PhiClause*pc = &clauses[j];
+            u32 blk_id = pc.src;
             Block* src = ph.blocks.get(blk_id);
             out.color(col_Block);
             out.print("@%s.%d", src.getKindName(), blk_id);
             out.color(color.Normal);
             out.add(": ");
-            ph.printRef(clauses[j].ref, false);
+            ph.printRef(pc.ref, false);
         }
         out.add(" ]");
         break;
@@ -512,7 +513,7 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
         break;
     case Register:
         out.color(col_Register);
-        out.print("R%d", r.value);
+        out.print("r%d", r.value);
         break;
     }
     out.color(color.Normal);
@@ -578,8 +579,8 @@ fn void dump_function_info(string_buffer.Buf* out, const FunctionInfo* info) @(u
     if (num_clauses) {
         out.print(" phi clauses: (%d)\n", num_clauses);
         for (u32 i=0; i<num_clauses; i++) {
-            PhiClause* pc = info.phis.get(i);
-            out.print("    [%2d] ref %8s %d   blk %d\n", i, pc.ref.getKindName(), pc.ref.value, pc.src);
+            const PhiClause* pc = info.phis.get(i);
+            out.print("    [%2d] %2d <=  %8s %2d   blk %2d\n", i, pc.dest_idx, pc.ref.getKindName(), pc.ref.value, pc.src);
         }
     }
 

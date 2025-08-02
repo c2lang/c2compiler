@@ -38,6 +38,11 @@ type Instr struct {
 }
 static_assert(12, sizeof(Instr));
 
+fn void Instr.setReg(Instr* i, u8 reg) {
+    i.instrBits.has_register = 1;
+    i.instrBits.register_nr = reg;
+}
+
 // instructions with no result or args (eg. hlt)
 fn void Instr.init0(Instr* i, InstrKind k) {
     memset(i, 0, sizeof(Instr));
