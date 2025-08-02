@@ -48,33 +48,33 @@ static_assert(sizeof(MyStruct*), sizeof(usize));
 static_assert(sizeof(MyStruct*), sizeof(sp));
 static_assert(sizeof(sp), sizeof(MyStruct*));
 static_assert(sizeof(sp), sizeof(sp));
-//static_assert(sizeof(const MyStruct[10]), sizeof(MyStruct) * 10);
-//static_assert(sizeof(MyStruct[10]), sizeof(MyStruct) * 10);
+static_assert(sizeof(const MyStruct[10]), sizeof(MyStruct) * 10);
+static_assert(sizeof(MyStruct[10]), sizeof(MyStruct) * 10);
 static_assert(sizeof(s), 32);
-//static_assert(sizeof(*&s), 32);
+static_assert(sizeof(*&s), 32);
 static_assert(sizeof(s), sizeof(s));
 static_assert(sizeof(s), sizeof(MyStruct));
-//static_assert(sizeof(s), sizeof(MyStruct[1]));
+static_assert(sizeof(s), sizeof(MyStruct[1]));
 static_assert(sizeof(MyStruct), sizeof(s));
 static_assert(sizeof(MyStruct), sizeof(MyStruct));
 static_assert(32, sizeof(MyStruct));
 static_assert(sizeof(s.p), sizeof(usize));
 static_assert(sizeof(s.def), 16);
-//static_assert(sizeof(*s.def), 1);
-//static_assert(sizeof(s.def[1]), 1);
+static_assert(sizeof(*s.def), 1);
+static_assert(sizeof(s.def[1]), 1);
 
 i32[20] aa;
 
 static_assert(sizeof(aa), 80);
-//static_assert(sizeof(aa[0]), 4);
-//static_assert(sizeof(*aa), 4);
+static_assert(sizeof(aa[0]), 4);
+static_assert(sizeof(*aa), 4);
 
 i32 cond = 1;
 
 static_assert(sizeof(cond), 4);
-//static_assert(sizeof(cond + cond), 4);
+static_assert(sizeof(cond + cond), 4);
 
 const char[] Error = "error";
 
 static_assert(sizeof(Error), 6);
-//static_assert(sizeof(*Error), 1);
+static_assert(sizeof(*Error), 1);
