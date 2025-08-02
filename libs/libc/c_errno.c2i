@@ -62,6 +62,7 @@ const i32 EMLINK      = 31;  /* Too many links */
 const i32 EPIPE       = 32;  /* Broken pipe */
 const i32 EDOM        = 33;  /* Math argument out of domain of func */
 const i32 ERANGE      = 34;  /* Math result not representable */
+const i32 ENAMETOOLONG = 36;  /* File name too long */
 
 const i32 EALREADY    = 114; /* Operation already in progress */
 const i32 EINPROGRESS = 115; /* Operation now in progress */
@@ -104,5 +105,6 @@ const i32 EDOM         =  33;  /* Math argument out of domain of func */
 const i32 ERANGE       =  34;  /* Math result not representable */
 const i32 EALREADY     =  37;  /* Operation already in progress */
 const i32 EINPROGRESS  =  36;  /* Operation now in progress */
+const i32 ENAMETOOLONG =  63;  /* File name too long */
 const i32 ESTALE       =  70;  /* Stale file handle */
 #endif

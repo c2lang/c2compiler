@@ -211,8 +211,7 @@ fn void Db.writeFile(Db* db, const char* filename, const char* data, u32 len) {
     char[128] fullname;
     sprintf(fullname, "%s/%s", db.tmp_dir, filename);
     file_utils.Writer writer;
-    bool ok = writer.write(fullname, cast<u8*>(data), len);
-    if (!ok) {
+    if (!writer.write(fullname, data, len)) {
         print_error("error writing %s: %s", fullname, writer.getError());
         exit(EXIT_FAILURE);
     }

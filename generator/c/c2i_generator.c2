@@ -59,10 +59,8 @@ public fn void generate(const char* output_dir,
 fn void Generator.write(Generator* gen, const char* output_dir) {
     char[constants.Max_path] fullname;
     stdio.snprintf(fullname, elemsof(fullname), "%s/%s.c2i", output_dir, gen.mod.getName());
-
     file_utils.Writer writer;
-    bool ok = writer.write(fullname, gen.out.udata(), gen.out.size());
-    if (!ok) {
+    if (!writer.write(fullname, gen.out.udata(), gen.out.size())) {
         console.error("cannot write to %s: %s", fullname, writer.getError());
     }
 }
