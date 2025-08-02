@@ -1013,9 +1013,9 @@ fn void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     hdr.add("#ifdef __cplusplus\n}\n#endif\n\n");
     hdr.add("#endif\n");
 
-    file_utils.Writer writer;
     char[constants.Max_path] fullname;
     stdio.snprintf(fullname, elemsof(fullname), "%s/%s.h", gen.results_dir, m.getName());
+    file_utils.Writer writer;
     if (!writer.write(fullname, hdr.data(), hdr.size())) {
         console.error("cannot write to %s: %s", fullname, writer.getError());
     }
@@ -1149,10 +1149,8 @@ fn void Generator.free(Generator* gen) {
 fn void Generator.write(Generator* gen, const char* output_dir, const char* filename, string_buffer.Buf* buf) {
     char[constants.Max_path] fullname;
     stdio.snprintf(fullname, elemsof(fullname), "%s/%s", output_dir, filename);
-
     file_utils.Writer writer;
-    bool ok = writer.write(fullname, buf.udata(), buf.size());
-    if (!ok) {
+    if (!writer.write(fullname, buf.udata(), buf.size())) {
         console.error("cannot write to %s: %s", fullname, writer.getError());
     }
 }
