@@ -71,22 +71,12 @@ fn u32 PhiList.addCache(PhiList* l, u32 dest, const PhiCache* cache) {
     return start;
 }
 
-fn void PhiList.clear(PhiList* l) {
-    l.count = 0;
-}
-
 fn u32 PhiList.getCount(const PhiList* l) {
     return l.count;
 }
 
 fn PhiClause* PhiList.get(const PhiList* l, u32 idx) {
     return &l.clauses[idx];
-}
-
-fn void PhiList.copy(PhiList* l, const PhiList* l2) {
-    if (l.capacity < l2.count) l.resize(l2.count - l.capacity);
-    l.count = l2.count;
-    memcpy(l.clauses, l2.clauses, l2.count * sizeof(PhiClause));
 }
 
 

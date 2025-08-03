@@ -25,7 +25,8 @@ public type RefList struct {
 }
 
 public fn void RefList.init(RefList* l, u32 initial_size) {
-    memset(l, 0, sizeof(RefList));
+    l.count = 0;
+    l.refs = nil;
     if (initial_size) l.resize(initial_size);
 }
 
@@ -55,13 +56,6 @@ fn u32 RefList.addList(RefList* l, const RefList* l2) {
     memcpy(&l.refs[l.count], l2.refs, l2.count * sizeof(Ref));
     l.count += l2.count;
     return start;
-}
-
-// Note: overwrites current entries
-fn void RefList.copy(RefList* l, const RefList* l2) {
-    if (l.capacity < l2.count) l.resize(l2.count);
-    l.count = l2.count;
-    memcpy(l.refs, l2.refs, l2.count * sizeof(Ref));
 }
 
 public fn void RefList.clear(RefList* l) {

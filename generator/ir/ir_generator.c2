@@ -452,6 +452,8 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
         d.setGenIdx(gen_idx);
     }
 
+    c.startFunc(gen_idx);
+
     // add params
     ir.Type rt = ir.Type.None;
     if (fd.hasReturn()) {
@@ -461,7 +463,6 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
         c.setFunctionReturnType(ir.Type.None);
     }
 
-    c.startFunc(gen_idx);
     ir.BlockId body_blk = c.createBlock(BlockKind.FnStart);
     c.startBlock(body_blk);
 

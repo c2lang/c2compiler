@@ -42,7 +42,7 @@ type LiveVector struct  {
 fn void LiveVector.init(LiveVector* v, u32 num_blocks) {
     v.count = 0;
     v.start = 0;
-    v.cap = 128;
+    v.cap = 256;
     v.temps = stdlib.malloc(v.cap * sizeof(u32));
 
     v.index_cap = num_blocks;

@@ -23,7 +23,6 @@ import string_pool;
 import usage_counter;
 
 import stdlib;
-import string;
 #if DebugIr
 import stdio;
 #endif
@@ -58,7 +57,6 @@ fn void Tools.free(Tools* t) {
 }
 
 type Builder struct {
-    bool in_block;
     u32 slot_idx;
     u32 num_scopes;
     SymbolId cur_func;
@@ -66,6 +64,7 @@ type Builder struct {
     BlockId cur_block;
     u32 blk_start_instr;    // used to note starting instruction
     bool block_terminated;
+    bool in_block;
 
     // only used during function generation
     index_list.List block_order;
@@ -74,11 +73,11 @@ type Builder struct {
 
 fn void Builder.init(Builder* b) {
     b.block_order.init(64);
-    b.tmp_info = FunctionInfo.create(32, 64, 32);
+    b.tmp_info = nil;
 }
 
 fn void Builder.free(Builder* b) {
-    b.tmp_info.free();
+    if (b.tmp_info) b.tmp_info.free();
     b.block_order.free();
 }
 
@@ -169,6 +168,8 @@ public fn void Context.startFunc(Context* c, SymbolId id) {
 #if DebugIr
     stdio.printf("startFunc(%d)  cur %d\n", id, b.cur_func);
 #endif
+    assert(b.tmp_info == nil);
+    b.tmp_info = FunctionInfo.create(8, 16, 16);
     assert(b.cur_func == 0);
     b.cur_func = id;
     b.num_scopes = 0;
@@ -615,151 +616,49 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     //dump_function(c.b.tmp_info, name);
     //if (print) c.print_function(symbol, c.b.tmp_info, "after check dest");
 
-    // move used blocks to new list, drop unused blocks
+    // TODO use Builder 2nd BlockList here (pass as well)
+    c.reorder_blocks(c.b.tmp_info, &c.b.block_order);
 
-    // TODO extract to function, pass 2x FunctionInfo
-    // TODO just used numBlocks, since switch stmts add blocks again..
-    u32 num_used_blocks = c.b.tmp_info.getUsedBlkCount();
-    FunctionInfo* fi2 = FunctionInfo.create(num_used_blocks, 32, c.b.tmp_info.refs.getCount());
-    fi2.num_slots = c.b.tmp_info.num_slots;   // TODO could change due to dead code removal
-
-    // TODO convert to Context.reorder_blocks()
-    // put blocks in correct order in new FunctionInfo
-    const u32* order = c.b.block_order.getFrom(0);
-    assert(num_blocks == c.b.block_order.getCount());
-    u32 blk_count = 0;
-    t.conversion.clear(num_blocks);
-    for (u32 i=0; i<num_blocks; i++) {
-        BlockId bid = order[i];
-        const Block* b = c.b.tmp_info.blocks.get(bid);
-        if (!b.used) continue;
-        fi2.blocks.copy(b);
-        t.conversion.set(bid, blk_count);
-        //stdio.printf("BLOCK MOVE %d -> %d\n", bid, blk_count);
-        blk_count++;
-    }
-
-    // convert block dests (old -> new)
-    Block* new_blks = fi2.blocks.get(0);
-    assert(t.conversion.get(0) == 0);   // block 0 should never move
-    for (u32 i=0; i<blk_count; i++) {
-        Block* b = &new_blks[i];
-        if (b.end_with_switch) {
-            CaseId case_id = b.dests[0];
-            u32 num_cases = b.dests[1];
-            for (u32 j=0; j<num_cases; j++) {
-                Case* cs = c.b.tmp_info.cases.get(case_id+j);
-                cs.block = t.conversion.get(cs.block);
-            }
-            // update block id in switch instr.args[1]
-            u32 instr_idx = b.instr.start + b.instr.count - 1;
-            Instr* switch_instr = c.b.tmp_info.instructions.get(instr_idx);
-            Ref* join_ref = &switch_instr.args[1];
-            join_ref.value = t.conversion.get(join_ref.value);
-        } else {
-            b.dests[0] = t.conversion.get(b.dests[0]);
-            b.dests[1] = t.conversion.get(b.dests[1]);
-        }
-    }
-    // also update block ids in phi clauses
-    for (u32 i=0; i<c.b.tmp_info.phis.getCount(); i++) {
-        PhiClause* pc = c.b.tmp_info.phis.get(i);
-        pc.src = t.conversion.get(pc.src);
-    }
-
-    //dump_function(c.b.tmp_info, name);
-
-    // Note: for now just copy all refs
-    // TODO remove unused refs
-    fi2.refs.copy(&c.b.tmp_info.refs);
-    // TODO remove unused cases
-    fi2.cases.copy(&c.b.tmp_info.cases);
-    fi2.phis.copy(&c.b.tmp_info.phis);
-
-    // args
-    fi2.num_args = c.b.tmp_info.num_args;
-    string.memcpy(fi2.args, c.b.tmp_info.args, sizeof(fi2.args));
-
-    // TODO cleanup, extract to function
-    // convert Ref.Temp to new index since intermediate blocks/instructions could have been removed
-    const Instr* i_old = c.b.tmp_info.instructions.get(0);
-    //stdio.printf("INSTR COUNT %d\n", c.b.tmp_info.instructions.getCount());
-    t.conversion.clear(c.b.tmp_info.instructions.getCount());
-    u32 i_index = 0;
-    for (u32 i=0; i<blk_count; i++) {
-        Block* b = &new_blks[i];
-        u32 i_start = b.instr.start;
-        u32 i_count = b.instr.count;
-        //stdio.printf("   B[%d] %d - %d\n", i, i_start, i_start+i_count-1);
-        u32 new_start = i_index;
-        for (u32 j=i_start; j<i_start+i_count; j++) {
-            Instr* is = fi2.instructions.add();
-            is.copy(&i_old[j]);
-            t.conversion.set(j, i_index);
-            Ref* r = &is.args[0];
-            if (r.isTemp()) r.value = t.conversion.get(r.value);
-            r = &is.args[1];
-            if (r.isTemp()) r.value = t.conversion.get(r.value);
-            else if (r.isRefList()) { // can only occur on args[1]
-                Ref* refs = fi2.refs.get(r.value);
-                u32 idx = 0;
-                while (1) {
-                    Ref* r2 = &refs[idx];
-                    if (r2.isTemp()) r2.value = t.conversion.get(r2.value);
-                    if (!r2.isValid()) break;
-                    idx++;
-                }
-            }
-            i_index++;
-        }
-        b.instr.start = new_start;
-    }
-    // update refs used inside Phi instructions
-    for (u32 i=0; i<fi2.phis.getCount(); i++) {
-        PhiClause* pc = fi2.phis.get(i);
-        if (pc.ref.isTemp()) pc.ref.value = t.conversion.get(pc.ref.value);
-    }
-
-    symbol.f.info = fi2;
-    c.b.tmp_info.clear();
+    FunctionInfo* fi = c.b.tmp_info;
+    symbol.f.info = c.b.tmp_info;
+    c.b.tmp_info = nil;
     c.b.block_order.clear();
 
-    //dump_function(fi2, name);
-    //c.generate_graphviz(fi2, name);
-    // TODO only print if changed
-    if (c.print_all && fi2.blocks.getCount() > 1) c.print_function(symbol, fi2, "after reorder");
+    //dump_function(fi, name);
+    if (c.print_all && fi.blocks.getCount() > 1) c.print_function(symbol, fi, "after reorder");
+    //c.generate_graphviz(fi, name);
 
-    // can be multi-threaded after this point (ready for inlining)
+    // TODO can be multi-threaded after this point (ready for inlining)
 
     // NOTE: cannot have outstanding inserts which converting switches!
-    bool changed = c.convert_switches(fi2);
-    if (changed && c.print_all) c.print_function(symbol, fi2, "after convert switch");
+    bool changed = c.convert_switches(fi);
+    if (changed && c.print_all) c.print_function(symbol, fi, "after convert switch");
 
-    c.create_ssa(symbol, fi2, name);
+    c.create_ssa(symbol, fi, name);
 
-    if (fi2.blocks.getCount() > 1 && c.print_all) c.print_function(symbol, fi2, "after create SSA");
+    if (fi.blocks.getCount() > 1 && c.print_all) c.print_function(symbol, fi, "after create SSA");
 
     if (t.inserter.needsFixup()) {
-        c.tools.fixup_function(fi2);
-        if (c.print_all) c.print_function(symbol, fi2, "after fixup");
+        c.tools.fixup_function(fi);
+        if (c.print_all) c.print_function(symbol, fi, "after fixup");
     }
 
-    t.eliminateCopies(fi2);
-    //dump_function(fi2, name);
-    if (c.print_all) c.print_function(symbol, fi2, "after eliminate copies");
+    t.eliminateCopies(fi);
+    //dump_function(fi, name);
+    if (c.print_all) c.print_function(symbol, fi, "after eliminate copies");
 
-    //c.propagateConstants(fi2);
-    //if (c.print_all) c.print_function(symbol, fi2, "after propagate constants");
-    t.removeUnused(fi2);
-    //if (print) c.print_function(symbol, fi2, "after remove unused");
+    //c.propagateConstants(fi);
+    //if (c.print_all) c.print_function(symbol, fi, "after propagate constants");
+    t.removeUnused(fi);
+    //if (print) c.print_function(symbol, fi, "after remove unused");
 
-    //t.propagateConstants(fi2);
+    //t.propagateConstants(fi);
 
-    t.removeNone(fi2);
-    if (c.print_all) c.print_function(symbol, fi2, "after remove none");
+    t.removeNone(fi);
+    if (c.print_all) c.print_function(symbol, fi, "after remove none");
 
-    //t.allocateRegisters(fi2);
-    //if (c.print_all) c.print_function(symbol, fi2, "after register allocation");
+    //t.allocateRegisters(fi);
+    //if (c.print_all) c.print_function(symbol, fi, "after register allocation");
 
     // generate Instruction
     // ..
@@ -837,4 +736,59 @@ fn BlockId checkDest(FunctionInfo* fi, BlockId id) {
 
     return id;
 }
+
+// NOTE: also removes unused blocks
+fn void Context.reorder_blocks(Context* c, FunctionInfo* fi, const index_list.List* block_order) {
+    Tools* t = &c.tools;
+    const u32* order = block_order.getFrom(0);
+    //printf("Order: [%d] ", block_order.getCount());
+
+    u32 num_blocks = block_order.getCount();
+    assert(num_blocks == fi.blocks.getCount());
+    BlockList list2.init(fi.blocks.getCount());
+    Block* blocks1 = fi.blocks.get(0);
+
+    u32 blk_count = 0;
+    t.conversion.clear(num_blocks);
+    for (u32 i=0; i<num_blocks; i++) {
+        BlockId blk_id = order[i];
+        const Block* old = &blocks1[blk_id];
+        if (!old.used) continue;
+        list2.copy(old);
+        t.conversion.set(blk_id, blk_count);
+        blk_count++;
+    }
+
+    // convert block dests (old -> new)
+    Block* blocks2 = list2.get(0);
+    assert(t.conversion.get(0) == 0);   // block 0 should never move
+    for (u32 i = 0; i < blk_count; i++) {
+        Block* b = &blocks2[i];
+        if (b.end_with_switch) {
+            CaseId case_id = b.dests[0];
+            u32 num_cases = b.dests[1];
+            for (u32 j=0; j<num_cases; j++) {
+                Case* cs = fi.cases.get(case_id+j);
+                cs.block = t.conversion.get(cs.block);
+            }
+            // update block id in switch instr.args[1]
+            u32 instr_idx = b.instr.start + b.instr.count - 1;
+            Instr* switch_instr = fi.instructions.get(instr_idx);
+            Ref* join_ref = &switch_instr.args[1];
+            join_ref.value = t.conversion.get(join_ref.value);
+        } else {
+            b.dests[0] = t.conversion.get(b.dests[0]);
+            b.dests[1] = t.conversion.get(b.dests[1]);
+        }
+    }
+    // also update block ids in phi clauses
+    for (u32 i = 0; i < fi.phis.getCount(); i++) {
+        PhiClause* pc = fi.phis.get(i);
+        pc.src = t.conversion.get(pc.src);
+    }
+
+    fi.blocks.swap(&list2);
+    list2.free();
+}
+
 

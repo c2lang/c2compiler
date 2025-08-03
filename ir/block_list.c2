@@ -72,21 +72,8 @@ fn void BlockList.swap(BlockList* l1, BlockList* l2) {
     *l2 = tmp;
 }
 
-fn void BlockList.clear(BlockList* l) {
-    l.count = 0;
-}
-
 fn u32 BlockList.getCount(const BlockList* l) {
     return l.count;
-}
-
-fn u32 BlockList.getUsedCount(const BlockList* l) {
-    u32 used = 0;
-    Block* blks = &l.blocks[0];
-    for (u32 i=0; i<l.count; i++) {
-        if (blks[i].used) used++;
-    }
-    return used;
 }
 
 fn Block* BlockList.get(const BlockList* l, BlockId idx) {

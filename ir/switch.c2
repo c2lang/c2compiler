@@ -19,16 +19,16 @@ import index_list;
 
 fn bool Context.convert_switches(Context* c, FunctionInfo* fi) {
 
-    Block* blocks = fi.blocks.get(0);
     u32 count = fi.blocks.getCount();
-
     // TODO add to Tools, dont re-create every time
     index_list.List block_order.init(count + 16);
 
+    // Note: cannot get Block* here and iterate that, since block adds might cause resize
     for (u32 i=0; i<count; i++) {
         block_order.add(i);
         // TODO pass tools?
-        if (blocks[i].end_with_switch) c.convert_switch_linear(fi, i, &block_order);
+        Block* b = fi.blocks.get(i);
+        if (b.end_with_switch) c.convert_switch_linear(fi, i, &block_order);
     }
 
     if (count != fi.blocks.getCount()) {
@@ -87,60 +87,4 @@ fn void Context.convert_switch_linear(Context* c, FunctionInfo* fi, u32 blk_id, 
         loc++;
     }
 }
-
-// NOTE: also removes unused blocks
-fn void Context.reorder_blocks(Context* c, FunctionInfo* fi, const index_list.List* block_order) {
-    Tools* t = &c.tools;
-    const u32* order = block_order.getFrom(0);
-    //printf("Order: [%d] ", block_order.getCount());
-
-    u32 num_blocks = block_order.getCount();
-    assert(num_blocks == fi.blocks.getCount());
-    BlockList list2.init(fi.blocks.getCount());
-    Block* blocks1 = fi.blocks.get(0);
-
-    u32 blk_count = 0;
-    t.conversion.clear(num_blocks);
-    for (u32 i=0; i<num_blocks; i++) {
-        BlockId blk_id = order[i];
-        // TODO if used in Phi, also keep (should be used then)
-        const Block* old = &blocks1[blk_id];
-        if (!old.used) continue;
-        list2.copy(old);
-        t.conversion.set(blk_id, blk_count);
-        blk_count++;
-    }
-
-    // convert block dests (old -> new)
-    Block* blocks2 = list2.get(0);
-    assert(t.conversion.get(0) == 0);   // block 0 should never move
-    for (u32 i=0; i<blk_count; i++) {
-        Block* b = &blocks2[i];
-        if (b.end_with_switch) {
-            CaseId case_id = b.dests[0];
-            u32 num_cases = b.dests[1];
-            for (u32 j=0; j<num_cases; j++) {
-                Case* cs = c.b.tmp_info.cases.get(case_id+j);
-                cs.block = t.conversion.get(cs.block);
-            }
-            // update block id in switch instr.args[1]
-            u32 instr_idx = b.instr.start + b.instr.count - 1;
-            Instr* switch_instr = c.b.tmp_info.instructions.get(instr_idx);
-            Ref* join_ref = &switch_instr.args[1];
-            join_ref.value = t.conversion.get(join_ref.value);
-        } else {
-            b.dests[0] = t.conversion.get(b.dests[0]);
-            b.dests[1] = t.conversion.get(b.dests[1]);
-        }
-    }
-    // also update block ids in phi clauses
-    for (u32 i=0; i<c.b.tmp_info.phis.getCount(); i++) {
-        PhiClause* pc = c.b.tmp_info.phis.get(i);
-        pc.src = t.conversion.get(pc.src);
-    }
-
-    fi.blocks.swap(&list2);
-    list2.free();
-}
-
 

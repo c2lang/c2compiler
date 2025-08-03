@@ -77,8 +77,3 @@ fn Case* CaseList.get(const CaseList* l, CaseId idx) {
     return &l.cases[idx];
 }
 
-fn void CaseList.copy(CaseList* l, const CaseList* l2) {
-    if (l.capacity < l2.count) l.resize(l2.count - l.capacity, false);
-    l.count = l2.count;
-    memcpy(l.cases, l2.cases, l2.count * sizeof(Case));
-}

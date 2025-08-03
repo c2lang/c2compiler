@@ -51,18 +51,6 @@ fn void FunctionInfo.free(FunctionInfo* fi) {
     stdlib.free(fi);
 }
 
-fn void FunctionInfo.clear(FunctionInfo* fi) {
-    fi.blocks.clear();
-    fi.cases.clear();
-    fi.instructions.clear();
-    fi.refs.clear();
-    fi.phis.clear();
-}
-
-fn u32 FunctionInfo.getUsedBlkCount(const FunctionInfo* fi) {
-    return fi.blocks.getUsedCount();
-}
-
 // Note: must be called before addArg
 fn void FunctionInfo.setReturnType(FunctionInfo* fi, ir.Type t) {
     fi.args[0] = t;
