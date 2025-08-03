@@ -51,7 +51,7 @@ fn const char* RefKind.str(RefKind k) {
 }
 
 public type Ref struct {
-    u32 kind : 4;
+    u32 kind : 4;   // RefKind
     u32 value : 28;
 }
 static_assert(4, sizeof(Ref));

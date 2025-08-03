@@ -43,7 +43,7 @@ fn void Instr.setReg(Instr* i, u8 reg) {
     i.instrBits.register_nr = reg;
 }
 
-// instructions with no result or args (eg. hlt)
+// instructions with no result or args (eg. hlt, jmp)
 fn void Instr.init0(Instr* i, InstrKind k) {
     memset(i, 0, sizeof(Instr));
     i.instrBits.kind = k;
@@ -79,7 +79,7 @@ fn void Instr.init1b(Instr* i, InstrKind k, Ref ref1) {
     i.args[0] = ref1;
 }
 
-// instructions with 2 args (eg store)
+// instructions with no result, 2 args (eg store)
 fn void Instr.init2(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
     memset(i, 0, sizeof(Instr));
     i.instrBits.kind = k;

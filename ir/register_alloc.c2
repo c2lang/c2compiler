@@ -115,7 +115,8 @@ fn void LiveVector.dump(const LiveVector* v) @(unused) {
     printf("\n");
 }
 
-fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
+// TEMP disable
+fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) @(unused) {
     LiveVector v.init(fi.blocks.getCount());
 
     Block* blocks = fi.blocks.get(0);

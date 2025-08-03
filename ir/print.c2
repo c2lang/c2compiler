@@ -392,24 +392,28 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
         out.color(color.Normal);
         out.space();
         ph.printRef(i.args[0], false);
-        out.add(" [\n");
+        out.add(", ");
+        // Note: cannot use printRef, since the dest is not in block.dests[]
+        out.color(col_Block);
+        u32 join_blk = i.args[1].value;
+        Block* dest = ph.blocks.get(join_blk);
+        out.print("@%s.%d", dest.getKindName(), join_blk);
+        out.newline();
         CaseId case_id = ph.cur_block.dests[0];
         u32 num_cases = ph.cur_block.dests[1];
         for (u32 j=0; j<num_cases; j++) {
             Case* cc = ph.cur_info.cases.get(case_id+j);
-            out.indent(3);
+            out.indent(5);
             out.color(col_Value);
             out.print("%d", cc.value);
             out.space();
             out.color(col_Block);
-            Block* dest = ph.blocks.get(cc.block);
+            dest = ph.blocks.get(cc.block);
             out.print("@%s.%d", dest.getKindName(), cc.block);
             out.color(color.Normal);
             out.newline();
         }
-        out.indent(2);
-        out.add1(']');
-        break;
+        return;
     case Phi:
         out.color(color.Normal);
         out.add(" [ ");

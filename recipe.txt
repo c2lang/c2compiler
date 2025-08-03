@@ -288,6 +288,7 @@ executable c2c
     ir/register_alloc.c2
     ir/slot_collector.c2
     ir/ssa.c2
+    ir/switch.c2
     ir/symbol_list.c2
     ir/instr_list.c2
     ir/lookup_table.c2

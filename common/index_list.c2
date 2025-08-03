@@ -26,6 +26,7 @@ public type List struct {
 
 public fn void List.init(List* l, u32 initial) {
     l.count = 0;
+    l.data = nil;
     l.resize(initial);
 }
 

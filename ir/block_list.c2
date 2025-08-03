@@ -27,7 +27,8 @@ type BlockList struct {
 }
 
 fn void BlockList.init(BlockList* l, u32 initial_size) {
-    memset(l, 0, sizeof(BlockList));
+    l.count = 0;
+    l.blocks = nil;
     l.resize(initial_size);
 }
 
@@ -63,6 +64,12 @@ fn BlockId BlockList.copy(BlockList* l, const Block* b2) {
     memcpy(b, b2, sizeof(Block));
     l.count++;
     return idx;
+}
+
+fn void BlockList.swap(BlockList* l1, BlockList* l2) {
+    BlockList tmp = *l1;
+    *l1 = *l2;
+    *l2 = tmp;
 }
 
 fn void BlockList.clear(BlockList* l) {

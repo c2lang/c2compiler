@@ -37,6 +37,7 @@ public type BlockKind enum u8 {
     CondFalse,
     CondJoin,
     Label,
+    SwitchCond,
     SwitchCase,
     SwitchJoin,
     SwitchDefault,
@@ -63,6 +64,7 @@ fn const char* BlockKind.str(BlockKind k) {
     case CondFalse:   return "cond_false";
     case CondJoin:    return "cond_join";
     case Label:       return "label";
+    case SwitchCond:  return "switch_cond";
     case SwitchCase:  return "switch_case";
     case SwitchJoin:  return "switch_join";
     case SwitchDefault:  return "switch_default";
@@ -71,14 +73,14 @@ fn const char* BlockKind.str(BlockKind k) {
 }
 
 type Block struct {
+    BlockId[2] dests;   // used if not 0
+    Index instr;        // index into FuncInfo.instructions
     BlockKind kind : 8 ;   // BlockKind
     u32 used : 1;
     u32 checked : 1;    // can be used during various passes
     u32 end_with_switch : 1;
     u32 phi_source : 1;
     u32 end_block : 1;  // ends with exit/ret, no successors
-    BlockId[2] dests;   // used if not 0
-    Index instr;        // index into FuncInfo.instructions
 }
 static_assert(20, sizeof(Block));
 

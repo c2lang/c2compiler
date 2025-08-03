@@ -67,7 +67,7 @@ type Builder struct {
     u32 blk_start_instr;    // used to note starting instruction
     bool block_terminated;
 
-    // used during both function generation and optimization
+    // only used during function generation
     index_list.List block_order;
     FunctionInfo* tmp_info;
 }
@@ -573,7 +573,7 @@ fn Ref Context.addComment2(Context* c, const char* text, FunctionInfo* info) {
     return out;
 }
 
-public fn CaseId Context.addSwitchInstr(Context* c, Ref cond, u32 num_cases) {
+public fn CaseId Context.addSwitchInstr(Context* c, Ref cond, Ref join_ref, u32 num_cases) {
 #if DebugIr
     stdio.printf("  switch (%d)\n", num_cases);
 #endif
@@ -581,7 +581,7 @@ public fn CaseId Context.addSwitchInstr(Context* c, Ref cond, u32 num_cases) {
 
     assert(c.b.in_block);
     Instr* i = c.b.tmp_info.instructions.add();
-    i.init1(InstrKind.Switch, cond);
+    i.init2(InstrKind.Switch, cond, join_ref);
     c.b.block_terminated = true;
     Block* b = c.b.tmp_info.blocks.get(c.b.cur_block);
     b.end_with_switch = 1;
@@ -618,16 +618,17 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     // move used blocks to new list, drop unused blocks
 
     // TODO extract to function, pass 2x FunctionInfo
+    // TODO just used numBlocks, since switch stmts add blocks again..
     u32 num_used_blocks = c.b.tmp_info.getUsedBlkCount();
-    // TODO dont know used instructions (should be calculated during used_blocks)
     FunctionInfo* fi2 = FunctionInfo.create(num_used_blocks, 32, c.b.tmp_info.refs.getCount());
     fi2.num_slots = c.b.tmp_info.num_slots;   // TODO could change due to dead code removal
 
+    // TODO convert to Context.reorder_blocks()
     // put blocks in correct order in new FunctionInfo
     const u32* order = c.b.block_order.getFrom(0);
     assert(num_blocks == c.b.block_order.getCount());
     u32 blk_count = 0;
-    t.conversion.clear(num_blocks);   // NOTE: potentially large memset
+    t.conversion.clear(num_blocks);
     for (u32 i=0; i<num_blocks; i++) {
         BlockId bid = order[i];
         const Block* b = c.b.tmp_info.blocks.get(bid);
@@ -640,12 +641,6 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
 
     // convert block dests (old -> new)
     Block* new_blks = fi2.blocks.get(0);
-#if 0
-    if (t.conversion.get(0) != 0) {
-        dump_function(c.b.tmp_info, name);
-        t.conversion.dump();
-    }
-#endif
     assert(t.conversion.get(0) == 0);   // block 0 should never move
     for (u32 i=0; i<blk_count; i++) {
         Block* b = &new_blks[i];
@@ -656,6 +651,11 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
                 Case* cs = c.b.tmp_info.cases.get(case_id+j);
                 cs.block = t.conversion.get(cs.block);
             }
+            // update block id in switch instr.args[1]
+            u32 instr_idx = b.instr.start + b.instr.count - 1;
+            Instr* switch_instr = c.b.tmp_info.instructions.get(instr_idx);
+            Ref* join_ref = &switch_instr.args[1];
+            join_ref.value = t.conversion.get(join_ref.value);
         } else {
             b.dests[0] = t.conversion.get(b.dests[0]);
             b.dests[1] = t.conversion.get(b.dests[1]);
@@ -729,6 +729,12 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     // TODO only print if changed
     if (c.print_all && fi2.blocks.getCount() > 1) c.print_function(symbol, fi2, "after reorder");
 
+    // can be multi-threaded after this point (ready for inlining)
+
+    // NOTE: cannot have outstanding inserts which converting switches!
+    bool changed = c.convert_switches(fi2);
+    if (changed && c.print_all) c.print_function(symbol, fi2, "after convert switch");
+
     c.create_ssa(symbol, fi2, name);
 
     if (fi2.blocks.getCount() > 1 && c.print_all) c.print_function(symbol, fi2, "after create SSA");
@@ -752,8 +758,8 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     t.removeNone(fi2);
     if (c.print_all) c.print_function(symbol, fi2, "after remove none");
 
-    t.allocateRegisters(fi2);
-    if (c.print_all) c.print_function(symbol, fi2, "after register allocation");
+    //t.allocateRegisters(fi2);
+    //if (c.print_all) c.print_function(symbol, fi2, "after register allocation");
 
     // generate Instruction
     // ..
