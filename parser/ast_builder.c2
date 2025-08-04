@@ -508,6 +508,22 @@ fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
     }
 }
 
+public fn bool Builder.hasOpaqueAttr(Builder* b) {
+    for (u32 i=0; i<b.num_attrs; i++) {
+        const attr.Attr* a = &b.attrs[i];
+        if (b.attrs[i].kind == Opaque) return true;
+    }
+    return false;
+}
+
+public fn bool Builder.hasEmbedAttr(Builder* b) {
+    for (u32 i=0; i<b.num_attrs; i++) {
+        const attr.Attr* a = &b.attrs[i];
+        if (b.attrs[i].kind == Embed) return true;
+    }
+    return false;
+}
+
 public fn bool Builder.actOnParamAttr(Builder* b,
                                       VarDecl* d,
                                       u32 name,
