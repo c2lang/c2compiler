@@ -150,6 +150,11 @@ fn bool Instr.isLoadStore(const Instr* i) @(unused) {
     return k >= InstrKind.Load1 && k <= InstrKind.Store8;
 }
 
+fn bool Instr.isSwitch(const Instr* i) {
+    InstrKind k = i.getKind();
+    return k == InstrKind.Switch;
+}
+
 fn bool Instr.isCall(const Instr* i) {
     InstrKind k = i.getKind();
     return k == InstrKind.Call;

@@ -211,10 +211,14 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
         out.color(col_Fixup);
         out.print("Inserted (%d)\n", instr_count - max);
         const Instr* instrs = info.instructions.get(0);
+        // NOTE: if inserted instructions with JmpDest, printRef() fails!
+        // WORKAROUND just set b0
+        //ph.cur_block = &blks[0];
         while (max != instr_count) {
             ph.printInstr(instrs, max, max);
             max++;
         }
+        //ph.cur_block = nil;
     }
 
     out.color(color.Normal);
@@ -519,6 +523,11 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
         out.color(col_Register);
         out.print("r%d", r.value);
         break;
+    case Block:
+        out.color(col_Block);
+        Block* b = ph.blocks.get(r.value);
+        out.print("@%s.%d", b.getKindName(), r.value);
+        break;
     }
     out.color(color.Normal);
 }
@@ -537,7 +546,7 @@ fn void dump_function_info(string_buffer.Buf* out, const FunctionInfo* info) @(u
     for (u32 j=0; j<info.blocks.getCount(); j++) {
         const Block* b = info.blocks.get(j);
         Index b_idx = b.getInstructions();
-        out.print("    [%3d] %14s  D %d|%d  I %d-%d",
+        out.print("    [%3d] %14s  D %2d|%2d  I %3d-%3d",
             j, b.getKindName(), b.dests[0], b.dests[1], b_idx.start, b_idx.start + b_idx.count - 1);
         if (b.used) out.add(" unused");
         if (b.end_with_switch) out.add(" switch");
@@ -553,15 +562,15 @@ fn void dump_function_info(string_buffer.Buf* out, const FunctionInfo* info) @(u
         if (r.isPhi()) {
             out.print("  clauses %d-%d", r.phi_clauses.start, r.phi_clauses.start + r.phi_clauses.count - 1);
         } else {
-            out.print("  %8s %3d  ", r.args[0].getKindName(), r.args[0].value);
-            out.print("  %8s %3d", r.args[01].getKindName(), r.args[1].value);
+            out.print("  %8s %4d  ", r.args[0].getKindName(), r.args[0].value);
+            out.print("  %8s %4d", r.args[01].getKindName(), r.args[1].value);
         }
         out.newline();
     }
 
-    u32 num_refs = info.refs.getCount();
+    u32 num_refs = info.refs.count;
     if (num_refs) {
-        out.print(" refs: (%d)\n", info.refs.getCount());
+        out.print(" refs: (%d/%d)\n", info.refs.count, info.refs.capacity);
         const Ref* refs = info.refs.get(0);
         for (u32 i=0; i<info.refs.getCount(); i++) {
             Ref r = refs[i];
@@ -575,7 +584,7 @@ fn void dump_function_info(string_buffer.Buf* out, const FunctionInfo* info) @(u
         const Case* cases = info.cases.get(0);
         for (u32 i=0; i<num_cases; i++) {
             const Case* c = &cases[i];
-            out.print("    [%2d] %d   blk %d\n", i, c.value, c.block);
+            out.print("    [%2d] %3d   blk %d\n", i, c.value, c.block);
         }
     }
 

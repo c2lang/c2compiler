@@ -59,17 +59,31 @@ fn void Context.convert_switch_linear(Context* c, FunctionInfo* fi, u32 blk_id, 
 
     u32 loc = fi.instructions.getCount();
 
-    // TODO handle default case
+    // Note: empty case are pruned early on, and block updated to join_blk
     for (u32 j=0; j<num_cases; j++) {
+        bool last_case = (j == num_cases-1);
+
+        // TODO also handle default case (=last)
+
+
         BlockId cur_blk = fi.blocks.add(BlockKind.SwitchCond);
         block_order.add(cur_blk);
         Block* cur = fi.blocks.get(cur_blk);
         cur.used = 1;
         cur.instr.start = loc;
-        cur.instr.count = 2;
+        cur.instr.count = 2;    // cmp + jmp_if
 
         Case* cc = fi.cases.get(case_id+j);
-        BlockId next_blk = (j == num_cases-1) ? join_blk : cur_blk +1;
+        if (cc.block == join_blk) { // case was empty
+            if (last_case) {
+                cur.instr.count = 1;    // jmp join_blk
+                Instr* i = fi.instructions.add();
+                i.init1(InstrKind.Jmp, jmp_ref);
+                cur.setDest(join_blk, 0);
+                return;
+            }
+        }
+        BlockId next_blk = (last_case) ? join_blk : cur_blk +1;
         cur.setDest(cc.block, next_blk);
 
         // compare

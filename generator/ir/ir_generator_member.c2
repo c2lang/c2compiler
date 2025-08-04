@@ -71,6 +71,9 @@ next:
     // member (a.b.c.etc)
     u32 numrefs = m.getNumRefs();
     numrefs -= tail;
+
+    // TODO needs overhaul, a big mess at the moment
+
     for (u32 i=idx; i<numrefs; i++) {
         // for final only load if conversion is set?
         // First add offset, then deref!, also should not have to do this here anymore!
@@ -92,14 +95,15 @@ next:
         }
         assert(dd);
 
+        if (is_pointer && i < numrefs) {
+            // DONT deref last, will be de-refed by LToRValue Conversion
+            // will be added below
+            base_ref = c.addLoadInstr(gen.ptr_type, base_ref);
+        }
+
         if (offset != 0) {
             ir.Ref offset_ref = c.addIntegerConstant(offset);
             base_ref = c.addBinaryInstr(InstrKind.Add, base_ref, offset_ref);
-        }
-
-        if (is_pointer && i+1 < numrefs) {
-            // DONT refer last, will be de-reffed by LToRValue Conversion
-            base_ref = c.addLoadInstr(ir.Type.I32, base_ref);
         }
 
         if (dd.isBitfield()) {
@@ -117,6 +121,15 @@ next:
         }
 
         base_type = d.getType();
+    }
+
+    // TODO use MemberExpr.getConversion()
+
+    if (tail) {
+        // for type functions, always pointer?
+        // If type-function (with ptr base?), add extra LoadInstr since no LToRValue Cast is present then
+        // Q: add in Analyser?
+        base_ref = c.addLoadInstr(gen.ptr_type, base_ref);
     }
     *result = base_ref;
 }

@@ -30,6 +30,7 @@ public type RefKind enum u8 {
     Double,    // constant_idx
     Text,      // idx into string pool, for comment
     Register,  // nr (0,1,..)
+    Block,     // only used by Switch to store join_blk in args[1]
 }
 
 fn const char* RefKind.str(RefKind k) {
@@ -46,6 +47,7 @@ fn const char* RefKind.str(RefKind k) {
     case Double:    return "double";
     case Text:      return "text";
     case Register:  return "register";
+    case Block   :  return "block";
     }
     return nil;
 }

@@ -53,8 +53,7 @@ fn void Generator.emitSwitchStmt(Generator* gen, const Stmt* s) {
     ir.Ref ref;
     gen.emitExpr(&ref, cond);
     // note: caseId is index of first case in CaseList
-    ir.Ref join_ref.init(RefKind.JmpDest, join_blk);
-    CaseId caseId = gen.ctx.addSwitchInstr(ref, join_ref, num_cases);
+    CaseId caseId = gen.ctx.addSwitchInstr(ref, join_blk, num_cases);
 
     gen.enterScope(join_blk, 0);
     bool prev_fallthrough = false;

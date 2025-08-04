@@ -28,7 +28,6 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         return;
     }
 
-    // TODO rest
     switch (e.getKind()) {
     case IntegerLiteral:
     case FloatLiteral:
@@ -146,7 +145,7 @@ fn void Generator.emitIdentifier(Generator* gen, ir.Ref* result, const Expr* e) 
         gen.emitVarDecl(result, i.getDecl());
         break;
     case EnumConstant:
-        assert(0); // TODO
+        assert(0); // is CTV so should not come here
         break;
     case StructMember:
     case Label:

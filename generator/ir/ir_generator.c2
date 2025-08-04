@@ -28,6 +28,7 @@ import ref_list_pool;
 import source_mgr;
 import string_buffer;
 import string_pool;
+import target_info;
 import value_maplist;
 
 import string;
@@ -53,16 +54,18 @@ type Generator struct {
     bool assert_generated;
     bool print;
     bool enable_asserts;
+    ir.Type ptr_type;
     u32 string_idx;     // for string literals
-    u32 substruct_idx;  // for unnamed substructs/unions
     const char* target;
     const char* output_dir;
     source_mgr.SourceMgr* sm;
+    const target_info.Info* targetInfo;
     FunctionDecl* cur_function;
 }
 
 fn void Generator.init(Generator* gen,
                        source_mgr.SourceMgr* sm,
+                       const target_info.Info* targetInfo,
                        const char* target,
                        const char* output_dir,
                        bool enable_asserts,
@@ -76,8 +79,9 @@ fn void Generator.init(Generator* gen,
     gen.string_idx = 1; // starting at 1 looks nicer
     gen.locals.init();
     gen.ref_pool.init(4);
-    gen.enable_asserts = enable_asserts;
     gen.print = print;
+    gen.enable_asserts = enable_asserts;
+    gen.ptr_type = targetInfo.intWidth == 64 ? ir.Type.U64 : ir.Type.U32;
     gen.sm = sm;
     gen.name_buf = string_buffer.create(128, false, 0);
 }
@@ -560,6 +564,7 @@ public fn void generate(const char* target,
                         const char* output_dir,
                         component.List* comps,
                         source_mgr.SourceMgr* sm,
+                        const target_info.Info* targetInfo,
                         bool enable_asserts,
                         bool print,
                         bool print_all) {
@@ -572,7 +577,7 @@ public fn void generate(const char* target,
     }
 
     Generator gen;
-    gen.init(sm, target, ir_dir, enable_asserts, print, print_all);
+    gen.init(sm, targetInfo, target, ir_dir, enable_asserts, print, print_all);
 
     // TODO: also need to generate inline functions from libs -> check body/not
     // We only need to generate the main component

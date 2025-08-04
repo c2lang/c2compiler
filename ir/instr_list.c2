@@ -65,3 +65,10 @@ fn void InstrList.swap(InstrList* l, InstrList* other) {
 
 }
 
+fn void InstrList.prune(InstrList* l) {
+    while (l.count) {
+        Instr* last = &l.instrs[l.count-1];
+        if (last.isNone()) l.count--;
+        else break;
+    }
+}

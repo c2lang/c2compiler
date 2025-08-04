@@ -517,6 +517,7 @@ fn void Compiler.build(Compiler* c,
                               info.output_dir,
                               &c.components,
                               c.sm,
+                              &c.targetInfo,
                               c.target.hasAsserts(),
                               c.opts.print_ir,
                               c.opts.print_all_ir);

@@ -19,38 +19,38 @@ import stdlib;
 import string;
 import stdio local;
 
-const u32 NumArenas = 8;
+const u32 NumArenas = 9;
 // Note: caps need to be double of previous (except first two)
-const u8[NumArenas] Caps   = { 0, 2, 4, 8, 16, 32, 64, 128 }
+const u16[NumArenas] Caps   = { 0, 2, 4, 8, 16, 32, 64, 128, 256 }
 
-//const u16 NULL = u16.max; // until bootstrap
-const u16 NULL = 65535;
+const u16 NULL = u16.max;
 
 type Arena struct {
     u16 first_var;   // NULL if none
     u16 last_var;   // NULL if none
     u32 map_start;
-    u16 map_size;
+    u32 max_elems;
     u16 free_slots;
+    // 2 bytes padding
 }
-static_assert(12, sizeof(Arena));
+static_assert(16, sizeof(Arena));
 
 type Variable struct {
     // map
-    u16 start;
-    u8 count;
-    u8 capacity;
+    u16 start;  // make start u32?
+    u16 count;
+    u16 capacity;
     // list
     u16 next;
     u16 prev;
 }
-static_assert(8, sizeof(Variable));
+static_assert(10, sizeof(Variable));
 
 public type InterferenceGraph struct @(opaque) {
     u16* map;
     Variable* variables;
     u32 num_variables;
-    u32 map_size;
+    u32 max_elems;   // only used for dump
     Arena[NumArenas] arenas;
     // used during allocation
     u8* register_map; // num_variables, 255 means not used, 254 means not done, 253 means enqueued
@@ -58,16 +58,16 @@ public type InterferenceGraph struct @(opaque) {
     u32 queue_count;
     u32 queue_head;
 }
-static_assert(144, sizeof(InterferenceGraph));
+static_assert(192, sizeof(InterferenceGraph));
 
 // Note: map size must be a multiple of largest arena size (so 256)
-public fn InterferenceGraph* create(u32 map_size, u16 num_variables) {
+public fn InterferenceGraph* create(u32 max_elems, u16 num_variables) {
     InterferenceGraph* g = stdlib.calloc(1, sizeof(InterferenceGraph));
-    g.map = stdlib.malloc(map_size * sizeof(u16));
+    g.map = stdlib.malloc(max_elems * sizeof(u16));
     g.variables = stdlib.calloc(num_variables, sizeof(Variable));
     g.num_variables = num_variables;
-    g.map_size = map_size;
-    g.register_map = stdlib.malloc(num_variables *sizeof(u8));
+    g.max_elems = max_elems;
+    g.register_map = stdlib.malloc(num_variables *sizeof(u16));
     string.memset(g.register_map, 255, num_variables);
     g.queue = stdlib.malloc(num_variables * sizeof(u16));
 
@@ -79,8 +79,8 @@ public fn InterferenceGraph* create(u32 map_size, u16 num_variables) {
     }
 
     // give everything to highest arena (map size must be multiple of 256)
-    g.arenas[NumArenas-1].map_size = (u16)map_size;
-    g.arenas[NumArenas-1].free_slots = (u16)map_size / Caps[NumArenas-1];
+    g.arenas[NumArenas-1].max_elems = max_elems;
+    g.arenas[NumArenas-1].free_slots = (u16)max_elems / Caps[NumArenas-1];
 
     // all Variables start in first arena
     for (u16 i=0; i<num_variables; i++) g.addVariableToArenaTail(&g.arenas[0], i);
@@ -219,15 +219,17 @@ fn void InterferenceGraph.addInternal(InterferenceGraph* g, u16 var1, u16 var2) 
         r.count++;
         return;
     }
+    //printf("add %d -> %d  %d/%d\n", var1, var2, r.count, r.capacity);
 
     // move Variable to higher arena
     u32 arena_idx = findArena(r.capacity);
+    assert(arena_idx != NumArenas-1);
     Arena* a1 = &g.arenas[arena_idx];
     Arena* a2 = &g.arenas[arena_idx+1];
 
     //printf("  move Arena %d -> %d\n", arena_idx, arena_idx+1);
     if (arena_idx != 0 && a1.free_slots >= 3 && a1.free_slots >= a2.free_slots*2) {    // keep at least 2 free slots
-        u8 cap = Caps[arena_idx+1];
+        u16 cap = Caps[arena_idx+1];
 
         //printf("  shrink current arena (%d), give to next\n", arena_idx);
         // move to before next-arena, resizing both
@@ -235,10 +237,10 @@ fn void InterferenceGraph.addInternal(InterferenceGraph* g, u16 var1, u16 var2) 
         g.addVariableToArenaHead(a2, var1);
 
         // move 2 slots to next arena (1 slot in new)
-        a1.map_size -= cap;
+        a1.max_elems -= cap;
         a1.free_slots -= 1; // -2 +1
         a2.map_start -= cap;
-        a2.map_size += cap;
+        a2.max_elems += cap;
         // a2.free_slots does not change
 
         u32 dest_idx = a2.map_start;
@@ -247,6 +249,7 @@ fn void InterferenceGraph.addInternal(InterferenceGraph* g, u16 var1, u16 var2) 
         //printf("  copy data %d -> %d\n", src_idx, dest_idx);
         string.memcpy(&g.map[dest_idx], &g.map[src_idx], r.count*sizeof(u16));
 
+        assert(dest_idx < 65536);
         r.start = (u16)dest_idx;
         r.capacity = (u8)cap;
 
@@ -261,12 +264,12 @@ fn void InterferenceGraph.addInternal(InterferenceGraph* g, u16 var1, u16 var2) 
         //printf("  move to right\n");
         // check if next variable has free space, resize if needed (recursively)
         if (!a2.free_slots) {
-            a2.map_size += g.shiftArenaRight(arena_idx+2);
+            a2.max_elems += g.shiftArenaRight(arena_idx+2);
             a2.free_slots = 2;
         }
         u16 last_idx = g.removeVariableFromArena(a1, var1);
         g.addVariableToArenaTail(a2, var1);
-        u32 dest_idx = a2.map_start + a2.map_size - a2.free_slots * Caps[arena_idx+1];
+        u32 dest_idx = a2.map_start + a2.max_elems - a2.free_slots * Caps[arena_idx+1];
         u16 src_idx = r.start;
         //printf("  DEST %d\n", dest_idx);
         if (r.count) { // was in arena[0], no need to plug holes
@@ -314,15 +317,15 @@ fn u16 InterferenceGraph.shiftArenaRight(InterferenceGraph* g, u32 arena_idx) {
 
     if (!a.free_slots) {
         assert(arena_idx != NumArenas-1);   // cannot shift after last one
-        a.map_size += g.shiftArenaRight(arena_idx+1);
+        a.max_elems += g.shiftArenaRight(arena_idx+1);
         a.free_slots = 2;
     }
 
     if (a.first_var == NULL) {    // empty
         a.map_start += cap;
-        a.map_size -= cap;
+        a.max_elems -= cap;
         a.free_slots--;
-        //printf("  start %d, size %d\n", a.map_start, a.map_size);
+        //printf("  start %d, size %d\n", a.map_start, a.max_elems);
         return cap;
     }
 
@@ -331,7 +334,7 @@ fn u16 InterferenceGraph.shiftArenaRight(InterferenceGraph* g, u32 arena_idx) {
 
     Variable* r = &g.variables[var_idx];
     u16 src_idx = r.start;
-    u32 dest_idx = a.map_start + a.map_size - a.free_slots * cap;
+    u32 dest_idx = a.map_start + a.max_elems - a.free_slots * cap;
     //printf("  DEST %d <- %d\n", dest_idx, src_idx);
     // move data
     string.memcpy(&g.map[dest_idx], &g.map[src_idx], r.count*sizeof(u16));
@@ -351,7 +354,7 @@ fn u16 InterferenceGraph.shiftArenaRight(InterferenceGraph* g, u32 arena_idx) {
     }
 
     a.map_start += cap;
-    a.map_size -= cap;
+    a.max_elems -= cap;
     a.free_slots--;
     return cap;
 }
@@ -425,9 +428,9 @@ fn void InterferenceGraph.enqueue(InterferenceGraph* g, u16 var_idx) {
 public fn void InterferenceGraph.dump(const InterferenceGraph* g, bool verbose) @(unused) {
     if (verbose) {
         u32 mem_variables = g.num_variables * sizeof(Variable);
-        u32 mem_map = g.map_size * sizeof(u16);
+        u32 mem_map = g.max_elems * sizeof(u16);
         u32 mem_usage = mem_variables + mem_map;
-        printf("InterferenceGraph: (%d users, map %d, %d/%d Kb)\n", g.num_variables, g.map_size, (mem_variables + 512) / 1024, (mem_usage + 512) / 1024);
+        printf("InterferenceGraph: (%d users, map %d, %d/%d Kb)\n", g.num_variables, g.max_elems, (mem_variables + 512) / 1024, (mem_usage + 512) / 1024);
         printf("Arenas:\n");
         u32 total = 0;
         for (u32 i=0; i<NumArenas; i++) {
@@ -444,7 +447,7 @@ public fn void InterferenceGraph.dump(const InterferenceGraph* g, bool verbose) 
             print_idx(a.first_var);
             printf(",");
             print_idx(a.last_var);
-            printf("  (%4d)  map %5d(%4d)  free: ", count, a.map_start, a.map_size);
+            printf("  (%4d)  map %5d(%4d)  free: ", count, a.map_start, a.max_elems);
             if (i == 0) printf("-");
             else printf("%d", a.free_slots);
             printf("\n");

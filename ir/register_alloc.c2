@@ -42,11 +42,11 @@ type LiveVector struct  {
 fn void LiveVector.init(LiveVector* v, u32 num_blocks) {
     v.count = 0;
     v.start = 0;
-    v.cap = 256;
+    v.cap = 1024;
     v.temps = stdlib.malloc(v.cap * sizeof(u32));
 
     v.index_cap = num_blocks;
-    v.indexes = stdlib.malloc(v.index_cap*sizeof(LiveIndex));
+    v.indexes = stdlib.malloc(v.index_cap * sizeof(LiveIndex));
 
     // TODO this should be re-used between functions (also LiveVector)
     v.interferences = interference_graph.create(16*1024, 1024);
@@ -58,7 +58,9 @@ fn void LiveVector.free(LiveVector* v) {
 }
 
 fn void LiveVector.add(LiveVector* v, u32 idx) {
-    //printf("add %d\n", idx);
+    assert(idx <= 65535);
+    //if (v.count == v.cap) printf("add %d/%d  %d\n", v.count, v.cap, idx);
+    //printf("  add %d/%d  %d\n", v.count, v.cap, idx);
     for (u32 i=v.start; i<v.count; i++) {
         if (v.temps[i] == idx) return;    // already in, ignore
     }
@@ -85,6 +87,7 @@ fn void LiveVector.remove(LiveVector* v, u32 idx) {
 }
 
 fn void LiveVector.store(LiveVector* v, u32 blk_id) {
+    assert(blk_id < v.index_cap);
     LiveIndex* idx = &v.indexes[blk_id];
     idx.start = (u16)v.start;
     idx.count = (u16)(v.count - v.start);
@@ -93,16 +96,18 @@ fn void LiveVector.store(LiveVector* v, u32 blk_id) {
 }
 
 fn void LiveVector.copy(LiveVector* v, u32 blk_id) {
+    assert(blk_id < v.index_cap);
     const LiveIndex* src = &v.indexes[blk_id];
-    //printf("COPY %d (%d %d)\n", blk_id, src.start, src.count);
+    //printf("  COPY %d (%d %d)\n", blk_id, src.start, src.count);
     assert(v.count + src.count < v.cap);
     string.memcpy(&v.temps[v.count], &v.temps[src.start], src.count * sizeof(u32));
     v.count += src.count;
 }
 
 fn void LiveVector.merge(LiveVector* v, u32 blk_id) {
+    assert(blk_id < v.index_cap);
     const LiveIndex* src = &v.indexes[blk_id];
-    //printf("MERGE %d (%d %d)\n", blk_id, src.start, src.count);
+    //printf("  MERGE %d (%d %d)\n", blk_id, src.start, src.count);
     u32 last = src.start + src.count;
     for (u32 i = src.start; i < last; i++) v.add(v.temps[i]);
 }
@@ -115,8 +120,19 @@ fn void LiveVector.dump(const LiveVector* v) @(unused) {
     printf("\n");
 }
 
-// TEMP disable
-fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) @(unused) {
+fn void LiveVector.dumpRanges(const LiveVector* v) @(unused) {
+    printf("Live ranges");
+    for (u32 i=v.start; i<v.index_cap; i++) {
+        const LiveIndex* idx = &v.indexes[i];
+        printf("  B%d %2d|%2d: ", i, idx.start, idx.count);
+        for (u32 j=idx.start; j<idx.start+idx.count; j++) {
+            printf(" %d", v.temps[j]);
+        }
+        printf("\n");
+    }
+}
+
+fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
     LiveVector v.init(fi.blocks.getCount());
 
     Block* blocks = fi.blocks.get(0);
@@ -128,6 +144,8 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) @(unused) {
     // that would still be ISA independent
 
     t.checkBlockReg(0, fi, &v);
+
+    //v.dumpRanges();
 
     //v.interferences.dump(false);
     v.interferences.allocate();
@@ -169,6 +187,7 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) @(unused) {
 fn void Tools.checkBlockReg(Tools* t, u32 blk_id, FunctionInfo* fi, LiveVector* v) {
     //printf("CHECK B%d\n", blk_id);
     Block* b = fi.blocks.get(blk_id);
+    //printf("CHECK BLK %d\n", blk_id);
 
     // algoritm:
     // 1. get LiveIn from successors

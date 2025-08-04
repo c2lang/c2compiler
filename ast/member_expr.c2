@@ -286,7 +286,7 @@ fn void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent
     IdentifierKind kind = e.getKind();
     if (kind == IdentifierKind.Unresolved) out.color(col_Error);
     else out.color(col_Attr);
-    out.add(identifierKind_names[kind]);
+    out.add(kind.str());
     out.color(col_Attr);
     if (e.isBitfield()) out.add(" bitfield");
     if (e.isTypeFunc()) out.add(" TF");
@@ -324,6 +324,11 @@ public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
     string_buffer.Buf* out = string_buffer.create(4096, useColor(), 2);
     out.color(col_Expr);
     out.print("MemberExpr expr %d ref %d/%d\n", m.hasExpr(), m.base.base.memberExprBits.num_decls, m.getNumRefs());
+    const MemberExprBits* bits = &m.base.base.memberExprBits;
+    IdentifierKind k = (IdentifierKind)bits.kind;
+    out.print("  bits: %d refs, kind %s, sf %d, ssf %d, conv %d, bitf %d\n",
+        bits.num_refs, k.str(), bits.is_struct_func, bits.is_static_sf,
+        bits.conversion, bits.is_bitfield);
     if (m.hasExpr()) {
         out.indent(1);
         out.color(col_Value);

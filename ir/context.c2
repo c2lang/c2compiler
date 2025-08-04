@@ -574,14 +574,15 @@ fn Ref Context.addComment2(Context* c, const char* text, FunctionInfo* info) {
     return out;
 }
 
-public fn CaseId Context.addSwitchInstr(Context* c, Ref cond, Ref join_ref, u32 num_cases) {
+public fn CaseId Context.addSwitchInstr(Context* c, Ref cond, BlockId join_blk, u32 num_cases) {
 #if DebugIr
-    stdio.printf("  switch (%d)\n", num_cases);
+    stdio.printf("  switch (join %d, %d cases)\n", join_blk, num_cases);
 #endif
     CaseId case_id = c.b.tmp_info.cases.reserve(num_cases);
 
     assert(c.b.in_block);
     Instr* i = c.b.tmp_info.instructions.add();
+    Ref join_ref.init(RefKind.Block, join_blk);
     i.init2(InstrKind.Switch, cond, join_ref);
     c.b.block_terminated = true;
     Block* b = c.b.tmp_info.blocks.get(c.b.cur_block);
@@ -613,16 +614,15 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     // prune unused and empty blocks, possible convert jmp_if to jmp
     checkDest(c.b.tmp_info, 0);
 
-    //dump_function(c.b.tmp_info, name);
-    //if (print) c.print_function(symbol, c.b.tmp_info, "after check dest");
+    if (c.print_all) c.print_function(symbol, c.b.tmp_info, "after check dest");
 
     // TODO use Builder 2nd BlockList here (pass as well)
     c.reorder_blocks(c.b.tmp_info, &c.b.block_order);
+    c.b.block_order.clear();
 
     FunctionInfo* fi = c.b.tmp_info;
     symbol.f.info = c.b.tmp_info;
     c.b.tmp_info = nil;
-    c.b.block_order.clear();
 
     //dump_function(fi, name);
     if (c.print_all && fi.blocks.getCount() > 1) c.print_function(symbol, fi, "after reorder");
@@ -657,8 +657,8 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     t.removeNone(fi);
     if (c.print_all) c.print_function(symbol, fi, "after remove none");
 
-    //t.allocateRegisters(fi);
-    //if (c.print_all) c.print_function(symbol, fi, "after register allocation");
+    t.allocateRegisters(fi);
+    if (c.print_all) c.print_function(symbol, fi, "after register allocation");
 
     // generate Instruction
     // ..
@@ -737,7 +737,7 @@ fn BlockId checkDest(FunctionInfo* fi, BlockId id) {
     return id;
 }
 
-// NOTE: also removes unused blocks
+// NOTE: also removes unused blocks, clears instructions in removed blocks
 fn void Context.reorder_blocks(Context* c, FunctionInfo* fi, const index_list.List* block_order) {
     Tools* t = &c.tools;
     const u32* order = block_order.getFrom(0);
@@ -753,7 +753,12 @@ fn void Context.reorder_blocks(Context* c, FunctionInfo* fi, const index_list.Li
     for (u32 i=0; i<num_blocks; i++) {
         BlockId blk_id = order[i];
         const Block* old = &blocks1[blk_id];
-        if (!old.used) continue;
+        if (!old.used) {
+            // clear instructions
+            Instr* instrs = fi.instructions.get(old.instr.start);
+            for (u32 j=0; j<old.instr.count; j++) instrs[j].clear();
+            continue;
+        }
         list2.copy(old);
         t.conversion.set(blk_id, blk_count);
         blk_count++;
@@ -771,9 +776,10 @@ fn void Context.reorder_blocks(Context* c, FunctionInfo* fi, const index_list.Li
                 Case* cs = fi.cases.get(case_id+j);
                 cs.block = t.conversion.get(cs.block);
             }
-            // update block id in switch instr.args[1]
+            // update block id in switch instr.args[1], is last instruction (if not comment)
             u32 instr_idx = b.instr.start + b.instr.count - 1;
             Instr* switch_instr = fi.instructions.get(instr_idx);
+            assert(switch_instr.isSwitch());
             Ref* join_ref = &switch_instr.args[1];
             join_ref.value = t.conversion.get(join_ref.value);
         } else {
@@ -786,6 +792,9 @@ fn void Context.reorder_blocks(Context* c, FunctionInfo* fi, const index_list.Li
         PhiClause* pc = fi.phis.get(i);
         pc.src = t.conversion.get(pc.src);
     }
+
+    // strip of empty instructions at end
+    fi.instructions.prune();
 
     fi.blocks.swap(&list2);
     list2.free();
