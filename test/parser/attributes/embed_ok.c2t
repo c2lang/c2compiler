@@ -1,0 +1,26 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file2}
+module file2;
+
+// The quick brown fox
+
+// @file{file1}
+module test;
+
+import file2;
+
+const char[] File1 @(embed="file2.c2");
+
+public fn i32 main(i32 argc, const i8** argv)
+{
+    const char* str = File1;
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+
+static const char test_File1[40] = "module file2;\n\n// The quick brown fox\n\n";
+

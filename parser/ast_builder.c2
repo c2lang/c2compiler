@@ -259,6 +259,7 @@ public fn Decl* Builder.actOnGlobalVarDecl(Builder* b,
                                             bool is_public,
                                             TypeRefHolder* ref,
                                             SrcLoc assignLoc,
+                                            bool has_embed,
                                             Expr* initValue)
 {
     is_public |= b.is_interface;
@@ -270,6 +271,7 @@ public fn Decl* Builder.actOnGlobalVarDecl(Builder* b,
                                  ref,
                                  b.ast_idx,
                                  assignLoc,
+                                 has_embed,
                                  initValue);
     Decl* d = vd.asDecl();
     b.ast.addVarDecl(d);
@@ -294,6 +296,7 @@ public fn VarDecl* Builder.actOnFunctionParam(Builder* b,
                           ref,
                           b.ast_idx,
                           0,
+                          false,
                           nil);
 }
 
@@ -319,24 +322,15 @@ public fn VarDecl* Builder.actOnVarDecl(Builder* b,
                                 ref,
                                 b.ast_idx,
                                 assignLoc,
+                                false,
                                 initValue);
     d.setLocal(has_local);
     d.setInitCall(has_init_call);
     return d;
 }
 
-fn bool Builder.hasAttr(const Builder* b, Decl* d, const Attr* a) {
-    // TODO
-    return false;
-}
-
 fn void Builder.storeAttr(Builder* b, Decl* d, const Attr* a) {
     d.setHasAttr();
-
-    if (b.hasAttr(d, a)) {
-        b.diags.error(a.loc, "attribute '%s' is already applied", kind2name(a.kind));
-        return;
-    }
     b.ast.storeAttr(d, a.kind, &a.value);
 }
 
@@ -372,9 +366,6 @@ fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
         d.setAttrExport();
         break;
     case Unused:
-        if (d.hasAttrUnused()) {
-            b.diags.error(a.loc, "attribute 'unused' is already applied");
-        }
         d.setAttrUnused();
         break;
     case UnusedParams:
@@ -423,9 +414,6 @@ fn void Builder.actOnStructAttr(Builder* b, Decl* d, const Attr* a) {
         std.setPacked();
         break;
     case Unused:
-        if (d.hasAttrUnused()) {
-            b.diags.error(a.loc, "attribute 'unused' is already applied");
-        }
         d.setAttrUnused();
         break;
     case Section:
@@ -469,9 +457,6 @@ fn bool Builder.actOnTypeAttr(Builder* b, Decl* d, const Attr* a) {
                 kind2name(a.kind));
         return false;
     case Unused:
-        if (d.hasAttrUnused()) {
-            b.diags.error(a.loc, "attribute 'unused' is already applied");
-        }
         d.setAttrUnused();
         break;
     case Opaque:
@@ -497,9 +482,6 @@ fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
         d.setAttrExport();
         break;
     case Unused:
-        if (d.hasAttrUnused()) {
-            b.diags.error(a.loc, "attribute 'unused' is already applied");
-        }
         d.setAttrUnused();
         break;
     case Section:
@@ -514,6 +496,9 @@ fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
         break;
     case CName:
     case CDef:
+        b.storeAttr(d, a);
+        break;
+    case Embed:
         b.storeAttr(d, a);
         break;
     default:

@@ -486,22 +486,6 @@ lib git_version dynamic
     plugins/git_version_plugin.c2
 end
 
-lib load_file dynamic
-    $warnings no-unused
-	$backend c
-    $config RadixTreeValue
-
-    (ast)
-    (common)
-    (yaml)
-
-    parser/ast_builder.c2
-    parser/expr_list.c2
-
-    plugins/plugin_info.c2
-    plugins/load_file_plugin.c2
-end
-
 lib unit_test dynamic
     $warnings no-unused
 	$backend c

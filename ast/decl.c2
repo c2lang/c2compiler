@@ -425,18 +425,26 @@ fn void Decl.printAttrs(const Decl* d, string_buffer.Buf* out) {
     if (!d.hasAttr()) return;
 
     const AST* a = d.getAST();
-    // Note: just request 3 here, ideally we should iterate over all
+    // Note: just request 4 here, ideally we should iterate over all
     const attr.Value* cname = a.getAttr(d, attr.AttrKind.CName);
     if (cname) {
+        out.color(col_Attr);
         out.print(" cname='%s'", idx2name(cname.text));
     }
     const attr.Value* cdef = a.getAttr(d, attr.AttrKind.CDef);
     if (cdef) {
+        out.color(col_Attr);
         out.print(" cdef='%s'", idx2name(cdef.text));
     }
     const attr.Value* section = a.getAttr(d, attr.AttrKind.Section);
     if (section) {
+        out.color(col_Attr);
         out.print(" section='%s'", idx2name(section.text));
+    }
+    const attr.Value* embed = a.getAttr(d, attr.AttrKind.Embed);
+    if (embed) {
+        out.color(col_Attr);
+        out.print(" embed='%s'", idx2name(embed.text));
     }
 }
 

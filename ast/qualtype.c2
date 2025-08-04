@@ -228,6 +228,15 @@ public fn bool QualType.isCharPointer(const QualType* qt) {
     return inner.isChar();
 }
 
+public fn bool QualType.isConstCharArray(const QualType* qt) {
+    if (!qt.isArray()) return false;
+    ArrayType* at = qt.getArrayType();
+    if (at.hasSize()) return false;
+    QualType elem = at.getElemType();
+    if (!elem.isConst()) return false;
+    return elem.isChar();
+}
+
 public fn bool QualType.isPointer(const QualType* qt) {
     return qt.getTypeOrNil().isPointerType();
 }

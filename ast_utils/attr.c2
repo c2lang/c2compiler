@@ -41,6 +41,7 @@ public type AttrKind enum u8 {
     AutoFile,       //               Var, function param only
     AutoLine,       //               Var, function param only
     AutoFunc,       //               Var, function param only
+    Embed,          //               Var, globals only
 }
 
 const char*[] attrKind_names = {
@@ -65,6 +66,7 @@ const char*[] attrKind_names = {
     "auto_file",
     "auto_line",
     "auto_func",
+    "embed",
 }
 
 static_assert(elemsof(AttrKind), elemsof(attrKind_names));
@@ -143,6 +145,7 @@ const AttrReq[] Required_arg = {
     [AttrKind.AutoFile]     = AttrReq.NoArg,
     [AttrKind.AutoLine]     = AttrReq.NoArg,
     [AttrKind.AutoFunc]     = AttrReq.NoArg,
+    [AttrKind.Embed]        = AttrReq.String,
 }
 static_assert(elemsof(AttrKind), elemsof(Required_arg));
 

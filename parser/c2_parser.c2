@@ -59,6 +59,7 @@ public type Parser struct @(opaque) {
     u32 va_list_idx;
     u32 varargs_idx;
     u32 stdarg_idx;
+    u32 embed_idx;
 
     stmt_list.List* stmt_lists;
     u32 stmt_list_count;
@@ -84,6 +85,7 @@ public fn Parser* create(SourceMgr* sm,
     p.va_list_idx = pool.addStr("va_list", true);
     p.varargs_idx = pool.addStr("varargs", true);
     p.stdarg_idx = pool.addStr("stdarg", true);
+    p.embed_idx = pool.addStr("embed", true);
 
     // create a stack of stmt_lists to re-use (resize stack if needed)
     p.stmt_lists = malloc(NumStmtLists * sizeof(stmt_list.List));
@@ -331,11 +333,17 @@ fn void Parser.parseTopLevel(Parser* p) {
                   name="value"
                   name=<number>
 */
-fn void Parser.parseOptionalAttributes(Parser* p) {
-    if (p.tok.kind != Kind.At) return;
+
+// returns if embed attribute was seen
+fn bool Parser.parseOptionalAttributes(Parser* p) {
+    if (p.tok.kind != Kind.At) return false;
     p.consumeToken();
 
     p.expectAndConsume(Kind.LParen);
+
+    u32[16] dups;
+    u32 num_attrs = 0;
+    bool has_embed = false;
 
     while (1) {
         p.expectIdentifier();
@@ -343,6 +351,15 @@ fn void Parser.parseOptionalAttributes(Parser* p) {
         a.name = p.tok.name_idx;
         a.loc = p.tok.loc;
         a.value_kind = attr.ValueKind.None;
+
+        assert(num_attrs < elemsof(dups));
+
+        for (u32 i=0; i<num_attrs; i++) {
+            if (dups[i] == a.name) p.error("duplicate attribute");
+        }
+        dups[num_attrs++] = a.name;
+
+        if (a.name == p.embed_idx) has_embed = true;
         p.consumeToken();
 
         if (p.tok.kind == Kind.Equal) {
@@ -365,7 +382,7 @@ fn void Parser.parseOptionalAttributes(Parser* p) {
                 break;
             default:
                 p.error("expected attribute argument");
-                return;
+                return has_embed;
             }
         }
 
@@ -376,6 +393,7 @@ fn void Parser.parseOptionalAttributes(Parser* p) {
     }
 
     p.expectAndConsume(Kind.RParen);
+    return has_embed;
 }
 
 fn void Parser.parseParamOptionalAttributes(Parser* p, VarDecl* d) {
@@ -633,7 +651,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
         Expr* initValue = nil;
         SrcLoc assignLoc = 0;
 
-        p.parseOptionalAttributes();
+        bool has_embed = p.parseOptionalAttributes();
 
         if (p.tok.kind == Kind.Dot)
             p.error("global variables cannot have an init call");
@@ -645,7 +663,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
             initValue = p.parseInitValue(false);
         }
 
-        Decl* d = p.builder.actOnGlobalVarDecl(name, loc, is_public, &ref, assignLoc, initValue);
+        Decl* d = p.builder.actOnGlobalVarDecl(name, loc, is_public, &ref, assignLoc, has_embed, initValue);
         p.builder.applyAttributes(d);
 
         if (p.tok.kind != Kind.Comma)

@@ -545,6 +545,9 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool a
             p.consumeToken();
             initValue = p.parseInitValue(false);
             break;
+        case At:
+            p.error("local variables cannot have attributes");
+            break;
         case Dot:
             if (p.tokenizer.lookahead(1, nil) == Kind.Identifier
             &&  p.tokenizer.lookahead(2, nil) == Kind.LParen) {

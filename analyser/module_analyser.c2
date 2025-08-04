@@ -22,6 +22,7 @@ import attr;
 import ctv_analyser;
 import conversion_checker as conv;
 import diagnostics;
+import file_utils;
 import init_checker;
 import module_list;
 import label_vector local;
@@ -36,6 +37,7 @@ import incr_array_list as ia_list;
 import ctype;
 import stdarg local;
 import stdlib;
+import string;
 
 const u32 MaxDepth = 8;
 const u32 LHS = 0x01;
@@ -555,6 +557,10 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         ma.error(ref.getLoc(), "%s has invalid type 'void'", res.isConst() ? "constant" : "variable");
         return;
     }
+
+    const AST* a = d.getAST();
+    const attr.Value* embed = a.getAttr(d, attr.AttrKind.Embed);
+
     if (canon.isArray() && !ref.isIncrArray()) {
         const ArrayType* at = canon.getArrayType();
         if (at.hasSize()) {
@@ -563,7 +569,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
                 return;
             }
         } else {
-            if (!init_expr && !d.isExternal()) {
+            if (!init_expr && !d.isExternal() && !embed) {
                 ma.error(d.getLoc(), "array-type variable '%s' needs an explicit size or an initializer", d.getFullName());
                 return;
             }
@@ -571,6 +577,38 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
     }
 
     d.setType(res);
+
+    if (embed) {
+        // TODO could also have const u8[] and dont treat as string then
+        if (!canon.isConstCharArray()) {
+            ma.error(d.getLoc(), "variables with 'embed' attribute must be type 'const char[]'");
+            return;
+        }
+
+        if (init_expr) {
+            ma.error(d.getLoc(), "variables with 'embed' attribute cannot have an initializer");
+            return;
+        }
+
+        // open file, copy contents to StringPool and close
+        const char* filename = ma.astPool.idx2str(embed.text);
+        file_utils.Reader reader;
+        if (!reader.open(filename)) {
+            ma.error(embed.loc, "error opening embedded file '%s': %s", filename, string.strerror(reader.error));
+            return;
+        }
+
+        u32 src_len = reader.size;
+        u32 len = reader.size;
+        //TODO check input for weird chars if string
+        u32 value = ma.astPool.add(reader.data(), reader.size, false);
+        Expr* init = ma.builder.actOnStringLiteral(embed.loc, src_len, value, len);
+
+        // Note: VarDecl already needed to allocate extra space during creation! (parser checks embed attr for this)
+        v.setInit(init);
+        d.setType(init.getType());
+        reader.close();
+    }
 
     if (!d.getAST().isInterface())
         ma.checkName(d, res.isConstant());
@@ -584,7 +622,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         }
         ma.analyseInitExpr(v.getInit2(), res, v.getAssignLoc(), false);
     } else {
-        if (res.isConstant()) {
+        if (res.isConstant() && !embed) {
             ma.error(d.getLoc(), "constant variable '%s' must be initialized", d.getFullName());
         }
     }

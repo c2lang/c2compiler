@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+const char[10] File1 @(embed="file1.txt"); // @error{variables with 'embed' attribute must be type 'const char[]'}
+
+const char[] File2 @(embed="file1.txt") = { 1, 2 } // @error{variables with 'embed' attribute cannot have an initializer}
+
+const i32 File3 @(embed="file1.txt");   // @error{variables with 'embed' attribute must be type 'const char[]'}
+
+const i32[] File4 @(embed="file1.txt"); // @error{variables with 'embed' attribute must be type 'const char[]'}
+
+u8[] file5 @(embed="file1.txt"); // @error{variables with 'embed' attribute must be type 'const char[]'}
+
+const char[] File6 @(embed="unknown.txt"); // @error{error opening embedded file 'unknown.txt': No such file or directory}
+

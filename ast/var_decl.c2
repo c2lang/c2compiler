@@ -89,12 +89,13 @@ public fn VarDecl* VarDecl.create(ast_context.Context* c,
                                     const TypeRefHolder* ref,
                                     u32 ast_idx,
                                     SrcLoc assignLoc,
+                                    bool has_embed,
                                     Expr* initValue)
 {
     u32 size = sizeof(VarDecl) + ref.getExtraSize();
     // Note: assignLoc only used for initValue
     // Note: for incremental arrays, the initValue will be set later
-    if (initValue || ref.isIncrArray()) size += sizeof(VarDeclInit);
+    if (initValue || ref.isIncrArray() || has_embed) size += sizeof(VarDeclInit);
     assert (kind != VarDeclKind.StructMember);
     size = (size + 7) & ~0x7; // round to 8-byte (temp)
 
@@ -102,7 +103,7 @@ public fn VarDecl* VarDecl.create(ast_context.Context* c,
     d.base.init(DeclKind.Variable, name, loc, is_public, QualType_Invalid, ast_idx);
     d.base.varDeclBits.kind = kind;
     d.typeRef.init(ref);
-    if (initValue) {
+    if (initValue || has_embed) {
         d.base.varDeclBits.has_init = 1;
         VarDeclInit* init = d.typeRef.getPointerAfter();
         init.expr = initValue;
@@ -149,6 +150,7 @@ fn VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
 {
     bool matches = vd.typeRef.matchesTemplate(inst.template_name);
     u32 extra = matches ? inst.ref.getExtraSize() : vd.typeRef.getExtraSize();
+    //TODO handle embed
     if (vd.base.varDeclBits.has_init) extra += sizeof(VarDeclInit);
     if (vd.base.varDeclBits.is_bitfield) extra += sizeof(BitFieldInfo);
     u32 size = sizeof(VarDecl) + extra;
@@ -255,7 +257,7 @@ public fn Expr** VarDecl.getInit2(VarDecl* d) {
     return nil;
 }
 
-// Note: can ONLY be done for incremental arrays (since init is tail allocated)
+// Note: can ONLY be done for incremental arrays / embed attr (since init is tail allocated)
 public fn  void VarDecl.setInit(VarDecl* d, Expr* initValue) {
     d.base.varDeclBits.has_init = 1;
     VarDeclInit* init = d.typeRef.getPointerAfter();

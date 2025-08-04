@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1() {
+    const char[10] File @(embed="file1.txt");   // @error{local variables cannot have attributes}
+}
+
