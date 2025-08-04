@@ -1,0 +1,155 @@
+// NOTE: module + imports are generated so this file is not valid C2.
+
+import csetjmp local;
+import stdarg local;
+import stdio local;
+import sys_time;
+import unistd;
+
+public const char[] Red      = "\033[0;31m";
+public const char[] Green    = "\033[0;32m";
+public const char[] Yellow   = "\033[0;33m";
+public const char[] Blue     = "\033[0;34m";
+public const char[] Normal   = "\033[0m";
+
+bool color_output;
+JmpBufTag jmpbuf;
+char[4096] error_buffer;
+char* error_msg;
+u32 error_size;
+
+public fn u64 now() {
+  sys_time.Timeval tv;
+  sys_time.gettimeofday(&tv, nil);
+  u64 now64 = cast<u64>(tv.tv_sec);
+  now64 *= 1000000;
+  now64 += tv.tv_usec;
+  return now64;
+}
+
+fn void color_print(const char* color, const char* text) {
+  if (color_output) {
+    printf("%s%s%s\n", color, text, Normal);
+  } else {
+    printf("%s\n", text);
+  }
+}
+
+fn void run_group(const Group* g, Stats* stats) {
+  u8[256] fixture;
+  for (u32 i=0; i<g.num_tests; i++) {
+    const C2Test* t = &g.tests[i];
+
+    error_size = sizeof(error_buffer) -1;
+    error_msg = error_buffer;
+    printf("TEST [%d/%d] %s.%s ", i+1+stats.done, stats.total, g.name, t.name);
+    fflush(stdout);
+    i32 result = setjmp(&jmpbuf);
+    if (result == 0) {
+      if (g.setup) g.setup(&fixture);
+      t.func(&fixture);
+      if (g.teardown) g.teardown(&fixture);
+      printf("[OK]\n");
+      stats.ok++;
+    } else {
+      color_print(Red, "[FAIL]");
+      stats.failed++;
+    }
+    if (error_msg != error_buffer) printf("%s", error_buffer);
+  }
+}
+
+fn void vprint_errormsg(const char* fmt, va_list ap) {
+  i32 ret = vsnprintf(error_msg, error_size, fmt, ap);
+  if (ret < 0) {
+    error_msg[0] = 0;
+  } else {
+    const usize size = cast<usize>(ret);
+    const usize s = (error_size <= size) ? size - error_size : size;
+    // error_size may overflow at this point
+    error_size -= s;
+    error_msg += s;
+  }
+}
+
+fn void print_errormsg(const char* fmt @(printf_format), ...) {
+  va_list args;
+  va_start(args, fmt);
+  vprint_errormsg(fmt, args);
+  va_end(args);
+}
+
+fn void msg_start(const char* color, const char* title) {
+  if (color_output) {
+    print_errormsg("%s", color);
+  }
+  print_errormsg("  %s: ", title);
+}
+
+fn void msg_end() {
+  if (color_output) print_errormsg(Normal);
+  print_errormsg("\n");
+}
+
+fn void on_error(const char* fmt @(printf_format), ...) {
+  va_list args;
+  msg_start(Yellow, "ERR");
+  va_start(args, fmt);
+  vprint_errormsg(fmt, args);
+  va_end(args);
+  msg_end();
+  longjmp(&jmpbuf, 1);
+}
+
+public fn void on_log(const char* fmt, va_list args) {
+  msg_start(Blue, "LOG");
+  vprint_errormsg(fmt, args);
+  msg_end();
+}
+
+public type Stats struct {
+  u32 done;
+  u32 total;
+  u32 ok;
+  u32 failed;
+  u32 skipped;
+}
+
+public fn i32 run_tests() {
+  color_output = unistd.isatty(1);
+  Config cfg = {
+    .on_error = on_error,
+    .on_log = on_log,
+  };
+  c2test.init(&cfg);
+
+  Stats stats = { };
+  for(u32 i=0; i<elemsof(groups); i++) {
+    stats.total += groups[i].num_tests;
+  }
+
+  u64 t1 = now();
+  for(u32 i=0; i<elemsof(groups); i++) {
+    const Group* g = groups[i];
+    run_group(g, &stats);
+    stats.done += g.num_tests;
+  }
+  u64 t2 = now();
+
+  const char* color = stats.failed ? Red : Green;
+  char[80] results;
+  sprintf(results, "RESULT: %d tests (%d ok, %d failed, %d skipped) ran in %d ms",
+    stats.total, stats.ok, stats.failed, stats.skipped, (t2 - t1) / 1000);
+  color_print(color, results);
+  return 0;
+}
+
+public fn void show_tests() {
+  for(u32 i=0; i<elemsof(groups); i++) {
+    const Group* g = groups[i];
+    for(u32 t=0; t<g.num_tests; t++) {
+      printf("%s.%s\n", g.name, g.tests[t].name);
+    }
+  }
+}
+
