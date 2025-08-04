@@ -98,7 +98,7 @@ fn void Palette.setColors(Palette* palette, const Color* colors,
 
 // ------ From SDL_thread.h ------
 
-type Thread struct @(cname="SDL_Thread") {}
+type Thread struct @(cname="SDL_Thread");
 
 type ThreadFunction fn c_int (void* data);
 
@@ -132,7 +132,7 @@ type Rect struct @(cname="SDL_Rect") {
 
 // ------ From SDL_rwops.h ------
 
-type RWops struct @(cname="SDL_RWops") { }
+type RWops struct @(cname="SDL_RWops");
 
 fn RWops* rwFromFile(const char* file, const char* mode) @(cname="SDL_RWFromFile");
 
@@ -666,7 +666,7 @@ const c_uint WINDOW_INPUT_GRABBED = WINDOW_MOUSE_GRABBED; /**< equivalent to WIN
 
 
 
-type Window struct @(cname="SDL_Window") {}
+type Window struct @(cname="SDL_Window");
 
 fn Window* createWindow(const char* title, c_int x, c_int y, c_int w, c_int h, u32 flags) @(cname="SDL_CreateWindow");
 
@@ -1124,7 +1124,7 @@ type RendererFlip enum u8 {
     Vertical   = 0x00000002
 }
 
-type Renderer struct @(cname="SDL_Renderer") {}
+type Renderer struct @(cname="SDL_Renderer");
 
 fn Renderer* Window.createRenderer(Window* window, c_int index, u32 flags) @(cname="SDL_CreateRenderer");
 
@@ -1148,7 +1148,7 @@ fn c_int Renderer.fillRect(Renderer* renderer, const Rect* rect) @(cname="SDL_Re
 
 fn c_int Renderer.fillRects(Renderer* renderer, const Rect* rects, c_int count) @(cname="SDL_RenderFillRects");
 
-type Texture struct @(cname="SDL_Texture") {}
+type Texture struct @(cname="SDL_Texture");
 
 fn c_int Renderer.copy(Renderer* renderer, Texture* texture, const Rect* src, const Rect* dst) @(cname="SDL_RenderCopy");
 

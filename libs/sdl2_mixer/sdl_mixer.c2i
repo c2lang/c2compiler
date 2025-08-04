@@ -17,7 +17,7 @@ const u32 MIX_DEFAULT_FORMAT = AUDIO_S16LSB;
 
 const i32 CHANNEL_POST = -2; // MIX_CHANNEL_POST
 
-type Mix_Music  struct @(cname="Mix_Music") { }
+type Mix_Music  struct @(opaque, cname="Mix_Music");
 
 fn Mix_Music* Mix_LoadMUS(const char* file) @(cname="Mix_LoadMUS");
 

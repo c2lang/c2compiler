@@ -2,8 +2,7 @@ module libc_dirent;
 
 import c2 local;
 
-type DIR struct @(opaque) {
-}
+type DIR struct @(opaque);
 
 fn DIR* opendir(const c_char* name);
 fn DIR* fdopendir(c_int fd);

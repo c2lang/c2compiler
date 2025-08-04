@@ -141,7 +141,7 @@ type Pk_type_t enum u8 @(cname="mbedtls_pk_type_t") {
     MBEDTLS_PK_OPAQUE,
 }
 
-type Pk_info_t struct @(opaque, cname="mbedtls_pk_info_t") {}
+type Pk_info_t struct @(opaque, cname="mbedtls_pk_info_t");
 
 type Pk_context struct @(cname="mbedtls_pk_context") {
     const Pk_info_t* pk_info; /**< Public key information         */
@@ -450,7 +450,7 @@ type Ssl_recv_t fn c_int(void *ctx, c_uchar *buf, c_size len) @(cname="mbedtls_s
 type Ssl_recv_timeout_t fn c_int(void *ctx, c_uchar *buf, c_size len, c_uint timeout) @(cname="mbedtls_ssl_recv_timeout_t");
 
 
-type Ssl_key_cert struct @(opaque, cname="mbedtls_ssl_key_cert") {}
+type Ssl_key_cert struct @(opaque, cname="mbedtls_ssl_key_cert");
 
 
 // NOTE: from platform_time.h
@@ -747,9 +747,9 @@ type Ssl_config struct @(cname="mbedtls_ssl_config") {
 
 static_assert(384, sizeof(Ssl_config));
 
-type Ssl_handshake_params struct @(opaque, cname="mbedtls_ssl_handshake_params") {}
+type Ssl_handshake_params struct @(opaque, cname="mbedtls_ssl_handshake_params");
 
-type Ssl_transform struct @(opaque, cname="mbedtls_ssl_transform") {}
+type Ssl_transform struct @(opaque, cname="mbedtls_ssl_transform");
 
 type Ssl_set_timer_t fn void (void* ctx, c_uint int_ms, c_uint fin_ms) @(cname="mbedtls_ssl_set_timer_t");
 type Ssl_get_timer_t fn c_int (void* ctx) @(cname="mbedtls_ssl_get_timer_t");

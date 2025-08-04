@@ -38,14 +38,14 @@ FILE* stdout;
 FILE* stderr;
 #endif
 #if SYSTEM_DARWIN
-type FILE struct @(opaque) {}
+type FILE struct @(opaque);
 
 FILE* stdin @(cname="__stdinp");
 FILE* stdout @(cname="__stdoutp");
 FILE* stderr @(cname="__stderrp");
 #endif
 #if SYSTEM_FREEBSD
-type FILE struct @(opaque) {}
+type FILE struct @(opaque);
 
 FILE* stdin @(cname="__stdinp");
 FILE* stdout @(cname="__stdoutp");

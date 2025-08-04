@@ -7,7 +7,7 @@ fn c_int init() @(cname="TTF_Init");
 
 fn void quit() @(cname="TTF_Quit");
 
-type Font struct @(cname="TTF_FONT", opaque) {}
+type Font struct @(cname="TTF_FONT", opaque);
 
 fn Font* openFont(const char* file, c_int ptsize) @(cname="TTF_OpenFont");
 
