@@ -455,15 +455,17 @@ fn Stmt* Parser.parseReturnStmt(Parser* p) {
     p.consumeToken();
 
     Expr* ret = nil;
+    bool need_semi = true;
     if (p.tok.kind != Kind.Semicolon) {
         if (p.tok.kind == Kind.LBrace) {
             ret = p.parseInitList();
+            need_semi = false;
         } else {
             ret = p.parseExpr();
         }
     }
 
-    p.expectAndConsume(Kind.Semicolon);
+    if (need_semi) p.expectAndConsume(Kind.Semicolon);
     return p.builder.actOnReturnStmt(loc, ret);
 }
 
@@ -544,6 +546,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool a
             assignLoc = p.tok.loc;
             p.consumeToken();
             initValue = p.parseInitValue(false);
+            checkSemi = checkSemi && initValue.needsSemi();
             break;
         case At:
             p.error("local variables cannot have attributes");
@@ -594,7 +597,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool a
 fn Stmt* Parser.parseExprStmt(Parser* p) {
     Expr* e = p.parseExpr();
 
-    p.expectAndConsume(Kind.Semicolon);
+    if (e.needsSemi()) p.expectAndConsume(Kind.Semicolon);
     return e.asStmt();
 }
 

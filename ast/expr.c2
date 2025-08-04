@@ -447,6 +447,43 @@ public fn void Expr.setType(Expr* e, QualType qt) { e.qt = qt; }
 
 public fn QualType Expr.getType(const Expr* e) { return e.qt; }
 
+public fn bool Expr.needsSemi(const Expr* e) {
+    switch (e.getKind()) {
+    case IntegerLiteral:
+    case FloatLiteral:
+    case BooleanLiteral:
+    case CharLiteral:
+    case StringLiteral:
+    case Nil:
+    case Identifier:
+    case Type:
+    case Call:
+        return true;
+    case InitList:
+        return false;
+    case FieldDesignatedInit:
+    case ArrayDesignatedInit:
+        assert(0);  // cannot happen
+        break;
+    case BinaryOperator:
+        const BinaryOperator* binop = (BinaryOperator*)e;
+        const Expr* rhs = binop.getRHS();
+        return rhs.needsSemi();
+    case UnaryOperator:
+    case ConditionalOperator:
+    case Builtin:
+    case ArraySubscript:
+    case Member:
+    case Paren:
+    case BitOffset:
+    case ExplicitCast:
+    case ImplicitCast:
+    case Range:
+        break;
+    }
+    return true;
+}
+
 public fn void Expr.dump(const Expr* e) {
     string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
     e.print(out, 0);
