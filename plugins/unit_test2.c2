@@ -120,10 +120,10 @@ public fn i32 run_tests() {
   Config cfg = {
     .on_error = on_error,
     .on_log = on_log,
-  };
+  }
   c2test.init(&cfg);
 
-  Stats stats = { };
+  Stats stats = { }
   for(u32 i=0; i<elemsof(groups); i++) {
     stats.total += groups[i].num_tests;
   }
