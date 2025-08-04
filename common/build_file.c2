@@ -234,7 +234,7 @@ fn bool Info.parse(Info* info, const char* data) {
 
 public fn Info* parse(source_mgr.SourceMgr* sm, string_pool.Pool* pool, const char* filename) {
     // create on stack first. After successful parse, alloc on heap and return
-    Info info = {};
+    Info info = {}
     info.pool = pool;
     info.filename = filename;
     info.lib_dirs.init(pool);

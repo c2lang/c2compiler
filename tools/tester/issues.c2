@@ -159,7 +159,7 @@ public fn bool Issues.empty(const Issues* i) {
 }
 
 public fn Iter Issues.getIter(const Issues* i) {
-    Iter iter = { i, 0 };
+    Iter iter = { i, 0 }
     return iter;
 }
 

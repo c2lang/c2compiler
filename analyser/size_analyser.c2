@@ -182,7 +182,7 @@ public fn void sizeOfStruct(StructTypeDecl* s) {
 
 public fn TypeSize sizeOfType(QualType qt) {
 
-    TypeSize result = { 0, 1, 0 };
+    TypeSize result = { 0, 1, 0 }
 
     if (qt.isInvalid()) return result;
 

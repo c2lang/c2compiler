@@ -28,7 +28,7 @@ public type QualType struct {
 }
 
 public fn QualType QualType.create(Type* t) {
-    QualType qt = { (usize)t };
+    QualType qt = { (usize)t }
     return qt;
 }
 

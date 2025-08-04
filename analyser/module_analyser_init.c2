@@ -354,7 +354,7 @@ fn const FieldInitInfo* Analyser.getFieldInfo(Analyser* ma, StructTypeDecl* std)
     if (std.hasFieldInfo()) return std.getFieldInfo();
 
     FieldInitInfo* fii = ma.builder.actOnFieldInitInfo(std);
-    FillInfo fi = { .fii = fii };
+    FillInfo fi = { .fii = fii }
     fillFieldInfo(std, &fi, 0);
     fii.num_indexes = fi.member_idx + 1;
 

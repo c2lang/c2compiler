@@ -7,6 +7,6 @@ type Point struct {
 }
 
 fn void test1() {
-    Point p = { 1000, 300 }; // @error{constant value 300 out-of-bounds for type 'i8', range [-128, 127]}
+    Point p = { 1000, 300 } // @error{constant value 300 out-of-bounds for type 'i8', range [-128, 127]}
 }
 

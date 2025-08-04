@@ -15,7 +15,7 @@ fn void test3() {
 }
 
 fn void test4() {
-    const i32[10] array = { };
+    const i32[10] array = { }
     array[0] = 1;   // @error{cannot assign to variable with const-qualified type 'const i32'}
 }
 

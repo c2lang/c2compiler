@@ -16,6 +16,6 @@ fn void test2() {
 }
 
 fn void test3(i32 x) {
-    i32[x] a = { 1, 2 }; // @error{array size is not a compile-time value}
+    i32[x] a = { 1, 2 } // @error{array size is not a compile-time value}
 }
 

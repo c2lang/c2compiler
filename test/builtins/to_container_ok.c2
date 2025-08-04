@@ -17,10 +17,10 @@ type Union union {
 }
 
 fn void test1() {
-    Struct s1 = { 1 };
+    Struct s1 = { 1 }
     Struct* s2 = to_container(Struct, list, &s1.list);
 
-    Union u1 = { .x=1 };
+    Union u1 = { .x=1 }
     Union* u2 = to_container(Union, list, &u1.list);
 }
 

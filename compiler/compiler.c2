@@ -93,8 +93,8 @@ public fn void build(string_pool.Pool* auxPool,
                        const Options* opts,
                        PluginHandler* pluginHandler)
 {
-    Compiler c = {};
-    plugin_info.Info info = {};
+    Compiler c = {}
+    plugin_info.Info info = {}
 
     c.build(auxPool, sm, diags, build_info, target, opts, pluginHandler, &info);
 

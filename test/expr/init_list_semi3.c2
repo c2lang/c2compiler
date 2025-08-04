@@ -7,7 +7,7 @@ type Point struct {
 }
 
 fn void test2() {
-    Point p1 = { 1, 2 };
-    Point p2 = { 3, 4 };
-    p1 = p2 = { 5, 6 };
+    Point p1 = { 1, 2 }
+    Point p2 = { 3, 4 }
+    p1 = p2 = { 5, 6 }
 }

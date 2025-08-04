@@ -322,7 +322,7 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
         // Support external functions such as ctype.isalpha, math.sin...
         // cache symbol address using dlsym(RTLD_DEFAULT, fd.getCName())
         // dispatch function call depending on function prototype
-        Fun fun = { .address = fd.getAddress() };
+        Fun fun = { .address = fd.getAddress() }
         if (!fun.address) {
             const char* cname = fd.getCName();
             if (!cname) return Value.error("no function name");
@@ -379,7 +379,7 @@ fn FunctionDecl* expr2function(Expr* e) {
 }
 
 public fn Value evalExpr(const Expr* e) {
-    Evaluator top = {};
+    Evaluator top = {}
     return top.get_value(e);
 }
 

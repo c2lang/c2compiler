@@ -544,7 +544,7 @@ fn void Context.handle_plugins(Context* c) {
         .after_analysis = plugins_after_analysis,
         .end_target = plugins_end_target,
         .arg = c.plugins,
-    };
+    }
     c.pluginHandler = pluginHandler;
 }
 

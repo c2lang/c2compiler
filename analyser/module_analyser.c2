@@ -180,7 +180,7 @@ fn void Analyser.putInitChecker(Analyser* ma, init_checker.Checker* c) {
 }
 
 fn void Analyser.collectTypeFunctions(Analyser* ma) {
-    sf_list.List type_fn_decls = { };
+    sf_list.List type_fn_decls = { }
     // Note: set temporarily pointer to local variable (used by visitor functions)
     ma.type_fn_decls = &type_fn_decls;
     ma.mod.visitTypeFunctions(Analyser.handleStructFunc, ma);
@@ -208,7 +208,7 @@ fn void Analyser.handleArrayValue(void* arg, ArrayValue* avd) {
 }
 
 fn void Analyser.collectIncrementalArrays(Analyser* ma) {
-    ia_list.List ialist = { };
+    ia_list.List ialist = { }
     // Note: set temporarily pointer to local variable (used by visitor functions)
     ma.incr_values = &ialist;
     ma.mod.visitArrayValues(Analyser.handleArrayValue, ma);
@@ -724,7 +724,7 @@ fn void findMainFunction(void* arg, FunctionDecl* fd) {
 
 public fn Decl* Analyser.findMain(Analyser* ma, Module* top, u32 name_idx) {
     top.setUsed();
-    MainMarker marker = { name_idx, nil };
+    MainMarker marker = { name_idx, nil }
     top.visitFunctions(findMainFunction, &marker);
     if (marker.main) {
         marker.main.setUsed();

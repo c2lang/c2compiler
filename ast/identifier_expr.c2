@@ -86,7 +86,7 @@ public fn Decl* IdentifierExpr.getDecl(const IdentifierExpr* e) {
 
 // for (ref-)generator, convenience
 public fn Ref IdentifierExpr.getRef(const IdentifierExpr* e) @(unused) {
-    Ref ref = { e.base.base.loc, e.getNameIdx(), e.getDecl() };
+    Ref ref = { e.base.base.loc, e.getNameIdx(), e.getDecl() }
     return ref;
 }
 

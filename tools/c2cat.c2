@@ -292,7 +292,7 @@ public fn i32 c2cat(const char* filename)
         return -1;
     }
 
-    C2cat ctx = { };
+    C2cat ctx = { }
     ctx.pool = string_pool.create(16*1024, 1024);
     ctx.out = string_buffer.create(16*1024, true, 2);
     ctx.offset = 0;

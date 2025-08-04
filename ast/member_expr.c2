@@ -161,7 +161,7 @@ public fn SrcLoc MemberExpr.getLoc(const MemberExpr* e, u32 ref_idx) {
 }
 
 public fn SrcRange MemberExpr.getRange(const MemberExpr* e, u32 ref_idx) {
-    SrcRange range = { e.getStartLoc(), e.getLoc(ref_idx) - 1 }; // cut off . and member
+    SrcRange range = { e.getStartLoc(), e.getLoc(ref_idx) - 1 } // cut off . and member
     return range;
 }
 

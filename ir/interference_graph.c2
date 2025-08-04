@@ -304,7 +304,7 @@ public fn void Iter.dump(const Iter* iter) @(unused) {
 
 fn Iter InterferenceGraph.getList(const InterferenceGraph* g, u16 var_idx) {
     const Variable* r = &g.variables[var_idx];
-    return { .count = r.count, .ids = &g.map[r.start] };
+    return { .count = r.count, .ids = &g.map[r.start] }
 }
 
 fn u16 InterferenceGraph.shiftArenaRight(InterferenceGraph* g, u32 arena_idx) {

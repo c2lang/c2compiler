@@ -38,7 +38,7 @@ public fn void generate(const char* output_dir,
         .out = string_buffer.create(256*1024, false, 3),
         .mod = mod,
         .in_body = false,
-    };
+    }
     gen.imports.init(nil);  // note: cannot get string values! (not needed)
 
     // module

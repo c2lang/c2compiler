@@ -21,7 +21,7 @@ fn void test1() {
 
 fn void test2() {
     u32 x = 1, y = 2;
-    Point p1 = { 1, 2 }, p2 = { 3, 4 };
+    Point p1 = { 1, 2 }, p2 = { 3, 4 }
 }
 
 fn void test3() {

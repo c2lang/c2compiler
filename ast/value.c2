@@ -39,32 +39,32 @@ public type Value struct {
 static_assert(16, sizeof(Value));
 
 fn Value Value.createUnsigned(u64 uvalue) {
-    Value result = { .kind = ValueKind.Integer, .uvalue = uvalue };
+    Value result = { .kind = ValueKind.Integer, .uvalue = uvalue }
     return result;
 }
 
 fn Value Value.createSigned(i64 svalue) {
     if (svalue < 0) {
-        Value result = { .kind = ValueKind.Integer, .negative = true, .uvalue = ~svalue + 1 };
+        Value result = { .kind = ValueKind.Integer, .negative = true, .uvalue = ~svalue + 1 }
         return result;
     } else {
-        Value result = { .kind = ValueKind.Integer, .uvalue = cast<u64>(svalue) };
+        Value result = { .kind = ValueKind.Integer, .uvalue = cast<u64>(svalue) }
         return result;
     }
 }
 
 fn Value Value.createBool(bool value) {
-    Value result = { .kind = ValueKind.Integer, .uvalue = value };
+    Value result = { .kind = ValueKind.Integer, .uvalue = value }
     return result;
 }
 
 fn Value Value.createFloat(f64 fvalue) {
-    Value result = { .kind = ValueKind.Float, .fvalue = fvalue };
+    Value result = { .kind = ValueKind.Float, .fvalue = fvalue }
     return result;
 }
 
 fn Value Value.error(const char* msg) {
-    Value result = { .kind = ValueKind.Error, .error_msg = msg };
+    Value result = { .kind = ValueKind.Error, .error_msg = msg }
     return result;
 }
 
@@ -783,19 +783,19 @@ fn Value Value.castAs(const Value* v, QualType qt) {
 type FP64 union { f64 d; u64 bits; }
 
 fn bool isfinite(f64 d) {
-    FP64 u = { .d = d };
+    FP64 u = { .d = d }
     return ((u.bits >> 52) & 0x7ff) != 0x7ff;
 }
 
 //fn bool isnan(f64 d) { return d != d; }
 
 fn i32 signbit(f64 d) {
-    FP64 u = { .d = d };
+    FP64 u = { .d = d }
     return (u.bits >> 63) & 1;
 }
 
 fn f64 fabs(f64 d) {
-    FP64 u = { .d = d };
+    FP64 u = { .d = d }
     u.bits = u.bits << 1 >> 1;
     return u.d;
 }

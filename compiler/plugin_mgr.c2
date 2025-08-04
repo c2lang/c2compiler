@@ -157,7 +157,7 @@ fn bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
         return false;
     }
 
-    Plugin p = {};
+    Plugin p = {}
     p.name = name;
     p.is_global = is_global;
     p.is_active = true;

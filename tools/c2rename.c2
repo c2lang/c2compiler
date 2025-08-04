@@ -48,7 +48,7 @@ fn void usage(const char* me) {
 }
 
 fn void parse_options(i32 argc, const char** argv) {
-    const char*[4] args = { nil };
+    const char*[4] args = { nil }
     u32 pos_count = 0;
     i32 i = 1;
     while (i<argc) {
@@ -130,7 +130,7 @@ public fn i32 main(i32 argc, const char** argv)
     if (opts.symbolname) {
         refs.findSymbolUses(opts.symbolname, use_fn, r, &old_len);
     } else {
-        Dest origin = { opts.filename, opts.line, opts.column };
+        Dest origin = { opts.filename, opts.line, opts.column }
         refs.findRefUses(&origin, use_fn, r, &old_len);
     }
     i32 ret = r.replace(old_len);

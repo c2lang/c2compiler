@@ -152,7 +152,7 @@ fn void Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
             ls.setUsed();
         }
     } else {
-        Label lab = { .name_idx = name, .loc = s.getLoc(), .is_label = true, .used = false, .stmt = ls };
+        Label lab = { .name_idx = name, .loc = s.getLoc(), .is_label = true, .used = false, .stmt = ls }
         ma.labels.add(lab);
     }
 
@@ -169,7 +169,7 @@ fn void Analyser.analyseGotoStmt(Analyser* ma, Stmt* s) {
         label.used = true;
         if (label.stmt) label.stmt.setUsed();
     } else {
-        Label lab = { .name_idx = name, .loc = s.getLoc(), .is_label = false, .used = true, .stmt = nil };
+        Label lab = { .name_idx = name, .loc = s.getLoc(), .is_label = false, .used = true, .stmt = nil }
         ma.labels.add(lab);
     }
 }

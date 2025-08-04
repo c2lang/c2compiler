@@ -79,7 +79,7 @@ fn bool Generator.emitSwitchCase(Generator* gen,
     ir.Context* c = gen.ctx;
 
     Expr* case_cond = sc.getCond(0);
-    Value v = { };
+    Value v = { }
     if (case_cond) { // nil for default
         v = ctv_analyser.get_value(case_cond);
     }

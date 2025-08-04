@@ -551,7 +551,7 @@ public fn void Tree.find(Tree* t, const char* text, MatchFn func, void* arg) @(u
         func(arg, t.idx2word(n.word_idx) + cur_match);
 #endif
     } else {
-        Iter iter = { func, arg, 0 };
+        Iter iter = { func, arg, 0 }
         strcpy(iter.buf, t.idx2word(n.word_idx) + cur_match);
         iter.len = cast<u32>(strlen(iter.buf));
         for (u32 i=0; i<n.num_children; i++) {

@@ -19,13 +19,13 @@ fn void print_point(const char* name, Point p) {
 }
 
 fn Point new_point(i32 x, i32 y) {
-    return { x, y };
+    return { x, y }
 }
 
 public fn i32 main() {
     printf("p0={ %d, %d }\n", p0.x, p0.y);
     Point p1;
-    p1 = { 3, 4 };
+    p1 = { 3, 4 }
     printf("p1={ %d, %d }\n", p1.x, p1.y);
     print_point("p2", { 5, 6 });
     Point p3 = new_point(7, 8);

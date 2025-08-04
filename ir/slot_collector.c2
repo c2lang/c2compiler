@@ -302,7 +302,7 @@ fn void SlotCollector.checkBlock(SlotCollector* c, BlockId blk_id) {
                 wa.slot = slot;
                 c.num_writes++;
             }
-            wa.ref = { RefKind.Temp, idx };
+            wa.ref = { RefKind.Temp, idx }
             //printf("[%d] store %d (%s %d)\n", i, slot, wa.ref.getKindName(), wa.ref.value);
 #if 0
             cur.clear();

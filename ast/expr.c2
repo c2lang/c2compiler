@@ -439,7 +439,7 @@ public fn SrcLoc Expr.getEndLoc(const Expr* e) {
 }
 
 public fn SrcRange Expr.getRange(const Expr* e) {
-    SrcRange range = { e.getStartLoc(), e.getEndLoc() };
+    SrcRange range = { e.getStartLoc(), e.getEndLoc() }
     return range;
 }
 

@@ -107,7 +107,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     d.template_name = 0;
     d.template_loc = 0;
     d.flagBits = 0;
-    d.prefix = {};
+    d.prefix = {}
     d.rtype.init(rtype);
     if (prefix) {
         d.base.functionDeclBits.has_prefix = 1;
@@ -153,7 +153,7 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     d.template_name = template_name;
     d.template_loc = template_loc;
     d.flagBits = 0;
-    d.prefix = {};
+    d.prefix = {}
     d.rtype.init(rtype);
     if (num_params) {
         VarDecl** tail = d.rtype.getPointerAfter();

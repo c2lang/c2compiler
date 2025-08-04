@@ -41,7 +41,7 @@ public fn Value get_value(const Expr* e) {
 }
 #else
 public fn Value get_value(const Expr* e) {
-    Value result = { };
+    Value result = { }
 
     if (!e.isCtv()) {
         e.dump(); // TEMP
@@ -149,7 +149,7 @@ fn Value get_decl_value(const Decl* d) {
 }
 
 fn Value get_unaryop_value(const UnaryOperator* e) {
-    Value result = { };
+    Value result = { }
     const Expr* inner = e.getInner();
     Value res2 = get_value(inner);
 
@@ -183,7 +183,7 @@ fn Value get_unaryop_value(const UnaryOperator* e) {
 }
 
 fn Value get_binaryop_value(const BinaryOperator* e) {
-    Value result = { };
+    Value result = { }
     Value left = get_value(e.getLHS());
     Value right = get_value(e.getRHS());
 
@@ -307,7 +307,7 @@ public fn bool checkRange(diagnostics.Diags* diags, QualType qt, Value* value, S
     Limit limit.init(bi.getWidth(), bi.isSigned());
 
     if (!value.checkRange(limit.min_val, limit.max_val)) {
-        SrcRange range = { 0, 0 };
+        SrcRange range = { 0, 0 }
         if (e) {
             loc = e.getLoc();
             range = e.getRange();

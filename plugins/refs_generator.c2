@@ -40,7 +40,7 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
     const char* name = d.getName();
     if (name && global) {
         source_mgr.Location loc = gen.sm.locate(d.getLoc());
-        refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) };
+        refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
         gen.refs.add_symbol(d.getFullName(), &dest);
     }
 
@@ -58,7 +58,7 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
             Decl* ecd = cast<Decl*>(constants[i]);
             // NOTE: we add the symbol here, since we have the EnumDecl here
             source_mgr.Location loc = gen.sm.locate(ecd.getLoc());
-            refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) };
+            refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
             gen.refs.add_symbol(ecd.getFullName(), &dest);
             Generator.on_decl(arg, ecd, false);
         }
@@ -94,8 +94,8 @@ fn void Generator.handleRef(Generator* gen, const Ref* ref) {
     // TODO filter out generated destinations
     source_mgr.Location src_loc = gen.sm.locate(ref.loc);
     u16 len = cast<u16>(string.strlen(idx2name(ref.name_idx)));
-    refs.RefSrc src = { src_loc.line, cast<u16>(src_loc.column), len };
-    refs.Dest dest = { dst_loc.filename, dst_loc.line, cast<u16>(dst_loc.column) };
+    refs.RefSrc src = { src_loc.line, cast<u16>(src_loc.column), len }
+    refs.Dest dest = { dst_loc.filename, dst_loc.line, cast<u16>(dst_loc.column) }
     gen.refs.add_tag(&src, &dest);
 }
 
@@ -129,7 +129,7 @@ fn void Generator.on_ref(void* arg, const Ref* ref) {
 }
 
 public fn void generate(source_mgr.SourceMgr* sm, const char* output_dir, component.List* comps, const char* filename) {
-    Generator gen = { sm, refs.Refs.create(), nil };
+    Generator gen = { sm, refs.Refs.create(), nil }
     gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
 
     for (u32 i=0; i<comps.size(); i++) {

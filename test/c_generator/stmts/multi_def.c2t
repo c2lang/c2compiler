@@ -18,7 +18,7 @@ fn void test1(i32 i) {}
 public fn i32 main() {
     i32 x = 1, y = 2;
 
-    Point p1 = { 1, 2 }, p2 = { 3, 4 };
+    Point p1 = { 1, 2 }, p2 = { 3, 4 }
 
     if (x > y)
         if (i32 z = 1)

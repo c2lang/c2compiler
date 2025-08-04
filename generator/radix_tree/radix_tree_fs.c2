@@ -47,7 +47,7 @@ public fn void Tree.trim(Tree* t) {
 
     u32 used = t.used_nodes();
 
-    Trimmer tr = { };
+    Trimmer tr = { }
     tr.nodes = Nodes.create(used);
     tr.nodes_size = sizeof(Node); // first index is used as 'nil'
     tr.words = Words.create(t.words.capacity);

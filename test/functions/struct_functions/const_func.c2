@@ -9,7 +9,7 @@ fn void Type.init(Type* t) {
 }
 
 fn void myfunc() {
-    const Type t = { 1 };
+    const Type t = { 1 }
     t.init();           // @error{pointer conversion discards const qualifier}
 }
 

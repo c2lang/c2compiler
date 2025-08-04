@@ -232,7 +232,7 @@ fn void Context.create_ssa(Context* c, const Symbol* symbol, FunctionInfo* fi, c
 fn Ref Context.checkPredBlock(Context* c, BlockId blk_id, u16 slot, u32 indent, FunctionInfo* fi) {
     Tools* t = &c.tools;
     // TODO do loop detection
-    Ref ref = { };
+    Ref ref = { }
 
     t.active_blocks.set(blk_id);
 
