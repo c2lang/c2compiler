@@ -183,7 +183,7 @@ fn void Generator.writeCalls(Generator* gen, string_buffer.Buf* out) {
         unsigned short filename_idx;
         unsigned short line;
         const char *funcname;
-    }
+    };
     static struct c2_func_t c2_func_data[] = {
     ```);
     // TODO: store function definition location
@@ -193,7 +193,7 @@ fn void Generator.writeCalls(Generator* gen, string_buffer.Buf* out) {
     }
     out.add(
     ```c
-    }
+    };
 
     struct c2_trace_t {
         unsigned count;
@@ -202,7 +202,7 @@ fn void Generator.writeCalls(Generator* gen, string_buffer.Buf* out) {
         unsigned short line;
         unsigned short caller_idx;
         unsigned short callee_idx;
-    }
+    };
     static struct c2_trace_t c2_trace_data[] = {
     ```);
     for (u32 i = 0; i < gen.calls.count; i++) {
@@ -213,7 +213,7 @@ fn void Generator.writeCalls(Generator* gen, string_buffer.Buf* out) {
 
     out.add(
     ```c
-    }
+    };
 
     static const unsigned c2_trace_length = sizeof(c2_trace_data) / sizeof(c2_trace_data[0]);
     unsigned c2_trace_counts[sizeof(c2_trace_data) / sizeof(c2_trace_data[0])];
