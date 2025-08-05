@@ -228,13 +228,15 @@ public fn bool QualType.isCharPointer(const QualType* qt) {
     return inner.isChar();
 }
 
-public fn bool QualType.isConstCharArray(const QualType* qt) {
+public fn bool QualType.isEmbedType(const QualType* qt, bool* is_char) {
     if (!qt.isArray()) return false;
     ArrayType* at = qt.getArrayType();
     if (at.hasSize()) return false;
     QualType elem = at.getElemType();
     if (!elem.isConst()) return false;
-    return elem.isChar();
+    *is_char = elem.isChar();
+    if (*is_char) return true;
+    return elem.isUInt8();
 }
 
 public fn bool QualType.isPointer(const QualType* qt) {

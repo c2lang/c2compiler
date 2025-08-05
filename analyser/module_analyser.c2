@@ -579,9 +579,9 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
     d.setType(res);
 
     if (embed) {
-        // TODO could also have const u8[] and dont treat as string then
-        if (!canon.isConstCharArray()) {
-            ma.error(d.getLoc(), "variables with 'embed' attribute must be type 'const char[]'");
+        bool is_char = false;
+        if (!canon.isEmbedType(&is_char)) {
+            ma.error(d.getLoc(), "variables with 'embed' attribute must be type 'const char[]' or 'const u8[]'");
             return;
         }
 
@@ -602,6 +602,10 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         u32 len = reader.size;
         //TODO check input for weird chars if string
         u32 value = ma.astPool.add(reader.data(), reader.size, false);
+        if (!is_char) {
+            src_len--;
+            len--;
+        }
         Expr* init = ma.builder.actOnStringLiteral(embed.loc, src_len, value, len);
 
         // Note: VarDecl already needed to allocate extra space during creation! (parser checks embed attr for this)
