@@ -49,7 +49,8 @@ fn void LiveVector.init(LiveVector* v, u32 num_blocks) {
     v.indexes = stdlib.malloc(v.index_cap * sizeof(LiveIndex));
 
     // TODO this should be re-used between functions (also LiveVector)
-    v.interferences = interference_graph.create(16*1024, 1024);
+    // TODO let number of variables depend on nr of instructions
+    v.interferences = interference_graph.create(32*1024, 2048);
 }
 
 fn void LiveVector.free(LiveVector* v) {
@@ -66,8 +67,8 @@ fn void LiveVector.add(LiveVector* v, u32 idx) {
     }
     // Note: interferes with all other vars in there
     for (u32 i=v.start; i<v.count; i++) {
-        v.interferences.add((u16)idx, (u16)v.temps[i]);
         //printf("  %d interferes with %d\n", idx, v.temps[i]);
+        v.interferences.add((u16)idx, (u16)v.temps[i]);
     }
     assert(v.count < v.cap);
     v.temps[v.count] = idx;

@@ -19,9 +19,9 @@ import stdlib;
 import string;
 import stdio local;
 
-const u32 NumArenas = 9;
+const u32 NumArenas = 11;
 // Note: caps need to be double of previous (except first two)
-const u16[NumArenas] Caps   = { 0, 2, 4, 8, 16, 32, 64, 128, 256 }
+const u16[NumArenas] Caps   = { 0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 }
 
 const u16 NULL = u16.max;
 
@@ -58,7 +58,7 @@ public type InterferenceGraph struct @(opaque) {
     u32 queue_count;
     u32 queue_head;
 }
-static_assert(192, sizeof(InterferenceGraph));
+static_assert(224, sizeof(InterferenceGraph));
 
 // Note: map size must be a multiple of largest arena size (so 256)
 public fn InterferenceGraph* create(u32 max_elems, u16 num_variables) {
@@ -203,6 +203,15 @@ public fn void InterferenceGraph.enable(InterferenceGraph* g, u16 var_idx) {
 }
 
 public fn void InterferenceGraph.add(InterferenceGraph* g, u16 var1, u16 var2) {
+    // check for duplicates
+    const Variable* r = &g.variables[var1];
+    u32 idx = r.start + r.count;
+    for (u32 i=r.start; i<idx; i++) {
+        if (g.map[i] == var2) {
+            //printf("ALREADY IN %d %d\n", var1, var2);
+            return;
+        }
+    }
     //printf("ADD %d %d\n", var1, var2);
     // adds interference both ways, var1->var2 and var2->var1
     g.addInternal(var1, var2);
@@ -223,6 +232,9 @@ fn void InterferenceGraph.addInternal(InterferenceGraph* g, u16 var1, u16 var2) 
 
     // move Variable to higher arena
     u32 arena_idx = findArena(r.capacity);
+#if 0
+    if (arena_idx == NumArenas-1) g.dump(true);
+#endif
     assert(arena_idx != NumArenas-1);
     Arena* a1 = &g.arenas[arena_idx];
     Arena* a2 = &g.arenas[arena_idx+1];

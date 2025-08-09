@@ -657,6 +657,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     t.removeNone(fi);
     if (c.print_all) c.print_function(symbol, fi, "after remove none");
 
+    //c.print_function(symbol, fi, "BEFORE register allocation");
     t.allocateRegisters(fi);
     if (c.print_all) c.print_function(symbol, fi, "after register allocation");
 
