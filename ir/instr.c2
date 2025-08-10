@@ -96,6 +96,17 @@ fn void Instr.init2b(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
     i.args[1] = ref2;
 }
 
+fn void Instr.initRegCopy(Instr* i, u8 dst_reg, Ref ref) {
+    i.instrBits.kind = InstrKind.Copy;
+    i.instrBits.type_ = 0; // not used
+    i.instrBits.has_result = 1;
+    i.instrBits.has_register = 1;
+    i.instrBits.register_nr = dst_reg;
+    i.args[0] = ref;
+    i.args[1].kind = RefKind.None;
+    i.args[1].value = 0;
+}
+
 fn void Instr.copy(Instr* i, const Instr* i2) {
     memcpy(i, i2, sizeof(Instr));
 }

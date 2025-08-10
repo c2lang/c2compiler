@@ -41,6 +41,7 @@ public type BlockKind enum u8 {
     SwitchCase,
     SwitchJoin,
     SwitchDefault,
+    PhiJoin,
 }
 
 fn const char* BlockKind.str(BlockKind k) {
@@ -68,6 +69,7 @@ fn const char* BlockKind.str(BlockKind k) {
     case SwitchCase:  return "switch_case";
     case SwitchJoin:  return "switch_join";
     case SwitchDefault:  return "switch_default";
+    case PhiJoin:     return "phi_join";
     }
     return "";
 }

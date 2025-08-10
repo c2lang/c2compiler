@@ -41,6 +41,15 @@ fn void PhiList.free(PhiList* l) {
     if (l.clauses) free(l.clauses);
 }
 
+fn void PhiList.clear(PhiList* l) {
+    l.count = 0;
+    l.capacity = 0;
+    if (l.clauses) {
+        free(l.clauses);
+        l.clauses = nil;
+    }
+}
+
 fn void PhiList.resize(PhiList* l, u32 extra) {
     l.capacity += extra;
     PhiClause* clauses2 = calloc(l.capacity, sizeof(PhiClause));

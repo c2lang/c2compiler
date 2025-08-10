@@ -160,7 +160,7 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
         if (ii.hasResult()) ii.setReg(regmap[i]);
 
         if (ii.isPhi()) {
-            // Note: there should be no phi instructions anymore!!
+            // nothing to do
         } else if (ii.isCall()) {
             if (ii.args[1].isRefList()) {
                 Ref* refs = fi.refs.get(ii.args[1].value);
@@ -181,8 +181,18 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
             }
         }
     }
+    // replace all temps in Phi-clauses
+    PhiClause* clauses = fi.phis.get(0);
+    for (u32 i=0; i<fi.phis.getCount(); i++) {
+        PhiClause* pc = &clauses[i];
+        pc.dest_idx = regmap[pc.dest_idx];
+        if (pc.ref.isTemp()) {
+            pc.ref.setRegister(regmap[pc.ref.value]);
+        }
+    }
 
     v.free();
+    t.replacePhis(fi);
 }
 
 fn void Tools.checkBlockReg(Tools* t, u32 blk_id, FunctionInfo* fi, LiveVector* v) {
@@ -286,5 +296,96 @@ fn void Tools.checkBlockReg(Tools* t, u32 blk_id, FunctionInfo* fi, LiveVector* 
     // 5. store in LiveVector, mark is done
     v.store(blk_id);
     b.checked = true;
+}
+
+fn void Tools.replacePhis(Tools* t, FunctionInfo* fi) {
+    /*
+        If phi-clause source block ends with:
+            - 'jmp', just insert 'copy' before it
+            - 'jmp_if', create new PhiJoin block as intermediate jump dest
+
+        TODO also need to merge multiple phi's into using same merge block! for B1 -> B2
+
+        B0:                                    B0:
+            jmp B2                                 copy 10, %2
+        B1:                                        jmp B2
+            jmp_if B2, ..                      B1:
+        B2:                                        jmp_if MergeB1, ..
+            %2 = phi [ @B0: 10, @B1: 20 ]      MergeB1:
+                                                   copy 20, %2
+                                                   jmp B2
+                                               B2:
+                                                   -
+    */
+
+    // TODO solve swap,lost-copy problems - compare all phi's in block, see if they interfere
+
+    // TODO have Block bit: has_phi, to search faster?
+
+    t.inserter.clear();
+
+    // TODO refactor so that inserter stores new blocks + instructions?
+    // -> can also insert block at right position then, no need for tracking block-order
+    // otherwise can change during loops
+    // TEMP just reserve (too many) extra blocks + instructions
+    u32 extra_blocks = fi.phis.getCount();
+    u32 extra_instr = 2 * fi.phis.getCount(); // assume new block: copy + jmp
+    fi.blocks.reserve(extra_blocks);
+    fi.instructions.reserve(extra_instr);
+
+    // Note: cannot get all blocks ptr, since block insertions might re-alloc it
+    u32 num_blocks = fi.blocks.getCount();
+    Block* blocks = fi.blocks.get(0);
+    for (u32 i=0; i<num_blocks; i++) {
+        Block* b = &blocks[i];
+        u32 last = b.instr.start + b.instr.count;
+        for (u32 j=b.instr.start; j<last; j++) {
+            Instr* ii = fi.instructions.get(j);
+            if (ii.isComment() || ii.isNone()) continue;
+            if (!ii.isPhi()) break; // phi-instructions are always at start of block
+
+            const PhiClause* clauses = fi.phis.get(ii.phi_clauses.start);
+            for (u32 c=0; c<ii.phi_clauses.count; c++) {
+                const PhiClause* pc = &clauses[c];
+                Block* src = fi.blocks.get(pc.src);
+                if (src.dests[1]) { // jmp_if, create merge_block (if it doesn't already exist)
+                    // no need for inserter, just add to new block
+                    BlockId cur_blk = fi.blocks.add(BlockKind.PhiJoin);
+                    Block* cur = fi.blocks.get(cur_blk);
+                    cur.used = 1;
+                    cur.instr.start = fi.instructions.getCount();
+                    cur.instr.count = 2;    // copy + jmp
+                    cur.dests[0] = i;
+
+                    Instr* copy = fi.instructions.add();
+                    // Note: dest_idx was changed to register nr in previous step
+                    copy.initRegCopy((u8)pc.dest_idx, pc.ref);
+                    Instr* jmp = fi.instructions.add();
+                    Ref jmp_ref = { .kind = RefKind.JmpDest, .value = 0 }
+                    jmp.init1(InstrKind.Jmp, jmp_ref);
+
+                    // modify original dest
+                    if (src.dests[0] == i) src.dests[0] = cur_blk;
+                    if (src.dests[1] == i) src.dests[1] = cur_blk;
+                } else {    // jmp, insert copy here
+                    u32 insert_loc = src.instr.start + src.instr.count - 1;
+                    t.inserter.add(insert_loc, fi.instructions.getCount());
+                    Instr* copy = fi.instructions.add();
+                    // Note: dest_idx was changed to register nr in previous step
+                    copy.initRegCopy((u8)pc.dest_idx, pc.ref);
+                }
+            }
+
+            ii.clear();
+
+            // clear optional comment
+            if (j+1 < last) {
+                ii = fi.instructions.get(j+1);
+                if (ii.isComment()) ii.clear();
+            }
+        }
+    }
+
+    fi.phis.clear();
 }
 

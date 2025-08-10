@@ -46,6 +46,11 @@ fn void BlockList.resize(BlockList* l, u32 cap) {
     l.blocks = blocks2;
 }
 
+fn void BlockList.reserve(BlockList* l, u32 extra) {
+    u32 new_count = l.count + extra;
+    if (new_count > l.capacity) l.resize(new_count);
+}
+
 fn BlockId BlockList.add(BlockList* l, BlockKind kind) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
 

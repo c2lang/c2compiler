@@ -659,7 +659,11 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
 
     //c.print_function(symbol, fi, "BEFORE register allocation");
     t.allocateRegisters(fi);
-    if (c.print_all) c.print_function(symbol, fi, "after register allocation");
+    //if (c.print_all) c.print_function(symbol, fi, "after register allocation");
+
+    if (t.inserter.needsFixup()) c.tools.fixup_function(fi);
+    if (c.print_all) c.print_function(symbol, fi, "after register allocation + phi-removal");
+    //c.print_function(symbol, fi, "AFTER register allocation + fixup");
 
     // generate Instruction
     // ..
