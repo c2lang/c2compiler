@@ -73,6 +73,23 @@ public fn const u8* Buf.udata(const Buf* buf) {
     return (u8*)buf.data_;
 }
 
+public fn void* Buf.detach(Buf* buf, u32 *psize) {
+    *psize = buf.size_;
+    if (buf.own) {
+        // try and shrink allocated buffer
+        void* data = realloc(buf.data_, buf.size_ + 1);
+        if (!data) data = buf.data_;
+        buf.data_ = nil;
+        buf.size_ = 0;
+        buf.capacity = 0;
+        buf.own = false;
+        return data;
+    } else {
+        void* data = malloc(buf.size_ + 1);
+        return memcpy(data, buf.data_, buf.size_ + 1);
+    }
+}
+
 public fn void Buf.clear(Buf* buf) {
     buf.size_ = 0;
 }
@@ -97,7 +114,6 @@ public fn void Buf.add(Buf* buf, const char* text) {
     buf.add2(text, len);
 }
 
-// len = strlen(text)
 public fn void Buf.add2(Buf* buf, const char* text, u32 len) {
     if (buf.size_ + len + 1 > buf.capacity) {
         u32 new_cap = buf.capacity * 2;
@@ -109,21 +125,9 @@ public fn void Buf.add2(Buf* buf, const char* text, u32 len) {
     buf.data_[buf.size_] = '\0';
 }
 
-public fn void Buf.newline(Buf* buf) {
-    if (buf.size_ + 2 > buf.capacity) {
-        u32 new_cap = buf.capacity * 2;
-        while (buf.size_ + 2 > new_cap) new_cap *= 2;
-        buf.resize(new_cap);
-    }
-    buf.data_[buf.size_] = '\n';
-    buf.size_ += 1;
-    buf.data_[buf.size_] = 0;
-}
-
+public fn void Buf.newline(Buf* buf) { buf.add1('\n'); }
 public fn void Buf.space(Buf* buf) { buf.add1(' '); }
-
 public fn void Buf.lparen(Buf* buf) { buf.add1('('); }
-
 public fn void Buf.rparen(Buf* buf) { buf.add1(')'); }
 
 public fn void Buf.print(Buf* buf, const char* format @(printf_format), ...) {

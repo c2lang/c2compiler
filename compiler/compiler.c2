@@ -365,6 +365,7 @@ fn void Compiler.build(Compiler* c,
 
         console.debug("parsing %s", sm.getFileName(file_id));
 
+        // parse error indicator updated in c.parser state
         c.parser.parse(file_id, false, false);
 
         sm.close(file_id);
@@ -543,7 +544,9 @@ fn void Compiler.free(Compiler* c) {
 fn void Compiler.add_source(void* arg, const char* name, string_buffer.Buf* content) {
     Compiler* c = arg;
     u32 name2 = c.auxPool.addStr(name, false);
-    i32 file_id = c.sm.addGenerated(content, name2);
+    u32 size;
+    void *data = content.detach(&size);
+    i32 file_id = c.sm.addGenerated(name2, data, size);
     c.parser.parse(file_id, false, true);
 }
 

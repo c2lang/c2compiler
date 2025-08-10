@@ -116,7 +116,7 @@ public fn i32 main(i32 argc, const char** argv)
     }
 
     pool = string_pool.create(32*1024, 1024);
-    sm = source_mgr.create(pool, 8);
+    sm = source_mgr.create(pool);
     c2recipe.Recipe* recipe = c2recipe.create(sm, pool);
 
     u32 recipe_idx = pool.addStr(constants.recipe_name, false);
@@ -140,6 +140,7 @@ public fn i32 main(i32 argc, const char** argv)
     }
 
     recipe.free();
+    sm.close(file_id);
     sm.free();
 
     return 0;

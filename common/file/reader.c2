@@ -111,7 +111,7 @@ public fn void Reader.close(Reader* file) {
     }
 }
 
-public fn bool Reader.isOpen(const Reader* file) {
+public fn bool Reader.isOpen(const Reader* file) @(unused) {
     return file.region != nil;
 }
 
@@ -144,4 +144,12 @@ public fn const char* Reader.getError(const Reader* file) @(unused) {
         break;
     }
     return msg;
+}
+
+public fn void* Reader.detach(Reader* file, u32 *psize) {
+    void* data = file.region;
+    *psize = file.size;
+    file.region = nil;
+    file.size = 0;
+    return data;
 }
