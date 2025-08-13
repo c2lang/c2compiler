@@ -601,6 +601,32 @@ fn void Generator.emitAutoInit(Generator* gen, string_buffer.Buf* out, QualType 
     }
 }
 
+fn void Generator.on_public_import_decl(void* arg, ImportDecl* i) {
+    Generator* gen = arg;
+    Decl* d = cast<Decl*>(i);
+
+    if (!d.isUsedPublic()) return;
+
+    u32 name_idx = d.getNameIdx();
+    if (gen.imports.contains_idx(name_idx)) return;
+
+    gen.imports.add(name_idx);
+    gen.header.print("#include \"%s.h\"\n", d.getName());
+}
+
+fn void Generator.on_private_import_decl(void* arg, ImportDecl* i) {
+    Generator* gen = arg;
+    Decl* d = cast<Decl*>(i);
+
+    if (d.isUsedPublic()) return;
+
+    u32 name_idx = d.getNameIdx();
+    if (gen.imports.contains_idx(name_idx)) return;
+
+    gen.imports.add(name_idx);
+    gen.out.print("#include \"%s.h\"\n", d.getName());
+}
+
 fn void Generator.on_forward_structs(void* arg, Decl* d) {
     Generator* gen = arg;
 
@@ -654,13 +680,6 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
         }
         break;
     case Import:
-        assert(gen.fast_build);
-        ImportDecl* id = cast<ImportDecl*>(d);
-        Module* dest = id.getDest();
-
-        // put self include in .c file, otherwise put in header if used publicly
-        string_buffer.Buf* out = gen.getBuf(dest != gen.mod && d.isUsedPublic());
-        out.print("#include \"%s.h\"\n", dest.getName());
         break;
     case StructType:
         StructTypeDecl* std = cast<StructTypeDecl*>(d);
@@ -901,6 +920,14 @@ fn void Generator.create_interface_decls(void* arg, AST* a) {
     a.visitDecls(Generator.on_interface_decl, arg);
 }
 
+fn void Generator.on_public_ast_imports(void* arg, AST* a) {
+    a.visitImports(Generator.on_public_import_decl, arg);
+}
+
+fn void Generator.on_private_ast_imports(void* arg, AST* a) {
+    a.visitImports(Generator.on_private_import_decl, arg);
+}
+
 fn void Generator.on_ast_structs(void* arg, AST* a) {
     //Generator* gen = arg;
     a.visitTypeDecls(Generator.on_forward_structs, arg);
@@ -1064,6 +1091,21 @@ fn void Generator.on_module(void* arg, Module* m) {
 
         if (gen.fast_build) gen.write_files();
         return;
+    }
+
+    if (gen.fast_build) {
+        // generate self include
+        out.print("#include \"%s.h\"\n", gen.mod_name);
+        // For now just iterate twice, possibly generating same include twice
+        // if used public and non-public by other ASTs
+
+        // collect all public includes, strip duplicates and emit
+        gen.imports.clear();
+        m.visitASTs(Generator.on_public_ast_imports, gen);
+
+        // collect all non-public includes, strip duplicates and emit
+        gen.imports.clear();
+        m.visitASTs(Generator.on_private_ast_imports, gen);
     }
 
     m.visitASTs(Generator.ast_clear_generated, gen);
