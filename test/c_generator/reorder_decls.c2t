@@ -21,7 +21,7 @@ public fn i32 main() {
 typedef struct test_Foo_ test_Foo;
 
 struct test_Foo_ {
-   int32_t x;
+   int x;
 };
 
 typedef void (*test_Fn)(test_Foo* t);

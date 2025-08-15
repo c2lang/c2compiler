@@ -80,26 +80,26 @@ static void test_foo_char(void)
 
 static void test_foo_i8(void)
 {
-   int8_t min = i8_min;
-   int8_t max = i8_max;
+   i8 min = i8_min;
+   i8 max = i8_max;
 }
 
 static void test_foo_i16(void)
 {
-   int16_t min = i16_min;
-   int16_t max = i16_max;
+   i16 min = i16_min;
+   i16 max = i16_max;
 }
 
 static void test_foo_i32(void)
 {
-   int32_t min = i32_min;
-   int32_t max = i32_max;
+   int min = i32_min;
+   int max = i32_max;
 }
 
 static void test_foo_i64(void)
 {
-   int64_t min = i64_min;
-   int64_t max = i64_max;
+   i64 min = i64_min;
+   i64 max = i64_max;
 }
 
 static void test_foo_isize(void)
@@ -110,26 +110,26 @@ static void test_foo_isize(void)
 
 static void test_foo_u8(void)
 {
-   uint8_t min = u8_min;
-   uint8_t max = u8_max;
+   u8 min = u8_min;
+   u8 max = u8_max;
 }
 
 static void test_foo_u16(void)
 {
-   uint16_t min = u16_min;
-   uint16_t max = u16_max;
+   u16 min = u16_min;
+   u16 max = u16_max;
 }
 
 static void test_foo_u32(void)
 {
-   uint32_t min = u32_min;
-   uint32_t max = u32_max;
+   u32 min = u32_min;
+   u32 max = u32_max;
 }
 
 static void test_foo_u64(void)
 {
-   uint64_t min = u64_min;
-   uint64_t max = u64_max;
+   u64 min = u64_min;
+   u64 max = u64_max;
 }
 
 static void test_foo_usize(void)

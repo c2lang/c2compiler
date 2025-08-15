@@ -20,13 +20,13 @@ public fn i32 main() {
 // @expect{atleast, cgen/build.c}
 typedef struct test_Type_ test_Type;
 
-typedef void (*test_Func)(int32_t n);
+typedef void (*test_Func)(int n);
 
 struct test_Type_ {
     test_Func init;
 };
 
-int32_t main(void)
+int main(void)
 {
   test_Type t;
   t.init(1);

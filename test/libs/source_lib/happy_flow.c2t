@@ -14,15 +14,15 @@ public fn i32 main(i32 argc, const char** argv) {
 
 // @expect{atleast, cgen/build.c}
 
-static int32_t foo_test4(int32_t a);
-static int32_t foo_internal(int32_t a);
+static int foo_test4(int a);
+static int foo_internal(int a);
 
-static int32_t foo_test4(int32_t a)
+static int foo_test4(int a)
 {
    return 4 * foo_internal(a);
 }
 
-static int32_t foo_internal(int32_t a)
+static int foo_internal(int a)
 {
    return a + 1;
 }

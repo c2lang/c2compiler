@@ -239,14 +239,14 @@ fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, Decl* d) 
 
 const char*[BuiltinKind] builtinType_cnames = {
     "char",
-    "int8_t",
-    "int16_t",
-    "int32_t",
-    "int64_t",
-    "uint8_t",
-    "uint16_t",
-    "uint32_t",
-    "uint64_t",
+    "i8",
+    "i16",
+    "int",
+    "i64",
+    "u8",
+    "u16",
+    "u32",
+    "u64",
     "float",
     "double",
     "ssize_t",
@@ -254,7 +254,7 @@ const char*[BuiltinKind] builtinType_cnames = {
     "bool",
 }
 
-fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType qt) {
+fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType qt, bool bitfield = false) {
     Decl* decl = nil;
 
     if (qt.isConst()) out.add("const ");
@@ -263,6 +263,8 @@ fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType q
     switch (qt.getKind()) {
     case Builtin:
         BuiltinType* bt = (BuiltinType*)qt.getType();
+        // special case to ensure signed behavior
+        if (bitfield && bt.getKind() == Int32) out.add("signed  ");
         out.add(builtinType_cnames[bt.getKind()]);
         return;
     case Pointer:
@@ -385,13 +387,14 @@ fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl*
         }
         gen.genTypeIfNeeded(qt, true);
 
-        gen.emitTypePre(out, qt);
+        VarDecl* vd = (VarDecl*)d;
+        Expr* bitfield = vd.getBitfield();
+
+        gen.emitTypePre(out, qt, bitfield != nil);
         out.space();
         if (d.getNameIdx()) out.add(d.getName());
         gen.emitTypePost(out, qt);
 
-        VarDecl* vd = (VarDecl*)d;
-        Expr* bitfield = vd.getBitfield();
         if (bitfield) {
             out.add(" : ");
             // C does not allow using constants here, so generate CTV Value
@@ -861,7 +864,7 @@ fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer
     }
 
     if (d == gen.mainFunc) {
-        out.add("int32_t main");
+        out.add("int main");
     } else {
         // 2 options:
         // - external .c2i files
@@ -1435,12 +1438,11 @@ const char[] C_types =
     #define true 1
     #define false 0
     #endif
-    typedef signed char int8_t;
-    typedef unsigned char uint8_t;
-    typedef signed short int16_t;
-    typedef unsigned short uint16_t;
-    typedef signed int int32_t;
-    typedef unsigned int uint32_t;
+    typedef signed char i8;
+    typedef unsigned char u8;
+    typedef signed short i16;
+    typedef unsigned short u16;
+    typedef unsigned int u32;
     ```;
 const char[] C_defines =
     ```c
@@ -1493,24 +1495,24 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
     if (ast.getWordSize() == 4) {
         // ILP32 (32-bit int, long and pointers)
         out.add(```c
-                typedef signed long long int64_t;
-                typedef unsigned long long uint64_t;
+                typedef signed long long i64;
+                typedef unsigned long long u64;
                 typedef signed long ssize_t;
                 typedef unsigned long size_t;
                 ```);
     } else {
         // LP64 (64-bit long and pointers)
         out.add(```c
-                typedef signed long int64_t;
-                typedef unsigned long uint64_t;
+                typedef signed long i64;
+                typedef unsigned long u64;
                 typedef signed long ssize_t;
                 typedef unsigned long size_t;
                 ```);
 #if 0
         // TODO support LLP64 (64-bit long long and pointers, but 32-bit long)
         out.add(```c
-                typedef signed long long int64_t;
-                typedef unsigned long long uint64_t;
+                typedef signed long long i64;
+                typedef unsigned long long u64;
                 typedef signed long long ssize_t;
                 typedef unsigned long long size_t;
                 ```);

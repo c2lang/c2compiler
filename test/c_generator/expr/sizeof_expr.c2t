@@ -42,23 +42,23 @@ public fn i32 main(i32 argc, const char** argv) {
 
 // @expect{atleast, cgen/build.c}
 
-int32_t main(int32_t argc, const char** argv)
+int main(int argc, const char** argv)
 {
-    int32_t a = 8;
-    int32_t b = 4;
-    //int32_t c = 8;
-    int32_t d = 4;
-    int32_t e = 8;
-    //int32_t f = 12;
-    int32_t g = 24;
-    int32_t h = 4;
-    int32_t i = 8;
-    int32_t j = 24;
-    int32_t k = 4;
-    int32_t l = 8;
-    int32_t o1 = 10;
-    int32_t o2 = 20;
-    int32_t o3 = 40;
+    int a = 8;
+    int b = 4;
+    //int c = 8;
+    int d = 4;
+    int e = 8;
+    //int f = 12;
+    int g = 24;
+    int h = 4;
+    int i = 8;
+    int j = 24;
+    int k = 4;
+    int l = 8;
+    int o1 = 10;
+    int o2 = 20;
+    int o3 = 40;
 
     return 0;
 }

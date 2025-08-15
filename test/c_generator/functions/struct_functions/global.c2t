@@ -22,7 +22,7 @@ public fn i32 main() {
 typedef struct test_Type_ test_Type;
 
 struct test_Type_ {
-  int32_t member;
+  int member;
 };
 
 static test_Type test_t = { };
@@ -31,7 +31,7 @@ static void test_Type_init(test_Type* _arg0)
 {
 }
 
-int32_t main(void)
+int main(void)
 {
   test_Type_init(&test_t);
   return 0;

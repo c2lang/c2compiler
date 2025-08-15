@@ -47,11 +47,11 @@ fn void nested_body(i32 arg) {
 
 // @expect{atleast, cgen/build.c}
 
-int32_t main(int32_t argc, const char** argv)
+int main(int argc, const char** argv)
 {
     switch (argc) {
     case 1: {
-        int32_t a = 10;
+        int a = 10;
         return a;
     }
     case 2:
@@ -62,24 +62,24 @@ int32_t main(int32_t argc, const char** argv)
     return 0;
 }
 
-static int32_t test_default_body(int32_t arg)
+static int test_default_body(int arg)
 {
     switch (arg) {
     case 1:
         break;
     default: {
-        int32_t a = 10;
+        int a = 10;
         return a;
      }
     }
     return 0;
 }
 
-static void test_nested_body(int32_t arg)
+static void test_nested_body(int arg)
 {
     switch (arg) {
     case 1: {
-        int32_t a = 10;
+        int a = 10;
         switch (a) {
         case 1:
             break;

@@ -19,6 +19,6 @@ fn void Foo.test(Foo* f, const char* file @(auto_file), u32 line @(auto_line), v
 
 // @expect{atleast, foo.h}
 
-void foo_Foo_test(foo_Foo* f, const char* file, uint32_t line, void* p);
+void foo_Foo_test(foo_Foo* f, const char* file, u32 line, void* p);
 
 

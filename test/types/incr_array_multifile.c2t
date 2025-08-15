@@ -28,4 +28,4 @@ public fn i32 main()
 
 // @expect{atleast, cgen/build.c}
 
-static const int32_t foo_List[4] = { 10, 20, 30, 40 };
+static const int foo_List[4] = { 10, 20, 30, 40 };

@@ -19,13 +19,13 @@ public fn i32 main() {
 }
 
 // @expect{atleast, cgen/build.c}
-static void test_Foo_test(test_Foo* f, const char* file, uint32_t line, void* p);
-int32_t main(void);
-static void test_Foo_test(test_Foo* f, const char* file, uint32_t line, void* p)
+static void test_Foo_test(test_Foo* f, const char* file, u32 line, void* p);
+int main(void);
+static void test_Foo_test(test_Foo* f, const char* file, u32 line, void* p)
 {
 }
 
-int32_t main(void)
+int main(void)
 {
    test_Foo f;
    test_Foo_test(&f, "file1.c2", 11, NULL);

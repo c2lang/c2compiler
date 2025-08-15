@@ -16,7 +16,7 @@ type A struct {
 typedef struct test_A_ test_A;
 
 struct test_A_ {
-  int32_t x;
+  int x;
 };
 
 typedef test_A test_B;

@@ -27,7 +27,7 @@ const u32 Size = 3;
 
 // @expect{atleast, aa.h}
 
-typedef uint8_t aa_Enum;
+typedef u8 aa_Enum;
 enum aa_Enum {
    aa_Enum_A,
    aa_Enum_B,

@@ -21,7 +21,7 @@ const u32 Columns = 20;
 
 // @expect{atleast, aa.h}
 
-extern int32_t aa_array[10][20];
+extern int aa_array[10][20];
 
 #define aa_Rows 10
 #define aa_Columns 20

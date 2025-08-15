@@ -20,14 +20,14 @@ public fn i32 main() {
 typedef struct test_Type_ test_Type;
 
 struct test_Type_ {
-  int32_t member;
+  int member;
 };
 
-static void test_Type_init(int32_t n)
+static void test_Type_init(int n)
 {
 }
 
-int32_t main(void)
+int main(void)
 {
   test_Type_init(1);
   return 0;

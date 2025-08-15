@@ -170,22 +170,22 @@ fn void test1() {
 
 // @expect{atleast, cgen/build.c}
 
-static uint32_t test_s1_offs[5] = { 0, 4, 8, 12, 16 };
-static uint32_t test_s2_offs[6] = { 0, 2, 4, 8, 16, 20 };
-static uint32_t test_s2p_offs[6] = { 0, 1, 3, 7, 15, 18 };
-static uint32_t test_s3_offs[4] = { 0, 40, 44, 60 };
-static uint32_t test_s4_offs[5] = { 4, 4, 6, 8, 12 };
-static uint32_t test_s5_offs[3] = { 12, 4, 8 };
-static uint32_t test_s6_offs[3] = { 6, 2, 4 };
+static u32 test_s1_offs[5] = { 0, 4, 8, 12, 16 };
+static u32 test_s2_offs[6] = { 0, 2, 4, 8, 16, 20 };
+static u32 test_s2p_offs[6] = { 0, 1, 3, 7, 15, 18 };
+static u32 test_s3_offs[4] = { 0, 40, 44, 60 };
+static u32 test_s4_offs[5] = { 4, 4, 6, 8, 12 };
+static u32 test_s5_offs[3] = { 12, 4, 8 };
+static u32 test_s6_offs[3] = { 6, 2, 4 };
 
 static void test_test1(void)
 {
-    uint32_t s1_offs_local[5] = { 0, 4, 8, 12, 16 };
-    uint32_t s2_offs_local[6] = { 0, 2, 4, 8, 16, 20 };
-    uint32_t s2p_offs_local[6] = { 0, 1, 3, 7, 15, 18 };
-    uint32_t s3_offs_local[4] = { 0, 40, 44, 60 };
-    uint32_t s4_offs_local[5] = { 4, 4, 6, 8, 12 };
-    uint32_t s5_offs_local[3] = { 12, 4, 8 };
-    uint32_t s6_offs_local[3] = { 6, 2, 4 };
+    u32 s1_offs_local[5] = { 0, 4, 8, 12, 16 };
+    u32 s2_offs_local[6] = { 0, 2, 4, 8, 16, 20 };
+    u32 s2p_offs_local[6] = { 0, 1, 3, 7, 15, 18 };
+    u32 s3_offs_local[4] = { 0, 40, 44, 60 };
+    u32 s4_offs_local[5] = { 4, 4, 6, 8, 12 };
+    u32 s5_offs_local[3] = { 12, 4, 8 };
+    u32 s6_offs_local[3] = { 6, 2, 4 };
 }
 

@@ -21,17 +21,17 @@ public fn i32 main(i32 argc, const i8** argv)
 // @expect{atleast, cgen/build.c}
 
 static inline
-int32_t test_foo(void)
+int test_foo(void)
 {
     return 1;
 }
 
 static inline
-int32_t test_bar(void);
+int test_bar(void);
 
 
 static inline
-int32_t test_bar(void)
+int test_bar(void)
 {
     return 2;
 }

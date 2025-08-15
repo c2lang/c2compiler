@@ -19,18 +19,18 @@ public fn i32 main() {
 typedef struct test_Foo_ test_Foo;
 
 struct test_Foo_ {
-   int32_t v;
+   int v;
 };
 
-static void test_Foo_init(test_Foo* f, int32_t v);
-int32_t main(void);
+static void test_Foo_init(test_Foo* f, int v);
+int main(void);
 
-static void test_Foo_init(test_Foo* f, int32_t v)
+static void test_Foo_init(test_Foo* f, int v)
 {
    f->v = v;
 }
 
-int32_t main(void)
+int main(void)
 {
    test_Foo foo; test_Foo_init(&foo, 1);
    return foo.v;

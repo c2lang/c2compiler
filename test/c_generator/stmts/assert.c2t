@@ -15,9 +15,9 @@ public fn i32 main() {
 }
 
 // @expect{atleast, cgen/build.c}
-int32_t main(void);
+int main(void);
 
-int32_t main(void)
+int main(void)
 {
    (test_a) || c2_assert("file1.c2", 7, "test.main", "a");
    (test_p) || c2_assert("file1.c2", 8, "test.main", "p");

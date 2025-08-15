@@ -16,11 +16,11 @@ type Faa i16;
 // @expect{atleast, cgen/build.c}
 typedef struct test_Foo_ test_Foo;
 
-typedef int32_t test_Bar;
+typedef int test_Bar;
 
 struct test_Foo_ {
     test_Bar b;
 };
 
-typedef int16_t test_Faa;
+typedef i16 test_Faa;
 

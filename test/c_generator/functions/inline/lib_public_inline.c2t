@@ -36,12 +36,12 @@ fn i32 test_fn(Handler a, i32** b) {
 
 // @expect{atleast, test1.h}
 
-typedef void (*test1_Handler)(int32_t* _arg0);
+typedef void (*test1_Handler)(int* _arg0);
 
 static inline
-int32_t test1_test_fn(test1_Handler a, int32_t** b)
+int test1_test_fn(test1_Handler a, int** b)
 {
-  int32_t c[4];
+  int c[4];
   a(*b);
   return 123;
 }

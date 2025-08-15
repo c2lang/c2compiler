@@ -27,13 +27,13 @@ public fn i32 main() {
 
 // @expect{atleast, cgen/build.c}
 
-typedef void (*test_Func)(const char* file, uint32_t line);
+typedef void (*test_Func)(const char* file, u32 line);
 
-static void test_impl(const char* file, uint32_t line);
+static void test_impl(const char* file, u32 line);
 static void test_test1(test_Func f);
 static void test_test2(void);
 
-static void test_impl(const char* file, uint32_t line)
+static void test_impl(const char* file, u32 line)
 {
 }
 

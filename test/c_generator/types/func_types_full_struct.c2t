@@ -15,7 +15,7 @@ type Struct struct {
 typedef struct test_Struct_ test_Struct;
 
 struct test_Struct_ {
-  int32_t x;
+  int x;
 };
 
 typedef test_Struct (*test_Callback)(void);

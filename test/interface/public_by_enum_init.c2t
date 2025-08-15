@@ -26,7 +26,7 @@ type BB enum i8 {
 // @expect{atleast, bb.h}
 #include "aa.h"
 
-typedef int8_t bb_BB;
+typedef i8 bb_BB;
 enum bb_BB {
     bb_BB_BB1 = aa_AA,
 };

@@ -24,14 +24,14 @@ public fn i32 main(i32 argc, const char** argv) {
 
 // @expect{atleast, cgen/build.c}
 
-int32_t main(int32_t argc, const char** argv)
+int main(int argc, const char** argv)
 {
-    int32_t a = 0;
+    int a = 0;
     if (a) {
     }
 
     if (a) {
-        int32_t b = 10;
+        int b = 10;
         if (b) return 0;
         else return 1;
     }

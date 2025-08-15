@@ -26,7 +26,7 @@ const u32 Size = 10;
 // @expect{atleast, bb.h}
 #include "aa.h"
 
-extern int32_t bb_b[10];
+extern int bb_b[10];
 
 #define bb_Size 10
 

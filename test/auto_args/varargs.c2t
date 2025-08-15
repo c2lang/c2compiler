@@ -15,13 +15,13 @@ public fn i32 main() {
 
 // @expect{atleast, cgen/build.c}
 
-static void test_log(uint32_t line, const char* filename, const char* fmt, ...);
+static void test_log(u32 line, const char* filename, const char* fmt, ...);
 
-static void test_log(uint32_t line, const char* filename, const char* fmt, ...)
+static void test_log(u32 line, const char* filename, const char* fmt, ...)
 {
 }
 
-int32_t main(void)
+int main(void)
 {
    test_log(7, "file1.c2", "hello %s", "C2");
    return 0;

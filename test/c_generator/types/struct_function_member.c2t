@@ -22,16 +22,16 @@ fn void test1() {
 typedef struct test_Foo_ test_Foo;
 
 struct test_Foo_ {
-   int32_t a;
-   void (*cb1)(void* arg, int32_t a);
+   int a;
+   void (*cb1)(void* arg, int a);
 };
 
-static void test_callback(void* arg, int32_t a);
+static void test_callback(void* arg, int a);
 static test_Foo test_foo = { 3, test_callback };
 
 static void test_test1(void);
 
-static void test_callback(void* arg, int32_t a)
+static void test_callback(void* arg, int a)
 {
 }
 

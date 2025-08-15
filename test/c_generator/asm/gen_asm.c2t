@@ -40,24 +40,24 @@ fn void basic_asm() {
 }
 
 // @expect{atleast, cgen/build.c}
-static int32_t test_add(int32_t x, int32_t y);
+static int test_add(int x, int y);
 static void test_clobbers(void);
 static inline
-uint64_t test_rdtsc(void);
+u64 test_rdtsc(void);
 static void test_basic_asm(void);
 
-static int32_t test_add(int32_t x, int32_t y)
+static int test_add(int x, int y)
 {
-  int32_t result;
+  int result;
   __asm__ volatile ("add %[Rd], %[Rm], %[Rn]" : [Rd] "=r" (result) : [Rm] "r" (x), [Rn] "r" (y));
   return result;
 }
 
 static void test_clobbers(void)
 {
-  int32_t from;
-  int32_t to;
-  int32_t count;
+  int from;
+  int to;
+  int count;
   __asm__ volatile ("movc3 %0, %1, %2"
             :
             : "g" (from), "g" (to), "g" (count)
@@ -65,12 +65,12 @@ static void test_clobbers(void)
 }
 
 static inline
-uint64_t test_rdtsc(void)
+u64 test_rdtsc(void)
 {
-  uint32_t lo;
-  uint32_t hi;
+  u32 lo;
+  u32 hi;
   __asm__ volatile ("rdtsc" : "=a" (lo), "=d" (hi));
-  uint64_t res = hi;
+  u64 res = hi;
   res <<= 32;
   res |= lo;
   return res;

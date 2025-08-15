@@ -22,16 +22,16 @@ i32[2] is;
 typedef struct test_Foo_ test_Foo;
 
 struct test_Foo_ {
-    int32_t i;
-    int8_t* cp;
+    int i;
+    i8* cp;
     bool b;
 };
 
 static test_Foo test_f = { };
 
-static int32_t test_i = 0;
+static int test_i = 0;
 
 static test_Foo test_fs[2] = { };
 
-static int32_t test_is[2] = { };
+static int test_is[2] = { };
 

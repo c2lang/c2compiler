@@ -68,7 +68,7 @@ public fn i32 main(i32 argc, const char** argv) {
 // @expect{atleast, cgen/build.c}
 
 
-static void test_test1(int32_t i)
+static void test_test1(int i)
 {
     switch (i) {
     case 1:
@@ -92,7 +92,7 @@ static void test_test1(int32_t i)
     }
 }
 
-static void test_test2(int32_t i)
+static void test_test2(int i)
 {
     while (1) {
         switch (i) {
@@ -105,18 +105,18 @@ static void test_test2(int32_t i)
 }
 
 
-static void test_test3(int32_t i)
+static void test_test3(int i)
 {
    switch (i) {
    case 0:
       break;
    case 1: {
-      int32_t a = 10;
+      int a = 10;
       break;
    }
    case 2:
    {
-      int32_t b = 20;
+      int b = 20;
       break;
    }
    default:
@@ -124,9 +124,9 @@ static void test_test3(int32_t i)
    }
 }
 
-int32_t main(int32_t argc, const char** argv)
+int main(int argc, const char** argv)
 {
-    int32_t a = 0;
+    int a = 0;
     switch (a) {
     default:
         break;

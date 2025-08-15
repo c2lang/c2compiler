@@ -23,7 +23,7 @@ public fn i32 main(i32 argc, const char** argv) {
 // @expect{atleast, cgen/build.c}
 
 static void test_forever(void);
-int32_t main(int32_t argc, const char** argv);
+int main(int argc, const char** argv);
 
 static void test_forever(void)
 {
@@ -31,13 +31,13 @@ static void test_forever(void)
     }
 }
 
-int32_t main(int32_t argc, const char** argv)
+int main(int argc, const char** argv)
 {
-    int32_t a = 0;
+    int a = 0;
     for (a = 0; a < 10; a++) {
     }
 
-    for (int32_t b = 0; b < 10; b++) {
+    for (int b = 0; b < 10; b++) {
     }
 
     test_forever();

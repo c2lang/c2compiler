@@ -24,18 +24,18 @@ type Outer struct {
 // @expect{atleast, cgen/build.c}
 typedef struct test_Outer_ test_Outer;
 struct test_Outer_ {
-    int32_t x;
+    int x;
     struct {
-        int32_t x;
-        int32_t y;
+        int x;
+        int y;
     } a;
     struct {
-        int32_t z;
+        int z;
     };
     union {
-        int32_t c;
-        int16_t d;
-        int8_t e;
+        int c;
+        i16 d;
+        i8 e;
     };
 };
 

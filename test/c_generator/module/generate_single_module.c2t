@@ -17,16 +17,16 @@ fn i32 sum(i32 c, i32 d) {
 }
 
 // @expect{atleast, cgen/build.c}
-static int32_t mod1_sum(int32_t a, int32_t b);
+static int mod1_sum(int a, int b);
 
-static int32_t mod1_sum(int32_t a, int32_t b)
+static int mod1_sum(int a, int b)
 {
     return a + b;
 }
 
-static int32_t mod2_sum(int32_t c, int32_t d);
+static int mod2_sum(int c, int d);
 
-static int32_t mod2_sum(int32_t c, int32_t d)
+static int mod2_sum(int c, int d)
 {
     return c + d;
 }

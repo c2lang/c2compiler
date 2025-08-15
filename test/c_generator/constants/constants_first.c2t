@@ -18,10 +18,10 @@ const i32 C = 30;
 typedef struct test_Foo_ test_Foo;
 
 struct test_Foo_ {
-   int32_t x;
+   int x;
 };
 
-static int32_t test_a = 10;
+static int test_a = 10;
 
 #define test_B 20
 

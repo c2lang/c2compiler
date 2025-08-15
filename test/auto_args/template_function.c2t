@@ -15,16 +15,16 @@ public fn i32 main() {
 }
 
 // @expect{atleast, cgen/build.c}
-int32_t main(void);
+int main(void);
 
-static int32_t test_test1_0_(const uint32_t line, int32_t x)
+static int test_test1_0_(const u32 line, int x)
 {
-    return (int32_t)(x + line);
+    return (int)(x + line);
 }
 
-int32_t main(void)
+int main(void)
 {
-   int32_t a = test_test1_0_(8, 20);
+   int a = test_test1_0_(8, 20);
    return 0;
 }
 

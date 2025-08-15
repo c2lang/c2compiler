@@ -19,5 +19,5 @@ module bb;
 i32 b;
 
 // @expect{atleast, bb.h}
-extern int32_t bb_b;
+extern int bb_b;
 

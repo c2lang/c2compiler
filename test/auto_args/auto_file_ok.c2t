@@ -18,13 +18,13 @@ public fn i32 main() {
 
 // @expect{atleast, cgen/build.c}
 
-static void test_test2(const char* file, uint32_t line);
+static void test_test2(const char* file, u32 line);
 
-static void test_test2(const char* file, uint32_t line)
+static void test_test2(const char* file, u32 line)
 {
 }
 
-int32_t main(void)
+int main(void)
 {
    test_test2("file1.c2", 7);
    test_test2("file1.c2", 8);

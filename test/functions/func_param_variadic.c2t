@@ -21,16 +21,16 @@ public fn void test2() {
 }
 
 // @expect{atleast, cgen/build.c}
-static void test_test1(void* arg, void (*cb)(void* arg, int32_t a, ...), int32_t a, ...);
-static void test_callback(void* arg, int32_t a, ...);
+static void test_test1(void* arg, void (*cb)(void* arg, int a, ...), int a, ...);
+static void test_callback(void* arg, int a, ...);
 static void test_test2(void);
 
-static void test_test1(void* arg, void (*cb)(void* arg, int32_t a, ...), int32_t a, ...)
+static void test_test1(void* arg, void (*cb)(void* arg, int a, ...), int a, ...)
 {
    cb(arg, a);
 }
 
-static void test_callback(void* arg, int32_t a, ...)
+static void test_callback(void* arg, int a, ...)
 {
 }
 

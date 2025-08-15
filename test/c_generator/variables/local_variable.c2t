@@ -13,6 +13,6 @@ fn void test1() {
 
 static void test_test1(void)
 {
-    static int32_t a = 10;
+    static int a = 10;
 }
 

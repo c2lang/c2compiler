@@ -112,7 +112,7 @@ next:
 // @expect{atleast, test1.h}
 
 static inline
-int32_t test1_test_fn(const char* format, ...)
+int test1_test_fn(const char* format, ...)
 {
   const char* p;
   {
@@ -153,7 +153,7 @@ int32_t test1_test_fn(const char* format, ...)
   for (;;) {
       break;
   }
-  for (uint32_t i = 0; format[i]; i++) {
+  for (u32 i = 0; format[i]; i++) {
     break;
   }
   goto next;

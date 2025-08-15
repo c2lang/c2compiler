@@ -193,10 +193,10 @@ fn void Generator.writeCalls(Generator* gen, string_buffer.Buf* out) {
     }
     out.add("};\n\n");
 
-    out.add("uint32_t c2_trace_length = sizeof(c2_trace_data) / sizeof(c2_trace_data[0]);\n"
-            "uint32_t c2_trace_counts[sizeof(c2_trace_data) / sizeof(c2_trace_data[0])];\n\n");
+    out.add("u32 c2_trace_length = sizeof(c2_trace_data) / sizeof(c2_trace_data[0]);\n"
+            "u32 c2_trace_counts[sizeof(c2_trace_data) / sizeof(c2_trace_data[0])];\n\n");
 }
 
 fn void Generator.writeCallExterns(Generator* gen, string_buffer.Buf* out) {
-    out.add("extern uint32_t c2_trace_counts[];\n");
+    out.add("extern u32 c2_trace_counts[];\n");
 }

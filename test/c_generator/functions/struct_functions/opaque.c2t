@@ -39,7 +39,7 @@ public fn i32 main() {
 // @expect{atleast, cgen/build.c}
 
 struct foo_Type_ {
-  int32_t x;
+  int x;
 };
 
 static void foo_Type_internal(foo_Type* t);
@@ -60,7 +60,7 @@ static void foo_Type_init(foo_Type* t)
   foo_Type_internal(t);
 }
 
-int32_t main(void)
+int main(void)
 {
   foo_Type* t = foo_Type_create();
   foo_Type_init(t);

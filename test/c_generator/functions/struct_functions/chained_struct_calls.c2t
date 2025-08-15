@@ -40,7 +40,7 @@ typedef struct test_B_ test_B;
 typedef struct test_C_ test_C;
 
 struct test_A_ {
-    int32_t x;
+    int x;
 };
 
 struct test_B_ {
@@ -51,12 +51,12 @@ struct test_C_ {
   test_B b;
 };
 
-static uint32_t test_A_run(test_A* a);
+static u32 test_A_run(test_A* a);
 static test_A* test_B_getA(test_B* b);
 static test_B* test_C_getB(test_C* c);
 static void test_test1(void);
 
-static uint32_t test_A_run(test_A* a)
+static u32 test_A_run(test_A* a)
 {
   return 10;
 }
@@ -74,6 +74,6 @@ static test_B* test_C_getB(test_C* c)
 static void test_test1(void)
 {
   test_C c;
-  uint32_t n = test_A_run(test_B_getA(test_C_getB(&c)));
+  u32 n = test_A_run(test_B_getA(test_C_getB(&c)));
 }
 

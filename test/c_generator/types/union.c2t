@@ -14,7 +14,7 @@ type Data union {
 typedef union test_Data_ test_Data;
 
 union test_Data_ {
-    int32_t a;
-    int8_t* b;
+    int a;
+    i8* b;
 };
 

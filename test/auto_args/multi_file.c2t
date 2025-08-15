@@ -25,7 +25,7 @@ public fn i32 main() {
 
 // @expect{atleast, cgen/test.c}
 
-int32_t main(void)
+int main(void)
 {
    foo_Foo* f = NULL;
    foo_Foo_test(f, "file2.c2", 7, NULL);

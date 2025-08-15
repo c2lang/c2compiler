@@ -10,7 +10,7 @@ type Foo i32;
 public type Bar i16;
 
 // @expect{atleast, cgen/build.c}
-typedef int32_t test_Foo;
+typedef int test_Foo;
 
-typedef int16_t test_Bar;
+typedef i16 test_Bar;
 

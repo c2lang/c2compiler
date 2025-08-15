@@ -694,7 +694,7 @@ static inline bool io_uring_cq_eventfd_enabled(const struct io_uring *ring)
 static inline int io_uring_cq_eventfd_toggle(struct io_uring *ring,
 					     bool enabled)
 {
-	uint32_t flags;
+	u32 flags;
 
 	if (!!enabled == io_uring_cq_eventfd_enabled(ring))
 		return 0;

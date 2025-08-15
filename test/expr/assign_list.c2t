@@ -36,12 +36,12 @@ public fn i32 main() {
 
 // @expect{atleast, cgen/build.c}
 
-static test_Point test_new_point(int32_t x, int32_t y)
+static test_Point test_new_point(int x, int y)
 {
     return (test_Point){ x, y };
 }
 
-int32_t main(void)
+int main(void)
 {
     printf("p0={ %d, %d }\n", test_p0.x, test_p0.y);
     test_Point p1;

@@ -45,7 +45,7 @@ static void test1_nonpub1(void)
 {
 }
 
-int32_t main(int32_t argc, const char** argv)
+int main(int argc, const char** argv)
 {
     return 0;
 }

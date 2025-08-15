@@ -28,9 +28,9 @@ public fn i32 main(i32 argc, const char** argv) {
 
 // @expect{atleast, cgen/build.c}
 
-int32_t main(int32_t argc, const char** argv)
+int main(int argc, const char** argv)
 {
-    int32_t a;
+    int a;
 
     a = (1 << 2) + 3;
     a = ((1 ^ 2) | 3) & 4;

@@ -51,7 +51,7 @@ aa.AA a1;
 typedef struct aa_AA_ aa_AA;
 
 struct aa_AA_ {
-    int32_t x;
+    int x;
 };
 
 void aa_foo(void);

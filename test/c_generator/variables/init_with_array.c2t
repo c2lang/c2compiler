@@ -22,11 +22,11 @@ const i32[] N1 = { 1, 2, 3, 4 }
 typedef struct test_List_ test_List;
 
 struct test_List_ {
-  const int32_t* x;
-  uint32_t len;
+  const int* x;
+  u32 len;
 };
 
-static const int32_t test_N1[4] = { 1, 2, 3, 4 };
+static const int test_N1[4] = { 1, 2, 3, 4 };
 
 static const test_List test_Lists[1] = {
   { test_N1, 4 }

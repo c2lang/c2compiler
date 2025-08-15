@@ -40,7 +40,7 @@ static void test_test1(test_Foo f)
    }
 }
 
-int32_t main(void)
+int main(void)
 {
     return 0;
 }

@@ -20,12 +20,12 @@ public fn i32 main() {
 
 #define test_Size 20
 
-static int32_t test_board[20][20] = { };
+static int test_board[20][20] = { };
 
 static void test_func1(void);
 
 static void test_func1(void)
 {
-  int32_t board2[20][20];
+  int board2[20][20];
 }
 

@@ -21,7 +21,7 @@ fn void test1() {
 
 // @expect{atleast, cgen/build.c}
 
-typedef uint8_t file1_State;
+typedef u8 file1_State;
 enum file1_State {
     file1_State_A,
     file1_State_B,

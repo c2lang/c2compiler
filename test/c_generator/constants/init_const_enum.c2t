@@ -16,16 +16,16 @@ public fn i32 main() { return My_Zero2; }
 
 // @expect{atleast, cgen/build.c}
 
-typedef uint8_t test_Enum;
+typedef u8 test_Enum;
 enum test_Enum {
    test_Enum_Zero,
 };
 
 #define test_My_Zero test_Enum_Zero
 #define test_My_Zero2 test_My_Zero
-int32_t main(void);
+int main(void);
 
-int32_t main(void)
+int main(void)
 {
    return test_My_Zero2;
 }

@@ -16,13 +16,13 @@ type State enum i8 { A, B, C }
 // @expect{atleast, cgen/build.c}
 typedef struct test_Point_ test_Point;
 
-typedef int32_t test_Number;
+typedef int test_Number;
 
 struct test_Point_ {
-    int32_t x;
+    int x;
 };
 
-typedef int8_t test_State;
+typedef i8 test_State;
 enum test_State {
   test_State_A,
   test_State_B,

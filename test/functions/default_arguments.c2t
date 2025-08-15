@@ -71,25 +71,25 @@ public fn void test1() {
 typedef struct test_S_ test_S;
 
 struct test_S_ {
-   int32_t x;
-   int32_t y;
+   int x;
+   int y;
 };
 
 static const char test_Str[13] = "dummy string";
 
 #define test_Default_bar 43
-static uint8_t test_bar_array[7] = "abcdef";
+static u8 test_bar_array[7] = "abcdef";
 
-static int32_t test_add(int32_t x, int32_t y);
+static int test_add(int x, int y);
 static void test_output(const char* msg);
 static void test_foo(const char* msg);
-static uint32_t test_bar1(uint32_t val);
-static uint32_t test_bar2(uint32_t val);
-static void test_S_init(test_S* s, int32_t x, int32_t y);
+static u32 test_bar1(u32 val);
+static u32 test_bar2(u32 val);
+static void test_S_init(test_S* s, int x, int y);
 static void test_S_print(test_S* s);
 static void test_test1(void);
 
-static int32_t test_add(int32_t x, int32_t y)
+static int test_add(int x, int y)
 {
    return x + y;
 }
@@ -104,17 +104,17 @@ static void test_foo(const char* msg)
    printf("%s\n", msg);
 }
 
-static uint32_t test_bar1(uint32_t val)
+static u32 test_bar1(u32 val)
 {
    return val;
 }
 
-static uint32_t test_bar2(uint32_t val)
+static u32 test_bar2(u32 val)
 {
    return val;
 }
 
-static void test_S_init(test_S* s, int32_t x, int32_t y)
+static void test_S_init(test_S* s, int x, int y)
 {
    s->x = x;
    s->y = y;

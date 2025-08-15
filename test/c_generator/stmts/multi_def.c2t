@@ -37,32 +37,32 @@ public fn i32 main() {
 typedef struct test_Point_ test_Point;
 
 struct test_Point_ {
-   int32_t x;
-   int32_t y;
+   int x;
+   int y;
 };
 
 static void test_Point_print(const test_Point* p);
-static void test_test1(int32_t i);
-int32_t main(void);
+static void test_test1(int i);
+int main(void);
 
 static void test_Point_print(const test_Point* p)
 {
 }
 
-static void test_test1(int32_t i)
+static void test_test1(int i)
 {
 }
 
-int32_t main(void)
+int main(void)
 {
-   int32_t x = 1, y = 2;
+   int x = 1, y = 2;
    test_Point p1 = { 1, 2 }, p2 = { 3, 4 };
    if (x > y) {
-      int32_t z = 1;
+      int z = 1;
       if (z) test_Point_print(&p1);
       else test_Point_print(&p2);
    }
 
-   for (int32_t i = 0, n = 32; i < n; i++) test_test1(i);
+   for (int i = 0, n = 32; i < n; i++) test_test1(i);
    return 0;
 }

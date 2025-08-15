@@ -32,7 +32,7 @@ aa.Number n2;
 
 // @expect{atleast, aa.h}
 
-typedef int32_t aa_Number;
+typedef int aa_Number;
 
 // @expect{atleast, bb.h}
 

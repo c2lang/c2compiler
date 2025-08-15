@@ -51,7 +51,7 @@ fn void test3() {
 
 // @expect{atleast, cgen/build.c}
 
-typedef uint8_t test_Foo;
+typedef u8 test_Foo;
 enum test_Foo {
    test_Foo_A,
    test_Foo_B,
