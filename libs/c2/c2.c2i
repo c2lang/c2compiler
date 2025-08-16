@@ -1,5 +1,28 @@
 module c2;
 
+#if USE_NATIVE_CTYPES
+type c_char char @(cname="char");
+type c_uchar u8 @(cname="unsigned char");
+type c_short i16 @(cname="short");
+type c_ushort u16 @(cname="unsigned short");
+type c_int i32 @(cname="int");
+type c_uint u32 @(cname="unsigned int");
+type c_longlong i64 @(cname="long long");
+type c_ulonglong u64 @(cname="unsigned long long");
+type c_float f32 @(cname="float");
+type c_double f64 @(cname="double");
+#if ARCH_32BIT
+type c_long i32 @(cname="long");
+type c_ulong u32 @(cname="unsigned long");
+type c_size u32 @(cname="size_t");
+type c_ssize i32 @(cname="ssize_t");
+#else
+type c_long i64 @(cname="long");
+type c_ulong u64 @(cname="unsigned long");
+type c_size u64 @(cname="size_t");
+type c_ssize i64 @(cname="ssize_t");
+#endif
+#else  // compiling the compiler from bootstrap code
 type c_char char;
 type c_uchar u8;
 type c_short i16;
@@ -20,6 +43,7 @@ type c_long i64;
 type c_ulong u64;
 type c_size u64;
 type c_ssize i64;
+#endif
 #endif
 
 const i8 min_i8 = -128;

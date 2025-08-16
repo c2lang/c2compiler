@@ -300,6 +300,8 @@ fn void Compiler.build(Compiler* c,
     if (opts.msan) c.addFeature("__MSAN__", "1");
     if (opts.ubsan) c.addFeature("__UBSAN__", "1");
 
+    c.addFeature("USE_NATIVE_CTYPES", "1");
+
     target.addLib(c.auxPool.add("c2", 2, true), false);
 
     c.parser = c2_parser.create(sm,
