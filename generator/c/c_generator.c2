@@ -79,6 +79,7 @@ type Generator struct {
     bool msan;
     bool ubsan;
     bool trace_calls;
+    bool no_trace;  //to disable tracing on c2_trace module
 
     // set during generation
     bool cur_external;  // whether current component is external
@@ -1058,6 +1059,9 @@ fn void Generator.on_module(void* arg, Module* m) {
     gen.mod_name = m.getName();
     gen.mod = m;
 
+    // Temporary disable call tracing when compiling the c2_trace module
+    gen.no_trace = !string.strcmp(gen.mod_name, "c2_trace");
+
     if (gen.fast_build) {
         out.clear();
         gen.header.clear();
@@ -1268,9 +1272,17 @@ public fn void generate(string_pool.Pool* astPool,
 
     mainComp.visitModules(Generator.on_module, &gen);
 
-    if (fast_build) gen.out.clear();
-    if (gen.trace_calls) gen.writeCalls(gen.out);
-    if (!fast_build || gen.trace_calls) {
+    if (fast_build) {
+        if (gen.trace_calls) {
+            gen.out.clear();
+            gen.out.add("#include \"c2_trace_tables.h\"\n\n");
+            gen.writeCalls(gen.out);
+            gen.write(dir, "c2_trace_tables.c", gen.out);
+        }
+    } else {
+        if (gen.trace_calls) {
+            gen.writeCalls(gen.out);
+        }
         gen.write(dir, "build.c", gen.out);
     }
 
