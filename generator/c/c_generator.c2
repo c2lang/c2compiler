@@ -453,7 +453,39 @@ fn void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Decl*
     out.add(";\n\n");
 }
 
+fn bool match_type(const char* s, const char* list, const char** sp) {
+    while (*list) {
+        usize len;
+        for (len = 0; list[len] && list[len] != ','; len++)
+            continue;
+        usize i;
+        for (i = 0; i < len && s[i] == list[i]; i++)
+            continue;
+        if (i == len && (s[i] == '\0' || s[i] == ' ')) {
+            *sp = s + i;
+            return true;
+        }
+        list += len;
+        list += (*list == ',');
+    }
+    return false;
+}
+
+fn bool is_c_type(const char* s) {
+    for (;;) {
+        while (*s == ' ') s++;
+        if (!*s) return true;
+        if (!match_type(s, "const,volatile,unsigned,signed,short,long,"
+                        "_Bool,char,int,float,double,size_t,ssize_t", &s))
+            break;
+    }
+    return false;
+}
+
 fn void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* d) {
+    const char* cname = d.getCName();
+    if (cname && is_c_type(cname))
+        return;
     // For now, just generate canonicalType as RHS
     QualType qt = d.getType();
     qt = qt.getCanonicalType(); // just generate final type
@@ -462,7 +494,7 @@ fn void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* d)
     gen.emitTypePost(out, qt);
     out.space();
     gen.emitCName(out, d);
-    out.add(";\n\n");
+    out.add(";\n");
 }
 
 fn bool emitAsDefine(const VarDecl* vd) {
@@ -1353,7 +1385,6 @@ const char[] Include_guard1 =
 const char[] C_types =
     ```c
     // --- internally added ---
-    typedef unsigned char bool;
     typedef signed char int8_t;
     typedef unsigned char uint8_t;
     typedef signed short int16_t;
