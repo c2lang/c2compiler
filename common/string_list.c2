@@ -75,7 +75,7 @@ public fn void List.addStr(List* l, const char* str) {
     l.add(l.pool.addStr(str, true));
 }
 
-public fn bool List.contains(const List* l, const char* name) {
+public fn bool List.contains(const List* l, const char* name) @(unused) {
     for (u32 i=0; i<l.count; i++) {
         if (strcmp(l.pool.idx2str(l.indexes[i]), name) == 0) return true;
     }

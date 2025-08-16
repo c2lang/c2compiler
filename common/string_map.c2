@@ -1,0 +1,153 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module string_map;
+
+import string_pool;
+import string local;
+import stdlib local;
+
+public type Map struct {
+    string_pool.Pool* pool;
+    u32* names;    // into pool
+    u32* values;   // into pool
+    u32 count;
+    u32 capacity;
+}
+
+public fn void Map.init(Map* m, string_pool.Pool* pool) {
+    memset(m, 0, sizeof(Map));
+    m.pool = pool;
+    m.resize(16);
+}
+
+public fn void Map.free(Map* m) {
+    free(m.names);
+    free(m.values);
+    m.names = nil;
+    m.values = nil;
+    m.count = 0;
+    m.capacity = 0;
+}
+
+public fn void Map.clear(Map* m) @(unused) {
+    m.count = 0;
+}
+
+fn void Map.resize(Map* m, u32 capacity) {
+    m.capacity = capacity;
+    u32* names2 = malloc(capacity * sizeof(u32));
+    u32* values2 = malloc(capacity * sizeof(u32));
+    if (m.count) {
+        memcpy(names2, m.names, m.count * sizeof(u32));
+        memcpy(values2, m.values, m.count * sizeof(u32));
+        free(m.names);
+        free(m.values);
+    }
+    m.names = names2;
+    m.values = values2;
+}
+
+public fn void Map.add(Map* m, u32 name_idx, u32 value_idx) @(unused) {
+    if (m.count == m.capacity) m.resize(m.capacity * 2);
+
+    m.names[m.count] = name_idx;
+    m.values[m.count] = value_idx;
+    m.count++;
+}
+
+// remove an index from the string map
+// return number of items removed.
+public fn u32 Map.del(Map* m, u32 name_idx) {
+    u32 j = 0;
+    u32 count = m.count;
+    for (u32 i = 0; i < count; i++) {
+        if (m.names[i] != name_idx) {
+            m.names[j] = m.names[i];
+            m.values[j] = m.values[i];
+            j++;
+        }
+    }
+    m.count = j;
+    return count - j;
+}
+
+public fn void Map.addStr(Map* m, const char* str, const char* val) @(unused) {
+    m.add(m.pool.addStr(str, true), m.pool.addStr(val, true));
+}
+
+public fn void Map.addNameValue(Map* m, u32 idx, const char* def) {
+    const char* str = m.pool.idx2str(idx);
+    u32 len;
+    const char* value = def;
+    for (len = 0; str[len]; len++) {
+        if (str[len] == '=') {
+            u32 new_idx = m.pool.add(str, len, true);
+            // reload from pool in case block was reallocated
+            value = m.pool.idx2str(idx) + len + 1;
+            idx = new_idx;
+            break;
+        }
+    }
+    m.add(idx, m.pool.addStr(value, true));
+}
+
+public fn bool Map.contains(const Map* m, const char* name, u32* indexp = nil) {
+    for (u32 i = 0; i < m.count; i++) {
+        if (!strcmp(m.pool.idx2str(m.names[i]), name)) {
+            if (indexp) *indexp = i;
+            return true;
+        }
+    }
+    return false;
+}
+
+public fn bool Map.contains_idx(const Map* m, u32 name_idx, u32* indexp = nil) @(unused) {
+    for (u32 i = 0; i < m.count; i++) {
+        if (m.names[i] == name_idx) {
+            if (indexp) *indexp = i;
+            return true;
+        }
+    }
+    return false;
+}
+
+public fn u32 Map.length(const Map* m) @(unused) {
+    return m.count;
+}
+
+public fn u32 Map.getNameIdx(const Map* m, u32 i) @(unused) {
+    return m.names[i];
+}
+
+public fn const char* Map.getName(const Map* m, u32 i) @(unused) {
+    return m.pool.idx2str(m.names[i]);
+}
+
+public fn u32 Map.getValueIdx(const Map* m, u32 i) @(unused) {
+    return m.values[i];
+}
+
+public fn const char* Map.getValue(const Map* m, u32 i) @(unused) {
+    return m.pool.idx2str(m.values[i]);
+}
+
+public fn u32* Map.getNames(const Map* m) @(unused) {
+    return m.names;
+}
+
+public fn u32* Map.getValues(const Map* m) @(unused) {
+    return m.values;
+}

@@ -20,6 +20,7 @@ set common
     common/process_utils.c2
     common/source_mgr.c2
     common/string_list.c2
+    common/string_map.c2
     common/string_utils.c2
     common/utf8.c2
     common/utils.c2
@@ -410,6 +411,7 @@ executable c2cat
     common/file/file_utils.c2
     common/file/reader.c2
     common/string_list.c2
+    common/string_map.c2
     common/utf8.c2
 
     parser/c2_tokenizer.c2
@@ -443,6 +445,7 @@ executable c2loc
     common/library_list.c2
     common/source_mgr.c2
     common/string_list.c2
+    common/string_map.c2
     common/warning_flags.c2
 
     compiler/c2recipe.c2

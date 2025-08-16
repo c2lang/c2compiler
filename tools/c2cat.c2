@@ -22,6 +22,7 @@ import file_utils;
 import keywords;
 import string_buffer;
 import string_list;
+import string_map;
 import string_pool;
 import number_radix;
 import token local;
@@ -256,13 +257,10 @@ public fn i32 c2cat(const char* filename, bool use_color)
     ctx.in_attributes = 0;
     u32 file_size = file.data_size();
 
-    string_list.List features;
-    features.init(ctx.pool);
+    string_map.Map features.init(ctx.pool);
     string_buffer.Buf* buf = string_buffer.create(1024, false, 0);
-    keywords.Info kwinfo;
-    kwinfo.init(ctx.pool);
-    c2_tokenizer.Tokenizer tokenizer;
-    tokenizer.init(ctx.pool, buf, ctx.input, 0, &kwinfo, &features, nil, nil, true);
+    keywords.Info kwinfo.init(ctx.pool);
+    c2_tokenizer.Tokenizer tokenizer.init(ctx.pool, buf, ctx.input, 0, &kwinfo, &features, nil, nil, true);
     ctx.tokenizer = &tokenizer;
     ctx.attr_registry.init(ctx.pool);
 

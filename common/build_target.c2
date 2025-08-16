@@ -18,6 +18,7 @@ module build_target;
 import file_list local;
 import src_loc local;
 import string_list;
+import string_map;
 import string_pool;
 import warning_flags;
 
@@ -110,7 +111,7 @@ public type Target struct @(opaque) {
     bool backend_fast;
     bool optional;
 
-    string_list.List features;
+    string_map.Map features;
     List libs;
     string_list.List exports;
     PluginList plugins;
@@ -152,10 +153,10 @@ public fn u32 Target.numFiles(const Target* t) { return t.files.getCount(); }
 
 public fn u32 Target.numAsmFiles(const Target* t) { return t.asm_files.getCount(); }
 
-public fn const string_list.List* Target.getFeatures(const Target* t) { return &t.features; }
+public fn const string_map.Map* Target.getFeatures(const Target* t) { return &t.features; }
 
 public fn void Target.addFeature(Target* t, u32 feature) {
-    t.features.add(feature);
+    t.features.addNameValue(feature, "1");
 }
 
 public fn void Target.removeFeature(Target* t, u32 feature) {

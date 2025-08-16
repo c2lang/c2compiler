@@ -19,7 +19,7 @@ import constants;
 import keywords;
 import src_loc local;
 import string_buffer;
-import string_list;
+import string_map;
 import string_pool;
 import token local;
 import utf8;
@@ -271,7 +271,7 @@ public type Tokenizer struct {
     // Feature handling
     Feature[constants.MaxFeatureDepth+1] feature_stack;
     u32 feature_count;
-    const string_list.List* features;
+    const string_map.Map* features;
     bool raw_mode;  // also emit comments and invalid characters
     bool stop_at_eol; // restrict lexing to single line for preprocessor
     u8 c_mode;      // inside a module extern "C" or an extern "C" {} block
@@ -286,7 +286,7 @@ public fn void Tokenizer.init(Tokenizer* t,
                               const char* input,
                               SrcLoc loc_start,
                               const keywords.Info* kwinfo,
-                              const string_list.List* features,
+                              const string_map.Map* features,
                               ErrorFn on_error,
                               void* on_error_arg,
                               bool raw_mode)
@@ -1547,8 +1547,12 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
                     }
                     val.setUnsigned(t.features.contains(id));
                 } else {
-                    // TODO: use feature value
-                    val.setUnsigned(t.features.contains(id));
+                    i64 value = 0;
+                    u32 idx = 0;
+                    if (t.features.contains(id, &idx)) {
+                        value = stdlib.strtol(t.features.getValue(idx), nil, 0);
+                    }
+                    val.setSigned(value);
                 }
                 prefix = false;
                 continue;
@@ -1817,10 +1821,14 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result, Kind kind) {
     } else {
         /* handle Feat_ifdef, Feat_ifndef */
         if (t.lex_preproc(result) == Identifier) {
-            // TODO use feature value
             // XXX: cannot use t.features.contains_idx(result.name_idx)
             //      because t.pool and t.features.pool are different in c2c
-            if (!t.features.contains(t.pool.idx2str(result.name_idx)))
+            i64 value = 0;
+            u32 idx = 0;
+            if (t.features.contains(t.pool.idx2str(result.name_idx), &idx)) {
+                value = stdlib.strtol(t.features.getValue(idx), nil, 0);
+            }
+            if (!value)
                 top.skipping = 1;
             if (kind == Feat_ifndef)
                 top.skipping ^= 1;
