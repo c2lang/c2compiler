@@ -156,6 +156,7 @@ public fn u32 Target.numAsmFiles(const Target* t) { return t.asm_files.getCount(
 public fn const string_list.List* Target.getFeatures(const Target* t) { return &t.features; }
 
 public fn void Target.addFeature(Target* t, u32 feature) {
+    // TODO: handle value
     t.features.add(feature);
 }
 
