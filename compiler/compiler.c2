@@ -93,12 +93,13 @@ public fn void build(string_pool.Pool* auxPool,
                        build_file.Info* build_info, // can be nil
                        build_target.Target* target,
                        const Options* opts,
+                       string_list.List* features,
                        PluginHandler* pluginHandler)
 {
     Compiler c = {}
     plugin_info.Info info = {}
 
-    c.build(auxPool, sm, diags, build_info, target, opts, pluginHandler, &info);
+    c.build(auxPool, sm, diags, build_info, target, opts, features, pluginHandler, &info);
 
     if (opts.print_reports) {
         c.sm.report(opts.print_reports > 1);
@@ -211,6 +212,7 @@ fn void Compiler.build(Compiler* c,
                          build_file.Info* build_info, // can be nil
                          build_target.Target* target,
                          const Options* opts,
+                         string_list.List* features,
                          PluginHandler* pluginHandler,
                          plugin_info.Info* info)
 {
@@ -293,15 +295,19 @@ fn void Compiler.build(Compiler* c,
     c.addGlobalDefine("SYSTEM", c.targetInfo.getSystemName());
     c.addGlobalDefine("ARCH", c.targetInfo.getArchName());
     if (c.targetInfo.intWidth == 64) {
-        c.addFeature("ARCH_64BIT", "1");
+        c.addFeature("ARCH_64BIT");
     } else {
-        c.addFeature("ARCH_32BIT", "1");
+        c.addFeature("ARCH_32BIT");
     }
-    if (opts.asan) c.addFeature("__ASAN__", "1");
-    if (opts.msan) c.addFeature("__MSAN__", "1");
-    if (opts.ubsan) c.addFeature("__UBSAN__", "1");
+    if (opts.asan) c.addFeature("__ASAN__");
+    if (opts.msan) c.addFeature("__MSAN__");
+    if (opts.ubsan) c.addFeature("__UBSAN__");
 
-    c.addFeature("USE_NATIVE_CTYPES", "1");
+    for (u32 i = 0; i < features.length(); i++) {
+        c.addFeature(features.get(i));
+    }
+
+    c.addFeature("USE_NATIVE_CTYPES");
 
     target.addLib(c.auxPool.add("c2", 2, true), false);
 
@@ -663,18 +669,17 @@ fn void Compiler.checkMain(Compiler* c) {
     }
 }
 
-fn void Compiler.addFeature(Compiler* c, const char* str, const char* value) {
-    // TODO: handle value
+fn void Compiler.addFeature(Compiler* c, const char* str) {
     c.target.addFeature(c.auxPool.addStr(str, true));
 }
 
 fn void Compiler.addGlobalDefine(Compiler* c, const char* prefix, const char* tail) {
     char[32] tmp;
-    stdio.snprintf(tmp, 32, "%s_%s", prefix, tail);
+    stdio.snprintf(tmp, elemsof(tmp), "%s_%s", prefix, tail);
     for (usize i = 0; tmp[i]; i++) {
-        u8 ch = cast<u8>(tmp[i]);
-        tmp[i] = (ch == '-') ? '_' : cast<char>(ctype.toupper(ch));
+        u8 ch = tmp[i];
+        tmp[i] = (char)((ch == '-') ? '_' : ctype.toupper(ch));
     }
 
-    c.addFeature(tmp, "1");
+    c.addFeature(tmp);
 }
