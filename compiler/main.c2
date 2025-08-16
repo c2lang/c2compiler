@@ -56,17 +56,20 @@ type Options struct {
     const char* output_name;
     string_list.List targets;
     string_list.List files;
+    string_list.List features;
 }
 
 fn void Options.init(Options* opts, string_pool.Pool* pool) {
     memset(opts, 0, sizeof(Options));
     opts.targets.init(pool);
     opts.files.init(pool);
+    opts.features.init(pool);
 }
 
 fn void Options.free(Options *opts) {
     opts.targets.free();
     opts.files.free();
+    opts.features.free();
 }
 
 fn void write_file_or_die(const char* filename, string_buffer.Buf* buf) {
@@ -175,6 +178,7 @@ const char[] Usage_help =
     "  -A                print Library ASTs\n"
     "  -b [file]         use specified build file\n"
     "  -d [dir]          change to [dir] first\n"
+    "  -Dfeature         define global feature\n"
     "  -h                print this help\n"
     "  -i                use IR backend\n"
     "  -I                use IR backend and print generated IR\n"
@@ -215,8 +219,12 @@ fn void missing_arg(const char* option) {
     exit(EXIT_FAILURE);
 }
 
-fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts, Options* opts) {
-    const char* arg = argv[i];
+fn void unknown_option(const char* option) {
+    console.error("c2c: unknown option: '%s'", option);
+    exit(EXIT_FAILURE);
+}
+
+fn i32 parse_long_opt(const char* arg, i32 i, i32 argc, char** argv, compiler.Options* comp_opts, Options* opts) {
     switch (arg+2) {
     case "I2":
         opts.use_ir_backend = true;
@@ -226,9 +234,8 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts,
         comp_opts.check_only = true;
         break;
     case "create":
-        if (i==argc-1) missing_arg(arg);
-        i++;
-        create_project(argv[i]);
+        if (i >= argc) missing_arg(arg);
+        create_project(argv[i++]);
         break;
     case "fast":
         comp_opts.fast_build = true;
@@ -249,9 +256,8 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts,
         opts.show_plugins = true;
         break;
     case "target":
-        if (i==argc-1) missing_arg(arg);
-        i++;
-        comp_opts.target_triple = argv[i];
+        if (i >= argc) missing_arg(arg);
+        comp_opts.target_triple = argv[i++];
         break;
     case "targets":
         opts.show_targets = true;
@@ -275,22 +281,28 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts,
         print_version();
         exit(EXIT_SUCCESS);
     default:
-        console.error("c2c: unknown option: %s", arg);
-        exit(EXIT_FAILURE);
+        unknown_option(arg);
+        break;
     }
     return i;
 }
 
 fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* opts) {
-    for (i32 i=1; i<argc; i++) {
-        const char* arg = argv[i];
+    for (i32 i = 1; i < argc;) {
+        const char* arg = argv[i++];
         if (arg[0] == '-') {
             if (arg[1] == '-') {
-                i = parse_long_opt(i, argc, argv, comp_opts, opts);
+                i = parse_long_opt(arg, i, argc, argv, comp_opts, opts);
             } else {
-                if (strlen(arg) != 2) {
-                    console.error("c2c: unknown option '%s'", arg);
-                    exit(EXIT_FAILURE);
+                const char *argarg = nil;
+                if (memchr("Ddbo", arg[1], 4)) { // needs argument
+                    argarg = &arg[2];
+                    if (!*argarg) {
+                        if (i >= argc) missing_arg(arg);
+                        argarg = argv[i++];
+                    }
+                } else if (strlen(arg) != 2) {
+                    unknown_option(arg);
                 }
                 switch (arg[1]) {
                 case '0':    // 'hidden' feature, print AST early after parsing, then quit
@@ -298,6 +310,9 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
                     break;
                 case 'A':
                     comp_opts.print_lib_ast = true;
+                    break;
+                case 'D':
+                    opts.features.addStr(argarg);
                     break;
                 case 'I':
                     opts.use_ir_backend = true;
@@ -313,14 +328,10 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
                     comp_opts.print_ast = true;
                     break;
                 case 'b':
-                    if (i==argc-1) missing_arg(arg);
-                    i++;
-                    opts.build_file = argv[i];
+                    opts.build_file = argarg;
                     break;
                 case 'd':
-                    if (i==argc-1) missing_arg(arg);
-                    i++;
-                    opts.other_dir = argv[i];
+                    opts.other_dir = argarg;
                     break;
                 case '?':
                 case 'h':
@@ -333,9 +344,7 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
                     comp_opts.print_modules = true;
                     break;
                 case 'o':
-                    if (i==argc-1) missing_arg(arg);
-                    i++;
-                    opts.output_name = argv[i];
+                    opts.output_name = argarg;
                     break;
                 case 'r':
                     comp_opts.print_reports += 1;
@@ -353,8 +362,7 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
                     opts.force_warnings = true;
                     break;
                 default:
-                    console.error("c2c: unknown option '-%c'", arg[1]);
-                    exit(EXIT_FAILURE);
+                    unknown_option(arg);
                     break;
                 }
             }
@@ -592,7 +600,7 @@ fn bool Context.build_target(Context* c,
         }
     }
 
-    compiler.build(c.auxPool, c.sm, c.diags, c.build_info, target, &c.comp_opts, &c.pluginHandler);
+    compiler.build(c.auxPool, c.sm, c.diags, c.build_info, target, &c.comp_opts, &c.opts.features, &c.pluginHandler);
 
     // TODO unload target-specific plugins?
     // TODO fix build_file
