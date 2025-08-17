@@ -17,6 +17,7 @@ module refs_main;
 
 import c2refs local;
 import constants;
+import file_utils;
 import replacer;
 import refs_finder;
 import utils;
@@ -95,10 +96,10 @@ public fn i32 main(i32 argc, const char** argv)
     }
 
     const char* refsfile = constants.refs_filename;
-    char[constants.Max_path] refsname;
+    char[file_utils.Max_path] refsname;
     if (opts.target) {
-        snprintf(refsname, 256, "%s/%s/%s", constants.output_dir, opts.target, constants.refs_filename);
-        refsname[255] = 0;
+        file_utils.make_path3(refsname, elemsof(refsname),
+                              constants.output_dir, opts.target, constants.refs_filename);
         refsfile = refsname;
     } else {
         refs_finder.Finder* finder = refs_finder.create(constants.output_dir, constants.refs_filename);

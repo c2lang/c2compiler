@@ -162,8 +162,8 @@ public fn void SourceMgr.clear(SourceMgr* sm, i32 handle) {
 
 fn void* SourceMgr.loadFile(SourceMgr* sm, u32 name, SrcLoc loc, u32* psize) {
     const char* filename = sm.pool.idx2str(name);
-    file_utils.Reader file;
-    if (file.open(filename)) return file.detach(psize);
+    file_utils.File file.init("", filename);
+    if (file.load()) return file.detach(psize);
 
     // TODO only color if enabled (cannot use console since we need source loc first)
     if (loc) {

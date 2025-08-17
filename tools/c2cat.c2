@@ -286,8 +286,8 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
 
 public fn i32 c2cat(const char* filename)
 {
-    file_utils.Reader file;
-    if (!file.open(filename)) {
+    file_utils.File file.init("", filename);
+    if (!file.load()) {
         fprintf(stderr, "error opening %s: %s\n", filename, file.getError());
         return -1;
     }
@@ -298,6 +298,7 @@ public fn i32 c2cat(const char* filename)
     ctx.offset = 0;
     ctx.input = file.data();
     ctx.in_attributes = 0;
+    u32 file_size = file.data_size();
 
     string_list.List features;
     features.init(ctx.pool);
@@ -320,13 +321,13 @@ public fn i32 c2cat(const char* filename)
         ctx.print_token(&tok);
     }
 
-    if (ctx.offset <= file.size) {
-        u32 len = file.size - ctx.offset;
+    if (ctx.offset <= file_size) {
+        u32 len = file_size - ctx.offset;
         if (len) ctx.out.add2(ctx.input + ctx.offset, len);
     } else {
         ctx.out.add1('\n');
         ctx.out.color(col_error);
-        ctx.out.print("error: offset=%d file.size=%d", ctx.offset, file.size);
+        ctx.out.print("error: offset=%d file_size=%d", ctx.offset, file_size);
         ctx.out.color(col_normal);
         ctx.out.add1('\n');
     }

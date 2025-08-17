@@ -20,19 +20,6 @@ import c_errno local;
 import sys_stat local;
 import unistd local;
 import stdlib;
-import string local;
-
-u8 empty;
-
-const i32 Err_not_a_file = 2001;
-const i32 Err_read_error = 2002;
-const i32 Err_too_large = 2003;
-
-public type Reader struct {
-    u8* region;
-    u32 size;
-    i32 error;
-}
 
 fn isize read2(i32 hd, void* data, usize len) {
     u8* p = data;
@@ -51,17 +38,20 @@ fn isize read2(i32 hd, void* data, usize len) {
     return total_read;
 }
 
-public fn bool Reader.open(Reader* file, const char* filename) {
-    file.region = nil;
-    file.size = 0;
-    file.error = 0;
-
-    i32 fd = open(filename, O_RDONLY | O_BINARY);
-    if (fd == -1) {
+public fn bool File.load(File* file) {
+    if (file.error) return false;
+    file.contents_size = 0;
+    if (file.contents) {
+        stdlib.free(file.contents);
+        file.contents = nil;
+    }
+    i32 fd = open(file.path, O_RDONLY | O_BINARY);
+    if (fd < 0) {
         file.error = errno;
         return false;
     }
 
+    // TODO: handle files whose size cannot be determined
     Stat statbuf;
     if (fstat(fd, &statbuf)) {
         file.error = errno;
@@ -82,74 +72,52 @@ public fn bool Reader.open(Reader* file, const char* filename) {
         return false;
     }
 
-    u8* region = stdlib.malloc(size + 1);
-    i64 numread = read2(fd, region, size);
+    u8* region = stdlib.malloc((usize)size + 1);
+    if (!region) {
+        file.error = ENOMEM;
+        close(fd);
+        return false;
+    }
+    isize numread = read2(fd, region, size);
     if (numread < 0) {
         file.error = errno;
         stdlib.free(region);
         close(fd);
         return false;
     }
-    if (numread != size) {
+    if ((usize)numread != size) {
         file.error = Err_read_error;
         stdlib.free(region);
         close(fd);
         return false;
     }
     region[size] = '\0';
-    file.region = region;
-    file.size = size;
+    file.contents = region;
+    file.contents_size = size;
     close(fd);
     return true;
 }
 
-public fn void Reader.close(Reader* file) {
-    if (file.size) {
-        stdlib.free(file.region);
-        file.region = nil;
-        file.size = 0;
-    }
+public fn bool File.isOpen(const File* file) @(unused) {
+    return file.contents != nil;
 }
 
-public fn bool Reader.isOpen(const Reader* file) @(unused) {
-    return file.region != nil;
+public fn const void* File.data(File* file) @(unused) {
+    return file.contents;
 }
 
-public fn const u8* Reader.udata(Reader* file) @(unused) {
-    return file.region;
+public fn u32 File.data_size(File* file) @(unused) {
+    return file.contents_size;
 }
 
-public fn const char* Reader.data(Reader* file) @(unused) {
-    return cast<const char*>(file.region);
+public fn bool File.isEmpty(const File* file) @(unused) {
+    return file.contents_size == 0;
 }
 
-public fn bool Reader.isEmpty(const Reader* file) @(unused) {
-    return file.size == 0;
-}
-
-public fn const char* Reader.getError(const Reader* file) @(unused) {
-    const char *msg;
-    switch (file.error) {
-    case Err_not_a_file:
-        msg = "not a regular file";
-        break;
-    case Err_read_error:
-        msg = "read error";
-        break;
-    case Err_too_large:
-        msg = "file too large";
-        break;
-    default:
-        msg = strerror(file.error);
-        break;
-    }
-    return msg;
-}
-
-public fn void* Reader.detach(Reader* file, u32 *psize) {
-    void* data = file.region;
-    *psize = file.size;
-    file.region = nil;
-    file.size = 0;
+public fn void* File.detach(File* file, u32 *psize) @(unused) {
+    void* data = file.contents;
+    *psize = file.contents_size;
+    file.contents = nil;
+    file.contents_size = 0;
     return data;
 }

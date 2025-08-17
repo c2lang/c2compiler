@@ -32,8 +32,8 @@ import string_pool;
 import target_info;
 import value_maplist;
 
+import c_errno local;
 import string;
-import stdio;
 
 type JumpScope struct {
     u32 break_block;    // 0 means invalid (assert)
@@ -569,11 +569,10 @@ public fn void generate(const char* target,
                         bool enable_asserts,
                         bool print,
                         bool print_all) {
-    char[constants.Max_path] ir_dir;
-    stdio.sprintf(ir_dir, "%s/ir", output_dir);
-    i32 err = file_utils.create_directory(ir_dir);
-    if (err) {
-        console.error("cannot create directory %s: %s", ir_dir, string.strerror(err));
+    char[file_utils.Max_path] ir_dir;
+    if (!file_utils.make_path(ir_dir, elemsof(ir_dir), output_dir, "ir")
+    ||  file_utils.create_path(ir_dir)) {
+        console.error("cannot create directory %s: %s", ir_dir, string.strerror(errno));
         return;
     }
 

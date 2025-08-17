@@ -15,6 +15,7 @@
 
 module refs_finder;
 
+import file_utils;
 import string_pool;
 
 import c_errno local;
@@ -22,7 +23,6 @@ import libc_dirent local;
 import stdio local;
 import stdlib local;
 import string;
-import sys_stat local;
 
 public type Finder struct @(opaque) {
     const char* dirname;
@@ -51,15 +51,15 @@ public fn void Finder.free(Finder* f) {
 }
 
 public fn u32 Finder.search(Finder* f, const char* target) {
-    char[512] fullname;
+    char[file_utils.Max_path] fullname;
 
     if (target) {
-        stdio.snprintf(fullname, 512, "%s/%s/%s", f.dirname, target, f.filename);
-        Stat statbuf;
-        i32 err = stat(fullname, &statbuf);
-        if (err) return 0;
-        f.add(fullname);
-        return 1;
+        if (file_utils.make_path3(fullname, elemsof(fullname), f.dirname, target, f.filename)
+        &&  file_utils.path_exists(fullname)) {
+            f.add(fullname);
+            return 1;
+        }
+        return 0;
     }
     DIR* dir = opendir(f.dirname);
     if (dir == nil) {
@@ -67,19 +67,14 @@ public fn u32 Finder.search(Finder* f, const char* target) {
         exit(EXIT_FAILURE);
     }
 
-    Dirent* entry = readdir(dir);
-    while (entry != nil) {
+    while (Dirent* entry = readdir(dir)) {
         const char* name = entry.d_name;
         if (name[0] != '.' && entry.d_type == DT_DIR) {
-            stdio.snprintf(fullname, 512, "%s/%s/%s", f.dirname, name, f.filename);
-
-            Stat statbuf;
-            i32 err = stat(fullname, &statbuf);
-            if (err) goto next;
-            f.add(fullname);
+            if (file_utils.make_path3(fullname, elemsof(fullname), f.dirname, name, f.filename)
+            &&  file_utils.path_exists(fullname)) {
+                f.add(fullname);
+            }
         }
-next:
-        entry = readdir(dir);
     }
     closedir(dir);
     return f.count;

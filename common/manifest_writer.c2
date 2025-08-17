@@ -18,12 +18,10 @@ module manifest_writer;
 import ast;
 import component;
 import console;
-import constants;
 import file_utils;
 import string_buffer;
 import string_list;
 
-import stdio;
 import stdlib local;
 
 fn const char* getKindStr(const component.Component* c) {
@@ -79,11 +77,9 @@ public fn void write(const char* dir, component.Component* c, const char* filena
     out.add("modules:\n");
     c.visitModules(on_module, out);
 
-    char[constants.Max_path] fullname;
-    stdio.snprintf(fullname, elemsof(fullname), "%s/%s", dir, filename);
-    file_utils.Writer writer;
-    if (!writer.write(fullname, out.data(), out.size())) {
-        console.error("cannot write to %s: %s", fullname, writer.getError());
+    file_utils.File file.init(dir, filename);
+    if (!file.write(out.data(), out.size())) {
+        console.error("cannot write to %s: %s", file.path, file.getError());
         exit(EXIT_FAILURE);
     }
     out.free();

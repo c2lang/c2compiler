@@ -45,6 +45,7 @@ import unused_checker;
 import utils;
 import warning_flags;
 
+import c_errno local;
 import ctype;
 import string;
 import stdlib;
@@ -350,10 +351,9 @@ fn void Compiler.build(Compiler* c,
     string.strcpy(info.target_name, c.auxPool.idx2str(target.getNameIdx()));
 
     // create output directory
-    stdio.sprintf(info.output_dir, "%s/%s", output_base, c.auxPool.idx2str(target.getNameIdx()));
-    i32 err = file_utils.create_directory(info.output_dir);
-    if (err) {
-        console.error("cannot create directory %s", info.output_dir);
+    if (!file_utils.make_path(info.output_dir, elemsof(info.output_dir), output_base, c.auxPool.idx2str(target.getNameIdx()))
+    ||  file_utils.create_path(info.output_dir)) {
+        console.error("cannot create directory %s: %s", info.output_dir, string.strerror(errno));
         stdlib.exit(-1);
     }
 

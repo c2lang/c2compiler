@@ -51,20 +51,3 @@ public fn bool endsWith(const char* text, const char* tail) @(unused) {
     usize tlen = strlen(tail);
     return (tlen <= len && !memcmp(text + len - tlen, tail, tlen));
 }
-
-public fn const char* getBasename(const char* s) {
-    const char* base = s;
-    while (*s) {
-        if (*s++ == '/') base = s;
-    }
-    return base;
-}
-
-public fn const char* getExtension(const char* s) {
-    const char* ext = nil;
-    for (; *s; s++) {
-        if (*s == '/') ext = nil;
-        if (*s == '.') ext = s;
-    }
-    return ext ? ext : s;
-}

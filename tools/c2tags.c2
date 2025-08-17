@@ -17,6 +17,7 @@ module refs_main;
 
 import c2refs local;
 import constants;
+import file_utils;
 import refs_finder;
 import string_pool;
 import utils;
@@ -187,15 +188,13 @@ fn void use_fn(void* arg, const Dest* res) {
         count++;
 
         // TODO extract to info
-        char[constants.Max_path] fullname;
-        const char* full;
+        char[file_utils.Max_path] fullname;
+        const char* filename = res.filename;
         if (info.hasSubdir()) {
-            sprintf(fullname, "%s%s", info.root2orig, res.filename);
-            full = fullname;
-        } else {
-            full = res.filename;
+            file_utils.make_path(fullname, elemsof(fullname), info.root2orig, filename);
+            filename = fullname;
         }
-        printf("found %s %d %d\n", full, res.line, res.col);
+        printf("found %s %d %d\n", filename, res.line, res.col);
     }
 }
 
@@ -203,16 +202,13 @@ fn void use_fn_multi(void* arg, const Dest* res) {
     const utils.PathInfo* info = arg;
 
     if (res.filename) {
-        char[constants.Max_path] fullname;
-        const char* full;
+        char[file_utils.Max_path] fullname;
+        const char* filename = res.filename;
         if (opts.filename && info.hasSubdir()) {
-            sprintf(fullname, "%s%s", info.root2orig, res.filename);
-            full = fullname;
-        } else {
-            full = res.filename;
+            file_utils.make_path(fullname, elemsof(fullname), info.root2orig, filename);
+            filename = fullname;
         }
-
-        results.add(full, res.line, res.col);
+        results.add(filename, res.line, res.col);
     }
 }
 
@@ -261,9 +257,9 @@ public fn i32 main(i32 argc, const char** argv)
     }
     //printf("P1 [%s]\n", info.root2orig);
     //printf("P2 [%s]\n", info.orig2root);
-    char[constants.Max_path] fullname;
+    char[file_utils.Max_path] fullname;
     if (opts.filename && info.hasSubdir()) {
-        sprintf(fullname, "%s/%s", info.orig2root, opts.filename);
+        file_utils.make_path(fullname, elemsof(fullname), info.orig2root, opts.filename);
         opts.filename = fullname;
     }
 #if MeasureTime

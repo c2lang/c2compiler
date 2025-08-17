@@ -23,7 +23,6 @@ import string local;
 import unistd local;
 
 import color;
-import constants;
 import expect_file local;
 import file_utils;
 import issues local;
@@ -60,7 +59,7 @@ type Type enum u8 { ERROR, WARNING, NOTE }
 
 public type Db struct {
     string_buffer.Buf* output;  // no ownership
-    file_utils.Reader* file;    // no ownership
+    const char* source;    // no ownership
     const char* filename;
     TestKind kind;
     const char* tmp_dir;
@@ -86,7 +85,7 @@ public type Db struct {
     u32 line_nr;
     string_buffer.Buf* errorMsg;    // ownership
     string_buffer.Buf* recipe;      // ownership
-    char[constants.Max_path] current_file;
+    char[file_utils.Max_path] current_file;
     char[64] target;
 
     char[32] word_buffer;
@@ -95,7 +94,7 @@ public type Db struct {
 
 public fn void Db.init(Db* db,
                          string_buffer.Buf* output,
-                         file_utils.Reader* file,
+                         const char* source,
                          const char* filename,
                          TestKind kind,
                          const char* tmp_dir,
@@ -105,7 +104,7 @@ public fn void Db.init(Db* db,
 {
     memset(db, 0, sizeof(Db));
     db.output = output;
-    db.file = file;
+    db.source = source;
     db.filename = filename;
     db.kind = kind;
     db.tmp_dir = tmp_dir;
@@ -121,7 +120,7 @@ public fn void Db.init(Db* db,
     db.recipe = string_buffer.create(4096, false, 2);
 
     if (kind == TestKind.C2) { // only for single file test
-        sprintf(db.current_file, "%s/%s", cwd, filename);
+        file_utils.make_path(db.current_file, elemsof(db.current_file), cwd, filename);
     }
 }
 
@@ -208,11 +207,9 @@ fn void Db.matchError(Db* db, const char* filename, i32 linenr, const char* msg)
 }
 
 fn void Db.writeFile(Db* db, const char* filename, const char* data, u32 len) {
-    char[128] fullname;
-    sprintf(fullname, "%s/%s", db.tmp_dir, filename);
-    file_utils.Writer writer;
-    if (!writer.write(fullname, data, len)) {
-        print_error("error writing %s: %s", fullname, writer.getError());
+    file_utils.File file.init(db.tmp_dir, filename);
+    if (!file.write(data, len)) {
+        print_error("error writing %s: %s", file.path, file.getError());
         exit(EXIT_FAILURE);
     }
 }
@@ -630,7 +627,7 @@ public fn void Db.parseLine(Db* db, const char* start, const char* end) {
 }
 
 public fn bool Db.parse(Db* db) {
-    const char* cp = db.file.data();
+    const char* cp = db.source;
     db.cur = cp;
     db.line_nr = 1;
 
@@ -848,8 +845,8 @@ fn void Db.checkErrors(Db* db, const char* buffer, u32 size) {
 }
 
 fn void Db.checkExpectedFiles(Db* db) {
-    char[constants.Max_path] basedir;
-    sprintf(basedir, "%s/output/test/", db.tmp_dir);
+    char[file_utils.Max_path] basedir;
+    file_utils.make_path(basedir, elemsof(basedir), db.tmp_dir, "output/test/");
     for (u32 i=0; i<db.expectedCount; ++i) {
         ExpectFile* e = db.expectedFiles[i];
         if (!e.check(db.output, basedir)) db.hasErrors = true;

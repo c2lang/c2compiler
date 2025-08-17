@@ -15,7 +15,6 @@
 
 module expect_file;
 
-import sys_stat local;
 import stdlib local;
 import string local;
 import stdio local;
@@ -48,7 +47,7 @@ public type ExpectMode enum u8 {
 }
 
 public type ExpectFile struct @(opaque) {
-    char[128] filename;
+    char[file_utils.Max_path] filename;
     ExpectMode mode;
     string_buffer.Buf* output;  // will be set in check()
 
@@ -145,24 +144,17 @@ fn void ExpectFile.setExpected(ExpectFile* f) {
 }
 
 public fn bool ExpectFile.check(ExpectFile* f, string_buffer.Buf* output, const char* basedir) {
-    // TODO use constant
-    char[128] fullname;
-    sprintf(fullname, "%s%s", basedir, f.filename);
     f.output = output;
     bool result = true;
 
-    // check if file exists
-    Stat statbuf;
-    i32 err = stat(fullname, &statbuf);
-    if (err) {
-        color_print2(f.output, colError, "  missing expected file '%s' (%s)", f.filename, fullname);
+    file_utils.File file.init(basedir, f.filename);
+    if (!file.exists()) {
+        color_print2(f.output, colError, "  missing expected file '%s' (%s)", f.filename, file.path);
         return false;
     }
 
-    file_utils.Reader file;
-    bool ok = file.open(fullname);
-    if (!ok) {
-        fprintf(stderr, "error opening %s: %s\n", fullname, file.getError());
+    if (!file.load()) {
+        fprintf(stderr, "error loading %s: %s\n", file.path, file.getError());
         exit(EXIT_FAILURE);
     }
 

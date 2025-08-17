@@ -36,6 +36,7 @@ import string_pool;
 import string_utils;
 import target_info;
 
+import c_errno local;
 import string;
 import stdlib;
 import stdio;
@@ -1041,11 +1042,9 @@ fn void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     hdr.add("#ifdef __cplusplus\n}\n#endif\n\n");
     hdr.add("#endif\n");
 
-    char[constants.Max_path] fullname;
-    stdio.snprintf(fullname, elemsof(fullname), "%s/%s.h", gen.results_dir, m.getName());
-    file_utils.Writer writer;
-    if (!writer.write(fullname, hdr.data(), hdr.size())) {
-        console.error("cannot write to %s: %s", fullname, writer.getError());
+    file_utils.File file.init_ext(gen.results_dir, m.getName(), ".h");
+    if (!file.write(hdr.data(), hdr.size())) {
+        console.error("cannot write to %s: %s", file.path, file.getError());
     }
     gen.cur_external = false;
 }
@@ -1193,11 +1192,9 @@ fn void Generator.free(Generator* gen) {
 }
 
 fn void Generator.write(Generator* gen, const char* output_dir, const char* filename, string_buffer.Buf* buf) {
-    char[constants.Max_path] fullname;
-    stdio.snprintf(fullname, elemsof(fullname), "%s/%s", output_dir, filename);
-    file_utils.Writer writer;
-    if (!writer.write(fullname, buf.udata(), buf.size())) {
-        console.error("cannot write to %s: %s", fullname, writer.getError());
+    file_utils.File file.init(output_dir, filename);
+    if (!file.write(buf.udata(), buf.size())) {
+        console.error("cannot write to %s: %s", file.path, file.getError());
     }
 }
 
@@ -1218,11 +1215,10 @@ public fn void generate(string_pool.Pool* astPool,
                         bool fast_build, bool asan, bool msan, bool ubsan,
                         bool test_mode, bool trace_calls)
 {
-    char[constants.Max_path] dir;
-    stdio.sprintf(dir, "%s/%s", output_dir, Dir);
-    i32 err = file_utils.create_directory(dir);
-    if (err) {
-        console.error("cannot create directory %s: %s", dir, string.strerror(err));
+    char[file_utils.Max_path] dir;
+    if (!file_utils.make_path(dir, elemsof(dir), output_dir, Dir)
+    ||  file_utils.create_path(dir)) {
+        console.error("cannot create directory %s: %s", dir, string.strerror(errno));
         return;
     }
 
@@ -1298,17 +1294,17 @@ public fn void generate(string_pool.Pool* astPool,
 
 public fn void build(const char* output_dir)
 {
+#if SYSTEM_FREEBSD || SYSTEM_OPENBSD
+    const char* make = "gmake";
+#else
     const char* make = "make";
-#if SYSTEM_FREEBSD
-    make = "gmake";
-#endif
-#if SYSTEM_OPENBSD
-    make = "gmake";
 #endif
 
-    // TODO use stringbuf for this
-    char[constants.Max_path] dir;
-    stdio.sprintf(dir, "%s/%s/", output_dir, Dir);
+    char[file_utils.Max_path] dir;
+    if (!file_utils.make_path_ext(dir, elemsof(dir), output_dir, Dir, "/")) {
+        console.error("cannot launch C compilation: %s", string.strerror(errno));
+        return;
+    }
 
     i32 retval = process_utils.run_args(dir, make, "-j", LogFile);
     if (retval != 0) {

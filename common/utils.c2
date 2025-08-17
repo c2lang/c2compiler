@@ -16,6 +16,7 @@
 module utils;
 
 import constants;
+import file_utils;
 
 import c_errno local;
 import stdio local;
@@ -34,8 +35,8 @@ public fn u64 now() @(unused) {
 }
 
 public type PathInfo struct {
-    char[constants.Max_path] orig2root; // subdir/subdir/
-    char[constants.Max_path] root2orig; // ../../
+    char[file_utils.Max_path] orig2root; // subdir/subdir/
+    char[file_utils.Max_path] root2orig; // ../../
 }
 
 public fn bool PathInfo.hasSubdir(const PathInfo* pi) {
@@ -48,14 +49,14 @@ public fn bool findProjectDir(PathInfo* info) {
         info.root2orig[0] = 0;
         info.orig2root[0] = 0;
     }
-    char[constants.Max_path] base_path;
-    char[constants.Max_path] rel_path;
+    char[file_utils.Max_path] base_path;
+    char[file_utils.Max_path] rel_path;
     base_path[0] = 0;
     rel_path[0] = 0;
 
-    char[constants.Max_path] buffer;
+    char[file_utils.Max_path] buffer;
     while (1) {
-        char* path = unistd.getcwd(buffer, constants.Max_path);
+        char* path = unistd.getcwd(buffer, elemsof(buffer));
         if (path == nil) {
             perror("getcwd");
             return false;
@@ -63,8 +64,7 @@ public fn bool findProjectDir(PathInfo* info) {
         if (base_path[0] == 0) strcpy(base_path, path);
 
         Stat buf;
-        i32 error = stat(constants.recipe_name, &buf);
-        if (error) {
+        if (stat(constants.recipe_name, &buf)) {
             if (path[0] == '/' && path[1] == '\0') return false;
             if (errno != ENOENT) {
                 perror("stat");
@@ -82,8 +82,7 @@ public fn bool findProjectDir(PathInfo* info) {
                 return true;
             }
         }
-        error = unistd.chdir("..");
-        if (error) {
+        if (unistd.chdir("..")) {
             perror("chdir");
             return false;
         }

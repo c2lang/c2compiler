@@ -15,6 +15,8 @@
 
 module process_utils;
 
+import file_utils;
+
 import ctype local;
 import string local;
 import stdarg local;
@@ -96,8 +98,8 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
         close(error_pipe[0]);
 
         // redirect output to logfile
-        char[512] filename;
-        snprintf(filename, elemsof(filename), "%s%s", path, logfile);
+        char[file_utils.Max_path] filename;
+        file_utils.make_path(filename, elemsof(filename), path, logfile);
         close(STDOUT_FILENO);
         i32 fdout = open(filename, O_TRUNC | O_CREAT | O_WRONLY, 0644);
         if (fdout == -1) {
@@ -122,7 +124,7 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
             printf("changing to dir: %s\n", path);
         }
 
-        char[512] self;
+        char[file_utils.Max_path] self;
         if (!find_bin(self, elemsof(self), cmd)) {
             child_error(error_pipe[1], "command not found: %s", cmd);
         }
@@ -148,14 +150,13 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
         // close the writing end of the error pipe
         close(error_pipe[1]);
         char[256] error;
-        memset(error, 0, sizeof(error));
         isize numread = read(error_pipe[0], error, sizeof(error)-1);
         if (numread < 0) {
             fprintf(stderr, "Error reading pipe\n");
             close(error_pipe[0]);
             return -1;
         }
-        error[numread] = 0;
+        error[numread] = '\0';
         close(error_pipe[0]);
 
         if (numread != 0) {
@@ -296,7 +297,7 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
             }
         }
 
-        char[512] self;
+        char[file_utils.Max_path] self;
         if (!find_bin(self, elemsof(self), cmd)) {
             child_error(error_pipe[1], "command not found: %s", cmd);
         }
@@ -320,7 +321,6 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
         close(error_pipe[1]);
         close(output_pipe[1]);
         char[256] error;
-        memset(error, 0, sizeof(error));
         isize numread = read(error_pipe[0], error, sizeof(error)-1);
         if (numread < 0) {
             fprintf(stderr, "Error reading pipe\n");
@@ -328,7 +328,7 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
             close(output_pipe[0]);
             return -1;
         }
-        error[numread] = 0;
+        error[numread] = '\0';
         close(error_pipe[0]);
 
         if (numread != 0) {

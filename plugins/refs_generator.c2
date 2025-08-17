@@ -19,11 +19,11 @@ import ast local;
 import component;
 import console;
 import c2refs as refs;
+import file_utils;
 import source_mgr;
 import ast_visitor;
 
 import string;
-import stdio;
 
 type Generator struct {
     source_mgr.SourceMgr* sm;
@@ -136,8 +136,8 @@ public fn void generate(source_mgr.SourceMgr* sm, const char* output_dir, compon
         comps.get(i).visitModules(Generator.on_module, &gen);
     }
 
-    char[128] outfile;
-    stdio.sprintf(outfile, "%s/%s", output_dir, filename);
+    char[file_utils.Max_path] outfile;
+    file_utils.make_path(outfile, elemsof(outfile), output_dir, filename);
     gen.refs.write(outfile);
     gen.refs.free();
 

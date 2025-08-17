@@ -21,6 +21,7 @@ import ast_context;
 import build_target;
 import component;
 import diagnostics;
+import file_utils;
 import source_mgr;
 import string_pool;
 import string_buffer;
@@ -47,7 +48,7 @@ public type Info struct {
     void* fn_arg;
 
     char[32] target_name;
-    char[256] output_dir;
+    char[file_utils.Max_path] output_dir;
 }
 
 // only used by plugins

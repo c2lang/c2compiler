@@ -16,13 +16,110 @@
 module file_utils;
 
 import c_errno local;
+import stdlib local;
+import string local;
 import sys_stat local;
 
+public const u32 Max_path = 512;
+
+public fn const char* get_basename(const char* s) {
+    const char* base = s;
+    while (*s) {
+        if (*s++ == '/') base = s;
+    }
+    return base;
+}
+
+public fn const char* get_extension(const char* s) {
+    const char* ext = nil;
+    for (; *s; s++) {
+        if (*s == '/') ext = nil;
+        if (*s == '.') ext = s;
+    }
+    return ext ? ext : s;
+}
+
+// Copy a string with truncation
+// return the length of the string if shorter than size
+// otherwise truncate the string and return size
+// compare the return value with size to detect truncation
+fn usize pstrcpy(char *dest, usize size, const char* src) {
+    usize i;
+    for (i = 0; i < size; i++) {
+        if ((dest[i] = src[i]) == '\0') return i;
+    }
+    if (size) dest[size - 1] = '\0';
+    return size;
+}
+
+// Copy a directory name with truncation and append a / if not empty
+fn usize copy_dirname(char *buf, usize size, const char* dir) {
+    usize pos = pstrcpy(buf, size, dir);
+    if (pos && pos < size && dir[pos - 1] != '/') {
+        if (pos + 1 < size) {
+            buf[pos] = '/';
+            buf[pos + 1] = '\0';
+        }
+        pos += 1;
+    }
+    return pos;
+}
+
+// construct a path in a buffer from a directory name and a filename
+// if the path fits in the destination array, a pointer to it is returned.
+// otherwise the path is truncated, errno is set to ENAMETOOLONG and nil is returned
+public fn const char* make_path(char *buf, usize size, const char* dir, const char* filename) {
+    usize pos = 0;
+    if (*filename != '/') pos = copy_dirname(buf, size, dir);
+    if (pos < size) {
+        pos += pstrcpy(buf + pos, size - pos, filename);
+        if (pos < size) return buf;
+    }
+    errno = ENAMETOOLONG;
+    return nil;
+}
+
+// construct a path in a buffer from a directory name, a filename and an extension
+// if the path fits in the destination array, a pointer to it is returned.
+// otherwise the path is truncated, errno is set to ENAMETOOLONG and nil is returned
+public fn const char* make_path_ext(char *buf, usize size, const char* dir, const char* filename, const char* ext) {
+    usize pos = 0;
+    if (*filename != '/') pos = copy_dirname(buf, size, dir);
+    if (pos < size) {
+        pos += pstrcpy(buf + pos, size - pos, filename);
+        if (pos < size) {
+            pos += pstrcpy(buf + pos, size - pos, ext);
+            if (pos < size) return buf;
+        }
+    }
+    errno = ENAMETOOLONG;
+    return nil;
+}
+
+// construct a path in a buffer from a directory name, a subdirectory name and an extension
+// if the path fits in the destination array, a pointer to it is returned.
+// otherwise the path is truncated, errno is set to ENAMETOOLONG and nil is returned
+public fn const char* make_path3(char *buf, usize size, const char* dir, const char* subdir, const char* filename) {
+    usize pos = 0;
+    if (*filename != '/') {
+        if (*subdir != '/') pos = copy_dirname(buf, size, dir);
+        if (pos < size) pos += copy_dirname(buf + pos, size - pos, subdir);
+    }
+    if (pos < size) {
+        pos += pstrcpy(buf + pos, size - pos, filename);
+        if (pos < size) return buf;
+    }
+    errno = ENAMETOOLONG;
+    return nil;
+}
+
 // returns 0 on success, errno on failure
-public fn i32 create_directory(const char* path) {
-    char[512] tmp;
+// create a directory path, OK if exists already
+public fn i32 create_path(const char* path) {
+    char[file_utils.Max_path] tmp;
     char *p = tmp;
-    if (*path == '/') *p++ = *path++;
+    if (!*path) return 0;
+    *p++ = *path++;
     for (;;) {
         char c = *path++;
         // ignore duplicate and trailing slashes
@@ -36,15 +133,86 @@ public fn i32 create_directory(const char* path) {
                 break;
         }
         if (p > &tmp[elemsof(tmp) - 2])
-            return ENAMETOOLONG;
+            return errno = ENAMETOOLONG;
         *p++ = c;
     }
     return 0;
 }
 
-public fn bool exists(const char* filename) {
+public fn bool path_exists(const char* path) {
     Stat statbuf;
-    // TODO also check regular file
-    return (stat(filename, &statbuf) == 0);
+    return !stat(path, &statbuf);
 }
 
+public fn bool is_file(const char* filename) @(unused) {
+    Stat statbuf;
+    return !stat(filename, &statbuf) && (statbuf.st_mode & S_IFMT) == S_IFREG;
+}
+
+public fn bool is_dir(const char* dirname) @(unused) {
+    Stat statbuf;
+    return !stat(dirname, &statbuf) && (statbuf.st_mode & S_IFMT) == S_IFDIR;
+}
+
+public type File struct @(unused) {
+    char[Max_path] path;
+    i32 handle;  // 0:none, otherwise unix handle +1
+    i32 error;
+    u32 contents_size;
+    void* contents;
+}
+
+public fn bool File.init(File* file, const char* dir, const char* filename) {
+    file.handle = 0;
+    file.error = 0;
+    file.contents_size = 0;
+    file.contents = nil;
+    if (!make_path(file.path, elemsof(file.path), dir, filename)) {
+        file.error = ENAMETOOLONG;
+        return false;
+    }
+    return true;
+}
+
+public fn bool File.init_ext(File* file, const char* dir, const char* filename, const char* ext) @(unused) {
+    if (!file.init(dir, filename)) return false;
+    u32 len = (u32)strlen(file.path);
+    len += pstrcpy(file.path + len, elemsof(file.path) - len, ext);
+    if (len >= elemsof(file.path)) {
+        file.error = ENAMETOOLONG;
+        return false;
+    }
+    return true;
+}
+
+public fn void File.close(File* file) @(unused) {
+    if (file.contents) {
+        stdlib.free(file.contents);
+        file.contents = nil;
+    }
+}
+
+public fn bool File.exists(File *file) @(unused) {
+    return path_exists(file.path);
+}
+
+const i32 Err_not_a_file = 2001;
+const i32 Err_read_error = 2002;
+const i32 Err_too_large = 2003;
+const i32 Err_write_error = 2004;
+
+public fn const char* File.getError(File* file) @(unused) {
+    switch (file.error) {
+    case Err_not_a_file:
+        return "not a regular file";
+    case Err_read_error:
+        return "read error";
+    case Err_write_error:
+        return "write error";
+    case Err_too_large:
+        return "file too large";
+    default:
+        break;
+    }
+    return strerror(file.error);
+}

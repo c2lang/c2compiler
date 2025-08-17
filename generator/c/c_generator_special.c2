@@ -20,7 +20,6 @@ import build_file;
 import build_target;
 import component;
 import console;
-import constants;
 import file_utils;
 import module_list;
 import string_buffer;
@@ -94,7 +93,7 @@ fn void Generator.createMakefile(Generator* gen,
         out.add("LDFLAGS+=-fsanitize=undefined\n");
     }
 
-    char[128] target_name;
+    char[file_utils.Max_path] target_name;
 
     if (gen.fast_build) {
         // dont add *.c, but add (handy for switching between fast/normal build
@@ -291,11 +290,9 @@ fn void Generator.generateC2TypesHeader(Generator* gen) {
     out.clear();
     out.add(C2_types_header);
 
-    char[constants.Max_path] fullname;
-    stdio.snprintf(fullname, elemsof(fullname), "%s/c2types.h", gen.results_dir);
-    file_utils.Writer writer;
-    if (!writer.write(fullname, out.data(), out.size())) {
-        console.error("cannot write to %s: %s", fullname, writer.getError());
+    file_utils.File file.init(gen.results_dir, "c2types.h");
+    if (!file.write(out.data(), out.size())) {
+        console.error("cannot write to %s: %s", file.path, file.getError());
     }
     out.clear();
 }

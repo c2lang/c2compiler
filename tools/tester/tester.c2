@@ -160,24 +160,23 @@ fn void handle_dir(TestQueue* queue, const char* path) {
         color_print(colError, "cannot open dir '%s': %s", path, strerror(errno));
         return;
     }
-    Dirent* dir2 = readdir(dir);
-    char[test_db.MAX_LINE] temp;
-    while (dir2 != nil) {
-        // FIXME: need string.makepath
-        snprintf(temp, sizeof(temp), "%s/%s", path, dir2.d_name);
-        switch (dir2.d_type) {
-        case DT_REG:
-            handle_file(queue, temp);
-            break;
-        case DT_DIR:
-            if (strcmp(dir2.d_name, ".") != 0 && strcmp(dir2.d_name, "..") != 0) {
-                handle_dir(queue, temp);
+
+    while (Dirent* entry = readdir(dir)) {
+        char[file_utils.Max_path] temp;
+        if (file_utils.make_path(temp, elemsof(temp), path, entry.d_name)) {
+            switch (entry.d_type) {
+            case DT_REG:
+                handle_file(queue, temp);
+                break;
+            case DT_DIR:
+                if (strcmp(entry.d_name, ".") != 0 && strcmp(entry.d_name, "..") != 0) {
+                    handle_dir(queue, temp);
+                }
+                break;
+            default:
+                break;
             }
-            break;
-        default:
-            break;
         }
-        dir2 = readdir(dir);
     }
     closedir(dir);
 }
@@ -255,15 +254,14 @@ fn void Tester.run_test(Tester* t, Test* test) {
     string_buffer.Buf* buf = string_buffer.create(4096, true, 2);
     buf.print("%s ", test.filename);
 
-    file_utils.Reader file;
-    bool ok = file.open(test.filename);
-    if (!ok) {
+    file_utils.File file.init("", test.filename);
+    if (!file.load()) {
         print_error("error opening %s: %s", test.filename, file.getError());
         exit(EXIT_FAILURE);
     }
 
     test_db.Db db;
-    db.init(buf, &file, test.filename, test.kind, t.tmp_dir, c2c_cmd, t.cwd, runSkipped);
+    db.init(buf, file.data(), test.filename, test.kind, t.tmp_dir, c2c_cmd, t.cwd, runSkipped);
     bool print = verboseLevel > 1;
     bool skip = db.parse();
     if (skip) {
@@ -347,18 +345,10 @@ public fn i32 main(i32 argc, char** argv) {
         }
         target = arg;
 
-        Stat statbuf;
-        if (stat(target, &statbuf)) {
-            print_error("error stat-ing %s: %s", target, strerror(errno));
-            return -1;
-        }
-        // strip off trailing '/'
-        usize len = strlen(target);
-        if (len > 1 && target[len - 1] == '/') target[--len] = '\0';
-
-        if ((statbuf.st_mode & S_IFMT) == S_IFREG) {
+        if (file_utils.is_file(target)) {
             handle_file(queue, target);
-        } else if ((statbuf.st_mode & S_IFMT) == S_IFDIR) {
+        } else
+        if (file_utils.is_dir(target)) {
             handle_dir(queue, target);
         } else {
             print_error("argument must be a regular file a directory: %s", target);

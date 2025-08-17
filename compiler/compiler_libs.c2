@@ -21,6 +21,7 @@ import component local;
 import component_sorter;
 import console;
 import constants;
+import file_utils;
 import manifest;
 import module_list;
 import module_sorter;
@@ -34,7 +35,6 @@ import libc_dirent local;
 import stdio;
 import stdlib;
 import string;
-import sys_stat local;
 
 fn void Compiler.createComponent(Compiler* c, u32 name, bool is_direct, bool is_static) {
     Kind kind = is_static ? Kind.ExternalStatic : Kind.ExternalDynamic;
@@ -89,14 +89,14 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
     const char* libstr = comp.getName();
 
     console.debug("opening lib %s", libstr);
-    char[512] libdir;
-    if (!c.find_lib(libstr, libdir)) {
+    char[file_utils.Max_path] libdir;
+    if (!c.find_lib(libstr, libdir, elemsof(libdir))) {
         console.error("cannot find library '%s'", libstr);
         stdlib.exit(-1);
     }
 
-    char[512] fullname;
-    stdio.snprintf(fullname, elemsof(fullname), "%s/%s", libdir, constants.manifest_name);
+    char[file_utils.Max_path] fullname;
+    if (!file_utils.make_path(fullname, elemsof(fullname), libdir, constants.manifest_name)) return;
     u32 filename_idx = c.auxPool.addStr(fullname, false);
     i32 file_id = c.sm.open(filename_idx, 0, false);
     if (file_id == -1) return;
@@ -150,16 +150,14 @@ fn bool Compiler.has_component(Compiler* c, u32 name) {
     return false;
 }
 
-fn bool Compiler.find_lib(const Compiler* c, const char* libname, char* fullpath) {
+fn bool Compiler.find_lib(const Compiler* c, const char* libname, char* libdir, usize size) {
     for (u32 i=0; i<c.libdirs.length(); i++) {
         const char* dirname = c.libdirs.get(i);
-        stdio.sprintf(fullpath, "%s/%s/%s", dirname, libname, constants.manifest_name);
-
-        Stat statbuf;
-        i32 err = stat(fullpath, &statbuf);
-        if (!err) {
-            stdio.sprintf(fullpath, "%s/%s", dirname, libname);
-            return true;
+        if (file_utils.make_path(libdir, size, dirname, libname)) {
+            char[file_utils.Max_path] path;
+            if (file_utils.make_path(path, elemsof(path), libdir, constants.manifest_name)
+            &&  file_utils.is_file(path))
+                return true;
         }
     }
     return false;
@@ -169,15 +167,16 @@ fn void Compiler.parseExternalModule(void* arg, ast.Module* m) {
     Compiler* c = arg;
     if (!m.isUsed()) return;
 
-    char[512] filename;
-    i32 len = stdio.sprintf(filename, "%s/%s.c2i", c.current.getPath(), m.getName());
-    u32 name = c.auxPool.add(filename, cast<usize>(len), false);
+    char[file_utils.Max_path] filename;
+    if (!file_utils.make_path_ext(filename, elemsof(filename), c.current.getPath(), m.getName(), ".c2i"))
+        return;
 
+    u32 name = c.auxPool.addStr(filename, false);
     i32 file_id = c.sm.open(name, 0, false);
     if (file_id == -1) return;   // note: error already printed
 
     m.setLoaded();
-    console.debug("parsing %s", c.sm.getFileName(file_id));
+    console.debug("parsing %s", filename);
     // on parse error, c.parser state has already been updated
     c.parser.parse(file_id, true, false);
 
@@ -243,18 +242,15 @@ fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirna
         return;
     }
 
-    char[512] fullname;
     while (Dirent* entry = readdir(dir)) {
+        char[file_utils.Max_path] fullname;
         const char* name = entry.d_name;
         if (name[0] != '.' && entry.d_type == DT_DIR) {
-            i32 len = stdio.snprintf(fullname, elemsof(fullname), "%s/%s/%s", dirname, name, constants.manifest_name);
-            if (len >= elemsof(fullname)) continue;
+            if (!file_utils.make_path3(fullname, elemsof(fullname), dirname, name, constants.manifest_name)
+            ||  !file_utils.is_file(fullname))
+                continue;
 
-            Stat statbuf;
-            i32 err = stat(fullname, &statbuf);
-            if (err) continue;
-
-            u32 filename_idx = c.auxPool.add(fullname, cast<usize>(len), false);
+            u32 filename_idx = c.auxPool.addStr(fullname, false);
 
             out.indent(2);
             out.print("%-12s", name);

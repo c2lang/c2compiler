@@ -414,10 +414,8 @@ public fn void generate(const char* title, const char* output_dir, component.Lis
     gen.indent--;
     out.add("</dsm>\n");
 
-    char[128] outfile;
-    sprintf(outfile, "%s/%s", output_dir, "deps.xml");
-    file_utils.Writer file;
-    file.write(outfile, out.data(), out.size());
+    file_utils.File file.init(output_dir, "deps.xml");
+    file.write(out.data(), out.size());
 
     if (gen.visitor) gen.visitor.free();
 

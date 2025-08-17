@@ -37,7 +37,6 @@ import incr_array_list as ia_list;
 import ctype;
 import stdarg local;
 import stdlib;
-import string;
 
 const u32 MaxDepth = 8;
 const u32 LHS = 0x01;
@@ -592,20 +591,18 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
 
         // open file, copy contents to StringPool and close
         const char* filename = ma.astPool.idx2str(embed.text);
-        file_utils.Reader reader;
-        if (!reader.open(filename)) {
-            ma.error(embed.loc, "error opening embedded file '%s': %s", filename, string.strerror(reader.error));
+        file_utils.File reader.init("", filename);
+        if (!reader.load()) {
+            ma.error(embed.loc, "error opening embedded file '%s': %s", filename, reader.getError());
             return;
         }
 
-        u32 src_len = reader.size;
-        u32 len = reader.size;
-        //TODO check input for weird chars if string
-        u32 value = ma.astPool.add(reader.data(), reader.size, false);
-        if (!is_char) {
-            src_len--;
-            len--;
-        }
+        //TODO: attribute should have source length
+        u32 src_len = 8; // source length is attribute @(embed="xxx")
+        u32 len = reader.data_size();
+        //TODO: check input for weird chars if string
+        u32 value = ma.astPool.add(reader.data(), len, false);
+        if (!is_char) len--;
         Expr* init = ma.builder.actOnStringLiteral(embed.loc, src_len, value, len);
 
         // Note: VarDecl already needed to allocate extra space during creation! (parser checks embed attr for this)

@@ -27,16 +27,8 @@ public const u32 MaxMultiString = 64*1024;
 public const u32 MaxMultiDeclBits = 4;
 public const u32 MaxMultiDecl = (1 << MaxMultiDeclBits) - 1;
 
-public const u32 Max_path = 512;
-
 public const char* output_dir = "output";
-
 public const char* recipe_name = "recipe.txt";
-
 public const char* buildfile_name = "build.yaml";
-
 public const char* manifest_name = "manifest.yaml";
-
 public const char* refs_filename = "refs";
-
-

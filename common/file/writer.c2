@@ -17,14 +17,7 @@ module file_utils;
 
 import libc_fcntl local;
 import c_errno local;
-import string local;
 import unistd local;
-
-const i32 Err_write_error = 2003;
-
-public type Writer struct {
-    i32 error;
-}
 
 fn isize write2(i32 hd, const void* data, usize len) {
     const u8* p = data;
@@ -43,23 +36,25 @@ fn isize write2(i32 hd, const void* data, usize len) {
     return total_written;
 }
 
-public fn bool Writer.write(Writer* writer, const char* filename, const void* data, u32 len) {
-    writer.error = 0;
+public fn bool File.write(File* file, const void* data, usize len) {
+    if (file.error) return false;
 
-    i32 fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC | O_BINARY, 0660);
-    if (fd == -1) {
-        writer.error = errno;
+    i32 fd = open(file.path, O_CREAT | O_WRONLY | O_TRUNC | O_BINARY, 0660);
+    if (fd < 0) {
+        file.error = errno;
         return false;
     }
 
-    i64 written = write2(fd, data, len);
+    isize written = write2(fd, data, len);
     if (written < 0) {
-        writer.error = errno;
+        file.error = errno;
         close(fd);
         return false;
     }
-    if (written != len) {
-        writer.error = Err_write_error;
+
+    // TODO: store number of bytes written to file?
+    if ((usize)written != len) {
+        file.error = Err_write_error;
         close(fd);
         return false;
     }
@@ -67,17 +62,3 @@ public fn bool Writer.write(Writer* writer, const char* filename, const void* da
     close(fd);
     return true;
 }
-
-public fn const char* Writer.getError(const Writer* file) @(unused) {
-    const char *msg;
-    switch (file.error) {
-    case Err_write_error:
-        msg = "write error";
-        break;
-    default:
-        msg = strerror(file.error);
-        break;
-    }
-    return msg;
-}
-

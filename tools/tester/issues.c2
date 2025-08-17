@@ -15,6 +15,8 @@
 
 module issues;
 
+import file_utils;
+
 import stdlib local;
 import string local;
 import stdio local; // for dump()
@@ -32,9 +34,9 @@ public type Iter struct {
 }
 
 public fn const char* relativeFilename(const char *name) {
-    char[512] buffer;
+    char[file_utils.Max_path] buffer;
     char* path = unistd.getcwd(buffer, sizeof(buffer));
-    if (path && path[1]) {
+    if (path && *path && path[1]) {
         usize len = strlen(path);
         if (!strncmp(name, path, len) && name[len] == '/' && name[len + 1] != '\0')
             return name + len + 1;

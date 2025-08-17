@@ -74,10 +74,10 @@ fn void init(void* arg, plugin_info.Info* info) {
     ast.setGlobals(info.ast_globals);
     ast.builtins = info.ast_builtins;
 
-    console.debug("shell_cmd: opening %s", p.config_file);
-    file_utils.Reader file;
-    if (!file.open(p.config_file)) {
-        console.error("shell_cmd: cannot open file %s: %s", p.config_file, file.getError());
+    console.debug("shell_cmd: loading %s", p.config_file);
+    file_utils.File file.init("", p.config_file);
+    if (!file.load()) {
+        console.error("shell_cmd: cannot load file %s: %s", p.config_file, file.getError());
         exit(EXIT_FAILURE);
     }
     yaml.Parser* parser = yaml.Parser.create();

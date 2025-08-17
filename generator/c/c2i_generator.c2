@@ -16,13 +16,10 @@
 module c2i_generator;
 
 import ast local;
-import constants;
 import console;
 import file_utils;
 import string_buffer;
 import string_list;
-
-import stdio;
 
 type Generator struct {
     string_buffer.Buf* out;
@@ -57,11 +54,9 @@ public fn void generate(const char* output_dir,
 }
 
 fn void Generator.write(Generator* gen, const char* output_dir) {
-    char[constants.Max_path] fullname;
-    stdio.snprintf(fullname, elemsof(fullname), "%s/%s.c2i", output_dir, gen.mod.getName());
-    file_utils.Writer writer;
-    if (!writer.write(fullname, gen.out.udata(), gen.out.size())) {
-        console.error("cannot write to %s: %s", fullname, writer.getError());
+    file_utils.File file.init_ext(output_dir, gen.mod.getName(), ".c2i");
+    if (!file.write(gen.out.udata(), gen.out.size())) {
+        console.error("cannot write to %s: %s", file.path, file.getError());
     }
 }
 
