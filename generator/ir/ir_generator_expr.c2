@@ -17,6 +17,7 @@ module ir_generator;
 
 import ast local;
 import ir local;
+import ir_context local;
 import ir_gen_locals local;
 import ctv_analyser;
 
@@ -184,8 +185,13 @@ fn void Generator.emitVarDecl(Generator* gen, ir.Ref* result, Decl* d) {
 }
 
 fn void Generator.emitCondOperator(Generator* gen, ir.Ref* result, const Expr* e) {
-    ir.Context* c = gen.ctx;
+    ir_context.Context* c = gen.ctx;
     const ConditionalOperator* co = cast<ConditionalOperator*>(e);
+
+    //a = cond ? b : c;
+    // ->
+    // if (cond) a = b;
+    // else a = c;
 
     BlockId then_blk = c.createBlock(BlockKind.CondTrue);
     BlockId else_blk = c.createBlock(BlockKind.CondFalse);
@@ -197,6 +203,7 @@ fn void Generator.emitCondOperator(Generator* gen, ir.Ref* result, const Expr* e
     // true
     ir.Ref ref1;
     gen.emitExpr(&ref1, co.getLHS());
+
     if (!c.isBlockTerminated()) c.addJmpInstr(join_blk);
     c.endBlock();
 
@@ -298,7 +305,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, ir.Ref* result, const Expr* 
 
 // EmitCond will end with the true_blk started
 fn void Generator.emitCond(Generator* gen, const Expr* e, BlockId true_blk, BlockId false_blk, BlockId start_blk) {
-    ir.Context* c = gen.ctx;
+    ir_context.Context* c = gen.ctx;
 
     if (e.isCtv()) {
         Value v = ctv_analyser.get_value(e);
@@ -369,12 +376,10 @@ fn void Generator.emitCond(Generator* gen, const Expr* e, BlockId true_blk, Bloc
     c.addJmpIfInstr(cond, true_blk, false_blk);
     c.endBlock();
     c.startBlock(start_blk);
-
-
 }
 
 fn void Generator.emitAssignCond(Generator* gen, ir.Type t, ir.Ref lhs, ir.Ref rhs, BlockId left, BlockId right, BlockId start) {
-    Context* c = gen.ctx;
+    ir_context.Context* c = gen.ctx;
     // if (a = getchar()), emit:
     //   %x = getchar()
     //   store a, %x
@@ -413,7 +418,7 @@ fn bool Generator.emitBinaryCond(Generator* gen, const Expr* e, BlockId left, Bl
         k = InstrKind.CmpNe;
         break;
     case LAnd:
-        gen.emitAndCond(b, left, right);
+        gen.emitAndCond(b, left, right, start);
         return true;
     case LOr:
         gen.emitOrCond(b, left, right, start);
@@ -436,18 +441,18 @@ fn bool Generator.emitBinaryCond(Generator* gen, const Expr* e, BlockId left, Bl
     ir.Ref rhs;
     gen.emitExpr(&rhs, b.getRHS());
     ir.Ref cond = gen.ctx.addBinaryInstr(k, lhs, rhs);
-    Context* c = gen.ctx;
+    ir_context.Context* c = gen.ctx;
     c.addJmpIfInstr(cond, left, right);
     c.endBlock();
     c.startBlock(start);
     return true;
 }
 
-fn void Generator.emitAndCond(Generator* gen, const BinaryOperator* b, BlockId true_blk, BlockId false_blk) {
+fn void Generator.emitAndCond(Generator* gen, const BinaryOperator* b, BlockId true_blk, BlockId false_blk, BlockId start_blk) {
     BlockId and_true = gen.ctx.createBlock(BlockKind.AndTrue);
 
     gen.emitCond(b.getLHS(), and_true, false_blk, and_true);
-    gen.emitCond(b.getRHS(), true_blk, false_blk, true_blk);
+    gen.emitCond(b.getRHS(), true_blk, false_blk, start_blk);
 }
 
 fn void Generator.emitOrCond(Generator* gen, const BinaryOperator* b, BlockId true_blk, BlockId false_blk, BlockId start_blk) {

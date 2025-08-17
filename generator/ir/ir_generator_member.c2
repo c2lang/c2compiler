@@ -18,11 +18,12 @@ module ir_generator;
 import ast local;
 import bit_utils;
 import ir local;
+import ir_context;
 
 // NOTE: should not be used for LHS bitfields!
 fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     const MemberExpr* m = cast<MemberExpr*>(e);
-    Context* c = gen.ctx;
+    ir_context.Context* c = gen.ctx;
 
     u32 tail = 0;
 
@@ -123,9 +124,10 @@ next:
         base_type = d.getType();
     }
 
-    // TODO use MemberExpr.getConversion()
+    MemberConversion conv = m.getConversion();
+    //printf("CONVERSION %d TAIL %d\n", conv, tail);
 
-    if (tail) {
+    if (tail && conv != Addr) {
         // for type functions, always pointer?
         // If type-function (with ptr base?), add extra LoadInstr since no LToRValue Cast is present then
         // Q: add in Analyser?

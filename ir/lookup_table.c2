@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-module lookup_table;
+module ir_lookup_table;
 
 import stdlib;
 import string;
@@ -59,13 +59,12 @@ fn void Table.resize(Table* t, u32 capacity2, bool copy) {
     t.data = data2;
 }
 
-#if 0
-public fn void Table.dump(const Table* t) {
+/*
+public fn void Table.dump(const Table* t) @(unused) {
     stdio.printf("TABLE %d\n", t.capacity);
     for (u32 i=0; i<t.capacity; i++) {
         if (t.data[i] != 0) stdio.printf("  [%d] %d\n", i, t.data[i]);
-        /* code */
     }
 }
-#endif
+*/
 

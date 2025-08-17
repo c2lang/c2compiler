@@ -1,0 +1,58 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir_slot_values;
+
+import ir local;
+
+import stdlib;
+import string;
+import stdio local;
+
+public type SlotValues struct {
+    Ref* values;    // slot is index
+}
+
+public fn void SlotValues.create(SlotValues* v) {
+    v.values = stdlib.malloc(SlotMax * sizeof(Ref));
+}
+
+public fn void SlotValues.free(SlotValues* v) {
+    stdlib.free(v.values);
+}
+
+public fn void SlotValues.clear(SlotValues* v, u32 num_slots) {
+    assert(num_slots < SlotMax);
+    string.memset(v.values, 0, num_slots * sizeof(Ref));
+}
+
+public fn Ref SlotValues.find(const SlotValues* v, u16 slot) {
+    return v.values[slot];
+}
+
+public fn void SlotValues.set(SlotValues* v, u16 slot, Ref ref) {
+    assert(slot < SlotMax);
+    v.values[slot] = ref;
+}
+
+public fn void SlotValues.dump(const SlotValues* v) @(unused) {
+    printf("Slot values:\n");
+    for (u32 i=0; i<SlotMax; i++) {
+        Ref* r = &v.values[i];
+        if (r.isNone()) continue;
+        printf("  %2d  %s%d\n", i, r.getKindName(), r.value);
+    }
+}
+

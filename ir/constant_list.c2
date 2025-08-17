@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-module ir;
+module ir_context;
 
 import string local;
 import stdlib;

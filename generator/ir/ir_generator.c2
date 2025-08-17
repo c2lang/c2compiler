@@ -23,6 +23,7 @@ import constants;
 import ctv_analyser;
 import file_utils;
 import ir local;
+import ir_context local;
 import ir_gen_locals local;
 import ref_list_pool;
 import source_mgr;
@@ -40,7 +41,7 @@ type JumpScope struct {
 }
 
 type Generator struct {
-    ir.Context* ctx;
+    ir_context.Context* ctx;
     string_pool.Pool* names;
     value_maplist.List labels;
 
@@ -72,7 +73,7 @@ fn void Generator.init(Generator* gen,
                        bool print,
                        bool print_all) {
     string.memset(gen, 0, sizeof(Generator));
-    gen.ctx = ir.create(print_all);
+    gen.ctx = ir_context.create(print_all);
     gen.labels.init();
     gen.target = target;
     gen.output_dir = output_dir;
@@ -441,7 +442,7 @@ fn bool Generator.isExternal(Generator* gen, const Decl* d) {
 }
 
 fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
-    ir.Context* c = gen.ctx;
+    ir_context.Context* c = gen.ctx;
 
     gen.labels.clear();
     gen.locals.clear();
@@ -519,7 +520,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
 
 fn void on_var_decl(void* arg, VarDecl* vd) {
     Generator* gen = arg;
-    ir.Context* c = gen.ctx;
+    ir_context.Context* c = gen.ctx;
 
     Decl* d = cast<Decl*>(vd);
     if (!d.isUsed()) return;

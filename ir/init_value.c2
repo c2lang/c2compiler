@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-module ir;
+module ir_context;
 
 type InitValueKind enum u8 {
     None,

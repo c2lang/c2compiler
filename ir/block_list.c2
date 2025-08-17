@@ -18,21 +18,19 @@ module ir;
 import string local;
 import stdlib;
 
-public type BlockId u32;
-
-type BlockList struct {
+public type BlockList struct {
     u32 count;
     u32 capacity;
     Block* blocks;  // global list, index = nr
 }
 
-fn void BlockList.init(BlockList* l, u32 initial_size) {
+public fn void BlockList.init(BlockList* l, u32 initial_size) {
     l.count = 0;
     l.blocks = nil;
     l.resize(initial_size);
 }
 
-fn void BlockList.free(BlockList* l) {
+public fn void BlockList.free(BlockList* l) {
     if (l.blocks) stdlib.free(l.blocks);
 }
 
@@ -46,12 +44,7 @@ fn void BlockList.resize(BlockList* l, u32 cap) {
     l.blocks = blocks2;
 }
 
-fn void BlockList.reserve(BlockList* l, u32 extra) {
-    u32 new_count = l.count + extra;
-    if (new_count > l.capacity) l.resize(new_count);
-}
-
-fn BlockId BlockList.add(BlockList* l, BlockKind kind) {
+public fn BlockId BlockList.add(BlockList* l, BlockKind kind) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
 
     BlockId idx = l.count;
@@ -61,7 +54,7 @@ fn BlockId BlockList.add(BlockList* l, BlockKind kind) {
     return idx;
 }
 
-fn BlockId BlockList.copy(BlockList* l, const Block* b2) {
+public fn BlockId BlockList.copy(BlockList* l, const Block* b2) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
 
     BlockId idx = l.count;
@@ -71,17 +64,40 @@ fn BlockId BlockList.copy(BlockList* l, const Block* b2) {
     return idx;
 }
 
-fn void BlockList.swap(BlockList* l1, BlockList* l2) {
+public fn void BlockList.clear(BlockList* l) {
+    l.count = 0;
+}
+
+public fn void BlockList.merge(BlockList* l1, const BlockList* l2) {
+    if (l2.count == 0) return;
+
+    u32 total = l1.count + l2.count;
+    if (total > l1.capacity) l1.resize(total);
+
+    memcpy(&l1.blocks[l1.count], l2.blocks, l2.count * sizeof(Block));
+    l1.count = total;
+}
+
+public fn void BlockList.swap(BlockList* l1, BlockList* l2) {
     BlockList tmp = *l1;
     *l1 = *l2;
     *l2 = tmp;
 }
 
-fn u32 BlockList.getCount(const BlockList* l) {
+public fn u32 BlockList.getCount(const BlockList* l) {
     return l.count;
 }
 
-fn Block* BlockList.get(const BlockList* l, BlockId idx) {
+public fn Block* BlockList.get(const BlockList* l, BlockId idx) {
     return &l.blocks[idx];
+}
+
+public fn Block* BlockList.getLast(const BlockList* l) {
+    assert(l.count);
+    return &l.blocks[l.count-1];
+}
+
+public fn void BlockList.removeLastBlock(BlockList* l) {
+    l.count--;
 }
 

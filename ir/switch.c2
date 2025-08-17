@@ -13,27 +13,41 @@
  * limitations under the License.
  */
 
-module ir;
+module ir_context;
+
+import ir local;
+import ir_inserter local;
 
 import index_list;
 
-fn bool Context.convert_switches(Context* c, FunctionInfo* fi) {
+fn bool Tools.convert_switches(Tools* t, FunctionInfo* fi) {
 
-    u32 count = fi.blocks.getCount();
+    u32 num_blocks = fi.blocks.getCount();
     // TODO add to Tools, dont re-create every time
-    index_list.List block_order.init(count + 16);
+    // TODO make dynamic
+    index_list.List block_order.init(num_blocks + 16);
 
-    // Note: cannot get Block* here and iterate that, since block adds might cause resize
-    for (u32 i=0; i<count; i++) {
+    Inserter* inserter = &t.inserter;
+    inserter.clear(num_blocks, fi.instructions.getCount());
+
+    Block* blocks = fi.blocks.get(0);
+    for (u32 i=0; i<num_blocks; i++) {
         block_order.add(i);
-        // TODO pass tools?
-        Block* b = fi.blocks.get(i);
-        if (b.end_with_switch) c.convert_switch_linear(fi, i, &block_order);
+        Block* b = &blocks[i];
+        if (b.end_with_switch) t.convert_switch_linear(fi, i, &block_order);
     }
 
-    if (count != fi.blocks.getCount()) {
+    if (inserter.hasBlocks()) {
         fi.cases.clear();
-        c.reorder_blocks(fi, &block_order);
+        inserter.insertBlocks(&fi.blocks);
+        //dump_function(fi, "bb1");
+        //print_func(t.arg1, t.arg2, fi, "bb1");
+
+        t.markUsedBlocks(fi);
+        //dump_function(fi, "bb2");
+        //print_func(t.arg1, t.arg2, fi, "bb2");
+
+        t.reorder_blocks(fi, &block_order);
         block_order.free();
         return true;
     }
@@ -41,7 +55,11 @@ fn bool Context.convert_switches(Context* c, FunctionInfo* fi) {
     return false;
 }
 
-fn void Context.convert_switch_linear(Context* c, FunctionInfo* fi, u32 blk_id, index_list.List* block_order) {
+fn void Tools.convert_switch_linear(Tools* t, FunctionInfo* fi, u32 blk_id, index_list.List* block_order) {
+    Inserter* inserter = &t.inserter;
+
+    // Note: switches can be nested, so need to handle that
+
     Block* b = fi.blocks.get(blk_id);
     u32 switch_loc = b.instr.start + b.instr.count - 1;
     Instr* ii = fi.instructions.get(switch_loc);
@@ -55,35 +73,45 @@ fn void Context.convert_switch_linear(Context* c, FunctionInfo* fi, u32 blk_id, 
     // just convert switch to jmp
     Ref jmp_ref.init(RefKind.JmpDest, 0);
     ii.init1(InstrKind.Jmp, jmp_ref);
-    b.setDest(fi.blocks.getCount(), 0);
+    b.setDest(inserter.getNextBlockId(), 0);
 
+    fi.instructions.reserve(num_cases); // NOTE: invalidates Instr*
     u32 loc = fi.instructions.getCount();
+    // NOTE: new instructions are only added to new blocks, so no need to use Inserter for instructions
 
     // Note: empty case are pruned early on, and block updated to join_blk
     for (u32 j=0; j<num_cases; j++) {
         bool last_case = (j == num_cases-1);
 
-        // TODO also handle default case (=last)
-
-
-        BlockId cur_blk = fi.blocks.add(BlockKind.SwitchCond);
-        block_order.add(cur_blk);
-        Block* cur = fi.blocks.get(cur_blk);
+        BlockId new_blk = inserter.addBlock(BlockKind.SwitchCond);
+        block_order.add(new_blk);
+        Block* cur = inserter.getLastBlock();
         cur.used = 1;
         cur.instr.start = loc;
         cur.instr.count = 2;    // cmp + jmp_if
 
         Case* cc = fi.cases.get(case_id+j);
-        if (cc.block == join_blk) { // case was empty
-            if (last_case) {
+        if (last_case) {
+            // Note: for now default also has a Cond block, could be removed later
+            Block* dest = fi.blocks.get(cc.block);
+            if (cc.block == join_blk) { // case was empty
                 cur.instr.count = 1;    // jmp join_blk
+                cur.setDest(join_blk, 0);
+
                 Instr* i = fi.instructions.add();
                 i.init1(InstrKind.Jmp, jmp_ref);
-                cur.setDest(join_blk, 0);
+                return;
+            }
+            if (dest.kind == SwitchDefault) {
+                cur.instr.count = 1;    // jmp default_blk
+                cur.setDest(cc.block, 0);
+
+                Instr* i = fi.instructions.add();
+                i.init1(InstrKind.Jmp, jmp_ref);
                 return;
             }
         }
-        BlockId next_blk = (last_case) ? join_blk : cur_blk +1;
+        BlockId next_blk = (last_case) ? join_blk : new_blk +1;
         cur.setDest(cc.block, next_blk);
 
         // compare
@@ -97,7 +125,6 @@ fn void Context.convert_switch_linear(Context* c, FunctionInfo* fi, u32 blk_id, 
         // jump
         i = fi.instructions.add();
         i.init2(InstrKind.JmpIf, cmp_result, jmp_ref);
-
         loc++;
     }
 }

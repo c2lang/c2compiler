@@ -41,10 +41,10 @@ public type BlockKind enum u8 {
     SwitchCase,
     SwitchJoin,
     SwitchDefault,
-    PhiJoin,
+    PhiSplit,
 }
 
-fn const char* BlockKind.str(BlockKind k) {
+public fn const char* BlockKind.str(BlockKind k) @(unused) {
     switch (k) {
     case Unspecified: return "";
     case FnStart:     return "start";
@@ -69,12 +69,12 @@ fn const char* BlockKind.str(BlockKind k) {
     case SwitchCase:  return "switch_case";
     case SwitchJoin:  return "switch_join";
     case SwitchDefault:  return "switch_default";
-    case PhiJoin:     return "phi_join";
+    case PhiSplit:     return "phi_split";
     }
     return "";
 }
 
-type Block struct {
+public type Block struct {
     BlockId[2] dests;   // used if not 0
     Index instr;        // index into FuncInfo.instructions
     BlockKind kind : 8 ;   // BlockKind
@@ -95,21 +95,21 @@ fn BlockKind Block.getKind(const Block* b) {
     return b.kind;
 }
 
-fn const char* Block.getKindName(const Block* b) {
+public fn const char* Block.getKindName(const Block* b) {
     BlockKind k = b.getKind();
     return k.str();
 }
 
-fn void Block.setInstructions(Block* b, u32 start, u32 count) {
+public fn void Block.setInstructions(Block* b, u32 start, u32 count) {
     b.instr.start = start;
     b.instr.count = count;
 }
 
-fn Index Block.getInstructions(const Block* b) {
+public fn Index Block.getInstructions(const Block* b) {
     return b.instr;
 }
 
-fn void Block.setDest(Block* b, BlockId dest1, BlockId dest2) {
+public fn void Block.setDest(Block* b, BlockId dest1, BlockId dest2) {
     b.dests[0] = dest1;
     b.dests[1] = dest2;
 }

@@ -1,0 +1,208 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir_inserter;
+
+import ir local;
+
+import stdlib;
+import string;
+import stdio local;
+
+public type InstrInsertion struct {
+    u32 location;   // instr to insert before
+    u32 instr_idx;  // place where instruction is currently stored
+    Instr instr;
+}
+static_assert(20, sizeof(InstrInsertion));
+
+public type SplitEdge struct {
+    u32 src;    // original src
+    u32 dest;   // original dest
+    u32 blk_id; // new block
+}
+
+public type Inserter struct {
+    u32 next_loc;  // for insertion
+    u32 cur;        // current insertion index
+    u32 count;
+    u32 capacity;
+    InstrInsertion* ins;
+
+    // new instructions + blocks
+    BlockList new_blocks;
+    u32 new_instr_idx;
+    u32 last_inserted_instr;
+    BlockId new_blk_id; // start id for new blocks
+
+    SplitEdge* split_edges;
+    u32 split_count;
+    u32 split_cap;
+}
+static_assert(72, sizeof(Inserter));
+
+public fn void Inserter.create(Inserter* ins) {
+    string.memset(ins, 0, sizeof(Inserter));
+    ins.resize(16);
+    ins.new_blocks.init(4);
+}
+
+public fn void Inserter.free(Inserter* ins) {
+    ins.new_blocks.free();
+    stdlib.free(ins.ins);
+    stdlib.free(ins.split_edges); // may be nil
+}
+
+public fn void Inserter.clear(Inserter* ins, u32 num_blocks, u32 num_instr) {
+    ins.next_loc = 0;
+    ins.cur = 0;
+    ins.count = 0;
+    ins.split_count = 0;
+    ins.new_blocks.clear();
+    ins.new_blk_id = num_blocks;
+    ins.new_instr_idx = num_instr;
+    ins.split_count = 0;
+}
+
+fn void Inserter.resize(Inserter* ins, u32 capacity) {
+    ins.capacity = capacity;
+    InstrInsertion* ins2 = stdlib.malloc(ins.capacity * sizeof(InstrInsertion));
+    if (ins.count) {
+        string.memcpy(ins2, ins.ins, ins.count * sizeof(InstrInsertion));
+        stdlib.free(ins.ins);
+    }
+    ins.ins = ins2;
+}
+
+public fn u32 Inserter.addInstr(Inserter* ins, u32 loc) {
+    u32 instr_idx =  ins.new_instr_idx + ins.count;
+    u32 insert_idx = ins.getAddIndex(loc);
+    InstrInsertion* ii = &ins.ins[insert_idx];
+    ii.location = loc;
+    ii.instr_idx = instr_idx;
+    ins.count++;
+
+    ins.last_inserted_instr = insert_idx;
+    return instr_idx;
+}
+
+public fn Instr* Inserter.getLastInstr(Inserter* ins) {
+    return &ins.ins[ins.last_inserted_instr].instr;
+}
+
+public fn u32 Inserter.getInstrCount(Inserter* ins) {
+    return ins.count;
+}
+
+fn u32 Inserter.getAddIndex(Inserter* ins, u32 location) {
+    if (ins.count == ins.capacity) ins.resize(ins.capacity * 2);
+
+    u32 idx = ins.count;
+    while (idx > 0) {
+        u32 prev = idx-1;
+        if (ins.ins[prev].location <= location) break;
+        ins.ins[idx] = ins.ins[prev];
+        idx = prev;
+    }
+    return idx;
+}
+
+public fn void Inserter.start(Inserter* ins) {
+    ins.cur = 0;
+    if (ins.count) ins.next_loc = ins.ins[ins.cur].location;
+    else ins.next_loc = u32.max;
+}
+
+public fn void Inserter.next(Inserter* ins) {
+    ins.cur++;
+    if (ins.cur < ins.count) ins.next_loc = ins.ins[ins.cur].location;
+    else ins.next_loc = u32.max;
+}
+
+public fn bool Inserter.hasInsert(const Inserter* ins, u32 loc) {
+    return loc == ins.next_loc;
+}
+
+public fn u32 Inserter.getInstrIdx(const Inserter* ins) {
+    return ins.ins[ins.cur].instr_idx;
+}
+
+public fn const Instr* Inserter.getInstr(const Inserter* ins) {
+    return &ins.ins[ins.cur].instr;
+}
+
+public fn bool Inserter.needsFixup(const Inserter* ins) {
+    return (ins.count + ins.split_count + ins.new_blocks.count) != 0;
+}
+
+public fn u32 Inserter.findSplitEdge(const Inserter* ins, u32 src, u32 dest) {
+    for (u32 i = 0; i < ins.split_count; i++) {
+        const  SplitEdge* e = &ins.split_edges[i];
+        if (e.src == src && e.dest == dest) return e.blk_id;
+    }
+    return 0;
+}
+
+public fn void Inserter.addSplitEdge(Inserter* ins, u32 src, u32 dest, u32 blk_id) {
+    if (ins.split_count == ins.split_cap) {
+        ins.split_cap += 2;
+        SplitEdge* split_edges2 = stdlib.malloc(ins.split_cap * sizeof(SplitEdge));
+        if (ins.split_count) {
+            string.memcpy(split_edges2, ins.split_edges, ins.split_count * sizeof(SplitEdge));
+            stdlib.free(ins.split_edges);
+        }
+        ins.split_edges = split_edges2;
+    }
+
+    SplitEdge* e = &ins.split_edges[ins.split_count++];
+    e.src = src;
+    e.dest = dest;
+    e.blk_id = blk_id;
+}
+
+public fn BlockId Inserter.addBlock(Inserter* ins, BlockKind kind) {
+    BlockId blk_id = ins.new_blocks.add(kind);
+    return ins.new_blk_id + blk_id;
+}
+
+public fn Block* Inserter.getLastBlock(const Inserter* ins) {
+    return ins.new_blocks.getLast();
+}
+
+public fn bool Inserter.hasBlocks(const Inserter* ins) {
+    return ins.new_blocks.getCount() != 0;
+}
+
+public fn void Inserter.insertBlocks(Inserter* ins, BlockList* list) {
+    list.merge(&ins.new_blocks);
+    ins.new_blocks.clear();
+}
+
+public fn BlockId Inserter.getNextBlockId(const Inserter* ins) {
+    return ins.new_blk_id + ins.new_blocks.getCount();
+}
+
+public fn void Inserter.dump(const Inserter* ins) @(unused) {
+    printf("insertions:\n");
+    for (u32 i=0; i<ins.count; i++) {
+        const InstrInsertion* ii = &ins.ins[i];
+        const Instr* is = &ii.instr;
+        printf("  [%d] %3d  %d  %7s", i, ii.location, ii.instr_idx, is.getKindName());
+        printf("  %10s %3d", is.args[0].getKindName(), is.args[0].value);
+        printf("  %10s %3d", is.args[1].getKindName(), is.args[1].value);
+        printf("\n");
+    }
+}
+

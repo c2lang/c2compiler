@@ -25,8 +25,8 @@ public const u32 MemberExprMaxDepth = 7;
 
 public type MemberConversion enum u8 {
     None,
-    Addr,       // Foo -> Foo*
-    Deref,      // Foo* -> Foo
+    Addr,       // Foo -> Foo* (ie &f)
+    Deref,      // Foo* -> Foo (ie *f)
 }
 
 type MemberExprBits struct {

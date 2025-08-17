@@ -18,14 +18,14 @@ module ir;
 import string local;
 import stdlib local;
 
-type PhiClause struct {
+public type PhiClause struct {
     BlockId src;
     u32 dest_idx;   // = TempRef value
     Ref ref;
 }
 static_assert(12, sizeof(PhiClause));
 
-type PhiList struct {
+public type PhiList struct {
     u32 count;
     u32 capacity;
     PhiClause* clauses;
@@ -41,7 +41,7 @@ fn void PhiList.free(PhiList* l) {
     if (l.clauses) free(l.clauses);
 }
 
-fn void PhiList.clear(PhiList* l) {
+public fn void PhiList.clear(PhiList* l) {
     l.count = 0;
     l.capacity = 0;
     if (l.clauses) {
@@ -58,7 +58,7 @@ fn void PhiList.resize(PhiList* l, u32 extra) {
     l.clauses = clauses2;
 }
 
-fn void PhiList.add(PhiList* l, u32 dest, BlockId src, Ref ref) {
+public fn void PhiList.add(PhiList* l, u32 dest, BlockId src, Ref ref) {
     if (l.count == l.capacity) l.resize(2);
     PhiClause* c = &l.clauses[l.count++];
     c.src = src;
@@ -66,7 +66,7 @@ fn void PhiList.add(PhiList* l, u32 dest, BlockId src, Ref ref) {
     c.ref = ref;
 }
 
-fn u32 PhiList.addCache(PhiList* l, u32 dest, const PhiCache* cache) {
+public fn u32 PhiList.addCache(PhiList* l, u32 dest, const PhiClauses* cache) {
     u32 extra = cache.getCount();
     if (l.count + extra >= l.capacity) l.resize(extra);
 
@@ -80,40 +80,36 @@ fn u32 PhiList.addCache(PhiList* l, u32 dest, const PhiCache* cache) {
     return start;
 }
 
-fn u32 PhiList.getCount(const PhiList* l) {
+public fn u32 PhiList.getCount(const PhiList* l) {
     return l.count;
 }
 
-fn PhiClause* PhiList.get(const PhiList* l, u32 idx) {
+public fn PhiClause* PhiList.get(const PhiList* l, u32 idx) {
     return &l.clauses[idx];
 }
 
 
-type PhiCache struct {
+public type PhiClauses struct {
     u32 count;
     u32 capacity;
     PhiClause* clauses;
     PhiClause[2] stash;
 }
 
-fn void PhiCache.init(PhiCache* c) {
+public fn void PhiClauses.init(PhiClauses* c) {
     c.count = 0;
     c.capacity = 0;
 }
 
-fn void PhiCache.free(PhiCache* c) {
+public fn void PhiClauses.free(PhiClauses* c) {
     if (c.capacity > elemsof(c.stash)) free(c.clauses);
 }
 
-fn u32 PhiCache.getCount(const PhiCache* c) {
+public fn u32 PhiClauses.getCount(const PhiClauses* c) {
     return c.count;
 }
 
-fn void PhiCache.clear(PhiCache* c) {
-    c.count = 0;
-}
-
-fn bool PhiCache.contains(const PhiCache* c, Ref ref) {
+fn bool PhiClauses.contains(const PhiClauses* c, Ref ref) {
     const PhiClause* clauses = c.getClauses();
     for (u32 i=0; i<c.count; i++) {
         if (clauses[i].ref.equals(ref)) return true;
@@ -122,7 +118,8 @@ fn bool PhiCache.contains(const PhiCache* c, Ref ref) {
     return false;
 }
 
-fn void PhiCache.add(PhiCache* c, BlockId blk_id, Ref ref) {
+public fn void PhiClauses.add(PhiClauses* c, BlockId blk_id, Ref ref) {
+    // TODO also check if blk_id is the same
     if (c.contains(ref)) return;
 
     PhiClause* clause;
@@ -150,8 +147,10 @@ fn void PhiCache.add(PhiCache* c, BlockId blk_id, Ref ref) {
     clause.ref = ref;
 }
 
-fn const PhiClause* PhiCache.getClauses(const PhiCache* c) {
+public fn const PhiClause* PhiClauses.getClauses(const PhiClauses* c) {
     if (c.count <= elemsof(c.stash)) return c.stash;
     return c.clauses;
 }
 
+public fn void PhiClauses.dump(const PhiClauses* c) @(unused) {
+}

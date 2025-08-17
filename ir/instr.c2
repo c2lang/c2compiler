@@ -17,7 +17,7 @@ module ir;
 
 import string local;
 
-type InstrBits struct {
+public type InstrBits struct {
     InstrKind kind : 8;
     u32 type_ : 4;  // resulting type if any
     u32 has_result : 1;
@@ -25,54 +25,50 @@ type InstrBits struct {
     u32 register_nr : 6;    // might need more for spilling
 }
 
-type Instr struct {
+public type Instr struct {
     union {
         InstrBits instrBits;
         u32 bits;
     }
-    union {
-        Ref[2] args; // most instructions
-        Index phi_clauses;  // phi instruction, index into FunctionInfo.phis
-        //Index call;   // for call, the first arg is the function name (type is not used)
-    }
+    Ref[2] args; // most instructions
 }
 static_assert(12, sizeof(Instr));
 
-fn void Instr.setReg(Instr* i, u8 reg) {
+public fn void Instr.setReg(Instr* i, u8 reg) {
     i.instrBits.has_register = 1;
     i.instrBits.register_nr = reg;
 }
 
 // instructions with no result or args (eg. hlt, jmp)
-fn void Instr.init0(Instr* i, InstrKind k) {
+public fn void Instr.init0(Instr* i, InstrKind k) {
     memset(i, 0, sizeof(Instr));
     i.instrBits.kind = k;
 }
 
 // instructions with result, no args (eg param)
-fn void Instr.init0b(Instr* i, InstrKind k) {
+public fn void Instr.init0b(Instr* i, InstrKind k) {
     memset(i, 0, sizeof(Instr));
     i.instrBits.kind = k;
     i.instrBits.has_result = true;
 }
 
-fn void Instr.initPhi(Instr* i, u32 clause_start, u32 num_clauses) {
+public fn void Instr.initPhi(Instr* i, u32 clause_start, u32 num_clauses) {
     i.bits = 0;
     i.instrBits.kind = InstrKind.Phi;
     i.instrBits.has_result = true;
-    i.phi_clauses.start = clause_start;
-    i.phi_clauses.count = num_clauses;
+    i.args[0].init(RefKind.PhiClause, clause_start);
+    i.args[1].init(RefKind.PhiClause, num_clauses);
 }
 
 // instructions with no result, 1 arg (eg. jmp, ret)
-fn void Instr.init1(Instr* i, InstrKind k, Ref ref1) {
+public fn void Instr.init1(Instr* i, InstrKind k, Ref ref1) {
     memset(i, 0, sizeof(Instr));
     i.instrBits.kind = k;
     i.args[0] = ref1;
 }
 
 // instructions with 1 result and 1 arg (eg. neg, load, alloc)
-fn void Instr.init1b(Instr* i, InstrKind k, Ref ref1) {
+public fn void Instr.init1b(Instr* i, InstrKind k, Ref ref1) {
     memset(i, 0, sizeof(Instr));
     i.instrBits.kind = k;
     i.instrBits.has_result = true;
@@ -80,7 +76,7 @@ fn void Instr.init1b(Instr* i, InstrKind k, Ref ref1) {
 }
 
 // instructions with no result, 2 args (eg store)
-fn void Instr.init2(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
+public fn void Instr.init2(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
     memset(i, 0, sizeof(Instr));
     i.instrBits.kind = k;
     i.args[0] = ref1;
@@ -88,7 +84,7 @@ fn void Instr.init2(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
 }
 
 // instructions with result + 2 args (eg add, call, jmp_if)
-fn void Instr.init2b(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
+public fn void Instr.init2b(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
     i.bits = 0;
     i.instrBits.kind = k;
     i.instrBits.has_result = true;
@@ -96,7 +92,7 @@ fn void Instr.init2b(Instr* i, InstrKind k, Ref ref1, Ref ref2) {
     i.args[1] = ref2;
 }
 
-fn void Instr.initRegCopy(Instr* i, u8 dst_reg, Ref ref) {
+public fn void Instr.initRegCopy(Instr* i, u8 dst_reg, Ref ref) {
     i.instrBits.kind = InstrKind.Copy;
     i.instrBits.type_ = 0; // not used
     i.instrBits.has_result = 1;
@@ -107,76 +103,73 @@ fn void Instr.initRegCopy(Instr* i, u8 dst_reg, Ref ref) {
     i.args[1].value = 0;
 }
 
-fn void Instr.copy(Instr* i, const Instr* i2) {
+public fn void Instr.copy(Instr* i, const Instr* i2) {
     memcpy(i, i2, sizeof(Instr));
 }
 
-fn InstrKind Instr.getKind(const Instr* i) {
+public fn InstrKind Instr.getKind(const Instr* i) {
     return i.instrBits.kind;
 }
 
-fn bool Instr.hasResult(const Instr* i) {
+public fn bool Instr.hasResult(const Instr* i) {
     return i.instrBits.has_result;
 }
 
-fn bool Instr.hasRegister(const Instr* i) {
+public fn bool Instr.hasRegister(const Instr* i) {
     return i.instrBits.has_register;
 }
 
-fn u32 Instr.getRegister(const Instr* i) {
+public fn u32 Instr.getRegister(const Instr* i) {
     return i.instrBits.register_nr;
 }
 
-fn void Instr.clear(Instr* i) {
+public fn void Instr.clear(Instr* i) {
     memset(i, 0, sizeof(Instr));
 }
 
-fn const char* Instr.getKindName(const Instr* i) {
+public fn const char* Instr.getKindName(const Instr* i) {
     InstrKind k = i.getKind();
     return k.str();
 }
 
-fn bool Instr.isPseudo(const Instr* i) {
+public fn bool Instr.isPseudo(const Instr* i) {
     InstrKind k = i.getKind();
     return k >= InstrKind.Switch;
 }
 
-fn bool Instr.isNone(const Instr* i) {
+public fn bool Instr.isNone(const Instr* i) {
     InstrKind k = i.getKind();
     return k == InstrKind.None;
 }
 
-fn bool Instr.isCopy(const Instr* i) {
+public fn bool Instr.isCopy(const Instr* i) {
     InstrKind k = i.getKind();
     return k == InstrKind.Copy;
 }
 
-fn bool Instr.isArithmetic(const Instr* i) @(unused) {
+/*
+fn bool Instr.isArithmetic(const Instr* i) {
     InstrKind k = i.getKind();
     return k >= InstrKind.Add && k <= InstrKind.Shl;
 }
+*/
 
-fn bool Instr.isLoadStore(const Instr* i) @(unused) {
-    InstrKind k = i.getKind();
-    return k >= InstrKind.Load1 && k <= InstrKind.Store8;
-}
-
-fn bool Instr.isSwitch(const Instr* i) {
+public fn bool Instr.isSwitch(const Instr* i) {
     InstrKind k = i.getKind();
     return k == InstrKind.Switch;
 }
 
-fn bool Instr.isCall(const Instr* i) {
+public fn bool Instr.isCall(const Instr* i) {
     InstrKind k = i.getKind();
     return k == InstrKind.Call;
 }
 
-fn bool Instr.isPhi(const Instr* i) {
+public fn bool Instr.isPhi(const Instr* i) {
     InstrKind k = i.getKind();
     return k == InstrKind.Phi;
 }
 
-fn bool Instr.isComment(const Instr* i) {
+public fn bool Instr.isComment(const Instr* i) {
     InstrKind k = i.getKind();
     return k == InstrKind.Comment;
 }

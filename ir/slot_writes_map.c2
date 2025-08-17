@@ -1,0 +1,412 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir_slot_writes_map;
+
+import ir;
+
+import stdlib;
+import string;
+import stdio local;
+
+public type SlotWrite struct {
+    u16 slot;
+    // u16 pad
+    ir.Ref ref;
+}
+
+const u32 NumArenas = 9;
+// Note: caps need to be double of previous (except first two)
+const u16[NumArenas] Caps   = { 0, 2, 4, 8, 16, 32, 64, 128, 256, }
+
+const u16 NULL = u16.max;
+
+type Arena struct {
+    u16 first_var;   // NULL if none
+    u16 last_var;   // NULL if none
+    u32 map_start;
+    u32 max_elems;
+    u16 free_slots;
+    // 2 bytes padding
+}
+static_assert(16, sizeof(Arena));
+
+type BlockWrites struct {
+    // map
+    u16 start;  // make start u32?
+    u16 count;
+    u16 capacity;
+    // list
+    u16 next;
+    u16 prev;
+}
+static_assert(10, sizeof(BlockWrites));
+
+public type Map struct @(opaque) {
+    SlotWrite* map;
+    BlockWrites* blocks;
+    u32 num_blocks;
+    u32 max_elems;   // only used for dump
+    Arena[NumArenas] arenas;
+}
+static_assert(168, sizeof(Map));
+
+// Note: map size must be a multiple of largest arena size (so 256)
+public fn Map* create(u32 max_elems, u16 num_blocks) {
+    Map* m = stdlib.calloc(1, sizeof(Map));
+    m.map = stdlib.malloc(max_elems * sizeof(SlotWrite));
+    m.blocks = stdlib.malloc(num_blocks * sizeof(BlockWrites));
+    m.num_blocks = num_blocks;
+    m.max_elems = max_elems;
+
+    m.clear();
+    return m;
+}
+
+public fn void Map.free(Map* m) {
+    stdlib.free(m.map);
+    stdlib.free(m.blocks);
+    stdlib.free(m);
+}
+
+public fn void Map.clear(Map* m) {
+    string.memset(m.arenas, 0, sizeof(m.arenas));
+    string.memset(m.blocks, 0, m.num_blocks * sizeof(BlockWrites));
+
+    // initialize arenas
+    for (u32 i=0; i<NumArenas; i++) {
+        Arena* a = &m.arenas[i];
+        a.first_var = NULL;
+        a.last_var = NULL;
+    }
+
+    // give everything to highest arena (map size must be multiple of 256)
+    m.arenas[NumArenas-1].max_elems = m.max_elems;
+    m.arenas[NumArenas-1].free_slots = (u16)m.max_elems / Caps[NumArenas-1];
+
+    // all BlockWritess start in first arena
+    for (u16 i=0; i<m.num_blocks; i++) m.addBlockWritesToArenaTail(&m.arenas[0], i);
+}
+
+fn u32 findArena(u16 capacity) {
+    for (u32 i=0; i<NumArenas; i++) {
+        if (Caps[i] == capacity) return i;
+    }
+    assert(0); // if variable outgrows largest arena
+    return 0;
+}
+
+fn u16 Map.removeBlockWritesFromArena(Map* m, Arena* a, u16 blk_id) {
+    // Replace hole of removed area with last element. Options: (X=removed, L=last, _=other)
+    // [X] or [_X], no hole, just remove
+    // [XL] or [_XL], hole, but no need to fix linked-list after removal
+    // [X_L] or [_X_L], hole and need to fix linked-list after removal
+
+    // Many situations:
+    BlockWrites* r = &m.blocks[blk_id];
+
+    // [X] or [_X], just remove X, no holes, or dont care for arena 0
+    if (blk_id == a.last_var) {
+        if (r.prev == NULL) {
+            a.first_var = NULL;
+        } else {
+            BlockWrites* prev = &m.blocks[r.prev];
+            prev.next = NULL;
+        }
+        a.last_var = r.prev;
+        // no hole will appear
+        return NULL;
+    }
+
+    // remove variable
+    if (r.prev == NULL) {
+        if (blk_id != a.first_var) {
+            m.dump(false);
+        }
+
+        assert(blk_id == a.first_var);
+        a.first_var = r.next;
+    } else {
+        BlockWrites* prev = &m.blocks[r.prev];
+        prev.next = r.next;
+    }
+    BlockWrites* next = &m.blocks[r.next];
+    next.prev = r.prev;
+
+
+    u16 last_idx = a.last_var;
+
+    // [XL]  or  [_XL], no need for fixup: (X=removed, L=last)
+    if (r.next == a.last_var) return last_idx;
+
+    // [X_L]  or [_X_L], need to move last to X to plug hole
+
+    // remove L
+    BlockWrites* last = &m.blocks[last_idx];
+    BlockWrites* prev = &m.blocks[last.prev];
+    prev.next = NULL;
+    a.last_var = last.prev;
+
+    // re-insert L at X
+    // [X_] or [_X_]
+    last.next = r.next;
+    last.prev = r.prev;
+    if (r.prev == NULL) {    // [X_L]
+        a.first_var = last_idx;
+    } else {    // [_X_]
+        prev = &m.blocks[r.prev];
+        prev.next = last_idx;
+    }
+    next.prev = last_idx;
+
+    return last_idx;
+}
+
+fn void Map.addBlockWritesToArenaHead(Map* m, Arena* a, u16 blk_id) {
+    BlockWrites* r = &m.blocks[blk_id];
+    r.prev = NULL;
+    r.next = a.first_var;
+
+    if (a.first_var == NULL) {
+        a.last_var = blk_id;
+    } else {
+        BlockWrites* head = &m.blocks[a.first_var];
+        head.prev = blk_id;
+    }
+    a.first_var = blk_id;
+}
+
+fn void Map.addBlockWritesToArenaTail(Map* m, Arena* a, u16 blk_id) {
+    BlockWrites* r = &m.blocks[blk_id];
+    r.prev = a.last_var;
+    r.next = NULL;
+
+    if (a.first_var == NULL) {
+        a.first_var = blk_id;
+    } else {
+        BlockWrites* tail = &m.blocks[a.last_var];
+        tail.next = blk_id;
+    }
+    a.last_var = blk_id;
+}
+
+public fn void Map.add(Map* m, u16 blk_id, u16 slot, ir.Ref ref) {
+    BlockWrites* r = &m.blocks[blk_id];
+
+    if (r.count < r.capacity) {
+        //printf("  add to current\n");
+        u32 idx = r.start + r.count;
+        m.map[idx].slot = slot;
+        m.map[idx].ref = ref;
+        r.count++;
+        return;
+    }
+
+    // move BlockWrites to higher arena
+    u32 arena_idx = findArena(r.capacity);
+#if 0
+    if (arena_idx == NumArenas-1) m.dump(true);
+#endif
+    assert(arena_idx != NumArenas-1);
+    Arena* a1 = &m.arenas[arena_idx];
+    Arena* a2 = &m.arenas[arena_idx+1];
+
+    //printf("  move Arena %d -> %d\n", arena_idx, arena_idx+1);
+    if (arena_idx != 0 && a1.free_slots >= 3 && a1.free_slots >= a2.free_slots*2) {    // keep at least 2 free slots
+        u16 cap = Caps[arena_idx+1];
+
+        //printf("  shrink current arena (%d), give to next\n", arena_idx);
+        // move to before next-arena, resizing both
+        u16 last_idx = m.removeBlockWritesFromArena(a1, blk_id);
+        m.addBlockWritesToArenaHead(a2, blk_id);
+
+        // move 2 slots to next arena (1 slot in new)
+        a1.max_elems -= cap;
+        a1.free_slots -= 1; // -2 +1
+        a2.map_start -= cap;
+        a2.max_elems += cap;
+        // a2.free_slots does not change
+
+        u32 dest_idx = a2.map_start;
+        u16 src_idx = r.start;
+        // copy BlockWrites's data to new head of a2
+        //printf("  copy data %d -> %d\n", src_idx, dest_idx);
+        string.memcpy(&m.map[dest_idx], &m.map[src_idx], r.count*sizeof(SlotWrite));
+
+        assert(dest_idx < 65536);
+        r.start = (u16)dest_idx;
+        r.capacity = (u8)cap;
+
+        if (last_idx != NULL) {
+            // fix hole in map by moving data of last BlockWrites in arena
+            BlockWrites* last = &m.blocks[last_idx];
+            //printf("  PLUG HOLE %d -> %d\n", last.start, src_idx);
+            string.memcpy(&m.map[src_idx], &m.map[last.start], last.count*sizeof(SlotWrite));
+            last.start = src_idx;
+        }
+    } else {    // just move to next arena
+        //printf("  move to right\n");
+        // check if next variable has free space, resize if needed (recursively)
+        if (!a2.free_slots) {
+            a2.max_elems += m.shiftArenaRight(arena_idx+2);
+            a2.free_slots = 2;
+        }
+        u16 last_idx = m.removeBlockWritesFromArena(a1, blk_id);
+        m.addBlockWritesToArenaTail(a2, blk_id);
+        u32 dest_idx = a2.map_start + a2.max_elems - a2.free_slots * Caps[arena_idx+1];
+        u16 src_idx = r.start;
+        //printf("  DEST %d\n", dest_idx);
+        if (r.count) { // was in arena[0], no need to plug holes
+            // copy variable's data to end end of a2
+            string.memcpy(&m.map[dest_idx], &m.map[src_idx], r.count*sizeof(SlotWrite));
+            if (last_idx != NULL) {
+                // fix hole in map by moving data of last BlockWrites in arena
+                BlockWrites* last = &m.blocks[last_idx];
+                //printf("  PLUG HOLE %d -> %d\n", last.start, src_idx);
+                string.memcpy(&m.map[src_idx], &m.map[last.start], last.count*sizeof(SlotWrite));
+                last.start = src_idx;
+            }
+        }
+        r.capacity = Caps[arena_idx+1];
+        r.start = (u16)dest_idx;
+        a1.free_slots++;
+        a2.free_slots--;
+    }
+    SlotWrite* wr = &m.map[r.start+r.count];
+    wr.slot = slot;
+    wr.ref = ref;
+    r.count++;
+}
+
+public type Iter struct {
+    u32 count;
+    SlotWrite* ids;     // allow changes
+}
+
+public fn Iter Map.getList(const Map* m, u16 blk_id) {
+    const BlockWrites* r = &m.blocks[blk_id];
+    return { .count = r.count, .ids = &m.map[r.start] }
+}
+
+fn u16 Map.shiftArenaRight(Map* m, u32 arena_idx) {
+    u16 cap = Caps[arena_idx];
+    //printf("  SHIFT ARENA %d  cap %d\n", arena_idx, cap);
+    Arena* a = &m.arenas[arena_idx];
+
+    if (!a.free_slots) {
+        if (arena_idx == NumArenas-1) m.dump(true);
+        // TODO resize dynamically?
+        assert(arena_idx != NumArenas-1);   // cannot shift after last one
+        a.max_elems += m.shiftArenaRight(arena_idx+1);
+        a.free_slots = 2;
+    }
+
+    if (a.first_var == NULL) {    // empty
+        a.map_start += cap;
+        a.max_elems -= cap;
+        a.free_slots--;
+        //printf("  start %d, size %d\n", a.map_start, a.max_elems);
+        return cap;
+    }
+
+    u16 blk_id = a.first_var;
+    //printf("  MOVE %d\n", blk_id);
+
+    BlockWrites* r = &m.blocks[blk_id];
+    u16 src_idx = r.start;
+    u32 dest_idx = a.map_start + a.max_elems - a.free_slots * cap;
+    //printf("  DEST %d <- %d\n", dest_idx, src_idx);
+    // move data
+    string.memcpy(&m.map[dest_idx], &m.map[src_idx], r.count*sizeof(SlotWrite));
+    r.start = (u16)dest_idx;
+
+    if (a.first_var != a.last_var) {  // several members, move variable to tail
+        BlockWrites* head = &m.blocks[r.next];
+        head.prev = NULL;
+
+        BlockWrites* tail = &m.blocks[a.last_var];
+        tail.next = blk_id;
+
+        r.prev = a.last_var;
+        a.first_var = r.next;
+        a.last_var = blk_id;
+        r.next = NULL;
+    }
+
+    a.map_start += cap;
+    a.max_elems -= cap;
+    a.free_slots--;
+    return cap;
+}
+
+fn void print_idx(u16 idx) {
+    if (idx == NULL) printf("   -");
+    else printf("%4d", idx);
+}
+
+public fn void Map.dump(const Map* m, bool verbose) @(unused) {
+    if (verbose) {
+        u32 mem_blocks = m.num_blocks * sizeof(BlockWrites);
+        u32 mem_map = m.max_elems * sizeof(u16);
+        u32 mem_usage = mem_blocks + mem_map;
+        printf("Map: (%d users, map %d, %d/%d Kb)\n", m.num_blocks, m.max_elems, (mem_blocks + 512) / 1024, (mem_usage + 512) / 1024);
+        printf("Arenas:\n");
+        u32 total = 0;
+        for (u32 i=0; i<NumArenas; i++) {
+            const Arena* a = &m.arenas[i];
+            u32 count = 0;
+            u16 idx = a.first_var;
+            while (idx != NULL) {
+                const BlockWrites* r = &m.blocks[idx];
+                idx = r.next;
+                count++;
+            }
+            total += count;
+            printf("  [%d] size %4d  blocks ", i, Caps[i]);
+            print_idx(a.first_var);
+            printf(",");
+            print_idx(a.last_var);
+            printf("  (%4d)  map %5d(%4d)  free: ", count, a.map_start, a.max_elems);
+            if (i == 0) printf("-");
+            else printf("%d", a.free_slots);
+            printf("\n");
+        }
+        if (total != m.num_blocks) {
+            printf("WARNING: invalid num_blocks, expect %d, got %d\n", m.num_blocks, total);
+        }
+
+        printf("BlockWritess (%d)\n", m.num_blocks);
+        for (u32 i=0; i<m.num_blocks; i++) {
+            const BlockWrites* r = &m.blocks[i];
+            printf("  [%4d] %4d  %4d/%4d  prev ", i, r.start, r.count, r.capacity);
+            print_idx(r.prev);
+            printf("  next ");
+            print_idx(r.next);
+            printf("\n");
+        }
+    }
+
+    for (u32 i=0; i<m.num_blocks; i++) {
+        Iter iter = m.getList((u16)i);
+        if (iter.count == 0) continue;
+        printf(" B%2d ", i);
+        for (u32 j = 0; j < iter.count; j++) {
+            const SlotWrite* w = &iter.ids[j];
+            printf("  s%d:%s%d", w.slot, w.ref.getKindName(), w.ref.value);
+        }
+        printf("\n");
+    }
+}
+

@@ -18,7 +18,21 @@ module ir_generator;
 import ast local;
 import bit_utils;
 import ir local;
+import ir_context;
 import ctv_analyser local;
+
+fn void Generator.emitAssign(Generator* gen, ir.Ref* result, const Expr* lhs, const Expr* rhs) {
+    // special case is needed because setting Bitfield is not a simple store
+    if (lhs.isBitfield()) {
+        gen.emitBitfieldAssign(result, lhs, rhs);
+    } else {
+        gen.emitExpr(result, rhs);
+        ir.Ref dest;
+        gen.emitExpr(&dest, lhs);
+        // TODO get type (from either side, should be same by now)
+        gen.ctx.addStoreInstr(ir.Type.I32, *result, dest);
+    }
+}
 
 fn void Generator.emitBinaryOperator(Generator* gen, ir.Ref* result, const Expr* e) {
     const BinaryOperator* b = cast<BinaryOperator*>(e);
@@ -52,19 +66,7 @@ fn void Generator.emitBinaryOperator(Generator* gen, ir.Ref* result, const Expr*
         gen.emitLogicalOr(result, e);
         return;
     case Assign:
-        // special case is needed because setting Bitfield is not a simple store
-        Expr* lhs = b.getLHS();
-        if (lhs.isBitfield()) {
-            gen.emitBitfieldAssign(result, lhs, b.getRHS());
-            return;
-        }
-        ir.Ref src;
-        gen.emitExpr(&src, b.getRHS());
-        ir.Ref dest;
-        gen.emitExpr(&dest, lhs);
-        // TODO get type (from either side, should be same by now)
-        gen.ctx.addStoreInstr(ir.Type.I32, src, dest);
-        *result = src;
+        gen.emitAssign(result, b.getLHS(), b.getRHS());
         return;
     case MulAssign:
     case DivAssign:
@@ -145,7 +147,7 @@ fn void Generator.emitBinaryOperator(Generator* gen, ir.Ref* result, const Expr*
 // this is the outside case, should return a result
 fn void Generator.emitLogicalAnd(Generator* gen, ir.Ref* result, const Expr* e) {
     const BinaryOperator* b = cast<BinaryOperator*>(e);
-    ir.Context* c = gen.ctx;
+    ir_context.Context* c = gen.ctx;
 
 /*
     emit:
@@ -161,7 +163,6 @@ fn void Generator.emitLogicalAnd(Generator* gen, ir.Ref* result, const Expr* e) 
         %11 = phi [start: 0, and_true: %4]
 */
 
-    // TODO check for CTV
     ir.Ref left;
     gen.emitExpr(&left, b.getLHS());
 
@@ -180,11 +181,13 @@ fn void Generator.emitLogicalAnd(Generator* gen, ir.Ref* result, const Expr* e) 
     c.endBlock();
     c.startBlock(true_blk);
     ir.Ref right;
-    // TODO check for CTV
     gen.emitExpr(&right, b.getRHS());
 
     ir.Ref cond2 = c.addBinaryInstr(InstrKind.CmpNe, right, zero);
     c.addJmpInstr(join_blk);
+
+    // TODO update true_blk with c.getCurBlock()?
+    assert(c.getCurBlock() == true_blk);
 
     c.endBlock();
     c.startBlock(join_blk);
@@ -194,7 +197,7 @@ fn void Generator.emitLogicalAnd(Generator* gen, ir.Ref* result, const Expr* e) 
 
 fn void Generator.emitLogicalOr(Generator* gen, ir.Ref* result, const Expr* e) {
     const BinaryOperator* b = cast<BinaryOperator*>(e);
-    ir.Context* c = gen.ctx;
+    ir_context.Context* c = gen.ctx;
 
 /*
     emit:
@@ -234,6 +237,9 @@ fn void Generator.emitLogicalOr(Generator* gen, ir.Ref* result, const Expr* e) {
 
     ir.Ref cond2 = gen.ctx.addBinaryInstr(InstrKind.CmpNe, right, zero);
     c.addJmpInstr(join_blk);
+
+    // generating RHS might have added multiple new blocks, take last as phi-source
+    false_blk = c.getCurBlock();
 
     c.endBlock();
     c.startBlock(join_blk);
@@ -333,7 +339,7 @@ fn void Generator.emitOpAssign(Generator* gen, ir.Ref* result, const Expr* e) {
 }
 
 fn void Generator.emitBitfieldAssign(Generator* gen, ir.Ref* result, const Expr* lhs, const Expr* rhs) {
-    ir.Context* c = gen.ctx;
+    ir_context.Context* c = gen.ctx;
 
     //assert(lhs.isMember());
     const MemberExpr* m = (MemberExpr*)lhs;

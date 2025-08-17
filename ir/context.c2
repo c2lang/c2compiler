@@ -13,12 +13,17 @@
  * limitations under the License.
  */
 
-module ir;
+module ir_context;
 
 import bit_array;
 import index_list;
-import instr_inserter;
-import lookup_table;
+import ir_copy_list local;
+import ir_inserter;
+import ir local;
+import ir_lookup_table;
+import ir_rev_list local;
+import ir_slot_collector local;
+import ir_slot_values local;
 import string_pool;
 import usage_counter;
 
@@ -28,23 +33,31 @@ import stdio;
 #endif
 
 type Tools struct {
-    lookup_table.Table conversion;
+    ir_lookup_table.Table conversion;
+    SlotValues slot_values;
     SlotCollector collector;
     RevList revlist;
-    instr_inserter.InstrInserter inserter;
+    ir_inserter.Inserter inserter;
     bit_array.BitArray active_blocks;
     CopyList copies;
     usage_counter.Counter usage;
-}
-static_assert(728, sizeof(Tools));
 
-fn void Tools.init(Tools* t) {
+    // for printing, print_func(arg1, arg2, FunctionInfo*, const char* label)
+    const void* arg1;
+    const void* arg2;
+}
+static_assert(792, sizeof(Tools));
+
+fn void Tools.init(Tools* t, const void* arg1) {
     t.conversion.init(64);
+    t.slot_values.create();
     t.collector.create();
     t.revlist.create(256);
     t.inserter.create();
     t.copies.init(1024);
     t.usage.init(1024);
+    t.arg1 = arg1;
+    t.arg2 = nil;
 }
 
 fn void Tools.free(Tools* t) {
@@ -53,6 +66,7 @@ fn void Tools.free(Tools* t) {
     t.inserter.free();
     t.revlist.free();
     t.collector.free();
+    t.slot_values.free();
     t.conversion.free();
 }
 
@@ -105,7 +119,7 @@ public fn Context* create(bool print) {
 
     c.b.init();
 
-    c.tools.init();
+    c.tools.init(c);
     c.print_all = print;
     return c;
 }
@@ -299,7 +313,7 @@ public fn bool Context.isBlockTerminated(const Context* c) {
 public fn void Context.startBlock(Context* c, BlockId id) {
 #if DebugIr
     Block* b = c.b.tmp_info.blocks.get(id);
-    stdio.printf(" startBlock(%s.%d) cur %d\n", b.getKind().str(), id, c.b.cur_block);
+    stdio.printf(" startBlock(%s.%d) cur %d\n", b.getKindName(), id, c.b.cur_block);
 #endif
     assert(!c.b.in_block);
     c.b.in_block = true;
@@ -346,8 +360,8 @@ public fn void Context.addJmpIfInstr(Context* c, Ref cond, BlockId dest1, BlockI
     Block* b = c.b.tmp_info.blocks.get(c.b.cur_block);
 #if DebugIr
     Block* d1 = c.b.tmp_info.blocks.get(dest1);
-    Block* d2 = c.b.tmp_info.blocks.get(dest1);
-    stdio.printf("  cond jmp_if %s.%d, %s.%d\n", d1.getKindName(), dest1, d2.getKindName(), dest2);
+    Block* d2 = c.b.tmp_info.blocks.get(dest2);
+    stdio.printf("  jmp_if %s.%d, %s.%d\n", d1.getKindName(), dest1, d2.getKindName(), dest2);
 #endif
     b.setDest(dest1, dest2);
     Ref ref.init(RefKind.JmpDest, 0);
@@ -470,7 +484,7 @@ public fn Ref Context.addBinaryInstr(Context* c, InstrKind k, Ref left, Ref righ
 
 public fn Ref Context.addCallInstr(Context* c, Ref name, Ref args, bool has_result, bool noreturn) {
 #if DebugIr
-    stdio.printf("  call %s\n", c.pool.idx2str(name.value));
+    stdio.printf("  call %s%d\n", name.getKindName(), name.value);
 #endif
     Ref out.init(RefKind.Temp, c.b.tmp_info.instructions.getCount());
 
@@ -591,6 +605,11 @@ public fn CaseId Context.addSwitchInstr(Context* c, Ref cond, BlockId join_blk, 
     return case_id;
 }
 
+fn void print_func(const void* arg1, const void* arg2, const FunctionInfo* fi, const char* label) @(unused) {
+    const Context* c = arg1;
+    c.print_function(arg2, fi, label);
+}
+
 public fn void Context.setCase(Context* c, CaseId case_id, u32 value, BlockId blk_id) {
 #if DebugIr
     stdio.printf("  case (%d) value %d blk %d\n", case_id, value, blk_id);
@@ -602,26 +621,27 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     // prune unused blocks and flatten blocks with only a jmp instruction
     Tools* t = &c.tools;
     Symbol* symbol = c.symbols.get(id);
+    FunctionInfo* fi = c.b.tmp_info;
 
-    u32 num_blocks = c.b.tmp_info.blocks.getCount();
-    c.b.tmp_info.num_slots = cast<u16>(c.b.slot_idx);
+    t.arg2 = symbol;
+
+    u32 num_blocks = fi.blocks.getCount();
+    fi.num_slots = cast<u16>(c.b.slot_idx);
 
     const char* name = c.pool.idx2str(symbol.name);
 
-    //dump_function(c.b.tmp_info, name);
-    if (c.print_all) c.print_function(symbol, c.b.tmp_info, "after generation");
-
+    //dump_function(fi, name);
+    if (c.print_all) c.print_function(symbol, fi, "after generation");
     // prune unused and empty blocks, possible convert jmp_if to jmp
-    checkDest(c.b.tmp_info, 0);
+    checkDest(fi, 0);
 
-    if (c.print_all) c.print_function(symbol, c.b.tmp_info, "after check dest");
+    if (c.print_all) c.print_function(symbol, fi, "after check dest");
 
     // TODO use Builder 2nd BlockList here (pass as well)
-    c.reorder_blocks(c.b.tmp_info, &c.b.block_order);
+    t.reorder_blocks(fi, &c.b.block_order);
     c.b.block_order.clear();
 
-    FunctionInfo* fi = c.b.tmp_info;
-    symbol.f.info = c.b.tmp_info;
+    symbol.f.info = fi;
     c.b.tmp_info = nil;
 
     //dump_function(fi, name);
@@ -629,19 +649,26 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     //c.generate_graphviz(fi, name);
 
     // TODO can be multi-threaded after this point (ready for inlining)
+    // MULTI-THREAD: need to pre-alloc names for Slots (S0, S1, etc), since pool access needs to be read-only
 
     // NOTE: cannot have outstanding inserts which converting switches!
-    bool changed = c.convert_switches(fi);
+    bool changed = t.convert_switches(fi);
     if (changed && c.print_all) c.print_function(symbol, fi, "after convert switch");
+    //c.print_function(symbol, fi, "BEFORE collector fill");
 
+    //c.print_function(symbol, fi, "BEFORE create SSA");
     c.create_ssa(symbol, fi, name);
+    //c.print_function(symbol, fi, "AFTER create SSA");
+    //t.inserter.dump();
 
-    if (fi.blocks.getCount() > 1 && c.print_all) c.print_function(symbol, fi, "after create SSA");
+    //if (fi.blocks.getCount() > 1 && c.print_all) c.print_function(symbol, fi, "after create SSA");
 
     if (t.inserter.needsFixup()) {
-        c.tools.fixup_function(fi);
-        if (c.print_all) c.print_function(symbol, fi, "after fixup");
+        t.fixup_function(fi);
+        //if (c.print_all) c.print_function(symbol, fi, "after fixup");
     }
+    if (fi.blocks.getCount() > 1 && c.print_all) c.print_function(symbol, fi, "after create SSA");
+    //c.print_function(symbol, fi, "AFTER fixup");
 
     t.eliminateCopies(fi);
     //dump_function(fi, name);
@@ -659,10 +686,12 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
 
     //c.print_function(symbol, fi, "BEFORE register allocation");
     t.allocateRegisters(fi);
-    //if (c.print_all) c.print_function(symbol, fi, "after register allocation");
+    //c.print_function(symbol, fi, "AFTER register allocation");
+    //dump_function(fi, name);
 
-    if (t.inserter.needsFixup()) c.tools.fixup_function(fi);
+    if (t.inserter.needsFixup()) t.fixup_function(fi);
     if (c.print_all) c.print_function(symbol, fi, "after register allocation + phi-removal");
+    //c.print_function(symbol, fi, "AFTER register allocation");
     //c.print_function(symbol, fi, "AFTER register allocation + fixup");
 
     // generate Instruction
@@ -700,8 +729,15 @@ fn BlockId checkDest(FunctionInfo* fi, BlockId id) {
         for (u32 i=0; i<num_cases; i++) {
             Case* cs = fi.cases.get(case_id+i);
             BlockId new_blk = checkDest(fi, cs.block);
-            if (cs.block != new_blk) cs.block = new_blk;
+            cs.block = new_blk;
         }
+
+        // update join blk
+        u32 instr_idx = b.instr.start + b.instr.count - 1;
+        Instr* switch_instr = fi.instructions.get(instr_idx);
+        assert(switch_instr.isSwitch());
+        Ref* join_ref = &switch_instr.args[1];
+        join_ref.value = checkDest(fi, join_ref.value);
         return id;
     }
 
@@ -742,24 +778,72 @@ fn BlockId checkDest(FunctionInfo* fi, BlockId id) {
     return id;
 }
 
+
+// Can only be used after switch-instructions have been converted
+fn void Tools.markUsedBlocks(Tools* t, FunctionInfo* fi) {
+    u32 num_blocks = fi.blocks.getCount();
+    Block* blocks = fi.blocks.get(0);
+
+    for (u32 i=0; i<num_blocks; i++) {
+        blocks[i].checked = false;
+        blocks[i].used = blocks[i].phi_source;
+    }
+
+    BlockId* blocks2 = stdlib.malloc(num_blocks * sizeof(BlockId));
+    //rpo.num_blocks = num_blocks;
+
+    blocks2[0] = 0; // add start block to todo-list
+    blocks[0].checked = true;
+    blocks[0].used = true;
+    u32 head = 1;   // insert point
+    u32 tail = 0; // check point
+
+    //printf("find unused: (%d blocks)\n", num_blocks);
+    while (head != tail) {
+        BlockId blk_id = blocks2[tail];
+        //printf("  %d/%d  B%d\n", tail, head, blk_id);
+
+        Block* b = &blocks[blk_id];
+
+        for (u32 d = 0; d < 2; d++) {
+            BlockId dest_id = b.dests[d];
+            assert(dest_id < num_blocks);
+            if (!dest_id) break;
+
+            Block* dest = &blocks[dest_id];
+            if (!dest.checked) {
+                //printf("   add %d\n", dest_id);
+                blocks2[head++] = dest_id;
+                dest.checked = true;
+                dest.used = true;
+            }
+        }
+        tail++;
+    }
+#if 0
+    printf("USED: \n");
+    for (u32 i = 0; i < num_blocks; i++) printf("  B%d  used %d\n", i, blocks[i].used);
+#endif
+    stdlib.free(blocks2);
+
+}
+
 // NOTE: also removes unused blocks, clears instructions in removed blocks
-fn void Context.reorder_blocks(Context* c, FunctionInfo* fi, const index_list.List* block_order) {
-    Tools* t = &c.tools;
+fn void Tools.reorder_blocks(Tools* t, FunctionInfo* fi, const index_list.List* block_order) {
     const u32* order = block_order.getFrom(0);
-    //printf("Order: [%d] ", block_order.getCount());
 
     u32 num_blocks = block_order.getCount();
     assert(num_blocks == fi.blocks.getCount());
-    BlockList list2.init(fi.blocks.getCount());
+    BlockList list2.init(num_blocks);
     Block* blocks1 = fi.blocks.get(0);
 
-    u32 blk_count = 0;
     t.conversion.clear(num_blocks);
+
+    u32 blk_count = 0;
     for (u32 i=0; i<num_blocks; i++) {
         BlockId blk_id = order[i];
         const Block* old = &blocks1[blk_id];
-        if (!old.used) {
-            // clear instructions
+        if (!old.used) { // clear instructions of unused blocks
             Instr* instrs = fi.instructions.get(old.instr.start);
             for (u32 j=0; j<old.instr.count; j++) instrs[j].clear();
             continue;
@@ -781,6 +865,7 @@ fn void Context.reorder_blocks(Context* c, FunctionInfo* fi, const index_list.Li
                 Case* cs = fi.cases.get(case_id+j);
                 cs.block = t.conversion.get(cs.block);
             }
+            //u32 join_blk = i.args[1].value;
             // update block id in switch instr.args[1], is last instruction (if not comment)
             u32 instr_idx = b.instr.start + b.instr.count - 1;
             Instr* switch_instr = fi.instructions.get(instr_idx);

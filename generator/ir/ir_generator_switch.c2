@@ -18,9 +18,10 @@ module ir_generator;
 import ast local;
 import ctv_analyser;
 import ir local;
+import ir_context;
 
 fn void Generator.emitSwitchStmt(Generator* gen, const Stmt* s) {
-    ir.Context* c = gen.ctx;
+    ir_context.Context* c = gen.ctx;
     SwitchStmt* sw = cast<SwitchStmt*>(s);
 
     Expr* cond = sw.getCond();
@@ -75,11 +76,16 @@ fn bool Generator.emitSwitchCase(Generator* gen,
                                  BlockId join_blk,
                                  CaseId caseId,
                                  bool prev_fallthrough) {
-    ir.Context* c = gen.ctx;
+    ir_context.Context* c = gen.ctx;
 
     Expr* case_cond = sc.getCond(0);
     Value v = { }
     if (case_cond) { // nil for default
+        // TODO handle ranges, for now only take first member
+        if (case_cond.isRange()) {
+            const RangeExpr* r = (RangeExpr*)case_cond;
+            case_cond = r.getLHS();
+        }
         v = ctv_analyser.get_value(case_cond);
     }
     // TEMP always take u32 for now

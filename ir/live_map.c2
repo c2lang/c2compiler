@@ -13,22 +13,17 @@
  * limitations under the License.
  */
 
-module ir_interference_graph;
+module ir_live_map;
 
 import stdlib;
 import string;
 import stdio local;
 
-const u32 NumArenas = 11;
+const u32 NumArenas = 9;
 // Note: caps need to be double of previous (except first two)
-const u16[NumArenas] Caps   = { 0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 }
+const u16[NumArenas] Caps   = { 0, 2, 4, 8, 16, 32, 64, 128, 256, }
 
 const u16 NULL = u16.max;
-
-const u8 VAR_UNUSED = 255;
-const u8 VAR_TODO   = 254;
-const u8 VAR_QUEUED = 253;
-
 
 type Arena struct {
     u16 first_var;   // NULL if none
@@ -51,30 +46,22 @@ type Variable struct {
 }
 static_assert(10, sizeof(Variable));
 
-public type InterferenceGraph struct @(opaque) {
+public type Map struct @(opaque) {
     u16* map;
     Variable* variables;
     u32 num_variables;
     u32 max_elems;   // only used for dump
     Arena[NumArenas] arenas;
-    // used during allocation
-    u8* register_map; // num_variables, 255 means not used, 254 means not done, 253 means enqueued
-    u16* queue;  // num_variables
-    u32 queue_count;
-    u32 queue_head;
 }
-static_assert(224, sizeof(InterferenceGraph));
+static_assert(168, sizeof(Map));
 
 // Note: map size must be a multiple of largest arena size (so 256)
-public fn InterferenceGraph* create(u32 max_elems, u16 num_variables) {
-    InterferenceGraph* g = stdlib.calloc(1, sizeof(InterferenceGraph));
+public fn Map* create(u32 max_elems, u16 num_variables) {
+    Map* g = stdlib.calloc(1, sizeof(Map));
     g.map = stdlib.malloc(max_elems * sizeof(u16));
     g.variables = stdlib.calloc(num_variables, sizeof(Variable));
     g.num_variables = num_variables;
     g.max_elems = max_elems;
-    g.register_map = stdlib.malloc(num_variables *sizeof(u16));
-    string.memset(g.register_map, VAR_UNUSED, num_variables);
-    g.queue = stdlib.malloc(num_variables * sizeof(u16));
 
     // initialize arenas
     for (u32 i=0; i<NumArenas; i++) {
@@ -93,9 +80,7 @@ public fn InterferenceGraph* create(u32 max_elems, u16 num_variables) {
     return g;
 }
 
-public fn void InterferenceGraph.free(InterferenceGraph* g) {
-    stdlib.free(g.queue);
-    stdlib.free(g.register_map);
+public fn void Map.free(Map* g) {
     stdlib.free(g.map);
     stdlib.free(g.variables);
     stdlib.free(g);
@@ -109,7 +94,7 @@ fn u32 findArena(u16 capacity) {
     return 0;
 }
 
-fn u16 InterferenceGraph.removeVariableFromArena(InterferenceGraph* g, Arena* a, u16 var_idx) {
+fn u16 Map.removeVariableFromArena(Map* g, Arena* a, u16 var_idx) {
     // Replace hole of removed area with last element. Options: (X=removed, L=last, _=other)
     // [X] or [_X], no hole, just remove
     // [XL] or [_XL], hole, but no need to fix linked-list after removal
@@ -132,8 +117,11 @@ fn u16 InterferenceGraph.removeVariableFromArena(InterferenceGraph* g, Arena* a,
     }
 
     // remove variable
-    if (r.prev == NULL) {   // it should be the first entry
-        //if (var_idx != a.first_var) g.dump(true);
+    if (r.prev == NULL) {
+        if (var_idx != a.first_var) {
+            g.dump(true);
+        }
+
         assert(var_idx == a.first_var);
         a.first_var = r.next;
     } else {
@@ -172,7 +160,7 @@ fn u16 InterferenceGraph.removeVariableFromArena(InterferenceGraph* g, Arena* a,
     return last_idx;
 }
 
-fn void InterferenceGraph.addVariableToArenaHead(InterferenceGraph* g, Arena* a, u16 var_idx) {
+fn void Map.addVariableToArenaHead(Map* g, Arena* a, u16 var_idx) {
     Variable* r = &g.variables[var_idx];
     r.prev = NULL;
     r.next = a.first_var;
@@ -186,7 +174,7 @@ fn void InterferenceGraph.addVariableToArenaHead(InterferenceGraph* g, Arena* a,
     a.first_var = var_idx;
 }
 
-fn void InterferenceGraph.addVariableToArenaTail(InterferenceGraph* g, Arena* a, u16 var_idx) {
+fn void Map.addVariableToArenaTail(Map* g, Arena* a, u16 var_idx) {
     Variable* r = &g.variables[var_idx];
     r.prev = a.last_var;
     r.next = NULL;
@@ -200,11 +188,7 @@ fn void InterferenceGraph.addVariableToArenaTail(InterferenceGraph* g, Arena* a,
     a.last_var = var_idx;
 }
 
-public fn void InterferenceGraph.enable(InterferenceGraph* g, u16 var_idx) {
-    g.register_map[var_idx] = VAR_TODO;
-}
-
-public fn void InterferenceGraph.add(InterferenceGraph* g, u16 var1, u16 var2) {
+public fn void Map.addFiltered(Map* g, u16 var1, u16 var2) {
     // check for duplicates
     const Variable* r = &g.variables[var1];
     u32 idx = r.start + r.count;
@@ -215,15 +199,12 @@ public fn void InterferenceGraph.add(InterferenceGraph* g, u16 var1, u16 var2) {
         }
     }
     //printf("ADD %d %d\n", var1, var2);
-    // adds interference both ways, var1->var2 and var2->var1
-    g.addInternal(var1, var2);
-    g.addInternal(var2, var1);
+    g.add(var1, var2);
 }
 
-fn void InterferenceGraph.addInternal(InterferenceGraph* g, u16 var1, u16 var2) {
+public fn void Map.add(Map* g, u16 var1, u16 var2) {
     Variable* r = &g.variables[var1];
 
-    //printf("ADD %d %d  (%d/%d)\n", var1, var2, r.count, r.capacity);
     if (r.count < r.capacity) {
         //printf("  add to current\n");
         u32 idx = r.start + r.count;
@@ -235,12 +216,14 @@ fn void InterferenceGraph.addInternal(InterferenceGraph* g, u16 var1, u16 var2) 
 
     // move Variable to higher arena
     u32 arena_idx = findArena(r.capacity);
-    //if (arena_idx == NumArenas-1) g.dump(true);
+#if 0
+    if (arena_idx == NumArenas-1) g.dump(true);
+#endif
     assert(arena_idx != NumArenas-1);
     Arena* a1 = &g.arenas[arena_idx];
     Arena* a2 = &g.arenas[arena_idx+1];
 
-    //printf("  move Arena %d -> %d (free %d %d)\n", arena_idx, arena_idx+1, a1.free_slots, a2.free_slots);
+    //printf("  move Arena %d -> %d\n", arena_idx, arena_idx+1);
     if (arena_idx != 0 && a1.free_slots >= 3 && a1.free_slots >= a2.free_slots*2) {    // keep at least 2 free slots
         u16 cap = Caps[arena_idx+1];
 
@@ -264,7 +247,7 @@ fn void InterferenceGraph.addInternal(InterferenceGraph* g, u16 var1, u16 var2) 
 
         assert(dest_idx < 65536);
         r.start = (u16)dest_idx;
-        r.capacity = (u16)cap;
+        r.capacity = (u8)cap;
 
         if (last_idx != NULL) {
             // fix hole in map by moving data of last Variable in arena
@@ -310,6 +293,13 @@ public type Iter struct {
     const u16* ids;
 }
 
+public fn bool Iter.contains(const Iter* iter, u16 value) {
+    for (u32 i=0; i<iter.count; i++) {
+        if (iter.ids[i] == value) return true;
+    }
+    return false;
+}
+
 public fn void Iter.dump(const Iter* iter) @(unused) {
     printf("SET: ");
     for (u32 i=0; i<iter.count; i++) {
@@ -318,17 +308,19 @@ public fn void Iter.dump(const Iter* iter) @(unused) {
     printf("\n");
 }
 
-fn Iter InterferenceGraph.getList(const InterferenceGraph* g, u16 var_idx) {
+public fn Iter Map.getList(const Map* g, u16 var_idx) {
     const Variable* r = &g.variables[var_idx];
     return { .count = r.count, .ids = &g.map[r.start] }
 }
 
-fn u16 InterferenceGraph.shiftArenaRight(InterferenceGraph* g, u32 arena_idx) {
+fn u16 Map.shiftArenaRight(Map* g, u32 arena_idx) {
     u16 cap = Caps[arena_idx];
     //printf("  SHIFT ARENA %d  cap %d\n", arena_idx, cap);
     Arena* a = &g.arenas[arena_idx];
 
     if (!a.free_slots) {
+        if (arena_idx == NumArenas-1) g.dump(true);
+        // TODO resize dynamically?
         assert(arena_idx != NumArenas-1);   // cannot shift after last one
         a.max_elems += g.shiftArenaRight(arena_idx+1);
         a.free_slots = 2;
@@ -377,73 +369,12 @@ fn void print_idx(u16 idx) {
     else printf("%4d", idx);
 }
 
-fn void InterferenceGraph.handleQueue(InterferenceGraph* g) {
-    while (g.queue_count) {
-        u16 var = g.queue[g.queue_head];
-        g.queue_head++;
-        if (g.queue_head == g.num_variables) g.queue_head = 0;
-        g.queue_count--;
-        g.allocateVariable(var);
-    }
-}
-
-public fn void InterferenceGraph.allocate(InterferenceGraph* g) {
-    // will go breadth-first from each variable, skipping already done
-    for (u16 v=0; v<g.num_variables; v++) {
-        if (g.register_map[v] != VAR_TODO) continue;
-        g.enqueue(v);
-        g.handleQueue();
-    }
-#if 0
-    printf("allocation:\n");
-    for (u32 i=0; i<g.num_variables; i++) {
-        if (g.register_map[i] == VAR_UNUSED) continue;
-        printf(" %2d: r%d\n", i, g.register_map[i]);
-    }
-#endif
-}
-
-public fn const u8* InterferenceGraph.getRegs(const InterferenceGraph* g) {
-    return g.register_map;
-}
-
-fn void InterferenceGraph.allocateVariable(InterferenceGraph* g, u16 var_idx) {
-    //printf("allocate %d\n", var_idx);
-    Iter iter = g.getList(var_idx);
-    u64 used_regs = 0;
-    for (u32 i=0; i<iter.count; i++) {
-        u16 neighbor = iter.ids[i];
-        u8 r = g.register_map[neighbor];
-        if (r < 64) used_regs |= (1 << r);
-        if (r == VAR_TODO) g.enqueue(neighbor);
-    }
-
-    for (u32 i=0; i<64; i++) {
-        if ((used_regs & (1 << i)) == 0) {
-            g.register_map[var_idx] = (u8)i;
-            //printf("  %d -> r%d\n", var_idx, i);
-            return;
-        }
-    }
-    assert(0);  // spill
-}
-
-fn void InterferenceGraph.enqueue(InterferenceGraph* g, u16 var_idx) {
-    //printf("enqueue %d\n", var_idx);
-    assert(g.register_map[var_idx] == VAR_TODO);
-    g.register_map[var_idx] = VAR_QUEUED;
-    u32 tail = g.queue_head + g.queue_count;
-    if (tail >= g.num_variables) tail -= g.num_variables;
-    g.queue[tail] = var_idx;
-    g.queue_count++;
-}
-
-public fn void InterferenceGraph.dump(const InterferenceGraph* g, bool verbose) @(unused) {
+public fn void Map.dump(const Map* g, bool verbose) @(unused) {
     if (verbose) {
         u32 mem_variables = g.num_variables * sizeof(Variable);
         u32 mem_map = g.max_elems * sizeof(u16);
         u32 mem_usage = mem_variables + mem_map;
-        printf("InterferenceGraph: (%d users, map %d, %d/%d Kb)\n", g.num_variables, g.max_elems, (mem_variables + 512) / 1024, (mem_usage + 512) / 1024);
+        printf("Map: (%d users, map %d, %d/%d Kb)\n", g.num_variables, g.max_elems, (mem_variables + 512) / 1024, (mem_usage + 512) / 1024);
         printf("Arenas:\n");
         u32 total = 0;
         for (u32 i=0; i<NumArenas; i++) {
@@ -478,16 +409,6 @@ public fn void InterferenceGraph.dump(const InterferenceGraph* g, bool verbose) 
             print_idx(r.next);
             printf("\n");
         }
-    }
-    printf("Interferences:\n");
-    for (u16 i=0; i<g.num_variables; i++) {
-        if (g.register_map[i] == VAR_UNUSED) continue;
-        Iter iter = g.getList(i);
-        stdio.printf("  %2d: ", i);
-        for (u32 j=0; j<iter.count; j++) {
-            stdio.printf(" %d", iter.ids[j]);
-        }
-        stdio.printf("\n");
     }
 }
 

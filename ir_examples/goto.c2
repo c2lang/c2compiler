@@ -4,7 +4,6 @@ fn void run(i32 a) {
     a++;
     if (a == 2) goto next;
     return;
-    a = 5;
 prev:
     a = 4;
     return;

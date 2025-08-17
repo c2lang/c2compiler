@@ -13,15 +13,25 @@
  * limitations under the License.
  */
 
-module ir_context;
+module ir;
 
-type Constant struct {
-    union {
-        i64 ivalue;
-        u64 uvalue;
-        f32 svalue;
-        f64 dvalue;
+public const u32 SlotMax = 256;
+
+public type BlockId u32;    // TODO make u16
+
+
+public fn bool block_has_dest(const Block* b, const CaseList* cases, u32 dest) {
+    if (b.end_with_switch) {
+        CaseId case_id = b.dests[0];
+        u32 num_cases = b.dests[1];
+        for (u32 j=0; j<num_cases; j++) {
+            Case* cs = cases.get(case_id+j);
+            if (cs.block == dest) return true;
+        }
+    } else {
+        if (b.dests[0] == dest) return true;
+        if (b.dests[1] == dest) return true;
     }
+    return false;
 }
-static_assert(8, sizeof(Constant));
 

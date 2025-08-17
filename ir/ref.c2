@@ -31,6 +31,7 @@ public type RefKind enum u8 {
     Text,      // idx into string pool, for comment
     Register,  // nr (0,1,..)
     Block,     // only used by Switch to store join_blk in args[1]
+    PhiClause, // only for Phi instructions. args[0]=start, args[1]=count
 }
 
 fn const char* RefKind.str(RefKind k) {
@@ -38,8 +39,8 @@ fn const char* RefKind.str(RefKind k) {
     case None:      return "none";
     case Slot:      return "slot";
     case Temp:      return "temp";
-    case JmpDest:   return "jmp_dest";
-    case RefList:   return "ref_list";
+    case JmpDest:   return "jmp-dest";
+    case RefList:   return "ref-list";
     case Symbol:    return "symbol";
     case Value:     return "value";
     case Integer:   return "integer";
@@ -47,7 +48,8 @@ fn const char* RefKind.str(RefKind k) {
     case Double:    return "double";
     case Text:      return "text";
     case Register:  return "register";
-    case Block   :  return "block";
+    case Block:     return "block";
+    case PhiClause: return "clause";
     }
     return nil;
 }
@@ -69,40 +71,52 @@ fn bool Ref.equals(const Ref* r1, Ref r2) {
     return r1.kind == r2.kind;
 }
 
-fn RefKind Ref.getKind(const Ref* r) {
+public fn RefKind Ref.getKind(const Ref* r) {
     return cast<RefKind>(r.kind);
 }
 
-fn bool Ref.isValid(const Ref* r) {
+public fn bool Ref.isValid(const Ref* r) {
     return r.kind != RefKind.None;
 }
 
-fn void Ref.setRegister(Ref* r, u32 value) {
+public fn void Ref.setRegister(Ref* r, u32 value) {
     r.kind = RefKind.Register;
     r.value = value;
 }
 
-fn bool Ref.isTemp(const Ref* r) {
+public fn bool Ref.isNone(const Ref* r) {
+    return r.kind == RefKind.None;
+}
+
+public fn bool Ref.isTemp(const Ref* r) {
     return r.kind == RefKind.Temp;
 }
 
-fn bool Ref.isSlot(const Ref* r) {
+public fn bool Ref.isSlot(const Ref* r) {
     return r.kind == RefKind.Slot;
 }
 
-fn bool Ref.isConstant(const Ref* r) @(unused) {
+public fn bool Ref.isValue(const Ref* r) {
+    return r.kind == RefKind.Value;
+}
+
+public fn bool Ref.isRegister(const Ref* r) {
+    return r.kind == RefKind.Register;
+}
+
+public fn bool Ref.isConstant(const Ref* r) @(unused) {
     return r.kind >= RefKind.Value && r.kind <= RefKind.Double;
 }
 
-fn bool Ref.isRefList(const Ref* r) {
+public fn bool Ref.isRefList(const Ref* r) {
     return r.kind == RefKind.RefList;
 }
 
-fn const char* Ref.getKindName(const Ref* r) {
+public fn const char* Ref.getKindName(const Ref* r) {
     return r.getKind().str();
 }
 
-fn const char* Ref.str(const Ref* r) @(unused) {
+public fn const char* Ref.str(const Ref* r) @(unused) {
     local char[4][24] buf;
     local u32 idx;
     idx = (idx+1) % 4;
@@ -110,3 +124,4 @@ fn const char* Ref.str(const Ref* r) @(unused) {
     stdio.sprintf(tmp, "%s %d", r.getKind().str(), r.value);
     return tmp;
 }
+

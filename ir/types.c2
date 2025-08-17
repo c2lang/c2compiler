@@ -30,7 +30,7 @@ public type Type enum u8 {
 }
 static_assert(elemsof(Type) < 16, 1);
 
-fn const char* Type.str(Type t) {
+public fn const char* Type.str(Type t) {
     switch (t) {
     case None:  return "none";
     case I8:    return "i8";
@@ -47,7 +47,7 @@ fn const char* Type.str(Type t) {
     return "";
 }
 
-type Index struct {
+public type Index struct {
     u32 start;
     u32 count;
 }

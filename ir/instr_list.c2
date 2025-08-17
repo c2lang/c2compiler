@@ -18,13 +18,13 @@ module ir;
 import string local;
 import stdlib;
 
-type InstrList struct {
+public type InstrList struct {
     u32 count;
     u32 capacity;
     Instr* instrs;
 }
 
-fn void InstrList.init(InstrList* l, u32 initial_size) {
+public fn void InstrList.init(InstrList* l, u32 initial_size) {
     memset(l, 0, sizeof(InstrList));
     if (initial_size) {
         l.capacity = initial_size;
@@ -32,11 +32,11 @@ fn void InstrList.init(InstrList* l, u32 initial_size) {
     }
 }
 
-fn void InstrList.free(InstrList* l) {
+public fn void InstrList.free(InstrList* l) {
     if (l.instrs) stdlib.free(l.instrs);
 }
 
-fn void InstrList.reserve(InstrList* l, u32 extra) {
+public fn void InstrList.reserve(InstrList* l, u32 extra) {
     u32 new_count = l.count + extra;
     if (new_count > l.capacity) l.resize(new_count);
 }
@@ -49,32 +49,36 @@ fn void InstrList.resize(InstrList* l, u32 cap) {
     l.instrs = instrs2;
 }
 
-fn Instr* InstrList.add(InstrList* l) {
+public fn Instr* InstrList.add(InstrList* l) {
     if (l.count >= l.capacity) l.resize(l.capacity == 0 ? 8 : l.capacity * 2);
 
     return &l.instrs[l.count++];
 }
 
-fn u32 InstrList.getCount(const InstrList* l) {
+public fn u32 InstrList.getCount(const InstrList* l) {
     return l.count;
 }
 
-fn Instr* InstrList.get(const InstrList* l, u32 idx) {
+public fn Instr* InstrList.get(const InstrList* l, u32 idx) {
     assert(idx < l.count);
     return &l.instrs[idx];
 }
 
-fn void InstrList.swap(InstrList* l, InstrList* other) {
+public fn void InstrList.swap(InstrList* l, InstrList* other) {
     InstrList tmp = *other;
     *other = *l;
     *l = tmp;
-
 }
 
-fn void InstrList.prune(InstrList* l) {
+public fn void InstrList.prune(InstrList* l) {
     while (l.count) {
         Instr* last = &l.instrs[l.count-1];
         if (last.isNone()) l.count--;
         else break;
     }
 }
+
+public fn void InstrList.removeLastInstruction(InstrList* l) {
+    l.count--;
+}
+

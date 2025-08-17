@@ -50,7 +50,7 @@ public fn void RefList.add(RefList* l, Ref ref) {
     l.count++;
 }
 
-fn u32 RefList.addList(RefList* l, const RefList* l2) {
+public fn u32 RefList.addList(RefList* l, const RefList* l2) {
     u32 start = l.count;
     if (l.capacity < l.count + l2.count) l.resize(l.count + l2.count);
     memcpy(&l.refs[l.count], l2.refs, l2.count * sizeof(Ref));
@@ -66,7 +66,7 @@ public fn u32 RefList.getCount(const RefList* l) {
     return l.count;
 }
 
-fn Ref* RefList.get(const RefList* l, u32 idx) {
+public fn Ref* RefList.get(const RefList* l, u32 idx) {
     return &l.refs[idx];
 }
 

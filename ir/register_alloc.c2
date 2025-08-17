@@ -13,47 +13,44 @@
  * limitations under the License.
  */
 
-module ir;
+module ir_context;
 
-import interference_graph local;
+import ir_rpo;
+import ir local;
+import ir_interference_graph local;
+import ir_live_map;
 
 import stdlib;
-import string;
 import stdio local;
 
-// TEMP here
-type LiveIndex struct {
-    u16 start;  // in temps array
-    u16 count;
-}
-
 type LiveVector struct  {
-    u32 count;  // total count
-    u32 start; // where current blocks temps start
+    u32 count;
     u32 cap;
-    u32 index_cap;
     u32* temps;
-    LiveIndex* indexes;  // block-id is index
 
     // TEMP HERE, should be placed in tools and created once
-    InterferenceGraph* interferences;
+    InterferenceGraph* interferences;   // temp_id is index
+    ir_live_map.Map* live_in;     // blk_id is index
+    ir_live_map.Map* live_out;    // blk_id is index
 }
 
-fn void LiveVector.init(LiveVector* v, u32 num_blocks) {
+fn void LiveVector.init(LiveVector* v, u32 num_blocks, u32 num_instr) {
     v.count = 0;
-    v.start = 0;
     v.cap = 1024;
     v.temps = stdlib.malloc(v.cap * sizeof(u32));
-
-    v.index_cap = num_blocks;
-    v.indexes = stdlib.malloc(v.index_cap * sizeof(LiveIndex));
+    assert(num_instr <= u16.max);
 
     // TODO this should be re-used between functions (also LiveVector)
     // TODO let number of variables depend on nr of instructions
-    v.interferences = interference_graph.create(32*1024, 2048);
+    v.interferences = ir_interference_graph.create(32*1024, (u16)num_instr);
+    // TODO dynamically resize maps
+    v.live_in = ir_live_map.create(4096, (u16)num_blocks);
+    v.live_out = ir_live_map.create(4096, (u16)num_blocks);
 }
 
 fn void LiveVector.free(LiveVector* v) {
+    v.live_out.free();
+    v.live_in.free();
     v.interferences.free();
     stdlib.free(v.temps);
 }
@@ -62,22 +59,16 @@ fn void LiveVector.add(LiveVector* v, u32 idx) {
     assert(idx <= 65535);
     //if (v.count == v.cap) printf("add %d/%d  %d\n", v.count, v.cap, idx);
     //printf("  add %d/%d  %d\n", v.count, v.cap, idx);
-    for (u32 i=v.start; i<v.count; i++) {
+    for (u32 i=0; i<v.count; i++) {
         if (v.temps[i] == idx) return;    // already in, ignore
     }
-    // Note: interferes with all other vars in there
-    for (u32 i=v.start; i<v.count; i++) {
-        //printf("  %d interferes with %d\n", idx, v.temps[i]);
-        v.interferences.add((u16)idx, (u16)v.temps[i]);
-    }
     assert(v.count < v.cap);
-    v.temps[v.count] = idx;
-    v.count++;
+    v.temps[v.count++] = idx;
 }
 
 fn void LiveVector.remove(LiveVector* v, u32 idx) {
     //printf("remove %d\n", idx);
-    for (u32 i=v.start; i<v.count; i++) {
+    for (u32 i=0; i<v.count; i++) {
         if (v.temps[i] == idx) {    // swap with last
             v.count--;
             if (i != v.count) v.temps[i] = v.temps[v.count];
@@ -87,66 +78,474 @@ fn void LiveVector.remove(LiveVector* v, u32 idx) {
     //printf("  not found\n");
 }
 
-fn void LiveVector.store(LiveVector* v, u32 blk_id) {
-    assert(blk_id < v.index_cap);
-    LiveIndex* idx = &v.indexes[blk_id];
-    idx.start = (u16)v.start;
-    idx.count = (u16)(v.count - v.start);
-    v.start = v.count;
-    //printf("STORE B%d  %d  %d\n", blk_id, idx.start, idx.count);
+// Does not filter, but does add to interference graph
+fn void LiveVector.addInterfere(LiveVector* v, u16 idx) {
+    assert(v.count < v.cap);
+    for (u32 i=0; i<v.count; i++) {
+        v.interferences.add((u16)v.temps[i], idx);
+    }
+    v.temps[v.count++] = idx;
 }
 
-fn void LiveVector.copy(LiveVector* v, u32 blk_id) {
-    assert(blk_id < v.index_cap);
-    const LiveIndex* src = &v.indexes[blk_id];
-    //printf("  COPY %d (%d %d)\n", blk_id, src.start, src.count);
-    assert(v.count + src.count < v.cap);
-    string.memcpy(&v.temps[v.count], &v.temps[src.start], src.count * sizeof(u32));
-    v.count += src.count;
+fn void LiveVector.addInterfereFilter(LiveVector* v, u32 idx) {
+    for (u32 i=0; i<v.count; i++) {
+        if (v.temps[i] == idx) return;
+    }
+    v.addInterfere((u16)idx);
+}
+
+fn void LiveVector.clear(LiveVector* v) {
+    v.count = 0;
+}
+
+fn void LiveVector.storeOut(LiveVector* v, u16 blk_id) {
+    for (u32 i=0; i<v.count; i++) {
+        v.live_out.addFiltered(blk_id, (u16)v.temps[i]);
+    }
+}
+fn void LiveVector.storeIn(LiveVector* v, u16 blk_id) {
+    for (u32 i=0; i<v.count; i++) {
+        v.live_in.add(blk_id, (u16)v.temps[i]);
+    }
+    v.count = 0;
 }
 
 fn void LiveVector.merge(LiveVector* v, u32 blk_id) {
-    assert(blk_id < v.index_cap);
-    const LiveIndex* src = &v.indexes[blk_id];
-    //printf("  MERGE %d (%d %d)\n", blk_id, src.start, src.count);
-    u32 last = src.start + src.count;
-    for (u32 i = src.start; i < last; i++) v.add(v.temps[i]);
+    ir_live_map.Iter iter = v.live_in.getList((u16)blk_id);
+    assert(iter.count + iter.count < v.cap);
+    for (u32 i=0; i<iter.count; i++) {
+        v.add(iter.ids[i]);
+    }
 }
 
 fn void LiveVector.dump(const LiveVector* v) @(unused) {
-    printf("Live: ");
-    for (u32 i=v.start; i<v.count; i++) {
+    for (u32 i=0; i<v.count; i++) {
         printf(" %d", v.temps[i]);
     }
     printf("\n");
 }
 
-fn void LiveVector.dumpRanges(const LiveVector* v) @(unused) {
-    printf("Live ranges");
-    for (u32 i=v.start; i<v.index_cap; i++) {
-        const LiveIndex* idx = &v.indexes[i];
-        printf("  B%d %2d|%2d: ", i, idx.start, idx.count);
-        for (u32 j=idx.start; j<idx.start+idx.count; j++) {
-            printf(" %d", v.temps[j]);
+fn void LiveVector.dumpRanges(const LiveVector* v, u32 num_blocks) @(unused) {
+    for (u32 i=0; i<num_blocks; i++) {
+        printf("B%d\n", i);
+        printf("  In [");
+        ir_live_map.Iter iter = v.live_in.getList((u16)i);
+        for (u32 j=0; j<iter.count; j++) printf(" %d", iter.ids[j]);
+        printf(" ]\n  Out[");
+        iter = v.live_out.getList((u16)i);
+        for (u32 j=0; j<iter.count; j++) printf(" %d", iter.ids[j]);
+        printf(" ]\n");
+    }
+}
+
+fn void Tools.createBlockInterferences(Tools* t, u32 blk_id, FunctionInfo* fi, LiveVector* v) {
+    Block* b = fi.blocks.get(blk_id);
+
+    v.clear();
+
+    // step 1 - start from LiveOut
+    ir_live_map.Iter iter = v.live_out.getList((u16)blk_id);
+    for (u32 i=0; i<iter.count; i++) {
+        v.addInterfere(iter.ids[i]);
+    }
+
+    if (b.phi_source) {
+        // insert 'virtual' copy (since we cannot insert %2 = copy %4)
+        // So 2 and 4 dont interfere. This removes %2 and adds %4
+        const PhiClause* clauses = fi.phis.get(0);
+        u32 num_clauses = fi.phis.getCount();
+        for (u32 c=0; c<num_clauses; c++) {
+            const PhiClause* pc = &clauses[c];
+            if (pc.src != blk_id) continue;
+            //printf("  PHI CLAUSE %d  %s %d\n", pc.dest_idx, pc.ref.getKindName(), pc.ref.value);
+            v.remove(pc.dest_idx);
+            if (pc.ref.isTemp()) v.addInterfere((u16)pc.ref.value);
         }
-        printf("\n");
+    }
+
+    // step 2 - iterate all instructions bottom -> top
+    Instr* instrs = fi.instructions.get(0);
+    u32 first = b.instr.start;
+    u32 last = b.instr.start + b.instr.count - 1;
+    u32 i = last;
+    while (1) {
+        const Instr* ii = &instrs[i];
+
+        if (ii.hasResult()) {
+            v.remove(i);
+            v.interferences.enable((u16)i);
+        }
+
+        if (ii.isPhi()) {
+            // TODO need to do something?
+        } else {
+            if (ii.isCall()) {
+                if (ii.args[1].isRefList()) {
+                    Ref* refs = fi.refs.get(ii.args[1].value);
+                    u32 idx = 0;
+                    while (1) {
+                        Ref* r2 = &refs[idx];
+                        if (r2.isTemp()) v.addInterfereFilter(r2.value);
+                        if (!r2.isValid()) break;
+                        idx++;
+                    }
+                }
+            } else {
+                if (ii.args[0].isTemp()) v.addInterfereFilter(ii.args[0].value);
+                if (ii.args[1].isTemp()) v.addInterfereFilter(ii.args[1].value);
+            }
+        }
+        if (i == first) break;
+        i--;
+    }
+    //printf("[%d] ", i);
+    //v.dump();
+    //v.store((u16)blk_id);
+}
+
+fn void Tools.checkBlockLiveness(Tools* t, u32 blk_id, FunctionInfo* fi, LiveVector* v) {
+    //printf("CHECK B%d\n", blk_id);
+    Block* b = fi.blocks.get(blk_id);
+
+    // modify LiveIn/LiveOut in Arena
+    // algoritm:
+    // 1. get LiveIn from successors
+    // 2. merge these into own LiveOut
+    // 3. if phi-block, add Phi clauses to LiveOut
+    // 4. iterate all instructions bottom -> top, checking for interference
+    // - store LiveIn =+ LiveOut for all
+    // 5. store LiveIn in LiveVector, mark is done
+
+    // step 1 - get LiveIn from successors
+    // TEST since blocks are ordered, back jumps are loops. These are already handled by phi.
+    // so try ignoring them.
+
+    // step 2 - merge these into own start-set
+    v.clear();
+#if 0
+    if (b.phi_source) {
+        // copy from LiveIn (could be from Phi-instructions if earlier)
+        ir_live_map.Iter iter = v.live_out.getList((u16)blk_id);
+        for (u32 i=0; i<iter.count; i++) {
+            // TODO use function to access v.temps
+            v.temps[v.count++] = iter.ids[i];
+        }
+    }
+#endif
+    if (b.dests[0]) v.merge(b.dests[0]);
+    if (b.dests[1]) v.merge(b.dests[1]);
+
+    //printf("  LiveOut: "); v.dump();
+    v.storeOut((u16)blk_id);
+
+    // step 3 - add phi-clauses
+    if (b.phi_source) {
+        // avoid Lost-copy problem, by checking dependencies between Phi operations
+        // Brigg's algorithm:
+        // - if there is a copy dest = src, where src is not used as dest in any unprocessed copy, emit it
+        //      (and remove from list)
+        // - Else, select a cycle (e.g., a := b, b := a) → use a temporary to break it:
+        //     t = a; a = b; b = t;
+        // Note: need to add instruction and add to Interference graph
+
+        //printf("B%d phi source\n", blk_id);
+        const PhiClause* clauses = fi.phis.get(0);
+        u32 num_clauses = fi.phis.getCount();
+        for (u32 i=0; i<num_clauses; i++) {
+            const PhiClause* c = &clauses[i];
+            if (c.src == blk_id) {
+                //printf("  B%d remove phi %d\n", blk_id, c.dest_idx);
+                v.remove(c.dest_idx);
+                if (c.ref.isTemp()) {
+                    //printf("  B%d add phi clause %d\n", blk_id, c.ref.value);
+                    v.add(c.ref.value);
+                }
+            }
+        }
+    }
+
+    // step 4 - iterate all instructions bottom -> top
+    Instr* instrs = fi.instructions.get(0);
+    assert(b.instr.count);
+    u32 first = b.instr.start;
+    u32 last = b.instr.start + b.instr.count - 1;
+    u32 i = last;
+    while (1) {
+        const Instr* ii = &instrs[i];
+
+        if (ii.isPhi()) {
+            //v.interferences.enable((u16)i);
+            // TODO add to LiveOut for Clause Blocks (filter dups)
+            const PhiClause* clauses = fi.phis.get(ii.args[0].value);
+            for (u32 c=0; c<ii.args[1].value; c++) {
+                const PhiClause* pc = &clauses[c];
+                v.live_out.addFiltered((u16)pc.src, (u16)pc.dest_idx);
+                //printf(" PHI ADD OUT B%d  %d\n", pc.src, pc.dest_idx);
+#if 0
+                // TODO dont know about this one..
+                if (pc.ref.isTemp()) {
+                    v.live_in.addFiltered((u16)pc.src, (u16)pc.ref.value);
+                }
+#endif
+            }
+        } else {
+            if (ii.hasResult()) {
+                v.remove(i);
+                //v.interferences.enable((u16)i);
+            }
+
+            if (ii.isCall()) {
+                if (ii.args[1].isRefList()) {
+                    Ref* refs = fi.refs.get(ii.args[1].value);
+                    u32 idx = 0;
+                    while (1) {
+                        Ref* r2 = &refs[idx];
+                        if (r2.isTemp()) v.add(r2.value);
+                        if (!r2.isValid()) break;
+                        idx++;
+                    }
+                }
+            } else {
+                if (ii.args[0].isTemp()) v.add(ii.args[0].value);
+                if (ii.args[1].isTemp()) v.add(ii.args[1].value);
+            }
+            //printf("[%d] ", i);
+            //v.dump();
+        }
+        if (i == first) break;
+        i--;
+    }
+    //printf("  LiveIn:  "); v.dump();
+
+    // 5. store in LiveVector in global list.
+    v.storeIn((u16)blk_id);
+}
+
+fn void Tools.replacePhis(Tools* t, FunctionInfo* fi) {
+    /*
+        If phi-clause source block ends with:
+            - 'jmp', just insert 'copy' before it
+            - 'jmp_if', create new PhiSplit block as intermediate jump dest
+
+        B0:                                    B0:
+            jmp B2                                 copy 10, %2
+        B1:                                        jmp B2
+            jmp_if B2, ..                      B1:
+        B2:                                        jmp_if MergeB1, ..
+            %2 = phi [ @B0: 10, @B1: 20 ]      MergeB1:
+                                                   copy 20, %2
+                                                   jmp B2
+                                               B2:
+                                                   -
+    */
+
+    // TODO solve swap,lost-copy problems - compare all phi's in block, see if they interfere
+
+    t.inserter.clear(fi.blocks.getCount(), fi.instructions.getCount());
+
+    u32 num_blocks = fi.blocks.getCount();
+    Block* blocks = fi.blocks.get(0);
+    for (u32 blk_id = 0; blk_id < num_blocks; blk_id++) {
+        Block* b = &blocks[blk_id];
+        u32 last = b.instr.start + b.instr.count;
+        for (u32 j=b.instr.start; j<last; j++) {
+            Instr* ii = fi.instructions.get(j);
+            if (ii.isComment() || ii.isNone()) continue;
+            if (!ii.isPhi()) break; // phi-instructions are always at start of block
+
+            const PhiClause* clauses = fi.phis.get(ii.args[0].value);
+            for (u32 c=0; c<ii.args[1].value; c++) {
+                const PhiClause* pc = &clauses[c];
+                Block* src = &blocks[pc.src];
+
+                // dont insert Rx = copy Rx
+                if (pc.dest_idx == pc.ref.value && pc.ref.isRegister()) continue;
+
+                u32 insert_loc = src.instr.start + src.instr.count - 1;
+                u32 instr_idx = t.inserter.addInstr(insert_loc);
+                Instr* copy = t.inserter.getLastInstr();
+                // Note: dest_idx was changed to register nr in previous step
+                copy.initRegCopy((u8)pc.dest_idx, pc.ref);
+            }
+
+            ii.clear();
+
+            // clear optional comment
+            if (j+1 < last) {
+                ii = fi.instructions.get(j+1);
+                if (ii.isComment()) ii.clear();
+            }
+        }
+    }
+
+    fi.phis.clear();
+}
+
+
+fn void Tools.insertSplitEdges(Tools* t, FunctionInfo* fi) {
+    u32 num_blocks = fi.blocks.getCount();
+    Block* blocks = fi.blocks.get(0);
+    Instr* instrs = fi.instructions.get(0);
+    //printf("%d blocks, %d instructions\n", num_blocks, fi.instructions.getCount());
+
+    // Extra:
+    // if phi-clause argument is input param, never split or insert copy?
+    // Q: where to insert?
+    // if already written there, eg used after write (could that be?)
+
+    u32 insert_loc = fi.instructions.getCount();    // after all others
+    // create split-edge blocks for phi-insertions to avoid invalid Liveness
+    for (u32 blk_id = 0; blk_id < num_blocks; blk_id++) {
+        Block* b = &blocks[blk_id];
+        u32 last = b.instr.start + b.instr.count;
+        // TODO have Block bit: has_phi, to search faster?
+        for (u32 j = b.instr.start; j < last; j++) {
+            const Instr* ii = &instrs[j];
+            if (!ii.isPhi()) continue;  // TODO can also break? (if all phi's are at start, comments?)
+
+            PhiClause* clauses = fi.phis.get(ii.args[0].value);
+            for (u32 c = 0; c < ii.args[1].value; c++) {
+                PhiClause* pc = &clauses[c];
+
+                Block* src = fi.blocks.get(pc.src);
+                if (!src.dests[1]) continue;    // only 1 successor
+
+                BlockId new_blk = t.inserter.findSplitEdge(pc.src, blk_id);
+                if (!new_blk) {
+                    new_blk = t.inserter.addBlock(BlockKind.PhiSplit);
+                    //printf("new block %d (%d -> %d)\n", new_blk, pc.src, blk_id);
+                    t.inserter.addSplitEdge(pc.src, blk_id, new_blk);
+
+                    Block* cur = t.inserter.getLastBlock();
+                    cur.used = 1;
+                    cur.phi_source = 1;
+                    cur.dests[0] = blk_id;
+
+                    // modify original dest
+                    if (src.dests[0] == blk_id) src.dests[0] = new_blk;
+                    else {
+                        assert(src.dests[1] == blk_id);
+                        src.dests[1] = new_blk;
+                    }
+
+                    u32 instr_idx = t.inserter.addInstr(insert_loc);
+                    //printf("add instr %d  @ %d\n", instr_idx, insert_loc);
+                    Instr* jmp = t.inserter.getLastInstr();
+                    Ref jmp_ref = { .kind = RefKind.JmpDest, .value = 0 }
+                    jmp.init1(InstrKind.Jmp, jmp_ref);
+                    cur.instr.start = instr_idx;
+                    insert_loc++;
+                }
+                // update clause src_blk
+                pc.src = new_blk;
+            }
+        }
+    }
+    t.inserter.insertBlocks(&fi.blocks);
+}
+
+fn void Tools.removeSplitEdges(Tools* t, FunctionInfo* fi) {
+    u32 num_blocks = fi.blocks.getCount();
+    Block* blocks = fi.blocks.get(0);
+
+    // try to remove added split-edge blocks from tail
+    u32 blk_id = num_blocks-1;
+    while (1) {
+        Block* b = &blocks[blk_id];
+
+        if (b.kind != PhiSplit || b.instr.count != 1) break;  // stop on first non-empty block
+
+        u32 dest = b.dests[0];
+
+        // update dest in predecessor
+        for (u32 i = 0; i < blk_id; i++) {
+            Block* b2 = &blocks[i];
+            if (b2.dests[0] == blk_id) {
+                b2.dests[0] = dest;
+                break;
+            }
+            if (b2.dests[1] == blk_id) {
+                b2.dests[1] = dest;
+                break;
+            }
+        }
+
+        // remove jmp instruction
+        fi.instructions.removeLastInstruction();
+
+        // Note: invalidates RPO
+        fi.blocks.removeLastBlock();
+        blk_id--;
     }
 }
 
 fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
-    LiveVector v.init(fi.blocks.getCount());
-
-    Block* blocks = fi.blocks.get(0);
-    for (u32 i=0; i<fi.blocks.getCount(); i++) {
-        blocks[i].checked = false;
-    }
-
     // TODO can manually allocate registers to params here already (R0..Rx)
     // that would still be ISA independent
 
-    t.checkBlockReg(0, fi, &v);
+    t.inserter.clear(fi.blocks.getCount(), fi.instructions.getCount());
 
-    //v.dumpRanges();
+    t.insertSplitEdges(fi);
+
+    if (t.inserter.needsFixup()) t.fixup_function(fi);
+
+    u32 num_blocks = fi.blocks.getCount();
+    Block* blocks = fi.blocks.get(0);
+
+    //dump_function(fi, "bb1");
+    //print_func(t.arg1, t.arg2, fi, "RegAlloc1");
+
+    // Liveness part 1: initial LiveIn/Out
+    ir_rpo.Rpo rpo.create(fi); // TODO re-use
+
+    LiveVector v.init(num_blocks, fi.instructions.getCount());  // TODO re-use
+
+    for (u32 i = 0; i < num_blocks; i++) {
+        u32 blk_id = rpo.blocks[i];
+        t.checkBlockLiveness(blk_id, fi, &v);
+    }
+    rpo.free();
+    //v.dumpRanges(num_blocks);
+
+    // Liveness part 2: loop until done
+    // check that all vars in LiveIn are in LiveOut of predecessor
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        for (u32 i=0; i<num_blocks; i++) {
+            Block* b = &blocks[i];
+            u16 blk_id = (u16)i;
+            ir_live_map.Iter iter = v.live_out.getList(blk_id);
+            for (u32 d=0; d<2; d++) {
+                u16 dest = (u16)b.dests[d];
+                if (!dest) break;
+
+                ir_live_map.Iter iter2 = v.live_in.getList(dest);
+                for (u32 j=0; j<iter2.count; j++) {
+                    u16 var = iter2.ids[j];
+                    if (!iter.contains(var)) {
+                        //printf("  ADD %d to LiveOut %d\n", var, blk_id);
+                        v.live_out.add(blk_id, var);
+                        iter = v.live_out.getList(blk_id);  // re-read in case of re-alloc
+                        // if not generated in block, also add to LiveIn
+                        if (var < b.instr.start || var >= b.instr.start + b.instr.count) {
+                            v.live_in.addFiltered(blk_id, var);
+                        }
+                        changed = true;
+                    }
+                }
+            }
+        }
+    }
+
+    //v.dumpRanges(num_blocks);
+
+    // THIS STEP GOES WRONG for c2c itself
+
+    // Liveness part 3: create full Liveness + interference graph
+    for (u32 i=0; i<num_blocks; i++) {
+        t.createBlockInterferences(i, fi, &v);
+    }
 
     //v.interferences.dump(false);
     v.interferences.allocate();
@@ -193,199 +592,7 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
 
     v.free();
     t.replacePhis(fi);
-}
-
-fn void Tools.checkBlockReg(Tools* t, u32 blk_id, FunctionInfo* fi, LiveVector* v) {
-    //printf("CHECK B%d\n", blk_id);
-    Block* b = fi.blocks.get(blk_id);
-    //printf("CHECK BLK %d\n", blk_id);
-
-    // algoritm:
-    // 1. get LiveIn from successors
-    // 2. merge these into own LiveOut
-    // 3. if phi-block, add Phi clauses to LiveOut
-    // 4. iterate all instructions bottom -> top, checking for interference
-    // 5. store LiveIn in LiveVector, mark is done
-
-    // step 0 - check if already checked, return results
-    if (b.checked) return;
-
-    // step 1 - get LiveIn from successors
-    // TEST since blocks are ordered, back jumps are loops. These are already handled by phi.
-    // so try ignoring them.
-    if (b.dests[0] > blk_id) {
-        t.checkBlockReg(b.dests[0], fi, v);
-    }
-    if (b.dests[1] > blk_id) {
-        t.checkBlockReg(b.dests[1], fi, v);
-    }
-
-    // 2. merge these into own start-set
-    if (b.dests[0] > blk_id) v.copy(b.dests[0]);
-    if (b.dests[1] > blk_id) v.merge(b.dests[1]);
-
-    //printf("  B%d successors: ", blk_id); v.dump();
-
-    // step 3 - add phi-clauses
-    if (b.phi_source) {
-        // avoid Lost-copy problem, by checking dependencies between Phi operations
-        // Brigg's algorithm:
-        // - if there is a copy dest = src, where src is not used as dest in any unprocessed copy, emit it
-        //      (and remove from list)
-        // - Else, select a cycle (e.g., a := b, b := a) → use a temporary to break it:
-        //     t = a; a = b; b = t;
-        // Note: need to add instruction and add to Interference graph
-        // TODO also add copy instructions
-
-        //printf("B%d phi source\n", blk_id);
-        const PhiClause* clauses = fi.phis.get(0);
-        u32 num_clauses = fi.phis.getCount();
-        for (u32 i=0; i<num_clauses; i++) {
-            const PhiClause* c = &clauses[i];
-            if (c.src == blk_id) {
-                //printf("  B%d remove phi %d\n", blk_id, c.dest_idx);
-                v.remove(c.dest_idx);
-                if (c.ref.isTemp()) {
-                    //printf("  B%d add phi clause %d\n", blk_id, c.ref.value);
-                    v.add(c.ref.value);
-                }
-            }
-        }
-    }
-
-    // step 4 - iterate all instructions bottom -> top
-    Instr* instrs = fi.instructions.get(0);
-    assert(b.instr.count);
-    u32 first = b.instr.start;
-    u32 last = b.instr.start + b.instr.count - 1;
-    u32 i = last;
-    while (1) {
-        const Instr* ii = &instrs[i];
-
-        if (ii.isPhi()) {
-            v.interferences.enable((u16)i);
-        } else {
-            if (ii.hasResult()) {
-                v.remove(i);
-                v.interferences.enable((u16)i);
-            }
-
-            if (ii.isCall()) {
-                if (ii.args[1].isRefList()) {
-                    Ref* refs = fi.refs.get(ii.args[1].value);
-                    u32 idx = 0;
-                    while (1) {
-                        Ref* r2 = &refs[idx];
-                        if (r2.isTemp()) v.add(r2.value);
-                        if (!r2.isValid()) break;
-                        idx++;
-                    }
-                }
-            } else {
-                if (ii.args[0].isTemp()) v.add(ii.args[0].value);
-                if (ii.args[1].isTemp()) v.add(ii.args[1].value);
-            }
-            //printf("[%d] ", i);
-            //v.dump();
-        }
-        if (i == first) break;
-        i--;
-    }
-    //printf("B%d LiveIn ", blk_id); v.dump();
-
-    // 5. store in LiveVector, mark is done
-    v.store(blk_id);
-    b.checked = true;
-}
-
-fn void Tools.replacePhis(Tools* t, FunctionInfo* fi) {
-    /*
-        If phi-clause source block ends with:
-            - 'jmp', just insert 'copy' before it
-            - 'jmp_if', create new PhiJoin block as intermediate jump dest
-
-        TODO also need to merge multiple phi's into using same merge block! for B1 -> B2
-
-        B0:                                    B0:
-            jmp B2                                 copy 10, %2
-        B1:                                        jmp B2
-            jmp_if B2, ..                      B1:
-        B2:                                        jmp_if MergeB1, ..
-            %2 = phi [ @B0: 10, @B1: 20 ]      MergeB1:
-                                                   copy 20, %2
-                                                   jmp B2
-                                               B2:
-                                                   -
-    */
-
-    // TODO solve swap,lost-copy problems - compare all phi's in block, see if they interfere
-
-    // TODO have Block bit: has_phi, to search faster?
-
-    t.inserter.clear();
-
-    // TODO refactor so that inserter stores new blocks + instructions?
-    // -> can also insert block at right position then, no need for tracking block-order
-    // otherwise can change during loops
-    // TEMP just reserve (too many) extra blocks + instructions
-    u32 extra_blocks = fi.phis.getCount();
-    u32 extra_instr = 2 * fi.phis.getCount(); // assume new block: copy + jmp
-    fi.blocks.reserve(extra_blocks);
-    fi.instructions.reserve(extra_instr);
-
-    // Note: cannot get all blocks ptr, since block insertions might re-alloc it
-    u32 num_blocks = fi.blocks.getCount();
-    Block* blocks = fi.blocks.get(0);
-    for (u32 i=0; i<num_blocks; i++) {
-        Block* b = &blocks[i];
-        u32 last = b.instr.start + b.instr.count;
-        for (u32 j=b.instr.start; j<last; j++) {
-            Instr* ii = fi.instructions.get(j);
-            if (ii.isComment() || ii.isNone()) continue;
-            if (!ii.isPhi()) break; // phi-instructions are always at start of block
-
-            const PhiClause* clauses = fi.phis.get(ii.phi_clauses.start);
-            for (u32 c=0; c<ii.phi_clauses.count; c++) {
-                const PhiClause* pc = &clauses[c];
-                Block* src = fi.blocks.get(pc.src);
-                if (src.dests[1]) { // jmp_if, create merge_block (if it doesn't already exist)
-                    // no need for inserter, just add to new block
-                    BlockId cur_blk = fi.blocks.add(BlockKind.PhiJoin);
-                    Block* cur = fi.blocks.get(cur_blk);
-                    cur.used = 1;
-                    cur.instr.start = fi.instructions.getCount();
-                    cur.instr.count = 2;    // copy + jmp
-                    cur.dests[0] = i;
-
-                    Instr* copy = fi.instructions.add();
-                    // Note: dest_idx was changed to register nr in previous step
-                    copy.initRegCopy((u8)pc.dest_idx, pc.ref);
-                    Instr* jmp = fi.instructions.add();
-                    Ref jmp_ref = { .kind = RefKind.JmpDest, .value = 0 }
-                    jmp.init1(InstrKind.Jmp, jmp_ref);
-
-                    // modify original dest
-                    if (src.dests[0] == i) src.dests[0] = cur_blk;
-                    if (src.dests[1] == i) src.dests[1] = cur_blk;
-                } else {    // jmp, insert copy here
-                    u32 insert_loc = src.instr.start + src.instr.count - 1;
-                    t.inserter.add(insert_loc, fi.instructions.getCount());
-                    Instr* copy = fi.instructions.add();
-                    // Note: dest_idx was changed to register nr in previous step
-                    copy.initRegCopy((u8)pc.dest_idx, pc.ref);
-                }
-            }
-
-            ii.clear();
-
-            // clear optional comment
-            if (j+1 < last) {
-                ii = fi.instructions.get(j+1);
-                if (ii.isComment()) ii.clear();
-            }
-        }
-    }
-
-    fi.phis.clear();
+    t.removeSplitEdges(fi);
+    // TODO sort Blocks (not instructions)
 }
 

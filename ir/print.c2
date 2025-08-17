@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-module ir;
+module ir_context;
 
+import ir local;
 import color local;
 import string_buffer;
 
@@ -173,11 +174,11 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
 
     const Block* blks = ph.blocks.get(0);
     u32 max = 0;
-    for (u32 i=0; i<num_blks; i++) {
-        ph.cur_block = &blks[i];
+    for (u32 blk_id=0; blk_id<num_blks; blk_id++) {
+        ph.cur_block = &blks[blk_id];
         const Block* b = ph.cur_block;
         out.color(color.Yellow);
-        out.print("%s.%d:", b.getKindName(), i);
+        out.print("%s.%d:", b.getKindName(), blk_id);
         if (!b.used) {
             out.color(color.Grey);
             out.add("  # unused");
@@ -199,6 +200,10 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
         const Instr* instrs = info.instructions.get(i_idx.start);
         for (u32 j=0; j<i_idx.count; j++) {
             ph.printInstr(instrs, j, i_idx.start + j);
+        }
+        if (i_idx.count == 0) {
+            out.color(col_Fixup);
+            out.add("  NO INSTRUCTIONS!!\n");
         }
         u32 last = i_idx.start + i_idx.count;
         if (last > max) max = last;
@@ -392,6 +397,20 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
         }
         out.add1(')');
         break;
+    case JmpIf:
+        for (u32 r=0; r<elemsof(i.args); r++) {
+            if (i.args[r].isValid()) {
+                if (r > 0) out.add1(',');
+                out.space();
+                ph.printRef(i.args[r], false);
+            }
+        }
+        if (!ph.cur_block.dests[1]) {
+            out.space();
+            out.color(col_Fixup);
+            out.add(" MISSING DEST[1]");
+        }
+        break;
     case Switch:
         out.color(color.Normal);
         out.space();
@@ -421,8 +440,8 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
     case Phi:
         out.color(color.Normal);
         out.add(" [ ");
-        const PhiClause* clauses = ph.cur_info.phis.get(i.phi_clauses.start);
-        for (u32 j=0; j<i.phi_clauses.count; j++) {
+        const PhiClause* clauses = ph.cur_info.phis.get(i.args[0].value);
+        for (u32 j=0; j<i.args[1].value; j++) {
             if (j != 0) out.add(", ");
             const PhiClause*pc = &clauses[j];
             u32 blk_id = pc.src;
@@ -469,10 +488,6 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
         out.print("(T%d)", r.value);
 #endif
         break;
-#if DebugIr
-        out.color(color.Grey);
-        out.print("(P%d)", r.value);
-#endif
     case JmpDest:
         assert(ph.cur_block);
         const Block* b = ph.cur_block;
@@ -528,6 +543,10 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
         Block* b = ph.blocks.get(r.value);
         out.print("@%s.%d", b.getKindName(), r.value);
         break;
+    case PhiClause:
+        out.color(col_Value);
+        out.print("%d", r.value);
+        break;
     }
     out.color(color.Normal);
 }
@@ -559,12 +578,8 @@ fn void dump_function_info(string_buffer.Buf* out, const FunctionInfo* info) @(u
     for (u32 i=0; i<info.instructions.getCount(); i++) {
         const Instr* r = &instr[i];
         out.print("    [%3d] %c  %7s", i, r.hasResult() ? 'r' : ' ', r.getKindName());
-        if (r.isPhi()) {
-            out.print("  clauses %d-%d", r.phi_clauses.start, r.phi_clauses.start + r.phi_clauses.count - 1);
-        } else {
-            out.print("  %8s %4d  ", r.args[0].getKindName(), r.args[0].value);
-            out.print("  %8s %4d", r.args[01].getKindName(), r.args[1].value);
-        }
+        out.print("  %8s %4d  ", r.args[0].getKindName(), r.args[0].value);
+        out.print("  %8s %4d", r.args[01].getKindName(), r.args[1].value);
         out.newline();
     }
 

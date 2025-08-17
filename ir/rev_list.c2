@@ -1,0 +1,107 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir_rev_list;
+
+import ir local;
+
+import stdlib;
+import string;
+import stdio local;
+
+public type RevIndex struct {
+    u16 start;
+    u16 count;
+}
+
+public type RevList struct {
+    u8* nodes;
+    u32 capacity;
+    u32 count;
+
+    u32 block_capacity;
+    u32 block_count;
+    RevIndex* indexes;  // [num_blocks]
+}
+
+public fn void RevList.create(RevList* r, u32 num_blocks) {
+    string.memset(r, 0, sizeof(RevList));
+
+    r.capacity = 1024;
+    r.block_capacity = num_blocks;
+    r.nodes = stdlib.malloc(r.capacity * sizeof(u8));
+    r.indexes = stdlib.malloc(num_blocks * sizeof(RevIndex));
+}
+
+public fn void RevList.build(RevList* r, FunctionInfo* info) {
+    r.count = 0;
+    u32 num_blocks = info.blocks.getCount();
+    if (num_blocks > r.block_capacity) {
+        assert(0); // TODO resize
+    }
+    r.block_count = num_blocks;
+
+    // no block goes to block 0
+    // Note: pretty inefficient way to do this, but easy code
+    r.indexes[0].start = 0;
+    r.indexes[0].count = 0;
+    for (u32 i=1; i<num_blocks; i++) {
+        u32 dest = i;
+        u32 start = r.count;
+        for (u32 j=0; j<num_blocks; j++) {
+            Block* b = info.blocks.get(j);
+            if (block_has_dest(b, &info.cases, dest)) {
+                assert(r.count <  r.capacity); // TODO resize
+                r.nodes[r.count++] = cast<u8>(j);
+            }
+        }
+        u32 count = r.count - start;
+        r.indexes[i].count = cast<u16>(count);
+        if (count) {
+            r.indexes[i].start = cast<u16>(start);
+        } else {
+            r.indexes[i].start = 0;
+        }
+    }
+}
+
+public fn void RevList.free(RevList* r) {
+    stdlib.free(r.nodes);
+    stdlib.free(r.indexes);
+}
+
+public fn RevIndex RevList.getBlockIndex(const RevList* r, BlockId blk_id) {
+    return r.indexes[blk_id];
+}
+
+public fn u8 RevList.getRev(const RevList* r, u32 idx) {
+    return r.nodes[idx];
+}
+
+
+public fn void RevList.dump(const RevList* r) @(unused) {
+    printf("Revlist [%d blocks]\n", r.block_count);
+    for (u32 i=0; i<r.block_count; i++) {
+        printf("  B%d  [", i);
+        u32 start = r.indexes[i].start;
+        u32 count = r.indexes[i].count;
+        for (u32 j=0; j<count; j++) {
+            printf(" %d", r.nodes[start+j]);
+
+        }
+        printf(" ]\n");
+    }
+}
+

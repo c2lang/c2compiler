@@ -21,13 +21,13 @@ import stdlib;
 public type CaseId u32;
 
 
-type Case struct {
+public type Case struct {
     u32 value;  // TODO include ranges, etc
     BlockId block;
 }
 static_assert(8, sizeof(Case));
 
-type CaseList struct {
+public type CaseList struct {
     u32 count;
     u32 capacity;
     Case* cases;
@@ -51,7 +51,7 @@ fn void CaseList.resize(CaseList* l, u32 extra, bool copy) {
     l.cases = cases2;
 }
 
-fn CaseId CaseList.reserve(CaseList* l, u32 count) {
+public fn CaseId CaseList.reserve(CaseList* l, u32 count) {
     u32 avail = l.capacity - l.count;
     if (count > avail) l.resize(count-avail, true);
     CaseId idx = l.count;
@@ -59,21 +59,21 @@ fn CaseId CaseList.reserve(CaseList* l, u32 count) {
     return idx;
 }
 
-fn void CaseList.set(CaseList* l, CaseId id, u32 value, BlockId block) {
+public fn void CaseList.set(CaseList* l, CaseId id, u32 value, BlockId block) {
     Case* c = &l.cases[id];
     c.value = value;
     c.block = block;
 }
 
-fn void CaseList.clear(CaseList* l) {
+public fn void CaseList.clear(CaseList* l) {
     l.count = 0;
 }
 
-fn u32 CaseList.getCount(const CaseList* l) {
+public fn u32 CaseList.getCount(const CaseList* l) {
     return l.count;
 }
 
-fn Case* CaseList.get(const CaseList* l, CaseId idx) {
+public fn Case* CaseList.get(const CaseList* l, CaseId idx) {
     return &l.cases[idx];
 }
 
