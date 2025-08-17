@@ -45,25 +45,16 @@ type File struct {
     u32 offset;
     u32 data_size;
     bool is_generated;
-    bool is_source;
     bool is_const;
-    char* data_;
+    char* data;
     CheckPoint *checkpoints;
 }
 
 fn void File.clear(File* f) {
-    if (!f.is_const) stdlib.free(f.data_);
-    f.data_ = nil;
+    if (!f.is_const) stdlib.free(f.data);
+    f.data = nil;
     stdlib.free(f.checkpoints);
     f.checkpoints = nil;
-}
-
-fn u32 File.size(const File* f) {
-    return f.data_size;
-}
-
-fn const char* File.data(File* f) {
-    return f.data_;
 }
 
 fn CheckPoint update_checkpoint(CheckPoint cp, const char* src, u32 len) {
@@ -90,7 +81,7 @@ fn void File.addCheckPoints(File* f) {
     u32 ncheck = f.data_size / CheckPointSize;
     CheckPoint* cp = stdlib.malloc((ncheck + 1) * sizeof(CheckPoint));
     CheckPoint pos = { 0, 0 }
-    const char* src = f.data_;
+    const char* src = f.data;
     f.checkpoints = cp;
     while (ncheck-- > 0) {
         *cp++ = pos;
@@ -104,12 +95,12 @@ fn CheckPoint File.findCheckPoint(File *f, u32 offset) {
     if (!f.checkpoints) f.addCheckPoints();
     CheckPoint pos = f.checkpoints[offset / CheckPointSize];
     u32 chunk = offset % CheckPointSize;
-    const char* src = f.data_ + offset - chunk;
+    const char* src = f.data + offset - chunk;
     return update_checkpoint(pos, src, chunk);
 }
 
 public type SourceMgr struct @(opaque) {
-    const string_pool.Pool* pool;
+    string_pool.Pool* pool;
 
     File* files;
     u32 num_files;
@@ -121,7 +112,7 @@ public type SourceMgr struct @(opaque) {
     u16* index;
 }
 
-public fn SourceMgr* create(const string_pool.Pool* pool) {
+public fn SourceMgr* create(string_pool.Pool* pool) {
     SourceMgr* sm = stdlib.calloc(1, sizeof(SourceMgr));
     sm.pool = pool;
     sm.max_files = InitialMaxFiles;
@@ -148,8 +139,7 @@ public fn void SourceMgr.clear(SourceMgr* sm, i32 handle) {
     if (handle >= 0) start_handle = (u32)(handle + 1);
 
     for (u32 i = start_handle; i < sm.num_files; i++) {
-        File* f = &sm.files[i];
-        f.clear();
+        sm.files[i].clear();
     }
     sm.num_files = start_handle;
     sm.index_count = 1;
@@ -160,22 +150,6 @@ public fn void SourceMgr.clear(SourceMgr* sm, i32 handle) {
     sm.max_offset = sm.index_count * FileIndexSize;
 }
 
-fn void* SourceMgr.loadFile(SourceMgr* sm, u32 name, SrcLoc loc, u32* psize) {
-    const char* filename = sm.pool.idx2str(name);
-    file_utils.File file.init("", filename);
-    if (file.load()) return file.detach(psize);
-
-    // TODO only color if enabled (cannot use console since we need source loc first)
-    if (loc) {
-        stdio.fprintf(stdio.stderr, "%s: %serror:%s cannot open %s: %s\n",
-                      sm.loc2str(loc), color.Red, color.Normal, filename, file.getError());
-    } else {
-        stdio.fprintf(stdio.stderr, "%serror%s: cannot open %s: %s\n",
-                      color.Red, color.Normal, filename, file.getError());
-    }
-    return nil;
-}
-
 fn void SourceMgr.resize(SourceMgr* sm) {
     sm.max_files *= 2;
     File* files2 = stdlib.malloc(sizeof(File) * sm.max_files);
@@ -184,38 +158,43 @@ fn void SourceMgr.resize(SourceMgr* sm) {
     sm.files = files2;
 }
 
-public fn i32 SourceMgr.addGenerated(SourceMgr* sm, u32 name, void* data, u32 size) @(unused) {
+public fn i32 SourceMgr.addGenerated(SourceMgr* sm, const char* name, void* data, u32 size) @(unused) {
 #if PrintGenerated
-    stdio.printf("------ GENERATED (%s) ------\n%s\n", sm.pool.idx2str(name), data);
+    stdio.printf("------ GENERATED (%s) ------\n%s\n", name, data);
 #endif
-    return sm.addFile(name, data, size, false, true, false);
+    return sm.addFile(name, data, size, true, false);
 }
 
-public fn i32 SourceMgr.addResource(SourceMgr* sm, u32 name, const void* data, u32 size) @(unused) {
+public fn i32 SourceMgr.addResource(SourceMgr* sm, const char* name, const void* data, u32 size) @(unused) {
 #if PrintGenerated
-    stdio.printf("------ RESOURCE (%s) ------\n%s\n", sm.pool.idx2str(name), data);
+    stdio.printf("------ RESOURCE (%s) ------\n%s\n", name, data);
 #endif
-    return sm.addFile(name, (void *)data, size, false, true, true);
+    return sm.addFile(name, (void *)data, size, true, true);
 }
 
-// Note: filename must be allocated in pool passed to SourceMgr
-public fn i32 SourceMgr.open(SourceMgr* sm, u32 filename, SrcLoc loc, bool is_source) {
-    // first check if file is already loaded
-    // TODO: use hashing
-    for (u32 i = 0; i < sm.num_files; i++) {
-        if (sm.files[i].filename == filename) {
-            return (i32)i;
+public fn i32 SourceMgr.loadFile(SourceMgr* sm, const char* filename, SrcLoc sloc) {
+    file_utils.File file.init("", filename);
+    if (!file.load()) {
+        char[256] tmp;
+        *tmp = '\0';
+        if (sloc) {
+            Location loc = sm.locate(sloc);
+            if (loc.line_start) {
+                stdio.snprintf(tmp, elemsof(tmp), "%s:%d:%d: ", loc.filename, loc.line, loc.column);
+            }
         }
+        // TODO only color if enabled (cannot use console since we need source loc first)
+        stdio.fprintf(stdio.stderr, "%s%serror:%s cannot open %s: %s\n",
+                      tmp, color.Red, color.Normal, filename, file.getError());
+        return -1;
     }
-
     u32 size;
-    void *data = sm.loadFile(filename, loc, &size);
-    if (!data) return -1;
-    return sm.addFile(filename, data, size, is_source, false, false);
+    void *data = file.detach(&size);
+    return sm.addFile(filename, data, size, false, false);
 }
 
-fn i32 SourceMgr.addFile(SourceMgr* sm, u32 filename, void* data, u32 size,
-                         bool is_source, bool is_generated, bool is_const) {
+fn i32 SourceMgr.addFile(SourceMgr* sm, const char* filename, void* data, u32 size,
+                         bool is_generated, bool is_const) {
 
     if (sm.num_files == sm.max_files) sm.resize();
 
@@ -223,11 +202,10 @@ fn i32 SourceMgr.addFile(SourceMgr* sm, u32 filename, void* data, u32 size,
     File* f = &sm.files[sm.num_files];
     string.memset(f, 0, sizeof(File));
 
-    f.filename = filename;
+    f.filename = sm.pool.addStr(filename, true);
     f.offset = sm.max_offset;
     f.data_size = size; // does not include null terminator byte
-    f.data_ = data;
-    f.is_source = is_source;
+    f.data = data;
     f.is_const = is_const;
     f.is_generated = is_generated;
     sm.max_offset += (size + FileIndexSize) & -FileIndexSize;
@@ -253,12 +231,9 @@ fn i32 SourceMgr.addFile(SourceMgr* sm, u32 filename, void* data, u32 size,
     return file_id;
 }
 
-public fn void SourceMgr.close(SourceMgr* sm, i32 file_id) {
-}
-
 public fn const char* SourceMgr.get_content(SourceMgr* sm, i32 handle) {
     assert((u32)handle < sm.num_files);
-    return sm.files[handle].data();
+    return sm.files[handle].data;
 }
 
 public fn u32 SourceMgr.get_offset(SourceMgr* sm, i32 handle) {
@@ -295,7 +270,7 @@ public fn Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
         CheckPoint pos = f.findCheckPoint(offset);
         l.line = pos.line + 1;
         l.column = pos.column + 1;
-        l.line_start = f.data_ + offset - pos.column;
+        l.line_start = f.data + offset - pos.column;
         l.filename = sm.pool.idx2str(f.filename);
     }
     //stdio.printf("    -> %s:%d:%d\n", l.filename, l.line, l.column);
@@ -313,28 +288,14 @@ public fn const char* SourceMgr.loc2str(SourceMgr* sm, SrcLoc sloc) {
     return tmp;
 }
 
-public fn void SourceMgr.report(SourceMgr* sm) {
-    u32 other_count = 0;
-    u32 other_size = 0;
-    u32 sources_count = 0;
-    u32 sources_size = 0;
-    for (u32 i = 0; i < sm.num_files; i++) {
-        const File* f = &sm.files[i];
-        if (f.is_source) {
-            sources_count++;
-            sources_size += f.size();
-        } else {
-            other_count++;
-            other_size += f.size();
-        }
-    }
-    stdio.printf("source-mgr: %d files, %d sources (%d bytes), %d other (%d bytes)\n",
-        sm.num_files, sources_count, sources_size, other_count, other_size);
-#if 1
+public fn void SourceMgr.report(SourceMgr* sm, bool full) {
     u32 total_size = sizeof(SourceMgr) + sm.max_files * sizeof(File) + sm.index_capacity * sizeof(u16);
+    u32 total_bytes = 0;
     u32 total_lines = 0;
-    for (u32 i=0; i<sm.num_files; i++) {
+    if (full) stdio.printf("source-mgr: %d files\n", sm.num_files);
+    for (u32 i = 0; i < sm.num_files; i++) {
         File* f = &sm.files[i];
+        total_bytes += f.data_size;
         total_size += f.data_size + 1;
         u32 lines = 0;
         if (f.data_size && f.checkpoints) {
@@ -344,10 +305,12 @@ public fn void SourceMgr.report(SourceMgr* sm) {
             lines = loc.line;
             total_lines += lines;
         }
-        stdio.printf("  %7d  %6d  %4d  %s%s\n",
-                     f.offset, f.data_size, lines, sm.pool.idx2str(f.filename),
-                     f.is_generated ? " (generated)" : "");
+        if (full) {
+            stdio.printf("  %7d  %6d  %4d  %s%s\n",
+                         f.offset, f.data_size, lines, sm.pool.idx2str(f.filename),
+                         f.is_generated ? " (generated)" : "");
+        }
     }
-    stdio.printf("  Total: %d bytes, %d lines\n", total_size, total_lines);
-#endif
+    stdio.printf("source-mgr: %d files, %d bytes, %d total size, %d lines\n",
+                 sm.num_files, total_bytes, total_size, total_lines);
 }

@@ -240,13 +240,10 @@ public fn Info* parse(source_mgr.SourceMgr* sm, string_pool.Pool* pool, const ch
     info.lib_dirs.init(pool);
     info.plugin_dirs.init(pool);
 
-    u32 filename_idx = pool.addStr(filename, false);
-    i32 file_id = sm.open(filename_idx, 0, false);
+    i32 file_id = sm.loadFile(filename, 0);
     if (file_id == -1) return nil;
 
     bool ok = info.parse(sm.get_content(file_id));
-
-    sm.close(file_id);
 
     if (!ok) return nil;
 

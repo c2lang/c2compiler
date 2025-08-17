@@ -74,7 +74,7 @@ public type Options struct {
     bool print_symbols;
     bool print_external_symbols;
     bool print_ast_stats;
-    bool print_reports;
+    u8 print_reports;
     bool show_libs;
     bool print_ir;
     bool print_all_ir;
@@ -100,9 +100,10 @@ public fn void build(string_pool.Pool* auxPool,
     c.build(auxPool, sm, diags, build_info, target, opts, pluginHandler, &info);
 
     if (opts.print_reports) {
-        c.sm.report();
+        c.sm.report(opts.print_reports > 1);
         c.context.report();
-        c.astPool.report();
+        c.astPool.report("astPool");
+        c.auxPool.report("auxPool");
     }
 
     diags.printStatus();
@@ -174,8 +175,8 @@ type Compiler struct {
     bool is_image; // require build-file, dont allow dynamic libs, dont allow module exports
 
     component.Component* mainComp;  // no ownership
-    u32 main_idx;  // in astpool
-    u32 libc_name; // in auxpool
+    u32 main_idx;  // in astPool
+    u32 libc_name; // in auxPool
     ast.Decl* mainFunc;
 
     // used to parse external components
@@ -364,21 +365,18 @@ fn void Compiler.build(Compiler* c,
     u64 t1_start = utils.now();
     for (u32 j=0; j<target.numFiles(); j++) {
         const build_target.File* f = target.getFile(j);
-        i32 file_id = sm.open(f.name, f.loc, true);
+        i32 file_id = sm.loadFile(auxPool.idx2str(f.name), f.loc);
         if (file_id == -1) return;   // note: error already printed
         console.debug("parsing %s", sm.getFileName(file_id));
 
         // parse error indicator updated in c.parser state
         c.parser.parse(file_id, false, false);
-        sm.close(file_id);
     }
     if (c.opts.trace_calls) {
-        i32 file_id = sm.addResource(c.auxPool.addStr("generator/c2_trace.c2", true),
-                                     C2_trace, elemsof(C2_trace) - 1);
+        i32 file_id = sm.addResource("generator/c2_trace.c2", C2_trace, elemsof(C2_trace) - 1);
         if (file_id == -1) return;   // note: error already printed
         console.debug("parsing %s", sm.getFileName(file_id));
         c.parser.parse(file_id, false, false);
-        sm.close(file_id);
     }
 
     u64 t1_end = utils.now();
@@ -554,10 +552,9 @@ fn void Compiler.free(Compiler* c) {
 
 fn void Compiler.add_source(void* arg, const char* name, string_buffer.Buf* content) {
     Compiler* c = arg;
-    u32 name2 = c.auxPool.addStr(name, false);
     u32 size;
     void *data = content.detach(&size);
-    i32 file_id = c.sm.addGenerated(name2, data, size);
+    i32 file_id = c.sm.addGenerated(name, data, size);
     c.parser.parse(file_id, false, true);
 }
 

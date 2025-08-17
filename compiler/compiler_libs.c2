@@ -97,8 +97,7 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
 
     char[file_utils.Max_path] fullname;
     if (!file_utils.make_path(fullname, elemsof(fullname), libdir, constants.manifest_name)) return;
-    u32 filename_idx = c.auxPool.addStr(fullname, false);
-    i32 file_id = c.sm.open(filename_idx, 0, false);
+    i32 file_id = c.sm.loadFile(fullname, 0);
     if (file_id == -1) return;
 
     u32 dirname = c.auxPool.addStr(libdir, false);
@@ -138,8 +137,6 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
         // Note: for now only support dynamic lib dependencies here
         c.createComponent(depname, false, false);
     }
-
-    c.sm.close(file_id);
 }
 
 fn bool Compiler.has_component(Compiler* c, u32 name) {
@@ -171,16 +168,13 @@ fn void Compiler.parseExternalModule(void* arg, ast.Module* m) {
     if (!file_utils.make_path_ext(filename, elemsof(filename), c.current.getPath(), m.getName(), ".c2i"))
         return;
 
-    u32 name = c.auxPool.addStr(filename, false);
-    i32 file_id = c.sm.open(name, 0, false);
+    i32 file_id = c.sm.loadFile(filename, 0);
     if (file_id == -1) return;   // note: error already printed
 
     m.setLoaded();
     console.debug("parsing %s", filename);
     // on parse error, c.parser state has already been updated
     c.parser.parse(file_id, true, false);
-
-    c.sm.close(file_id);
 }
 
 // parse all used <modules>.c2i
@@ -250,12 +244,10 @@ fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirna
             ||  !file_utils.is_file(fullname))
                 continue;
 
-            u32 filename_idx = c.auxPool.addStr(fullname, false);
-
             out.indent(2);
             out.print("%-12s", name);
             {
-                i32 file_id = c.sm.open(filename_idx, 0, false);
+                i32 file_id = c.sm.loadFile(fullname, 0);
                 if (file_id == -1) return;
 
                 u32 name_idx = c.auxPool.addStr(name, true);
@@ -295,7 +287,6 @@ fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirna
                     }
                 }
 
-                c.sm.close(file_id);
                 out.color(color.Normal);
                 out.newline();
             }

@@ -338,7 +338,7 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
                     opts.output_name = argv[i];
                     break;
                 case 'r':
-                    comp_opts.print_reports = true;
+                    comp_opts.print_reports += 1;
                     break;
                 case 's':
                     comp_opts.print_symbols = true;
@@ -465,9 +465,7 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
                           constants.recipe_name);
             exit(EXIT_FAILURE);
         }
-        u32 recipe_idx = c.auxPool.addStr(constants.recipe_name, false);
-
-        c.recipe_id = c.sm.open(recipe_idx, 0, false);
+        c.recipe_id = c.sm.loadFile(constants.recipe_name, 0);
         if (c.recipe_id == -1) exit(EXIT_FAILURE);
         if (!c.recipe.parse(c.recipe_id)) exit(EXIT_FAILURE);
         // keep c.recipe_id open so we can close source files in source_mgr
