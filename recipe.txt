@@ -157,6 +157,7 @@ executable c2c
     $warnings no-unused-parameter
     $warnings no-unused-enum-constant
 #    $warnings promote-to-error
+    $use pthread dynamic
 
     $backend c
 #    $backend ir
@@ -286,8 +287,14 @@ executable c2c
     ir/inserter.c2
     ir/instr.c2
     ir/instr_kind.c2
+    ir/instr_list.c2
     ir/interference_graph.c2
     ir/live_map.c2
+    ir/lookup_table.c2
+    ir/phi_list.c2
+    ir/print.c2
+    ir/ref.c2
+    ir/ref_list.c2
     ir/register_alloc.c2
     ir/rev_list.c2
     ir/rpo.c2
@@ -297,14 +304,9 @@ executable c2c
     ir/ssa.c2
     ir/switch.c2
     ir/symbol_list.c2
-    ir/instr_list.c2
-    ir/lookup_table.c2
-    ir/phi_list.c2
-    ir/print.c2
-    ir/ref.c2
-    ir/ref_list.c2
     ir/types.c2
     ir/usage_counter.c2
+    ir/work_queue.c2
 end
 
 executable c2tags

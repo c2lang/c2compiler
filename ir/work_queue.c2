@@ -1,0 +1,148 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir_context;
+
+import ir;
+
+import stdlib local;
+import string local;
+import unistd;
+import pthread;
+
+const u32 MAX_THREADS = 32;
+
+fn u32 online_cpus() {
+    i64 ncpus = unistd.sysconf(unistd._SC_NPROCESSORS_ONLN);
+    if (ncpus > 8) return 8;    // Hack around Ryzen virtual cores. Using only physical is faster
+    if (ncpus > 0) return cast<u32>(ncpus);
+    return 1;
+}
+
+
+type WorkQueue struct {
+    pthread.Mutex lock;
+
+    // vector of FunctionInfo's
+    u32 idx;
+    u32 count;
+    u32 capacity;
+    ir.FunctionInfo** funcs;
+}
+
+fn WorkQueue* WorkQueue.init(WorkQueue* q) {
+    memset(q, 0, sizeof(WorkQueue));
+    q.lock.init(nil);
+    q.resize(64);
+    return q;
+}
+
+fn void WorkQueue.free(WorkQueue* q) {
+    stdlib.free(q.funcs);
+}
+
+fn void WorkQueue.add(WorkQueue* q, ir.FunctionInfo* fi) {
+    // Adding is done single-threaded, no need to lock
+
+    if (q.count == q.capacity) q.resize(q.capacity * 2);
+
+    q.funcs[q.count] = fi;
+    q.count++;
+}
+
+fn void WorkQueue.resize(WorkQueue* q, u32 capacity) {
+    q.capacity = capacity;
+
+    ir.FunctionInfo** fns = malloc(capacity * sizeof(ir.FunctionInfo*));
+    if (q.count) {
+        memcpy(fns, q.funcs, q.count * sizeof(ir.FunctionInfo*));
+        stdlib.free(q.funcs);
+    }
+
+    q.funcs = fns;
+}
+
+fn ir.FunctionInfo* WorkQueue.get(WorkQueue* q) {
+    ir.FunctionInfo* fi = nil;
+    q.lock.lock();
+    if (q.idx != q.count) {
+        fi = q.funcs[q.idx++];
+    }
+    q.lock.unlock();
+    return fi;
+}
+
+type QueueWorker struct {
+    u32 index;
+    WorkQueue* queue;
+    pthread.Pthread thread;
+
+    Tools tools;
+}
+
+fn void* worker_main(void* arg) {
+    QueueWorker* w = arg;
+
+    while (1) {
+        ir.FunctionInfo* fi = w.queue.get();
+        if (!fi) break;
+
+        w.tools.fi = fi;
+        w.tools.arg2 = nil;
+        // TODO set w.tools.arg2 t Symbol* (only used during printing)
+        w.tools.convert_fn();
+    }
+    return nil;
+}
+
+fn QueueWorker* QueueWorker.create(u32 idx, WorkQueue* q, Context* c) {
+    QueueWorker* w = calloc(1, sizeof(QueueWorker));
+    w.index = idx;
+    w.queue = q;
+    w.tools.init(c, false); // never print during multi-threading
+    pthread.create(&w.thread, nil, worker_main, w);
+    return w;
+}
+
+fn void QueueWorker.destroy(QueueWorker* w) {
+    free(w);
+}
+
+fn void QueueWorker.join(QueueWorker* w) {
+    if (w.thread) pthread.join(w.thread, nil);
+    w.tools.free();
+}
+
+fn void WorkQueue.run(WorkQueue* q, Context* c, u32 num_threads) {
+    if (num_threads == 0) num_threads = online_cpus();
+    if (num_threads > MAX_THREADS) num_threads = MAX_THREADS;
+    if (num_threads > q.count) num_threads = q.count;
+
+    QueueWorker*[MAX_THREADS] workers = { nil }
+
+    for (u32 i=0; i<num_threads; i++) {
+        // TODO create different Tools*
+        workers[i] = QueueWorker.create(i, q, c);
+    }
+
+    // TODO handle Ctrl-C nicely
+
+    for (u32 i=0; i<num_threads; i++) {
+        QueueWorker* w = workers[i];
+        w.join();
+        w.destroy();
+    }
+}
+

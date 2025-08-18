@@ -40,12 +40,14 @@ type Tools struct {
     CopyList copies;
     usage_counter.Counter usage;
 
-    FunctionInfo* fi;   // no ownership
-
     // for printing
     bool print_all;
-    const void* arg1;
-    const void* arg2;
+    const void* arg1;   // Context*
+
+    // change per function
+    const void* arg2;   // Symbol*
+    FunctionInfo* fi;   // no ownership
+
 }
 static_assert(808, sizeof(Tools));
 
@@ -118,6 +120,9 @@ public type Context struct @(opaque) {
 
     // used during conversion of IR -> ASM
     Tools tools;
+
+    bool single_thread;
+    WorkQueue queue;
 }
 
 public fn Context* create(bool print) {
@@ -126,6 +131,9 @@ public fn Context* create(bool print) {
     c.constants.init(128);
     c.symbols.init(128);
     c.init_values.init(128);
+    c.queue.init();
+    c.single_thread = true;
+    //c.single_thread = false;
 
     // pre-load pool with slot names
     for (u32 slot = 0; slot < SlotMax; slot++) {
@@ -143,6 +151,7 @@ public fn Context* create(bool print) {
 }
 
 public fn void Context.free(Context* c) {
+    c.queue.free();
     c.tools.free();
     for (u32 i=1; i<c.symbols.getCount(); i++) {
         const Symbol* s = c.symbols.get(i);
@@ -158,6 +167,12 @@ public fn void Context.free(Context* c) {
     c.constants.free();
     c.pool.free();
     stdlib.free(c);
+}
+
+public fn void Context.convert_functions(Context* c) {
+    if (c.single_thread) return;    // already done
+
+    c.queue.run(c, 0);
 }
 
 public fn SymbolId Context.addStringLiteral(Context* c, const char* name, const char* text, u32 size) {
@@ -655,7 +670,11 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     c.b.tmp_info = nil;
 
     // TODO can be multi-threaded after this point (ready for inlining)
-    t.convert_fn();
+    if (c.single_thread) {
+        t.convert_fn();
+    } else {
+        c.queue.add(fi);
+    }
 }
 
 fn void Tools.convert_fn(Tools* t) {

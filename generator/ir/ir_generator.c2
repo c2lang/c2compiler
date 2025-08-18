@@ -584,6 +584,8 @@ public fn void generate(const char* target,
     component.Component* mainComp = comps.getLast();
     mainComp.visitModules(Generator.on_module, &gen);
 
+    gen.ctx.convert_functions();
+
     //gen.ctx.dump();
     //if (gen.print) gen.ctx.dump();
     if (gen.print) gen.ctx.print();
