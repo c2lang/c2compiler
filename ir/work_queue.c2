@@ -42,6 +42,21 @@ type WorkQueue struct {
     ir.FunctionInfo** funcs;
 }
 
+// TEMP to workaround include bug in bootstrap
+#if 1
+fn WorkQueue* WorkQueue.create() {
+    WorkQueue* q = stdlib.malloc(sizeof(WorkQueue));
+    memset(q, 0, sizeof(WorkQueue));
+    q.lock.init(nil);
+    q.resize(64);
+    return q;
+}
+
+fn void WorkQueue.free(WorkQueue* q) {
+    stdlib.free(q.funcs);
+    stdlib.free(q);
+}
+#else
 fn WorkQueue* WorkQueue.init(WorkQueue* q) {
     memset(q, 0, sizeof(WorkQueue));
     q.lock.init(nil);
@@ -52,6 +67,7 @@ fn WorkQueue* WorkQueue.init(WorkQueue* q) {
 fn void WorkQueue.free(WorkQueue* q) {
     stdlib.free(q.funcs);
 }
+#endif
 
 fn void WorkQueue.add(WorkQueue* q, ir.FunctionInfo* fi) {
     // Adding is done single-threaded, no need to lock

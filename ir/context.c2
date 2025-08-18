@@ -122,7 +122,9 @@ public type Context struct @(opaque) {
     Tools tools;
 
     bool single_thread;
-    WorkQueue queue;
+
+    // TODO make full member if include bug is solved in bootstrap
+    WorkQueue* queue;
 }
 
 public fn Context* create(bool print) {
@@ -131,7 +133,8 @@ public fn Context* create(bool print) {
     c.constants.init(128);
     c.symbols.init(128);
     c.init_values.init(128);
-    c.queue.init();
+    //c.queue.init();
+    c.queue = WorkQueue.create();
     c.single_thread = true;
     //c.single_thread = false;
 
