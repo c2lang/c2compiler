@@ -27,10 +27,8 @@ import ir_slot_values local;
 import string_pool;
 import usage_counter;
 
-import stdlib;
-#if DebugIr
 import stdio;
-#endif
+import stdlib;
 
 type Tools struct {
     ir_lookup_table.Table conversion;
@@ -42,13 +40,16 @@ type Tools struct {
     CopyList copies;
     usage_counter.Counter usage;
 
-    // for printing, print_func(arg1, arg2, FunctionInfo*, const char* label)
+    FunctionInfo* fi;   // no ownership
+
+    // for printing
+    bool print_all;
     const void* arg1;
     const void* arg2;
 }
-static_assert(792, sizeof(Tools));
+static_assert(808, sizeof(Tools));
 
-fn void Tools.init(Tools* t, const void* arg1) {
+fn void Tools.init(Tools* t, const void* arg1, bool print) {
     t.conversion.init(64);
     t.slot_values.create();
     t.collector.create();
@@ -56,6 +57,7 @@ fn void Tools.init(Tools* t, const void* arg1) {
     t.inserter.create();
     t.copies.init(1024);
     t.usage.init(1024);
+    t.print_all = print;
     t.arg1 = arg1;
     t.arg2 = nil;
 }
@@ -68,6 +70,16 @@ fn void Tools.free(Tools* t) {
     t.collector.free();
     t.slot_values.free();
     t.conversion.free();
+}
+
+fn void Tools.print_func(const Tools* t, const char* label) {
+    const Context* c = t.arg1;
+    c.print_function(t.arg2, t.fi, label);
+}
+
+fn u32 getSlotName(u32 slot) {
+    // see Context.create()
+    return 4 + slot*4;
 }
 
 type Builder struct {
@@ -104,10 +116,8 @@ public type Context struct @(opaque) {
 
     Builder b;
 
-    // only used during optimization
+    // used during conversion of IR -> ASM
     Tools tools;
-
-    bool print_all;
 }
 
 public fn Context* create(bool print) {
@@ -117,10 +127,18 @@ public fn Context* create(bool print) {
     c.symbols.init(128);
     c.init_values.init(128);
 
+    // pre-load pool with slot names
+    for (u32 slot = 0; slot < SlotMax; slot++) {
+        char[8] slot_name;
+        // Result: starts at 4, then +4 each
+        // Note: just 4,8,12,
+        stdio.sprintf(slot_name, "s%d", slot);
+        u32 idx = c.pool.addStr(slot_name, false);
+    }
+
     c.b.init();
 
-    c.tools.init(c);
-    c.print_all = print;
+    c.tools.init(c, print);
     return c;
 }
 
@@ -576,16 +594,12 @@ public fn Ref Context.addIntegerConstant(Context* c, i64 size) {
 }
 
 public fn void Context.addComment(Context* c, const char* text) {
-    c.addComment2(text, c.b.tmp_info);
-}
-
-fn Ref Context.addComment2(Context* c, const char* text, FunctionInfo* info) {
+    FunctionInfo* fi = c.b.tmp_info;
     u32 idx = c.pool.addStr(text, false);
-    Ref out.init(RefKind.Temp, info.instructions.getCount());
-    Instr* i = info.instructions.add();
+    Ref out.init(RefKind.Temp, fi.instructions.getCount());
+    Instr* i = fi.instructions.add();
     Ref ref.init(RefKind.Text, idx);
     i.init1(InstrKind.Comment, ref);
-    return out;
 }
 
 public fn CaseId Context.addSwitchInstr(Context* c, Ref cond, BlockId join_blk, u32 num_cases) {
@@ -605,11 +619,6 @@ public fn CaseId Context.addSwitchInstr(Context* c, Ref cond, BlockId join_blk, 
     return case_id;
 }
 
-fn void print_func(const void* arg1, const void* arg2, const FunctionInfo* fi, const char* label) @(unused) {
-    const Context* c = arg1;
-    c.print_function(arg2, fi, label);
-}
-
 public fn void Context.setCase(Context* c, CaseId case_id, u32 value, BlockId blk_id) {
 #if DebugIr
     stdio.printf("  case (%d) value %d blk %d\n", case_id, value, blk_id);
@@ -624,18 +633,19 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     FunctionInfo* fi = c.b.tmp_info;
 
     t.arg2 = symbol;
+    t.fi = fi;
 
     u32 num_blocks = fi.blocks.getCount();
     fi.num_slots = cast<u16>(c.b.slot_idx);
 
-    const char* name = c.pool.idx2str(symbol.name);
+    //const char* name = c.pool.idx2str(symbol.name);
 
     //dump_function(fi, name);
-    if (c.print_all) c.print_function(symbol, fi, "after generation");
+    if (t.print_all) t.print_func("after generation");
     // prune unused and empty blocks, possible convert jmp_if to jmp
     checkDest(fi, 0);
 
-    if (c.print_all) c.print_function(symbol, fi, "after check dest");
+    if (t.print_all) t.print_func("after check dest");
 
     // TODO use Builder 2nd BlockList here (pass as well)
     t.reorder_blocks(fi, &c.b.block_order);
@@ -644,55 +654,51 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     symbol.f.info = fi;
     c.b.tmp_info = nil;
 
-    //dump_function(fi, name);
-    if (c.print_all && fi.blocks.getCount() > 1) c.print_function(symbol, fi, "after reorder");
-    //c.generate_graphviz(fi, name);
-
     // TODO can be multi-threaded after this point (ready for inlining)
+    t.convert_fn();
+}
+
+fn void Tools.convert_fn(Tools* t) {
+    FunctionInfo* fi = t.fi;
+    if (t.print_all && fi.blocks.getCount() > 1) t.print_func("after reorder");
+    //t.generate_graphviz(fi);
+
     // MULTI-THREAD: need to pre-alloc names for Slots (S0, S1, etc), since pool access needs to be read-only
 
     // NOTE: cannot have outstanding inserts which converting switches!
-    bool changed = t.convert_switches(fi);
-    if (changed && c.print_all) c.print_function(symbol, fi, "after convert switch");
-    //c.print_function(symbol, fi, "BEFORE collector fill");
+    bool changed = t.convert_switches();
+    if (changed && t.print_all) t.print_func("after convert switch");
+    //t.print_function(symbol, fi, "BEFORE collector fill");
 
-    //c.print_function(symbol, fi, "BEFORE create SSA");
-    c.create_ssa(symbol, fi, name);
-    //c.print_function(symbol, fi, "AFTER create SSA");
+    t.createSSA();
     //t.inserter.dump();
 
-    //if (fi.blocks.getCount() > 1 && c.print_all) c.print_function(symbol, fi, "after create SSA");
+    //if (fi.blocks.getCount() > 1 && t.print_all) t.print_func("after create SSA");
 
     if (t.inserter.needsFixup()) {
-        t.fixup_function(fi);
-        //if (c.print_all) c.print_function(symbol, fi, "after fixup");
+        t.fixup_function();
+        //if (t.print_all) t.print_func("after fixup");
     }
-    if (fi.blocks.getCount() > 1 && c.print_all) c.print_function(symbol, fi, "after create SSA");
-    //c.print_function(symbol, fi, "AFTER fixup");
+    if (fi.blocks.getCount() > 1 && t.print_all) t.print_func("after create SSA");
+    //t.print_function(symbol, fi, "AFTER fixup");
 
-    t.eliminateCopies(fi);
-    //dump_function(fi, name);
-    if (c.print_all) c.print_function(symbol, fi, "after eliminate copies");
+    t.eliminateCopies();
+    if (t.print_all) t.print_func("after eliminate copies");
 
-    //c.propagateConstants(fi);
-    //if (c.print_all) c.print_function(symbol, fi, "after propagate constants");
-    t.removeUnused(fi);
-    //if (print) c.print_function(symbol, fi, "after remove unused");
+    //t.propagateConstants();
+    //if (t.print_all) t.print_function(symbol, fi, "after propagate constants");
+    t.removeUnused();
+    //if (print) t.print_func("after remove unused");
 
-    //t.propagateConstants(fi);
+    //t.propagateConstants();
 
-    t.removeNone(fi);
-    if (c.print_all) c.print_function(symbol, fi, "after remove none");
+    t.removeNone();
+    if (t.print_all) t.print_func("after remove none");
 
-    //c.print_function(symbol, fi, "BEFORE register allocation");
     t.allocateRegisters(fi);
-    //c.print_function(symbol, fi, "AFTER register allocation");
-    //dump_function(fi, name);
 
-    if (t.inserter.needsFixup()) t.fixup_function(fi);
-    if (c.print_all) c.print_function(symbol, fi, "after register allocation + phi-removal");
-    //c.print_function(symbol, fi, "AFTER register allocation");
-    //c.print_function(symbol, fi, "AFTER register allocation + fixup");
+    if (t.inserter.needsFixup()) t.fixup_function();
+    if (t.print_all) t.print_func("after register allocation + phi-removal");
 
     // generate Instruction
     // ..

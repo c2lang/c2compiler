@@ -21,7 +21,8 @@ import string_buffer;
 
 import stdio;
 
-fn void Context.generate_graphviz(Context* c, FunctionInfo* fi, const char* name) @(unused) {
+// Note: Tools not used
+fn void Tools.generate_graphviz(Tools* t, FunctionInfo* fi) @(unused) {
     string_buffer.Buf * out = string_buffer.create(16*1024, false, 2);
 
     out.add("-------------\n");

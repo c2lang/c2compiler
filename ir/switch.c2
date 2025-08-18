@@ -20,7 +20,8 @@ import ir_inserter local;
 
 import index_list;
 
-fn bool Tools.convert_switches(Tools* t, FunctionInfo* fi) {
+fn bool Tools.convert_switches(Tools* t) {
+    FunctionInfo* fi = t.fi;
 
     u32 num_blocks = fi.blocks.getCount();
     // TODO add to Tools, dont re-create every time

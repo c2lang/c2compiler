@@ -203,7 +203,8 @@ fn void Tools.createBlockInterferences(Tools* t, u32 blk_id, FunctionInfo* fi, L
     //v.store((u16)blk_id);
 }
 
-fn void Tools.checkBlockLiveness(Tools* t, u32 blk_id, FunctionInfo* fi, LiveVector* v) {
+fn void Tools.checkBlockLiveness(Tools* t, u32 blk_id, LiveVector* v) {
+    FunctionInfo* fi = t.fi;
     //printf("CHECK B%d\n", blk_id);
     Block* b = fi.blocks.get(blk_id);
 
@@ -321,7 +322,8 @@ fn void Tools.checkBlockLiveness(Tools* t, u32 blk_id, FunctionInfo* fi, LiveVec
     v.storeIn((u16)blk_id);
 }
 
-fn void Tools.replacePhis(Tools* t, FunctionInfo* fi) {
+fn void Tools.replacePhis(Tools* t) {
+    FunctionInfo* fi = t.fi;
     /*
         If phi-clause source block ends with:
             - 'jmp', just insert 'copy' before it
@@ -382,7 +384,9 @@ fn void Tools.replacePhis(Tools* t, FunctionInfo* fi) {
 }
 
 
-fn void Tools.insertSplitEdges(Tools* t, FunctionInfo* fi) {
+fn void Tools.insertSplitEdges(Tools* t) {
+    FunctionInfo* fi = t.fi;
+
     u32 num_blocks = fi.blocks.getCount();
     Block* blocks = fi.blocks.get(0);
     Instr* instrs = fi.instructions.get(0);
@@ -444,7 +448,8 @@ fn void Tools.insertSplitEdges(Tools* t, FunctionInfo* fi) {
     t.inserter.insertBlocks(&fi.blocks);
 }
 
-fn void Tools.removeSplitEdges(Tools* t, FunctionInfo* fi) {
+fn void Tools.removeSplitEdges(Tools* t) {
+    FunctionInfo* fi = t.fi;
     u32 num_blocks = fi.blocks.getCount();
     Block* blocks = fi.blocks.get(0);
 
@@ -485,9 +490,9 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
 
     t.inserter.clear(fi.blocks.getCount(), fi.instructions.getCount());
 
-    t.insertSplitEdges(fi);
+    t.insertSplitEdges();
 
-    if (t.inserter.needsFixup()) t.fixup_function(fi);
+    if (t.inserter.needsFixup()) t.fixup_function();
 
     u32 num_blocks = fi.blocks.getCount();
     Block* blocks = fi.blocks.get(0);
@@ -502,7 +507,7 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
 
     for (u32 i = 0; i < num_blocks; i++) {
         u32 blk_id = rpo.blocks[i];
-        t.checkBlockLiveness(blk_id, fi, &v);
+        t.checkBlockLiveness(blk_id, &v);
     }
     rpo.free();
     //v.dumpRanges(num_blocks);
@@ -591,8 +596,8 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
     }
 
     v.free();
-    t.replacePhis(fi);
-    t.removeSplitEdges(fi);
+    t.replacePhis();
+    t.removeSplitEdges();
     // TODO sort Blocks (not instructions)
 }
 
