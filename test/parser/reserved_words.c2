@@ -1,0 +1,83 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    u32 alignas;    // @error{reserved word 'alignas' cannot be used as struct/union member name}
+    u32 alignof;    // @error{reserved word 'alignof' cannot be used as struct/union member name}
+    u32 auto;       // @error{reserved word 'auto' cannot be used as struct/union member name}
+    u32 constexpr;  // @error{reserved word 'constexpr' cannot be used as struct/union member name}
+    u32 do;         // @error{reserved word 'do' cannot be used as struct/union member name}
+    u32 double;     // @error{reserved word 'double' cannot be used as struct/union member name}
+    u32 extern;     // @error{reserved word 'extern' cannot be used as struct/union member name}
+    u32 float;      // @error{reserved word 'float' cannot be used as struct/union member name}
+    u32 inline;     // @error{reserved word 'inline' cannot be used as struct/union member name}
+    u32 int;        // @error{reserved word 'int' cannot be used as struct/union member name}
+    u32 long;       // @error{reserved word 'long' cannot be used as struct/union member name}
+    u32 nullptr;    // @error{reserved word 'nullptr' cannot be used as struct/union member name}
+    u32 register;   // @error{reserved word 'register' cannot be used as struct/union member name}
+    u32 restrict;   // @error{reserved word 'restrict' cannot be used as struct/union member name}
+    u32 short;      // @error{reserved word 'short' cannot be used as struct/union member name}
+    u32 signed;     // @error{reserved word 'signed' cannot be used as struct/union member name}
+    u32 static;     // @error{reserved word 'static' cannot be used as struct/union member name}
+    u32 thread_local;   // @error{reserved word 'thread_local' cannot be used as struct/union member name}
+    u32 typedef;    // @error{reserved word 'typedef' cannot be used as struct/union member name}
+    u32 typeof;     // @error{reserved word 'typeof' cannot be used as struct/union member name}
+    u32 typeof_unqual;  // @error{reserved word 'typeof_unqual' cannot be used as struct/union member name}
+    u32 unsigned;   // @error{reserved word 'unsigned' cannot be used as struct/union member name}
+    u32 size_t;     // @error{reserved word 'size_t' cannot be used as struct/union member name}
+    u32 ssize_t;    // @error{reserved word 'ssize_t' cannot be used as struct/union member name}
+}
+
+fn void foo(
+    u32 alignas,    // @error{reserved word 'alignas' cannot be used as parameter name}
+    u32 alignof,    // @error{reserved word 'alignof' cannot be used as parameter name}
+    u32 auto,       // @error{reserved word 'auto' cannot be used as parameter name}
+    u32 constexpr,  // @error{reserved word 'constexpr' cannot be used as parameter name}
+    u32 do,         // @error{reserved word 'do' cannot be used as parameter name}
+    u32 double,     // @error{reserved word 'double' cannot be used as parameter name}
+    u32 extern,     // @error{reserved word 'extern' cannot be used as parameter name}
+    u32 float,      // @error{reserved word 'float' cannot be used as parameter name}
+    u32 inline,     // @error{reserved word 'inline' cannot be used as parameter name}
+    u32 int,        // @error{reserved word 'int' cannot be used as parameter name}
+    u32 long,       // @error{reserved word 'long' cannot be used as parameter name}
+    u32 nullptr,    // @error{reserved word 'nullptr' cannot be used as parameter name}
+    u32 register,   // @error{reserved word 'register' cannot be used as parameter name}
+    u32 restrict,   // @error{reserved word 'restrict' cannot be used as parameter name}
+    u32 short,      // @error{reserved word 'short' cannot be used as parameter name}
+    u32 signed,     // @error{reserved word 'signed' cannot be used as parameter name}
+    u32 static,     // @error{reserved word 'static' cannot be used as parameter name}
+    u32 thread_local,   // @error{reserved word 'thread_local' cannot be used as parameter name}
+    u32 typedef,    // @error{reserved word 'typedef' cannot be used as parameter name}
+    u32 typeof,     // @error{reserved word 'typeof' cannot be used as parameter name}
+    u32 typeof_unqual,  // @error{reserved word 'typeof_unqual' cannot be used as parameter name}
+    u32 unsigned,   // @error{reserved word 'unsigned' cannot be used as parameter name}
+    u32 size_t,     // @error{reserved word 'size_t' cannot be used as parameter name}
+    u32 ssize_t,    // @error{reserved word 'ssize_t' cannot be used as parameter name}
+        ) {}
+
+fn void bar() {
+    u32 alignas;    // @error{reserved word 'alignas' cannot be used as local variable name}
+    u32 alignof;    // @error{reserved word 'alignof' cannot be used as local variable name}
+    u32 auto;       // @error{reserved word 'auto' cannot be used as local variable name}
+    u32 constexpr;  // @error{reserved word 'constexpr' cannot be used as local variable name}
+    u32 do;         // @error{reserved word 'do' cannot be used as local variable name}
+    u32 double;     // @error{reserved word 'double' cannot be used as local variable name}
+    u32 extern;     // @error{reserved word 'extern' cannot be used as local variable name}
+    u32 float;      // @error{reserved word 'float' cannot be used as local variable name}
+    u32 inline;     // @error{reserved word 'inline' cannot be used as local variable name}
+    u32 int;        // @error{reserved word 'int' cannot be used as local variable name}
+    u32 long;       // @error{reserved word 'long' cannot be used as local variable name}
+    u32 nullptr;    // @error{reserved word 'nullptr' cannot be used as local variable name}
+    u32 register;   // @error{reserved word 'register' cannot be used as local variable name}
+    u32 restrict;   // @error{reserved word 'restrict' cannot be used as local variable name}
+    u32 short;      // @error{reserved word 'short' cannot be used as local variable name}
+    u32 signed;     // @error{reserved word 'signed' cannot be used as local variable name}
+    u32 static;     // @error{reserved word 'static' cannot be used as local variable name}
+    u32 thread_local;   // @error{reserved word 'thread_local' cannot be used as local variable name}
+    u32 typedef;    // @error{reserved word 'typedef' cannot be used as local variable name}
+    u32 typeof;     // @error{reserved word 'typeof' cannot be used as local variable name}
+    u32 typeof_unqual;  // @error{reserved word 'typeof_unqual' cannot be used as local variable name}
+    u32 unsigned;   // @error{reserved word 'unsigned' cannot be used as local variable name}
+    u32 size_t;     // @error{reserved word 'size_t' cannot be used as local variable name}
+    u32 ssize_t;    // @error{reserved word 'ssize_t' cannot be used as local variable name}
+}

@@ -21,14 +21,29 @@ import token local;
 import string;
 
 public type Info struct {
-    // Note: should be big enough to hold all keywords (currently 350-ish)
-    Kind[512] indexes;
+    // Note: should be big enough to hold all keywords (4+436+216 with alignment)
+    Kind[656] indexes;
     u32 max_index;
 }
 
+const char[] C_keywords = "alignas alignof auto constexpr do double extern"
+    " float inline int long nullptr register restrict short signed static"
+    " thread_local typedef typeof typeof_unqual unsigned size_t ssize_t";
+
 public fn void Info.init(Info* info, string_pool.Pool* pool) {
     u32 idx = 0;
-    string.memset(info.indexes, 0, sizeof(info.indexes));
+    string.memset(info, 0, sizeof(Info));
+    const char *p = C_keywords;
+    while (*p) {
+        u32 len;
+        for (len = 0; p[len] && p[len] != ' '; len++)
+            continue;
+        idx = pool.add(p, len, true);
+        assert(idx < elemsof(info.indexes));
+        info.indexes[idx] = Error;
+        p += len;
+        while (*p == ' ') p++;
+    }
     for (Kind k = Kind.KW_bool; k <= Kind.KW_while; k++) {
         const char *s = k.str();
         idx = pool.add(s, string.strlen(s), true);

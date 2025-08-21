@@ -364,6 +364,10 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
             if (result.name_idx <= t.kwinfo.max_index) {
                 Kind k = t.kwinfo.indexes[result.name_idx];
                 assert(k != Kind.None);
+                if (k == Kind.Error) {
+                    result.reserved = true;
+                    return;
+                }
                 result.kind = k;    // turn into keyword
             }
             return;

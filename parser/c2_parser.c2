@@ -553,6 +553,10 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
         if (!p.checkName(name, p.is_interface)) {
             p.error("a parameter name must start with a lower case character");
         }
+        if (p.tok.reserved) {
+            p.diags.error(loc, "reserved word '%s' cannot be used as parameter name",
+                          p.pool.idx2str(name));
+        }
         p.consumeToken();
     }
 
