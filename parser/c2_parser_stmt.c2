@@ -541,6 +541,10 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
 
         u32 name = p.tok.name_idx;
         SrcLoc loc = p.tok.loc;
+        if (p.tok.reserved) {
+            p.diags.error(loc, "reserved word '%s' cannot be used as local variable name",
+                          p.pool.idx2str(name));
+        }
         p.consumeToken();
 
         // TODO same as parseVarDecl()
