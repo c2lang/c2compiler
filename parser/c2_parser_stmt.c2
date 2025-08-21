@@ -75,7 +75,8 @@ fn Stmt* Parser.parseStmt(Parser* p) {
     case KW_usize:
     case KW_volatile:
     case KW_void:
-        return p.parseDeclStmt(true, true, true);
+        // checkSemi, allowLocal, !isCondition
+        return p.parseDeclStmt(true, true, false);
     case KW_while:
         return p.parseWhileStmt();
     default:
@@ -207,7 +208,10 @@ fn Stmt* Parser.parseDeclOrStmt(Parser* p) {
     assert(p.tok.kind == Kind.Identifier);
     bool isDecl = p.isTypeSpec();
 
-    if (isDecl) return p.parseDeclStmt(true, true, true);
+    if (isDecl) {
+        // checkSemi, allowLocal, !isCondition
+        return p.parseDeclStmt(true, true, false);
+    }
 
     Kind kind = p.tokenizer.lookahead(1, nil);
     if (kind == Kind.Colon) return p.parseLabelStmt();
@@ -425,7 +429,8 @@ fn Stmt* Parser.parseCondition(Parser* p) {
 
     Stmt* s;
     if (p.isDeclaration()) {
-        s = p.parseDeclStmt(false, false, false);
+        // !checkSemi, !allowLocal, isCondition
+        s = p.parseDeclStmt(false, false, true);
     } else {
         Expr* cond = p.parseExpr();
         s = cond.asStmt();
@@ -480,7 +485,8 @@ fn Stmt* Parser.parseForStmt(Parser* p) {
     if (p.tok.kind != Kind.Semicolon) {
         // parseCondition
         if (p.isDeclaration()) {
-            init = p.parseDeclStmt(false, false, true);
+            // !checkSemi, !allowLocal, !isCondition
+            init = p.parseDeclStmt(false, false, false);
         } else {
             init = p.parseExpr().asStmt();
         }
@@ -516,7 +522,7 @@ fn Stmt* Parser.parseWhileStmt(Parser* p) {
     return p.builder.actOnWhileStmt(loc, cond, then);
 }
 
-fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool allowComma) {
+fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool isCondition) {
     VarDecl*[MaxMultiDecl] decls;
     u32 num_decls = 0;
     bool has_local = false;
@@ -526,6 +532,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool a
         p.consumeToken();
     }
 
+    bool need_semi = true;
     TypeRefHolder ref.init();
     p.parseTypeSpecifier(&ref, true, true);
 
@@ -538,6 +545,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool a
 
         // TODO same as parseVarDecl()
         bool has_init_call = false;
+        need_semi = true;
         Expr* initValue = nil;
         SrcLoc assignLoc = 0;
 
@@ -546,7 +554,8 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool a
             assignLoc = p.tok.loc;
             p.consumeToken();
             initValue = p.parseInitValue(false);
-            checkSemi = checkSemi && initValue.needsSemi();
+            // handle type var = a = { xxx }
+            need_semi = checkSemi && initValue.needsSemi();
             break;
         case At:
             p.error("local variables cannot have attributes");
@@ -556,7 +565,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool a
             &&  p.tokenizer.lookahead(2, nil) == Kind.LParen) {
                 if (has_local)
                     p.error("local qualified variables cannot have an init call");
-                if (!checkSemi)
+                if (isCondition)
                     p.error("cannot use an init call inside a condition");
                 p.consumeToken();
                 Ref[2] refs;
@@ -581,7 +590,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool a
         if (p.tok.kind != Kind.Comma)
             break;
         p.consumeToken();
-        if (!allowComma)
+        if (isCondition)
             p.error("cannot define multiple variables in a condition");
         if (ref.getNumPointers() || ref.getNumArrays())
             p.error("pointer and array variables must be defined separately");
@@ -589,7 +598,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool a
             p.error("too many variables defined in a single statement");
     }
     if (checkSemi) {
-        p.expectAndConsume(Kind.Semicolon);
+        p.consumeSemicolon(need_semi);
     }
     return p.builder.actOnDeclStmt(decls, num_decls);
 }

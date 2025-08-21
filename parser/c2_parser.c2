@@ -178,8 +178,8 @@ fn void Parser.consumeSemicolon(Parser* p, bool need_semi) {
     if (need_semi) {
         p.expectAndConsume(Kind.Semicolon);
     } else {
-        if (p.tok.kind == Kind.Semicolon && p.tok.loc == p.prev_loc) {
-            p.diags.error(p.tok.loc, "semicolon is not accepted after initializer");
+        if (p.tok.kind == Kind.Semicolon) {
+            p.diags.error(p.tok.loc, "no semicolon allowed after initializer list");
             p.consumeToken();
         }
     }
@@ -550,7 +550,6 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
     SrcLoc loc = p.tok.loc;
     if (p.tok.kind == Kind.Identifier) {
         name = p.tok.name_idx;
-
         if (!p.checkName(name, p.is_interface)) {
             p.error("a parameter name must start with a lower case character");
         }

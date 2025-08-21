@@ -1,3 +1,4 @@
+// @warnings{no-unused}
 module test;
 
 type Foo struct {
@@ -7,6 +8,7 @@ type Foo struct {
 fn void Foo.init(Foo* f, i32 v) { f.v = v; }
 
 fn void test4() {
-    for (Foo foo.init(1); false;)  // @error{cannot use an init call inside a condition}
+    // Init call accepted in init part of for statement (not a condition)
+    for (Foo foo.init(1); false;)
         return;
 }
