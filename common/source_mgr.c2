@@ -288,6 +288,19 @@ public fn const char* SourceMgr.loc2str(SourceMgr* sm, SrcLoc sloc) {
     return tmp;
 }
 
+public fn u32 SourceMgr.getNumFiles(const SourceMgr* sm) @(unused) {
+    return sm.num_files;
+}
+
+public type Visitor fn void (void* arg, u32 start, u32 size, const char* filename, const char* contents);
+
+public fn void SourceMgr.visitFiles(const SourceMgr* sm, void* arg, Visitor visitor) @(unused) {
+    for (u32 i = 0; i < sm.num_files; i++) {
+        File* f = &sm.files[i];
+        visitor(arg, f.offset, f.data_size, sm.pool.idx2str(f.filename), f.data);
+    }
+}
+
 public fn void SourceMgr.report(SourceMgr* sm, bool full) {
     u32 total_size = sizeof(SourceMgr) + sm.max_files * sizeof(File) + sm.index_capacity * sizeof(u16);
     u32 total_bytes = 0;
@@ -314,3 +327,4 @@ public fn void SourceMgr.report(SourceMgr* sm, bool full) {
     stdio.printf("source-mgr: %d files, %d bytes, %d total size, %d lines\n",
                  sm.num_files, total_bytes, total_size, total_lines);
 }
+

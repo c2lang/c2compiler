@@ -146,14 +146,12 @@ type Files struct {
 
 static_assert(20, sizeof(Files));
 
-//#define FILES_TAGS(x) ((TagRange*)(((char*) x.name_indexes) +  x.idx_cap * sizeof(u32)))
 fn void* Files.tags(const Files* f) {
     u8* ptr = cast<u8*>(f.name_indexes);
     ptr += f.idx_cap * sizeof(u32);
     return ptr;
 }
 
-//#define FILES_NAMES(x) (((char*) x.name_indexes) +  x.idx_cap * (sizeof(u32) + sizeof(TagRange)))
 fn void* Files.names(const Files* f) {
     u8* ptr = cast<u8*>(f.name_indexes);
     ptr += f.idx_cap * (sizeof(u32) + sizeof(TagRange));
@@ -298,6 +296,200 @@ fn void Files.dump(const Files* f, bool verbose) {
 
 #endif
 
+// ------ Files2 ------
+
+type File struct {
+    u32 start;
+    u32 size;
+    u32 name_idx;
+    u32 len_start;
+    u32 len_count;
+}
+
+type Files2 struct {
+    u32 total_size;         // of whole section
+    u32 files_count;       // used when creating
+    u32 files_cap;
+    u32 names_len;          // total len of 0-terminated names
+    u32 names_cap;
+    File[0] files;          // tail allocated
+    // names                // list of 0-terminated names, tail allocated
+}
+
+static_assert(20, sizeof(Files2));
+
+#if C2TagsGenerate
+fn Files2* Files2.create(u32 num_files, u32 max_namesize) {
+    u32 size = sizeof(Files2) + num_files * sizeof(File) + max_namesize;
+    size = round4(size);
+
+    Files2* f = malloc(size);
+    f.total_size = size;
+    f.files_count = 0;
+    f.files_cap = num_files;
+    f.names_len = 0;
+    f.names_cap = max_namesize;
+    // set last 4 bytes to 0, to prevent writing random data
+    u32* last = cast<u32*>(f);
+    last[(size/4)-1] = 0;
+    return f;
+}
+#endif
+
+#if C2TagsGenerate
+fn Files2* Files2.resizeNames(Files2* f, u32 max_data) {
+    Files2* f2 = Files2.create(f.files_cap, max_data);
+    if (f.files_count) {
+        f2.files_count = f.files_count;
+        memcpy(f2.files, f.files, f.files_count * sizeof(File));
+    }
+    if (f.names_len) {
+        f2.names_len = f.names_len;
+        memcpy(f2.names(), f.names(), f.names_len);
+    }
+    free(f);
+    return f2;
+}
+#endif
+
+fn void* Files2.names(const Files2* f) {
+    return (void*)&f.files[f.files_cap];
+}
+
+// NOTE: return NOT_FOUND if not found
+fn u32 Files2.name2idx(const Files2* f, const char* filename) {
+    const char* names = f.names();
+
+    for (u32 i=0; i<f.files_count; i++) {
+        const File* file = &f.files[i];
+        const char* name = names + file.name_idx;
+        if (strcmp(name, filename) == 0) return i;
+    }
+    return NOT_FOUND;
+}
+
+#if C2TagsGenerate
+fn void Files2.add(Files2** f_ptr, u32 start, u32 size, const char* filename, u32 len_start, u32 len_count) {
+    Files2* f = *f_ptr;
+
+    assert(f.files_count < f.files_cap);
+    File* file = &f.files[f.files_count];
+    file.start = start;
+    file.size = size;
+    file.name_idx = f.names_len;
+    file.len_start = len_start;
+    file.len_count = len_count;
+    f.files_count++;
+
+    u32 len = cast<u32>(strlen(filename)) + 1; // add 0-terminator
+    if (f.names_len + len > f.names_cap) {
+        f = f.resizeNames(f.names_cap * 2);
+        assert(f.names_len + len < f.names_cap);
+        *f_ptr = f;
+    }
+
+    char* names = f.names();
+    memcpy(names + f.names_len, filename, len);
+    f.names_len += len;
+}
+
+fn Files2* Files2.trim(Files2* f) {
+    if (f.names_len == f.names_cap) return f;
+
+    return f.resizeNames(f.names_len);
+}
+
+#else
+
+fn void Files2.dump(const Files2* f, bool verbose) {
+    printf("  files2:   %7d bytes  %d/%d files  %d/%d data\n",
+        f.total_size,
+        f.files_count, f.files_cap,
+        f.names_len, f.names_cap);
+    if (verbose) {
+        const char* names = f.names();
+        for (u32 i=0; i<f.files_count; i++) {
+            const File* file = &f.files[i];
+            printf("  [%4d] %5d %5d  len %5d %5d %s\n", i,
+                file.start, file.size, file.len_start, file.len_count, names + file.name_idx);
+        }
+    }
+}
+
+#endif
+
+// ------ Lengths ------
+
+type Lengths struct {
+    u32 total_size;         // of whole Files
+    u32 count;          // current number of entries
+    u32 cap;            // max number of entries
+    u8[0] lengths;
+}
+
+static_assert(12, sizeof(Lengths));
+
+#if C2TagsGenerate
+fn Lengths* Lengths.create(u32 max_lengths) {
+    u32 size = sizeof(Lengths) + max_lengths * sizeof(u8);
+    size = round4(size);
+
+    Lengths* f = malloc(size);
+    f.total_size = size;
+    f.count = 0;
+    f.cap = max_lengths;
+    return f;
+}
+#endif
+
+#if C2TagsGenerate
+fn Lengths* Lengths.resize(Lengths* f, u32 cap) {
+    Lengths* f2 = Lengths.create(cap);
+    if (f.count) {
+        f2.count = f.count;
+        memcpy(f2.lengths, f.lengths, f.count * sizeof(u8));
+    }
+    free(f);
+    return f2;
+}
+#endif
+
+#if C2TagsGenerate
+// Note: if tag_start == NOT_FOUND, dont set
+fn u32 Lengths.add(Lengths** f_ptr, u32 count, const u8* lengths) {
+    Lengths* f = *f_ptr;
+
+    u32 needed = f.count + count;
+    if (needed > f.cap) {
+        f = f.resize(needed);
+        *f_ptr = f;
+    }
+
+    u32 start = f.count;
+    memcpy(&f.lengths[f.count], lengths, count * sizeof(u8));
+    f.count = needed;
+
+    return start;
+}
+
+fn Lengths* Lengths.trim(Lengths* f) {
+    if (f.count == f.cap) return f;
+
+    return f.resize(f.count);
+}
+
+#else
+
+fn void Lengths.dump(const Lengths* f, bool verbose) {
+    printf("  Lengths:   %7d bytes  %d/%d entries\n", f.total_size, f.count, f.cap);
+    if (verbose) {
+        for (u32 i=0; i<f.count; i++) {
+            printf("  [%4d] %4d\n", i, f.lengths[i]);
+        }
+    }
+}
+
+#endif
 // ------ TAGS ------
 
 type Tag struct @(packed) {
@@ -645,6 +837,8 @@ public type Dest struct {
 public type Refs struct @(opaque) {
     // Sections (saved to file)
     Files* files;
+    Files2* files2;
+    Lengths* line_lengths;
     Tags* tags;
     Locs* locs;
 
@@ -664,9 +858,12 @@ public type Refs struct @(opaque) {
 }
 
 #if C2TagsGenerate
-public fn Refs* Refs.create() {
+public fn Refs* Refs.create(u32 num_files) {
     Refs* r = calloc(1, sizeof(Refs));
-    r.files = Files.create(32, 2048);
+    r.files = Files.create(num_files, 2048);
+    //r.files2 = Files2.create(num_files, 2048);
+    r.files2 = Files2.create(num_files, 4096);
+    r.line_lengths = Lengths.create(4096);
     r.tags = Tags.create(128);
     r.locs = Locs.create(64);
     r.symbols = radix_tree.create(512, 512);
@@ -681,6 +878,8 @@ public fn void Refs.free(Refs* r) {
     if (r.file.map) {
         close_file(r.file);
     } else {
+        section_free(r.line_lengths);
+        section_free(r.files2);
         section_free(r.files);
         section_free(r.tags);
         section_free(r.locs);
@@ -698,6 +897,12 @@ fn Refs* Refs.load_internal(MapFile f) {
     Files* files = section_load(&f, sizeof(Files));
     if (!files) return nil;
 
+    Files2* files2 = section_load(&f, sizeof(Files2));
+    if (!files2) return nil;
+
+    Lengths* line_lengths = section_load(&f, sizeof(Lengths));
+    if (!line_lengths) return nil;
+
     Tags* tags = section_load(&f, sizeof(Tags));
     if (!tags) return nil;
 
@@ -710,6 +915,8 @@ fn Refs* Refs.load_internal(MapFile f) {
 
     Refs* r = calloc(1, sizeof(Refs));
     r.files = files;
+    r.files2 = files2;
+    r.line_lengths = line_lengths;
     r.tags = tags;
     r.locs = locs;
     r.symbols = symbols;
@@ -739,6 +946,8 @@ public fn bool Refs.write(Refs* r, const char* filename) {
     if (fd == -1) return false;
 
     if (!section_write(fd, r.files)) return false;
+    if (!section_write(fd, r.files2)) return false;
+    if (!section_write(fd, r.line_lengths)) return false;
     if (!section_write(fd, r.tags)) return false;
     if (!section_write(fd, r.locs)) return false;
     if (!r.symbols.store(fd)) return false;
@@ -754,6 +963,7 @@ fn void Refs.trim(Refs* r) {
     r.cur_file_idx = NOT_FOUND;
 
     r.files = r.files.trim();
+    r.files2 = r.files2.trim();
     r.tags = r.tags.trim();
     r.locs = r.locs.trim();
     r.symbols.trim();
@@ -763,6 +973,14 @@ fn void Refs.trim(Refs* r) {
 public fn void Refs.add_file(Refs* r, const char* filename) {
     if (r.cur_file_idx != NOT_FOUND) r.files.setEndTag(r.cur_file_idx, r.tags.getCount());
     r.cur_file_idx = Files.add(&r.files, filename, r.tags.getCount());
+}
+
+public fn void Refs.add_file2(Refs* r, u32 start, u32 size, const char* filename, u32 len_start, u32 len_count) {
+    Files2.add(&r.files2, start, size, filename, len_start, len_count);
+}
+
+public fn u32 Refs.add_line_lengths(Refs* r, u32 count, const u8* lengths) {
+    return Lengths.add(&r.line_lengths, count, lengths);
 }
 
 fn u32 Refs.add_dest(Refs* r, const Dest* dest) {
@@ -889,6 +1107,7 @@ public fn void Refs.findSymbolUses(const Refs* r, const char* symbol_name, RefUs
 public fn void Refs.dump(const Refs* r, bool verbose) {
     printf("Refs:\n");
     r.files.dump(verbose);
+    r.files2.dump(verbose);
     r.tags.dump(verbose);
     r.locs.dump(verbose);
     r.symbols.dump(verbose);

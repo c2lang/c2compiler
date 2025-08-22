@@ -16,20 +16,102 @@
 module refs_generator;
 
 import ast local;
+import ast_visitor;
+import c2refs as refs;
 import component;
 import console;
-import c2refs as refs;
 import file_utils;
 import source_mgr;
-import ast_visitor;
+import string_utils local;
 
 import string;
+import stdlib;
+
+type Loc struct {
+    u32 line;
+    u32 column;
+}
+
+type LineCounter struct {
+    u32 count;
+    u32 cap;
+    u8* lengths;
+}
+
+fn void LineCounter.init(LineCounter* l) {
+    l.count = 0;
+    l.cap = 0;
+    l.resize(4096);
+}
+
+fn void LineCounter.free(LineCounter* l) {
+    stdlib.free(l.lengths);
+}
+
+fn void LineCounter.add(LineCounter* l, u32 len) {
+    assert(len <= 255);
+    if (l.count == l.cap) l.resize(l.cap * 2);
+
+    l.lengths[l.count++] = (u8)len;
+}
+
+fn void LineCounter.resize(LineCounter* l, u32 cap) {
+    l.cap = cap;
+    u8* lengths2 = stdlib.malloc(l.cap * sizeof(u8));
+    if (l.count) {
+        string.memcpy(lengths2, l.lengths, l.count);
+        stdlib.free(l.lengths);
+    }
+    l.lengths = lengths2;
+}
+
+fn Loc LineCounter.offset2loc(const LineCounter* l, u32 offset) {
+    // Note: offset should already be checked if it fits the file
+    u32 line = 0;
+    while (line < l.count) {
+        u8 line_len = l.lengths[line];
+        if (offset < line_len) break;
+        offset -= line_len;
+        line++;
+    }
+
+    // make line + column 1-based
+    Loc loc = { .line = line+1, .column = offset + 1}
+    return loc;
+}
+
+// offset 0 - line 1, column 1
+fn u32 LineCounter.loc2offset(const LineCounter* l, Loc loc) {
+    assert(loc.line != 0);
+    u32 offset = 0;
+    loc.line--;
+    for (u32 i = 0; i < loc.line; i++) {
+        offset += l.lengths[i];
+    }
+    return offset + loc.column - 1;
+}
+
+fn void LineCounter.handle(LineCounter* l, u32 size, const char* content) {
+    l.count = 0;
+
+    // Note: a line with just a newline is 1 byte long
+    u32 start = 0;
+    for (u32 i = 0; i < size; i++) {
+        if (content[i] == '\n') {
+            l.add(i - start + 1);
+            start = i + 1;
+        }
+    }
+    // note: dont need last line length
+}
+
 
 type Generator struct {
     source_mgr.SourceMgr* sm;
     refs.Refs* refs;
     const char* curfile;
     ast_visitor.Visitor* visitor;
+    LineCounter lines;
 }
 
 fn void Generator.on_decl(void* arg, Decl* d, bool global) {
@@ -128,9 +210,42 @@ fn void Generator.on_ref(void* arg, const Ref* ref) {
     gen.handleRef(ref);
 }
 
+fn void Generator.on_file(void* arg, u32 start, u32 size, const char* filename, const char* contents) {
+    Generator* gen = arg;
+
+    u32 len_start = 0;
+    u32 len_count = 0;
+
+    if (!endsWith(filename, ".c2") && !endsWith(filename, ".c2i")) {
+        filename = "-";
+    } else {
+        gen.lines.handle(size, contents);
+        len_count = gen.lines.count;
+        len_start = gen.refs.add_line_lengths(len_count, gen.lines.lengths);
+    }
+
+    gen.refs.add_file2(start, size, filename, len_start, len_count);
+}
+
+fn void Generator.init(Generator* gen, source_mgr.SourceMgr* sm) {
+    gen.sm = sm;
+    gen.refs = refs.Refs.create(sm.getNumFiles());
+    gen.lines.init();
+    gen.curfile = nil;
+    gen.visitor = ast_visitor.create(gen, Generator.on_ref);
+}
+
+fn void Generator.free(Generator* gen) {
+    gen.visitor.free();
+    gen.lines.free();
+    gen.refs.free();
+}
+
 public fn void generate(source_mgr.SourceMgr* sm, const char* output_dir, component.List* comps, const char* filename) {
-    Generator gen = { sm, refs.Refs.create(), nil }
-    gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
+    Generator gen.init(sm);
+
+    // for each file, store:  start, size, filename. Store line lengths
+    sm.visitFiles(&gen, Generator.on_file);
 
     for (u32 i=0; i<comps.size(); i++) {
         comps.get(i).visitModules(Generator.on_module, &gen);
@@ -139,8 +254,7 @@ public fn void generate(source_mgr.SourceMgr* sm, const char* output_dir, compon
     char[file_utils.Max_path] outfile;
     file_utils.make_path(outfile, elemsof(outfile), output_dir, filename);
     gen.refs.write(outfile);
-    gen.refs.free();
 
-    gen.visitor.free();
+    gen.free();
 }
 
