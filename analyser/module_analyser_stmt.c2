@@ -278,8 +278,23 @@ fn QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {
     QualType qt = QualType_Invalid;
     DeclStmt* ds = (DeclStmt*)s;
     u32 count = ds.getDeclCount();
-    for (u32 i = 0; i < count; i++)
-        qt = ma.analyseDecl(ds.getDecl(i));
+    bool has_init = false;
+    bool init_err = false;
+    for (u32 i = 0; i < count; i++) {
+        VarDecl* vd = ds.getDecl(i);
+        qt = ma.analyseDecl(vd);
+        if (i == 0) {
+            has_init = vd.hasInit();
+        } else {
+            if (has_init != vd.hasInit()) init_err = true;
+        }
+        has_init |= vd.hasInit();
+    }
+
+    if (init_err) {
+        ma.error(s.getLoc(), "either all declarations must be initialized or none");
+    }
+
     return qt;
 }
 
