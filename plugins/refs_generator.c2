@@ -121,9 +121,7 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
 
     const char* name = d.getName();
     if (name && global) {
-        source_mgr.Location loc = gen.sm.locate(d.getLoc());
-        refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
-        gen.refs.add_symbol(d.getFullName(), &dest);
+        gen.refs.add_symbol(d.getFullName(), d.getLoc());
     }
 
     switch (d.getKind()) {
@@ -139,9 +137,7 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
         for (u32 i=0; i<etd.getNumConstants(); i++) {
             Decl* ecd = cast<Decl*>(constants[i]);
             // NOTE: we add the symbol here, since we have the EnumDecl here
-            source_mgr.Location loc = gen.sm.locate(ecd.getLoc());
-            refs.Dest dest = { gen.curfile, loc.line, cast<u16>(loc.column) }
-            gen.refs.add_symbol(ecd.getFullName(), &dest);
+            gen.refs.add_symbol(ecd.getFullName(), ecd.getLoc());
             Generator.on_decl(arg, ecd, false);
         }
         return;
@@ -171,14 +167,9 @@ fn void Generator.handleRef(Generator* gen, const Ref* ref) {
         console.warn("refs: Type Decl not set!");
         return;
     }
-
-    const source_mgr.Location dst_loc = gen.sm.locate(ref.decl.getLoc());
-    // TODO filter out generated destinations
-    source_mgr.Location src_loc = gen.sm.locate(ref.loc);
     u16 len = cast<u16>(string.strlen(idx2name(ref.name_idx)));
-    refs.RefSrc src = { src_loc.line, cast<u16>(src_loc.column), len }
-    refs.Dest dest = { dst_loc.filename, dst_loc.line, cast<u16>(dst_loc.column) }
-    gen.refs.add_tag(&src, &dest);
+    assert(len <= 32);
+    gen.refs.add_link(ref.loc, ref.decl.getLoc(), len);
 }
 
 fn void Generator.on_global_decl(void* arg, Decl* d) {
@@ -195,9 +186,13 @@ fn void Generator.on_ast(void* arg, AST* a) {
 
     Generator* gen = arg;
     gen.curfile = a.getFilename();
-    gen.refs.add_file(a.getFilename());
+    gen.refs.start_file(gen.curfile);
+
     a.visitDecls(Generator.on_global_decl, arg); // globals
     a.visitStaticAsserts(Generator.on_static_assert, arg);
+    // store file.link_count
+
+    gen.refs.end_file();
 }
 
 fn void Generator.on_module(void* arg, Module* m) {
@@ -224,7 +219,7 @@ fn void Generator.on_file(void* arg, u32 start, u32 size, const char* filename, 
         len_start = gen.refs.add_line_lengths(len_count, gen.lines.lengths);
     }
 
-    gen.refs.add_file2(start, size, filename, len_start, len_count);
+    gen.refs.add_file(start, size, filename, len_start, len_count);
 }
 
 fn void Generator.init(Generator* gen, source_mgr.SourceMgr* sm) {

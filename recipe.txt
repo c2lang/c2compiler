@@ -138,7 +138,6 @@ end
 set refs
     common/file/file_utils.c2
     common/linked_list.c2
-    common/quicksort.c2
     common/utils.c2
 
     generator/c2refs.c2
@@ -310,7 +309,6 @@ executable c2c
 end
 
 executable c2tags
-#	$warnings no-unused
     $warnings no-unused-variable
     $warnings no-unused-function
     $warnings no-unused-parameter
@@ -337,6 +335,7 @@ executable c2rename
 
     common/file/reader.c2
     common/file/writer.c2
+    common/quicksort.c2
 
     (refs)
 
