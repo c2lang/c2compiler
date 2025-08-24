@@ -52,7 +52,7 @@ fn void Parser.parseTypeDecl(Parser* p, bool is_public) {
 }
 
 fn void Parser.parseFunctionType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
-    p.consumeToken(); // func
+    p.consumeToken(); // fn
 
     TypeRefHolder rtype.init();
     p.parseSingleTypeSpecifier(&rtype, true);
@@ -60,18 +60,18 @@ fn void Parser.parseFunctionType(Parser* p, u32 name, SrcLoc loc, bool is_public
     DeclList params.init();
 
     bool is_variadic = p.parseFunctionParams(&params, is_public);
-    Decl* f = p.builder.actOnFunctionTypeDecl(name,
-                                              loc,
-                                              is_public,
-                                              &rtype,
-                                              (VarDecl**)params.getDecls(),
-                                              params.size(),
-                                              is_variadic);
+    Decl* ftd = p.builder.actOnFunctionTypeDecl(name,
+                                                loc,
+                                                is_public,
+                                                &rtype,
+                                                (VarDecl**)params.getDecls(),
+                                                params.size(),
+                                                is_variadic);
     p.parseOptionalAttributes();
     params.free();
-    p.expectAndConsume(Kind.Semicolon);
 
-    p.builder.applyAttributes(f);
+    p.expectAndConsume(Kind.Semicolon);
+    p.builder.applyAttributes(ftd);
 }
 
 fn void Parser.parseStructType(Parser* p, bool is_struct, u32 name, SrcLoc loc, bool is_public) {
@@ -101,6 +101,17 @@ fn void Parser.parseStructType(Parser* p, bool is_struct, u32 name, SrcLoc loc, 
 
 }
 
+fn void Parser.checkMemberName(Parser* p) {
+    u32 name = p.tok.name_idx;
+    if (!p.checkName(name, p.is_interface)) {
+        p.error("a struct/union member name must start with a lower case character");
+    }
+    if (p.tok.reserved) {
+        p.diags.error(p.tok.loc, "reserved word '%s' cannot be used as struct/union member name",
+                      p.pool.idx2str(name));
+    }
+}
+
 fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
     p.expectAndConsume(Kind.LBrace);
 
@@ -111,6 +122,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
         // struct_member ::= UNION <IDENTIFIER> LBRACE struct_block RBRACE.
 
         if (p.tok.kind == Kind.RBrace) break;
+
         if (p.tok.kind == Kind.KW_union || p.tok.kind == Kind.KW_struct) {
             bool is_struct = p.tok.kind == Kind.KW_struct;
             p.consumeToken();
@@ -121,13 +133,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
                 name = p.tok.name_idx;
                 loc = p.tok.loc;
 
-                if (!p.checkName(name, p.is_interface)) {
-                    p.error("a struct/union member name must start with a lower case character");
-                }
-                if (p.tok.reserved) {
-                    p.diags.error(loc, "reserved word '%s' cannot be used as struct/union member name",
-                                  p.pool.idx2str(name));
-                }
+                p.checkMemberName();
                 p.consumeToken();
             }
 
@@ -143,50 +149,77 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
                                                                sub_members.size());
             sub_members.free();
             members.add(member.asDecl());
-        } else {
-            TypeRefHolder ref.init();
-            p.parseTypeSpecifier(&ref, true, true);
-
-            for (;;) {
-                u32 name = 0;
-                SrcLoc loc;
-                if (p.tok.kind == Kind.Colon) { // anonymous bit-field
-                    loc = p.tok.loc;
-                } else {
-                    p.expectIdentifier();
-                    name = p.tok.name_idx;
-                    loc = p.tok.loc;
-
-                    if (!p.checkName(name, p.is_interface)) {
-                        p.error("a struct/union member name must start with a lower case character");
-                    }
-                    if (p.tok.reserved) {
-                        p.diags.error(loc, "reserved word '%s' cannot be used as struct/union member name",
-                                      p.pool.idx2str(name));
-                    }
-                    p.consumeToken();
-                }
-
-                Expr* bitfield = nil;
-                if (p.tok.kind == Kind.Colon) {
-                    p.consumeToken();
-                    bitfield = p.parseExpr();
-                }
-                VarDecl* member = p.builder.actOnStructMember(name, loc, is_public, &ref, bitfield);
-                members.add(member.asDecl());
-                if (p.tok.kind != Kind.Comma)
-                    break;
-                p.consumeToken();
-                if (ref.getNumPointers() || ref.getNumArrays())
-                    p.error("pointer and array members must be defined separately");
-            }
-            p.expectAndConsume(Kind.Semicolon);
+            continue;
         }
+
+        if (p.tok.kind == Kind.KW_fn) {
+            p.consumeToken(); // fn
+
+            TypeRefHolder rtype.init();
+            p.parseSingleTypeSpecifier(&rtype, true);
+
+            DeclList params.init();
+
+            bool is_variadic = p.parseFunctionParams(&params, is_public);
+
+            Decl* fd = p.builder.actOnStructMemberType(&rtype,
+                                                       (VarDecl**)params.getDecls(),
+                                                       params.size(),
+                                                       is_variadic);
+            // TODO attributes?
+            //p.parseOptionalAttributes();
+            params.free();
+
+            p.expectIdentifier();
+            u32 name = p.tok.name_idx;
+            SrcLoc loc = p.tok.loc;
+
+            p.checkMemberName();
+            p.consumeToken();
+
+            TypeRefHolder ref.init();
+            ref.setStructMemberType(fd);
+            VarDecl* member = p.builder.actOnStructMember(name, loc, is_public, &ref, nil);
+            members.add(member.asDecl());
+
+            goto semi_colon;
+        }
+        TypeRefHolder ref.init();
+        p.parseTypeSpecifier(&ref, true, true);
+
+        for (;;) {
+            u32 name = 0;
+            SrcLoc loc;
+            if (p.tok.kind == Kind.Colon) { // anonymous bit-field
+                loc = p.tok.loc;
+            } else {
+                p.expectIdentifier();
+                name = p.tok.name_idx;
+                loc = p.tok.loc;
+
+                p.checkMemberName();
+                p.consumeToken();
+            }
+
+            Expr* bitfield = nil;
+            if (p.tok.kind == Kind.Colon) {
+                p.consumeToken();
+                bitfield = p.parseExpr();
+            }
+            VarDecl* member = p.builder.actOnStructMember(name, loc, is_public, &ref, bitfield);
+            members.add(member.asDecl());
+            if (p.tok.kind != Kind.Comma)
+                break;
+            p.consumeToken();
+            if (ref.getNumPointers() || ref.getNumArrays())
+                p.error("pointer and array members must be defined separately");
+        }
+semi_colon:
+        p.expectAndConsume(Kind.Semicolon);
     }
 
     p.expectAndConsume(Kind.RBrace);
 }
-
 
 fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
     p.consumeToken();

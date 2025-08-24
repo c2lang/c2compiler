@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    const fn void (void* arg) cb; // @error{expected type specifier}
+}
+

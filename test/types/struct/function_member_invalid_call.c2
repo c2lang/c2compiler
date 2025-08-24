@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+fn void callback(void* arg) { }
+
+type Foo struct {
+    fn void (void* arg) cb;
+}
+
+Foo foo = { callback }
+
+fn void test1() {
+    foo.cb(3); // @error{incompatible integer to pointer conversion: 'i32' to 'void*'}
+}
+

@@ -43,6 +43,7 @@ type FunctionDeclBits struct {
     u32 has_return : 1;     // if it returns something, set during analysis
     u32 is_template : 1;
     u32 is_type : 1;     // part of FunctionTypeDecl
+    u32 is_member_type : 1;    // if function is defined in struct as member type
     u32 has_body : 1;    // if function is defined in C2
 }
 
@@ -125,16 +126,16 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
 }
 
 public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
-                                                      u32 name,
-                                                      SrcLoc loc,
-                                                      bool is_public,
-                                                      u32 ast_idx,
-                                                      const TypeRefHolder* rtype,
-                                                      u32 template_name,
-                                                      SrcLoc template_loc,
-                                                      VarDecl** params,
-                                                      u32 num_params,
-                                                      bool is_variadic)
+                                                    u32 name,
+                                                    SrcLoc loc,
+                                                    bool is_public,
+                                                    u32 ast_idx,
+                                                    const TypeRefHolder* rtype,
+                                                    u32 template_name,
+                                                    SrcLoc template_loc,
+                                                    VarDecl** params,
+                                                    u32 num_params,
+                                                    bool is_variadic)
 {
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + rtype.getExtraSize();
     FunctionDecl* d = c.alloc(size);
@@ -236,6 +237,11 @@ public fn bool FunctionDecl.isInline(const FunctionDecl* d) {
     if (!d.hasAttrInline()) return false;
     if (!d.base.isPublic()) return false;
     return true;
+}
+
+public fn bool FunctionDecl.canBeNil(const FunctionDecl* d) {
+    // Variable with Function type (eg callback)
+    return d.isType() || d.isMemberType() || d.hasAttrWeak();
 }
 
 public fn bool FunctionDecl.isType(const FunctionDecl* d) {
@@ -426,6 +432,14 @@ public fn const char* FunctionDecl.getDiagKind(const FunctionDecl* d) {
     return "";
 }
 
+public fn void FunctionDecl.setMemberType(FunctionDecl* d) {
+    d.base.functionDeclBits.is_member_type = 1;
+}
+
+public fn bool FunctionDecl.isMemberType(const FunctionDecl* d) {
+    return d.base.functionDeclBits.is_member_type;
+}
+
 fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 indent) {
     bool valid_type = d.base.qt.isValid();
     d.base.printKind(out, indent, valid_type);
@@ -441,6 +455,7 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
     out.add(callKind_names[d.getCallKind()]);
     d.base.printAttrs(out);
     if (d.base.functionDeclBits.is_type) out.add(" Type");
+    if (d.base.functionDeclBits.is_member_type) out.add(" MemberType");
     out.color(col_Expr); // purple
     if (d.hasAttrUnusedParams()) out.add(" unused-params");
     if (d.hasAttrNoReturn()) out.add(" noreturn");

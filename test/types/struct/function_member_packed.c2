@@ -1,0 +1,14 @@
+// @skip
+// @warnings{no-unused}
+module test;
+
+type Foo struct @(packed) {
+    fn void (void* arg) cb1; // @error{TODO}
+}
+
+type Callback fn void (void* arg);
+
+type Bar struct @(packed) {
+    Callback cb;    // @error{TODO}
+}
+

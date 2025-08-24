@@ -96,6 +96,18 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
     }
 }
 
+fn QualType Analyser.analyseStructMemberTypeRef(Analyser* ma, TypeRef* ref) {
+    const Ref* member = ref.getStructMemberType();
+    // Member.decl is uninitialized!? (member is ok)
+    assert(member.decl);
+    assert(member.decl.isFunction());
+
+    FunctionDecl* fd = (FunctionDecl*)member.decl;
+    ma.analyseFunction(fd);
+    if (ma.has_error) return QualType_Invalid;
+    return member.decl.getType();
+}
+
 fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     assert(ma.mod);
     const Ref* user = ref.getUser();
@@ -166,14 +178,22 @@ fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
 
 fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
     QualType base;
-    if (ref.isUser()) {
-        base = ma.analyseUserTypeRef(ref);
-        if (base.isInvalid()) return base;
-        if (!base.hasCanonicalType()) return QualType_Invalid;
-    } else {
+    switch (ref.getKind()) {
+    case Builtin:
         BuiltinKind kind = ref.getBuiltinKind();
         base = ma.builder.actOnBuiltinType(kind);
         assert(base.isValid());
+        break;
+    case User:
+        base = ma.analyseUserTypeRef(ref);
+        if (base.isInvalid()) return base;
+        if (!base.hasCanonicalType()) return QualType_Invalid;
+        break;
+    case StructMemberType:
+        base = ma.analyseStructMemberTypeRef(ref);
+        if (base.isInvalid()) return base;
+        if (!base.hasCanonicalType()) return QualType_Invalid;
+        break;
     }
 
     if (ref.isConst()) base.setConst();

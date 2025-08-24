@@ -243,6 +243,11 @@ public fn bool QualType.isPointer(const QualType* qt) {
     return qt.getTypeOrNil().isPointerType();
 }
 
+public fn bool QualType.isPointerOrFunction(const QualType* qt) @(unused) {
+    const Type* t = qt.getTypeOrNil();
+    return t.isPointerType() || t.isFunctionType();
+}
+
 // NOTE: does not check if kind is ok
 public fn QualType QualType.getPointerBaseType(const QualType* qt) {
     const PointerType* pt = qt.getPointerType();

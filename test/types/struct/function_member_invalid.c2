@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+fn void callback(char b, i32 a) { }
+
+type Foo struct {
+    i32 a;
+    fn void (void* arg, i32 a) on_done;
+}
+
+Foo[] f = {
+    { .a = 1, .on_done = callback }, // @error{invalid function conversion from 'void (char, i32)' to 'void (void*, i32)'}
+    { 3, callback }, // @error{invalid function conversion from 'void (char, i32)' to 'void (void*, i32)'}
+}
+

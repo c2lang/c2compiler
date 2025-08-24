@@ -1,0 +1,27 @@
+// @warnings{no-unused}
+module test;
+
+fn i32 callback(void* arg) { return 0; }
+
+type Foo struct {
+    struct named {
+        fn i32 (void* arg) cb1;
+    }
+    struct  {
+        fn i32 (void* arg) cb2;
+    }
+}
+
+Foo[] foo = {
+    { { callback }, { callback } },
+    { .named = { callback }, .cb2 = callback },
+}
+
+fn void test1() {
+    foo[0].named.cb1(nil);
+    foo[0].cb2(nil);
+
+    if (foo[0].named.cb1) {}
+    if (foo[0].cb2) {}
+}
+

@@ -1,0 +1,15 @@
+// @warnings{no-unused}
+module test;
+
+fn void print(const char* format, ...) {}
+
+type Foo struct {
+    fn void (const char* format, ...) cb;
+}
+
+Foo foo = { print }
+
+fn void test1() {
+    foo.cb("hello %d", 3);
+}
+

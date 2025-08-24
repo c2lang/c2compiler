@@ -190,7 +190,6 @@ fn void Generator.on_ast(void* arg, AST* a) {
 
     a.visitDecls(Generator.on_global_decl, arg); // globals
     a.visitStaticAsserts(Generator.on_static_assert, arg);
-    // store file.link_count
 
     gen.refs.end_file();
 }

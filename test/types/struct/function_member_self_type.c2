@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    fn void (Foo* f) cb1;
+    fn void (Foo f) cb3;    // @error{circular declaration}
+
+    fn Foo* () cb2;
+    fn Foo (i32 a) cb4;    // @error{circular declaration}
+}
+

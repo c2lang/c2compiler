@@ -20,13 +20,28 @@ import string_buffer;
 import stdio;
 import string;
 
+public type TypeRefKind enum u8 {
+    Builtin,
+    User,
+    StructMemberType,
+}
+
+fn const char* TypeRefKind.str(TypeRefKind k) {
+    switch (k) {
+    case Builtin:   return "builtin";
+    case User:      return "user";
+    case StructMemberType: return "structmemberfn";
+    }
+    return nil;
+}
+
 type TypeRefBits struct {
     u32 is_const : 1;
     u32 is_volatile : 1;
     u32 num_ptrs : 2;   // 0 = Foo, 1 = Foo*, 2 = Foo**
     u32 num_arrays : 2; // limit to 3-dimensional arrays
     u32 incr_array : 1;
-    u32 is_user : 1;    // otherwise builtin
+    u32 kind : 2;   // TypeRefKind
     u32 has_prefix : 1;
     u32 builtin_kind : 4;   // only if builtin (!is_user)
 }
@@ -34,7 +49,7 @@ type TypeRefBits struct {
 public type Ref struct {
     SrcLoc loc;
     u32 name_idx;
-    Decl* decl; // set during analysis
+    Decl* decl; // set during analysis, or during parsing for StructMemberType
 }
 
 static_assert(16, sizeof(Ref));
@@ -53,10 +68,11 @@ public type TypeRef struct @(opaque, aligned=8) {
         u32 dest;       // index into TypePool. only used by user type, but must be 8-byte aligned anyways, so put here
         SrcLoc loc;     // for non-user types only
     }
-    Ref[0] refs;    // tail-allocated. [1] if is_user, [2] if also has_prefix
+    Ref[0] refs;    // tail-allocated. [1] if is_user/struct_member_fn, [2] if also has_prefix
     //Expr*[0] arrays; // tail-allocated. [1] if Foo[..], [2] if Foo[..][..], etc
 }
 
+// just a TypeRef with all possible tail-allocated fields
 public type TypeRefHolder struct {
     u64 ref;    // to make TypeRef opaque
     Ref user;
@@ -134,10 +150,18 @@ public fn void TypeRefHolder.setBuiltin(TypeRefHolder* h, BuiltinKind kind, SrcL
 
 public fn void TypeRefHolder.setUser(TypeRefHolder* h, SrcLoc loc, u32 name_idx) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
-    r.flags.is_user = 1;
+    r.flags.kind = TypeRefKind.User;
     h.user.loc = loc;
     h.user.name_idx = name_idx;
     h.user.decl = nil;
+}
+
+public fn void TypeRefHolder.setStructMemberType(TypeRefHolder* h, Decl* fd) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    r.flags.kind = TypeRefKind.StructMemberType;
+    h.user.loc = 0;
+    h.user.name_idx = 0;
+    h.user.decl = fd;
 }
 
 public fn void TypeRefHolder.setPrefix(TypeRefHolder* h, SrcLoc loc, u32 name_idx) {
@@ -165,15 +189,25 @@ public fn void TypeRefHolder.dump(const TypeRefHolder* h) @(unused) {
     out.free();
 }
 
+
+
 fn void TypeRef.init(TypeRef* dest, const TypeRefHolder* h) {
     const TypeRef* r = cast<const TypeRef*>(&h.ref);
-    *dest = *r;
-    if (r.isUser()) {
-        dest.refs[0] = r.refs[0];
-        if (r.hasPrefix()) {
-            dest.refs[1] = r.refs[1];
-        }
+    *dest = *r; // copy base members
+
+    // copy for tail-allocated info
+    switch (r.getKind()) {
+    case Builtin:
+        break;
+    case User:
+        dest.refs[0] = h.user;
+        if (r.hasPrefix()) dest.refs[1] = h.prefix;
+        break;
+    case StructMemberType:
+        dest.refs[0] = h.user;
+        break;
     }
+
     for (u32 i=0; i<r.flags.num_arrays; i++) {
         Expr** a = dest.getArray2(i);
         *a = h.arrays[i];
@@ -181,7 +215,7 @@ fn void TypeRef.init(TypeRef* dest, const TypeRefHolder* h) {
 }
 
 fn bool TypeRef.matchesTemplate(const TypeRef* r, u32 template_arg) {
-    if (!r.flags.is_user || r.flags.has_prefix) return false;
+    if (r.flags.kind != TypeRefKind.User || r.flags.has_prefix) return false;
     return r.refs[0].name_idx == template_arg;
 }
 
@@ -192,7 +226,7 @@ fn void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, Instantiator* inst) {
         // TODO enforce no prefix in template functions
         r.flagBits = r2.flagBits;
         r.dest = r2.dest;
-        if (r2.flags.is_user) {
+        if (r2.flags.kind == TypeRefKind.User) {
             r.refs[0].name_idx = r2.refs[0].name_idx;
             r.refs[0].loc = r1.refs[0].loc;     // location from instance?
             r.refs[0].decl = r2.refs[0].decl;
@@ -220,7 +254,8 @@ public fn void TypeRef.setDest(TypeRef* r, u32 dest) {
 }
 
 fn u32 TypeRef.getExtraSize(const TypeRef* r) {
-    u32 numrefs = r.flags.is_user + r.flags.has_prefix;
+    // User, StructMemberType use Ref
+    u32 numrefs = (r.flags.kind != TypeRefKind.Builtin) + r.flags.has_prefix;
     u32 extra = numrefs * sizeof(Ref);
     extra += r.flags.num_arrays * sizeof(Expr*);
     return extra;
@@ -245,20 +280,24 @@ public fn bool TypeRef.isVolatile(const TypeRef* r) {
 }
 
 public fn bool TypeRef.isUser(const TypeRef* r) {
-    return r.flags.is_user;
+    return r.flags.kind == TypeRefKind.User;
+}
+
+fn bool TypeRef.isBuiltin(const TypeRef* r) {
+    return r.flags.kind == TypeRefKind.Builtin;
 }
 
 public fn bool TypeRef.isVoid(const TypeRef* r) {
-    return !r.flags.is_user && r.flags.num_ptrs == 0 && r.getBuiltinKind() == BuiltinKind.Void;
+    return r.isBuiltin() && r.flags.num_ptrs == 0 && r.getBuiltinKind() == BuiltinKind.Void;
 }
 
 public fn bool TypeRef.isConstCharPtr(const TypeRef* r) {
-    return r.flags.is_const && !r.flags.is_user && r.flags.num_ptrs == 1 &&
+    return r.flags.is_const && r.isBuiltin() && r.flags.num_ptrs == 1 &&
            r.flags.num_arrays == 0 && r.getBuiltinKind() == BuiltinKind.Char;
 }
 
 public fn bool TypeRef.isU32(const TypeRef* r) {
-    return !r.flags.is_user && r.flags.num_ptrs == 0 && r.flags.num_arrays == 0 && r.getBuiltinKind() == BuiltinKind.UInt32;
+    return r.isBuiltin() && r.flags.num_ptrs == 0 && r.flags.num_arrays == 0 && r.getBuiltinKind() == BuiltinKind.UInt32;
 }
 
 fn bool TypeRef.hasPrefix(const TypeRef* r) {
@@ -271,17 +310,29 @@ public fn bool TypeRef.isIncrArray(const TypeRef* r) {
 
 public fn bool TypeRef.isPointerTo(const TypeRef* r, u32 ptr_idx) {
     if (r.dest != ptr_idx || ptr_idx == 0) return false;
-    return (r.flags.num_ptrs == 1 && r.flags.num_arrays == 0 && r.flags.is_user);
+    return (r.flags.num_ptrs == 1 && r.flags.num_arrays == 0 && r.isUser());
 }
 
 public fn BuiltinKind TypeRef.getBuiltinKind(const TypeRef* r) {
     return cast<BuiltinKind>(r.flags.builtin_kind);
 }
 
+public fn TypeRefKind TypeRef.getKind(const TypeRef* r) {
+    return cast<TypeRefKind>(r.flags.kind);
+}
+
 public fn SrcLoc TypeRef.getLoc(const TypeRef* r) {
-    if (r.isUser()) {
+    switch (r.getKind()) {
+    case Builtin:
+        break;
+    case User:
         if (r.hasPrefix()) return r.refs[1].loc;
         else return r.refs[0].loc;
+        break;
+    case StructMemberType:
+        //TODO
+        //return r.user.decl.getLoc();
+        break;
     }
     return r.loc;
 }
@@ -291,12 +342,17 @@ public fn u32 TypeRef.getNumPointers(const TypeRef* r) {
 }
 
 public fn const Ref* TypeRef.getUser(const TypeRef* r) {
-    if (r.flags.is_user) return &r.refs[0];
+    if (r.isUser()) return &r.refs[0];
     return nil;
 }
 
+public fn const Ref* TypeRef.getStructMemberType(const TypeRef* r) {
+    // Note: user should test kind before
+    return &r.refs[0];
+}
+
 public fn const Decl* TypeRef.getUserDecl(const TypeRef* r) {
-    if (r.flags.is_user) return r.refs[0].decl;
+    if (r.isUser()) return r.refs[0].decl;
     return nil;
 }
 
@@ -318,14 +374,14 @@ public fn u32 TypeRef.getNumArrays(const TypeRef* r) {
 }
 
 public fn Expr* TypeRef.getArray(const TypeRef* r, u32 idx) {
-    const u32 numrefs = r.flags.is_user + r.flags.has_prefix;
+    const u32 numrefs = r.isUser() + r.flags.has_prefix;
     const u8* ptr = cast<u8*>(r.refs) + numrefs * sizeof(Ref);
     Expr** arrays = cast<Expr**>(ptr);
     return arrays[idx];
 }
 
 public fn Expr** TypeRef.getArray2(TypeRef* r, u32 idx) {
-    const u32 numrefs = r.flags.is_user + r.flags.has_prefix;
+    const u32 numrefs = r.isUser() + r.flags.has_prefix;
     const u8* ptr = cast<u8*>(r.refs) + numrefs * sizeof(Ref);
     Expr** arrays = cast<Expr**>(ptr);
     return &arrays[idx];
@@ -335,7 +391,11 @@ fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool prin
     if (r.isConst()) out.add("const ");
     if (r.isVolatile()) out.add("volatile ");
 
-    if (r.flags.is_user) {
+    switch ((TypeRefKind)r.flags.kind) {
+    case Builtin:
+        out.add(builtinType_names[r.flags.builtin_kind]);
+        break;
+    case User:
         Decl* d = r.refs[0].decl;
         assert(d);
         if (print_prefix) {
@@ -343,8 +403,11 @@ fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool prin
         } else {
             out.add(d.getName());
         }
-    } else {
-        out.add(builtinType_names[r.flags.builtin_kind]);
+        break;
+    case StructMemberType:
+        out.add("FN TODO");
+        // TODO
+        break;
     }
 
     for (u32 i=0; i<r.flags.num_ptrs; i++) out.add1('*');
@@ -406,14 +469,23 @@ fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
     if (r.isConst()) out.add("const ");
     if (r.isVolatile()) out.add("volatile ");
 
-    if (r.flags.is_user) {
+    switch ((TypeRefKind)r.flags.kind) {
+    case Builtin:
+        out.add(builtinType_names[r.flags.builtin_kind]);
+        break;
+    case User:
         if (r.flags.has_prefix) {
             out.add(idx2name(r.refs[1].name_idx));
             out.add1('.');
         }
         out.add(idx2name(r.refs[0].name_idx));
-    } else {
-        out.add(builtinType_names[r.flags.builtin_kind]);
+        break;
+    case StructMemberType:
+        out.add("fn ");
+        assert(r.refs[0].decl);
+        const FunctionDecl* fd = (FunctionDecl*)r.refs[0].decl;
+        fd.printType(out);
+        break;
     }
 
     for (u32 i=0; i<r.flags.num_ptrs; i++) out.add1('*');
@@ -451,13 +523,13 @@ public fn void TypeRef.dump_full(const TypeRef* r) @(unused) {
     out.add("flags:");
     if (r.flags.is_const) out.add(" const");
     out.print(" ptrs=%d", r.flags.num_ptrs);
-    out.print(" user=%d", r.flags.is_user);
+    out.print(" kind=%s", TypeRefKind.str((TypeRefKind)r.flags.kind));
     out.print(" has_prefix=%d", r.flags.has_prefix);
     out.newline();
     out.indent(1);
     out.print("dest %d\n", r.dest);
     u32 num_refs = 0;
-    if (r.flags.is_user) num_refs++;
+    if (r.isUser()) num_refs++;
     if (r.flags.has_prefix) num_refs++;
     for (u32 i=0; i<num_refs; i++) {
         out.indent(1);

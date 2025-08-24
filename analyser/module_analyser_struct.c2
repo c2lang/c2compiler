@@ -57,6 +57,14 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
             member.setCheckInProgress();
             ma.analyseStructMember(vd);
 
+#if 0
+            // TODO decide whether to allow this
+            QualType qt = member.getType();
+            if (is_packed && qt.isPointerOrFunction()) {
+                ma.error(member.getLoc(), "pointer types are not allowed in packed structs");
+            }
+#endif
+
             Expr* bitfield = vd.getBitfield();
             if (bitfield) {
                 // canonical must be builtin type/enum

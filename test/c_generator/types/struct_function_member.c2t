@@ -1,0 +1,42 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+fn void callback(void* arg, i32 a) { }
+
+type Foo struct {
+    i32 a;
+    fn void (void* arg, i32 a) cb1;
+}
+
+Foo foo = { 3, callback, }
+
+fn void test1() {
+    foo.cb1(nil, 1);
+}
+
+// @expect{atleast, cgen/build.c}
+typedef struct test_Foo_ test_Foo;
+
+struct test_Foo_ {
+   int32_t a;
+   void (*cb1)(void* arg, int32_t a);
+};
+
+static void test_callback(void* arg, int32_t a);
+static test_Foo test_foo = { 3, test_callback };
+
+static void test_test1(void);
+
+static void test_callback(void* arg, int32_t a)
+{
+}
+
+static void test_test1(void)
+{
+   test_foo.cb1(NULL, 1);
+}
+

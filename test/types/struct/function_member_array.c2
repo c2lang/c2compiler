@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    fn void (void* arg)[3] cb;  // @error{expected identifier}
+}
+

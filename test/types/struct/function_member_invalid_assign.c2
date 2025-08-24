@@ -1,0 +1,22 @@
+// @warnings{no-unused}
+module test;
+
+fn void callback1(void* arg, i32 a) { }
+fn void callback2(i32 a, void* arg) {}
+
+type Foo struct {
+    fn void (void* arg, i32 a) cb;
+}
+
+type Bar struct {
+    fn void (i32 a, void* arg) cb;
+}
+
+Foo foo = { callback1 }
+Bar bar = { callback2 }
+
+fn void test1() {
+    foo.cb = bar.cb; // @error{invalid function conversion from 'void (i32, void*)' to 'void (void*, i32)'}
+}
+
+

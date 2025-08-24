@@ -173,13 +173,13 @@ public fn Decl* Builder.actOnAliasType(Builder* b,
 }
 
 public fn Decl* Builder.actOnFunctionTypeDecl(Builder* b,
-                                                u32 name,
-                                                SrcLoc loc,
-                                                bool is_public,
-                                                const TypeRefHolder* rtype,
-                                                VarDecl** params,
-                                                u32 num_params,
-                                                bool is_variadic)
+                                              u32 name,
+                                              SrcLoc loc,
+                                              bool is_public,
+                                              const TypeRefHolder* rtype,
+                                              VarDecl** params,
+                                              u32 num_params,
+                                              bool is_variadic)
 {
     is_public |= b.is_interface;
     FunctionDecl* fd = FunctionDecl.create(b.context,
@@ -203,6 +203,25 @@ public fn Decl* Builder.actOnFunctionTypeDecl(Builder* b,
     }
     b.addSymbol(name, dd);
     return dd;
+}
+
+public fn Decl* Builder.actOnStructMemberType(Builder* b,
+                                            const TypeRefHolder* rtype,
+                                            VarDecl** params,
+                                            u32 num_params,
+                                            bool is_variadic)
+{
+    FunctionDecl* fd = FunctionDecl.create(b.context,
+                                           0, 0, false,
+                                           0,  // b.ast_idx  HMM TODO
+                                           rtype,
+                                           nil,
+                                           params,
+                                           num_params,
+                                           is_variadic,
+                                           false);
+    fd.setMemberType();
+    return (Decl*)fd;
 }
 
 public fn StructTypeDecl* Builder.actOnStructType(Builder* b,

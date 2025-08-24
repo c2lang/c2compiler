@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    fn Bar (void* arg) cb1; // @error{unknown type 'Bar'}
+    fn i32 (Bar* b) cb2; // @error{unknown type 'Bar'}
+}
+

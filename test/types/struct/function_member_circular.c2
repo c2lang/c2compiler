@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+fn void callback1(Bar* b) { }
+fn void callback2(Foo* f) {}
+
+type Foo struct {
+    fn void (Bar* b) cb;
+}
+
+type Bar struct {
+    fn void (Foo* f) cb;
+}
+
+Foo foo = { callback1 }
+Bar bar = { callback2 }
+

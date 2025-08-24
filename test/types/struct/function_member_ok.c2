@@ -1,0 +1,40 @@
+// @warnings{no-unused}
+module test;
+
+fn void callback(void* arg, i32 a) { }
+fn void callback2(Foo* f) {}
+
+type Foo struct {
+    i32 a;
+    fn void (void* arg, i32 a) cb1;
+    fn void (Foo* f) cb2;
+    i32 c;
+}
+
+Foo[] foo = {
+    { .a = 1, .cb1 = callback, .cb2 = callback2, .c = 2 },
+    { 3, callback, callback2, 4 },
+    { 5, nil, nil, 6 },
+}
+
+fn void test1() {
+    foo[0].cb1(nil, 1);
+    foo[1].cb1(nil, 2);
+
+    if (foo[0].cb1) { }
+
+    foo[0].cb2(nil);
+
+    foo[0].cb1 = bar[1].cb1;
+}
+
+// union
+type Bar union {
+    i32 abc;
+    fn void (void* arg, i32 a) cb1;
+}
+
+Bar[] bar = {
+    { .abc = 2 },
+    { .cb1 = callback },
+}

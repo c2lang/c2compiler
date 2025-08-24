@@ -286,7 +286,8 @@ fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType q
         break;
     case Function:
         FunctionType* ft = cast<FunctionType*>(qt.getType());
-        decl = cast<Decl*>(ft.getDecl());
+        FunctionDecl* fd = ft.getDecl();
+        decl = cast<Decl*>(fd);
         break;
     case Alias:
         AliasType* at = cast<AliasType*>(qt.getType());
@@ -345,8 +346,9 @@ fn void Generator.genTypeIfNeeded(Generator* gen, QualType qt, bool full) {
         d = cast<Decl*>(et.getDecl());
         break;
     case Function:
-        FunctionType* et = cast<FunctionType*>(qt.getType());
-        d = cast<Decl*>(et.getDecl());
+        FunctionType* ft = cast<FunctionType*>(qt.getType());
+        FunctionDecl* fd = ft.getDecl();
+        d = cast<Decl*>(fd);
         break;
     case Alias:
         AliasType* at = cast<AliasType*>(qt.getType());
@@ -362,16 +364,23 @@ fn void Generator.genTypeIfNeeded(Generator* gen, QualType qt, bool full) {
 
 fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
     if (d.isVariable()) {
-        // check if full/pointer dep
-        //QualType qt = d.getType();
-        // TODO canon for AliasType
-        gen.genTypeIfNeeded(d.getType(), true);
-
         out.indent(indent);
-        gen.emitTypePre(out, d.getType());
+
+        QualType qt = d.getType();
+        if (qt.isFunction()) {
+            FunctionType* ft = qt.getFunctionType();
+            FunctionDecl* fd = ft.getDecl();
+            if (fd.isMemberType()) {
+                gen.gen_member_type_func(fd, out, d.getName());
+                return;
+            }
+        }
+        gen.genTypeIfNeeded(qt, true);
+
+        gen.emitTypePre(out, qt);
         out.space();
         if (d.getNameIdx()) out.add(d.getName());
-        gen.emitTypePost(out, d.getType());
+        gen.emitTypePost(out, qt);
 
         VarDecl* vd = cast<VarDecl*>(d);
         Expr* bitfield = vd.getBitfield();
@@ -798,6 +807,16 @@ fn void Generator.on_ast_decl(void* arg, AST* a) {
     a.visitDecls(Generator.on_decl, arg);
 }
 
+fn void Generator.gen_member_type_func(Generator* gen, FunctionDecl* fd, string_buffer.Buf* out, const char* name) {
+    // generate something like: void (*name)(void* arg);\n
+    Decl* d = cast<Decl*>(fd);
+
+    gen.emitTypePre(out, fd.getRType());
+    out.print(" (*%s)", name);
+    gen.emitFuncParams(fd, out);
+    out.add(";\n");
+}
+
 fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer.Buf* out) {
     Decl* d = cast<Decl*>(fd);
 
@@ -805,9 +824,6 @@ fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer
 
     // template are generated as late as possible, since the Type might not be known yet
     if (fd.isTemplate()) return;
-
-    VarDecl** params = fd.getParams();
-    u32 num_params = fd.getNumParams();
 
     const char* section = d.getSection();
     if (section) {
@@ -831,7 +847,7 @@ fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer
 
     u8 printf_arg = fd.getAttrPrintf();
     if (printf_arg) {
-        out.print("__attribute__((__format__(printf, %d, %d))) ", printf_arg, num_params +1);
+        out.print("__attribute__((__format__(printf, %d, %d))) ", printf_arg, fd.getNumParams() +1);
     }
     if (out.endsWith(' ')) {
         out.trim(1);
@@ -852,7 +868,14 @@ fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer
         out.space();
         gen.emitCName(out, d);
     }
+    gen.emitFuncParams(fd, out);
+}
+
+fn void Generator.emitFuncParams(Generator* gen, FunctionDecl* fd, string_buffer.Buf* out) {
     out.lparen();
+    u32 num_params = fd.getNumParams();
+
+    VarDecl** params = fd.getParams();
     for (u32 i=0; i<num_params; i++) {
         Decl* argx = cast<Decl*>(params[i]);
         if (i != 0) out.add(", ");

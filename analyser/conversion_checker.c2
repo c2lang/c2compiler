@@ -497,7 +497,7 @@ fn bool Checker.checkFunc2Builtin(Checker* c, const Type* lcanon, const Type* rc
         // only allow Callback types or weak-functions
         FunctionType* ft = (FunctionType*)rcanon;
         FunctionDecl* fd = ft.getDecl();
-        if (fd.isType() || fd.hasAttrWeak()) return true; // Variable with Function type (eg callback)
+        if (fd.canBeNil()) return true; // Variable with Function type (eg callback)
 
         // TODO not always comparision (bool b = test1);
         c.diags.error(c.loc, "comparison of function '%s' will always be true", fd.asDecl().getFullName());

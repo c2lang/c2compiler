@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    i32 abc; // @note{previous declaration is here}
+    fn void (void* arg, i32 a) abc; // @error{duplicate struct/union member 'abc'}
+}
+
