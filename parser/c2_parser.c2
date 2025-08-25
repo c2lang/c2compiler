@@ -451,7 +451,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
 
     DeclList params.init();
 
-    bool is_variadic = p.parseFunctionParams(&params, is_public);
+    bool is_variadic = p.parseFunctionParams(&params, is_public, true);
 
     FunctionDecl* f;
     if (p.tok.kind == Kind.KW_template) {
@@ -503,7 +503,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
     p.builder.actOnFunctionBody(f, body);
 }
 
-fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public) {
+fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public, bool accept_default) {
     p.expectAndConsume(Kind.LParen);
 
     // fast path for ()
@@ -516,7 +516,7 @@ fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public) 
 
     // VarDeclList args
     while (p.tok.kind != Kind.RParen) {
-        VarDecl* decl = p.parseParamDecl(is_public);
+        VarDecl* decl = p.parseParamDecl(is_public, accept_default);
         decl.setOffset(params.count);  // set argument number
         params.add(decl.asDecl());
 
@@ -539,7 +539,7 @@ fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public) 
     param_declaration ::= type_qualifier type_specifier IDENTIFIER param_default.
     param_default ::= EQUALS constant_expression.
 */
-fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
+fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool accept_default) {
     if (p.tok.kind == Kind.KW_local) p.error("keyword 'local' is not allowed here");
 
     TypeRefHolder ref.init();
@@ -560,11 +560,17 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public) {
         p.consumeToken();
     }
 
+    Expr* initValue = nil;
+    SrcLoc assignLoc = 0;
+
     if (p.tok.kind == Kind.Equal) {
-        p.error("default parameter values are not allowed");
+        if (!accept_default) p.error("default parameter values are not allowed in type definitions");
+        assignLoc = p.tok.loc;
+        p.consumeToken();
+        initValue = p.parseInitValue(false);
     }
 
-    VarDecl* param = p.builder.actOnFunctionParam(name, loc, is_public, &ref);
+    VarDecl* param = p.builder.actOnFunctionParam(name, loc, is_public, &ref, assignLoc, initValue);
 
     p.parseParamOptionalAttributes(param);
 

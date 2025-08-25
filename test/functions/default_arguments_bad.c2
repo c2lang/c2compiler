@@ -1,0 +1,26 @@
+// @warnings{no-unused}
+module test;
+
+const char* str = "dummy string";
+
+fn void foo1(const char* msg = str) { // @error{default parameter value is not a compile-time value}
+}
+
+fn void foo2(u32 val = val) { // @error{default parameter value is not a compile-time value}
+}
+
+fn void foo3(u32 val = "default") { // @error{invalid type conversion from 'const char[8]' to 'u32'}
+}
+
+fn void foo4(const char* val = 123) { // @error{incompatible integer to pointer conversion: 'i32' to 'const char*'}
+}
+
+fn void foo5(u32 x = 0, u32 y) { // @error{parameter must have a default value}
+}
+
+fn void print_file(const char* filename = "default" @(auto_file)) { // @error{automatic argument cannot have default value}
+}
+
+fn void print(const char* fmt = "default" @(printf_format), ...) { // @error{printf_format parameter cannot have default value}
+}
+

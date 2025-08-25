@@ -59,7 +59,7 @@ fn void Parser.parseFunctionType(Parser* p, u32 name, SrcLoc loc, bool is_public
 
     DeclList params.init();
 
-    bool is_variadic = p.parseFunctionParams(&params, is_public);
+    bool is_variadic = p.parseFunctionParams(&params, is_public, false);
     Decl* ftd = p.builder.actOnFunctionTypeDecl(name,
                                                 loc,
                                                 is_public,
@@ -160,7 +160,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
 
             DeclList params.init();
 
-            bool is_variadic = p.parseFunctionParams(&params, is_public);
+            bool is_variadic = p.parseFunctionParams(&params, is_public, false);
 
             Decl* fd = p.builder.actOnStructMemberType(&rtype,
                                                        (VarDecl**)params.getDecls(),

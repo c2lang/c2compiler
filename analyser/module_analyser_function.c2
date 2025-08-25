@@ -91,7 +91,9 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         if (v.hasAutoAttr()) {
             if (auto_arg_count == 0) first_auto_arg = i;
             auto_arg_count++;
-
+            if (auto_arg_count > 3) {
+                ma.error(ref.getLoc(), "too many automatic arguments");
+            }
             // check type
             if (v.hasAttrAutoFile() && !ref.isConstCharPtr()) { // check for 'const char *'
                 ma.error(ref.getLoc(), "attribute 'auto_file' requires a parameter of type 'const char*'");
@@ -211,6 +213,7 @@ fn void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope
 
     ma.scope.reset();
     ma.scope.enter(scope.Function | scope.Decl);
+    bool has_default = false;
     u32 num_params = fd.getNumParams();
     VarDecl** params = fd.getParams();
     for (u32 i=0; i<num_params; i++) {
@@ -218,6 +221,27 @@ fn void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope
         if (p.getNameIdx()) {
             bool error = ma.scope.add(p);
             if (error) return;   // no need to set ma.has_error. NOTE: pushCheck remains!
+        }
+        VarDecl* vd = (VarDecl*)p;
+        if (vd.hasInit()) {
+            has_default = true;
+            if (vd.hasAutoAttr()) {
+                ma.error(vd.getAssignLoc(), "automatic argument cannot have default value");
+            }
+            if (vd.hasPrintfFormat()) {
+                ma.error(vd.getAssignLoc(), "printf_format parameter cannot have default value");
+            }
+            Expr** initExpr = vd.getInit2();
+            if (ma.analyseInitExpr(initExpr, p.getType(), vd.getAssignLoc(), false)) {
+                Expr* e = vd.getInit();
+                if (!e.isCtc() && !e.isCtv()) {
+                    ma.errorRange(e.getLoc(), e.getRange(), "default parameter value is not a compile-time value");
+                }
+            }
+        } else {
+            if (has_default) {
+                ma.error(p.getLoc(), "parameter must have a default value");
+            }
         }
     }
 
@@ -281,8 +305,8 @@ fn void Analyser.checkPrintfFormat(Analyser* ma, VarDecl* v, QualType qt, u32 id
     }
 
     u32 num_params = fd.getNumParams();
-    if (idx != num_params -1) {
-        ma.error(d.getLoc(), "printf_format parameter must be the last parameter)");
+    if (idx != num_params - 1) {
+        ma.error(d.getLoc(), "printf_format parameter must be the last parameter");
         return;
     }
 }

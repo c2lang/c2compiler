@@ -182,10 +182,16 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
 
     u32 expected_args = func_num_args - num_auto_args - isTypeFuncCall;
     if (call_num_args < expected_args) {
-        // error loc is closing parenthesis
-        ma.error(call.getEndLoc() - 1, DiagTooFewArgs, fd.getDiagKind(), expected_args, call_num_args);
-        ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
-        return QualType_Invalid;
+        u32 missing_args = 0;
+        for (u32 i = func_arg_index; i < func_num_args; i++) {
+            if (!func_args[i].hasInit()) missing_args++;
+        }
+        if (missing_args) {
+            // error loc is closing parenthesis
+            ma.error(call.getEndLoc() - 1, DiagTooFewArgs, fd.getDiagKind(), expected_args, call_num_args);
+            ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
+            return QualType_Invalid;
+        }
     }
 
     if (call_arg_index != call_num_args || fd.isVariadic()) {

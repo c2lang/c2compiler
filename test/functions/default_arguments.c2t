@@ -1,0 +1,148 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+import stdio local;
+import stdlib local;
+
+fn i32 add(i32 x = 10, i32 y = 20) {
+    return x + y;
+}
+
+fn void output(const char* msg = "default") {
+    printf("%s\n", msg);
+}
+
+const char[] Str = "dummy string";
+
+fn void foo(const char* msg = Str) {
+    printf("%s\n", msg);
+}
+
+const u32 Default_bar = 43;
+u8[] bar_array = "abcdef";
+
+// constant expression using global variables
+fn u32 bar1(u32 val = Default_bar) {
+    return val;
+}
+
+fn u32 bar2(u32 val = elemsof(bar_array)) {
+    return val;
+}
+
+type S struct {
+    i32 x, y;
+}
+
+fn void S.init(S* s, i32 x = 10, i32 y = 20) {
+    s.x = x;
+    s.y = y;
+}
+
+fn void S.print(S* s = nil) {
+    if (s) printf("{ %d, %d }\n", s.x, s.y);
+}
+
+public fn void test1() {
+    add();
+    add(1);
+    add(2, 3);
+    output();
+    output(nil);
+    foo();
+    foo("bar");
+    bar1();
+    bar1(1);
+    bar2();
+    bar2(1);
+    S s1.init();
+    S s2.init(1);
+    S s3.init(2, 3);
+    s1.print();
+    S.print();
+    S.print(&s1);
+}
+
+// @expect{atleast, cgen/build.c}
+typedef struct test_S_ test_S;
+
+struct test_S_ {
+   int32_t x;
+   int32_t y;
+};
+
+static const char test_Str[13] = "dummy string";
+
+#define test_Default_bar 43
+static uint8_t test_bar_array[7] = "abcdef";
+
+static int32_t test_add(int32_t x, int32_t y);
+static void test_output(const char* msg);
+static void test_foo(const char* msg);
+static uint32_t test_bar1(uint32_t val);
+static uint32_t test_bar2(uint32_t val);
+static void test_S_init(test_S* s, int32_t x, int32_t y);
+static void test_S_print(test_S* s);
+static void test_test1(void);
+
+static int32_t test_add(int32_t x, int32_t y)
+{
+   return (x + y);
+}
+
+static void test_output(const char* msg)
+{
+   printf("%s\n", msg);
+}
+
+static void test_foo(const char* msg)
+{
+   printf("%s\n", msg);
+}
+
+static uint32_t test_bar1(uint32_t val)
+{
+   return val;
+}
+
+static uint32_t test_bar2(uint32_t val)
+{
+   return val;
+}
+
+static void test_S_init(test_S* s, int32_t x, int32_t y)
+{
+   s->x = x;
+   s->y = y;
+}
+
+static void test_S_print(test_S* s)
+{
+   if (s) printf("{ %d, %d }\n", s->x, s->y);
+}
+
+static void test_test1(void)
+{
+   test_add(10, 20);
+   test_add(1, 20);
+   test_add(2, 3);
+   test_output("default");
+   test_output(NULL);
+   test_foo(test_Str);
+   test_foo("bar");
+   test_bar1(test_Default_bar);
+   test_bar1(1);
+   test_bar2(7);
+   test_bar2(1);
+   test_S s1; test_S_init(&s1, 10, 20);
+   test_S s2; test_S_init(&s2, 1, 20);
+   test_S s3; test_S_init(&s3, 2, 3);
+   test_S_print(&s1);
+   test_S_print(NULL);
+   test_S_print(&s1);
+}
+

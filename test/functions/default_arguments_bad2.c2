@@ -1,0 +1,5 @@
+// @warnings{no-unused}
+module test;
+
+fn void print(const char* fmt @(printf_format), u32 arg = 1, ...) { // @error{printf_format parameter must be the last parameter}
+}
