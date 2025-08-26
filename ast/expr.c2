@@ -43,6 +43,7 @@ public type ExprKind enum u8 {
     ExplicitCast,
     ImplicitCast,
     Range,
+    NamedArgument,
 }
 
 const char*[] exprKind_names = {
@@ -69,6 +70,7 @@ const char*[] exprKind_names = {
     "ExplicitCast",
     "ImplicitCast",
     "RangeExpr",
+    "NamedArgument",
 }
 static_assert(elemsof(ExprKind), elemsof(exprKind_names));
 
@@ -182,6 +184,8 @@ fn Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
         break;
     case Range:
         return RangeExpr.instantiate((RangeExpr*)e, inst);
+    case NamedArgument:
+        return NamedArgument.instantiate((NamedArgument*)e, inst);
     }
     e.dump();
     assert(0);
@@ -271,6 +275,10 @@ public fn bool Expr.isAssignment(const Expr* e) {
 
 public fn bool Expr.isInitlistAssignment(const Expr* e) {
     return e.isAssignment() && ((BinaryOperator*)e).getRHS().isInitList();
+}
+
+public fn bool Expr.isNamedArgument(const Expr* e) {
+    return e.getKind() == ExprKind.NamedArgument;
 }
 
 public fn bool Expr.isCtv(const Expr* e) { return e.base.exprBits.is_ctv; }
@@ -382,6 +390,8 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
         return ((ImplicitCastExpr*)e).getStartLoc();
     case Range:
         return ((RangeExpr*)e).getStartLoc();
+    case NamedArgument:
+        return ((NamedArgument*)e).getStartLoc();
     }
     return e.base.loc;
 }
@@ -434,6 +444,8 @@ public fn SrcLoc Expr.getEndLoc(const Expr* e) {
         return ((ImplicitCastExpr*)e).getEndLoc();
     case Range:
         return ((RangeExpr*)e).getEndLoc();
+    case NamedArgument:
+        return ((NamedArgument*)e).getEndLoc();
     }
     return e.base.loc;
 }
@@ -480,6 +492,9 @@ public fn bool Expr.needsSemi(const Expr* e) {
     case ImplicitCast:
     case Range:
         break;
+    case NamedArgument:
+        const NamedArgument* n = (NamedArgument*)e;
+        return n.getInner().needsSemi();
     }
     return true;
 }
@@ -563,6 +578,9 @@ fn void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
     case Range:
         RangeExpr.print((RangeExpr*)e, out, indent);
         break;
+    case NamedArgument:
+        NamedArgument.print((NamedArgument*)e, out, indent);
+        break;
     }
 }
 
@@ -638,6 +656,9 @@ public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     case Range:
         RangeExpr.printLiteral((RangeExpr*)e, out);
         return;
+    case NamedArgument:
+        NamedArgument.printLiteral((NamedArgument*)e, out);
+        break;
     }
     out.print("<<kind=%d>>", e.getKind());
 }

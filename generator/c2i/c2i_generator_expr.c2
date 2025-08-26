@@ -147,6 +147,9 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         out.add(" ... ");
         gen.emitExpr(out, b.getRHS());
         break;
+    case NamedArgument:
+        NamedArgument.printLiteral((NamedArgument*)e, out);
+        break;
     }
 }
 

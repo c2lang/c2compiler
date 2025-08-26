@@ -1,0 +1,109 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+import ctype local;
+import stdio local;
+
+fn bool check_case(const char* s, bool is_upper) {
+    if (is_upper) return isupper(*s);
+    else return islower(*s);
+}
+
+fn void fun1(const char* s, bool is_upper = false, bool is_lower = false) {
+}
+
+fn void fun3(const char* s, bool = false, bool is_lower) {
+}
+
+fn void foo1(const char* s) {
+    fun1(s, is_upper: true);
+}
+
+fn void foo2(const char* s) {
+    fun1(s, is_lower: true);
+}
+
+fn void foo3(const char* s) {
+    fun3(s, is_lower: true);
+}
+
+fn void test1(const char* s) {
+    printf("check_case(\"%s\", true) -> %d\n", s, check_case(s, true));
+    printf("check_case(\"%s\", false) -> %d\n", s, check_case(s, false));
+    printf("check_case(\"%s\", is_upper: true) -> %d\n", s, check_case(s, is_upper: true));
+    printf("check_case(\"%s\", is_upper: false) -> %d\n", s, check_case(s, is_upper: false));
+}
+
+public fn i32 main(i32 argc, char** argv) {
+    test1("Hello");
+    test1("world");
+    test1("!");
+    foo1("");
+    foo2("");
+    foo3("");
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+static _Bool test_check_case(const char* s, _Bool is_upper);
+static void test_fun1(const char* s, _Bool is_upper, _Bool is_lower);
+static void test_fun3(const char* s, _Bool _arg1, _Bool is_lower);
+static void test_foo1(const char* s);
+static void test_foo2(const char* s);
+static void test_foo3(const char* s);
+static void test_test1(const char* s);
+int32_t main(int32_t argc, char** argv);
+
+static _Bool test_check_case(const char* s, _Bool is_upper)
+{
+   if (is_upper) return isupper(*s);
+   else return islower(*s);
+
+}
+
+static void test_fun1(const char* s, _Bool is_upper, _Bool is_lower)
+{
+}
+
+static void test_fun3(const char* s, _Bool _arg1, _Bool is_lower)
+{
+}
+
+static void test_foo1(const char* s)
+{
+   test_fun1(s, true, false);
+}
+
+static void test_foo2(const char* s)
+{
+   test_fun1(s, false, true);
+}
+
+static void test_foo3(const char* s)
+{
+   test_fun3(s, false, true);
+}
+
+static void test_test1(const char* s)
+{
+   printf("check_case(\"%s\", true) -> %u\n", s, test_check_case(s, true));
+   printf("check_case(\"%s\", false) -> %u\n", s, test_check_case(s, false));
+   printf("check_case(\"%s\", is_upper: true) -> %u\n", s, test_check_case(s, true));
+   printf("check_case(\"%s\", is_upper: false) -> %u\n", s, test_check_case(s, false));
+}
+
+int32_t main(int32_t argc, char** argv)
+{
+   test_test1("Hello");
+   test_test1("world");
+   test_test1("!");
+   test_foo1("");
+   test_foo2("");
+   test_foo3("");
+   return 0;
+}
+

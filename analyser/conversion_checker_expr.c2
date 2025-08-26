@@ -101,6 +101,9 @@ fn ExprWidth getExprWidth(const Expr* e) {
         ExprWidth lhs = getExprWidth(b.getLHS());
         ExprWidth rhs = getExprWidth(b.getRHS());
         return ExprWidth.mergeWider(lhs, rhs);
+    case NamedArgument:
+        const NamedArgument* n = (NamedArgument*)e;
+        return getExprWidth(n.getInner());
     }
 
     e.dump();
