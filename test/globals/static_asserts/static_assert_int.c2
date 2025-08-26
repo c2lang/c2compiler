@@ -1,5 +1,17 @@
 // @warnings{no-unused}
 module test;
 
-static_assert(3, 4);    // @error{static_assert failed, expected 3, got 4}
+static_assert(3, 4);    // @error{static_assert failed: 3 == 4}
+static_assert(0xff, 0b11111110);    // @error{static_assert failed: 0xff == 0b11111110}
 
+type S struct {
+    i32 x, y;
+}
+
+type T struct {
+    u32 x;
+}
+
+static_assert(sizeof(S), 4);    // @error{static_assert failed: sizeof(S) == 4, got 8}
+static_assert(4, sizeof(S));    // @error{static_assert failed: 4 == sizeof(S), got 8}
+static_assert(sizeof(T), sizeof(S));    // @error{static_assert failed: sizeof(T) == sizeof(S), got 4 and 8}

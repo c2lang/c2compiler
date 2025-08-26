@@ -6,11 +6,16 @@
 module test;
 
 i32 a = 10;
+i32 b = 20;
 void* p = nil;
 
 public fn i32 main() {
-    assert(a);
     assert(p);
+    assert(a);
+    assert(a == 10);
+    assert(a != 10);
+    assert(a > 10);
+    assert(a == b);
     return 0;
 }
 
@@ -19,8 +24,12 @@ int32_t main(void);
 
 int32_t main(void)
 {
-   (test_a) || c2_assert("file1.c2", 7, "test.main", "a");
    (test_p) || c2_assert("file1.c2", 8, "test.main", "p");
+   (test_a) || c2_assert("file1.c2", 9, "test.main", "a");
+   (test_a == 10) || c2_assert("file1.c2", 10, "test.main", "a == 10, a: %d", test_a);
+   (test_a != 10) || c2_assert("file1.c2", 11, "test.main", "a != 10, a: %d", test_a);
+   (test_a > 10) || c2_assert("file1.c2", 12, "test.main", "a > 10, a: %d", test_a);
+   (test_a == test_b) || c2_assert("file1.c2", 13, "test.main", "a == b, a: %d, b: %d", test_a, test_b);
    return 0;
 }
 

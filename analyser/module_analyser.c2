@@ -28,6 +28,7 @@ import label_vector local;
 import name_vector local;
 import src_loc local;
 import scope;
+import string_buffer;
 import string_pool;
 import warning_flags;
 import struct_func_list as sf_list;
@@ -507,7 +508,24 @@ fn void Analyser.handleStaticAssert(void* arg, StaticAssert* d) {
     Value val2 = ast.evalExpr(rhs);
 
     if (!val1.is_equal(&val2)) {
-        ma.errorRange(rhs.getStartLoc(), rhs.getRange(), "static_assert failed, expected %s, got %s", val1.str(), val2.str());
+        char[256] tmp;
+        string_buffer.Buf buf.init(tmp, elemsof(tmp), false, false, 0);
+        lhs.printLiteral(&buf);
+        buf.add(" == ");
+        rhs.printLiteral(&buf);
+        if (lhs.isLiteral()) {
+            if (rhs.isLiteral()) {
+                ma.errorRange(rhs.getStartLoc(), rhs.getRange(), "static_assert failed: %s", buf.str());
+            } else {
+                ma.errorRange(rhs.getStartLoc(), rhs.getRange(), "static_assert failed: %s, got %s", buf.str(), val2.str());
+            }
+        } else {
+            if (rhs.isLiteral()) {
+                ma.errorRange(lhs.getStartLoc(), lhs.getRange(), "static_assert failed: %s, got %s", buf.str(), val1.str());
+            } else {
+                ma.errorRange(lhs.getStartLoc(), lhs.getRange(), "static_assert failed: %s, got %s and %s", buf.str(), val1.str(), val2.str());
+            }
+        }
     }
 }
 
