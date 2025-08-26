@@ -445,22 +445,68 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
         // add c2_assert.fail func designator
         Expr* func = ma.builder.actOnMemberExpr(nil, ma.c2_assert_idx, 0, loc, ma.c2_assert_fail_idx);
         // encode expression as a string
+        u32 num_args = 1;
+        Expr*[3] args;
         char[128] tmp;
         string_buffer.Buf buf.init(tmp, elemsof(tmp), true, false, 0);
-        inner.printLiteral(&buf);
-        u32 msg_len = buf.size();
-        u32 msg_idx = ma.astPool.add(buf.data(), msg_len, true);
+        string_buffer.Buf* out = &buf;
+        encode_expression(out, inner);
+        if (inner.isComparison()) {
+            BinaryOperator* b = (BinaryOperator*)inner;
+            Expr* lhs = b.getLHS();
+            const char* fmt1 = lhs.isLiteral() ? nil : get_type_format(lhs);
+            if (fmt1) {
+                out.add(", ");
+                encode_expression(out, lhs);
+                out.print(": %%%s", fmt1);
+                args[num_args++] = lhs;
+            }
+            Expr* rhs = b.getRHS();
+            const char* fmt2 = rhs.isLiteral() ? nil : get_type_format(rhs);
+            if (fmt2) {
+                out.add(", ");
+                encode_expression(out, rhs);
+                out.print(": %%%s", fmt2);
+                args[num_args++] = rhs;
+            }
+        }
+        u32 msg_len = out.size();
+        u32 msg_idx = ma.astPool.add(out.data(), msg_len, true);
         buf.deinit();
         SrcLoc eloc = inner.getStartLoc();
         SrcLoc eloc_end = inner.getEndLoc();
-        Expr* arg = ma.builder.actOnStringLiteral(eloc, eloc_end - eloc, msg_idx, msg_len);
+        args[0] = ma.builder.actOnStringLiteral(eloc, eloc_end - eloc, msg_idx, msg_len);
 
-        // create call expression `c2_assert.c2_assert_fail("expression")
+        // create call expression `c2_assert.c2_assert_fail("expression...", ...)
         Expr** callp = a.getCall2();
-        *callp = ma.builder.actOnCallExpr(loc, eloc_end + 1, func, &arg, 1);
+        *callp = ma.builder.actOnCallExpr(loc, eloc_end + 1, func, args, num_args);
         qt = ma.analyseExpr(a.getCall2(), true, RHS);
         if (qt.isInvalid()) return;
     }
+}
+
+// encode expression as part of a format string
+fn void encode_expression(string_buffer.Buf* out, Expr* e) {
+    char[128] tmp;
+    string_buffer.Buf buf.init(tmp, elemsof(tmp), false, false, 0);
+    e.printLiteral(&buf);
+    const char* s = buf.data();
+    for (const char* p = s; *p; p++) {
+        if (*p == '%') out.add1('%');
+        out.add1(*p);
+    }
+    buf.deinit();
+}
+
+fn const char* get_type_format(Expr* e) {
+    QualType qt = e.getType();
+    QualType canon = qt.getCanonicalType();
+    if (canon.isPointer() || canon.isFunction()) return "p";
+    if (canon.isBuiltin()) {
+        return canon.isFloat() ? "g" : "d";
+    }
+    if (canon.isEnum()) return "d";
+    return nil;
 }
 
 fn void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
