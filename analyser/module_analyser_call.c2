@@ -168,6 +168,22 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             continue;
         }
 
+        if (call_args[call_arg_index].isNamedArgument()) {
+            NamedArgument* n = (NamedArgument*)call_args[call_arg_index];
+            u32 arg_name_idx = n.getNameIdx();
+            Decl* d = vd.asDecl();
+            u32 param_name_idx = d.getNameIdx();
+            if (arg_name_idx != param_name_idx) {
+                ma.error(cast<Expr*>(n).getLoc(), "unexpected named argument '%s'", ma.astPool.idx2str(arg_name_idx));
+                if (param_name_idx) {
+                    ma.note(d.getLoc(), "expected argument '%s' instead", ma.astPool.idx2str(param_name_idx));
+                } else {
+                    ma.note(d.getLoc(), "expected unnamed argument");
+                }
+                return QualType_Invalid;
+            }
+        }
+
         if (!ma.analyseInitExpr(&call_args[call_arg_index], vd.asDecl().getType(), call_args[call_arg_index].getLoc(), false))
             return QualType_Invalid;
 

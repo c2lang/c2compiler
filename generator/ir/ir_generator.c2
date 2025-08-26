@@ -348,6 +348,10 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
     case Range:
         assert(0);
         break;
+    case NamedArgument:
+        NamedArgument* n = cast<NamedArgument*>(e);
+        gen.emitInit(n.getInner(), size);
+        break;
     }
 }
 
