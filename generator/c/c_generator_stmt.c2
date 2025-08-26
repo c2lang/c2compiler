@@ -237,26 +237,113 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         gen.emitAsmStmt((AsmStmt*)s, indent);
         break;
     case Assert:
-        if (!gen.enable_asserts) out.print(";//assert");
         AssertStmt* a = (AssertStmt*)s;
-        out.add1('(');
-        Expr* inner = a.getInner();
-        gen.emitExpr(out, inner);
-        out.add1(')');
-        if (gen.enable_asserts) {
-            source_mgr.Location loc = gen.sm.locate(s.getLoc());
-            const char* funcname = gen.cur_function.asDecl().getFullName();
-            out.print(" || c2_assert(\"%s\", %d, \"%s\", \"", loc.filename, loc.line, funcname);
-            // encode expression as a string
-            string_buffer.Buf* str = string_buffer.create(128, false, 0);
-            inner.printLiteral(str);
-            out.encodeBytes(str.data(), str.size(), '"');
-            str.free();
-            out.add("\")");
+        if (!gen.enable_asserts) {
+            out.print(";//assert");
+            out.add1('(');
+            Expr* inner = a.getInner();
+            gen.emitExpr(out, inner);
+            out.add1(')');
+            break;
         }
-        out.add(";\n");
+        gen.emitAssertStmt(a, indent);
         break;
     }
+}
+
+fn const char* get_type_format(Expr* e) {
+    QualType qt = e.getType();
+    QualType canon = qt.getCanonicalType();
+    if (canon.isPointer() || canon.isFunction()) return "p";
+    const Type* t = canon.getTypeOrNil();
+    if (canon.isEnum()) {
+        // output numeric value
+        EnumType* et = (EnumType*)t;
+        canon = et.getImplType();
+        t = canon.getTypeOrNil();
+    }
+    const BuiltinType* bi = (BuiltinType*)t;
+    switch (bi.getBaseKind()) {
+    case Char:
+    case Int8:
+    case Int16:
+    case Int32:
+        return "d";
+    case Int64:
+        return "ld";
+    case UInt8:
+    case UInt16:
+    case UInt32:
+        return "u";
+    case UInt64:
+        return "lu";
+    case Float32:
+    case Float64:
+        return "g";
+    case Bool:
+        return "d";
+    case ISize: // not a base kind
+    case USize: // not a base kind
+        break;
+    }
+    return nil;
+}
+
+// encode expression as a string
+fn void encode_expression(string_buffer.Buf* out, Expr* e) {
+    char[128] tmp;
+    string_buffer.Buf buf.init(tmp, elemsof(tmp), false, false, 0);
+    e.printLiteral(&buf);
+    const char* s = buf.data();
+    for (const char* p = s;; p++) {
+        if (!*p || *p == '%') {
+            out.encodeBytes(s, (u32)(p - s), '"');
+            if (!*p) break;
+            if (*p == '%') out.add("%%");
+        }
+    }
+}
+
+fn void Generator.emitAssertStmt(Generator* gen, AssertStmt* a, u32 indent) {
+    string_buffer.Buf* out = gen.out;
+    source_mgr.Location loc = gen.sm.locate(((Stmt*)a).getLoc());
+    const char* funcname = gen.cur_function.asDecl().getFullName();
+    Expr* inner = a.getInner();
+    out.add1('(');
+    gen.emitExpr(out, inner);
+    out.print(") || c2_assert(\"%s\", %d, \"%s\", \"", loc.filename, loc.line, funcname);
+    encode_expression(out, inner);
+    if (inner.isComparison()) {
+        BinaryOperator* b = (BinaryOperator*)inner;
+        Expr* lhs = b.getLHS();
+        Expr* rhs = b.getRHS();
+        const char* fmt1 = lhs.isLiteral() ? nil : get_type_format(lhs);
+        const char* fmt2 = rhs.isLiteral() ? nil : get_type_format(rhs);
+        if (fmt1) {
+            out.print(", ");
+            encode_expression(out, lhs);
+            out.print(": %%%s", fmt1);
+        }
+        if (fmt2) {
+            out.print(", ");
+            encode_expression(out, rhs);
+            out.print(": %%%s", fmt2);
+        }
+        out.add1('"');
+        if (fmt1) {
+            out.add(", ");
+            if (*fmt1 == 'p') out.add("(void*)");
+            gen.emitExpr(out, lhs);
+        }
+        if (fmt2) {
+            out.add(", ");
+            if (*fmt2 == 'p') out.add("(void*)");
+            gen.emitExpr(out, rhs);
+        }
+    } else {
+        out.add1('"');
+    }
+    out.add(");\n");
 }
 
 fn void emitAsmPart(string_buffer.Buf* out, bool multi_line, u32 indent) {
