@@ -28,6 +28,7 @@ import label_vector local;
 import name_vector local;
 import src_loc local;
 import scope;
+import string_buffer;
 import string_pool;
 import warning_flags;
 import struct_func_list as sf_list;
@@ -37,6 +38,7 @@ import value_type local;
 import ctype;
 import stdarg local;
 import stdlib;
+import string;
 
 const u32 MaxDepth = 8;
 const u32 LHS = 0x01;
@@ -521,37 +523,117 @@ fn void Analyser.handleEnumAssocValue(void* arg, Decl* d) {
     ma.popCheck();
 }
 
+fn void Analyser.printLiteral(Analyser* ma, string_buffer.Buf *buf,
+                              const char* s, const Expr* e, Value val,
+                              bool as_is = false)
+{
+    buf.add(s);
+    u32 off = buf.size();
+    e.printLiteral(buf);
+    const char* str = val.str();
+    if (as_is) {
+        buf.print(" is %s", str);
+    } else
+    if (string.strcmp((const char*)buf.data() + off, str)) {
+        buf.print(" (%s)", str);
+    }
+}
+
+fn bool isTrueLiteral(Expr* e) {
+    switch (e.getKind()) {
+    case IntegerLiteral: return ((IntegerLiteral*)e).isDecimal();
+    case FloatLiteral:   return true;
+    case BooleanLiteral: return true;
+    case CharLiteral:    return false;
+    case StringLiteral:  return false;
+    case Nil:            return false;
+    default: return false;
+    }
+}
+
 fn void Analyser.handleStaticAssert(void* arg, StaticAssert* sa) {
     Analyser* ma = arg;
-
-    Expr* lhs = sa.getLhs();
-    Expr* rhs = sa.getRhs();
+    Expr* lhs = sa.getLHS();
+    Expr* rhs = sa.getRHS();
+    const char* msg = "static_assert failed";
+    if (rhs && rhs.isStringLiteral()) {
+        StringLiteral* s = (StringLiteral*)rhs;
+        msg = ma.astPool.idx2str(s.getTextIndex());
+        rhs = nil;
+    }
 
     // push a dummy declaration so ma.popCheck() does not set ma.scope to nil
     if (!ma.pushCheck(nil, sa.getAST().getPtr(), nil)) return;
     QualType t1 = ma.analyseConstExpr(&lhs, true);
-    QualType t2 = t1.isInvalid() ? t1 : ma.analyseConstExpr(&rhs, true);
+    QualType t2 = t1;
+    if (!t1.isInvalid() && rhs) t2 = ma.analyseConstExpr(&rhs, true);
     ma.popCheck();
     if (t1.isInvalid() || t2.isInvalid()) return;
 
-    bool error = false;
     if (!lhs.isCtv()) {
         ma.errorRange(lhs.getLoc(), lhs.getRange(), "static_assert element is not a compile-time value");
-        error = true;
+        return;
     }
-    if (!rhs.isCtv()) {
+    if (rhs && !rhs.isCtv()) {
         ma.errorRange(rhs.getLoc(), rhs.getRange(), "static_assert element is not a compile-time value");
-        error = true;
+        return;
     }
 
-    if (error) return;
+    Expr* e = lhs;
+    BinaryOpcode opcode = Equal;
+    if (lhs.isComparison() && !rhs) {
+        BinaryOperator* b = (BinaryOperator*)e;
+        opcode = b.getOpcode();
+        lhs = b.getLHS();
+        if (lhs.isImplicitCast()) lhs = ((ImplicitCastExpr*)lhs).getInner();
+        rhs = b.getRHS();
+        if (rhs.isImplicitCast()) rhs = ((ImplicitCastExpr*)rhs).getInner();
+    }
 
     Value val1 = ast.evalExpr(lhs);
-    Value val2 = ast.evalExpr(rhs);
-
-    if (!val1.is_equal(&val2)) {
-        ma.errorRange(rhs.getStartLoc(), rhs.getRange(), "static_assert failed, expected %s, got %s", val1.str(), val2.str());
+    Value val2 = {}
+    if (rhs) {
+        val2 = ast.evalExpr(rhs);
+        if (val1.is_equal(&val2)) return;
+    } else {
+        if (!val1.isZero()) return;
     }
+
+    char[256] tmp;
+    string_buffer.Buf buf.init(tmp, elemsof(tmp), true, false, 0);
+
+    if (rhs) {
+        if (opcode == Equal) {
+            if (!lhs.isLiteral() && rhs.isLiteral()) {
+                ma.printLiteral(&buf, "", lhs, val1, true);
+                ma.printLiteral(&buf, ", expected ", rhs, val2);
+            } else
+            if (lhs.isLiteral() && !rhs.isLiteral()) {
+                ma.printLiteral(&buf, "", rhs, val2, true);
+                ma.printLiteral(&buf, ", expected ", lhs, val1);
+            } else {
+                ma.printLiteral(&buf, "values differ: ", lhs, val1);
+                ma.printLiteral(&buf, " <> ", rhs, val2);
+            }
+        } else {
+            buf.add("expected ");
+            lhs.printLiteral(&buf);
+            buf.print(" %s ", opcode.str());
+            rhs.printLiteral(&buf);
+            if (!isTrueLiteral(lhs)) {
+                ma.printLiteral(&buf, ", ", lhs, val1, true);
+            }
+            if (!isTrueLiteral(rhs)) {
+                ma.printLiteral(&buf, ", ", rhs, val2, true);
+            }
+        }
+    } else {
+        buf.add("expected ");
+        e.printLiteral(&buf);
+        buf.add(" != 0");
+    }
+    ma.errorRange(e.getStartLoc(), e.getRange(), "%s: %s", msg, buf.str());
+    buf.deinit();
 }
 
 fn void Analyser.handleVarDecl(void* arg, VarDecl* v) {

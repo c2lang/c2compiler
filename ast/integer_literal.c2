@@ -58,11 +58,9 @@ fn u32 IntegerLiteral.getSrcLen(const IntegerLiteral* e) {
     return e.base.base.integerLiteralBits.src_len;
 }
 
-/*
 public fn bool IntegerLiteral.isDecimal(const IntegerLiteral* e) {
     return e.base.base.integerLiteralBits.radix == Default;
 }
-*/
 
 fn void printBinary(string_buffer.Buf* out, u64 value, u32 len) {
     char[2+64+1] tmp;

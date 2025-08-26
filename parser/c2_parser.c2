@@ -832,8 +832,11 @@ fn void Parser.parseStaticAssert(Parser* p) {
 
     p.expectAndConsume(LParen);
     Expr* lhs = p.parseExpr();
-    p.expectAndConsume(Comma);
-    Expr* rhs = p.parseExpr();
+    Expr* rhs = nil;
+    if (p.tok.kind == Comma) {
+        p.consumeToken();
+        rhs = p.parseExpr();
+    }
     p.expectAndConsume(RParen);
     p.expectAndConsume(Semicolon);
     p.builder.actOnStaticAssert(loc, lhs, rhs);

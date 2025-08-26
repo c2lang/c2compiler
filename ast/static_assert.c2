@@ -47,11 +47,11 @@ public fn AST* StaticAssert.getAST(const StaticAssert* d) {
     return idx2ast(d.ast_idx);
 }
 
-public fn Expr* StaticAssert.getLhs(const StaticAssert* d) {
+public fn Expr* StaticAssert.getLHS(const StaticAssert* d) {
     return d.lhs;
 }
 
-public fn Expr* StaticAssert.getRhs(const StaticAssert* d) {
+public fn Expr* StaticAssert.getRHS(const StaticAssert* d) {
     return d.rhs;
 }
 

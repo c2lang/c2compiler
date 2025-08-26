@@ -41,8 +41,8 @@ public fn void Visitor.free(Visitor* v) {
 
 // only used by plugins
 public fn void Visitor.handleAssert(Visitor* v, StaticAssert* a) @(unused) {
-    v.handleExpr(a.getLhs());
-    v.handleExpr(a.getRhs());
+    v.handleExpr(a.getLHS());
+    v.handleExpr(a.getRHS());
 }
 
 public fn void Visitor.handle(Visitor* v, Decl* d) {

@@ -2,13 +2,21 @@
 module test;
 
 static_assert(8, 8);
+static_assert(8 == 8);
 static_assert(8, 4+4);
+static_assert(8 == 4+4);
 static_assert(2+2*3, 4+4);
+static_assert(2+2*3 == 4+4);
 static_assert(true, true);
+static_assert(true == true);
 static_assert(false, false);
+static_assert(false == false);
 static_assert(1, true);
+static_assert(1 == true);
 static_assert(true, 1);
+static_assert(true == 1);
 static_assert('c', 0x63);
+static_assert('c' == 0x63);
 
 type Struct struct {
     i32 a;

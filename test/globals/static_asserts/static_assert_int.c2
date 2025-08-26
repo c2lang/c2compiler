@@ -1,5 +1,29 @@
 // @warnings{no-unused}
 module test;
 
-static_assert(3, 4);    // @error{static_assert failed, expected 3, got 4}
+type S struct { i32 x, y; }
+type T struct { u32 x; }
 
+static_assert(3, 4);                    // @error{static_assert failed: values differ: 3 <> 4}
+static_assert(0xff, 0b11111110);        // @error{static_assert failed: values differ: 0xFF (255) <> 0b11111110 (254)}
+static_assert(sizeof(S), 4);            // @error{static_assert failed: sizeof(S) is 8, expected 4}
+static_assert(4, sizeof(S));            // @error{static_assert failed: sizeof(S) is 8, expected 4}
+static_assert(sizeof(T), sizeof(S));    // @error{static_assert failed: values differ: sizeof(T) (4) <> sizeof(S) (8)}
+
+static_assert(3 == 4);                  // @error{static_assert failed: values differ: 3 <> 4}
+static_assert(0xff == 0b11111110);      // @error{static_assert failed: values differ: 0xFF (255) <> 0b11111110 (254)}
+static_assert(sizeof(S) == 4);          // @error{static_assert failed: sizeof(S) is 8, expected 4}
+static_assert(4 == sizeof(S));          // @error{static_assert failed: sizeof(S) is 8, expected 4}
+static_assert(sizeof(T) == sizeof(S));  // @error{static_assert failed: values differ: sizeof(T) (4) <> sizeof(S) (8)}
+
+static_assert(3 >= 4);                  // @error{static_assert failed: expected 3 >= 4}
+static_assert(0xff <= 0b11111110);      // @error{static_assert failed: expected 0xFF <= 0b11111110, 0xFF is 255, 0b11111110 is 254}
+static_assert(sizeof(S) <= 4);          // @error{static_assert failed: expected sizeof(S) <= 4, sizeof(S) is 8}
+static_assert(4 >= sizeof(S));          // @error{static_assert failed: expected 4 >= sizeof(S), sizeof(S) is 8}
+static_assert(sizeof(T) > sizeof(S));   // @error{static_assert failed: expected sizeof(T) > sizeof(S), sizeof(T) is 4, sizeof(S) is 8}
+
+static_assert(1.5 >= 4);                // @error{static_assert failed: expected 1.5 >= 4}
+static_assert(true, 0);                 // @error{static_assert failed: values differ: true (1) <> 0}
+static_assert(true, false);             // @error{static_assert failed: values differ: true (1) <> false (0)}
+static_assert(true, "unexpected failure");
+static_assert(false, "expected failure"); // @error{expected failure: expected false != 0}
