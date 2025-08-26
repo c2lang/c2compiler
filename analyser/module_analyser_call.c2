@@ -167,15 +167,47 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     while (1) {
         //stdio.printf("ARG [%d | %d]\n", func_arg_index, call_arg_index);
         if (func_arg_index >= func_num_args) break;
-        if (call_arg_index >= call_num_args) break;
 
         VarDecl* vd = func_args[func_arg_index];
+        Decl* d = vd.asDecl();
         if (vd.hasAutoAttr()) {
             func_arg_index++;
             continue;
         }
 
-        if (!ma.analyseInitExpr(&call_args[call_arg_index], vd.asDecl().getType(), call_args[call_arg_index].getLoc(), false, false))
+        if (call_arg_index >= call_num_args) break;
+
+        Expr* arg = call_args[call_arg_index];
+        if (arg.isNamedArgument()) {
+            NamedArgument* n = (NamedArgument*)arg;
+            u32 arg_name_idx = n.getNameIdx();
+            u32 param_name_idx;
+            bool found = false;
+            while (func_arg_index < func_num_args) {
+                vd = func_args[func_arg_index];
+                d = vd.asDecl();
+                param_name_idx = d.getNameIdx();
+                found = (param_name_idx == arg_name_idx);
+                if (found)
+                    break;
+                if (!vd.hasInit())
+                    break;
+                func_arg_index++;
+            }
+            if (!found) {
+                ma.error(arg.getLoc(), "unexpected named argument '%s'", ma.astPool.idx2str(arg_name_idx));
+                if (func_arg_index < func_num_args) {
+                    if (param_name_idx) {
+                        ma.note(d.getLoc(), "expected argument '%s' instead", ma.astPool.idx2str(param_name_idx));
+                    } else {
+                        ma.note(d.getLoc(), "expected unnamed argument");
+                    }
+                }
+                return QualType_Invalid;
+            }
+        }
+
+        if (!ma.analyseInitExpr(&call_args[call_arg_index], d.getType(), arg.getLoc(), false, false))
             return QualType_Invalid;
 
         if (vd.hasPrintfFormat()) {
@@ -188,7 +220,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     }
 
     u32 expected_args = func_num_args - num_auto_args - isTypeFuncCall;
-    if (call_num_args < expected_args) {
+    if (func_arg_index < func_num_args) {
         u32 missing_args = 0;
         for (u32 i = func_arg_index; i < func_num_args; i++) {
             if (!func_args[i].hasInit()) missing_args++;
@@ -456,6 +488,7 @@ fn QualType Analyser.analysePureCallExpr(Analyser* ma, Expr* e) {
         return QualType_Invalid;
     }
 
+    // TODO: handle default and named arguments
     u32 func_num_args = fd.getNumParams();
     u32 call_num_args = call.getNumArgs();
     //VarDecl** func_args = fd.getParams();
