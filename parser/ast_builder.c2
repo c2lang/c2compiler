@@ -1094,3 +1094,7 @@ fn void Builder.addSymbol(Builder* b, u32 name_idx, Decl* d) {
     }
 }
 
+public fn Expr* Builder.actOnNamedArgument(Builder* b, SrcLoc loc, u32 name, Expr* inner) {
+    return (Expr*)NamedArgument.create(b.context, loc, name, inner);
+}
+

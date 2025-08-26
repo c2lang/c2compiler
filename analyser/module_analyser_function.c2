@@ -68,7 +68,6 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
     VarDecl** params = fd.getParams();
     u32 auto_arg_count = 0;
     u32 first_auto_arg = 0;
-    bool has_default = false;
     for (u32 i=0; i<num_params; i++) {
         VarDecl* vd = params[i];
         TypeRef* ref = vd.getTypeRef();
@@ -90,7 +89,6 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         if (is_public) setTypePublicUsed(res);
 
         if (vd.hasInit()) {
-            has_default = true;
             if (vd.hasAutoAttr()) {
                 ma.error(vd.getAssignLoc(), "automatic argument cannot have default value");
             }
@@ -99,11 +97,6 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
             }
             Expr** initExpr = vd.getInit2();
             ma.analyseInitExpr(initExpr, res, vd.getAssignLoc(), false, true);
-        } else {
-            if (has_default) {
-                Decl* d = (Decl*)vd;
-                ma.error(d.getLoc(), "parameter must have a default value");
-            }
         }
 
         if (vd.hasAutoAttr()) {

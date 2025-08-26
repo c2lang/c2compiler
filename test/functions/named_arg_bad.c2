@@ -1,0 +1,23 @@
+// @warnings{no-unused}
+module test;
+
+fn void foo1(const char* s, bool is_upper, bool is_lower) { // @note{expected argument 'is_upper' instead}
+}
+
+fn void foo2(const char* s, bool is_upper, bool is_lower) { // @note{expected argument 'is_upper' instead}
+}
+
+fn void foo3(const char* s, bool, bool is_lower) { // @note{expected unnamed argument}
+}
+
+fn void bar1(const char* s) {
+    foo1(s, is_lower: true); // @error{unexpected named argument 'is_lower'}
+}
+
+fn void bar2(const char* s) {
+    foo2(s, is_none: true); // @error{unexpected named argument 'is_none'}
+}
+
+fn void bar3(const char* s) {
+    foo3(s, is_lower: true); // @error{unexpected named argument 'is_lower'}
+}
