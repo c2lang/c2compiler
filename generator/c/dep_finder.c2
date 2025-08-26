@@ -226,6 +226,10 @@ fn void Finder.handleExpr(Finder* s, Expr* e) {
         s.handleExpr(b.getLHS());
         s.handleExpr(b.getRHS());
         break;
+    case NamedArgument:
+        NamedArgument* n = (NamedArgument*)e;
+        s.handleExpr(n.getInner());
+        break;
     }
 }
 

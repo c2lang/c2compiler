@@ -164,6 +164,10 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
         gen.emitExpr(out, b.getRHS());
         if (prec > Assignment) out.rparen();
         return;
+    case NamedArgument:
+        NamedArgument* n = (NamedArgument*)e;
+        gen.emitExpr(out, n.getInner());
+        break;
     }
 }
 

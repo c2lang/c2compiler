@@ -88,6 +88,7 @@ set ast
     ast/init_list_expr.c2
     ast/integer_literal.c2
     ast/member_expr.c2
+    ast/named_argument.c2
     ast/nil_expr.c2
     ast/paren_expr.c2
     ast/range_expr.c2
