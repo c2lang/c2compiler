@@ -1,0 +1,47 @@
+// @warnings{no-unused}
+module test;
+
+import ctype local;
+import stdio local;
+
+fn bool check_case(const char* s, bool is_upper) {
+    if (is_upper) return isupper(*s);
+    else return islower(*s);
+}
+
+#if 1
+fn void foo1(const char* s, bool is_upper, bool is_lower) { // @note{expected argument 'is_upper' instead}
+}
+
+fn void foo2(const char* s, bool is_upper, bool is_lower) { // @note{expected argument 'is_upper' instead}
+}
+
+fn void foo3(const char* s, bool, bool is_lower) { // @note{expected unnamed argument}
+}
+
+fn void bar1(const char* s) {
+    foo1(s, is_lower: true); // @error{unexpected named argument 'is_lower'}
+}
+
+fn void bar2(const char* s) {
+    foo2(s, is_none: true); // @error{unexpected named argument 'is_none'}
+}
+
+fn void bar3(const char* s) {
+    foo3(s, is_lower: true); // @error{unexpected named argument 'is_lower'}
+}
+#endif
+
+fn void test1(const char* s) {
+    printf("check_case(\"%s\", true) -> %d\n", s, check_case(s, true));
+    printf("check_case(\"%s\", false) -> %d\n", s, check_case(s, false));
+    printf("check_case(\"%s\", is_upper: true) -> %d\n", s, check_case(s, is_upper: true));
+    printf("check_case(\"%s\", is_upper: false) -> %d\n", s, check_case(s, is_upper: false));
+}
+
+public fn i32 main(i32 argc, char** argv) {
+    test1("Hello");
+    test1("world");
+    test1("!");
+    return 0;
+}

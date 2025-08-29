@@ -115,6 +115,10 @@ fn void Visitor.handleExpr(Visitor* v, Expr* e) {
         v.handleExpr(b.getLHS());
         v.handleExpr(b.getRHS());
         break;
+    case NamedArgument:
+        NamedArgument* n = cast<NamedArgument*>(e);
+        v.handleExpr(n.getInner());
+        break;
     }
 }
 

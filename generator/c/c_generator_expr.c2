@@ -153,6 +153,10 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
         out.add(" ... ");
         gen.emitExpr(out, b.getRHS());
         return;
+    case NamedArgument:
+        NamedArgument* n = cast<NamedArgument*>(e);
+        gen.emitExpr(out, n.getInner());
+        break;
     }
 }
 
