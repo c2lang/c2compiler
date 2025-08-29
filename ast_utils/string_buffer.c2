@@ -56,14 +56,6 @@ public fn Buf* create(u32 capacity, bool use_colors, u32 indent_step) {
     return buf.init(nil, capacity, true, use_colors, indent_step);
 }
 
-#if 0
-// Note: no growing possible
-public fn Buf* create_static(u32 capacity, bool use_colors, char* data) {
-    Buf* buf = malloc(sizeof(Buf));
-    return buf.init(data, capacity, false, use_colors, 0);
-}
-#endif
-
 fn void Buf.deinit(Buf* buf) {
     if (buf.own) free(buf.data_);
     buf.data_ = nil;
