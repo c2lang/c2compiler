@@ -68,9 +68,10 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
     VarDecl** params = fd.getParams();
     u32 auto_arg_count = 0;
     u32 first_auto_arg = 0;
+    bool has_default = false;
     for (u32 i=0; i<num_params; i++) {
-        VarDecl* v = params[i];
-        TypeRef* ref = v.getTypeRef();
+        VarDecl* vd = params[i];
+        TypeRef* ref = vd.getTypeRef();
 
         QualType res = ma.analyseTypeRef(ref);
         if (res.isInvalid()) continue;
@@ -88,31 +89,48 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
 
         if (is_public) setTypePublicUsed(res);
 
-        if (v.hasAutoAttr()) {
+        if (vd.hasInit()) {
+            has_default = true;
+            if (vd.hasAutoAttr()) {
+                ma.error(vd.getAssignLoc(), "automatic argument cannot have default value");
+            }
+            if (vd.hasPrintfFormat()) {
+                ma.error(vd.getAssignLoc(), "printf_format parameter cannot have default value");
+            }
+            Expr** initExpr = vd.getInit2();
+            ma.analyseInitExpr(initExpr, res, vd.getAssignLoc(), false, true);
+        } else {
+            if (has_default) {
+                Decl* d = (Decl*)vd;
+                ma.error(d.getLoc(), "parameter must have a default value");
+            }
+        }
+
+        if (vd.hasAutoAttr()) {
             if (auto_arg_count == 0) first_auto_arg = i;
             auto_arg_count++;
             if (auto_arg_count > 3) {
                 ma.error(ref.getLoc(), "too many automatic arguments");
             }
             // check type
-            if (v.hasAttrAutoFile() && !ref.isConstCharPtr()) { // check for 'const char *'
+            if (vd.hasAttrAutoFile() && !ref.isConstCharPtr()) { // check for 'const char *'
                 ma.error(ref.getLoc(), "attribute 'auto_file' requires a parameter of type 'const char*'");
             }
-            if (v.hasAttrAutoLine() && !ref.isU32()) {  // check for 'u32'
+            if (vd.hasAttrAutoLine() && !ref.isU32()) {  // check for 'u32'
                 ma.error(ref.getLoc(), "attribute 'auto_line' requires a parameter of type 'u32'");
             }
-            if (v.hasAttrAutoFunc() && !ref.isConstCharPtr()) { // check for 'const char *'
+            if (vd.hasAttrAutoFunc() && !ref.isConstCharPtr()) { // check for 'const char *'
                 ma.error(ref.getLoc(), "attribute 'auto_func' requires a parameter of type 'const char*'");
             }
         }
 
-        if (v.hasPrintfFormat()) {
-            ma.checkPrintfFormat(v, res, i, fd);
+        if (vd.hasPrintfFormat()) {
+            ma.checkPrintfFormat(vd, res, i, fd);
             fd.setAttrPrintf((u8)i + 1); // change to 1-based
         }
 
         // Note: we dont check the arg name for clash here, but when checking body
-        Decl* d = (Decl*)v;
+        Decl* d = (Decl*)vd;
         d.setType(res);
         d.setChecked();
     }
@@ -213,7 +231,6 @@ fn void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope
 
     ma.scope.reset();
     ma.scope.enter(scope.Function | scope.Decl);
-    bool has_default = false;
     u32 num_params = fd.getNumParams();
     VarDecl** params = fd.getParams();
     for (u32 i=0; i<num_params; i++) {
@@ -221,27 +238,6 @@ fn void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope
         if (p.getNameIdx()) {
             bool error = ma.scope.add(p);
             if (error) return;   // no need to set ma.has_error. NOTE: pushCheck remains!
-        }
-        VarDecl* vd = (VarDecl*)p;
-        if (vd.hasInit()) {
-            has_default = true;
-            if (vd.hasAutoAttr()) {
-                ma.error(vd.getAssignLoc(), "automatic argument cannot have default value");
-            }
-            if (vd.hasPrintfFormat()) {
-                ma.error(vd.getAssignLoc(), "printf_format parameter cannot have default value");
-            }
-            Expr** initExpr = vd.getInit2();
-            if (ma.analyseInitExpr(initExpr, p.getType(), vd.getAssignLoc(), false)) {
-                Expr* e = vd.getInit();
-                if (!e.isCtc() && !e.isCtv()) {
-                    ma.errorRange(e.getLoc(), e.getRange(), "default parameter value is not a compile-time value");
-                }
-            }
-        } else {
-            if (has_default) {
-                ma.error(p.getLoc(), "parameter must have a default value");
-            }
         }
     }
 

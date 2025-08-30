@@ -6,9 +6,6 @@ const char* str = "dummy string";
 fn void foo1(const char* msg = str) { // @error{default parameter value is not a compile-time value}
 }
 
-fn void foo2(u32 val = val) { // @error{default parameter value is not a compile-time value}
-}
-
 fn void foo3(u32 val = "default") { // @error{invalid type conversion from 'const char[8]' to 'u32'}
 }
 

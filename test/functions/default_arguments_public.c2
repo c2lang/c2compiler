@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+public fn void test1(i32 a = Max) {}    // @error{public declaration using non-public constant 'test.Max'}
+
+const i32 Max = 10;
+

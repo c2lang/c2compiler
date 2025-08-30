@@ -1,0 +1,20 @@
+// @warnings{no-unused}
+module test;
+
+type Callback fn void (i32 a, i32 b);
+
+fn void test1(Callback cb = nil) { }
+
+fn void test2(Callback cb = my_callback1) { }
+
+fn void test3(Callback cb = my_callback2) { }   // @error{invalid function conversion from 'void (i32)' to 'Callback'}
+
+fn void test4(Callback cb = my_callback3) { }   // @error{invalid function conversion from 'void (i32, i32, i32)' to 'Callback'}
+
+fn void my_callback1(i32 a, i32 b) {}
+
+fn void my_callback2(i32 a) {}
+
+fn void my_callback3(i32 a, i32 b, i32 c = 3) {}
+
+

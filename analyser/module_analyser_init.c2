@@ -20,7 +20,7 @@ import ctv_analyser;
 import init_checker;
 import src_loc local;
 
-fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType, SrcLoc assignLoc, bool is_bitfield) {
+fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType, SrcLoc assignLoc, bool is_bitfield, bool is_default_param) {
     Expr* e = *e_ptr;
 
     if (!is_bitfield) {
@@ -104,7 +104,11 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
 
     if (!ma.curFunction && !e.isCtv()) {
         if (!e.isCtc()) {
-            ma.errorRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
+            if (is_default_param) {
+                ma.errorRange(e.getLoc(), e.getRange(), "default parameter value is not a compile-time value");
+            } else {
+                ma.errorRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
+            }
             return false;
         }
 
@@ -172,7 +176,7 @@ fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expe
     if (val.isInitList()) {
         return ma.analyseInitListExpr((InitListExpr*)val, expectedType);
     }
-    bool ok = ma.analyseInitExpr(ad.getInit2(), expectedType, val.getLoc(), false);
+    bool ok = ma.analyseInitExpr(ad.getInit2(), expectedType, val.getLoc(), false, false);
     if (!ok) return false;
 
     if (!ma.curFunction) {
@@ -221,7 +225,7 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
             have_designators = true;
             continue;
         }
-        ok &= ma.analyseInitExpr(&values[i], et, values[i].getLoc(), false);
+        ok &= ma.analyseInitExpr(&values[i], et, values[i].getLoc(), false, false);
         ctc &= values[i].isCtc();
     }
     current_index = numValues;   // TODO also keep track of ArrayDesignatedInit
@@ -409,7 +413,7 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
             goto out;
         }
 
-        bool ok = ma.analyseInitExpr(fdi.getInit2(), member.getType(), fdi.getInit().getLoc(), fif.is_bitfield);
+        bool ok = ma.analyseInitExpr(fdi.getInit2(), member.getType(), fdi.getInit().getLoc(), fif.is_bitfield, false);
         if (!ok) goto out;
 
         Expr* inner = fdi.getInit();
@@ -485,7 +489,7 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
         }
         members[member_idx].setUsed();
 
-        bool ok = ma.analyseInitExpr(&values[i], members[member_idx].getType(), values[i].getLoc(), ml.is_bitfield);
+        bool ok = ma.analyseInitExpr(&values[i], members[member_idx].getType(), values[i].getLoc(), ml.is_bitfield, false);
         if (!ok) return false;
 
         if (ml.is_bitfield && value.isCtv()) {
