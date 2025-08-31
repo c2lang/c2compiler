@@ -276,7 +276,7 @@ fn void Files.dump(const Files* f, bool verbose) {
 // ------ Lengths ------
 
 type Lengths struct {
-    u32 total_size;         // of whole Files
+    u32 total_size;     // of whole Files
     u32 count;          // current number of entries
     u32 cap;            // max number of entries
     u8[0] lengths;
@@ -293,6 +293,9 @@ fn Lengths* Lengths.create(u32 max_lengths) {
     f.total_size = size;
     f.count = 0;
     f.cap = max_lengths;
+    // set last byte to avoid write of unitialized bytes
+    char* cp = (char*)f;
+    for (u32 i = 0; i < 4; i++) cp[size-1-i] = 0;
     return f;
 }
 #endif
@@ -315,8 +318,8 @@ fn u32 Lengths.add(Lengths** f_ptr, u32 count, const u8* lengths) {
     Lengths* f = *f_ptr;
 
     u32 needed = f.count + count;
-    if (needed > f.cap) {
-        f = f.resize(needed);
+    while (needed > f.cap) {
+        f = f.resize(f.cap * 2);
         *f_ptr = f;
     }
 
