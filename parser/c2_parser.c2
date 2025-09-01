@@ -798,7 +798,9 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
     out.print("%12s", tok.kind.str());
     if (tok.kind.isKeyword())
         out.color(color.Normal);
-    out.print("  %6d %s  ", tok.loc, p.sm.loc2str(tok.loc));
+    char[256] locstr;
+    p.sm.loc2str(tok.loc, locstr, elemsof(locstr));
+    out.print("  %6d %s  ", tok.loc, locstr);
 
     out.color(color.Cyan);
     switch (tok.kind) {

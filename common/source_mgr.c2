@@ -277,13 +277,12 @@ public fn Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
     return l;
 }
 
-public fn const char* SourceMgr.loc2str(SourceMgr* sm, SrcLoc sloc) {
-    local char[256] tmp;
+public fn char* SourceMgr.loc2str(SourceMgr* sm, SrcLoc sloc, char* tmp, usize tmp_size) {
     Location loc = sm.locate(sloc);
-    tmp[0] = '-';
-    tmp[1] = '\0';
     if (loc.line_start) {
-        stdio.snprintf(tmp, elemsof(tmp), "%s:%d:%d", loc.filename, loc.line, loc.column);
+        stdio.snprintf(tmp, tmp_size, "%s:%d:%d", loc.filename, loc.line, loc.column);
+    } else {
+        stdio.snprintf(tmp, tmp_size, "-");
     }
     return tmp;
 }

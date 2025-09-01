@@ -195,13 +195,16 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
     char[128] msg;
     va_list args;
     va_start(args, format);
-    vsnprintf(msg, sizeof(msg)-1, format, args);
+    vsnprintf(msg, sizeof(msg), format, args);
     va_end(args);
 
+    char[256] locstr;
+    p.sm.loc2str(p.token.loc, locstr, elemsof(locstr));
+
     if (color.useColor()) {
-        fprintf(stderr, "%s: %serror:%s %s\n", p.sm.loc2str(p.token.loc), color.Red, color.Normal, msg);
+        fprintf(stderr, "%s: %serror:%s %s\n", locstr, color.Red, color.Normal, msg);
     } else {
-        fprintf(stderr, "%s: error: %s\n", p.sm.loc2str(p.token.loc), msg);
+        fprintf(stderr, "%s: error: %s\n", locstr, msg);
     }
     longjmp(&p.jmpbuf, 1);
 }
@@ -209,7 +212,9 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
 fn void Parser.consumeToken(Parser* p) {
     p.lex(&p.token);
 #if 0
-    printf("  %s   %s", p.sm.loc2str(p.token.loc), kind_names[p.token.kind]);
+    char[256] locstr;
+    p.sm.loc2str(p.token.loc, locstr, elemsof(locstr));
+    printf("  %s   %s", locstr, kind_names[p.token.kind]);
     switch (p.token.kind) {
     case PluginOptions:
     case Text:
