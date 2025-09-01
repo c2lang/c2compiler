@@ -4,7 +4,7 @@
 // @file{file1}
 module foo;
 
-const i32 Priv = 0;
+const i32 Priv = 0;  // @note{symbol definition is here}
 
 // @file{file2}
 module bar;

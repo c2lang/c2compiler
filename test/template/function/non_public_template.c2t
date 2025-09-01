@@ -4,7 +4,7 @@
 // @file{file1}
 module file1;
 
-fn void test1(X arg1) template X {
+fn void test1(X arg1) template X {  // @note{symbol definition is here}
 }
 
 // @file{file2}

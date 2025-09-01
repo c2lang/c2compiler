@@ -370,6 +370,7 @@ public fn ast.Decl* Scope.findSymbolInModule(Scope* s, ast.Module* mod, u32 name
     if (mod != s.mod) {
         if (!d.isPublic()) {
             s.diags.error(loc, "symbol '%s' is not public", d.getFullName());
+            s.diags.note(d.getLoc(), "symbol definition is here");
             return nil;
         }
         d.setUsedPublic();

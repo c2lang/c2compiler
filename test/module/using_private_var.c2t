@@ -4,7 +4,7 @@
 // @file{file1}
 module foo;
 
-i32 n;
+i32 n;  // @note{symbol definition is here}
 
 // @file{file2}
 module bar;
