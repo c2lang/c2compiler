@@ -25,7 +25,7 @@ struct test_Type_ {
   int32_t member;
 };
 
-static test_Type test_t = { };
+static test_Type test_t;
 
 static void test_Type_init(test_Type* _arg0)
 {
