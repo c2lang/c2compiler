@@ -105,6 +105,7 @@ public type BuildTarget struct @(opaque) {
     Kind kind;
 
     bool disable_asserts;
+    bool force_initializers;
     bool no_libc;
     BackEndKind backend;
     bool backend_no_build;
@@ -176,6 +177,10 @@ public fn void BuildTarget.disableAsserts(BuildTarget* t) { t.disable_asserts = 
 public fn bool BuildTarget.hasAsserts(const BuildTarget* t) { return !t.disable_asserts; }
 
 public type Visitor fn void (void* arg, u32 name, Kind kind);
+
+public fn void BuildTarget.enableForceInitializers(BuildTarget* t) { t.force_initializers = true; }
+
+public fn bool BuildTarget.hasForceInitializers(const BuildTarget* t) { return t.force_initializers; }
 
 public fn void BuildTarget.visitLibs(const BuildTarget* t, Visitor visitor, void* arg) {
     t.libs.visit(visitor, arg);
