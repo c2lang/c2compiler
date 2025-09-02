@@ -1,10 +1,8 @@
 // @warnings{no-unused}
 module test;
 
-public fn i32 main() {
+fn void foo() {
     {
         goto begin;     // @error{use of undeclared label 'begin'}
     }
-    return 0;
 }
-

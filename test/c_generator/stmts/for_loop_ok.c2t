@@ -5,18 +5,31 @@
 // @file{file1}
 module test;
 
+fn void forever() {
+    for (;;) {}
+}
+
 public fn i32 main(i32 argc, const char** argv) {
     i32 a = 0;
     for (a=0; a<10; a++) {}
 
     for (i32 b=0; b<10; b++) {}
 
-    for (;;) {}
+    forever();
 
     return 0;
 }
 
 // @expect{atleast, cgen/build.c}
+
+static void test_forever(void);
+int32_t main(int32_t argc, const char** argv);
+
+static void test_forever(void)
+{
+    for (;;) {
+    }
+}
 
 int32_t main(int32_t argc, const char** argv)
 {
@@ -27,8 +40,8 @@ int32_t main(int32_t argc, const char** argv)
     for (int32_t b = 0; b < 10; b++) {
     }
 
-    for (;;) {
-    }
+    test_forever();
+
     return 0;
 }
 

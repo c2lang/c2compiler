@@ -10,6 +10,47 @@ fn u32 rec(u32 n) @(pure) {
     return n == 0 ? n : rec(n - 1) + 1;
 }
 
+fn u32 fib_if(u32 n) @(pure) {
+    if (n <= 2)
+        return 1;
+    else
+        return fib_if(n - 1) + fib_if(n - 2);
+}
+
+fn u32 fib_for(u32 n) @(pure) {
+    for (;;) {
+        return n <= 2 ? 1 : fib_for(n - 1) + fib_for(n - 2);
+    }
+}
+
+fn u32 fib_while(u32 n) @(pure) {
+    while (1) {
+        return n <= 2 ? 1 : fib_while(n - 1) + fib_while(n - 2);
+    }
+}
+
+fn u32 fib_goto(u32 n) @(pure) {
+    return n <= 2 ? 1 : fib_goto(n - 1) + fib_goto(n - 2);
+loop:                 // should have warning{unreachable code}
+    goto loop;
+}
+
+fn u32 fib_infinite(u32 n) @(pure) {
+    return n <= 2 ? 1 : fib_infinite(n - 1) + fib_infinite(n - 2);
+    for (;;) continue;  // @warning{unreachable code}
+}
+
+fn u32 fib_switch(u32 n) @(pure) {
+    switch (n) {
+    case 0:
+    case 1:
+    case 2:
+        return 1;
+    default:
+        return fib_switch(n - 1) + fib_switch(n - 2);
+    }
+}
+
 u32 fib0 = fib(0);       // @error{assertion failed}
 u32 fib90 = fib(90);     // @error{expression too complex}
 u32 fib1000 = fib(1000); // @error{recursion too deep}

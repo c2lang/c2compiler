@@ -1,8 +1,10 @@
 module test;
 
-public fn i32 main() {
+fn void forever() {
     for (;;) {}
-    return 0;
 }
 
-
+public fn i32 main() {
+    forever();
+    return 0;
+}

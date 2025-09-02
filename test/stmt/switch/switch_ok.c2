@@ -17,6 +17,7 @@ fn void foo(i32 a) {
         case 5:
             on_error();
         }
+        break;
     }
 
     switch (a) {

@@ -16,108 +16,104 @@
 module module_analyser;
 
 import ast local;
+import ctv_analyser;
 import label_vector local;
 import scope;
 
-fn bool hasReturn(const Stmt* s) {
-
-    switch (s.getKind()) {
-        case Return:
-            return true;
-        case If:
-            const IfStmt* i = (IfStmt*)s;
-            if (!hasReturn(i.getThen())) return false;
-            const Stmt* e = i.getElse();
-            if (e && hasReturn(e)) return true;
-            break;
-        case While:
-            // TODO only allow while(true/1), no breaks and only return
-            break;
-        case For:
-            // TODO
-            break;
-        case Switch:
-            // TODO
-            break;
-        case Label:
-            // TODO
-            const LabelStmt* ls = (LabelStmt*)s;
-            const Stmt* lss = ls.getStmt();
-            if (!lss) return false;
-            return hasReturn(lss);
-        case Compound:
-            const CompoundStmt* cs = (CompoundStmt*)s;
-            const Stmt* last = cs.getLastStmt();
-            if (!last) return false;
-            return hasReturn(last);
-        default:
-            break;
-    }
-
-    return false;
+type Flow enum u8 {
+    Next,
+    Return,
+    Break,
+    Continue,
+    Goto,
+    NoReturn,
+    Error,
 }
 
-fn void Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
-    if (ma.scope.isUnreachable() && s.getKind() != StmtKind.Label) {
-        ma.warn(s.getLoc(), "unreachable code");
+type FlowBits u32;
+
+const FlowBits FlowNext      = 1 << Flow.Next;
+const FlowBits FlowReturn    = 1 << Flow.Return;
+const FlowBits FlowBreak     = 1 << Flow.Break;
+const FlowBits FlowContinue  = 1 << Flow.Continue;
+const FlowBits FlowGoto      = 1 << Flow.Goto;
+const FlowBits FlowNoReturn  = 1 << Flow.NoReturn;
+const FlowBits FlowError     = 1 << Flow.Error;
+
+fn Expr* getCondExpr(const Stmt* cond) {
+    if (cond) {
+        if (cond.isExpr()) return cast<Expr*>(cond);
+        if (cond.isDecl()) return cast<DeclStmt*>(cond).getDecl(0).getInit();
+    }
+    return nil;
+}
+
+fn FlowBits Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
+    FlowBits flow = 0;
+    if (ma.scope.isUnreachable()) {
+        if (s.getKind() != StmtKind.Label && !ma.warnings.no_unreachable_code) {
+            ma.warn(s.getLoc(), "unreachable code");
+        }
+        ma.scope.setReachable();  // prevent multiple warnings
     }
     switch (s.getKind()) {
     case Return:
         ma.analyseReturnStmt(s);
-        ma.scope.setUnreachable();  // Note: can have label after that is reachable!
-        break;
+        ma.scope.setUnreachable();
+        return FlowReturn;
     case Expr:
         // TODO need a different set, since this one uses the Stack of Globals
         ma.analyseExpr((Expr**)&s, false, 0);
         Expr* e = (Expr*)s;
         if (checkEffect && !e.hasEffect()) ma.errorRange(e.getLoc(), e.getRange(), "expression without effect");
-        break;
+        return FlowNext;  // TODO: check for call to noreturn function
     case If:
-        ma.analyseIfStmt(s);
+        flow = ma.analyseIfStmt(s);
         break;
     case While:
-        ma.analyseWhileStmt(s);
+        flow = ma.analyseWhileStmt(s);
         break;
     case For:
-        ma.analyseForStmt(s);
+        flow = ma.analyseForStmt(s);
         break;
     case Switch:
-        ma.analyseSwitchStmt(s);
+        flow = ma.analyseSwitchStmt(s);
         break;
     case Break:
         ma.analyseBreakStmt(s);
         ma.scope.setUnreachable();
-        break;
+        return FlowBreak;
     case Continue:
         ma.analyseContinueStmt(s);
         ma.scope.setUnreachable();
-        break;
+        return FlowContinue;
     case Fallthrough:
         ma.analyseFallthroughStmt(s);
-        break;
+        return FlowNext;
     case Label:
-        ma.scope.setReachable();
-        ma.analyseLabelStmt(s);
+        flow = ma.analyseLabelStmt(s);
         break;
     case Goto:
         ma.analyseGotoStmt(s);
         ma.scope.setUnreachable();
-        break;
+        return FlowGoto;
     case Compound:
         ma.scope.enter(scope.Decl);
-        ma.analyseCompoundStmt((CompoundStmt*)s);
+        flow = ma.analyseCompoundStmt((CompoundStmt*)s);
         ma.scope.exit(ma.has_error);
         break;
     case Decl:
         ma.analyseDeclStmt(s);
-        break;
+        return FlowNext;
     case Asm:
         ma.analyseAsmStmt(s);
-        break;
+        return FlowNext;
     case Assert:
         ma.analyseAssertStmt(s);
-        break;
+        return FlowNext;
     }
+    if (!(flow & FlowNext)) ma.scope.setUnreachable();
+    return flow;
 }
 
 fn void Analyser.analyseBreakStmt(Analyser* ma, Stmt* s) {
@@ -137,7 +133,7 @@ fn void Analyser.analyseFallthroughStmt(Analyser* ma, Stmt* s) {
     ma.error(s.getLoc(), "'fallthrough' statement cannot be used here");
 }
 
-fn void Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
+fn FlowBits Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
     LabelStmt* ls = (LabelStmt*)s;
     u32 name = ls.getNameIdx();
 
@@ -157,7 +153,8 @@ fn void Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
     }
 
     Stmt* lss = ls.getStmt();
-    if (lss) ma.analyseStmt(lss, true);
+    if (!lss) return FlowNext;
+    return ma.analyseStmt(lss, true);
 }
 
 fn void Analyser.analyseGotoStmt(Analyser* ma, Stmt* s) {
@@ -174,14 +171,18 @@ fn void Analyser.analyseGotoStmt(Analyser* ma, Stmt* s) {
     }
 }
 
-fn void Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
+fn FlowBits Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
+    FlowBits flow = 0;
+    FlowBits flow2 = FlowNext;
     u32 count = c.getCount();
     Stmt** stmts = c.getStmts();
     for (u32 i=0; i<count; i++) {
         Stmt* s = stmts[i];
-        ma.analyseStmt(s, true);
-        if (ma.has_error) break;
+        flow2 = ma.analyseStmt(s, true);
+        flow |= flow2 & (FlowReturn | FlowBreak | FlowContinue | FlowGoto | FlowNoReturn | FlowError);
+        if (ma.has_error) return flow;
     }
+    return flow | flow2; // return FlowNext if last statement has FlowNext or empty block
 }
 
 fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_assign) {
@@ -212,28 +213,34 @@ fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_ass
     return qt;
 }
 
-fn void Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
+fn FlowBits Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
+    FlowBits flow = FlowNext;
     IfStmt* i = (IfStmt*)s;
     ma.scope.enter(scope.Decl);
 
     ma.analyseCondition(i.getCond2(), true);
     if (ma.has_error) goto done;
+    // TODO: handle constant conditions
 
     ma.scope.enter(scope.Decl);
-    ma.analyseStmt(i.getThen(), true);
+    flow = ma.analyseStmt(i.getThen(), true);
     ma.scope.exit(ma.has_error);
 
+    FlowBits flow2 = FlowNext;
     Stmt* else_ = i.getElse();
     if (else_) {
         ma.scope.enter(scope.Decl);
-        ma.analyseStmt(else_, true);
+        flow2 = ma.analyseStmt(else_, true);
         ma.scope.exit(ma.has_error);
     }
+    flow |= flow2;
 done:
     ma.scope.exit(ma.has_error);
+    return flow;
 }
 
-fn void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
+fn FlowBits Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
+    FlowBits flow = FlowNext;
     ForStmt* f = (ForStmt*)s;
 
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl | scope.Control);
@@ -248,6 +255,16 @@ fn void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
         QualType qt = ma.analyseExpr(cond, true, RHS);
         if (qt.isInvalid()) goto done;
         ma.checker.check(builtins[BuiltinKind.Bool], qt, cond, (*cond).getLoc());
+        if ((*cond).isCtv()) {
+            Value v = ctv_analyser.get_value((*cond));
+            if (v.isZero()) {
+                // TODO: body is never reached
+            } else {
+                flow = 0;
+            }
+        }
+    } else {
+        flow = 0;
     }
 
     Expr** cont = f.getCont2();
@@ -256,22 +273,40 @@ fn void Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
         if (qt.isInvalid()) goto done;
     }
 
-    ma.analyseStmt(f.getBody(), true);
+    FlowBits flow2 = ma.analyseStmt(f.getBody(), true);
+    flow |= flow2 & (FlowReturn | FlowGoto | FlowNoReturn | FlowError);
+    if (flow2 & FlowBreak) flow |= FlowNext;
 done:
     ma.scope.exit(ma.has_error);
+    return flow;
 }
 
-fn void Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
+fn FlowBits Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
+    FlowBits flow = FlowNext;
     WhileStmt* w = (WhileStmt*)s;
+
     ma.scope.enter(scope.Decl);
     ma.analyseCondition(w.getCond2(), true);
     if (ma.has_error) goto done;
 
+    Expr* cond = getCondExpr(w.getCond());
+    if (cond.isCtv()) {
+        Value v = ctv_analyser.get_value(cond);
+        if (v.isZero()) {
+            // TODO: body is never reached
+        } else {
+            flow = 0;
+        }
+    }
+
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl | scope.Control);
-    ma.analyseStmt(w.getBody(), true);
+    FlowBits flow2 = ma.analyseStmt(w.getBody(), true);
     ma.scope.exit(ma.has_error);
+    flow |= flow2 & (FlowReturn | FlowGoto | FlowNoReturn | FlowError);
+    if (flow2 & FlowBreak) flow |= FlowNext;
 done:
     ma.scope.exit(ma.has_error);
+    return flow;
 }
 
 fn QualType Analyser.analyseDeclStmt(Analyser* ma, Stmt* s) {

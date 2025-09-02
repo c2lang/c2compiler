@@ -268,6 +268,7 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
     assert(lcanon.isValid());
     assert(rcanon.isValid());
 
+    // TODO: refine this by selecting branch depending on cond value
     if (cond.getCond().isCtv()) e.combineConstantFlags(cond.getLHS(), cond.getRHS());
 
     u8 res = CondOpTable[lcanon.getKind()][rcanon.getKind()];

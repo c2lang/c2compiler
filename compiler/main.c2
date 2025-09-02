@@ -134,6 +134,7 @@ const char[] Recipe_help =
     "             <no-unused-public>\n"
     "             <no-unused-label> \n"
     "             <no-unused-enum-constant>\n"
+    "             <no-unreachable-code>\n"
     "             <promote-to-error> \n"
     "   $backend [c|ir] <check>\n"
     "              <fast>\n"

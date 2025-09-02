@@ -209,6 +209,23 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
     longjmp(&p.jmpbuf, 1);
 }
 
+fn void Parser.warning(Parser* p, const char* format @(printf_format), ...) {
+    char[128] msg;
+    va_list args;
+    va_start(args, format);
+    vsnprintf(msg, sizeof(msg), format, args);
+    va_end(args);
+
+    char[256] locstr;
+    p.sm.loc2str(p.token.loc, locstr, elemsof(locstr));
+
+    if (color.useColor()) {
+        fprintf(stderr, "%s: %swarning:%s %s\n", locstr, color.Red, color.Normal, msg);
+    } else {
+        fprintf(stderr, "%s: warning: %s\n", locstr, msg);
+    }
+}
+
 fn void Parser.consumeToken(Parser* p) {
     p.lex(&p.token);
 #if 0
@@ -533,51 +550,59 @@ fn void Parser.parseWarnings(Parser* p) {
     // TODO no need to store in string pool
     while (p.is(Kind.Text)) {
         const char* option = p.pool.idx2str(p.token.value);
+        bool disable = false;
+        if (!string.strncmp(option, "no-", 3)) {
+            disable = true;
+            option += 3;
+        }
         switch (option) {
-        case "no-unused":
-            warnings.no_unused = true;
-            warnings.no_unused_variable = true;
-            warnings.no_unused_function = true;
-            warnings.no_unused_parameter = true;
-            warnings.no_unused_type = true;
-            warnings.no_unused_module = true;
-            warnings.no_unused_import = true;
-            warnings.no_unused_public = true;
-            warnings.no_unused_label = true;
-            warnings.no_unused_enum_constant = true;
+        case "unused":
+            warnings.no_unused = disable;
+            warnings.no_unused_variable = disable;
+            warnings.no_unused_function = disable;
+            warnings.no_unused_parameter = disable;
+            warnings.no_unused_type = disable;
+            warnings.no_unused_module = disable;
+            warnings.no_unused_import = disable;
+            warnings.no_unused_public = disable;
+            warnings.no_unused_label = disable;
+            warnings.no_unused_enum_constant = disable;
             break;
-        case "no-unused-variable":
-            warnings.no_unused_variable = true;
+        case "unused-variable":
+            warnings.no_unused_variable = disable;
             break;
-        case "no-unused-function":
-            warnings.no_unused_function = true;
+        case "unused-function":
+            warnings.no_unused_function = disable;
             break;
-        case "no-unused-parameter":
-            warnings.no_unused_parameter = true;
+        case "unused-parameter":
+            warnings.no_unused_parameter = disable;
             break;
-        case "no-unused-type":
-            warnings.no_unused_type = true;
+        case "unused-type":
+            warnings.no_unused_type = disable;
             break;
-        case "no-unused-module":
-            warnings.no_unused_module = true;
+        case "unused-module":
+            warnings.no_unused_module = disable;
             break;
-        case "no-unused-import":
-            warnings.no_unused_import = true;
+        case "unused-import":
+            warnings.no_unused_import = disable;
             break;
-        case "no-unused-public":
-            warnings.no_unused_public = true;
+        case "unused-public":
+            warnings.no_unused_public = disable;
             break;
-        case "no-unused-label":
-            warnings.no_unused_label = true;
+        case "unused-label":
+            warnings.no_unused_label = disable;
             break;
-        case "no-unused-enum-constant":
-            warnings.no_unused_enum_constant = true;
+        case "unused-enum-constant":
+            warnings.no_unused_enum_constant = disable;
+            break;
+        case "unreachable-code":
+            warnings.no_unreachable_code = disable;
             break;
         case "promote-to-error":
-            warnings.are_errors = true;
+            warnings.are_errors = !disable;
             break;
         default:
-            p.error("unknown warning '%s'", option);
+            p.warning("unknown warning '%s'", option);
             break;
         }
         p.consumeToken();
