@@ -1,7 +1,9 @@
 module test;
 
+i32 x;
+
 public fn i32 main() {
-    if (i32 a = 12) {
+    if (i32 a = x) {
         return a;
     }
     return 0;

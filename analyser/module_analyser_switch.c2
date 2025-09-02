@@ -23,7 +23,8 @@ import scope;
 import string_buffer;
 import string;
 
-fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
+fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
+    FlowBits flow = 0;
     SwitchStmt* sw = (SwitchStmt*)s;
 
     ma.scope.enter(scope.Decl);
@@ -35,7 +36,7 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     QualType ct = ma.analyseExpr(sw.getCond2(), true, RHS);
     if (ct.isInvalid()) {
         ma.scope.exit(ma.has_error);
-        return;
+        return FlowNext | FlowError;
     }
 
     bool isCharPtr = ct.isCharPointer();
@@ -56,14 +57,13 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     if (numCases == 0) {
         ma.error(s.getLoc(), "switch without cases or default");
         ma.scope.exit(ma.has_error);
-        return;
+        return FlowNext | FlowError;
     }
 
     SwitchCase* defaultCase = nil;
 
     init_checker.Checker* checker = ma.getInitChecker();
 
-    bool ok = true;
     for (u32 i = 0; i < numCases; i++) {
         SwitchCase* c = cases[i];
         bool is_last = (i+1 == numCases);
@@ -71,29 +71,32 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
         if (c.isDefault()) {
             if (defaultCase) {
                 ma.error(c.getLoc(), "multiple default labels");
-                ok = false;
+                flow |= FlowError;
             } else
             if (!is_last) {
                 ma.error(c.getLoc(), "default case must be last in switch");
-                ok = false;
+                flow |= FlowError;
             }
             defaultCase = c;
         }
 
         ma.scope.enter(scope.Decl | scope.Break);
-        ok &= ma.analyseCase(c, checker, etd, is_string, is_last);
+        FlowBits flow2 = ma.analyseCase(c, checker, etd, is_string, is_last);
         ma.scope.exit(ma.has_error);
+        flow |= flow2 & (FlowReturn | FlowContinue | FlowGoto | FlowNoReturn | FlowError);
+        if (flow2 & FlowBreak) flow |= FlowNext;
     }
 
     ma.scope.exit(ma.has_error);
 
-    if (ok && etd) {
+    if (!(flow & FlowError) && etd) {
         const u32 numConstants = etd.getNumConstants();
 
         if (defaultCase) {
             // check for default with all cases covered
             if (checker.getCount() >= numConstants) {
                 ma.error(defaultCase.getLoc(), "default label in switch which covers all enumeration values");
+                flow |= FlowError;
             }
         } else {
             // check for uncovered cases
@@ -116,51 +119,60 @@ fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
 
                 if (missing) {
                     ma.error(s.getLoc(), "unhandled enumeration value%s: %s", missing > 1 ? "s" : "", out.data());
+                    flow |= FlowError;
                 }
                 out.free();
             }
         }
     }
+    // TODO: handle complete coverage
+    if (!defaultCase) flow |= FlowNext;
 
     ma.putInitChecker(checker);
+    return flow;
 }
 
-fn bool Analyser.analyseCase(Analyser* ma,
-                             SwitchCase* c,
-                             init_checker.Checker* checker,
-                             EnumTypeDecl* etd,
-                             bool is_string,
-                             bool is_last) {
+fn FlowBits Analyser.analyseCase(Analyser* ma,
+                                 SwitchCase* c,
+                                 init_checker.Checker* checker,
+                                 EnumTypeDecl* etd,
+                                 bool is_string,
+                                 bool is_last)
+{
+    FlowBits flow = 0;
     bool is_default = c.isDefault();
     if (!is_default) {
-        if (!ma.analyseCaseCondition(c, checker, etd, is_string)) return false;
+        if (!ma.analyseCaseCondition(c, checker, etd, is_string)) return FlowError;
     }
 
     const u32 count = c.getNumStmts();
     if (count == 0) {
         c.setHasFallthrough();
-        return true;
+        return FlowNext;
     }
     bool has_decls = false;
+    FlowBits flow2 = FlowNext;
     for (u32 i = 0; i < count; i++) {
         Stmt* st = c.getStmt(i);
         if (st.isFallthrough() && !is_last) {
             c.setHasFallthrough();
             if (i + 1 != count) {
                 ma.error(st.getLoc(), "'fallthrough' statement must be last statement in case");
-                return false;
+                return FlowError;
             }
             continue;
         }
-        ma.analyseStmt(st, true);
-        if (ma.has_error) return false;
+        flow2 = ma.analyseStmt(st, true);
+        flow |= flow2 & (FlowReturn | FlowBreak | FlowContinue | FlowGoto | FlowNoReturn | FlowError);
+        if (ma.has_error) return FlowError;
         if (st.isDecl()) has_decls = true;
     }
+    flow |= flow2;
     if (has_decls) c.setHasDecls();
 
     Stmt* last = c.getStmt(count-1);
     if (isTerminatingStmt(last, is_default))
-        return true;
+        return flow;
 
     SrcLoc loc = last.getLoc();
     if (!loc) loc = c.getLoc();
@@ -169,7 +181,7 @@ fn bool Analyser.analyseCase(Analyser* ma,
     } else {
         ma.error(loc, "no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case");
     }
-    return false;
+    return FlowError;
 }
 
 fn bool Analyser.analyseCaseCondition(Analyser* ma,

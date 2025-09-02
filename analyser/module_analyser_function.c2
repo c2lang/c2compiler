@@ -204,7 +204,7 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
             ma.error(fd.asDecl().getLoc(), "pure functions cannot be variadic");
             return;
         }
-        if (!fd.hasReturn()) {
+        if (rtype.isVoid()) {
             ma.error(rtype.getLoc(), "pure functions must return a value");
             return;
         }
@@ -213,7 +213,6 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
             ma.error(v.asDecl().getLoc(), "pure functions cannot have auto-arguments");
             return;
         }
-        // must have body (even in libs)
     }
 }
 
@@ -244,12 +243,12 @@ fn void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope
     ma.has_error = false;
     ma.labels.reset();
 
-    ma.analyseCompoundStmt(body);
+    FlowBits flow = ma.analyseCompoundStmt(body);
 
     // check for return stmt if function returns a value
     QualType rtype = fd.getRType();
     if (!rtype.isVoid()) {
-        if (!hasReturn((Stmt*)body)) {
+        if (flow & FlowNext) {
             // error loc is closing brace of the function body
             ma.error(body.getEndLoc() - 1, "control reaches end of non-void function");
         }

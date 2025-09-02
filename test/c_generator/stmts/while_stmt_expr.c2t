@@ -12,9 +12,9 @@ public fn i32 main(i32 argc, const char** argv) {
         if (argc == 2) break;
     }
 
-    while (i32 b = 10) {}
+    while (i32 b = 0) {}
 
-    while (true) {}
+    while (false) {}
 
     return 0;
 }
@@ -31,11 +31,11 @@ int32_t main(int32_t argc, const char** argv)
 
     {
         int32_t b;
-        while ((b = 10)) {
+        while ((b = 0)) {
         }
     }
 
-    while (true) {
+    while (false) {
     }
 
     return 0;

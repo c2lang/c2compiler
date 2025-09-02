@@ -34,7 +34,7 @@ public fn i32 test_fn(const char* format, ...) @(inline) {
         continue;
     }
     while (format) continue;
-    for (;;) {
+    for (; format;) {
     }
     for (;;) break;
     for (;;) {
@@ -87,7 +87,7 @@ fn i32 test_fn(const char* format, ...) {
       continue;
    }
    while (format) continue;
-   for (;;) {
+   for (; format;) {
    }
    for (;;) break;
    for (;;) {
@@ -147,7 +147,7 @@ int32_t test1_test_fn(const char* format, ...)
       continue;
   }
   while (format) continue;
-  for (;;) {
+  for (; format;) {
   }
   for (;;) break;
   for (;;) {

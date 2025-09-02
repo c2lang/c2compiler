@@ -1,15 +1,17 @@
 // @warnings{no-unused}
 module test;
 
+import stdlib local;
+
 fn void foo() {
-    while (i32 a = 12) {
+    while (i32 a = rand()) {
         a--;
     }
     a++;            // @error{use of undeclared identifier 'a'}
 }
 
 fn void bar() {
-    while (i32 a = 12) {}
-    while (i32 a = 12) {}
+    while (i32 a = rand()) {}
+    while (i32 a = rand()) {}
 }
 

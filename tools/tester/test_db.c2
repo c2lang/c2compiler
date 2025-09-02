@@ -160,16 +160,15 @@ fn void Db.matchNote(Db* db, const char* filename, i32 linenr, const char* msg) 
     const char* match = db.notes.find(filename, linenr);
     if (match) {
         if (!same_string(match, msg)) {
-            color_print2(db.output, colError, "  wrong note at %s:%d:", filename, linenr);
+            color_print2(db.output, colError, "%s:%d: wrong note: %s", relativeFilename(filename), linenr, msg);
             color_print2(db.output, colError, "     expected: %s", match);
-            color_print2(db.output, colError, "     got: %s", msg);
             db.hasErrors = true;
         }
         db.notes.erase(filename, linenr);
         return;
     }
     // not expected
-    color_print2(db.output, colError, "  unexpected note on line %d: %s", linenr, msg);
+    color_print2(db.output, colError, "%s:%d: unexpected note: %s", relativeFilename(filename), linenr, msg);
     db.hasErrors = true;
 }
 
@@ -177,16 +176,15 @@ fn void Db.matchWarning(Db* db, const char* filename, i32 linenr, const char* ms
     const char* match = db.warnings.find(filename, linenr);
     if (match) {
         if (!same_string(match, msg)) {
-            color_print2(db.output, colError, "  wrong warning at %s:%d:", filename, linenr);
+            color_print2(db.output, colError, "%s:%d: wrong warning: %s", relativeFilename(filename), linenr, msg);
             color_print2(db.output, colError, "     expected: %s", match);
-            color_print2(db.output, colError, "     got: %s", msg);
             db.hasErrors = true;
         }
         db.warnings.erase(filename, linenr);
         return;
     }
     // not expected
-    color_print2(db.output, colError, "  unexpected warning on line %d: %s", linenr, msg);
+    color_print2(db.output, colError, "%s:%d: unexpected warning: %s", relativeFilename(filename), linenr, msg);
     db.hasErrors = true;
 }
 
@@ -637,6 +635,7 @@ public fn bool Db.parse(Db* db) {
     switch (db.kind) {
     case C2:
         db.recipe.add("executable test\n");
+        db.recipe.add("  $warnings unreachable-code\n");
         db.recipe.add("  $warnings no-unused-module\n");
         db.recipe.add("  $backend c\n");
 
@@ -670,6 +669,7 @@ public fn bool Db.parse(Db* db) {
         break;
     case C2A:
         db.recipe.add("executable test\n");
+        db.recipe.add("  $warnings unreachable-code\n");
         db.recipe.add("  $warnings no-unused\n");
         db.recipe.add("  $backend c skip\n");
         db.recipe.add("  $write-AST\n");
