@@ -44,6 +44,7 @@ type Kind enum u8 (const char* const name @(unused)) {
     Warnings        : { "$warnings" },
     Backend         : { "$backend" },
     DisableAsserts  : { "$disable-asserts" },
+    ForceInitializers : { "$force-initializers" },
     NoLibc          : { "$nolibc" },
     Config          : { "$config" },
     Export          : { "$export" },
@@ -159,7 +160,6 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
 
     char[256] locstr;
     p.sm.loc2str(p.token.loc, locstr, elemsof(locstr));
-
     if (color.useColor()) {
         fprintf(stderr, "%s: %serror:%s %s\n", locstr, color.Red.str(), color.Normal.str(), msg);
     } else {
@@ -395,6 +395,9 @@ fn void Parser.lex_option(Parser* p, Token* result) {
     case "disable-asserts":
         result.kind = DisableAsserts;
         break;
+    case "force-initializers":
+        result.kind = Kind.ForceInitializers;
+        break;
     case "nolibc":
         result.kind = NoLibc;
         break;
@@ -457,6 +460,7 @@ fn void Parser.parseTop(Parser* p) {
         case Warnings:
         case Backend:
         case DisableAsserts:
+        case ForceInitializers:
         case NoLibc:
             p.error("must be inside target");
             break;
@@ -712,6 +716,11 @@ fn void Parser.parseTarget(Parser* p) {
             if (files_started) p.error("$disable-asserts must come before files");
             p.consumeToken();
             p.target.disableAsserts();
+            break;
+        case ForceInitializers:
+            if (files_started) p.error("$force-initializers must come before files");
+            p.consumeToken();
+            p.target.enableForceInitializers();
             break;
         case NoLibc:
             if (files_started) p.error("$nolibc must come before files");
