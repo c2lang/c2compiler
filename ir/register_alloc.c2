@@ -497,9 +497,6 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
     u32 num_blocks = fi.blocks.getCount();
     Block* blocks = fi.blocks.get(0);
 
-    //dump_function(fi, "bb1");
-    //print_func(t.arg1, t.arg2, fi, "RegAlloc1");
-
     // Liveness part 1: initial LiveIn/Out
     ir_rpo.Rpo rpo.create(fi); // TODO re-use
 
@@ -553,7 +550,7 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
     }
 
     //v.interferences.dump(false);
-    v.interferences.allocate();
+    v.interferences.allocate(fi.num_args-1);
 
     // replace temps with registers
     const u8* regmap = v.interferences.getRegs();
@@ -599,5 +596,33 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
     t.replacePhis();
     t.removeSplitEdges();
     // TODO sort Blocks (not instructions)
+
+    // TODO move somewhere else
+    // TODO add copy if return value is a const: return 0;
+    Type ret_type = fi.getReturnType();
+    if (ret_type != None) t.fixReturn(fi);
+
+    // TODO otherwise make sure register is R0 for return value -> depends on ABI
+}
+
+// change return 0; -> R0 = copy 0; ret
+fn void Tools.fixReturn(Tools* t, FunctionInfo* fi) {
+    u32 num_blocks = fi.blocks.getCount();
+    Block* blocks = fi.blocks.get(0);
+    Instr* instrs = fi.instructions.get(0);
+    for (u32 blk_id=0; blk_id<num_blocks; blk_id++) {
+        Block* b = &blocks[blk_id];
+        if (!b.instr.count) continue;
+        u32 instr_idx = b.instr.start + b.instr.count -1;
+        Instr* last = &instrs[instr_idx];
+        if (!last.isReturn()) continue;
+        Ref* ref = &last.args[0];
+        if (!ref.isConstant()) continue;
+
+        u32 instr_idx2 = t.inserter.addInstr(instr_idx);
+        Instr* copy = t.inserter.getLastInstr();
+        copy.initRegCopy(0, *ref);
+        ref.clear();
+    }
 }
 

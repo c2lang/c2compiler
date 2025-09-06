@@ -387,7 +387,12 @@ fn void InterferenceGraph.handleQueue(InterferenceGraph* g) {
     }
 }
 
-public fn void InterferenceGraph.allocate(InterferenceGraph* g) {
+public fn void InterferenceGraph.allocate(InterferenceGraph* g, u32 num_args) {
+    // pre-alloc arguments as R0,R1,..
+    for (u8 v=0; v<num_args; v++) {
+        g.register_map[v] = v;
+    }
+
     // will go breadth-first from each variable, skipping already done
     for (u16 v=0; v<g.num_variables; v++) {
         if (g.register_map[v] != VAR_TODO) continue;
