@@ -2,8 +2,6 @@
 plugin deps_generator [all-targets files private]
 plugin refs_generator [all-targets]
 
-$config AstStatistics
-
 set common
     common/attr_handler.c2
     common/build_target.c2
@@ -165,6 +163,7 @@ executable c2c
 
     $backend c
 #    $backend ir
+    $config AstStatistics
 #    $disable-asserts
 #    $config DumpTokens
 #    $config PrintGenerated
@@ -325,6 +324,121 @@ executable c2c
     ir/arch_rv64/arch_rv64.c2
 end
 
+executable c2c_bootstrap
+    $optional
+    $warnings no-unused
+#    $warnings no-unreachable-code
+#    $warnings promote-to-error
+#    $use pthread dynamic
+
+    $backend c
+    $disable-asserts
+#    $config AstStatistics
+#    $config DumpTokens
+#    $config PrintGenerated
+#    $config DebugIr
+#    $config Arch32  # should be set by build-file
+#    $plugin git_version []
+    $config BOOTSTRAP
+
+    $use dl dynamic
+
+    (ast)
+
+    ast/ast_evaluator.c2
+
+    (yaml)
+
+    (common)
+
+    common/ast_builder.c2
+    common/build_file.c2
+    common/build_file_parser.c2
+    #common/bit_array.c2
+    #common/bit_utils.c2
+    common/c_prec.c2
+    common/c2_prec.c2
+    common/component_sorter.c2
+    #common/index_list.c2
+    common/dsm_sorter.c2
+    common/manifest_writer.c2
+    common/target_info.c2
+    #common/value_maplist.c2
+    common/file/copy.c2
+
+    parser/c2_parser.c2
+    parser/c2_parser_expr.c2
+    parser/c2_parser_stmt.c2
+    parser/c2_parser_switch.c2
+    parser/c2_parser_type.c2
+    parser/c2_tokenizer.c2
+    parser/case_list.c2
+    parser/expr_list.c2
+    parser/keywords.c2
+    parser/stmt_list.c2
+    parser/token.c2
+
+    plugins/plugin_info.c2
+
+    analyser/conversion_checker.c2
+    analyser/conversion_checker_expr.c2
+    analyser/ctv_analyser.c2
+    analyser/incr_array_list.c2
+    analyser/init_checker.c2
+    analyser/module_analyser.c2
+    analyser/module_analyser_binop.c2
+    analyser/module_analyser_builtin.c2
+    analyser/module_analyser_call.c2
+    analyser/module_analyser_expr.c2
+    analyser/module_analyser_function.c2
+    analyser/module_analyser_init.c2
+    analyser/module_analyser_member.c2
+    analyser/module_analyser_stmt.c2
+    analyser/module_analyser_struct.c2
+    analyser/module_analyser_switch.c2
+    analyser/module_analyser_type.c2
+    analyser/module_analyser_unaryop.c2
+    analyser/module_sorter.c2
+    analyser/struct_field_init_checker.c2
+    analyser/name_vector.c2
+    analyser/label_vector.c2
+    analyser/printf_utils.c2
+    analyser/scope.c2
+    analyser/size_analyser.c2
+    analyser/struct_func_list.c2
+    analyser/unused_checker.c2
+
+    compiler/c2recipe.c2
+    compiler/c2recipe_parser.c2
+#    compiler/c2recipe_yaml.c2
+    compiler/compiler.c2
+    compiler/compiler_generate.c2
+    compiler/compiler_target.c2
+    compiler/compiler_libs.c2
+    compiler/compiler_analyse.c2
+	compiler/main.c2
+    compiler/manifest.c2
+    compiler/plugin_mgr.c2
+
+    generator/ast_visitor.c2
+    generator/ast_visitor_expr.c2
+#    generator/c2i/c2i_generator.c2
+#    generator/c2i/c2i_generator_decl.c2
+#    generator/c2i/c2i_generator_expr.c2
+#    generator/c2i/c2i_generator_stmt.c2
+    generator/c/c_generator.c2
+    generator/c/c_generator_call.c2
+    generator/c/c_generator_expr.c2
+    generator/c/c_generator_special.c2
+    generator/c/c_generator_stmt.c2
+    generator/c/c_generator_trace.c2
+    generator/c/dep_finder.c2
+
+#    generator/source_lib/source_lib_generator.c2
+
+    generator/generator_utils.c2
+end
+
 executable c2tags
     $warnings no-unused-variable
     $warnings no-unused-function
@@ -454,6 +568,7 @@ lib deps_generator dynamic
     $warnings no-unused-enum-constant
 
 	$backend c
+    $config AstStatistics
 
     (ast)
     (common)
@@ -479,6 +594,7 @@ lib refs_generator dynamic
     $warnings no-unused-enum-constant
 
 	$backend c
+    $config AstStatistics
     $config RadixTreeValue
     $config C2TagsGenerate
 
@@ -504,6 +620,7 @@ end
 lib git_version dynamic
     $warnings no-unused
 	$backend c
+    $config AstStatistics
     $config RadixTreeValue
 
     (ast)
@@ -519,6 +636,7 @@ end
 lib unit_test dynamic
     $warnings no-unused
 	$backend c
+    $config AstStatistics
     $config RadixTreeValue
 
     (ast)
@@ -534,6 +652,7 @@ end
 lib shell_cmd dynamic
     $warnings no-unused
 	$backend c
+    $config AstStatistics
     $config RadixTreeValue
 
     (ast)

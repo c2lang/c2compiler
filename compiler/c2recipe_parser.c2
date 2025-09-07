@@ -49,6 +49,7 @@ type Kind enum u8 {
     Export,
     Use,
     AsmFile,
+    Optional,
     Set,
     SetUse,
     Eof,
@@ -71,6 +72,7 @@ const char*[Kind] kind_names = {
     "$export",
     "$use",
     "$asm",
+    "$optional",
     "set",
     "(set)",
     "eof",
@@ -399,10 +401,10 @@ fn void Parser.lex_option(Parser* p, Token* result) {
     const char* end = p.cur;
     while (*end && !ctype.isspace(*end)) end++;
 
-    u32 len = (u32)(end - p.cur);
-    if (len >= 20) p.error("unknown option");
-
     char[24] option;
+    u32 len = (u32)(end - p.cur);
+    if (len >= elemsof(option)) p.error("unknown option");
+
     string.memcpy(option, p.cur, len);
     option[len] = 0;
 
@@ -410,7 +412,7 @@ fn void Parser.lex_option(Parser* p, Token* result) {
     case "warnings":
         result.kind = Warnings;
         break;
-    case  "backend":
+    case "backend":
         result.kind = Backend;
         break;
     case "disable-asserts":
@@ -434,8 +436,11 @@ fn void Parser.lex_option(Parser* p, Token* result) {
     case "asm":
         result.kind = AsmFile;
         break;
+    case "optional":
+        result.kind = Optional;
+        break;
     default:
-        p.error("unknown option '%s'", option);
+        p.warning("unknown option '%s'", option);
         break;
     }
     p.cur += string.strlen(option);
@@ -490,6 +495,7 @@ fn void Parser.parseTop(Parser* p) {
         case Export:
         case Use:
         case AsmFile:
+        case Optional:
             p.error("must be inside target");
             break;
         case Set:
@@ -792,6 +798,11 @@ fn void Parser.parseTarget(Parser* p) {
                 p.error("duplicate asm file '%s'", p.pool.idx2str(p.token.value));
             }
             p.consumeToken();
+            break;
+        case Optional:
+            if (files_started) p.error("$optional must come before files");
+            p.consumeToken();
+            p.target.setOptional();
             break;
         case Set:
             p.error("cannot define a set here");

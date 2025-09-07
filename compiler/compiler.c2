@@ -59,6 +59,7 @@ public type PluginHandler struct {
 }
 
 public type Options struct {
+    bool bootstrap;
     bool check_only;
     bool print_ast;
     bool print_ast_early;
@@ -181,6 +182,8 @@ fn void Compiler.build(Compiler* c,
     c.opts = opts;
     c.pluginHandler = pluginHandler;
 
+    if (opts.bootstrap) c.target.disableWarnings();
+
     diags.setWarningAsError(target.getWarnings().are_errors);
     c.diags.clear();
 
@@ -251,6 +254,8 @@ fn void Compiler.build(Compiler* c,
         getNativeTarget(&c.targetInfo);
     }
     console.debug("triple: %s", c.targetInfo.str());
+
+    if (opts.bootstrap) c.addFeature("BOOTSTRAP", "1");
 
     c.addGlobalDefine("SYSTEM", c.targetInfo.getSystemName());
     c.addGlobalDefine("ARCH", c.targetInfo.getArchName());

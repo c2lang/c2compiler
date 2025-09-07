@@ -24,7 +24,7 @@ import c2recipe;
 import compiler;
 import constants;
 import file_utils;
-#if C2_PLUGINS
+#if C2_PLUGINS && !BOOTSTRAP
 import git_version; // from plugin
 #endif
 import diagnostics;
@@ -125,6 +125,7 @@ const char[] Recipe_help =
     "end\n"
     "\n"
     "executable <name>\n"
+    "   $optional\n"
     "   $warnings <no-unused>\n"
     "             <no-unused-variable>\n"
     "             <no-unused-function>\n"
@@ -138,8 +139,8 @@ const char[] Recipe_help =
     "             <no-unreachable-code>\n"
     "             <promote-to-error> \n"
     "   $backend [c|ir] <check>\n"
-    "              <fast>\n"
-    "              <no-build>\n"
+    "                   <fast>\n"
+    "                   <no-build>\n"
     "   $nolibc\n"
     "   $disable-asserts\n"
     "   $config <options>\n"
@@ -162,7 +163,7 @@ fn void print_recipe_help() {
 }
 
 fn void print_version() {
-#if C2_PLUGINS
+#if C2_PLUGINS && !BOOTSTRAP
     console.log("version: %s", git_version.Describe);
 #else
     console.log("version: unknown");
@@ -192,6 +193,7 @@ const char[] Usage_help =
     "  --asan            generate code with address sanity checks\n"
     "  --msan            generate code with memory sanity checks\n"
     "  --ubsan           generate code with undefined behavior sanity checks\n"
+    "  --bootstrap       define BOOTSTRAP feature and disable unused warnings\n"
     "  --check           only parse and check\n"
     "  --create [name]   create an empty project recipe.txt and main.c2\n"
     "  --fast            do fast, un-optimized build\n"
@@ -253,6 +255,9 @@ fn void parse_long_opt(ArgumentParser *ap, const char* arg, compiler.Options* co
     case "I2":
         opts.use_ir_backend = true;
         comp_opts.print_all_ir = true;
+        break;
+    case "bootstrap":
+        comp_opts.bootstrap = true;
         break;
     case "check":
         comp_opts.check_only = true;
@@ -634,6 +639,8 @@ fn bool Context.build_targets(Context* c) {
         if (has_filter) {
             if (!c.opts.targets.contains_idx(target_idx)) continue;
             c.opts.targets.del(target_idx);
+        } else {
+            if (target.getOptional()) continue;
         }
         if (c.opts.show_targets) {
             console.log("%s", target_name);

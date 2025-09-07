@@ -42,7 +42,9 @@ type Checker struct {
 
 fn void Checker.unused_module(void* arg, AST* a) {
     Checker* c = arg;
-    c.diags.warn(a.getLoc(), "unused module '%s'", a.getName());
+    if (!c.warnings.no_unused_public) {
+        c.diags.warn(a.getLoc(), "unused module '%s'", a.getName());
+    }
 }
 
 fn void Checker.check(void* arg, Decl* d) {

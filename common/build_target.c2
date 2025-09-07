@@ -108,6 +108,7 @@ public type Target struct @(opaque) {
     BackEndKind backend;
     bool backend_no_build;
     bool backend_fast;
+    bool optional;
 
     string_list.List features;
     List libs;
@@ -295,5 +296,13 @@ public fn void Target.setFastBuild(Target* t) {
 
 public fn bool Target.getFastBuild(const Target* t) {
     return t.backend_fast;
+}
+
+public fn void Target.setOptional(Target* t) {
+    t.optional = true;
+}
+
+public fn bool Target.getOptional(const Target* t) {
+    return t.optional;
 }
 

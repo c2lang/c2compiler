@@ -56,13 +56,6 @@ typedef unsigned long size_t;
 #define offsetof(type, member) __builtin_offsetof(type, member)
 #define to_container(type, member, ptr) ((type*)((char*)(ptr) - offsetof(type, member)))
 
-int dprintf(int fd, const char *format, ...);
-void abort(void);
-static int c2_assert(const char* filename, int line, const char* funcname, const char* condstr) {
-    dprintf(2, "%s:%d: function %s: Assertion failed: %s\n", filename, line, funcname, condstr);
-    abort();
-    return 0;
-}
 static int c2_strswitch(const char* s1, const char* s2) {
     if (!s1) return 0;  // nil
     if (!*s1) return 1; // ""
@@ -87,9 +80,7 @@ static int c2_strswitch(const char* s1, const char* s2) {
 
 // --- module c2 ---
 
-#define c2_max_u8 255
 #define c2_max_i32 2147483647
-#define c2_max_u32 0xffffffffU
 #define c2_min_i64 (-9223372036854775807L - 1)
 #define c2_max_u64 0xffffffffffffffffUL
 
@@ -102,11 +93,6 @@ static int c2_strswitch(const char* s1, const char* s2) {
 // --- module i64 ---
 
 #define i64_max 9223372036854775807L
-
-
-// --- module u16 ---
-
-#define u16_max 65535
 
 
 // --- module u32 ---
@@ -368,7 +354,6 @@ int uname(utsname* buf);
 typedef int32_t pid_t;
 #define unistd_STDOUT_FILENO 1
 #define unistd_STDERR_FILENO 2
-#define unistd__SC_NPROCESSORS_ONLN 84
 char* getcwd(char* buf, size_t size);
 int chdir(const char* path);
 int close(int fd);
@@ -381,54 +366,6 @@ pid_t fork(void);
 pid_t waitpid(pid_t pid, int* wstatus, int options);
 int dup2(int oldfd, int newfd);
 int execv(const char* pathname, char** argv);
-long sysconf(int name);
-
-
-// --- module pthread ---
-typedef struct pthread_attr_t_ pthread_attr_t;
-typedef union pthread_mutex_t_ pthread_mutex_t;
-typedef union pthread_mutexattr_t_ pthread_mutexattr_t;
-typedef union pthread_cond_t_ pthread_cond_t;
-typedef union pthread_condattr_t_ pthread_condattr_t;
-
-typedef uint64_t pthread_t;
-#define pthread_SIZEOF_ATTR_T 64
-struct pthread_attr_t_ {
-   char __size[64];
-   long __align;
-};
-
-typedef void* (*pthread_threadfunc)(void* _arg0);
-
-#define pthread_SIZEOF_MUTEX_T 40
-union pthread_mutex_t_ {
-   char size[40];
-   long align;
-};
-
-#define pthread_SIZEOF_MUTEXATTR_T 4
-union pthread_mutexattr_t_ {
-   char size[4];
-   long align;
-};
-
-#define pthread_SIZEOF_COND_T 48
-union pthread_cond_t_ {
-   char size[48];
-   long align;
-};
-
-#define pthread_SIZEOF_CONDATTR_T 4
-union pthread_condattr_t_ {
-   char size[4];
-   long align;
-};
-
-int pthread_create(pthread_t* __newthread, const pthread_attr_t* __attr, pthread_threadfunc __start_routine, void* __arg);
-int pthread_join(pthread_t thread, void** value_ptr);
-int pthread_mutex_init(pthread_mutex_t* mutex, const pthread_mutexattr_t* attr);
-int pthread_mutex_lock(pthread_mutex_t* mutex);
-int pthread_mutex_unlock(pthread_mutex_t* mutex);
 
 
 // --- module dlfcn ---
@@ -717,11 +654,12 @@ static bool string_buffer_Buf_extend(string_buffer_Buf* buf, uint32_t len);
 static void string_buffer_Buf_setColors(string_buffer_Buf* buf, bool colors);
 static void string_buffer_Buf_setIndent(string_buffer_Buf* buf, uint32_t indent_step);
 static uint32_t string_buffer_Buf_size(const string_buffer_Buf* buf);
-static const char* string_buffer_Buf_data(const string_buffer_Buf* buf);
-static const uint8_t* string_buffer_Buf_udata(const string_buffer_Buf* buf);
+static const void* string_buffer_Buf_data(const string_buffer_Buf* buf);
+static const char* string_buffer_Buf_str(const string_buffer_Buf* buf);
 static void* string_buffer_Buf_detach(string_buffer_Buf* buf, uint32_t* psize);
 static void string_buffer_Buf_clear(string_buffer_Buf* buf);
 static void string_buffer_Buf_color(string_buffer_Buf* buf, color_Color col);
+static char string_buffer_Buf_at(const string_buffer_Buf* buf, uint32_t i);
 static void string_buffer_Buf_add1(string_buffer_Buf* buf, char c);
 static void string_buffer_Buf_add(string_buffer_Buf* buf, const char* text);
 static void string_buffer_Buf_add2(string_buffer_Buf* buf, const char* text, uint32_t len);
@@ -743,7 +681,7 @@ static void string_buffer_Buf_resetToLastNewline(string_buffer_Buf* buf);
 
 static string_buffer_Buf* string_buffer_Buf_init(string_buffer_Buf* buf, char* data, uint32_t capacity, bool grow, bool use_colors, uint32_t indent_step)
 {
-   (capacity) || c2_assert("ast_utils/string_buffer.c2", 39, "string_buffer.Buf.init", "capacity");
+   ;//assert(capacity);
    buf->capacity = capacity;
    buf->size_ = 0;
    buf->data_ = data;
@@ -756,7 +694,6 @@ static string_buffer_Buf* string_buffer_Buf_init(string_buffer_Buf* buf, char* d
       buf->data_ = malloc(capacity);
       buf->own = true;
    }
-   buf->data_[0] = '\0';
    return buf;
 }
 
@@ -812,19 +749,21 @@ static uint32_t string_buffer_Buf_size(const string_buffer_Buf* buf)
    return buf->size_;
 }
 
-static const char* string_buffer_Buf_data(const string_buffer_Buf* buf)
+static const void* string_buffer_Buf_data(const string_buffer_Buf* buf)
 {
+   buf->data_[buf->size_] = '\0';
    return buf->data_;
 }
 
-static const uint8_t* string_buffer_Buf_udata(const string_buffer_Buf* buf)
+static const char* string_buffer_Buf_str(const string_buffer_Buf* buf)
 {
-   return (uint8_t*)buf->data_;
+   return string_buffer_Buf_data(buf);
 }
 
 static void* string_buffer_Buf_detach(string_buffer_Buf* buf, uint32_t* psize)
 {
    *psize = buf->size_;
+   buf->data_[buf->size_] = '\0';
    if (buf->own) {
       void* data = realloc(buf->data_, buf->size_ + 1);
       if (!data) data = buf->data_;
@@ -850,6 +789,11 @@ static void string_buffer_Buf_color(string_buffer_Buf* buf, color_Color col)
    if (buf->colors) string_buffer_Buf_add(buf, color_Color_str(col));
 }
 
+static char string_buffer_Buf_at(const string_buffer_Buf* buf, uint32_t i)
+{
+   return i < buf->size_ ? buf->data_[i] : '\0';
+}
+
 static void string_buffer_Buf_add1(string_buffer_Buf* buf, char c)
 {
    if (buf->size_ + 2 > buf->capacity) {
@@ -857,7 +801,6 @@ static void string_buffer_Buf_add1(string_buffer_Buf* buf, char c)
    }
    buf->data_[buf->size_] = c;
    buf->size_ += 1;
-   buf->data_[buf->size_] = '\0';
 }
 
 static void string_buffer_Buf_add(string_buffer_Buf* buf, const char* text)
@@ -873,7 +816,6 @@ static void string_buffer_Buf_add2(string_buffer_Buf* buf, const char* text, uin
    }
    memcpy(&buf->data_[buf->size_], text, len);
    buf->size_ += len;
-   buf->data_[buf->size_] = '\0';
 }
 
 static void string_buffer_Buf_newline(string_buffer_Buf* buf)
@@ -899,7 +841,6 @@ static void string_buffer_Buf_rparen(string_buffer_Buf* buf)
 static void string_buffer_Buf_stripTrailingSpaces(string_buffer_Buf* buf)
 {
    while (buf->size_ && buf->data_[buf->size_ - 1] == ' ') buf->size_--;
-   buf->data_[buf->size_] = '\0';
 }
 
 __attribute__((__format__(printf, 2, 3)))
@@ -910,7 +851,7 @@ static void string_buffer_Buf_print(string_buffer_Buf* buf, const char* format, 
    va_start(args, format);
    int32_t len = vsnprintf(tmp, 4096, format, args);
    va_end(args);
-   (len < 4096) || c2_assert("ast_utils/string_buffer.c2", 176, "string_buffer.Buf.print", "len < sizeof(tmp)");
+   ;//assert(len < 4096);
    string_buffer_Buf_add2(buf, tmp, (uint32_t)len);
 }
 
@@ -918,16 +859,14 @@ static void string_buffer_Buf_vprintf(string_buffer_Buf* buf, const char* format
 {
    char tmp[4096];
    int32_t len = vsnprintf(tmp, 4096, format, args);
-   (len < 4096) || c2_assert("ast_utils/string_buffer.c2", 184, "string_buffer.Buf.vprintf", "len < sizeof(tmp)");
+   ;//assert(len < 4096);
    string_buffer_Buf_add2(buf, tmp, (uint32_t)len);
 }
 
 static void string_buffer_Buf_unindent(string_buffer_Buf* buf)
 {
    uint32_t i = buf->indent_step;
-   while (i-- > 0) {
-      if (buf->size_ && buf->data_[buf->size_ - 1] == ' ') buf->data_[--buf->size_] = '\0';
-   }
+   while (i-- > 0 && buf->size_ && buf->data_[buf->size_ - 1] == ' ') buf->size_--;
 }
 
 static void string_buffer_Buf_indent(string_buffer_Buf* buf, uint32_t indent)
@@ -939,7 +878,6 @@ static void string_buffer_Buf_indent(string_buffer_Buf* buf, uint32_t indent)
    if (indent == 0) return;
    char* cur = buf->data_ + buf->size_;
    for (uint32_t i = 0; i < indent; i++) cur[i] = ' ';
-   cur[indent] = 0;
    buf->size_ += indent;
 }
 
@@ -1016,7 +954,6 @@ static void string_buffer_Buf_encodeHex(string_buffer_Buf* buf, const uint8_t* d
    if (buf->size_ + len * 3 + 1 > buf->capacity) {
       if (!string_buffer_Buf_extend(buf, len * 3)) len = (buf->capacity - buf->size_ - 1) / 3;
    }
-   if (len == 0) return;
    char* cp = &buf->data_[buf->size_];
    for (uint32_t i = 0; i < len; i++) {
       if (i != 0) *cp++ = ' ';
@@ -1024,8 +961,7 @@ static void string_buffer_Buf_encodeHex(string_buffer_Buf* buf, const uint8_t* d
       *cp++ = string_buffer_ToHex[v >> 4];
       *cp++ = string_buffer_ToHex[v & 0xf];
    }
-   *cp = 0;
-   buf->size_ += len * 3 - 1;
+   buf->size_ = (uint32_t)(cp - buf->data_);
 }
 
 static void string_buffer_Buf_trim(string_buffer_Buf* buf, uint32_t len)
@@ -1037,10 +973,7 @@ static void string_buffer_Buf_resetToLastNewline(string_buffer_Buf* buf)
 {
    while (buf->size_) {
       buf->size_--;
-      if (buf->data_[buf->size_] == '\n') {
-         buf->data_[buf->size_] = 0;
-         return;
-      }
+      if (buf->data_[buf->size_] == '\n') break;
    }
 }
 
@@ -1272,15 +1205,17 @@ struct yaml_StackLevel_ {
 struct yaml_Data_ {
    char* text;
    uint32_t text_size;
-   char* text_cur;
+   uint32_t text_cur;
    yaml_Node* nodes;
    uint32_t nodes_count;
-   yaml_Node* nodes_cur;
+   uint32_t nodes_cur;
    yaml_StackLevel* stack;
 };
 
 #define yaml_MaxDepth 8
-static const char* yaml_node_names[4] = { "UNK", "SCA", "MAP", "SEQ" };
+#define yaml_MinText 256
+#define yaml_MinNodes 32
+static const char* yaml_node_names[4] = { [yaml_NodeKind_Unknown] = "UNK", [yaml_NodeKind_Scalar] = "SCA", [yaml_NodeKind_Map] = "MAP", [yaml_NodeKind_Sequence] = "SEQ" };
 static void yaml_Data_init(yaml_Data* d, uint32_t text_size, uint32_t nodes_count, yaml_StackLevel* stack);
 static void yaml_Data_destroy(yaml_Data* d);
 static void yaml_Data_resize_nodes(yaml_Data* d);
@@ -1349,9 +1284,10 @@ struct yaml_Token_ {
 
 struct yaml_Tokenizer_ {
    const char* cur;
-   yaml_Location loc;
    const char* input_start;
+   const char* line_start;
    char* error_msg;
+   uint32_t line_number;
    int32_t cur_indent;
    bool same_line;
    yaml_Data* data;
@@ -1359,21 +1295,20 @@ struct yaml_Tokenizer_ {
 };
 
 static const char* yaml_token_names[13] = {
-   "none",
-   "scalar",
-   "'scalar'",
-   "\"scalar\"",
-   ":",
-   "-",
-   "indent",
-   "dedent",
-   "---",
-   "...",
-   "%",
-   "eof",
-   "error"
+   [yaml_TokenKind_None] = "none",
+   [yaml_TokenKind_Plain_Scalar] = "scalar",
+   [yaml_TokenKind_Single_Quoted_Scalar] = "'scalar'",
+   [yaml_TokenKind_Double_Quoted_Scalar] = "\"scalar\"",
+   [yaml_TokenKind_Colon] = ":",
+   [yaml_TokenKind_Dash] = "-",
+   [yaml_TokenKind_Indent] = "indent",
+   [yaml_TokenKind_Dedent] = "dedent",
+   [yaml_TokenKind_Doc_Start] = "---",
+   [yaml_TokenKind_Doc_End] = "...",
+   [yaml_TokenKind_Directive] = "%",
+   [yaml_TokenKind_Eof] = "eof",
+   [yaml_TokenKind_Error] = "error"
 };
-static const char* yaml_Location_str(const yaml_Location* loc);
 static const char* yaml_Token_str(const yaml_Token* tok);
 static void yaml_Tokenizer_init(yaml_Tokenizer* t, const char* input, yaml_Data* d, char* error_msg);
 static void yaml_Tokenizer_lex(yaml_Tokenizer* t, yaml_Token* result);
@@ -1384,7 +1319,8 @@ static void yaml_Tokenizer_lex_directive(yaml_Tokenizer* t, yaml_Token* result);
 static void yaml_Tokenizer_lex_quoted_string(yaml_Tokenizer* t, yaml_Token* result, char delim);
 static bool yaml_is_string(char c);
 static void yaml_Tokenizer_lex_string(yaml_Tokenizer* t, yaml_Token* result);
-static void yaml_Tokenizer_error(yaml_Tokenizer* t, yaml_Token* result);
+__attribute__((__format__(printf, 3, 4)))
+static void yaml_Tokenizer_error(yaml_Tokenizer* t, yaml_Token* result, const char* format, ...);
 #define yaml_MaxDiag 256
 struct yaml_Parser_ {
    yaml_Token token;
@@ -1420,13 +1356,15 @@ static void yaml_Parser_push_node(yaml_Parser* p, yaml_Node* n, yaml_NodeKind pa
 
 static void yaml_Data_init(yaml_Data* d, uint32_t text_size, uint32_t nodes_count, yaml_StackLevel* stack)
 {
+   if (text_size < yaml_MinText) text_size = yaml_MinText;
    d->text = malloc(text_size);
    d->text_size = text_size;
-   d->text_cur = d->text + 1;
-   d->text[0] = 0;
+   d->text_cur = 1;
+   d->text[0] = '\0';
+   if (nodes_count < yaml_MinNodes) nodes_count = yaml_MinNodes;
    d->nodes = malloc(nodes_count * 16);
    d->nodes_count = nodes_count;
-   d->nodes_cur = &d->nodes[1];
+   d->nodes_cur = 1;
    memset(&d->nodes[0], 0, 16);
    d->stack = stack;
 }
@@ -1439,42 +1377,37 @@ static void yaml_Data_destroy(yaml_Data* d)
 
 static void yaml_Data_resize_nodes(yaml_Data* d)
 {
-   uint32_t idx = (uint32_t)(d->nodes_cur - d->nodes);
    d->nodes_count *= 2;
    yaml_Node* nodes2 = malloc(d->nodes_count * 16);
-   memcpy(nodes2, d->nodes, idx * 16);
+   memcpy(nodes2, d->nodes, d->nodes_cur * 16);
    for (uint32_t i = 0; i < yaml_MaxDepth; i++) {
       yaml_StackLevel* sl = &d->stack[i];
       if (sl->node) {
-         uint32_t node_idx = (uint32_t)(sl->node - d->nodes);
+         ssize_t node_idx = sl->node - d->nodes;
          sl->node = &nodes2[node_idx];
       }
       if (sl->last_child) {
-         uint32_t last_child_idx = (uint32_t)(sl->last_child - d->nodes);
+         ssize_t last_child_idx = sl->last_child - d->nodes;
          sl->last_child = &nodes2[last_child_idx];
       }
    }
    free(d->nodes);
    d->nodes = nodes2;
-   d->nodes_cur = &d->nodes[idx];
 }
 
 static void yaml_Data_resize_text(yaml_Data* d)
 {
-   uint32_t idx = (uint32_t)(d->text_cur - d->text);
    d->text_size *= 2;
    char* text2 = malloc(d->text_size);
-   memcpy(text2, d->text, idx + 1);
+   memcpy(text2, d->text, d->text_cur);
    free(d->text);
    d->text = text2;
-   d->text_cur = &d->text[idx];
 }
 
 static yaml_Node* yaml_Data_add_node(yaml_Data* d, yaml_NodeKind kind, uint32_t name_idx)
 {
-   uint32_t idx = (uint32_t)(d->nodes_cur - d->nodes);
-   if (idx >= d->nodes_count - 1) yaml_Data_resize_nodes(d);
-   yaml_Node* result = d->nodes_cur;
+   if (d->nodes_cur >= d->nodes_count - 1) yaml_Data_resize_nodes(d);
+   yaml_Node* result = &d->nodes[d->nodes_cur];
    d->nodes_cur++;
    result->kind = kind;
    result->next_idx = 0;
@@ -1491,10 +1424,10 @@ uint32_t yaml_Data_node2idx(const yaml_Data* d, const yaml_Node* n)
 
 static uint32_t yaml_Data_add_text(yaml_Data* d, const char* text, uint32_t len)
 {
-   uint32_t idx = (uint32_t)(d->text_cur - d->text);
+   uint32_t idx = d->text_cur;
    while (idx + len + 1 >= d->text_size) yaml_Data_resize_text(d);
-   memcpy(d->text_cur, text, len);
-   d->text_cur[len] = 0;
+   memcpy(d->text + idx, text, len);
+   d->text[idx + len] = '\0';
    d->text_cur += len + 1;
    return idx;
 }
@@ -1511,11 +1444,12 @@ static void yaml_Parser_dump(const yaml_Parser* p, bool verbose)
 
 static void yaml_Data_dump(const yaml_Data* d, bool verbose)
 {
-   uint32_t node_count = (uint32_t)(d->nodes_cur - d->nodes);
+   uint32_t node_count = d->nodes_cur;
    if (verbose) {
-      printf("Text %u/%u\n", (uint32_t)(d->text_cur - d->text), d->text_size);
+      printf("Text %u/%u\n", d->text_cur, d->text_size);
       const char* cp = d->text + 1;
-      while (cp < d->text_cur) {
+      const char* end = d->text + d->text_cur;
+      while (cp < end) {
          uint32_t len = (uint32_t)strlen(cp);
          uint32_t offset = (uint32_t)(cp - d->text);
          printf("  [%3u] %s\n", offset, cp);
@@ -1574,8 +1508,8 @@ static bool yaml_Node_isScalar(const yaml_Node* n)
 
 static const yaml_Node* yaml_Parser_getRoot(const yaml_Parser* p)
 {
-   uint32_t node_count = (uint32_t)(p->data.nodes_cur - p->data.nodes) - 1;
-   if (node_count == 0) return NULL;
+   uint32_t node_count = p->data.nodes_cur;
+   if (node_count <= 1) return NULL;
    return &p->data.nodes[1];
 }
 
@@ -1593,8 +1527,8 @@ static const yaml_Node* yaml_Parser_findNode(const yaml_Parser* p, const char* p
 
 static const yaml_Node* yaml_Data_findNode(const yaml_Data* d, const char* path)
 {
-   uint32_t node_count = (uint32_t)(d->nodes_cur - d->nodes) - 1;
-   if (node_count == 0) return NULL;
+   uint32_t node_count = d->nodes_cur;
+   if (node_count <= 1) return NULL;
    const yaml_Node* root = &d->nodes[1];
    if (root->kind == yaml_NodeKind_Sequence) return NULL;
    return yaml_Data_findChildNode(d, path, root->child_idx);
@@ -1690,13 +1624,6 @@ static const char* yaml_starts_with(const char* full, const char* start)
    return NULL;
 }
 
-static const char* yaml_Location_str(const yaml_Location* loc)
-{
-   static char msg[32];
-   sprintf(msg, "at line %u:%u", loc->line, loc->column);
-   return msg;
-}
-
 static const char* yaml_Token_str(const yaml_Token* tok)
 {
    return yaml_token_names[tok->kind];
@@ -1704,12 +1631,12 @@ static const char* yaml_Token_str(const yaml_Token* tok)
 
 static void yaml_Tokenizer_init(yaml_Tokenizer* t, const char* input, yaml_Data* d, char* error_msg)
 {
-   memset(t, 0, 72);
+   memset(t, 0, 80);
    t->cur = input;
    t->input_start = input;
-   t->loc.line = 1;
-   t->loc.column = 1;
+   t->line_start = input;
    t->error_msg = error_msg;
+   t->line_number = 1;
    t->data = d;
    t->next.kind = yaml_TokenKind_None;
 }
@@ -1717,16 +1644,17 @@ static void yaml_Tokenizer_init(yaml_Tokenizer* t, const char* input, yaml_Data*
 static void yaml_Tokenizer_lex(yaml_Tokenizer* t, yaml_Token* result)
 {
    if (t->next.kind != yaml_TokenKind_None) {
-      memcpy(result, &t->next, 24);
+      *result = t->next;
       t->next.kind = yaml_TokenKind_None;
       return;
    }
-   result->same_line = t->same_line;
+   *result = (yaml_Token){ .same_line = t->same_line };
    t->same_line = true;
-   result->text_idx = 0;
    while (1) {
-      if (t->loc.column == 1 && t->cur_indent && *t->cur != ' ' && *t->cur != '\r' && *t->cur != '\n') {
-         result->loc = t->loc;
+      result->loc.line = t->line_number;
+      result->loc.column = (uint32_t)(t->cur - t->line_start) + 1;
+      bool at_bol = result->loc.column == 1;
+      if (at_bol && t->cur_indent && *t->cur != ' ' && *t->cur != '\r' && *t->cur != '\n') {
          result->kind = yaml_TokenKind_Dedent;
          result->indent = 0;
          t->cur_indent = 0;
@@ -1734,36 +1662,32 @@ static void yaml_Tokenizer_lex(yaml_Tokenizer* t, yaml_Token* result)
          return;
       }
       switch (*t->cur) {
-      case 0:
-         result->loc = t->loc;
+      case '\0':
          result->kind = yaml_TokenKind_Eof;
          return;
       case '\t':
-         sprintf(t->error_msg, "file contains TAB characters %s", yaml_Location_str(&t->loc));
-         yaml_Tokenizer_error(t, result);
+         yaml_Tokenizer_error(t, result, "file contains TAB characters");
          return;
       case '\r':
          t->cur++;
          if (*t->cur != '\n') {
-            sprintf(t->error_msg, "unexpected char 0x%02X %s", *t->cur, yaml_Location_str(&t->loc));
-            yaml_Tokenizer_error(t, result);
+            yaml_Tokenizer_error(t, result, "missing LF char after CR");
             return;
          }
          fallthrough;
       case '\n':
          t->cur++;
-         t->loc.line++;
-         t->loc.column = 1;
+         t->line_number++;
+         t->line_start = t->cur;
          t->same_line = true;
          result->same_line = false;
          break;
       case ' ':
-         if (t->loc.column == 1) {
+         if (at_bol) {
             if (yaml_Tokenizer_lex_indent(t, result)) return;
             break;
          }
          t->cur++;
-         t->loc.column++;
          break;
       case '"':
          yaml_Tokenizer_lex_quoted_string(t, result, '"');
@@ -1779,44 +1703,39 @@ static void yaml_Tokenizer_lex(yaml_Tokenizer* t, yaml_Token* result)
          return;
       case '-':
          if (t->cur[1] == ' ' || t->cur[1] == '\r' || t->cur[1] == '\n') {
-            t->cur++;
-            result->loc = t->loc;
             result->kind = yaml_TokenKind_Dash;
-            t->loc.column++;
+            t->cur++;
             return;
          }
-         if (t->loc.column == 1 && t->cur[1] == '-' && t->cur[2] == '-') {
-            t->cur += 3;
-            result->loc = t->loc;
+         if (at_bol && t->cur[1] == '-' && t->cur[2] == '-') {
             result->kind = yaml_TokenKind_Doc_Start;
-            t->loc.column += 3;
+            t->cur += 3;
             return;
          }
          yaml_Tokenizer_lex_string(t, result);
          return;
       case '.':
-         if (t->loc.column == 1 && t->cur[1] == '.' && t->cur[2] == '.') {
-            result->loc = t->loc;
+         if (at_bol && t->cur[1] == '.' && t->cur[2] == '.') {
             result->kind = yaml_TokenKind_Doc_End;
             t->cur += 3;
-            t->loc.column += 3;
             return;
          }
          yaml_Tokenizer_lex_string(t, result);
          return;
       case ':':
-         t->cur++;
-         result->loc = t->loc;
          result->kind = yaml_TokenKind_Colon;
-         t->loc.column++;
+         t->cur++;
          return;
       default:
          if (yaml_is_string(*t->cur)) {
             yaml_Tokenizer_lex_string(t, result);
             return;
          }
-         sprintf(t->error_msg, "unhandled char 0x%02x (%c) %s", *t->cur, isprint(*t->cur) ? *t->cur : ' ', yaml_Location_str(&t->loc));
-         yaml_Tokenizer_error(t, result);
+         if (isprint(*t->cur)) {
+            yaml_Tokenizer_error(t, result, "unhandled char '%c' (0x%02x)", *t->cur, *t->cur);
+         } else {
+            yaml_Tokenizer_error(t, result, "unhandled byte 0x%02x", *t->cur);
+         }
          return;
       }
    }
@@ -1833,8 +1752,6 @@ static bool yaml_Tokenizer_lex_indent(yaml_Tokenizer* t, yaml_Token* result)
    const char* start = t->cur;
    while (*t->cur == ' ') t->cur++;
    int32_t indent = (int32_t)(t->cur - start);
-   result->loc = t->loc;
-   t->loc.column += indent;
    if (t->cur_indent == indent) return false;
    if (t->cur_indent > indent) result->kind = yaml_TokenKind_Dedent;
    else result->kind = yaml_TokenKind_Indent;
@@ -1845,74 +1762,36 @@ static bool yaml_Tokenizer_lex_indent(yaml_Tokenizer* t, yaml_Token* result)
 
 static void yaml_Tokenizer_lex_comment(yaml_Tokenizer* t)
 {
-   const char* start = t->cur;
    t->cur++;
-   while (1) {
-      switch (*t->cur) {
-      case 0:
-      case '\r':
-      case '\n':
-         t->loc.column += (t->cur - start);
-         return;
-      default:
-         t->cur++;
-         break;
-      }
-   }
+   while (*t->cur && *t->cur != '\r' && *t->cur != '\n') t->cur++;
 }
 
 static void yaml_Tokenizer_lex_directive(yaml_Tokenizer* t, yaml_Token* result)
 {
    t->cur++;
    const char* start = t->cur;
-   uint32_t count;
-   while (1) {
-      switch (*t->cur) {
-      case 0:
-      case '\r':
-      case '\n':
-         goto out;
-      default:
-         t->cur++;
-         break;
-      }
-   }
-out:
-   count = (uint32_t)(t->cur - start);
-   t->error_msg[count] = 0;
-   result->loc = t->loc;
+   while (*t->cur && *t->cur != '\r' && *t->cur != '\n') t->cur++;
    result->kind = yaml_TokenKind_Directive;
-   result->text_idx = yaml_Data_add_text(t->data, start, count);
-   t->loc.column += count + 1;
+   result->text_idx = yaml_Data_add_text(t->data, start, (uint32_t)(t->cur - start));
 }
 
 static void yaml_Tokenizer_lex_quoted_string(yaml_Tokenizer* t, yaml_Token* result, char delim)
 {
    t->cur++;
    const char* start = t->cur;
-   uint32_t count;
-   while (1) {
+   while (*t->cur != delim) {
       switch (*t->cur) {
-      case 0:
+      case '\0':
       case '\r':
       case '\n':
-         t->loc.column += (t->cur - start);
-         sprintf(t->error_msg, "unterminated string %s", yaml_Location_str(&t->loc));
-         yaml_Tokenizer_error(t, result);
+         yaml_Tokenizer_error(t, result, "unterminated string");
          return;
-      default:
-         if (*t->cur == delim) goto out;
-         t->cur++;
-         break;
       }
+      t->cur++;
    }
-out:
-   count = (uint32_t)(t->cur - start);
-   t->cur++;
-   result->loc = t->loc;
    result->kind = (delim == '"') ? yaml_TokenKind_Double_Quoted_Scalar : yaml_TokenKind_Single_Quoted_Scalar;
-   result->text_idx = yaml_Data_add_text(t->data, start, count);
-   t->loc.column += count + 2;
+   result->text_idx = yaml_Data_add_text(t->data, start, (uint32_t)(t->cur - start));
+   t->cur++;
 }
 
 static bool yaml_is_string(char c)
@@ -1939,23 +1818,27 @@ static void yaml_Tokenizer_lex_string(yaml_Tokenizer* t, yaml_Token* result)
       }
       break;
    }
-   uint32_t count = (uint32_t)(t->cur - start);
-   result->loc = t->loc;
    result->kind = yaml_TokenKind_Plain_Scalar;
-   result->text_idx = yaml_Data_add_text(t->data, start, count);
-   t->loc.column += count;
+   result->text_idx = yaml_Data_add_text(t->data, start, (uint32_t)(t->cur - start));
 }
 
-static void yaml_Tokenizer_error(yaml_Tokenizer* t, yaml_Token* result)
+__attribute__((__format__(printf, 3, 4)))
+static void yaml_Tokenizer_error(yaml_Tokenizer* t, yaml_Token* result, const char* format, ...)
 {
-   result->loc = t->loc;
+   va_list args;
+   va_start(args, format);
+   int32_t len = vsnprintf(t->error_msg, yaml_MaxDiag, format, args);
+   if ((uint32_t)len < yaml_MaxDiag) {
+      snprintf(t->error_msg + len, yaml_MaxDiag - len, "at line %u:%u", result->loc.line, result->loc.column);
+   }
+   va_end(args);
    result->kind = yaml_TokenKind_Error;
    result->error_msg = t->error_msg;
 }
 
 static yaml_Parser* yaml_Parser_create(void)
 {
-   yaml_Parser* p = calloc(1, 816);
+   yaml_Parser* p = calloc(1, 808);
    yaml_Data_init(&p->data, 1024, 32, p->stack);
    return p;
 }
@@ -1991,9 +1874,11 @@ static void yaml_Parser_error(yaml_Parser* p, const char* format, ...)
    va_list args;
    va_start(args, format);
    char* cp = p->message;
-   cp += vsnprintf(cp, yaml_MaxDiag - 1, format, args);
+   int32_t len = vsnprintf(cp, yaml_MaxDiag, format, args);
    va_end(args);
-   sprintf(cp, " %s", yaml_Location_str(&p->token.loc));
+   if ((uint32_t)len < yaml_MaxDiag) {
+      snprintf(cp + len, yaml_MaxDiag - len, "at line %u:%u", p->token.loc.line, p->token.loc.column);
+   }
    longjmp(&p->jmp_err, 1);
 }
 
@@ -2202,11 +2087,11 @@ static void yaml_Parser_push_root(yaml_Parser* p)
 
 static void yaml_Parser_push_node(yaml_Parser* p, yaml_Node* n, yaml_NodeKind parent_kind, int32_t indent)
 {
-   (p->stack_size) || c2_assert("common/yaml/yaml_parser.c2", 285, "yaml.Parser.push_node", "p.stack_size");
+   ;//assert(p->stack_size);
    uint32_t n_idx = yaml_Data_node2idx(&p->data, n);
    yaml_StackLevel* top = &p->stack[p->stack_size - 1];
    if (indent < top->indent) {
-      (indent + 1 == top->indent) || c2_assert("common/yaml/yaml_parser.c2", 290, "yaml.Parser.push_node", "indent + 1 == top.indent");
+      ;//assert(indent + 1 == top->indent);
       yaml_Parser_pop(p);
       top = &p->stack[p->stack_size - 1];
    }
@@ -2217,8 +2102,8 @@ static void yaml_Parser_push_node(yaml_Parser* p, yaml_Node* n, yaml_NodeKind pa
       }
       top->last_child = NULL;
    } else {
-      (p->stack_size + 1 < yaml_MaxDepth) || c2_assert("common/yaml/yaml_parser.c2", 303, "yaml.Parser.push_node", "p.stack_size + 1 < MaxDepth");
-      (indent > top->indent) || c2_assert("common/yaml/yaml_parser.c2", 304, "yaml.Parser.push_node", "indent > top.indent");
+      ;//assert(p->stack_size + 1 < yaml_MaxDepth);
+      ;//assert(indent > top->indent);
       yaml_Node* parent = top->node;
       if (parent->kind == yaml_NodeKind_Unknown) {
          if (parent_kind == yaml_NodeKind_Unknown) parent_kind = yaml_NodeKind_Map;
@@ -2227,7 +2112,7 @@ static void yaml_Parser_push_node(yaml_Parser* p, yaml_Node* n, yaml_NodeKind pa
       if (top->last_child) {
          top->last_child->next_idx = n_idx;
       } else {
-         (parent->child_idx == 0) || c2_assert("common/yaml/yaml_parser.c2", 315, "yaml.Parser.push_node", "parent.child_idx == 0");
+         ;//assert(parent->child_idx == 0);
          parent->child_idx = n_idx;
       }
       top->last_child = n;
@@ -3421,25 +3306,25 @@ static int32_t source_mgr_SourceMgr_addFile(source_mgr_SourceMgr* sm, const char
 
 static const char* source_mgr_SourceMgr_get_content(source_mgr_SourceMgr* sm, int32_t handle)
 {
-   ((uint32_t)handle < sm->num_files) || c2_assert("common/source_mgr.c2", 239, "source_mgr.SourceMgr.get_content", "(u32)handle < sm.num_files");
+   ;//assert((uint32_t)handle < sm->num_files);
    return sm->files[handle].data;
 }
 
 static uint32_t source_mgr_SourceMgr_get_offset(source_mgr_SourceMgr* sm, int32_t handle)
 {
-   ((uint32_t)handle < sm->num_files) || c2_assert("common/source_mgr.c2", 244, "source_mgr.SourceMgr.get_offset", "(u32)handle < sm.num_files");
+   ;//assert((uint32_t)handle < sm->num_files);
    return sm->files[handle].offset;
 }
 
 static uint32_t source_mgr_SourceMgr_getFileNameIdx(source_mgr_SourceMgr* sm, int32_t handle)
 {
-   ((uint32_t)handle < sm->num_files) || c2_assert("common/source_mgr.c2", 249, "source_mgr.SourceMgr.getFileNameIdx", "(u32)handle < sm.num_files");
+   ;//assert((uint32_t)handle < sm->num_files);
    return sm->files[handle].filename;
 }
 
 static const char* source_mgr_SourceMgr_getFileName(source_mgr_SourceMgr* sm, int32_t handle)
 {
-   ((uint32_t)handle < sm->num_files) || c2_assert("common/source_mgr.c2", 254, "source_mgr.SourceMgr.getFileName", "(u32)handle < sm.num_files");
+   ;//assert((uint32_t)handle < sm->num_files);
    return string_pool_Pool_idx2str(sm->pool, sm->files[handle].filename);
 }
 
@@ -3457,9 +3342,9 @@ static source_mgr_Location source_mgr_SourceMgr_locate(source_mgr_SourceMgr* sm,
    source_mgr_Location l = { 1, 1, "-", NULL };
    source_mgr_File* f = source_mgr_SourceMgr_find_file(sm, loc);
    if (f) {
-      (loc >= f->offset) || c2_assert("common/source_mgr.c2", 271, "source_mgr.SourceMgr.locate", "loc >= f.offset");
+      ;//assert(loc >= f->offset);
       uint32_t offset = loc - f->offset;
-      (offset <= f->data_size) || c2_assert("common/source_mgr.c2", 273, "source_mgr.SourceMgr.locate", "offset <= f.data_size");
+      ;//assert(offset <= f->data_size);
       source_mgr_CheckPoint pos = source_mgr_File_findCheckPoint(f, offset);
       l.line = pos.line + 1;
       l.column = pos.column + 1;
@@ -4105,122 +3990,6 @@ static build_file_Info* build_file_parser_parse(source_mgr_SourceMgr* sm, string
 }
 
 
-// --- module bit_array ---
-typedef struct bit_array_BitArray_ bit_array_BitArray;
-
-#define bit_array_MaxBits 256
-struct bit_array_BitArray_ {
-   uint64_t data[4];
-};
-
-static void bit_array_BitArray_reset(bit_array_BitArray* a, uint32_t cap);
-static void bit_array_BitArray_set(bit_array_BitArray* a, uint32_t idx);
-static void bit_array_BitArray_clear(bit_array_BitArray* a, uint32_t idx);
-static bool bit_array_BitArray_get(const bit_array_BitArray* a, uint32_t idx);
-
-static void bit_array_BitArray_reset(bit_array_BitArray* a, uint32_t cap)
-{
-   (cap <= bit_array_MaxBits) || c2_assert("common/bit_array.c2", 27, "bit_array.BitArray.reset", "cap <= MaxBits");
-   uint32_t num_words = (cap + 63) / 64;
-   memset(a->data, 0, num_words * 8);
-}
-
-static void bit_array_BitArray_set(bit_array_BitArray* a, uint32_t idx)
-{
-   uint32_t word = idx / 64;
-   idx -= word * 64;
-   a->data[word] |= ((uint64_t)1 << idx);
-}
-
-static void bit_array_BitArray_clear(bit_array_BitArray* a, uint32_t idx)
-{
-   uint32_t word = idx / 64;
-   idx -= word * 64;
-   a->data[word] &= ~((uint64_t)1 << idx);
-}
-
-static bool bit_array_BitArray_get(const bit_array_BitArray* a, uint32_t idx)
-{
-   uint32_t word = idx / 64;
-   idx -= word * 64;
-   return (a->data[word] >> idx) & 0x1;
-}
-
-
-// --- module bit_utils ---
-
-static uint32_t bit_utils_get_mask32(uint32_t i);
-
-static uint32_t bit_utils_get_mask32(uint32_t i)
-{
-   if (i == 0) return 0;
-   return (uint32_t)-1 >> (32 - i);
-}
-
-
-// --- module index_list ---
-typedef struct index_list_List_ index_list_List;
-
-struct index_list_List_ {
-   uint32_t count;
-   uint32_t capacity;
-   uint32_t* data;
-};
-
-static void index_list_List_init(index_list_List* l, uint32_t initial);
-static void index_list_List_free(index_list_List* l);
-static void index_list_List_clear(index_list_List* l);
-static void index_list_List_add(index_list_List* l, uint32_t item);
-static uint32_t* index_list_List_getFrom(const index_list_List* l, uint32_t idx);
-static uint32_t index_list_List_getCount(const index_list_List* l);
-static void index_list_List_resize(index_list_List* l, uint32_t cap);
-
-static void index_list_List_init(index_list_List* l, uint32_t initial)
-{
-   l->count = 0;
-   l->data = NULL;
-   index_list_List_resize(l, initial);
-}
-
-static void index_list_List_free(index_list_List* l)
-{
-   free(l->data);
-}
-
-static void index_list_List_clear(index_list_List* l)
-{
-   l->count = 0;
-}
-
-static void index_list_List_add(index_list_List* l, uint32_t item)
-{
-   if (l->count == l->capacity) index_list_List_resize(l, l->capacity * 2);
-   l->data[l->count] = item;
-   l->count++;
-}
-
-static uint32_t* index_list_List_getFrom(const index_list_List* l, uint32_t idx)
-{
-   return &l->data[idx];
-}
-
-static uint32_t index_list_List_getCount(const index_list_List* l)
-{
-   return l->count;
-}
-
-static void index_list_List_resize(index_list_List* l, uint32_t cap)
-{
-   l->capacity = cap;
-   uint32_t* data2 = malloc(l->capacity * 4);
-   if (l->data) {
-      memcpy(data2, l->data, l->count * 4);
-      free(l->data);
-   }
-   l->data = data2;
-}
-
-
 // --- module dsm_sorter ---
 typedef struct dsm_sorter_Sorter_ dsm_sorter_Sorter;
 
@@ -4239,7 +4008,7 @@ static void dsm_sorter_Sorter_init(dsm_sorter_Sorter* s, uint32_t count)
 {
    s->array = calloc(1, count * (count + 2));
    s->count = count;
-   (count <= 256) || c2_assert("common/dsm_sorter.c2", 28, "dsm_sorter.Sorter.init", "count <= 256");
+   ;//assert(count <= 256);
 }
 
 static void dsm_sorter_Sorter_free(dsm_sorter_Sorter* s)
@@ -4379,7 +4148,7 @@ static const char* target_info_Info_getArchName(const target_info_Info* info);
 static target_info_System target_info_str2sys(const char* name)
 {
    for (uint32_t i = 0; i < 6; i++) {
-      if (strcasecmp(target_info_system_names[i], name) == 0) return (target_info_System)i;
+      if (strcasecmp(target_info_system_names[(target_info_System)i], name) == 0) return (target_info_System)i;
    }
    return target_info_System_Unknown;
 }
@@ -4387,7 +4156,7 @@ static target_info_System target_info_str2sys(const char* name)
 static target_info_Arch target_info_str2arch(const char* name)
 {
    for (uint32_t i = 0; i < 8; i++) {
-      if (strcasecmp(target_info_arch_names[i], name) == 0) return (target_info_Arch)i;
+      if (strcasecmp(target_info_arch_names[(target_info_Arch)i], name) == 0) return (target_info_Arch)i;
    }
    return target_info_Arch_Unknown;
 }
@@ -4395,7 +4164,7 @@ static target_info_Arch target_info_str2arch(const char* name)
 static target_info_Vendor target_info_str2vendor(const char* name)
 {
    for (uint32_t i = 0; i < 2; i++) {
-      if (strcasecmp(target_info_vendor_names[i], name) == 0) return (target_info_Vendor)i;
+      if (strcasecmp(target_info_vendor_names[(target_info_Vendor)i], name) == 0) return (target_info_Vendor)i;
    }
    return target_info_Vendor_Unknown;
 }
@@ -4403,7 +4172,7 @@ static target_info_Vendor target_info_str2vendor(const char* name)
 static target_info_Abi target_info_str2abi(const char* name)
 {
    for (uint32_t i = 0; i < 7; i++) {
-      if (strcasecmp(target_info_abi_names[i], name) == 0) return (target_info_Abi)i;
+      if (strcasecmp(target_info_abi_names[(target_info_Abi)i], name) == 0) return (target_info_Abi)i;
    }
    return target_info_Abi_Unknown;
 }
@@ -4446,71 +4215,6 @@ static const char* target_info_Info_getSystemName(const target_info_Info* info)
 static const char* target_info_Info_getArchName(const target_info_Info* info)
 {
    return target_info_arch_names[info->arch];
-}
-
-
-// --- module value_maplist ---
-typedef struct value_maplist_Value_ value_maplist_Value;
-typedef struct value_maplist_List_ value_maplist_List;
-
-struct value_maplist_Value_ {
-   uint32_t key;
-   uint32_t value;
-};
-
-struct value_maplist_List_ {
-   value_maplist_Value* values;
-   uint32_t count;
-   uint32_t capacity;
-};
-
-static void value_maplist_List_init(value_maplist_List* l);
-static void value_maplist_List_free(value_maplist_List* l);
-static void value_maplist_List_clear(value_maplist_List* l);
-static void value_maplist_List_add(value_maplist_List* l, uint32_t key, uint32_t value);
-static uint32_t value_maplist_List_get(const value_maplist_List* l, uint32_t key);
-static void value_maplist_List_resize(value_maplist_List* l, uint32_t cap);
-
-static void value_maplist_List_init(value_maplist_List* l)
-{
-   memset(l, 0, 16);
-   value_maplist_List_resize(l, 8);
-}
-
-static void value_maplist_List_free(value_maplist_List* l)
-{
-   free(l->values);
-}
-
-static void value_maplist_List_clear(value_maplist_List* l)
-{
-   l->count = 0;
-}
-
-static void value_maplist_List_add(value_maplist_List* l, uint32_t key, uint32_t value)
-{
-   if (l->count == l->capacity) value_maplist_List_resize(l, l->capacity * 2);
-   value_maplist_Value* v = &l->values[l->count];
-   v->key = key;
-   v->value = value;
-   l->count++;
-}
-
-static uint32_t value_maplist_List_get(const value_maplist_List* l, uint32_t key)
-{
-   for (uint32_t i = 0; i < l->count; i++) {
-      if (l->values[i].key == key) return l->values[i].value;
-   }
-   return 0;
-}
-
-static void value_maplist_List_resize(value_maplist_List* l, uint32_t cap)
-{
-   l->capacity = cap;
-   value_maplist_Value* values2 = malloc(l->capacity * 8);
-   if (l->count) memcpy(values2, l->values, l->count * 8);
-   if (l->values) free(l->values);
-   l->values = values2;
 }
 
 
@@ -5225,3050 +4929,6 @@ static bool printf_utils_parseScanfFormat(const char* format, printf_utils_Scanf
 }
 
 
-// --- module ir ---
-typedef struct ir_Block_ ir_Block;
-typedef struct ir_BlockList_ ir_BlockList;
-typedef struct ir_Case_ ir_Case;
-typedef struct ir_CaseList_ ir_CaseList;
-typedef struct ir_FunctionInfo_ ir_FunctionInfo;
-typedef struct ir_InstrBits_ ir_InstrBits;
-typedef struct ir_Instr_ ir_Instr;
-typedef struct ir_InstrList_ ir_InstrList;
-typedef struct ir_PhiClause_ ir_PhiClause;
-typedef struct ir_PhiList_ ir_PhiList;
-typedef struct ir_PhiClauses_ ir_PhiClauses;
-typedef struct ir_Ref_ ir_Ref;
-typedef struct ir_Index_ ir_Index;
-
-typedef uint8_t ir_BlockKind;
-enum ir_BlockKind {
-   ir_BlockKind_Unspecified,
-   ir_BlockKind_FnStart,
-   ir_BlockKind_WhileCond,
-   ir_BlockKind_WhileBody,
-   ir_BlockKind_WhileJoin,
-   ir_BlockKind_ForCond,
-   ir_BlockKind_ForBody,
-   ir_BlockKind_ForCont,
-   ir_BlockKind_ForJoin,
-   ir_BlockKind_IfTrue,
-   ir_BlockKind_IfFalse,
-   ir_BlockKind_IfJoin,
-   ir_BlockKind_AndTrue,
-   ir_BlockKind_LogicJoin,
-   ir_BlockKind_OrFalse,
-   ir_BlockKind_CondTrue,
-   ir_BlockKind_CondFalse,
-   ir_BlockKind_CondJoin,
-   ir_BlockKind_Label,
-   ir_BlockKind_SwitchCond,
-   ir_BlockKind_SwitchCase,
-   ir_BlockKind_SwitchJoin,
-   ir_BlockKind_SwitchDefault,
-   ir_BlockKind_PhiSplit,
-};
-
-typedef uint32_t ir_BlockId;
-struct ir_Index_ {
-   uint32_t start;
-   uint32_t count;
-};
-
-struct ir_Block_ {
-   ir_BlockId dests[2];
-   ir_Index instr;
-   ir_BlockKind kind : 8;
-   uint32_t used : 1;
-   uint32_t checked : 1;
-   uint32_t end_with_switch : 1;
-   uint32_t phi_source : 1;
-   uint32_t end_block : 1;
-};
-
-static const char* ir_BlockKind_str(ir_BlockKind k);
-static void ir_Block_init(ir_Block* b, ir_BlockKind kind);
-static ir_BlockKind ir_Block_getKind(const ir_Block* b);
-static const char* ir_Block_getKindName(const ir_Block* b);
-static void ir_Block_setInstructions(ir_Block* b, uint32_t start, uint32_t count);
-static ir_Index ir_Block_getInstructions(const ir_Block* b);
-static void ir_Block_setDest(ir_Block* b, ir_BlockId dest1, ir_BlockId dest2);
-struct ir_BlockList_ {
-   uint32_t count;
-   uint32_t capacity;
-   ir_Block* blocks;
-};
-
-static void ir_BlockList_init(ir_BlockList* l, uint32_t initial_size);
-static void ir_BlockList_free(ir_BlockList* l);
-static void ir_BlockList_resize(ir_BlockList* l, uint32_t cap);
-static ir_BlockId ir_BlockList_add(ir_BlockList* l, ir_BlockKind kind);
-static ir_BlockId ir_BlockList_copy(ir_BlockList* l, const ir_Block* b2);
-static void ir_BlockList_clear(ir_BlockList* l);
-static void ir_BlockList_merge(ir_BlockList* l1, const ir_BlockList* l2);
-static void ir_BlockList_swap(ir_BlockList* l1, ir_BlockList* l2);
-static uint32_t ir_BlockList_getCount(const ir_BlockList* l);
-static ir_Block* ir_BlockList_get(const ir_BlockList* l, ir_BlockId idx);
-static ir_Block* ir_BlockList_getLast(const ir_BlockList* l);
-static void ir_BlockList_removeLastBlock(ir_BlockList* l);
-typedef uint32_t ir_CaseId;
-struct ir_Case_ {
-   uint32_t value;
-   ir_BlockId block;
-};
-
-struct ir_CaseList_ {
-   uint32_t count;
-   uint32_t capacity;
-   ir_Case* cases;
-};
-
-static void ir_CaseList_init(ir_CaseList* l);
-static void ir_CaseList_free(ir_CaseList* l);
-static void ir_CaseList_resize(ir_CaseList* l, uint32_t extra, bool copy);
-static ir_CaseId ir_CaseList_reserve(ir_CaseList* l, uint32_t count);
-static void ir_CaseList_set(ir_CaseList* l, ir_CaseId id, uint32_t value, ir_BlockId block);
-static void ir_CaseList_clear(ir_CaseList* l);
-static uint32_t ir_CaseList_getCount(const ir_CaseList* l);
-static ir_Case* ir_CaseList_get(const ir_CaseList* l, ir_CaseId idx);
-#define ir_SlotMax 256
-static bool ir_block_has_dest(const ir_Block* b, const ir_CaseList* cases, uint32_t dest);
-struct ir_InstrList_ {
-   uint32_t count;
-   uint32_t capacity;
-   ir_Instr* instrs;
-};
-
-struct ir_PhiList_ {
-   uint32_t count;
-   uint32_t capacity;
-   ir_PhiClause* clauses;
-};
-
-struct ir_FunctionInfo_ {
-   ir_BlockList blocks;
-   ir_InstrList instructions;
-   ir_CaseList cases;
-   ir_PhiList phis;
-   uint16_t num_slots;
-   uint8_t num_args;
-   uint8_t args[13];
-   uint32_t id;
-};
-
-static ir_FunctionInfo* ir_FunctionInfo_create(uint32_t id, uint32_t num_blks, uint32_t num_instr, uint32_t num_refs);
-static void ir_FunctionInfo_free(ir_FunctionInfo* fi);
-typedef uint8_t ir_Type;
-enum ir_Type {
-   ir_Type_None,
-   ir_Type_I8,
-   ir_Type_I16,
-   ir_Type_I32,
-   ir_Type_I64,
-   ir_Type_U8,
-   ir_Type_U16,
-   ir_Type_U32,
-   ir_Type_U64,
-   ir_Type_F32,
-   ir_Type_F64,
-};
-
-static void ir_FunctionInfo_setReturnType(ir_FunctionInfo* fi, ir_Type t);
-static void ir_FunctionInfo_addArg(ir_FunctionInfo* fi, ir_Type t);
-static ir_Type ir_FunctionInfo_getReturnType(const ir_FunctionInfo* fi);
-static ir_Type ir_FunctionInfo_getArg(const ir_FunctionInfo* fi, uint32_t idx);
-typedef uint8_t ir_InstrKind;
-enum ir_InstrKind {
-   ir_InstrKind_None,
-   ir_InstrKind_Add,
-   ir_InstrKind_Sub,
-   ir_InstrKind_Div,
-   ir_InstrKind_Rem,
-   ir_InstrKind_Mul,
-   ir_InstrKind_IDiv,
-   ir_InstrKind_And,
-   ir_InstrKind_Or,
-   ir_InstrKind_Xor,
-   ir_InstrKind_Shr,
-   ir_InstrKind_Shl,
-   ir_InstrKind_CmpNe,
-   ir_InstrKind_CmpEq,
-   ir_InstrKind_CmpLt,
-   ir_InstrKind_CmpGt,
-   ir_InstrKind_CmpLe,
-   ir_InstrKind_CmpGe,
-   ir_InstrKind_Load1,
-   ir_InstrKind_Load2,
-   ir_InstrKind_Load4,
-   ir_InstrKind_Load8,
-   ir_InstrKind_Store1,
-   ir_InstrKind_Store2,
-   ir_InstrKind_Store4,
-   ir_InstrKind_Store8,
-   ir_InstrKind_Alloc1,
-   ir_InstrKind_Alloc2,
-   ir_InstrKind_Alloc4,
-   ir_InstrKind_Alloc8,
-   ir_InstrKind_Jmp,
-   ir_InstrKind_JmpIf,
-   ir_InstrKind_Ret,
-   ir_InstrKind_Halt,
-   ir_InstrKind_Call,
-   ir_InstrKind_Copy,
-   ir_InstrKind_Arch,
-   ir_InstrKind_Param,
-   ir_InstrKind_Arg,
-   ir_InstrKind_Switch,
-   ir_InstrKind_Phi,
-   ir_InstrKind_Comment,
-};
-
-struct ir_InstrBits_ {
-   ir_InstrKind kind : 8;
-   uint32_t type_ : 4;
-   uint32_t has_result : 1;
-   uint32_t has_register : 1;
-   uint32_t register_nr : 6;
-   uint32_t arch_instr : 8;
-};
-
-struct ir_Ref_ {
-   uint32_t kind : 4;
-   int32_t value : 28;
-};
-
-struct ir_Instr_ {
-   union {
-      ir_InstrBits instrBits;
-      uint32_t bits;
-   };
-   ir_Ref args[2];
-};
-
-static void ir_Instr_setReg(ir_Instr* i, uint8_t reg);
-static void ir_Instr_init0(ir_Instr* i, ir_InstrKind k);
-static void ir_Instr_init0b(ir_Instr* i, ir_InstrKind k);
-static void ir_Instr_initPhi(ir_Instr* i, uint32_t clause_start, uint32_t num_clauses);
-static void ir_Instr_init1(ir_Instr* i, ir_InstrKind k, ir_Ref ref1);
-static void ir_Instr_init1b(ir_Instr* i, ir_InstrKind k, ir_Ref ref1);
-static void ir_Instr_init2(ir_Instr* i, ir_InstrKind k, ir_Ref ref1, ir_Ref ref2);
-static void ir_Instr_init2b(ir_Instr* i, ir_InstrKind k, ir_Ref ref1, ir_Ref ref2);
-static void ir_Instr_initRegCopy(ir_Instr* i, uint8_t dst_reg, ir_Ref ref);
-static void ir_Instr_setArch(ir_Instr* i, uint8_t instr_kind);
-static void ir_Instr_copy(ir_Instr* i, const ir_Instr* i2);
-static ir_InstrKind ir_Instr_getKind(const ir_Instr* i);
-static bool ir_Instr_hasResult(const ir_Instr* i);
-static bool ir_Instr_hasRegister(const ir_Instr* i);
-static uint32_t ir_Instr_getRegister(const ir_Instr* i);
-static void ir_Instr_clear(ir_Instr* i);
-static const char* ir_Instr_getKindName(const ir_Instr* i);
-static bool ir_Instr_isArch(const ir_Instr* i);
-static bool ir_Instr_isPseudo(const ir_Instr* i);
-static bool ir_Instr_isNone(const ir_Instr* i);
-static bool ir_Instr_isCopy(const ir_Instr* i);
-static bool ir_Instr_isReturn(const ir_Instr* i);
-static bool ir_Instr_isArithmetic(const ir_Instr* i);
-static bool ir_Instr_isSwitch(const ir_Instr* i);
-static bool ir_Instr_isCall(const ir_Instr* i);
-static bool ir_Instr_isPhi(const ir_Instr* i);
-static bool ir_Instr_isParam(const ir_Instr* i);
-static bool ir_Instr_isComment(const ir_Instr* i);
-static const char* ir_InstrKind_str(ir_InstrKind k);
-static void ir_InstrList_init(ir_InstrList* l, uint32_t initial_size);
-static void ir_InstrList_free(ir_InstrList* l);
-static void ir_InstrList_reserve(ir_InstrList* l, uint32_t extra);
-static void ir_InstrList_resize(ir_InstrList* l, uint32_t cap);
-static ir_Instr* ir_InstrList_add(ir_InstrList* l);
-static uint32_t ir_InstrList_getCount(const ir_InstrList* l);
-static ir_Instr* ir_InstrList_get(const ir_InstrList* l, uint32_t idx);
-static void ir_InstrList_swap(ir_InstrList* l, ir_InstrList* other);
-static void ir_InstrList_prune(ir_InstrList* l);
-static void ir_InstrList_removeLastInstruction(ir_InstrList* l);
-struct ir_PhiClause_ {
-   ir_BlockId src;
-   uint32_t dest_idx;
-   ir_Ref ref;
-};
-
-struct ir_PhiClauses_ {
-   uint32_t count;
-   uint32_t capacity;
-   ir_PhiClause* clauses;
-   ir_PhiClause stash[2];
-};
-
-static void ir_PhiList_init(ir_PhiList* l);
-static void ir_PhiList_free(ir_PhiList* l);
-static void ir_PhiList_clear(ir_PhiList* l);
-static void ir_PhiList_resize(ir_PhiList* l, uint32_t extra);
-static void ir_PhiList_add(ir_PhiList* l, uint32_t dest, ir_BlockId src, ir_Ref ref);
-static uint32_t ir_PhiList_addCache(ir_PhiList* l, uint32_t dest, const ir_PhiClauses* cache);
-static uint32_t ir_PhiList_getCount(const ir_PhiList* l);
-static ir_PhiClause* ir_PhiList_get(const ir_PhiList* l, uint32_t idx);
-static void ir_PhiClauses_init(ir_PhiClauses* c);
-static void ir_PhiClauses_free(ir_PhiClauses* c);
-static uint32_t ir_PhiClauses_getCount(const ir_PhiClauses* c);
-static bool ir_PhiClauses_contains(const ir_PhiClauses* c, ir_Ref ref);
-static void ir_PhiClauses_add(ir_PhiClauses* c, ir_BlockId blk_id, ir_Ref ref);
-static const ir_PhiClause* ir_PhiClauses_getClauses(const ir_PhiClauses* c);
-static void ir_PhiClauses_dump(const ir_PhiClauses* c);
-typedef uint8_t ir_RefKind;
-enum ir_RefKind {
-   ir_RefKind_None,
-   ir_RefKind_Slot,
-   ir_RefKind_Temp,
-   ir_RefKind_JmpDest,
-   ir_RefKind_Symbol,
-   ir_RefKind_Value,
-   ir_RefKind_Integer,
-   ir_RefKind_Float,
-   ir_RefKind_Double,
-   ir_RefKind_Text,
-   ir_RefKind_Register,
-   ir_RefKind_Block,
-   ir_RefKind_PhiClause,
-   ir_RefKind_CallNumArgs,
-};
-
-static const char* ir_RefKind_str(ir_RefKind k);
-static void ir_Ref_init(ir_Ref* r, ir_RefKind kind, uint32_t value);
-static void ir_Ref_clear(ir_Ref* r);
-static bool ir_Ref_equals(const ir_Ref* r1, ir_Ref r2);
-static ir_RefKind ir_Ref_getKind(const ir_Ref* r);
-static bool ir_Ref_isValid(const ir_Ref* r);
-static void ir_Ref_setRegister(ir_Ref* r, uint32_t value);
-static bool ir_Ref_isNone(const ir_Ref* r);
-static bool ir_Ref_isTemp(const ir_Ref* r);
-static bool ir_Ref_isSlot(const ir_Ref* r);
-static bool ir_Ref_isValue(const ir_Ref* r);
-static bool ir_Ref_isRegister(const ir_Ref* r);
-static bool ir_Ref_isConstant(const ir_Ref* r);
-static bool ir_Ref_isZero(const ir_Ref* r);
-static const char* ir_Ref_getKindName(const ir_Ref* r);
-static const char* ir_Ref_str(const ir_Ref* r);
-static const char* ir_Type_str(ir_Type t);
-static uint32_t ir_Type_size(ir_Type t);
-
-static const char* ir_BlockKind_str(ir_BlockKind k)
-{
-   switch (k) {
-   case ir_BlockKind_Unspecified:
-      return "";
-   case ir_BlockKind_FnStart:
-      return "start";
-   case ir_BlockKind_WhileCond:
-      return "while_cond";
-   case ir_BlockKind_WhileBody:
-      return "while_body";
-   case ir_BlockKind_WhileJoin:
-      return "while_join";
-   case ir_BlockKind_ForCond:
-      return "for_cond";
-   case ir_BlockKind_ForBody:
-      return "for_body";
-   case ir_BlockKind_ForCont:
-      return "for_cont";
-   case ir_BlockKind_ForJoin:
-      return "for_join";
-   case ir_BlockKind_IfTrue:
-      return "if_true";
-   case ir_BlockKind_IfFalse:
-      return "if_false";
-   case ir_BlockKind_IfJoin:
-      return "if_join";
-   case ir_BlockKind_AndTrue:
-      return "and_true";
-   case ir_BlockKind_LogicJoin:
-      return "logic_join";
-   case ir_BlockKind_OrFalse:
-      return "or_false";
-   case ir_BlockKind_CondTrue:
-      return "cond_true";
-   case ir_BlockKind_CondFalse:
-      return "cond_false";
-   case ir_BlockKind_CondJoin:
-      return "cond_join";
-   case ir_BlockKind_Label:
-      return "label";
-   case ir_BlockKind_SwitchCond:
-      return "switch_cond";
-   case ir_BlockKind_SwitchCase:
-      return "switch_case";
-   case ir_BlockKind_SwitchJoin:
-      return "switch_join";
-   case ir_BlockKind_SwitchDefault:
-      return "switch_default";
-   case ir_BlockKind_PhiSplit:
-      return "phi_split";
-   }
-   return "";
-}
-
-static void ir_Block_init(ir_Block* b, ir_BlockKind kind)
-{
-   memset(b, 0, 20);
-   b->kind = kind;
-}
-
-static ir_BlockKind ir_Block_getKind(const ir_Block* b)
-{
-   return b->kind;
-}
-
-static const char* ir_Block_getKindName(const ir_Block* b)
-{
-   ir_BlockKind k = ir_Block_getKind(b);
-   return ir_BlockKind_str(k);
-}
-
-static void ir_Block_setInstructions(ir_Block* b, uint32_t start, uint32_t count)
-{
-   b->instr.start = start;
-   b->instr.count = count;
-}
-
-static ir_Index ir_Block_getInstructions(const ir_Block* b)
-{
-   return b->instr;
-}
-
-static void ir_Block_setDest(ir_Block* b, ir_BlockId dest1, ir_BlockId dest2)
-{
-   b->dests[0] = dest1;
-   b->dests[1] = dest2;
-}
-
-static void ir_BlockList_init(ir_BlockList* l, uint32_t initial_size)
-{
-   l->count = 0;
-   l->blocks = NULL;
-   ir_BlockList_resize(l, initial_size);
-}
-
-static void ir_BlockList_free(ir_BlockList* l)
-{
-   if (l->blocks) free(l->blocks);
-}
-
-static void ir_BlockList_resize(ir_BlockList* l, uint32_t cap)
-{
-   l->capacity = cap;
-   ir_Block* blocks2 = calloc(l->capacity, 20);
-   if (l->count > 1) {
-      memcpy(blocks2, l->blocks, l->count * 20);
-      free(l->blocks);
-   }
-   l->blocks = blocks2;
-}
-
-static ir_BlockId ir_BlockList_add(ir_BlockList* l, ir_BlockKind kind)
-{
-   if (l->count == l->capacity) ir_BlockList_resize(l, l->capacity * 2);
-   ir_BlockId idx = l->count;
-   ir_Block* b = &l->blocks[idx];
-   ir_Block_init(b, kind);
-   l->count++;
-   return idx;
-}
-
-static ir_BlockId ir_BlockList_copy(ir_BlockList* l, const ir_Block* b2)
-{
-   if (l->count == l->capacity) ir_BlockList_resize(l, l->capacity * 2);
-   ir_BlockId idx = l->count;
-   ir_Block* b = &l->blocks[idx];
-   memcpy(b, b2, 20);
-   l->count++;
-   return idx;
-}
-
-static void ir_BlockList_clear(ir_BlockList* l)
-{
-   l->count = 0;
-}
-
-static void ir_BlockList_merge(ir_BlockList* l1, const ir_BlockList* l2)
-{
-   if (l2->count == 0) return;
-   uint32_t total = l1->count + l2->count;
-   if (total > l1->capacity) ir_BlockList_resize(l1, total);
-   memcpy(&l1->blocks[l1->count], l2->blocks, l2->count * 20);
-   l1->count = total;
-}
-
-static void ir_BlockList_swap(ir_BlockList* l1, ir_BlockList* l2)
-{
-   ir_BlockList tmp = *l1;
-   *l1 = *l2;
-   *l2 = tmp;
-}
-
-static uint32_t ir_BlockList_getCount(const ir_BlockList* l)
-{
-   return l->count;
-}
-
-static ir_Block* ir_BlockList_get(const ir_BlockList* l, ir_BlockId idx)
-{
-   return &l->blocks[idx];
-}
-
-static ir_Block* ir_BlockList_getLast(const ir_BlockList* l)
-{
-   (l->count) || c2_assert("ir/block_list.c2", 96, "ir.BlockList.getLast", "l.count");
-   return &l->blocks[l->count - 1];
-}
-
-static void ir_BlockList_removeLastBlock(ir_BlockList* l)
-{
-   l->count--;
-}
-
-static void ir_CaseList_init(ir_CaseList* l)
-{
-   l->count = 0;
-   l->capacity = 0;
-   l->cases = NULL;
-}
-
-static void ir_CaseList_free(ir_CaseList* l)
-{
-   if (l->cases) free(l->cases);
-}
-
-static void ir_CaseList_resize(ir_CaseList* l, uint32_t extra, bool copy)
-{
-   l->capacity += extra;
-   ir_Case* cases2 = calloc(l->capacity, 8);
-   if (l->count != 0 && copy) memcpy(cases2, l->cases, l->count * 8);
-   if (l->cases) free(l->cases);
-   l->cases = cases2;
-}
-
-static ir_CaseId ir_CaseList_reserve(ir_CaseList* l, uint32_t count)
-{
-   uint32_t avail = l->capacity - l->count;
-   if (count > avail) ir_CaseList_resize(l, count - avail, true);
-   ir_CaseId idx = l->count;
-   l->count += count;
-   return idx;
-}
-
-static void ir_CaseList_set(ir_CaseList* l, ir_CaseId id, uint32_t value, ir_BlockId block)
-{
-   ir_Case* c = &l->cases[id];
-   c->value = value;
-   c->block = block;
-}
-
-static void ir_CaseList_clear(ir_CaseList* l)
-{
-   l->count = 0;
-}
-
-static uint32_t ir_CaseList_getCount(const ir_CaseList* l)
-{
-   return l->count;
-}
-
-static ir_Case* ir_CaseList_get(const ir_CaseList* l, ir_CaseId idx)
-{
-   return &l->cases[idx];
-}
-
-static bool ir_block_has_dest(const ir_Block* b, const ir_CaseList* cases, uint32_t dest)
-{
-   if (b->end_with_switch) {
-      ir_CaseId case_id = b->dests[0];
-      uint32_t num_cases = b->dests[1];
-      for (uint32_t j = 0; j < num_cases; j++) {
-         ir_Case* cs = ir_CaseList_get(cases, case_id + j);
-         if (cs->block == dest) return true;
-      }
-   } else {
-      if (b->dests[0] == dest) return true;
-      if (b->dests[1] == dest) return true;
-   }
-   return false;
-}
-
-static ir_FunctionInfo* ir_FunctionInfo_create(uint32_t id, uint32_t num_blks, uint32_t num_instr, uint32_t num_refs)
-{
-   ir_FunctionInfo* fi = malloc(88);
-   fi->id = id;
-   ir_BlockList_init(&fi->blocks, num_blks);
-   ir_InstrList_init(&fi->instructions, num_instr);
-   ir_CaseList_init(&fi->cases);
-   ir_PhiList_init(&fi->phis);
-   fi->num_args = 0;
-   return fi;
-}
-
-static void ir_FunctionInfo_free(ir_FunctionInfo* fi)
-{
-   ir_PhiList_free(&fi->phis);
-   ir_CaseList_free(&fi->cases);
-   ir_InstrList_free(&fi->instructions);
-   ir_BlockList_free(&fi->blocks);
-   free(fi);
-}
-
-static void ir_FunctionInfo_setReturnType(ir_FunctionInfo* fi, ir_Type t)
-{
-   fi->args[0] = t;
-   fi->num_args = 1;
-}
-
-static void ir_FunctionInfo_addArg(ir_FunctionInfo* fi, ir_Type t)
-{
-   uint8_t* ptr = &fi->args[fi->num_args / 2];
-   if (fi->num_args % 2) {
-      *ptr |= (t << 4);
-   } else {
-      *ptr = t;
-   }
-   fi->num_args++;
-}
-
-static ir_Type ir_FunctionInfo_getReturnType(const ir_FunctionInfo* fi)
-{
-   if (fi->num_args == 0) return ir_Type_None;
-   return (ir_Type)(fi->args[0] & 0xf);
-}
-
-static ir_Type ir_FunctionInfo_getArg(const ir_FunctionInfo* fi, uint32_t idx)
-{
-   uint8_t value = fi->args[idx / 2];
-   if (idx % 2) {
-      value >>= 4;
-   } else {
-      value &= 0xf;
-   }
-   return (ir_Type)value;
-}
-
-static void ir_Instr_setReg(ir_Instr* i, uint8_t reg)
-{
-   i->instrBits.has_result = 1;
-   i->instrBits.has_register = 1;
-   i->instrBits.register_nr = reg;
-}
-
-static void ir_Instr_init0(ir_Instr* i, ir_InstrKind k)
-{
-   memset(i, 0, 12);
-   i->instrBits.kind = k;
-}
-
-static void ir_Instr_init0b(ir_Instr* i, ir_InstrKind k)
-{
-   memset(i, 0, 12);
-   i->instrBits.kind = k;
-   i->instrBits.has_result = true;
-}
-
-static void ir_Instr_initPhi(ir_Instr* i, uint32_t clause_start, uint32_t num_clauses)
-{
-   i->bits = 0;
-   i->instrBits.kind = ir_InstrKind_Phi;
-   i->instrBits.has_result = true;
-   ir_Ref_init(&i->args[0], ir_RefKind_PhiClause, clause_start);
-   ir_Ref_init(&i->args[1], ir_RefKind_PhiClause, num_clauses);
-}
-
-static void ir_Instr_init1(ir_Instr* i, ir_InstrKind k, ir_Ref ref1)
-{
-   memset(i, 0, 12);
-   i->instrBits.kind = k;
-   i->args[0] = ref1;
-}
-
-static void ir_Instr_init1b(ir_Instr* i, ir_InstrKind k, ir_Ref ref1)
-{
-   memset(i, 0, 12);
-   i->instrBits.kind = k;
-   i->instrBits.has_result = true;
-   i->args[0] = ref1;
-}
-
-static void ir_Instr_init2(ir_Instr* i, ir_InstrKind k, ir_Ref ref1, ir_Ref ref2)
-{
-   memset(i, 0, 12);
-   i->instrBits.kind = k;
-   i->args[0] = ref1;
-   i->args[1] = ref2;
-}
-
-static void ir_Instr_init2b(ir_Instr* i, ir_InstrKind k, ir_Ref ref1, ir_Ref ref2)
-{
-   i->bits = 0;
-   i->instrBits.kind = k;
-   i->instrBits.has_result = true;
-   i->args[0] = ref1;
-   i->args[1] = ref2;
-}
-
-static void ir_Instr_initRegCopy(ir_Instr* i, uint8_t dst_reg, ir_Ref ref)
-{
-   i->instrBits.kind = ir_InstrKind_Copy;
-   i->instrBits.type_ = 0;
-   i->instrBits.has_result = 1;
-   i->instrBits.has_register = 1;
-   i->instrBits.register_nr = dst_reg;
-   i->args[0] = ref;
-   i->args[1].kind = ir_RefKind_None;
-   i->args[1].value = 0;
-}
-
-static void ir_Instr_setArch(ir_Instr* i, uint8_t instr_kind)
-{
-   i->instrBits.kind = ir_InstrKind_Arch;
-   i->instrBits.arch_instr = instr_kind;
-}
-
-static void ir_Instr_copy(ir_Instr* i, const ir_Instr* i2)
-{
-   memcpy(i, i2, 12);
-}
-
-static ir_InstrKind ir_Instr_getKind(const ir_Instr* i)
-{
-   return i->instrBits.kind;
-}
-
-static bool ir_Instr_hasResult(const ir_Instr* i)
-{
-   return i->instrBits.has_result;
-}
-
-static bool ir_Instr_hasRegister(const ir_Instr* i)
-{
-   return i->instrBits.has_register;
-}
-
-static uint32_t ir_Instr_getRegister(const ir_Instr* i)
-{
-   return i->instrBits.register_nr;
-}
-
-static void ir_Instr_clear(ir_Instr* i)
-{
-   memset(i, 0, 12);
-}
-
-static const char* ir_Instr_getKindName(const ir_Instr* i)
-{
-   ir_InstrKind k = ir_Instr_getKind(i);
-   return ir_InstrKind_str(k);
-}
-
-static bool ir_Instr_isArch(const ir_Instr* i)
-{
-   return ir_Instr_getKind(i) == ir_InstrKind_Arch;
-}
-
-static bool ir_Instr_isPseudo(const ir_Instr* i)
-{
-   return ir_Instr_getKind(i) >= ir_InstrKind_Param;
-}
-
-static bool ir_Instr_isNone(const ir_Instr* i)
-{
-   return ir_Instr_getKind(i) == ir_InstrKind_None;
-}
-
-static bool ir_Instr_isCopy(const ir_Instr* i)
-{
-   return ir_Instr_getKind(i) == ir_InstrKind_Copy;
-}
-
-static bool ir_Instr_isReturn(const ir_Instr* i)
-{
-   return ir_Instr_getKind(i) == ir_InstrKind_Ret;
-}
-
-static bool ir_Instr_isArithmetic(const ir_Instr* i)
-{
-   ir_InstrKind k = ir_Instr_getKind(i);
-   return k >= ir_InstrKind_Add && k <= ir_InstrKind_Shl;
-}
-
-static bool ir_Instr_isSwitch(const ir_Instr* i)
-{
-   return ir_Instr_getKind(i) == ir_InstrKind_Switch;
-}
-
-static bool ir_Instr_isCall(const ir_Instr* i)
-{
-   return ir_Instr_getKind(i) == ir_InstrKind_Call;
-}
-
-static bool ir_Instr_isPhi(const ir_Instr* i)
-{
-   return ir_Instr_getKind(i) == ir_InstrKind_Phi;
-}
-
-static bool ir_Instr_isParam(const ir_Instr* i)
-{
-   return ir_Instr_getKind(i) == ir_InstrKind_Param;
-}
-
-static bool ir_Instr_isComment(const ir_Instr* i)
-{
-   return ir_Instr_getKind(i) == ir_InstrKind_Comment;
-}
-
-static const char* ir_InstrKind_str(ir_InstrKind k)
-{
-   switch (k) {
-   case ir_InstrKind_None:
-      return "none";
-   case ir_InstrKind_Add:
-      return "add";
-   case ir_InstrKind_Sub:
-      return "sub";
-   case ir_InstrKind_Div:
-      return "div";
-   case ir_InstrKind_Rem:
-      return "rem";
-   case ir_InstrKind_Mul:
-      return "mul";
-   case ir_InstrKind_IDiv:
-      return "idiv";
-   case ir_InstrKind_And:
-      return "and";
-   case ir_InstrKind_Or:
-      return "or";
-   case ir_InstrKind_Xor:
-      return "xor";
-   case ir_InstrKind_Shl:
-      return "shl";
-   case ir_InstrKind_Shr:
-      return "shr";
-   case ir_InstrKind_CmpNe:
-      return "icmp ne";
-   case ir_InstrKind_CmpEq:
-      return "icmp eq";
-   case ir_InstrKind_CmpLt:
-      return "icmp lt";
-   case ir_InstrKind_CmpGt:
-      return "icmp gt";
-   case ir_InstrKind_CmpLe:
-      return "icmp le";
-   case ir_InstrKind_CmpGe:
-      return "icmp ge";
-   case ir_InstrKind_Load1:
-      return "load1";
-   case ir_InstrKind_Load2:
-      return "load2";
-   case ir_InstrKind_Load4:
-      return "load4";
-   case ir_InstrKind_Load8:
-      return "load8";
-   case ir_InstrKind_Store1:
-      return "store1";
-   case ir_InstrKind_Store2:
-      return "store2";
-   case ir_InstrKind_Store4:
-      return "store4";
-   case ir_InstrKind_Store8:
-      return "store8";
-   case ir_InstrKind_Alloc1:
-      return "alloc1";
-   case ir_InstrKind_Alloc2:
-      return "alloc2";
-   case ir_InstrKind_Alloc4:
-      return "alloc4";
-   case ir_InstrKind_Alloc8:
-      return "alloc8";
-   case ir_InstrKind_Jmp:
-      return "jmp";
-   case ir_InstrKind_JmpIf:
-      return "jmp_if";
-   case ir_InstrKind_Ret:
-      return "ret";
-   case ir_InstrKind_Halt:
-      return "halt";
-   case ir_InstrKind_Call:
-      return "call";
-   case ir_InstrKind_Copy:
-      return "copy";
-   case ir_InstrKind_Arch:
-      return "(arch)";
-   case ir_InstrKind_Param:
-      return "param";
-   case ir_InstrKind_Arg:
-      return "arg";
-   case ir_InstrKind_Switch:
-      return "switch";
-   case ir_InstrKind_Phi:
-      return "phi";
-   case ir_InstrKind_Comment:
-      return "comment";
-   }
-   return "";
-}
-
-static void ir_InstrList_init(ir_InstrList* l, uint32_t initial_size)
-{
-   memset(l, 0, 16);
-   if (initial_size) {
-      l->capacity = initial_size;
-      l->instrs = malloc(l->capacity * 12);
-   }
-}
-
-static void ir_InstrList_free(ir_InstrList* l)
-{
-   if (l->instrs) free(l->instrs);
-}
-
-static void ir_InstrList_reserve(ir_InstrList* l, uint32_t extra)
-{
-   uint32_t new_count = l->count + extra;
-   if (new_count > l->capacity) ir_InstrList_resize(l, new_count);
-}
-
-static void ir_InstrList_resize(ir_InstrList* l, uint32_t cap)
-{
-   l->capacity = cap;
-   ir_Instr* instrs2 = malloc(l->capacity * 12);
-   if (l->count) memcpy(instrs2, l->instrs, l->count * 12);
-   if (l->instrs) free(l->instrs);
-   l->instrs = instrs2;
-}
-
-static ir_Instr* ir_InstrList_add(ir_InstrList* l)
-{
-   if (l->count >= l->capacity) ir_InstrList_resize(l, l->capacity == 0 ? 8 : l->capacity * 2);
-   return &l->instrs[l->count++];
-}
-
-static uint32_t ir_InstrList_getCount(const ir_InstrList* l)
-{
-   return l->count;
-}
-
-static ir_Instr* ir_InstrList_get(const ir_InstrList* l, uint32_t idx)
-{
-   (idx < l->count) || c2_assert("ir/instr_list.c2", 63, "ir.InstrList.get", "idx < l.count");
-   return &l->instrs[idx];
-}
-
-static void ir_InstrList_swap(ir_InstrList* l, ir_InstrList* other)
-{
-   ir_InstrList tmp = *other;
-   *other = *l;
-   *l = tmp;
-}
-
-static void ir_InstrList_prune(ir_InstrList* l)
-{
-   while (l->count) {
-      ir_Instr* last = &l->instrs[l->count - 1];
-      if (ir_Instr_isNone(last)) l->count--;
-      else break;
-   }
-}
-
-static void ir_InstrList_removeLastInstruction(ir_InstrList* l)
-{
-   l->count--;
-}
-
-static void ir_PhiList_init(ir_PhiList* l)
-{
-   l->count = 0;
-   l->capacity = 0;
-   l->clauses = NULL;
-}
-
-static void ir_PhiList_free(ir_PhiList* l)
-{
-   if (l->clauses) free(l->clauses);
-}
-
-static void ir_PhiList_clear(ir_PhiList* l)
-{
-   l->count = 0;
-   l->capacity = 0;
-   if (l->clauses) {
-      free(l->clauses);
-      l->clauses = NULL;
-   }
-}
-
-static void ir_PhiList_resize(ir_PhiList* l, uint32_t extra)
-{
-   l->capacity += extra;
-   ir_PhiClause* clauses2 = calloc(l->capacity, 12);
-   if (l->count != 0) memcpy(clauses2, l->clauses, l->count * 12);
-   if (l->clauses) free(l->clauses);
-   l->clauses = clauses2;
-}
-
-static void ir_PhiList_add(ir_PhiList* l, uint32_t dest, ir_BlockId src, ir_Ref ref)
-{
-   if (l->count == l->capacity) ir_PhiList_resize(l, 2);
-   ir_PhiClause* c = &l->clauses[l->count++];
-   c->src = src;
-   c->dest_idx = dest;
-   c->ref = ref;
-}
-
-static uint32_t ir_PhiList_addCache(ir_PhiList* l, uint32_t dest, const ir_PhiClauses* cache)
-{
-   uint32_t extra = ir_PhiClauses_getCount(cache);
-   if (l->count + extra >= l->capacity) ir_PhiList_resize(l, extra);
-   uint32_t start = l->count;
-   const ir_PhiClause* src = ir_PhiClauses_getClauses(cache);
-   for (uint32_t i = 0; i < extra; i++) {
-      l->clauses[l->count] = src[i];
-      l->clauses[l->count].dest_idx = dest;
-      l->count++;
-   }
-   return start;
-}
-
-static uint32_t ir_PhiList_getCount(const ir_PhiList* l)
-{
-   return l->count;
-}
-
-static ir_PhiClause* ir_PhiList_get(const ir_PhiList* l, uint32_t idx)
-{
-   return &l->clauses[idx];
-}
-
-static void ir_PhiClauses_init(ir_PhiClauses* c)
-{
-   c->count = 0;
-   c->capacity = 0;
-}
-
-static void ir_PhiClauses_free(ir_PhiClauses* c)
-{
-   if (c->capacity > 2) free(c->clauses);
-}
-
-static uint32_t ir_PhiClauses_getCount(const ir_PhiClauses* c)
-{
-   return c->count;
-}
-
-static bool ir_PhiClauses_contains(const ir_PhiClauses* c, ir_Ref ref)
-{
-   const ir_PhiClause* clauses = ir_PhiClauses_getClauses(c);
-   for (uint32_t i = 0; i < c->count; i++) {
-      if (ir_Ref_equals(&clauses[i].ref, ref)) return true;
-   }
-   return false;
-}
-
-static void ir_PhiClauses_add(ir_PhiClauses* c, ir_BlockId blk_id, ir_Ref ref)
-{
-   if (ir_PhiClauses_contains(c, ref)) return;
-   ir_PhiClause* clause;
-   if (c->count >= c->capacity) {
-      if (c->capacity == 0) {
-         c->capacity = 2;
-         clause = c->stash;
-      } else {
-         uint32_t cap2 = c->capacity + c->capacity / 2 + 2;
-         ir_PhiClause* clauses2 = malloc(cap2 * 12);
-         memcpy(clauses2, ir_PhiClauses_getClauses(c), c->count * 12);
-         if (c->capacity > 2) free(c->clauses);
-         c->capacity = cap2;
-         c->clauses = clauses2;
-         clause = &c->clauses[c->count];
-      }
-   } else {
-      if (c->count > 2) clause = &c->clauses[c->count];
-      else clause = &c->stash[c->count];
-   }
-   c->count++;
-   clause->src = blk_id;
-   clause->dest_idx = 0;
-   clause->ref = ref;
-}
-
-static const ir_PhiClause* ir_PhiClauses_getClauses(const ir_PhiClauses* c)
-{
-   if (c->count <= 2) return c->stash;
-   return c->clauses;
-}
-
-static void ir_PhiClauses_dump(const ir_PhiClauses* c)
-{
-}
-
-static const char* ir_RefKind_str(ir_RefKind k)
-{
-   switch (k) {
-   case ir_RefKind_None:
-      return "none";
-   case ir_RefKind_Slot:
-      return "slot";
-   case ir_RefKind_Temp:
-      return "temp";
-   case ir_RefKind_JmpDest:
-      return "jmp-dest";
-   case ir_RefKind_Symbol:
-      return "symbol";
-   case ir_RefKind_Value:
-      return "value";
-   case ir_RefKind_Integer:
-      return "integer";
-   case ir_RefKind_Float:
-      return "float";
-   case ir_RefKind_Double:
-      return "double";
-   case ir_RefKind_Text:
-      return "text";
-   case ir_RefKind_Register:
-      return "register";
-   case ir_RefKind_Block:
-      return "block";
-   case ir_RefKind_PhiClause:
-      return "clause";
-   case ir_RefKind_CallNumArgs:
-      return "callargs";
-   }
-   return NULL;
-}
-
-static void ir_Ref_init(ir_Ref* r, ir_RefKind kind, uint32_t value)
-{
-   r->kind = kind;
-   r->value = (int32_t)value;
-}
-
-static void ir_Ref_clear(ir_Ref* r)
-{
-   r->kind = ir_RefKind_None;
-   r->value = 0;
-}
-
-static bool ir_Ref_equals(const ir_Ref* r1, ir_Ref r2)
-{
-   if (r1->value != r2.value) return false;
-   return r1->kind == r2.kind;
-}
-
-static ir_RefKind ir_Ref_getKind(const ir_Ref* r)
-{
-   return (ir_RefKind)r->kind;
-}
-
-static bool ir_Ref_isValid(const ir_Ref* r)
-{
-   return r->kind != ir_RefKind_None;
-}
-
-static void ir_Ref_setRegister(ir_Ref* r, uint32_t value)
-{
-   r->kind = ir_RefKind_Register;
-   r->value = (int32_t)value;
-}
-
-static bool ir_Ref_isNone(const ir_Ref* r)
-{
-   return r->kind == ir_RefKind_None;
-}
-
-static bool ir_Ref_isTemp(const ir_Ref* r)
-{
-   return r->kind == ir_RefKind_Temp;
-}
-
-static bool ir_Ref_isSlot(const ir_Ref* r)
-{
-   return r->kind == ir_RefKind_Slot;
-}
-
-static bool ir_Ref_isValue(const ir_Ref* r)
-{
-   return r->kind == ir_RefKind_Value;
-}
-
-static bool ir_Ref_isRegister(const ir_Ref* r)
-{
-   return r->kind == ir_RefKind_Register;
-}
-
-static bool ir_Ref_isConstant(const ir_Ref* r)
-{
-   return r->kind >= ir_RefKind_Value && r->kind <= ir_RefKind_Double;
-}
-
-static bool ir_Ref_isZero(const ir_Ref* r)
-{
-   return r->kind == ir_RefKind_Value && r->value == 0;
-}
-
-static const char* ir_Ref_getKindName(const ir_Ref* r)
-{
-   return ir_RefKind_str(ir_Ref_getKind(r));
-}
-
-static const char* ir_Ref_str(const ir_Ref* r)
-{
-   static char buf[4][24];
-   static uint32_t idx;
-   idx = (idx + 1) % 4;
-   char* tmp = buf[idx++];
-   sprintf(tmp, "%s %d", ir_RefKind_str(ir_Ref_getKind(r)), r->value);
-   return tmp;
-}
-
-static const char* ir_Type_str(ir_Type t)
-{
-   switch (t) {
-   case ir_Type_None:
-      return "none";
-   case ir_Type_I8:
-      return "i8";
-   case ir_Type_I16:
-      return "i16";
-   case ir_Type_I32:
-      return "i32";
-   case ir_Type_I64:
-      return "i64";
-   case ir_Type_U8:
-      return "u8";
-   case ir_Type_U16:
-      return "u16";
-   case ir_Type_U32:
-      return "u32";
-   case ir_Type_U64:
-      return "u64";
-   case ir_Type_F32:
-      return "f32";
-   case ir_Type_F64:
-      return "f64";
-   }
-   return "";
-}
-
-static uint32_t ir_Type_size(ir_Type t)
-{
-   switch (t) {
-   case ir_Type_None:
-      break;
-   case ir_Type_I8:
-      return 1;
-   case ir_Type_I16:
-      return 2;
-   case ir_Type_I32:
-      return 4;
-   case ir_Type_I64:
-      return 8;
-   case ir_Type_U8:
-      return 1;
-   case ir_Type_U16:
-      return 2;
-   case ir_Type_U32:
-      return 4;
-   case ir_Type_U64:
-      return 8;
-   case ir_Type_F32:
-      return 4;
-   case ir_Type_F64:
-      return 8;
-   }
-   return 0;
-}
-
-
-// --- module ir_copy_list ---
-typedef struct ir_copy_list_CopyInfo_ ir_copy_list_CopyInfo;
-typedef struct ir_copy_list_CopyList_ ir_copy_list_CopyList;
-
-struct ir_copy_list_CopyInfo_ {
-   uint32_t instr_idx;
-   ir_Ref ref;
-};
-
-struct ir_copy_list_CopyList_ {
-   ir_copy_list_CopyInfo* copies;
-   uint32_t count;
-   uint32_t capacity;
-};
-
-static void ir_copy_list_CopyList_init(ir_copy_list_CopyList* l, uint32_t capacity);
-static void ir_copy_list_CopyList_resize(ir_copy_list_CopyList* l, uint32_t capacity);
-static void ir_copy_list_CopyList_free(ir_copy_list_CopyList* l);
-static void ir_copy_list_CopyList_clear(ir_copy_list_CopyList* l);
-static void ir_copy_list_CopyList_add(ir_copy_list_CopyList* l, uint32_t idx, ir_Ref ref);
-static ir_Ref* ir_copy_list_CopyList_find(ir_copy_list_CopyList* l, uint32_t idx);
-
-static void ir_copy_list_CopyList_init(ir_copy_list_CopyList* l, uint32_t capacity)
-{
-   l->count = 0;
-   ir_copy_list_CopyList_resize(l, capacity);
-}
-
-static void ir_copy_list_CopyList_resize(ir_copy_list_CopyList* l, uint32_t capacity)
-{
-   l->capacity = capacity;
-   ir_copy_list_CopyInfo* copies2 = malloc(capacity * 8);
-   if (l->count) {
-      memcpy(copies2, l->copies, l->count * 8);
-      free(l->copies);
-   }
-   l->copies = copies2;
-}
-
-static void ir_copy_list_CopyList_free(ir_copy_list_CopyList* l)
-{
-   free(l->copies);
-}
-
-static void ir_copy_list_CopyList_clear(ir_copy_list_CopyList* l)
-{
-   l->count = 0;
-}
-
-static void ir_copy_list_CopyList_add(ir_copy_list_CopyList* l, uint32_t idx, ir_Ref ref)
-{
-   if (l->count == l->capacity) ir_copy_list_CopyList_resize(l, l->capacity * 2);
-   if (ir_Ref_isTemp(&ref)) {
-      ir_Ref* copy = ir_copy_list_CopyList_find(l, (uint32_t)ref.value);
-      if (copy) ref = *copy;
-   }
-   ir_copy_list_CopyInfo* info = &l->copies[l->count++];
-   info->instr_idx = idx;
-   info->ref = ref;
-}
-
-static ir_Ref* ir_copy_list_CopyList_find(ir_copy_list_CopyList* l, uint32_t idx)
-{
-   for (uint32_t i = 0; i < l->count; i++) {
-      if (l->copies[i].instr_idx == idx) return &l->copies[i].ref;
-   }
-   return NULL;
-}
-
-
-// --- module ir_inserter ---
-typedef struct ir_inserter_InstrInsertion_ ir_inserter_InstrInsertion;
-typedef struct ir_inserter_SplitEdge_ ir_inserter_SplitEdge;
-typedef struct ir_inserter_Inserter_ ir_inserter_Inserter;
-
-struct ir_inserter_InstrInsertion_ {
-   uint32_t location;
-   uint32_t instr_idx;
-   ir_Instr instr;
-};
-
-struct ir_inserter_SplitEdge_ {
-   uint32_t src;
-   uint32_t dest;
-   uint32_t blk_id;
-};
-
-struct ir_inserter_Inserter_ {
-   uint32_t next_loc;
-   uint32_t cur;
-   uint32_t count;
-   uint32_t capacity;
-   ir_inserter_InstrInsertion* ins;
-   ir_BlockList new_blocks;
-   uint32_t new_instr_idx;
-   uint32_t last_inserted_instr;
-   ir_BlockId new_blk_id;
-   ir_inserter_SplitEdge* split_edges;
-   uint32_t split_count;
-   uint32_t split_cap;
-};
-
-static void ir_inserter_Inserter_create(ir_inserter_Inserter* ins);
-static void ir_inserter_Inserter_free(ir_inserter_Inserter* ins);
-static void ir_inserter_Inserter_clear(ir_inserter_Inserter* ins, uint32_t num_blocks, uint32_t num_instr);
-static void ir_inserter_Inserter_resize(ir_inserter_Inserter* ins, uint32_t capacity);
-static uint32_t ir_inserter_Inserter_addInstr(ir_inserter_Inserter* ins, uint32_t loc);
-static ir_Instr* ir_inserter_Inserter_getLastInstr(ir_inserter_Inserter* ins);
-static uint32_t ir_inserter_Inserter_getInstrCount(ir_inserter_Inserter* ins);
-static uint32_t ir_inserter_Inserter_getAddIndex(ir_inserter_Inserter* ins, uint32_t location);
-static void ir_inserter_Inserter_start(ir_inserter_Inserter* ins);
-static void ir_inserter_Inserter_next(ir_inserter_Inserter* ins);
-static bool ir_inserter_Inserter_hasInsert(const ir_inserter_Inserter* ins, uint32_t loc);
-static uint32_t ir_inserter_Inserter_getInstrIdx(const ir_inserter_Inserter* ins);
-static const ir_Instr* ir_inserter_Inserter_getInstr(const ir_inserter_Inserter* ins);
-static bool ir_inserter_Inserter_needsFixup(const ir_inserter_Inserter* ins);
-static uint32_t ir_inserter_Inserter_findSplitEdge(const ir_inserter_Inserter* ins, uint32_t src, uint32_t dest);
-static void ir_inserter_Inserter_addSplitEdge(ir_inserter_Inserter* ins, uint32_t src, uint32_t dest, uint32_t blk_id);
-static ir_BlockId ir_inserter_Inserter_addBlock(ir_inserter_Inserter* ins, ir_BlockKind kind);
-static ir_Block* ir_inserter_Inserter_getLastBlock(const ir_inserter_Inserter* ins);
-static bool ir_inserter_Inserter_hasBlocks(const ir_inserter_Inserter* ins);
-static void ir_inserter_Inserter_insertBlocks(ir_inserter_Inserter* ins, ir_BlockList* list);
-static ir_BlockId ir_inserter_Inserter_getNextBlockId(const ir_inserter_Inserter* ins);
-static void ir_inserter_Inserter_dump(const ir_inserter_Inserter* ins);
-
-static void ir_inserter_Inserter_create(ir_inserter_Inserter* ins)
-{
-   memset(ins, 0, 72);
-   ir_inserter_Inserter_resize(ins, 16);
-   ir_BlockList_init(&ins->new_blocks, 4);
-}
-
-static void ir_inserter_Inserter_free(ir_inserter_Inserter* ins)
-{
-   ir_BlockList_free(&ins->new_blocks);
-   free(ins->ins);
-   free(ins->split_edges);
-}
-
-static void ir_inserter_Inserter_clear(ir_inserter_Inserter* ins, uint32_t num_blocks, uint32_t num_instr)
-{
-   ins->next_loc = 0;
-   ins->cur = 0;
-   ins->count = 0;
-   ins->split_count = 0;
-   ir_BlockList_clear(&ins->new_blocks);
-   ins->new_blk_id = num_blocks;
-   ins->new_instr_idx = num_instr;
-   ins->split_count = 0;
-}
-
-static void ir_inserter_Inserter_resize(ir_inserter_Inserter* ins, uint32_t capacity)
-{
-   ins->capacity = capacity;
-   ir_inserter_InstrInsertion* ins2 = malloc(ins->capacity * 20);
-   if (ins->count) {
-      memcpy(ins2, ins->ins, ins->count * 20);
-      free(ins->ins);
-   }
-   ins->ins = ins2;
-}
-
-static uint32_t ir_inserter_Inserter_addInstr(ir_inserter_Inserter* ins, uint32_t loc)
-{
-   uint32_t instr_idx = ins->new_instr_idx + ins->count;
-   uint32_t insert_idx = ir_inserter_Inserter_getAddIndex(ins, loc);
-   ir_inserter_InstrInsertion* ii = &ins->ins[insert_idx];
-   ii->location = loc;
-   ii->instr_idx = instr_idx;
-   ins->count++;
-   ins->last_inserted_instr = insert_idx;
-   return instr_idx;
-}
-
-static ir_Instr* ir_inserter_Inserter_getLastInstr(ir_inserter_Inserter* ins)
-{
-   return &ins->ins[ins->last_inserted_instr].instr;
-}
-
-static uint32_t ir_inserter_Inserter_getInstrCount(ir_inserter_Inserter* ins)
-{
-   return ins->count;
-}
-
-static uint32_t ir_inserter_Inserter_getAddIndex(ir_inserter_Inserter* ins, uint32_t location)
-{
-   if (ins->count == ins->capacity) ir_inserter_Inserter_resize(ins, ins->capacity * 2);
-   uint32_t idx = ins->count;
-   while (idx > 0) {
-      uint32_t prev = idx - 1;
-      if (ins->ins[prev].location <= location) break;
-      ins->ins[idx] = ins->ins[prev];
-      idx = prev;
-   }
-   return idx;
-}
-
-static void ir_inserter_Inserter_start(ir_inserter_Inserter* ins)
-{
-   ins->cur = 0;
-   if (ins->count) ins->next_loc = ins->ins[ins->cur].location;
-   else ins->next_loc = u32_max;
-}
-
-static void ir_inserter_Inserter_next(ir_inserter_Inserter* ins)
-{
-   ins->cur++;
-   if (ins->cur < ins->count) ins->next_loc = ins->ins[ins->cur].location;
-   else ins->next_loc = u32_max;
-}
-
-static bool ir_inserter_Inserter_hasInsert(const ir_inserter_Inserter* ins, uint32_t loc)
-{
-   return loc == ins->next_loc;
-}
-
-static uint32_t ir_inserter_Inserter_getInstrIdx(const ir_inserter_Inserter* ins)
-{
-   return ins->ins[ins->cur].instr_idx;
-}
-
-static const ir_Instr* ir_inserter_Inserter_getInstr(const ir_inserter_Inserter* ins)
-{
-   return &ins->ins[ins->cur].instr;
-}
-
-static bool ir_inserter_Inserter_needsFixup(const ir_inserter_Inserter* ins)
-{
-   return (ins->count + ins->split_count + ins->new_blocks.count) != 0;
-}
-
-static uint32_t ir_inserter_Inserter_findSplitEdge(const ir_inserter_Inserter* ins, uint32_t src, uint32_t dest)
-{
-   for (uint32_t i = 0; i < ins->split_count; i++) {
-      const ir_inserter_SplitEdge* e = &ins->split_edges[i];
-      if (e->src == src && e->dest == dest) return e->blk_id;
-   }
-   return 0;
-}
-
-static void ir_inserter_Inserter_addSplitEdge(ir_inserter_Inserter* ins, uint32_t src, uint32_t dest, uint32_t blk_id)
-{
-   if (ins->split_count == ins->split_cap) {
-      ins->split_cap += 2;
-      ir_inserter_SplitEdge* split_edges2 = malloc(ins->split_cap * 12);
-      if (ins->split_count) {
-         memcpy(split_edges2, ins->split_edges, ins->split_count * 12);
-         free(ins->split_edges);
-      }
-      ins->split_edges = split_edges2;
-   }
-   ir_inserter_SplitEdge* e = &ins->split_edges[ins->split_count++];
-   e->src = src;
-   e->dest = dest;
-   e->blk_id = blk_id;
-}
-
-static ir_BlockId ir_inserter_Inserter_addBlock(ir_inserter_Inserter* ins, ir_BlockKind kind)
-{
-   ir_BlockId blk_id = ir_BlockList_add(&ins->new_blocks, kind);
-   return ins->new_blk_id + blk_id;
-}
-
-static ir_Block* ir_inserter_Inserter_getLastBlock(const ir_inserter_Inserter* ins)
-{
-   return ir_BlockList_getLast(&ins->new_blocks);
-}
-
-static bool ir_inserter_Inserter_hasBlocks(const ir_inserter_Inserter* ins)
-{
-   return ir_BlockList_getCount(&ins->new_blocks) != 0;
-}
-
-static void ir_inserter_Inserter_insertBlocks(ir_inserter_Inserter* ins, ir_BlockList* list)
-{
-   ir_BlockList_merge(list, &ins->new_blocks);
-   ir_BlockList_clear(&ins->new_blocks);
-}
-
-static ir_BlockId ir_inserter_Inserter_getNextBlockId(const ir_inserter_Inserter* ins)
-{
-   return ins->new_blk_id + ir_BlockList_getCount(&ins->new_blocks);
-}
-
-static void ir_inserter_Inserter_dump(const ir_inserter_Inserter* ins)
-{
-   printf("insertions:\n");
-   for (uint32_t i = 0; i < ins->count; i++) {
-      const ir_inserter_InstrInsertion* ii = &ins->ins[i];
-      const ir_Instr* is = &ii->instr;
-      printf("  [%u] %3u  %u  %7s", i, ii->location, ii->instr_idx, ir_Instr_getKindName(is));
-      printf("  %10s %3d", ir_Ref_getKindName(&is->args[0]), is->args[0].value);
-      printf("  %10s %3d", ir_Ref_getKindName(&is->args[1]), is->args[1].value);
-      printf("\n");
-   }
-}
-
-
-// --- module ir_interference_graph ---
-typedef struct ir_interference_graph_Arena_ ir_interference_graph_Arena;
-typedef struct ir_interference_graph_Variable_ ir_interference_graph_Variable;
-typedef struct ir_interference_graph_InterferenceGraph_ ir_interference_graph_InterferenceGraph;
-typedef struct ir_interference_graph_Iter_ ir_interference_graph_Iter;
-
-struct ir_interference_graph_Arena_ {
-   uint16_t first_var;
-   uint16_t last_var;
-   uint32_t map_start;
-   uint32_t max_elems;
-   uint16_t free_slots;
-};
-
-struct ir_interference_graph_Variable_ {
-   uint16_t start;
-   uint16_t count;
-   uint16_t capacity;
-   uint16_t next;
-   uint16_t prev;
-};
-
-#define ir_interference_graph_NumArenas 11
-struct ir_interference_graph_InterferenceGraph_ {
-   uint16_t* map;
-   ir_interference_graph_Variable* variables;
-   uint32_t num_variables;
-   uint32_t max_elems;
-   ir_interference_graph_Arena arenas[11];
-   uint8_t* register_map;
-   uint16_t* queue;
-   uint32_t queue_count;
-   uint32_t queue_head;
-};
-
-struct ir_interference_graph_Iter_ {
-   uint32_t count;
-   const uint16_t* ids;
-};
-
-static const uint16_t ir_interference_graph_Caps[11] = {
-   0,
-   2,
-   4,
-   8,
-   16,
-   32,
-   64,
-   128,
-   256,
-   512,
-   1024
-};
-#define ir_interference_graph_NULL u16_max
-#define ir_interference_graph_VAR_UNUSED 255
-#define ir_interference_graph_VAR_TODO 254
-#define ir_interference_graph_VAR_QUEUED 253
-static ir_interference_graph_InterferenceGraph* ir_interference_graph_create(uint32_t max_elems, uint16_t num_variables, uint16_t num_regs);
-static void ir_interference_graph_InterferenceGraph_free(ir_interference_graph_InterferenceGraph* g);
-static uint32_t ir_interference_graph_findArena(uint16_t capacity);
-static uint16_t ir_interference_graph_InterferenceGraph_removeVariableFromArena(ir_interference_graph_InterferenceGraph* g, ir_interference_graph_Arena* a, uint16_t var_idx);
-static void ir_interference_graph_InterferenceGraph_addVariableToArenaHead(ir_interference_graph_InterferenceGraph* g, ir_interference_graph_Arena* a, uint16_t var_idx);
-static void ir_interference_graph_InterferenceGraph_addVariableToArenaTail(ir_interference_graph_InterferenceGraph* g, ir_interference_graph_Arena* a, uint16_t var_idx);
-static void ir_interference_graph_InterferenceGraph_enable(ir_interference_graph_InterferenceGraph* g, uint16_t var_idx);
-static void ir_interference_graph_InterferenceGraph_add(ir_interference_graph_InterferenceGraph* g, uint16_t var1, uint16_t var2);
-static void ir_interference_graph_InterferenceGraph_addInternal(ir_interference_graph_InterferenceGraph* g, uint16_t var1, uint16_t var2);
-static void ir_interference_graph_Iter_dump(const ir_interference_graph_Iter* iter);
-static ir_interference_graph_Iter ir_interference_graph_InterferenceGraph_getList(const ir_interference_graph_InterferenceGraph* g, uint16_t var_idx);
-static uint16_t ir_interference_graph_InterferenceGraph_shiftArenaRight(ir_interference_graph_InterferenceGraph* g, uint32_t arena_idx);
-static void ir_interference_graph_print_idx(uint16_t idx);
-static void ir_interference_graph_InterferenceGraph_handleQueue(ir_interference_graph_InterferenceGraph* g);
-static void ir_interference_graph_InterferenceGraph_allocate(ir_interference_graph_InterferenceGraph* g, uint32_t num_args);
-static const uint8_t* ir_interference_graph_InterferenceGraph_getRegs(const ir_interference_graph_InterferenceGraph* g);
-static void ir_interference_graph_InterferenceGraph_allocateVariable(ir_interference_graph_InterferenceGraph* g, uint16_t var_idx);
-static void ir_interference_graph_InterferenceGraph_enqueue(ir_interference_graph_InterferenceGraph* g, uint16_t var_idx);
-static void ir_interference_graph_InterferenceGraph_dump(const ir_interference_graph_InterferenceGraph* g, bool verbose);
-
-static ir_interference_graph_InterferenceGraph* ir_interference_graph_create(uint32_t max_elems, uint16_t num_variables, uint16_t num_regs)
-{
-   ir_interference_graph_InterferenceGraph* g = calloc(1, 224);
-   g->map = malloc(max_elems * 2);
-   uint16_t total = num_variables + num_regs;
-   g->variables = calloc(total, 10);
-   g->num_variables = total;
-   g->max_elems = max_elems;
-   g->register_map = malloc(total * 1);
-   memset(g->register_map, ir_interference_graph_VAR_UNUSED, total);
-   uint32_t offset = num_variables;
-   for (uint32_t i = 0; i < num_regs; i++) {
-      g->register_map[offset + i] = (uint8_t)i;
-   }
-   g->queue = malloc(total * 2);
-   for (uint32_t i = 0; i < ir_interference_graph_NumArenas; i++) {
-      ir_interference_graph_Arena* a = &g->arenas[i];
-      a->first_var = ir_interference_graph_NULL;
-      a->last_var = ir_interference_graph_NULL;
-   }
-   g->arenas[ir_interference_graph_NumArenas - 1].max_elems = max_elems;
-   g->arenas[ir_interference_graph_NumArenas - 1].free_slots = (uint16_t)max_elems / ir_interference_graph_Caps[ir_interference_graph_NumArenas - 1];
-   for (uint16_t i = 0; i < total; i++) ir_interference_graph_InterferenceGraph_addVariableToArenaTail(g, &g->arenas[0], i);
-   return g;
-}
-
-static void ir_interference_graph_InterferenceGraph_free(ir_interference_graph_InterferenceGraph* g)
-{
-   free(g->queue);
-   free(g->register_map);
-   free(g->map);
-   free(g->variables);
-   free(g);
-}
-
-static uint32_t ir_interference_graph_findArena(uint16_t capacity)
-{
-   for (uint32_t i = 0; i < ir_interference_graph_NumArenas; i++) {
-      if (ir_interference_graph_Caps[i] == capacity) return i;
-   }
-   (0) || c2_assert("ir/interference_graph.c2", 114, "ir_interference_graph.findArena", "0");
-   return 0;
-}
-
-static uint16_t ir_interference_graph_InterferenceGraph_removeVariableFromArena(ir_interference_graph_InterferenceGraph* g, ir_interference_graph_Arena* a, uint16_t var_idx)
-{
-   ir_interference_graph_Variable* r = &g->variables[var_idx];
-   if (var_idx == a->last_var) {
-      if (r->prev == ir_interference_graph_NULL) {
-         a->first_var = ir_interference_graph_NULL;
-      } else {
-         ir_interference_graph_Variable* prev = &g->variables[r->prev];
-         prev->next = ir_interference_graph_NULL;
-      }
-      a->last_var = r->prev;
-      return ir_interference_graph_NULL;
-   }
-   if (r->prev == ir_interference_graph_NULL) {
-      (var_idx == a->first_var) || c2_assert("ir/interference_graph.c2", 143, "ir_interference_graph.InterferenceGraph.removeVariableFromArena", "var_idx == a.first_var");
-      a->first_var = r->next;
-   } else {
-      ir_interference_graph_Variable* prev = &g->variables[r->prev];
-      prev->next = r->next;
-   }
-   ir_interference_graph_Variable* next = &g->variables[r->next];
-   next->prev = r->prev;
-   uint16_t last_idx = a->last_var;
-   if (r->next == a->last_var) return last_idx;
-   ir_interference_graph_Variable* last = &g->variables[last_idx];
-   ir_interference_graph_Variable* prev = &g->variables[last->prev];
-   prev->next = ir_interference_graph_NULL;
-   a->last_var = last->prev;
-   last->next = r->next;
-   last->prev = r->prev;
-   if (r->prev == ir_interference_graph_NULL) {
-      a->first_var = last_idx;
-   } else {
-      prev = &g->variables[r->prev];
-      prev->next = last_idx;
-   }
-   next->prev = last_idx;
-   return last_idx;
-}
-
-static void ir_interference_graph_InterferenceGraph_addVariableToArenaHead(ir_interference_graph_InterferenceGraph* g, ir_interference_graph_Arena* a, uint16_t var_idx)
-{
-   ir_interference_graph_Variable* r = &g->variables[var_idx];
-   r->prev = ir_interference_graph_NULL;
-   r->next = a->first_var;
-   if (a->first_var == ir_interference_graph_NULL) {
-      a->last_var = var_idx;
-   } else {
-      ir_interference_graph_Variable* head = &g->variables[a->first_var];
-      head->prev = var_idx;
-   }
-   a->first_var = var_idx;
-}
-
-static void ir_interference_graph_InterferenceGraph_addVariableToArenaTail(ir_interference_graph_InterferenceGraph* g, ir_interference_graph_Arena* a, uint16_t var_idx)
-{
-   ir_interference_graph_Variable* r = &g->variables[var_idx];
-   r->prev = a->last_var;
-   r->next = ir_interference_graph_NULL;
-   if (a->first_var == ir_interference_graph_NULL) {
-      a->first_var = var_idx;
-   } else {
-      ir_interference_graph_Variable* tail = &g->variables[a->last_var];
-      tail->next = var_idx;
-   }
-   a->last_var = var_idx;
-}
-
-static void ir_interference_graph_InterferenceGraph_enable(ir_interference_graph_InterferenceGraph* g, uint16_t var_idx)
-{
-   g->register_map[var_idx] = ir_interference_graph_VAR_TODO;
-}
-
-static void ir_interference_graph_InterferenceGraph_add(ir_interference_graph_InterferenceGraph* g, uint16_t var1, uint16_t var2)
-{
-   if (var1 == var2) return;
-   const ir_interference_graph_Variable* r = &g->variables[var1];
-   uint32_t idx = r->start + r->count;
-   for (uint32_t i = r->start; i < idx; i++) {
-      if (g->map[i] == var2) {
-         return;
-      }
-   }
-   ir_interference_graph_InterferenceGraph_addInternal(g, var1, var2);
-   ir_interference_graph_InterferenceGraph_addInternal(g, var2, var1);
-}
-
-static void ir_interference_graph_InterferenceGraph_addInternal(ir_interference_graph_InterferenceGraph* g, uint16_t var1, uint16_t var2)
-{
-   ir_interference_graph_Variable* r = &g->variables[var1];
-   if (r->count < r->capacity) {
-      uint32_t idx = r->start + r->count;
-      g->map[idx] = var2;
-      r->count++;
-      return;
-   }
-   uint32_t arena_idx = ir_interference_graph_findArena(r->capacity);
-   (arena_idx != ir_interference_graph_NumArenas - 1) || c2_assert("ir/interference_graph.c2", 248, "ir_interference_graph.InterferenceGraph.addInternal", "arena_idx != NumArenas - 1");
-   ir_interference_graph_Arena* a1 = &g->arenas[arena_idx];
-   ir_interference_graph_Arena* a2 = &g->arenas[arena_idx + 1];
-   if (arena_idx != 0 && a1->free_slots >= 3 && a1->free_slots >= a2->free_slots * 2) {
-      uint16_t cap = ir_interference_graph_Caps[arena_idx + 1];
-      uint16_t last_idx = ir_interference_graph_InterferenceGraph_removeVariableFromArena(g, a1, var1);
-      ir_interference_graph_InterferenceGraph_addVariableToArenaHead(g, a2, var1);
-      a1->max_elems -= cap;
-      a1->free_slots -= 1;
-      a2->map_start -= cap;
-      a2->max_elems += cap;
-      uint32_t dest_idx = a2->map_start;
-      uint16_t src_idx = r->start;
-      memcpy(&g->map[dest_idx], &g->map[src_idx], r->count * 2);
-      (dest_idx < 65536) || c2_assert("ir/interference_graph.c2", 274, "ir_interference_graph.InterferenceGraph.addInternal", "dest_idx < 65536");
-      r->start = (uint16_t)dest_idx;
-      r->capacity = (uint16_t)cap;
-      if (last_idx != ir_interference_graph_NULL) {
-         ir_interference_graph_Variable* last = &g->variables[last_idx];
-         memcpy(&g->map[src_idx], &g->map[last->start], last->count * 2);
-         last->start = src_idx;
-      }
-   } else {
-      if (!a2->free_slots) {
-         a2->max_elems += ir_interference_graph_InterferenceGraph_shiftArenaRight(g, arena_idx + 2);
-         a2->free_slots = 2;
-      }
-      uint16_t last_idx = ir_interference_graph_InterferenceGraph_removeVariableFromArena(g, a1, var1);
-      ir_interference_graph_InterferenceGraph_addVariableToArenaTail(g, a2, var1);
-      uint32_t dest_idx = a2->map_start + a2->max_elems - a2->free_slots * ir_interference_graph_Caps[arena_idx + 1];
-      uint16_t src_idx = r->start;
-      if (r->count) {
-         memcpy(&g->map[dest_idx], &g->map[src_idx], r->count * 2);
-         if (last_idx != ir_interference_graph_NULL) {
-            ir_interference_graph_Variable* last = &g->variables[last_idx];
-            memcpy(&g->map[src_idx], &g->map[last->start], last->count * 2);
-            last->start = src_idx;
-         }
-      }
-      r->capacity = ir_interference_graph_Caps[arena_idx + 1];
-      r->start = (uint16_t)dest_idx;
-      a1->free_slots++;
-      a2->free_slots--;
-   }
-   g->map[r->start + r->count] = var2;
-   r->count++;
-}
-
-static void ir_interference_graph_Iter_dump(const ir_interference_graph_Iter* iter)
-{
-   printf("SET: ");
-   for (uint32_t i = 0; i < iter->count; i++) {
-      printf(" %d", iter->ids[i]);
-   }
-   printf("\n");
-}
-
-static ir_interference_graph_Iter ir_interference_graph_InterferenceGraph_getList(const ir_interference_graph_InterferenceGraph* g, uint16_t var_idx)
-{
-   const ir_interference_graph_Variable* r = &g->variables[var_idx];
-   return (ir_interference_graph_Iter){ .count = r->count, .ids = &g->map[r->start] };
-}
-
-static uint16_t ir_interference_graph_InterferenceGraph_shiftArenaRight(ir_interference_graph_InterferenceGraph* g, uint32_t arena_idx)
-{
-   uint16_t cap = ir_interference_graph_Caps[arena_idx];
-   ir_interference_graph_Arena* a = &g->arenas[arena_idx];
-   if (!a->free_slots) {
-      (arena_idx != ir_interference_graph_NumArenas - 1) || c2_assert("ir/interference_graph.c2", 341, "ir_interference_graph.InterferenceGraph.shiftArenaRight", "arena_idx != NumArenas - 1");
-      a->max_elems += ir_interference_graph_InterferenceGraph_shiftArenaRight(g, arena_idx + 1);
-      a->free_slots = 2;
-   }
-   if (a->first_var == ir_interference_graph_NULL) {
-      a->map_start += cap;
-      a->max_elems -= cap;
-      a->free_slots--;
-      return cap;
-   }
-   uint16_t var_idx = a->first_var;
-   ir_interference_graph_Variable* r = &g->variables[var_idx];
-   uint16_t src_idx = r->start;
-   uint32_t dest_idx = a->map_start + a->max_elems - a->free_slots * cap;
-   memcpy(&g->map[dest_idx], &g->map[src_idx], r->count * 2);
-   r->start = (uint16_t)dest_idx;
-   if (a->first_var != a->last_var) {
-      ir_interference_graph_Variable* head = &g->variables[r->next];
-      head->prev = ir_interference_graph_NULL;
-      ir_interference_graph_Variable* tail = &g->variables[a->last_var];
-      tail->next = var_idx;
-      r->prev = a->last_var;
-      a->first_var = r->next;
-      a->last_var = var_idx;
-      r->next = ir_interference_graph_NULL;
-   }
-   a->map_start += cap;
-   a->max_elems -= cap;
-   a->free_slots--;
-   return cap;
-}
-
-static void ir_interference_graph_print_idx(uint16_t idx)
-{
-   if (idx == ir_interference_graph_NULL) printf("   -");
-   else printf("%4d", idx);
-}
-
-static void ir_interference_graph_InterferenceGraph_handleQueue(ir_interference_graph_InterferenceGraph* g)
-{
-   while (g->queue_count) {
-      uint16_t var = g->queue[g->queue_head];
-      g->queue_head++;
-      if (g->queue_head == g->num_variables) g->queue_head = 0;
-      g->queue_count--;
-      ir_interference_graph_InterferenceGraph_allocateVariable(g, var);
-   }
-}
-
-static void ir_interference_graph_InterferenceGraph_allocate(ir_interference_graph_InterferenceGraph* g, uint32_t num_args)
-{
-   if (num_args >= g->num_variables) return;
-   for (uint16_t i = 0; i < num_args; i++) {
-      if (g->register_map[i] == ir_interference_graph_VAR_TODO) ir_interference_graph_InterferenceGraph_enqueue(g, i);
-   }
-   for (uint16_t v = 0; v < g->num_variables; v++) {
-      if (g->register_map[v] != ir_interference_graph_VAR_TODO) continue;
-      ir_interference_graph_InterferenceGraph_enqueue(g, v);
-      ir_interference_graph_InterferenceGraph_handleQueue(g);
-   }
-}
-
-static const uint8_t* ir_interference_graph_InterferenceGraph_getRegs(const ir_interference_graph_InterferenceGraph* g)
-{
-   return g->register_map;
-}
-
-static void ir_interference_graph_InterferenceGraph_allocateVariable(ir_interference_graph_InterferenceGraph* g, uint16_t var_idx)
-{
-   ir_interference_graph_Iter iter = ir_interference_graph_InterferenceGraph_getList(g, var_idx);
-   uint64_t used_regs = 0;
-   for (uint32_t i = 0; i < iter.count; i++) {
-      uint16_t neighbor = iter.ids[i];
-      uint8_t r = g->register_map[neighbor];
-      if (r < 64) {
-         used_regs |= (1 << r);
-      }
-      if (r == ir_interference_graph_VAR_TODO) ir_interference_graph_InterferenceGraph_enqueue(g, neighbor);
-   }
-   for (uint32_t i = 0; i < 64; i++) {
-      if ((used_regs & (1 << i)) == 0) {
-         g->register_map[var_idx] = (uint8_t)i;
-         return;
-      }
-   }
-   (0) || c2_assert("ir/interference_graph.c2", 450, "ir_interference_graph.InterferenceGraph.allocateVariable", "0");
-}
-
-static void ir_interference_graph_InterferenceGraph_enqueue(ir_interference_graph_InterferenceGraph* g, uint16_t var_idx)
-{
-   (g->register_map[var_idx] == ir_interference_graph_VAR_TODO) || c2_assert("ir/interference_graph.c2", 455, "ir_interference_graph.InterferenceGraph.enqueue", "g.register_map[var_idx] == VAR_TODO");
-   g->register_map[var_idx] = ir_interference_graph_VAR_QUEUED;
-   uint32_t tail = g->queue_head + g->queue_count;
-   if (tail >= g->num_variables) tail -= g->num_variables;
-   g->queue[tail] = var_idx;
-   g->queue_count++;
-}
-
-static void ir_interference_graph_InterferenceGraph_dump(const ir_interference_graph_InterferenceGraph* g, bool verbose)
-{
-   if (verbose) {
-      uint32_t mem_variables = g->num_variables * 10;
-      uint32_t mem_map = g->max_elems * 2;
-      uint32_t mem_usage = mem_variables + mem_map;
-      printf("InterferenceGraph: (%u users, map %u, %u/%u Kb)\n", g->num_variables, g->max_elems, (mem_variables + 512) / 1024, (mem_usage + 512) / 1024);
-      printf("Arenas:\n");
-      uint32_t total = 0;
-      for (uint32_t i = 0; i < ir_interference_graph_NumArenas; i++) {
-         const ir_interference_graph_Arena* a = &g->arenas[i];
-         uint32_t count = 0;
-         uint16_t idx = a->first_var;
-         while (idx != ir_interference_graph_NULL) {
-            const ir_interference_graph_Variable* r = &g->variables[idx];
-            idx = r->next;
-            count++;
-         }
-         total += count;
-         printf("  [%u] size %4d  variables ", i, ir_interference_graph_Caps[i]);
-         ir_interference_graph_print_idx(a->first_var);
-         printf(",");
-         ir_interference_graph_print_idx(a->last_var);
-         printf("  (%4u)  map %5u(%4u)  free: ", count, a->map_start, a->max_elems);
-         if (i == 0) printf("-");
-         else printf("%d", a->free_slots);
-         printf("\n");
-      }
-      if (total != g->num_variables) {
-         printf("WARNING: invalid num_variables, expect %u, got %u\n", g->num_variables, total);
-      }
-      printf("Variables (%u)\n", g->num_variables);
-      for (uint32_t i = 0; i < g->num_variables; i++) {
-         const ir_interference_graph_Variable* r = &g->variables[i];
-         printf("  [%4u] %4d  %4d/%4d  prev ", i, r->start, r->count, r->capacity);
-         ir_interference_graph_print_idx(r->prev);
-         printf("  next ");
-         ir_interference_graph_print_idx(r->next);
-         printf("\n");
-      }
-   }
-   printf("Interferences:\n");
-   for (uint16_t i = 0; i < g->num_variables; i++) {
-      if (g->register_map[i] == ir_interference_graph_VAR_UNUSED) continue;
-      ir_interference_graph_Iter iter = ir_interference_graph_InterferenceGraph_getList(g, i);
-      printf("  %2d: ", i);
-      for (uint32_t j = 0; j < iter.count; j++) {
-         printf(" %d", iter.ids[j]);
-      }
-      printf("\n");
-   }
-}
-
-
-// --- module ir_live_map ---
-typedef struct ir_live_map_Arena_ ir_live_map_Arena;
-typedef struct ir_live_map_Variable_ ir_live_map_Variable;
-typedef struct ir_live_map_Map_ ir_live_map_Map;
-typedef struct ir_live_map_Iter_ ir_live_map_Iter;
-
-struct ir_live_map_Arena_ {
-   uint16_t first_var;
-   uint16_t last_var;
-   uint32_t map_start;
-   uint32_t max_elems;
-   uint16_t free_slots;
-};
-
-struct ir_live_map_Variable_ {
-   uint16_t start;
-   uint16_t count;
-   uint16_t capacity;
-   uint16_t next;
-   uint16_t prev;
-};
-
-#define ir_live_map_NumArenas 9
-struct ir_live_map_Map_ {
-   uint16_t* map;
-   ir_live_map_Variable* variables;
-   uint32_t num_variables;
-   uint32_t max_elems;
-   ir_live_map_Arena arenas[9];
-};
-
-struct ir_live_map_Iter_ {
-   uint32_t count;
-   const uint16_t* ids;
-};
-
-static const uint16_t ir_live_map_Caps[9] = {
-   0,
-   2,
-   4,
-   8,
-   16,
-   32,
-   64,
-   128,
-   256
-};
-#define ir_live_map_NULL u16_max
-static ir_live_map_Map* ir_live_map_create(uint32_t max_elems, uint16_t num_variables);
-static void ir_live_map_Map_free(ir_live_map_Map* g);
-static uint32_t ir_live_map_findArena(uint16_t capacity);
-static uint16_t ir_live_map_Map_removeVariableFromArena(ir_live_map_Map* g, ir_live_map_Arena* a, uint16_t var_idx);
-static void ir_live_map_Map_addVariableToArenaHead(ir_live_map_Map* g, ir_live_map_Arena* a, uint16_t var_idx);
-static void ir_live_map_Map_addVariableToArenaTail(ir_live_map_Map* g, ir_live_map_Arena* a, uint16_t var_idx);
-static void ir_live_map_Map_addFiltered(ir_live_map_Map* g, uint16_t var1, uint16_t var2);
-static void ir_live_map_Map_add(ir_live_map_Map* g, uint16_t var1, uint16_t var2);
-static bool ir_live_map_Iter_contains(const ir_live_map_Iter* iter, uint16_t value);
-static void ir_live_map_Iter_dump(const ir_live_map_Iter* iter);
-static ir_live_map_Iter ir_live_map_Map_getList(const ir_live_map_Map* g, uint16_t var_idx);
-static uint16_t ir_live_map_Map_shiftArenaRight(ir_live_map_Map* g, uint32_t arena_idx);
-static void ir_live_map_print_idx(uint16_t idx);
-static void ir_live_map_Map_dump(const ir_live_map_Map* g, bool verbose);
-
-static ir_live_map_Map* ir_live_map_create(uint32_t max_elems, uint16_t num_variables)
-{
-   ir_live_map_Map* g = calloc(1, 168);
-   g->map = malloc(max_elems * 2);
-   g->variables = calloc(num_variables, 10);
-   g->num_variables = num_variables;
-   g->max_elems = max_elems;
-   for (uint32_t i = 0; i < ir_live_map_NumArenas; i++) {
-      ir_live_map_Arena* a = &g->arenas[i];
-      a->first_var = ir_live_map_NULL;
-      a->last_var = ir_live_map_NULL;
-   }
-   g->arenas[ir_live_map_NumArenas - 1].max_elems = max_elems;
-   g->arenas[ir_live_map_NumArenas - 1].free_slots = (uint16_t)max_elems / ir_live_map_Caps[ir_live_map_NumArenas - 1];
-   for (uint16_t i = 0; i < num_variables; i++) ir_live_map_Map_addVariableToArenaTail(g, &g->arenas[0], i);
-   return g;
-}
-
-static void ir_live_map_Map_free(ir_live_map_Map* g)
-{
-   free(g->map);
-   free(g->variables);
-   free(g);
-}
-
-static uint32_t ir_live_map_findArena(uint16_t capacity)
-{
-   for (uint32_t i = 0; i < ir_live_map_NumArenas; i++) {
-      if (ir_live_map_Caps[i] == capacity) return i;
-   }
-   (0) || c2_assert("ir/live_map.c2", 93, "ir_live_map.findArena", "0");
-   return 0;
-}
-
-static uint16_t ir_live_map_Map_removeVariableFromArena(ir_live_map_Map* g, ir_live_map_Arena* a, uint16_t var_idx)
-{
-   ir_live_map_Variable* r = &g->variables[var_idx];
-   if (var_idx == a->last_var) {
-      if (r->prev == ir_live_map_NULL) {
-         a->first_var = ir_live_map_NULL;
-      } else {
-         ir_live_map_Variable* prev = &g->variables[r->prev];
-         prev->next = ir_live_map_NULL;
-      }
-      a->last_var = r->prev;
-      return ir_live_map_NULL;
-   }
-   if (r->prev == ir_live_map_NULL) {
-      if (var_idx != a->first_var) {
-         ir_live_map_Map_dump(g, true);
-      }
-      (var_idx == a->first_var) || c2_assert("ir/live_map.c2", 125, "ir_live_map.Map.removeVariableFromArena", "var_idx == a.first_var");
-      a->first_var = r->next;
-   } else {
-      ir_live_map_Variable* prev = &g->variables[r->prev];
-      prev->next = r->next;
-   }
-   ir_live_map_Variable* next = &g->variables[r->next];
-   next->prev = r->prev;
-   uint16_t last_idx = a->last_var;
-   if (r->next == a->last_var) return last_idx;
-   ir_live_map_Variable* last = &g->variables[last_idx];
-   ir_live_map_Variable* prev = &g->variables[last->prev];
-   prev->next = ir_live_map_NULL;
-   a->last_var = last->prev;
-   last->next = r->next;
-   last->prev = r->prev;
-   if (r->prev == ir_live_map_NULL) {
-      a->first_var = last_idx;
-   } else {
-      prev = &g->variables[r->prev];
-      prev->next = last_idx;
-   }
-   next->prev = last_idx;
-   return last_idx;
-}
-
-static void ir_live_map_Map_addVariableToArenaHead(ir_live_map_Map* g, ir_live_map_Arena* a, uint16_t var_idx)
-{
-   ir_live_map_Variable* r = &g->variables[var_idx];
-   r->prev = ir_live_map_NULL;
-   r->next = a->first_var;
-   if (a->first_var == ir_live_map_NULL) {
-      a->last_var = var_idx;
-   } else {
-      ir_live_map_Variable* head = &g->variables[a->first_var];
-      head->prev = var_idx;
-   }
-   a->first_var = var_idx;
-}
-
-static void ir_live_map_Map_addVariableToArenaTail(ir_live_map_Map* g, ir_live_map_Arena* a, uint16_t var_idx)
-{
-   ir_live_map_Variable* r = &g->variables[var_idx];
-   r->prev = a->last_var;
-   r->next = ir_live_map_NULL;
-   if (a->first_var == ir_live_map_NULL) {
-      a->first_var = var_idx;
-   } else {
-      ir_live_map_Variable* tail = &g->variables[a->last_var];
-      tail->next = var_idx;
-   }
-   a->last_var = var_idx;
-}
-
-static void ir_live_map_Map_addFiltered(ir_live_map_Map* g, uint16_t var1, uint16_t var2)
-{
-   const ir_live_map_Variable* r = &g->variables[var1];
-   uint32_t idx = r->start + r->count;
-   for (uint32_t i = r->start; i < idx; i++) {
-      if (g->map[i] == var2) {
-         return;
-      }
-   }
-   ir_live_map_Map_add(g, var1, var2);
-}
-
-static void ir_live_map_Map_add(ir_live_map_Map* g, uint16_t var1, uint16_t var2)
-{
-   ir_live_map_Variable* r = &g->variables[var1];
-   if (r->count < r->capacity) {
-      uint32_t idx = r->start + r->count;
-      g->map[idx] = var2;
-      r->count++;
-      return;
-   }
-   uint32_t arena_idx = ir_live_map_findArena(r->capacity);
-   (arena_idx != ir_live_map_NumArenas - 1) || c2_assert("ir/live_map.c2", 222, "ir_live_map.Map.add", "arena_idx != NumArenas - 1");
-   ir_live_map_Arena* a1 = &g->arenas[arena_idx];
-   ir_live_map_Arena* a2 = &g->arenas[arena_idx + 1];
-   if (arena_idx != 0 && a1->free_slots >= 3 && a1->free_slots >= a2->free_slots * 2) {
-      uint16_t cap = ir_live_map_Caps[arena_idx + 1];
-      uint16_t last_idx = ir_live_map_Map_removeVariableFromArena(g, a1, var1);
-      ir_live_map_Map_addVariableToArenaHead(g, a2, var1);
-      a1->max_elems -= cap;
-      a1->free_slots -= 1;
-      a2->map_start -= cap;
-      a2->max_elems += cap;
-      uint32_t dest_idx = a2->map_start;
-      uint16_t src_idx = r->start;
-      memcpy(&g->map[dest_idx], &g->map[src_idx], r->count * 2);
-      (dest_idx < 65536) || c2_assert("ir/live_map.c2", 248, "ir_live_map.Map.add", "dest_idx < 65536");
-      r->start = (uint16_t)dest_idx;
-      r->capacity = (uint8_t)cap;
-      if (last_idx != ir_live_map_NULL) {
-         ir_live_map_Variable* last = &g->variables[last_idx];
-         memcpy(&g->map[src_idx], &g->map[last->start], last->count * 2);
-         last->start = src_idx;
-      }
-   } else {
-      if (!a2->free_slots) {
-         a2->max_elems += ir_live_map_Map_shiftArenaRight(g, arena_idx + 2);
-         a2->free_slots = 2;
-      }
-      uint16_t last_idx = ir_live_map_Map_removeVariableFromArena(g, a1, var1);
-      ir_live_map_Map_addVariableToArenaTail(g, a2, var1);
-      uint32_t dest_idx = a2->map_start + a2->max_elems - a2->free_slots * ir_live_map_Caps[arena_idx + 1];
-      uint16_t src_idx = r->start;
-      if (r->count) {
-         memcpy(&g->map[dest_idx], &g->map[src_idx], r->count * 2);
-         if (last_idx != ir_live_map_NULL) {
-            ir_live_map_Variable* last = &g->variables[last_idx];
-            memcpy(&g->map[src_idx], &g->map[last->start], last->count * 2);
-            last->start = src_idx;
-         }
-      }
-      r->capacity = ir_live_map_Caps[arena_idx + 1];
-      r->start = (uint16_t)dest_idx;
-      a1->free_slots++;
-      a2->free_slots--;
-   }
-   g->map[r->start + r->count] = var2;
-   r->count++;
-}
-
-static bool ir_live_map_Iter_contains(const ir_live_map_Iter* iter, uint16_t value)
-{
-   for (uint32_t i = 0; i < iter->count; i++) {
-      if (iter->ids[i] == value) return true;
-   }
-   return false;
-}
-
-static void ir_live_map_Iter_dump(const ir_live_map_Iter* iter)
-{
-   printf("SET: ");
-   for (uint32_t i = 0; i < iter->count; i++) {
-      printf(" %d", iter->ids[i]);
-   }
-   printf("\n");
-}
-
-static ir_live_map_Iter ir_live_map_Map_getList(const ir_live_map_Map* g, uint16_t var_idx)
-{
-   const ir_live_map_Variable* r = &g->variables[var_idx];
-   return (ir_live_map_Iter){ .count = r->count, .ids = &g->map[r->start] };
-}
-
-static uint16_t ir_live_map_Map_shiftArenaRight(ir_live_map_Map* g, uint32_t arena_idx)
-{
-   uint16_t cap = ir_live_map_Caps[arena_idx];
-   ir_live_map_Arena* a = &g->arenas[arena_idx];
-   if (!a->free_slots) {
-      if (arena_idx == ir_live_map_NumArenas - 1) ir_live_map_Map_dump(g, true);
-      (arena_idx != ir_live_map_NumArenas - 1) || c2_assert("ir/live_map.c2", 324, "ir_live_map.Map.shiftArenaRight", "arena_idx != NumArenas - 1");
-      a->max_elems += ir_live_map_Map_shiftArenaRight(g, arena_idx + 1);
-      a->free_slots = 2;
-   }
-   if (a->first_var == ir_live_map_NULL) {
-      a->map_start += cap;
-      a->max_elems -= cap;
-      a->free_slots--;
-      return cap;
-   }
-   uint16_t var_idx = a->first_var;
-   ir_live_map_Variable* r = &g->variables[var_idx];
-   uint16_t src_idx = r->start;
-   uint32_t dest_idx = a->map_start + a->max_elems - a->free_slots * cap;
-   memcpy(&g->map[dest_idx], &g->map[src_idx], r->count * 2);
-   r->start = (uint16_t)dest_idx;
-   if (a->first_var != a->last_var) {
-      ir_live_map_Variable* head = &g->variables[r->next];
-      head->prev = ir_live_map_NULL;
-      ir_live_map_Variable* tail = &g->variables[a->last_var];
-      tail->next = var_idx;
-      r->prev = a->last_var;
-      a->first_var = r->next;
-      a->last_var = var_idx;
-      r->next = ir_live_map_NULL;
-   }
-   a->map_start += cap;
-   a->max_elems -= cap;
-   a->free_slots--;
-   return cap;
-}
-
-static void ir_live_map_print_idx(uint16_t idx)
-{
-   if (idx == ir_live_map_NULL) printf("   -");
-   else printf("%4d", idx);
-}
-
-static void ir_live_map_Map_dump(const ir_live_map_Map* g, bool verbose)
-{
-   if (verbose) {
-      uint32_t mem_variables = g->num_variables * 10;
-      uint32_t mem_map = g->max_elems * 2;
-      uint32_t mem_usage = mem_variables + mem_map;
-      printf("Map: (%u users, map %u, %u/%u Kb)\n", g->num_variables, g->max_elems, (mem_variables + 512) / 1024, (mem_usage + 512) / 1024);
-      printf("Arenas:\n");
-      uint32_t total = 0;
-      for (uint32_t i = 0; i < ir_live_map_NumArenas; i++) {
-         const ir_live_map_Arena* a = &g->arenas[i];
-         uint32_t count = 0;
-         uint16_t idx = a->first_var;
-         while (idx != ir_live_map_NULL) {
-            const ir_live_map_Variable* r = &g->variables[idx];
-            idx = r->next;
-            count++;
-         }
-         total += count;
-         printf("  [%u] size %4d  variables ", i, ir_live_map_Caps[i]);
-         ir_live_map_print_idx(a->first_var);
-         printf(",");
-         ir_live_map_print_idx(a->last_var);
-         printf("  (%4u)  map %5u(%4u)  free: ", count, a->map_start, a->max_elems);
-         if (i == 0) printf("-");
-         else printf("%d", a->free_slots);
-         printf("\n");
-      }
-      if (total != g->num_variables) {
-         printf("WARNING: invalid num_variables, expect %u, got %u\n", g->num_variables, total);
-      }
-      printf("Variables (%u)\n", g->num_variables);
-      for (uint32_t i = 0; i < g->num_variables; i++) {
-         const ir_live_map_Variable* r = &g->variables[i];
-         printf("  [%4u] %4d  %4d/%4d  prev ", i, r->start, r->count, r->capacity);
-         ir_live_map_print_idx(r->prev);
-         printf("  next ");
-         ir_live_map_print_idx(r->next);
-         printf("\n");
-      }
-   }
-}
-
-
-// --- module ir_lookup_table ---
-typedef struct ir_lookup_table_Table_ ir_lookup_table_Table;
-
-struct ir_lookup_table_Table_ {
-   uint32_t capacity;
-   uint32_t* data;
-};
-
-static void ir_lookup_table_Table_init(ir_lookup_table_Table* t, uint32_t initial);
-static void ir_lookup_table_Table_free(ir_lookup_table_Table* t);
-static void ir_lookup_table_Table_clear(ir_lookup_table_Table* t, uint32_t amount);
-static void ir_lookup_table_Table_set(ir_lookup_table_Table* t, uint32_t idx, uint32_t value);
-static uint32_t ir_lookup_table_Table_get(const ir_lookup_table_Table* t, uint32_t idx);
-static void ir_lookup_table_Table_resize(ir_lookup_table_Table* t, uint32_t capacity2, bool copy);
-
-static void ir_lookup_table_Table_init(ir_lookup_table_Table* t, uint32_t initial)
-{
-   t->data = NULL;
-   t->capacity = 0;
-   ir_lookup_table_Table_resize(t, initial, false);
-}
-
-static void ir_lookup_table_Table_free(ir_lookup_table_Table* t)
-{
-   free(t->data);
-}
-
-static void ir_lookup_table_Table_clear(ir_lookup_table_Table* t, uint32_t amount)
-{
-   if (amount > t->capacity) ir_lookup_table_Table_resize(t, amount, false);
-   memset(t->data, 0, amount * 4);
-}
-
-static void ir_lookup_table_Table_set(ir_lookup_table_Table* t, uint32_t idx, uint32_t value)
-{
-   while (idx >= t->capacity) ir_lookup_table_Table_resize(t, t->capacity * 2, true);
-   t->data[idx] = value;
-}
-
-static uint32_t ir_lookup_table_Table_get(const ir_lookup_table_Table* t, uint32_t idx)
-{
-   if (idx >= t->capacity) return 0;
-   return t->data[idx];
-}
-
-static void ir_lookup_table_Table_resize(ir_lookup_table_Table* t, uint32_t capacity2, bool copy)
-{
-   uint32_t* data2 = calloc(capacity2, 4);
-   if (t->data) {
-      if (copy) memcpy(data2, t->data, t->capacity * 4);
-      free(t->data);
-   }
-   t->capacity = capacity2;
-   t->data = data2;
-}
-
-
-// --- module ir_rev_list ---
-typedef struct ir_rev_list_RevIndex_ ir_rev_list_RevIndex;
-typedef struct ir_rev_list_RevList_ ir_rev_list_RevList;
-
-struct ir_rev_list_RevIndex_ {
-   uint16_t start;
-   uint16_t count;
-};
-
-struct ir_rev_list_RevList_ {
-   uint8_t* nodes;
-   uint32_t capacity;
-   uint32_t count;
-   uint32_t block_capacity;
-   uint32_t block_count;
-   ir_rev_list_RevIndex* indexes;
-};
-
-static void ir_rev_list_RevList_create(ir_rev_list_RevList* r, uint32_t num_blocks);
-static void ir_rev_list_RevList_build(ir_rev_list_RevList* r, ir_FunctionInfo* info);
-static void ir_rev_list_RevList_free(ir_rev_list_RevList* r);
-static ir_rev_list_RevIndex ir_rev_list_RevList_getBlockIndex(const ir_rev_list_RevList* r, ir_BlockId blk_id);
-static uint8_t ir_rev_list_RevList_getRev(const ir_rev_list_RevList* r, uint32_t idx);
-static void ir_rev_list_RevList_dump(const ir_rev_list_RevList* r);
-
-static void ir_rev_list_RevList_create(ir_rev_list_RevList* r, uint32_t num_blocks)
-{
-   memset(r, 0, 32);
-   r->capacity = 1024;
-   r->block_capacity = num_blocks;
-   r->nodes = malloc(r->capacity * 1);
-   r->indexes = malloc(num_blocks * 4);
-}
-
-static void ir_rev_list_RevList_build(ir_rev_list_RevList* r, ir_FunctionInfo* info)
-{
-   r->count = 0;
-   uint32_t num_blocks = ir_BlockList_getCount(&info->blocks);
-   if (num_blocks > r->block_capacity) {
-      (0) || c2_assert("ir/rev_list.c2", 52, "ir_rev_list.RevList.build", "0");
-   }
-   r->block_count = num_blocks;
-   r->indexes[0].start = 0;
-   r->indexes[0].count = 0;
-   for (uint32_t i = 1; i < num_blocks; i++) {
-      uint32_t dest = i;
-      uint32_t start = r->count;
-      for (uint32_t j = 0; j < num_blocks; j++) {
-         ir_Block* b = ir_BlockList_get(&info->blocks, j);
-         if (ir_block_has_dest(b, &info->cases, dest)) {
-            (r->count < r->capacity) || c2_assert("ir/rev_list.c2", 66, "ir_rev_list.RevList.build", "r.count < r.capacity");
-            r->nodes[r->count++] = (uint8_t)j;
-         }
-      }
-      uint32_t count = r->count - start;
-      r->indexes[i].count = (uint16_t)count;
-      if (count) {
-         r->indexes[i].start = (uint16_t)start;
-      } else {
-         r->indexes[i].start = 0;
-      }
-   }
-}
-
-static void ir_rev_list_RevList_free(ir_rev_list_RevList* r)
-{
-   free(r->nodes);
-   free(r->indexes);
-}
-
-static ir_rev_list_RevIndex ir_rev_list_RevList_getBlockIndex(const ir_rev_list_RevList* r, ir_BlockId blk_id)
-{
-   return r->indexes[blk_id];
-}
-
-static uint8_t ir_rev_list_RevList_getRev(const ir_rev_list_RevList* r, uint32_t idx)
-{
-   return r->nodes[idx];
-}
-
-static void ir_rev_list_RevList_dump(const ir_rev_list_RevList* r)
-{
-   printf("Revlist [%u blocks]\n", r->block_count);
-   for (uint32_t i = 0; i < r->block_count; i++) {
-      printf("  B%u  [", i);
-      uint32_t start = r->indexes[i].start;
-      uint32_t count = r->indexes[i].count;
-      for (uint32_t j = 0; j < count; j++) {
-         printf(" %d", r->nodes[start + j]);
-      }
-      printf(" ]\n");
-   }
-}
-
-
-// --- module ir_rpo ---
-typedef struct ir_rpo_Rpo_ ir_rpo_Rpo;
-
-struct ir_rpo_Rpo_ {
-   uint16_t* blocks;
-};
-
-static void ir_rpo_Rpo_create(ir_rpo_Rpo* rpo, const ir_FunctionInfo* fi);
-static void ir_rpo_Rpo_free(ir_rpo_Rpo* rpo);
-
-static void ir_rpo_Rpo_create(ir_rpo_Rpo* rpo, const ir_FunctionInfo* fi)
-{
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   for (uint32_t i = 0; i < num_blocks; i++) blocks[i].checked = false;
-   rpo->blocks = malloc(num_blocks * 2);
-   uint32_t todo = num_blocks - 1;
-   uint32_t idx = todo;
-   rpo->blocks[todo--] = 0;
-   while (todo < num_blocks) {
-      uint16_t blk_id = rpo->blocks[idx];
-      (blk_id < num_blocks) || c2_assert("ir/rpo.c2", 43, "ir_rpo.Rpo.create", "blk_id < num_blocks");
-      ir_Block* b = &blocks[blk_id];
-      for (uint32_t d = 0; d < 2; d++) {
-         uint32_t dest_id = b->dests[d];
-         if (!dest_id) break;
-         ir_Block* dest = &blocks[dest_id];
-         if (!dest->checked) {
-            rpo->blocks[todo--] = (uint16_t)dest_id;
-            dest->checked = true;
-         }
-      }
-      idx--;
-   }
-}
-
-static void ir_rpo_Rpo_free(ir_rpo_Rpo* rpo)
-{
-   free(rpo->blocks);
-}
-
-
-// --- module ir_slot_values ---
-typedef struct ir_slot_values_SlotValues_ ir_slot_values_SlotValues;
-
-struct ir_slot_values_SlotValues_ {
-   ir_Ref* values;
-};
-
-static void ir_slot_values_SlotValues_create(ir_slot_values_SlotValues* v);
-static void ir_slot_values_SlotValues_free(ir_slot_values_SlotValues* v);
-static void ir_slot_values_SlotValues_clear(ir_slot_values_SlotValues* v, uint32_t num_slots);
-static ir_Ref ir_slot_values_SlotValues_find(const ir_slot_values_SlotValues* v, uint16_t slot);
-static void ir_slot_values_SlotValues_set(ir_slot_values_SlotValues* v, uint16_t slot, ir_Ref ref);
-static void ir_slot_values_SlotValues_dump(const ir_slot_values_SlotValues* v);
-
-static void ir_slot_values_SlotValues_create(ir_slot_values_SlotValues* v)
-{
-   v->values = malloc(ir_SlotMax * 4);
-}
-
-static void ir_slot_values_SlotValues_free(ir_slot_values_SlotValues* v)
-{
-   free(v->values);
-}
-
-static void ir_slot_values_SlotValues_clear(ir_slot_values_SlotValues* v, uint32_t num_slots)
-{
-   (num_slots < ir_SlotMax) || c2_assert("ir/slot_values.c2", 37, "ir_slot_values.SlotValues.clear", "num_slots < SlotMax");
-   memset(v->values, 0, num_slots * 4);
-}
-
-static ir_Ref ir_slot_values_SlotValues_find(const ir_slot_values_SlotValues* v, uint16_t slot)
-{
-   return v->values[slot];
-}
-
-static void ir_slot_values_SlotValues_set(ir_slot_values_SlotValues* v, uint16_t slot, ir_Ref ref)
-{
-   (slot < ir_SlotMax) || c2_assert("ir/slot_values.c2", 46, "ir_slot_values.SlotValues.set", "slot < SlotMax");
-   v->values[slot] = ref;
-}
-
-static void ir_slot_values_SlotValues_dump(const ir_slot_values_SlotValues* v)
-{
-   printf("Slot values:\n");
-   for (uint32_t i = 0; i < ir_SlotMax; i++) {
-      ir_Ref* r = &v->values[i];
-      if (ir_Ref_isNone(r)) continue;
-      printf("  %2u  %s%d\n", i, ir_Ref_getKindName(r), r->value);
-   }
-}
-
-
-// --- module ir_slot_writes_map ---
-typedef struct ir_slot_writes_map_SlotWrite_ ir_slot_writes_map_SlotWrite;
-typedef struct ir_slot_writes_map_Arena_ ir_slot_writes_map_Arena;
-typedef struct ir_slot_writes_map_BlockWrites_ ir_slot_writes_map_BlockWrites;
-typedef struct ir_slot_writes_map_Map_ ir_slot_writes_map_Map;
-typedef struct ir_slot_writes_map_Iter_ ir_slot_writes_map_Iter;
-
-struct ir_slot_writes_map_SlotWrite_ {
-   uint16_t slot;
-   ir_Ref ref;
-};
-
-struct ir_slot_writes_map_Arena_ {
-   uint16_t first_var;
-   uint16_t last_var;
-   uint32_t map_start;
-   uint32_t max_elems;
-   uint16_t free_slots;
-};
-
-struct ir_slot_writes_map_BlockWrites_ {
-   uint16_t start;
-   uint16_t count;
-   uint16_t capacity;
-   uint16_t next;
-   uint16_t prev;
-};
-
-#define ir_slot_writes_map_NumArenas 9
-struct ir_slot_writes_map_Map_ {
-   ir_slot_writes_map_SlotWrite* map;
-   ir_slot_writes_map_BlockWrites* blocks;
-   uint32_t num_blocks;
-   uint32_t max_elems;
-   ir_slot_writes_map_Arena arenas[9];
-};
-
-struct ir_slot_writes_map_Iter_ {
-   uint32_t count;
-   ir_slot_writes_map_SlotWrite* ids;
-};
-
-static const uint16_t ir_slot_writes_map_Caps[9] = {
-   0,
-   2,
-   4,
-   8,
-   16,
-   32,
-   64,
-   128,
-   256
-};
-#define ir_slot_writes_map_NULL u16_max
-static ir_slot_writes_map_Map* ir_slot_writes_map_create(uint32_t max_elems, uint16_t num_blocks);
-static void ir_slot_writes_map_Map_free(ir_slot_writes_map_Map* m);
-static void ir_slot_writes_map_Map_clear(ir_slot_writes_map_Map* m);
-static uint32_t ir_slot_writes_map_findArena(uint16_t capacity);
-static uint16_t ir_slot_writes_map_Map_removeBlockWritesFromArena(ir_slot_writes_map_Map* m, ir_slot_writes_map_Arena* a, uint16_t blk_id);
-static void ir_slot_writes_map_Map_addBlockWritesToArenaHead(ir_slot_writes_map_Map* m, ir_slot_writes_map_Arena* a, uint16_t blk_id);
-static void ir_slot_writes_map_Map_addBlockWritesToArenaTail(ir_slot_writes_map_Map* m, ir_slot_writes_map_Arena* a, uint16_t blk_id);
-static void ir_slot_writes_map_Map_add(ir_slot_writes_map_Map* m, uint16_t blk_id, uint16_t slot, ir_Ref ref);
-static ir_slot_writes_map_Iter ir_slot_writes_map_Map_getList(const ir_slot_writes_map_Map* m, uint16_t blk_id);
-static uint16_t ir_slot_writes_map_Map_shiftArenaRight(ir_slot_writes_map_Map* m, uint32_t arena_idx);
-static void ir_slot_writes_map_print_idx(uint16_t idx);
-static void ir_slot_writes_map_Map_dump(const ir_slot_writes_map_Map* m, bool verbose);
-
-static ir_slot_writes_map_Map* ir_slot_writes_map_create(uint32_t max_elems, uint16_t num_blocks)
-{
-   ir_slot_writes_map_Map* m = calloc(1, 168);
-   m->map = malloc(max_elems * 8);
-   m->blocks = malloc(num_blocks * 10);
-   m->num_blocks = num_blocks;
-   m->max_elems = max_elems;
-   ir_slot_writes_map_Map_clear(m);
-   return m;
-}
-
-static void ir_slot_writes_map_Map_free(ir_slot_writes_map_Map* m)
-{
-   free(m->map);
-   free(m->blocks);
-   free(m);
-}
-
-static void ir_slot_writes_map_Map_clear(ir_slot_writes_map_Map* m)
-{
-   memset(m->arenas, 0, 144);
-   memset(m->blocks, 0, m->num_blocks * 10);
-   for (uint32_t i = 0; i < ir_slot_writes_map_NumArenas; i++) {
-      ir_slot_writes_map_Arena* a = &m->arenas[i];
-      a->first_var = ir_slot_writes_map_NULL;
-      a->last_var = ir_slot_writes_map_NULL;
-   }
-   m->arenas[ir_slot_writes_map_NumArenas - 1].max_elems = m->max_elems;
-   m->arenas[ir_slot_writes_map_NumArenas - 1].free_slots = (uint16_t)m->max_elems / ir_slot_writes_map_Caps[ir_slot_writes_map_NumArenas - 1];
-   for (uint16_t i = 0; i < m->num_blocks; i++) ir_slot_writes_map_Map_addBlockWritesToArenaTail(m, &m->arenas[0], i);
-}
-
-static uint32_t ir_slot_writes_map_findArena(uint16_t capacity)
-{
-   for (uint32_t i = 0; i < ir_slot_writes_map_NumArenas; i++) {
-      if (ir_slot_writes_map_Caps[i] == capacity) return i;
-   }
-   (0) || c2_assert("ir/slot_writes_map.c2", 107, "ir_slot_writes_map.findArena", "0");
-   return 0;
-}
-
-static uint16_t ir_slot_writes_map_Map_removeBlockWritesFromArena(ir_slot_writes_map_Map* m, ir_slot_writes_map_Arena* a, uint16_t blk_id)
-{
-   ir_slot_writes_map_BlockWrites* r = &m->blocks[blk_id];
-   if (blk_id == a->last_var) {
-      if (r->prev == ir_slot_writes_map_NULL) {
-         a->first_var = ir_slot_writes_map_NULL;
-      } else {
-         ir_slot_writes_map_BlockWrites* prev = &m->blocks[r->prev];
-         prev->next = ir_slot_writes_map_NULL;
-      }
-      a->last_var = r->prev;
-      return ir_slot_writes_map_NULL;
-   }
-   if (r->prev == ir_slot_writes_map_NULL) {
-      if (blk_id != a->first_var) {
-         ir_slot_writes_map_Map_dump(m, false);
-      }
-      (blk_id == a->first_var) || c2_assert("ir/slot_writes_map.c2", 139, "ir_slot_writes_map.Map.removeBlockWritesFromArena", "blk_id == a.first_var");
-      a->first_var = r->next;
-   } else {
-      ir_slot_writes_map_BlockWrites* prev = &m->blocks[r->prev];
-      prev->next = r->next;
-   }
-   ir_slot_writes_map_BlockWrites* next = &m->blocks[r->next];
-   next->prev = r->prev;
-   uint16_t last_idx = a->last_var;
-   if (r->next == a->last_var) return last_idx;
-   ir_slot_writes_map_BlockWrites* last = &m->blocks[last_idx];
-   ir_slot_writes_map_BlockWrites* prev = &m->blocks[last->prev];
-   prev->next = ir_slot_writes_map_NULL;
-   a->last_var = last->prev;
-   last->next = r->next;
-   last->prev = r->prev;
-   if (r->prev == ir_slot_writes_map_NULL) {
-      a->first_var = last_idx;
-   } else {
-      prev = &m->blocks[r->prev];
-      prev->next = last_idx;
-   }
-   next->prev = last_idx;
-   return last_idx;
-}
-
-static void ir_slot_writes_map_Map_addBlockWritesToArenaHead(ir_slot_writes_map_Map* m, ir_slot_writes_map_Arena* a, uint16_t blk_id)
-{
-   ir_slot_writes_map_BlockWrites* r = &m->blocks[blk_id];
-   r->prev = ir_slot_writes_map_NULL;
-   r->next = a->first_var;
-   if (a->first_var == ir_slot_writes_map_NULL) {
-      a->last_var = blk_id;
-   } else {
-      ir_slot_writes_map_BlockWrites* head = &m->blocks[a->first_var];
-      head->prev = blk_id;
-   }
-   a->first_var = blk_id;
-}
-
-static void ir_slot_writes_map_Map_addBlockWritesToArenaTail(ir_slot_writes_map_Map* m, ir_slot_writes_map_Arena* a, uint16_t blk_id)
-{
-   ir_slot_writes_map_BlockWrites* r = &m->blocks[blk_id];
-   r->prev = a->last_var;
-   r->next = ir_slot_writes_map_NULL;
-   if (a->first_var == ir_slot_writes_map_NULL) {
-      a->first_var = blk_id;
-   } else {
-      ir_slot_writes_map_BlockWrites* tail = &m->blocks[a->last_var];
-      tail->next = blk_id;
-   }
-   a->last_var = blk_id;
-}
-
-static void ir_slot_writes_map_Map_add(ir_slot_writes_map_Map* m, uint16_t blk_id, uint16_t slot, ir_Ref ref)
-{
-   ir_slot_writes_map_BlockWrites* r = &m->blocks[blk_id];
-   if (r->count < r->capacity) {
-      uint32_t idx = r->start + r->count;
-      m->map[idx].slot = slot;
-      m->map[idx].ref = ref;
-      r->count++;
-      return;
-   }
-   uint32_t arena_idx = ir_slot_writes_map_findArena(r->capacity);
-   (arena_idx != ir_slot_writes_map_NumArenas - 1) || c2_assert("ir/slot_writes_map.c2", 222, "ir_slot_writes_map.Map.add", "arena_idx != NumArenas - 1");
-   ir_slot_writes_map_Arena* a1 = &m->arenas[arena_idx];
-   ir_slot_writes_map_Arena* a2 = &m->arenas[arena_idx + 1];
-   if (arena_idx != 0 && a1->free_slots >= 3 && a1->free_slots >= a2->free_slots * 2) {
-      uint16_t cap = ir_slot_writes_map_Caps[arena_idx + 1];
-      uint16_t last_idx = ir_slot_writes_map_Map_removeBlockWritesFromArena(m, a1, blk_id);
-      ir_slot_writes_map_Map_addBlockWritesToArenaHead(m, a2, blk_id);
-      a1->max_elems -= cap;
-      a1->free_slots -= 1;
-      a2->map_start -= cap;
-      a2->max_elems += cap;
-      uint32_t dest_idx = a2->map_start;
-      uint16_t src_idx = r->start;
-      memcpy(&m->map[dest_idx], &m->map[src_idx], r->count * 8);
-      (dest_idx < 65536) || c2_assert("ir/slot_writes_map.c2", 248, "ir_slot_writes_map.Map.add", "dest_idx < 65536");
-      r->start = (uint16_t)dest_idx;
-      r->capacity = (uint8_t)cap;
-      if (last_idx != ir_slot_writes_map_NULL) {
-         ir_slot_writes_map_BlockWrites* last = &m->blocks[last_idx];
-         memcpy(&m->map[src_idx], &m->map[last->start], last->count * 8);
-         last->start = src_idx;
-      }
-   } else {
-      if (!a2->free_slots) {
-         a2->max_elems += ir_slot_writes_map_Map_shiftArenaRight(m, arena_idx + 2);
-         a2->free_slots = 2;
-      }
-      uint16_t last_idx = ir_slot_writes_map_Map_removeBlockWritesFromArena(m, a1, blk_id);
-      ir_slot_writes_map_Map_addBlockWritesToArenaTail(m, a2, blk_id);
-      uint32_t dest_idx = a2->map_start + a2->max_elems - a2->free_slots * ir_slot_writes_map_Caps[arena_idx + 1];
-      uint16_t src_idx = r->start;
-      if (r->count) {
-         memcpy(&m->map[dest_idx], &m->map[src_idx], r->count * 8);
-         if (last_idx != ir_slot_writes_map_NULL) {
-            ir_slot_writes_map_BlockWrites* last = &m->blocks[last_idx];
-            memcpy(&m->map[src_idx], &m->map[last->start], last->count * 8);
-            last->start = src_idx;
-         }
-      }
-      r->capacity = ir_slot_writes_map_Caps[arena_idx + 1];
-      r->start = (uint16_t)dest_idx;
-      a1->free_slots++;
-      a2->free_slots--;
-   }
-   ir_slot_writes_map_SlotWrite* wr = &m->map[r->start + r->count];
-   wr->slot = slot;
-   wr->ref = ref;
-   r->count++;
-}
-
-static ir_slot_writes_map_Iter ir_slot_writes_map_Map_getList(const ir_slot_writes_map_Map* m, uint16_t blk_id)
-{
-   const ir_slot_writes_map_BlockWrites* r = &m->blocks[blk_id];
-   return (ir_slot_writes_map_Iter){ .count = r->count, .ids = &m->map[r->start] };
-}
-
-static uint16_t ir_slot_writes_map_Map_shiftArenaRight(ir_slot_writes_map_Map* m, uint32_t arena_idx)
-{
-   uint16_t cap = ir_slot_writes_map_Caps[arena_idx];
-   ir_slot_writes_map_Arena* a = &m->arenas[arena_idx];
-   if (!a->free_slots) {
-      if (arena_idx == ir_slot_writes_map_NumArenas - 1) ir_slot_writes_map_Map_dump(m, true);
-      (arena_idx != ir_slot_writes_map_NumArenas - 1) || c2_assert("ir/slot_writes_map.c2", 311, "ir_slot_writes_map.Map.shiftArenaRight", "arena_idx != NumArenas - 1");
-      a->max_elems += ir_slot_writes_map_Map_shiftArenaRight(m, arena_idx + 1);
-      a->free_slots = 2;
-   }
-   if (a->first_var == ir_slot_writes_map_NULL) {
-      a->map_start += cap;
-      a->max_elems -= cap;
-      a->free_slots--;
-      return cap;
-   }
-   uint16_t blk_id = a->first_var;
-   ir_slot_writes_map_BlockWrites* r = &m->blocks[blk_id];
-   uint16_t src_idx = r->start;
-   uint32_t dest_idx = a->map_start + a->max_elems - a->free_slots * cap;
-   memcpy(&m->map[dest_idx], &m->map[src_idx], r->count * 8);
-   r->start = (uint16_t)dest_idx;
-   if (a->first_var != a->last_var) {
-      ir_slot_writes_map_BlockWrites* head = &m->blocks[r->next];
-      head->prev = ir_slot_writes_map_NULL;
-      ir_slot_writes_map_BlockWrites* tail = &m->blocks[a->last_var];
-      tail->next = blk_id;
-      r->prev = a->last_var;
-      a->first_var = r->next;
-      a->last_var = blk_id;
-      r->next = ir_slot_writes_map_NULL;
-   }
-   a->map_start += cap;
-   a->max_elems -= cap;
-   a->free_slots--;
-   return cap;
-}
-
-static void ir_slot_writes_map_print_idx(uint16_t idx)
-{
-   if (idx == ir_slot_writes_map_NULL) printf("   -");
-   else printf("%4d", idx);
-}
-
-static void ir_slot_writes_map_Map_dump(const ir_slot_writes_map_Map* m, bool verbose)
-{
-   if (verbose) {
-      uint32_t mem_blocks = m->num_blocks * 10;
-      uint32_t mem_map = m->max_elems * 2;
-      uint32_t mem_usage = mem_blocks + mem_map;
-      printf("Map: (%u users, map %u, %u/%u Kb)\n", m->num_blocks, m->max_elems, (mem_blocks + 512) / 1024, (mem_usage + 512) / 1024);
-      printf("Arenas:\n");
-      uint32_t total = 0;
-      for (uint32_t i = 0; i < ir_slot_writes_map_NumArenas; i++) {
-         const ir_slot_writes_map_Arena* a = &m->arenas[i];
-         uint32_t count = 0;
-         uint16_t idx = a->first_var;
-         while (idx != ir_slot_writes_map_NULL) {
-            const ir_slot_writes_map_BlockWrites* r = &m->blocks[idx];
-            idx = r->next;
-            count++;
-         }
-         total += count;
-         printf("  [%u] size %4d  blocks ", i, ir_slot_writes_map_Caps[i]);
-         ir_slot_writes_map_print_idx(a->first_var);
-         printf(",");
-         ir_slot_writes_map_print_idx(a->last_var);
-         printf("  (%4u)  map %5u(%4u)  free: ", count, a->map_start, a->max_elems);
-         if (i == 0) printf("-");
-         else printf("%d", a->free_slots);
-         printf("\n");
-      }
-      if (total != m->num_blocks) {
-         printf("WARNING: invalid num_blocks, expect %u, got %u\n", m->num_blocks, total);
-      }
-      printf("BlockWritess (%u)\n", m->num_blocks);
-      for (uint32_t i = 0; i < m->num_blocks; i++) {
-         const ir_slot_writes_map_BlockWrites* r = &m->blocks[i];
-         printf("  [%4u] %4d  %4d/%4d  prev ", i, r->start, r->count, r->capacity);
-         ir_slot_writes_map_print_idx(r->prev);
-         printf("  next ");
-         ir_slot_writes_map_print_idx(r->next);
-         printf("\n");
-      }
-   }
-   for (uint32_t i = 0; i < m->num_blocks; i++) {
-      ir_slot_writes_map_Iter iter = ir_slot_writes_map_Map_getList(m, (uint16_t)i);
-      if (iter.count == 0) continue;
-      printf(" B%2u ", i);
-      for (uint32_t j = 0; j < iter.count; j++) {
-         const ir_slot_writes_map_SlotWrite* w = &iter.ids[j];
-         printf("  s%d:%s%d", w->slot, ir_Ref_getKindName(&w->ref), w->ref.value);
-      }
-      printf("\n");
-   }
-}
-
-
-// --- module usage_counter ---
-typedef struct usage_counter_Counter_ usage_counter_Counter;
-
-struct usage_counter_Counter_ {
-   uint32_t count;
-   uint32_t capacity;
-   uint8_t* counts;
-   uint32_t max_idx;
-   uint32_t work_queue[64];
-   uint32_t queue_head;
-   uint32_t queue_count;
-};
-
-static void usage_counter_Counter_init(usage_counter_Counter* c, uint32_t cap);
-static void usage_counter_Counter_free(usage_counter_Counter* c);
-static void usage_counter_Counter_resize(usage_counter_Counter* c, uint32_t cap);
-static void usage_counter_Counter_clear(usage_counter_Counter* c, uint32_t cap);
-static void usage_counter_Counter_incr(usage_counter_Counter* c, uint32_t idx);
-static void usage_counter_Counter_decr(usage_counter_Counter* c, uint32_t idx);
-static bool usage_counter_Counter_hasWork(const usage_counter_Counter* c);
-static void usage_counter_Counter_fillQueue(usage_counter_Counter* c);
-static uint32_t usage_counter_Counter_popHead(usage_counter_Counter* c);
-static void usage_counter_Counter_dump(const usage_counter_Counter* c);
-
-static void usage_counter_Counter_init(usage_counter_Counter* c, uint32_t cap)
-{
-   c->count = 0;
-   c->capacity = 0;
-   c->counts = NULL;
-   usage_counter_Counter_resize(c, cap);
-   c->max_idx = 0;
-   c->queue_head = 0;
-   c->queue_count = 0;
-}
-
-static void usage_counter_Counter_free(usage_counter_Counter* c)
-{
-   free(c->counts);
-}
-
-static void usage_counter_Counter_resize(usage_counter_Counter* c, uint32_t cap)
-{
-   if (c->counts) free(c->counts);
-   c->counts = malloc(cap * 1);
-}
-
-static void usage_counter_Counter_clear(usage_counter_Counter* c, uint32_t cap)
-{
-   if (cap > c->capacity) usage_counter_Counter_resize(c, cap);
-   c->count = cap;
-   memset(c->counts, 0, cap);
-   c->max_idx = 0;
-   c->queue_head = 0;
-   c->queue_count = 0;
-}
-
-static void usage_counter_Counter_incr(usage_counter_Counter* c, uint32_t idx)
-{
-   (c->counts[idx] != c2_max_u8) || c2_assert("ir/usage_counter.c2", 67, "usage_counter.Counter.incr", "c.counts[idx] != c2.max_u8");
-   c->counts[idx]++;
-   if (idx > c->max_idx) c->max_idx = idx;
-}
-
-static void usage_counter_Counter_decr(usage_counter_Counter* c, uint32_t idx)
-{
-   c->counts[idx]--;
-   if (c->counts[idx] == 1) {
-      uint32_t pos = c->queue_head;
-      for (uint32_t i = 0; i < c->queue_count; i++) {
-         if (c->work_queue[pos] == idx) return;
-         pos = (pos + 1) % 64;
-      }
-      (c->queue_count != 64) || c2_assert("ir/usage_counter.c2", 81, "usage_counter.Counter.decr", "c.queue_count != elemsof(c.work_queue)");
-      c->work_queue[pos] = idx;
-      c->queue_count++;
-   }
-}
-
-static bool usage_counter_Counter_hasWork(const usage_counter_Counter* c)
-{
-   return c->queue_count != 0;
-}
-
-static void usage_counter_Counter_fillQueue(usage_counter_Counter* c)
-{
-   uint32_t i = c->max_idx;
-   while (i != c2_max_u32) {
-      if (c->counts[i] == 1) {
-         (c->queue_count != 64) || c2_assert("ir/usage_counter.c2", 95, "usage_counter.Counter.fillQueue", "c.queue_count != elemsof(c.work_queue)");
-         c->work_queue[c->queue_count++] = i;
-      }
-      i--;
-   }
-}
-
-static uint32_t usage_counter_Counter_popHead(usage_counter_Counter* c)
-{
-   uint32_t idx = c->work_queue[c->queue_head];
-   c->queue_head = (c->queue_head + 1) % 64;
-   c->queue_count--;
-   return idx;
-}
-
-static void usage_counter_Counter_dump(const usage_counter_Counter* c)
-{
-   for (uint32_t i = 0; i <= c->max_idx; i++) {
-      if (c->counts[i] != 0) printf("  [%3u] %d\n", i, c->counts[i]);
-   }
-}
-
-
-// --- module git_version ---
-
-static const char git_version_Describe[9] = "67e27b96";
-
-
 // --- module attr ---
 typedef struct attr_AttrValue_ attr_AttrValue;
 typedef struct attr_Attr_ attr_Attr;
@@ -8406,15 +5066,15 @@ static const char* attr_Attr_kind2name(const attr_Attr* a)
 static void attr_AttrRegistry_init(attr_AttrRegistry* ar, string_pool_Pool* pool)
 {
    ar->name_indexes[0] = 0;
-   for (uint32_t i = 1; i < 24; i++) {
-      ar->name_indexes[i] = string_pool_Pool_addStr(pool, attr_attrKind_names[i], true);
+   for (attr_AttrKind kind = (attr_AttrKind)1; kind <= attr_AttrKind_Deprecated; kind++) {
+      ar->name_indexes[kind] = string_pool_Pool_addStr(pool, attr_attrKind_names[kind], true);
    }
 }
 
 static attr_AttrKind attr_AttrRegistry_find(attr_AttrRegistry* ar, uint32_t name_idx)
 {
-   for (uint32_t i = 1; i < 24; i++) {
-      if (name_idx == ar->name_indexes[i]) return (attr_AttrKind)i;
+   for (attr_AttrKind kind = (attr_AttrKind)1; kind <= attr_AttrKind_Deprecated; kind++) {
+      if (name_idx == ar->name_indexes[kind]) return kind;
    }
    return attr_AttrKind_Unknown;
 }
@@ -8652,8 +5312,6 @@ typedef struct ast_Module_ ast_Module;
 typedef struct ast_PointerPoolSlot_ ast_PointerPoolSlot;
 typedef struct ast_PointerPool_ ast_PointerPool;
 typedef struct ast_StaticAssertList_ ast_StaticAssertList;
-typedef struct ast_Stat_ ast_Stat;
-typedef struct ast_Stats_ ast_Stats;
 typedef struct ast_StringTypeSlot_ ast_StringTypeSlot;
 typedef struct ast_StringTypePool_ ast_StringTypePool;
 typedef struct ast_SymbolTable_ ast_SymbolTable;
@@ -8769,7 +5427,6 @@ struct ast_Decl_ {
    ast_QualType qt;
 };
 
-static const char* ast_declCheckState_names[3] = { "unchecked", "in-progress", "checked" };
 static const char* ast_declKind_names[8] = {
    "FunctionDecl",
    "ImportDecl",
@@ -8780,6 +5437,7 @@ static const char* ast_declKind_names[8] = {
    "AliasTypeDecl",
    "VarDecl"
 };
+static const char* ast_declCheckState_names[3] = { "unchecked", "in-progress", "checked" };
 #define ast_NumDeclBits 15
 static void ast_Decl_init(ast_Decl* d, ast_DeclKind k, uint32_t name_idx, src_loc_SrcLoc loc, bool is_public, ast_QualType qt, uint32_t ast_idx);
 static bool ast_Decl_hasGenIdx(const ast_Decl* d);
@@ -9001,6 +5659,7 @@ struct ast_IdentifierExprBits_ {
    uint32_t  : 14;
    uint32_t has_decl : 1;
    uint32_t kind : 3;
+   uint32_t name_len : 14;
 };
 
 struct ast_ImplicitCastBits_ {
@@ -9023,8 +5682,7 @@ struct ast_IntegerLiteralBits_ {
 struct ast_MemberExprBits_ {
    uint32_t  : 14;
    uint32_t kind : 3;
-   uint32_t num_refs : 3;
-   uint32_t num_decls : 3;
+   uint32_t num_decls : 2;
    uint32_t has_expr : 1;
    uint32_t is_struct_func : 1;
    uint32_t is_static_sf : 1;
@@ -9032,6 +5690,7 @@ struct ast_MemberExprBits_ {
    uint32_t is_volatile_base : 1;
    uint32_t conversion : 2;
    uint32_t is_bitfield : 1;
+   uint32_t base_len : 5;
 };
 
 struct ast_ParenExprBits_ {
@@ -9512,6 +6171,7 @@ static void ast_VarDecl_setInitCall(ast_VarDecl* d, bool has_init_call);
 static bool ast_VarDecl_hasInitCall(const ast_VarDecl* d);
 static void ast_VarDecl_setAttrWeak(ast_VarDecl* d);
 static bool ast_VarDecl_hasAttrWeak(const ast_VarDecl* d);
+static ast_AutoAttr ast_VarDecl_getAutoAttr(const ast_VarDecl* d);
 static void ast_VarDecl_setAttrAutoFile(ast_VarDecl* d);
 static bool ast_VarDecl_hasAttrAutoFile(const ast_VarDecl* d);
 static void ast_VarDecl_setAttrAutoLine(ast_VarDecl* d);
@@ -10235,10 +6895,11 @@ struct ast_IdentifierExpr_ {
 };
 
 static const char* ast_IdentifierKind_str(ast_IdentifierKind k);
-static ast_IdentifierExpr* ast_IdentifierExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, uint32_t name);
+static ast_IdentifierExpr* ast_IdentifierExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, uint32_t name, uint32_t name_len);
 static ast_Expr* ast_IdentifierExpr_instantiate(ast_IdentifierExpr* e, ast_Instantiator* inst);
 static ast_Expr* ast_IdentifierExpr_asExpr(ast_IdentifierExpr* e);
 static void ast_IdentifierExpr_setDecl(ast_IdentifierExpr* e, ast_Decl* decl);
+static bool ast_IdentifierExpr_hasDecl(const ast_IdentifierExpr* e);
 static ast_Decl* ast_IdentifierExpr_getDecl(const ast_IdentifierExpr* e);
 static ast_Ref ast_IdentifierExpr_getRef(const ast_IdentifierExpr* e);
 static void ast_IdentifierExpr_setKind(ast_IdentifierExpr* e, ast_IdentifierKind kind);
@@ -10315,26 +6976,30 @@ union ast_MemberRef_ {
    uint32_t name_idx;
    ast_Decl* decl;
    ast_Expr* expr;
+   size_t bits;
 };
 
 struct ast_MemberExpr_ {
    ast_Expr base;
-   ast_MemberRef refs[0];
+   ast_MemberRef refs[2];
 };
 
-#define ast_MemberExprMaxDepth 7
-static ast_MemberExpr* ast_MemberExpr_create(ast_context_Context* c, ast_Expr* base, const ast_Ref* refs, uint32_t refcount);
+static ast_MemberExpr* ast_MemberExpr_create(ast_context_Context* c, ast_Expr* base, uint32_t base_name_idx, uint32_t base_len, src_loc_SrcLoc loc, uint32_t member_name_idx);
 static ast_Expr* ast_MemberExpr_instantiate(ast_MemberExpr* e, ast_Instantiator* inst);
 static bool ast_MemberExpr_hasExpr(const ast_MemberExpr* e);
-static ast_Expr* ast_MemberExpr_getExprBase(const ast_MemberExpr* e);
+static ast_Expr* ast_MemberExpr_getBaseExpr(const ast_MemberExpr* e);
 static void ast_MemberExpr_setConversion(ast_MemberExpr* e, ast_MemberConversion c);
 static ast_MemberConversion ast_MemberExpr_getConversion(const ast_MemberExpr* e);
 static const char* ast_MemberExpr_getName(const ast_MemberExpr* e, uint32_t ref_idx);
-static uint32_t ast_MemberExpr_getNumRefs(const ast_MemberExpr* e);
 static uint32_t ast_MemberExpr_getNameIdx(const ast_MemberExpr* e, uint32_t ref_idx);
 static src_loc_SrcLoc ast_MemberExpr_getLoc(const ast_MemberExpr* e, uint32_t ref_idx);
-static src_loc_SrcRange ast_MemberExpr_getRange(const ast_MemberExpr* e, uint32_t ref_idx);
-static ast_Ref ast_MemberExpr_getRef(const ast_MemberExpr* e, uint32_t ref_idx);
+static src_loc_SrcLoc ast_MemberExpr_getMemberLoc(const ast_MemberExpr* e);
+static src_loc_SrcLoc ast_MemberExpr_getStartLoc(const ast_MemberExpr* e);
+static src_loc_SrcLoc ast_MemberExpr_getEndLoc(const ast_MemberExpr* e);
+static src_loc_SrcLoc ast_MemberExpr_getBaseEndLoc(const ast_MemberExpr* e);
+static src_loc_SrcRange ast_MemberExpr_getBaseRange(const ast_MemberExpr* e);
+static ast_Ref ast_MemberExpr_getBaseRef(const ast_MemberExpr* e);
+static ast_Ref ast_MemberExpr_getRef(const ast_MemberExpr* e);
 static ast_IdentifierKind ast_MemberExpr_getKind(const ast_MemberExpr* e);
 static void ast_MemberExpr_setKind(ast_MemberExpr* e, ast_IdentifierKind kind);
 static void ast_MemberExpr_setIsTypeFunc(ast_MemberExpr* e);
@@ -10347,15 +7012,12 @@ static void ast_MemberExpr_setConstBase(ast_MemberExpr* e, bool b);
 static bool ast_MemberExpr_isConstBase(const ast_MemberExpr* e);
 static void ast_MemberExpr_setVolatileBase(ast_MemberExpr* e, bool b);
 static bool ast_MemberExpr_isVolatileBase(const ast_MemberExpr* e);
-static ast_Decl* ast_MemberExpr_getPrevLastDecl(const ast_MemberExpr* e);
+static ast_Decl* ast_MemberExpr_getBaseDecl(const ast_MemberExpr* e);
 static ast_Decl* ast_MemberExpr_getFullDecl(const ast_MemberExpr* e);
 static ast_Decl* ast_MemberExpr_getDecl(const ast_MemberExpr* e, uint32_t ref_idx);
 static void ast_MemberExpr_setDecl(ast_MemberExpr* e, ast_Decl* d, uint32_t ref_idx);
-static src_loc_SrcLoc ast_MemberExpr_getStartLoc(const ast_MemberExpr* e);
-static src_loc_SrcLoc ast_MemberExpr_getLastLoc(const ast_MemberExpr* e);
-static src_loc_SrcLoc ast_MemberExpr_getEndLoc(const ast_MemberExpr* e);
 static ast_QualType ast_MemberExpr_getBaseType(const ast_MemberExpr* m);
-static const char* ast_MemberExpr_getLastMemberName(const ast_MemberExpr* e);
+static const char* ast_MemberExpr_getMemberName(const ast_MemberExpr* e);
 static void ast_MemberExpr_print(const ast_MemberExpr* e, string_buffer_Buf* out, uint32_t indent);
 static void ast_MemberExpr_printLiteral(const ast_MemberExpr* e, string_buffer_Buf* out);
 static void ast_MemberExpr_dump(const ast_MemberExpr* m);
@@ -10694,6 +7356,7 @@ static const char* ast_BuiltinKind_str(ast_BuiltinKind kind);
 static ast_BuiltinType* ast_BuiltinType_create(ast_context_Context* c, ast_BuiltinKind kind);
 static ast_BuiltinKind ast_BuiltinType_getKind(const ast_BuiltinType* b);
 static ast_BuiltinKind ast_BuiltinType_getBaseKind(const ast_BuiltinType* b);
+static ast_BuiltinKind ast_BuiltinType_getBuiltinKind(const ast_BuiltinType* b);
 static bool ast_BuiltinType_isInt32(const ast_BuiltinType* b);
 static bool ast_BuiltinType_isBool(const ast_BuiltinType* b);
 static const char* ast_BuiltinType_kind2str(const ast_BuiltinType* b);
@@ -10762,7 +7425,7 @@ static void ast_QualType_clearQuals(ast_QualType* qt);
 static bool ast_QualType_isConstant(const ast_QualType qt);
 static bool ast_QualType_isValid(const ast_QualType qt);
 static bool ast_QualType_isInvalid(const ast_QualType qt);
-static uint32_t ast_QualType_getBitFieldWidth(const ast_QualType qt);
+static uint32_t ast_QualType_getBitFieldWidth(const ast_QualType qt, bool precise);
 static bool ast_QualType_isScalar(const ast_QualType qt);
 static ast_Type* ast_QualType_getType(const ast_QualType qt);
 static ast_Type* ast_QualType_getTypeOrNil(const ast_QualType qt);
@@ -10770,7 +7433,6 @@ static bool ast_QualType_hasCanonicalType(const ast_QualType qt);
 static ast_QualType ast_QualType_getCanonicalType(const ast_QualType qt);
 static void ast_QualType_setCanonicalType(ast_QualType* qt, ast_QualType canon);
 static ast_QualType ast_QualType_getImplType(const ast_QualType* qt);
-static bool ast_QualType_isConstPtr(const ast_QualType qt);
 static ast_TypeKind ast_QualType_getKind(const ast_QualType qt);
 static uint32_t ast_QualType_getIndex(const ast_QualType qt);
 static uint32_t ast_QualType_getAlignment(const ast_QualType qt);
@@ -11169,34 +7831,6 @@ static void ast_StaticAssertList_add(ast_StaticAssertList* l, ast_StaticAssert* 
 static uint32_t ast_StaticAssertList_getCount(const ast_StaticAssertList* l);
 static ast_StaticAssert* ast_StaticAssertList_getAt(const ast_StaticAssertList* l, uint32_t idx);
 static ast_StaticAssert** ast_StaticAssertList_get(ast_StaticAssertList* l);
-#define ast_NCat 1
-struct ast_Stat_ {
-   uint32_t count[1];
-   uint32_t size[1];
-};
-
-struct ast_Stats_ {
-   ast_Stat types[9];
-   ast_Stat exprs[25];
-   ast_Stat stmts[15];
-   ast_Stat decls[8];
-   ast_Stat others[3];
-};
-
-#define ast_BucketWidth 8
-static const char* ast_other_names[3] = { "ArrayValue", "StaticAssert", "SwitchCase" };
-static void ast_Stats_reset(ast_Stats* s);
-static void ast_Stat_add(ast_Stat* ss, uint32_t size);
-static void ast_Stats_addType(ast_TypeKind kind, uint32_t size);
-static void ast_Stats_addExpr(ast_ExprKind kind, uint32_t size);
-static void ast_Stats_addStmt(ast_StmtKind kind, uint32_t size);
-static void ast_Stats_addDecl(ast_DeclKind kind, uint32_t size);
-static void ast_Stats_addArrayValue(uint32_t size);
-static void ast_Stats_addStaticAssert(uint32_t size);
-static void ast_Stats_addSwitchCase(uint32_t size);
-static void ast_Stat_slack(const ast_Stat* ss, uint32_t* countp, uint32_t* totalp);
-static void ast_Stat_dump(const ast_Stat* ss, const char* name, uint32_t* countp, uint32_t* totalp);
-static void ast_Stats_dump(const ast_Stats* s);
 struct ast_StringTypeSlot_ {
    uint32_t len;
    ast_Type* type_;
@@ -11240,7 +7874,6 @@ struct ast_Globals_ {
    uint32_t builtinType_width[14];
    ast_BuiltinKind builtinType_baseTypes[14];
    string_buffer_Buf* dump_buf;
-   ast_Stats stats;
 };
 
 typedef bool (*ast_AttrHandlerFn)(void* arg, ast_Decl* d, const attr_Attr* a);
@@ -11374,12 +8007,12 @@ static ast_DeclCheckState ast_Decl_getCheckState(const ast_Decl* d)
 
 static bool ast_Decl_isChecked(const ast_Decl* d)
 {
-   return d->declBits.check_state == ast_DeclCheckState_Checked;
+   return ast_Decl_getCheckState(d) == ast_DeclCheckState_Checked;
 }
 
 static bool ast_Decl_isCheckInProgress(const ast_Decl* d)
 {
-   return d->declBits.check_state == ast_DeclCheckState_InProgress;
+   return ast_Decl_getCheckState(d) == ast_DeclCheckState_InProgress;
 }
 
 static void ast_Decl_setChecked(ast_Decl* d)
@@ -11815,7 +8448,6 @@ static ast_AliasTypeDecl* ast_AliasTypeDecl_create(ast_context_Context* c, uint3
    ast_AliasType* at = ast_AliasType_create(c, d);
    ast_Decl_init(&d->base, ast_DeclKind_AliasType, name, loc, is_public, ast_QualType_create((ast_Type*)at), ast_idx);
    ast_TypeRef_init(&d->typeRef, ref);
-   ast_Stats_addDecl(ast_DeclKind_AliasType, size);
    return d;
 }
 
@@ -11848,7 +8480,6 @@ static ast_ArrayValue* ast_ArrayValue_create(ast_context_Context* c, uint32_t na
    d->name_idx = name;
    d->loc = loc;
    d->value = value;
-   ast_Stats_addArrayValue(16);
    return d;
 }
 
@@ -11878,7 +8509,6 @@ static ast_DeclStmt* ast_DeclStmt_create(ast_context_Context* c, ast_VarDecl** d
    ast_Stmt_init(&s->base, ast_StmtKind_Decl, ast_Decl_getLoc(ast_VarDecl_asDecl(decl[0])));
    s->base.declStmtBits.count = count;
    memcpy(s->decl, decl, 8 * count);
-   ast_Stats_addStmt(ast_StmtKind_Decl, size);
    return s;
 }
 
@@ -11919,7 +8549,6 @@ static ast_EnumConstantDecl* ast_EnumConstantDecl_create(ast_context_Context* c,
       d->base.enumConstantDeclBits.has_init = 1;
       d->init[0] = initValue;
    }
-   ast_Stats_addDecl(ast_DeclKind_EnumConstant, size);
    return d;
 }
 
@@ -11985,7 +8614,7 @@ static ast_EnumTypeDecl* ast_EnumTypeDecl_create(ast_context_Context* c, uint32_
    d->num_enum_functions = 0;
    d->enum_functions = NULL;
    if (is_incremental) {
-      (num_constants == 0) || c2_assert("ast/enum_type_decl.c2", 62, "ast.EnumTypeDecl.create", "num_constants == 0");
+      ;//assert(num_constants == 0);
       d->incr_constants[0] = NULL;
    } else {
       memcpy(d->constants, constants, num_constants * 8);
@@ -11993,7 +8622,6 @@ static ast_EnumTypeDecl* ast_EnumTypeDecl_create(ast_context_Context* c, uint32_
          ast_Decl_setType(ast_EnumConstantDecl_asDecl(constants[i]), qt);
       }
    }
-   ast_Stats_addDecl(ast_DeclKind_EnumType, size);
    return d;
 }
 
@@ -12037,7 +8665,7 @@ static ast_EnumConstantDecl** ast_EnumTypeDecl_getConstants(ast_EnumTypeDecl* d)
 
 static void ast_EnumTypeDecl_setIncrConstants(ast_EnumTypeDecl* d, ast_context_Context* c, ast_IdentifierExpr** constants, uint32_t count)
 {
-   (count) || c2_assert("ast/enum_type_decl.c2", 114, "ast.EnumTypeDecl.setIncrConstants", "count");
+   ;//assert(count);
    const uint32_t size = count * 8;
    ast_EnumConstantDecl** decls = ast_context_Context_alloc(c, size);
    ast_QualType qt = ast_Decl_getType(&d->base);
@@ -12133,7 +8761,6 @@ static ast_FunctionDecl* ast_FunctionDecl_create(ast_context_Context* c, uint32_
       ast_VarDecl** tail = ast_TypeRef_getPointerAfter(&d->rtype);
       memcpy(tail, params, num_params * 8);
    }
-   ast_Stats_addDecl(ast_DeclKind_Function, size);
    return d;
 }
 
@@ -12161,7 +8788,6 @@ static ast_FunctionDecl* ast_FunctionDecl_createTemplate(ast_context_Context* c,
       ast_VarDecl** tail = ast_TypeRef_getPointerAfter(&d->rtype);
       memcpy(tail, params, num_params * 8);
    }
-   ast_Stats_addDecl(ast_DeclKind_Function, size);
    return d;
 }
 
@@ -12193,7 +8819,6 @@ static ast_FunctionDecl* ast_FunctionDecl_instantiate(const ast_FunctionDecl* fd
    for (uint32_t i = 0; i < num_params; i++) {
       dst[i] = ast_VarDecl_instantiate(src[i], inst);
    }
-   ast_Stats_addDecl(ast_DeclKind_Function, size);
    return fd2;
 }
 
@@ -12282,22 +8907,22 @@ static bool ast_FunctionDecl_hasPrefix(const ast_FunctionDecl* d)
 
 static bool ast_FunctionDecl_isType(const ast_FunctionDecl* d)
 {
-   return d->base.functionDeclBits.def_kind == ast_DefKind_Type;
+   return ast_FunctionDecl_getDefKind(d) == ast_DefKind_Type;
 }
 
 static bool ast_FunctionDecl_isTemplate(const ast_FunctionDecl* d)
 {
-   return d->base.functionDeclBits.def_kind == ast_DefKind_Template;
+   return ast_FunctionDecl_getDefKind(d) == ast_DefKind_Template;
 }
 
 static bool ast_FunctionDecl_isMemberType(const ast_FunctionDecl* d)
 {
-   return d->base.functionDeclBits.def_kind == ast_DefKind_StructMember;
+   return ast_FunctionDecl_getDefKind(d) == ast_DefKind_StructMember;
 }
 
 static bool ast_FunctionDecl_isParam(const ast_FunctionDecl* d)
 {
-   return d->base.functionDeclBits.def_kind == ast_DefKind_Param;
+   return ast_FunctionDecl_getDefKind(d) == ast_DefKind_Param;
 }
 
 static ast_DefKind ast_FunctionDecl_getDefKind(const ast_FunctionDecl* d)
@@ -12393,7 +9018,7 @@ static uint32_t ast_FunctionDecl_getNumAutoArgs(const ast_FunctionDecl* d)
 
 static void ast_FunctionDecl_setNumAutoArgs(ast_FunctionDecl* d, uint32_t num)
 {
-   (num < 16) || c2_assert("ast/function_decl.c2", 403, "ast.FunctionDecl.setNumAutoArgs", "num < 16");
+   ;//assert(num < 16);
    d->flags.num_auto_args = num;
 }
 
@@ -12547,7 +9172,7 @@ static void ast_FunctionDecl_print(const ast_FunctionDecl* d, string_buffer_Buf*
    if (name) string_buffer_Buf_add(out, name);
    else string_buffer_Buf_add(out, "<unnamed>");
    string_buffer_Buf_newline(out);
-   if (d->base.functionDeclBits.def_kind == ast_DefKind_Template) {
+   if (ast_FunctionDecl_getDefKind(d) == ast_DefKind_Template) {
       string_buffer_Buf_indent(out, indent + 1);
       string_buffer_Buf_color(out, ast_col_Template);
       string_buffer_Buf_print(out, "template %s\n", ast_idx2name(d->template_name));
@@ -12588,7 +9213,6 @@ static ast_FunctionTypeDecl* ast_FunctionTypeDecl_create(ast_context_Context* c,
    ast_Decl* d = ast_FunctionDecl_asDecl(func);
    ast_Decl_init(&ftd->base, ast_DeclKind_FunctionType, ast_Decl_getNameIdx(d), ast_Decl_getLoc(d), ast_Decl_isPublic(d), ast_Decl_getType(d), ast_Decl_getASTIdx(d));
    ftd->func = func;
-   ast_Stats_addDecl(ast_DeclKind_FunctionType, 32);
    return ftd;
 }
 
@@ -12620,7 +9244,6 @@ static ast_ImportDecl* ast_ImportDecl_create(ast_context_Context* c, uint32_t na
    d->alias_idx = alias_name;
    d->alias_loc = alias_loc;
    d->dest = NULL;
-   ast_Stats_addDecl(ast_DeclKind_Import, 40);
    return d;
 }
 
@@ -12699,7 +9322,6 @@ static ast_StaticAssert* ast_StaticAssert_create(ast_context_Context* c, uint32_
    d->loc = loc;
    d->lhs = lhs;
    d->rhs = rhs;
-   ast_Stats_addStaticAssert(24);
    return d;
 }
 
@@ -12774,7 +9396,6 @@ static ast_StructTypeDecl* ast_StructTypeDecl_create(ast_context_Context* c, uin
       memcpy(d->members, members, num_members * 8);
       memset(layout->members, 0, num_members * 12);
    }
-   ast_Stats_addDecl(ast_DeclKind_StructType, size);
    return d;
 }
 
@@ -13144,7 +9765,7 @@ static double ast_Value_toFloat(const ast_Value* v)
 
 static uint8_t ast_Value_as_u8(const ast_Value* v)
 {
-   (v->kind == ast_ValueKind_Integer) || c2_assert("ast/value.c2", 144, "ast.Value.as_u8", "v.kind == ValueKind.Integer");
+   ;//assert(v->kind == ast_ValueKind_Integer);
    uint64_t res = v->uvalue;
    if (v->negative) res = ~res + 1;
    return (uint8_t)res;
@@ -13152,7 +9773,7 @@ static uint8_t ast_Value_as_u8(const ast_Value* v)
 
 static uint16_t ast_Value_as_u16(const ast_Value* v)
 {
-   (v->kind == ast_ValueKind_Integer) || c2_assert("ast/value.c2", 151, "ast.Value.as_u16", "v.kind == ValueKind.Integer");
+   ;//assert(v->kind == ast_ValueKind_Integer);
    uint64_t res = v->uvalue;
    if (v->negative) res = ~res + 1;
    return (uint16_t)res;
@@ -13386,8 +10007,8 @@ static ast_Value ast_Value_divide(const ast_Value* v1, const ast_Value* v2)
 
 static ast_Value ast_Value_remainder(const ast_Value* v1, const ast_Value* v2)
 {
-   (ast_Value_isDecimal(v1)) || c2_assert("ast/value.c2", 382, "ast.Value.remainder", "v1.isDecimal()");
-   (ast_Value_isDecimal(v2)) || c2_assert("ast/value.c2", 383, "ast.Value.remainder", "v2.isDecimal()");
+   ;//assert(ast_Value_isDecimal(v1));
+   ;//assert(ast_Value_isDecimal(v2));
    ast_Value result = *v1;
    result.overflow |= v2->overflow;
    if (v2->uvalue == 0) {
@@ -13482,8 +10103,8 @@ static ast_Value ast_Value_right_shift(const ast_Value* v1, const ast_Value* v2)
 
 static ast_Value ast_Value_and(const ast_Value* v1, const ast_Value* v2)
 {
-   (ast_Value_isDecimal(v1)) || c2_assert("ast/value.c2", 484, "ast.Value.and", "v1.isDecimal()");
-   (ast_Value_isDecimal(v2)) || c2_assert("ast/value.c2", 485, "ast.Value.and", "v2.isDecimal()");
+   ;//assert(ast_Value_isDecimal(v1));
+   ;//assert(ast_Value_isDecimal(v2));
    ast_Value result = *v1;
    ast_Value r2 = *v2;
    if (result.negative) result.uvalue = ~result.uvalue + 1;
@@ -13497,8 +10118,8 @@ static ast_Value ast_Value_and(const ast_Value* v1, const ast_Value* v2)
 
 static ast_Value ast_Value_or(const ast_Value* v1, const ast_Value* v2)
 {
-   (ast_Value_isDecimal(v1)) || c2_assert("ast/value.c2", 499, "ast.Value.or", "v1.isDecimal()");
-   (ast_Value_isDecimal(v2)) || c2_assert("ast/value.c2", 500, "ast.Value.or", "v2.isDecimal()");
+   ;//assert(ast_Value_isDecimal(v1));
+   ;//assert(ast_Value_isDecimal(v2));
    ast_Value result = *v1;
    ast_Value r2 = *v2;
    if (result.negative) result.uvalue = ~result.uvalue + 1;
@@ -13512,8 +10133,8 @@ static ast_Value ast_Value_or(const ast_Value* v1, const ast_Value* v2)
 
 static ast_Value ast_Value_xor(const ast_Value* v1, const ast_Value* v2)
 {
-   (ast_Value_isDecimal(v1)) || c2_assert("ast/value.c2", 514, "ast.Value.xor", "v1.isDecimal()");
-   (ast_Value_isDecimal(v2)) || c2_assert("ast/value.c2", 515, "ast.Value.xor", "v2.isDecimal()");
+   ;//assert(ast_Value_isDecimal(v1));
+   ;//assert(ast_Value_isDecimal(v2));
    ast_Value result = *v1;
    ast_Value r2 = *v2;
    if (result.negative) result.uvalue = ~result.uvalue + 1;
@@ -13668,7 +10289,7 @@ static void ast_Value_mask(ast_Value* v, uint32_t width)
 
 static void ast_Value_truncate(ast_Value* orig, uint32_t width, bool is_signed)
 {
-   (ast_Value_isDecimal(orig)) || c2_assert("ast/value.c2", 671, "ast.Value.truncate", "orig.isDecimal()");
+   ;//assert(ast_Value_isDecimal(orig));
    uint64_t uvalue = ast_Value_as_u64(orig);
    if (is_signed) {
       uint64_t sbit = (uint64_t)1 << (width - 1);
@@ -13732,7 +10353,7 @@ static ast_Value ast_Value_castAs(const ast_Value* v, ast_QualType qt)
    qt = ast_QualType_getCanonicalType(qt);
    if (ast_QualType_isEnum(qt)) qt = ast_EnumType_getImplType(ast_QualType_getEnum(qt));
    if (ast_QualType_isPointer(qt)) return result;
-   (ast_QualType_isBuiltin(qt)) || c2_assert("ast/value.c2", 741, "ast.Value.castAs", "qt.isBuiltin()");
+   ;//assert(ast_QualType_isBuiltin(qt));
    ast_BuiltinType* bi = ast_QualType_getBuiltin(qt);
    uint32_t width = ast_BuiltinType_getWidth(bi);
    switch (result.kind) {
@@ -13861,7 +10482,7 @@ static ast_VarDecl* ast_VarDecl_create(ast_context_Context* c, ast_VarDeclKind k
 {
    uint32_t size = 32 + ast_TypeRefHolder_getExtraSize(ref);
    if (initValue || ast_TypeRefHolder_isIncrArray(ref) || has_embed) size += 16;
-   (kind != ast_VarDeclKind_StructMember) || c2_assert("ast/var_decl.c2", 105, "ast.VarDecl.create", "kind != VarDeclKind.StructMember");
+   ;//assert(kind != ast_VarDeclKind_StructMember);
    ast_VarDecl* d = ast_context_Context_alloc(c, size);
    ast_Decl_init(&d->base, ast_DeclKind_Variable, name, loc, is_public, ast_QualType_Invalid, ast_idx);
    d->base.varDeclBits.kind = kind;
@@ -13872,7 +10493,6 @@ static ast_VarDecl* ast_VarDecl_create(ast_context_Context* c, ast_VarDeclKind k
       init->expr = initValue;
       init->loc = assignLoc;
    }
-   ast_Stats_addDecl(ast_DeclKind_Variable, size);
    return d;
 }
 
@@ -13893,7 +10513,6 @@ static ast_VarDecl* ast_VarDecl_createStructMember(ast_context_Context* c, uint3
       info->layout.bit_width = 0;
       info->layout.bit_offset = 0;
    }
-   ast_Stats_addDecl(ast_DeclKind_Variable, size);
    return d;
 }
 
@@ -13919,7 +10538,6 @@ static ast_VarDecl* ast_VarDecl_instantiate(const ast_VarDecl* vd, ast_Instantia
       info2->loc = info1->loc;
       info2->expr = ast_Expr_instantiate(info1->expr, inst);
    }
-   ast_Stats_addDecl(ast_DeclKind_Variable, size);
    return vd2;
 }
 
@@ -14083,6 +10701,11 @@ static bool ast_VarDecl_hasAttrWeak(const ast_VarDecl* d)
    return d->base.varDeclBits.attr_weak;
 }
 
+static ast_AutoAttr ast_VarDecl_getAutoAttr(const ast_VarDecl* d)
+{
+   return (ast_AutoAttr)d->base.varDeclBits.auto_attr;
+}
+
 static void ast_VarDecl_setAttrAutoFile(ast_VarDecl* d)
 {
    d->base.varDeclBits.auto_attr = ast_AutoAttr_File;
@@ -14090,7 +10713,7 @@ static void ast_VarDecl_setAttrAutoFile(ast_VarDecl* d)
 
 static bool ast_VarDecl_hasAttrAutoFile(const ast_VarDecl* d)
 {
-   return d->base.varDeclBits.auto_attr == ast_AutoAttr_File;
+   return ast_VarDecl_getAutoAttr(d) == ast_AutoAttr_File;
 }
 
 static void ast_VarDecl_setAttrAutoLine(ast_VarDecl* d)
@@ -14100,7 +10723,7 @@ static void ast_VarDecl_setAttrAutoLine(ast_VarDecl* d)
 
 static bool ast_VarDecl_hasAttrAutoLine(const ast_VarDecl* d)
 {
-   return d->base.varDeclBits.auto_attr == ast_AutoAttr_Line;
+   return ast_VarDecl_getAutoAttr(d) == ast_AutoAttr_Line;
 }
 
 static void ast_VarDecl_setAttrAutoFunc(ast_VarDecl* d)
@@ -14110,12 +10733,12 @@ static void ast_VarDecl_setAttrAutoFunc(ast_VarDecl* d)
 
 static bool ast_VarDecl_hasAttrAutoFunc(const ast_VarDecl* d)
 {
-   return d->base.varDeclBits.auto_attr == ast_AutoAttr_Func;
+   return ast_VarDecl_getAutoAttr(d) == ast_AutoAttr_Func;
 }
 
 static bool ast_VarDecl_hasAutoAttr(const ast_VarDecl* d)
 {
-   return d->base.varDeclBits.auto_attr != ast_AutoAttr_None;
+   return ast_VarDecl_getAutoAttr(d) != ast_AutoAttr_None;
 }
 
 static void ast_VarDecl_setFormatAttr(ast_VarDecl* d, ast_FormatAttr kind)
@@ -14230,7 +10853,7 @@ static ast_Stmt* ast_Stmt_instantiate(ast_Stmt* s, ast_Instantiator* inst)
       return ast_AssertStmt_instantiate((ast_AssertStmt*)s, inst);
    }
    ast_Stmt_dump(s);
-   (0) || c2_assert("ast/stmt.c2", 138, "ast.Stmt.instantiate", "0");
+   ;//assert(0);
    return NULL;
 }
 
@@ -14371,7 +10994,6 @@ static ast_AsmStmt* ast_AsmStmt_create(ast_context_Context* c, src_loc_SrcLoc lo
    if (num_names) {
       memcpy(tail, names, num_names * 4);
    }
-   ast_Stats_addStmt(ast_StmtKind_Asm, size);
    return s;
 }
 
@@ -14511,7 +11133,6 @@ static ast_AssertStmt* ast_AssertStmt_create(ast_context_Context* c, src_loc_Src
    ast_AssertStmt* s = ast_context_Context_alloc(c, 16);
    ast_Stmt_init(&s->base, ast_StmtKind_Assert, loc);
    s->inner = inner;
-   ast_Stats_addStmt(ast_StmtKind_Assert, 16);
    return s;
 }
 
@@ -14541,7 +11162,6 @@ static ast_BreakStmt* ast_BreakStmt_create(ast_context_Context* c, src_loc_SrcLo
 {
    ast_BreakStmt* s = ast_context_Context_alloc(c, 8);
    ast_Stmt_init(&s->base, ast_StmtKind_Break, loc);
-   ast_Stats_addStmt(ast_StmtKind_Break, 8);
    return s;
 }
 
@@ -14553,7 +11173,7 @@ static void ast_BreakStmt_print(const ast_BreakStmt* s, string_buffer_Buf* out, 
 
 static ast_CompoundStmt* ast_CompoundStmt_create(ast_context_Context* c, src_loc_SrcLoc endLoc, ast_Stmt** stmts, uint32_t count)
 {
-   (count < 65556) || c2_assert("ast/compound_stmt.c2", 35, "ast.CompoundStmt.create", "count < 65556");
+   ;//assert(count < 65556);
    uint32_t size = 8 + count * 8;
    ast_CompoundStmt* s = ast_context_Context_alloc(c, size);
    ast_Stmt_init(&s->base, ast_StmtKind_Compound, endLoc);
@@ -14561,7 +11181,6 @@ static ast_CompoundStmt* ast_CompoundStmt_create(ast_context_Context* c, src_loc
    if (count) {
       memcpy(s->stmts, stmts, count * 8);
    }
-   ast_Stats_addStmt(ast_StmtKind_Compound, size);
    return s;
 }
 
@@ -14574,7 +11193,6 @@ static ast_CompoundStmt* ast_CompoundStmt_instantiate(ast_CompoundStmt* s, ast_I
    for (uint32_t i = 0; i < count; i++) {
       s2->stmts[i] = ast_Stmt_instantiate(s->stmts[i], inst);
    }
-   ast_Stats_addStmt(ast_StmtKind_Compound, size);
    return s2;
 }
 
@@ -14608,7 +11226,6 @@ static ast_ContinueStmt* ast_ContinueStmt_create(ast_context_Context* c, src_loc
 {
    ast_ContinueStmt* s = ast_context_Context_alloc(c, 8);
    ast_Stmt_init(&s->base, ast_StmtKind_Continue, loc);
-   ast_Stats_addStmt(ast_StmtKind_Continue, 8);
    return s;
 }
 
@@ -14622,7 +11239,6 @@ static ast_FallthroughStmt* ast_FallthroughStmt_create(ast_context_Context* c, s
 {
    ast_FallthroughStmt* s = ast_context_Context_alloc(c, 8);
    ast_Stmt_init(&s->base, ast_StmtKind_Fallthrough, loc);
-   ast_Stats_addStmt(ast_StmtKind_Fallthrough, 8);
    return s;
 }
 
@@ -14640,7 +11256,6 @@ static ast_ForStmt* ast_ForStmt_create(ast_context_Context* c, src_loc_SrcLoc lo
    s->cond = cond;
    s->cont = cont;
    s->body = body;
-   ast_Stats_addStmt(ast_StmtKind_For, 40);
    return s;
 }
 
@@ -14703,7 +11318,6 @@ static ast_GotoStmt* ast_GotoStmt_create(ast_context_Context* c, uint32_t name, 
    ast_GotoStmt* s = ast_context_Context_alloc(c, 12);
    ast_Stmt_init(&s->base, ast_StmtKind_Goto, loc);
    s->name = name;
-   ast_Stats_addStmt(ast_StmtKind_Goto, 12);
    return s;
 }
 
@@ -14736,7 +11350,6 @@ static ast_IfStmt* ast_IfStmt_create(ast_context_Context* c, src_loc_SrcLoc loc,
       s->base.ifStmtBits.has_else = 1;
       s->else_stmt[0] = else_stmt;
    }
-   ast_Stats_addStmt(ast_StmtKind_If, size);
    return s;
 }
 
@@ -14785,7 +11398,6 @@ static ast_LabelStmt* ast_LabelStmt_create(ast_context_Context* c, uint32_t name
    ast_Stmt_init(&s->base, ast_StmtKind_Label, loc);
    s->name = name;
    s->stmt = stmt;
-   ast_Stats_addStmt(ast_StmtKind_Label, 24);
    return s;
 }
 
@@ -14845,7 +11457,6 @@ static ast_ReturnStmt* ast_ReturnStmt_create(ast_context_Context* c, src_loc_Src
       s->base.returnStmtBits.has_value = 1;
       s->value[0] = value;
    }
-   ast_Stats_addStmt(ast_StmtKind_Return, size);
    return s;
 }
 
@@ -14878,8 +11489,8 @@ static void ast_ReturnStmt_print(const ast_ReturnStmt* s, string_buffer_Buf* out
 
 static ast_SwitchCase* ast_SwitchCase_create(ast_context_Context* c, src_loc_SrcLoc loc, bool is_default, ast_Expr** conds, uint32_t num_conds, ast_Stmt** stmts, uint32_t num_stmts)
 {
-   (num_stmts < 1024) || c2_assert("ast/switch_case.c2", 48, "ast.SwitchCase.create", "num_stmts < 1024");
-   (num_conds < 256) || c2_assert("ast/switch_case.c2", 49, "ast.SwitchCase.create", "num_conds < 256");
+   ;//assert(num_stmts < 1024);
+   ;//assert(num_conds < 256);
    uint32_t size = 8 + num_conds * 8 + num_stmts * 8;
    ast_SwitchCase* s = ast_context_Context_alloc(c, size);
    s->allbits = 0;
@@ -14890,7 +11501,6 @@ static ast_SwitchCase* ast_SwitchCase_create(ast_context_Context* c, src_loc_Src
    memcpy(s->conds, conds, num_conds * 8);
    ast_Stmt** dst_stmts = ast_SwitchCase_getStmts(s);
    memcpy(dst_stmts, stmts, num_stmts * 8);
-   ast_Stats_addSwitchCase(size);
    return s;
 }
 
@@ -14910,7 +11520,6 @@ static ast_SwitchCase* ast_SwitchCase_instantiate(ast_SwitchCase* src, ast_Insta
    for (uint32_t i = 0; i < num_stmts; i++) {
       dst_stmts[i] = ast_Stmt_instantiate(src_stmts[i], inst);
    }
-   ast_Stats_addSwitchCase(size);
    return dst;
 }
 
@@ -15013,7 +11622,6 @@ static ast_SwitchStmt* ast_SwitchStmt_create(ast_context_Context* c, src_loc_Src
    s->base.switchStmtBits.num_cases = numCases;
    s->cond = cond;
    memcpy(s->cases, cases, numCases * 8);
-   ast_Stats_addStmt(ast_StmtKind_Switch, size);
    return s;
 }
 
@@ -15027,7 +11635,6 @@ static ast_Stmt* ast_SwitchStmt_instantiate(ast_SwitchStmt* s, ast_Instantiator*
    for (uint32_t i = 0; i < numCases; i++) {
       s2->cases[i] = ast_SwitchCase_instantiate(s->cases[i], inst);
    }
-   ast_Stats_addStmt(ast_StmtKind_Switch, size);
    return (ast_Stmt*)s2;
 }
 
@@ -15090,7 +11697,6 @@ static ast_WhileStmt* ast_WhileStmt_create(ast_context_Context* c, src_loc_SrcLo
    ast_Stmt_init(&s->base, ast_StmtKind_While, loc);
    s->cond = cond;
    s->body = body;
-   ast_Stats_addStmt(ast_StmtKind_While, 24);
    return s;
 }
 
@@ -15185,7 +11791,7 @@ static ast_Expr* ast_Expr_instantiate(ast_Expr* e, ast_Instantiator* inst)
       return ast_AlternateExpr_instantiate((ast_AlternateExpr*)e, inst);
    }
    ast_Expr_dump(e);
-   (0) || c2_assert("ast/expr.c2", 194, "ast.Expr.instantiate", "0");
+   ;//assert(0);
    return NULL;
 }
 
@@ -15609,7 +12215,7 @@ static bool ast_Expr_needsSemi(const ast_Expr* e)
       return false;
    case ast_ExprKind_FieldDesignatedInit:
    case ast_ExprKind_ArrayDesignatedInit:
-      (0) || c2_assert("ast/expr.c2", 566, "ast.Expr.needsSemi", "0");
+      ;//assert(0);
       break;
    case ast_ExprKind_BinaryOperator: {
       const ast_BinaryOperator* binop = (ast_BinaryOperator*)e;
@@ -15834,7 +12440,6 @@ static ast_AlternateExpr* ast_AlternateExpr_create(ast_context_Context* c, ast_E
    e->original = original;
    e->generated = generated;
    ast_Expr_setType(&e->base, ast_Expr_getType(original));
-   ast_Stats_addExpr(ast_ExprKind_Alternate, 32);
    return e;
 }
 
@@ -15885,7 +12490,6 @@ static ast_ArrayDesignatedInitExpr* ast_ArrayDesignatedInitExpr_create(ast_conte
    ast_Expr_init(&e->base, ast_ExprKind_ArrayDesignatedInit, loc, 0, 0, 0, ast_ValType_RValue);
    e->designator = designator;
    e->initValue = initValue;
-   ast_Stats_addExpr(ast_ExprKind_ArrayDesignatedInit, 32);
    return e;
 }
 
@@ -15943,7 +12547,6 @@ static ast_ArraySubscriptExpr* ast_ArraySubscriptExpr_create(ast_context_Context
    e->base.base.arraySubscriptExprBits.src_len = src_len;
    e->lhs = lhs;
    e->idx = idx;
-   ast_Stats_addExpr(ast_ExprKind_ArraySubscript, 32);
    return e;
 }
 
@@ -16016,7 +12619,6 @@ static ast_BinaryOperator* ast_BinaryOperator_create(ast_context_Context* c, src
    e->base.base.binaryOperatorBits.kind = kind;
    e->lhs = lhs;
    e->rhs = rhs;
-   ast_Stats_addExpr(ast_ExprKind_BinaryOperator, 32);
    return e;
 }
 
@@ -16092,7 +12694,6 @@ static ast_BitOffsetExpr* ast_BitOffsetExpr_create(ast_context_Context* c, src_l
    ast_Expr_init(&e->base, ast_ExprKind_BitOffset, loc, 0, 0, 0, ast_ValType_RValue);
    e->lhs = lhs;
    e->rhs = rhs;
-   ast_Stats_addExpr(ast_ExprKind_BitOffset, 32);
    return e;
 }
 
@@ -16166,7 +12767,6 @@ static ast_BooleanLiteral* ast_BooleanLiteral_create(ast_context_Context* c, src
    ast_Expr_init(&e->base, ast_ExprKind_BooleanLiteral, loc, 1, 1, 0, ast_ValType_RValue);
    e->base.base.booleanLiteralBits.value = val;
    ast_Expr_setType(&e->base, ast_getBuiltinQT(ast_BuiltinKind_Bool));
-   ast_Stats_addExpr(ast_ExprKind_BooleanLiteral, 16);
    return e;
 }
 
@@ -16204,7 +12804,6 @@ static ast_BuiltinExpr* ast_BuiltinExpr_create(ast_context_Context* c, src_loc_S
    e->base.base.builtinExprBits.src_len = src_len;
    e->inner = inner;
    ast_Value_setUnsigned(&e->value, 0);
-   ast_Stats_addExpr(ast_ExprKind_Builtin, size);
    return e;
 }
 
@@ -16218,7 +12817,6 @@ static ast_BuiltinExpr* ast_BuiltinExpr_createOffsetOf(ast_context_Context* c, s
    e->inner = typeExpr;
    ast_Value_setUnsigned(&e->value, 0);
    e->offset[0].member = member;
-   ast_Stats_addExpr(ast_ExprKind_Builtin, size);
    return e;
 }
 
@@ -16233,7 +12831,6 @@ static ast_BuiltinExpr* ast_BuiltinExpr_createToContainer(ast_context_Context* c
    ast_Value_setUnsigned(&e->value, 0);
    e->container[0].member = member;
    e->container[0].pointer = pointer;
-   ast_Stats_addExpr(ast_ExprKind_Builtin, size);
    return e;
 }
 
@@ -16285,25 +12882,25 @@ static src_loc_SrcLoc ast_BuiltinExpr_getEndLoc(const ast_BuiltinExpr* e)
 
 static ast_Expr* ast_BuiltinExpr_getOffsetOfMember(const ast_BuiltinExpr* b)
 {
-   (ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_OffsetOf) || c2_assert("ast/builtin_expr.c2", 155, "ast.BuiltinExpr.getOffsetOfMember", "b.getKind() == BuiltinExprKind.OffsetOf");
+   ;//assert(ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_OffsetOf);
    return b->offset[0].member;
 }
 
 static ast_Expr* ast_BuiltinExpr_getToContainerMember(const ast_BuiltinExpr* b)
 {
-   (ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer) || c2_assert("ast/builtin_expr.c2", 160, "ast.BuiltinExpr.getToContainerMember", "b.getKind() == BuiltinExprKind.ToContainer");
+   ;//assert(ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer);
    return b->container[0].member;
 }
 
 static ast_Expr* ast_BuiltinExpr_getToContainerPointer(const ast_BuiltinExpr* b)
 {
-   (ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer) || c2_assert("ast/builtin_expr.c2", 165, "ast.BuiltinExpr.getToContainerPointer", "b.getKind() == BuiltinExprKind.ToContainer");
+   ;//assert(ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer);
    return b->container[0].pointer;
 }
 
 static ast_Expr** ast_BuiltinExpr_getToContainerPointer2(ast_BuiltinExpr* b)
 {
-   (ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer) || c2_assert("ast/builtin_expr.c2", 170, "ast.BuiltinExpr.getToContainerPointer2", "b.getKind() == BuiltinExprKind.ToContainer");
+   ;//assert(ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_ToContainer);
    return &b->container[0].pointer;
 }
 
@@ -16376,7 +12973,6 @@ static ast_CallExpr* ast_CallExpr_create(ast_context_Context* c, src_loc_SrcLoc 
    e->instance_ast_idx = 0;
    e->func = func;
    memcpy(e->args, args, num_args * 8);
-   ast_Stats_addExpr(ast_ExprKind_Call, size);
    return e;
 }
 
@@ -16395,13 +12991,12 @@ static ast_CallExpr* ast_CallExpr_createTemplate(ast_context_Context* c, src_loc
    memcpy(e->args, args, num_args * 8);
    ast_TypeRef* destRef = (ast_TypeRef*)&e->args[num_args];
    ast_TypeRef_init(destRef, ref);
-   ast_Stats_addExpr(ast_ExprKind_Call, size);
    return e;
 }
 
 static ast_Expr* ast_CallExpr_instantiate(ast_CallExpr* e, ast_Instantiator* inst)
 {
-   (!ast_CallExpr_isTemplateCall(e)) || c2_assert("ast/call_expr.c2", 95, "ast.CallExpr.instantiate", "!e.isTemplateCall()");
+   ;//assert(!ast_CallExpr_isTemplateCall(e));
    uint32_t num_args = e->base.base.callExprBits.num_args;
    uint32_t size = 32 + num_args * 8;
    ast_CallExpr* e2 = ast_context_Context_alloc(inst->c, size);
@@ -16413,7 +13008,6 @@ static ast_Expr* ast_CallExpr_instantiate(ast_CallExpr* e, ast_Instantiator* ins
    for (uint32_t i = 0; i < num_args; i++) {
       e2->args[i] = ast_Expr_instantiate(e->args[i], inst);
    }
-   ast_Stats_addExpr(ast_ExprKind_Call, size);
    return (ast_Expr*)e2;
 }
 
@@ -16574,7 +13168,6 @@ static ast_CharLiteral* ast_CharLiteral_create(ast_context_Context* c, src_loc_S
    e->base.base.charLiteralBits.value = val;
    e->base.base.charLiteralBits.radix = radix;
    e->base.base.charLiteralBits.src_len = src_len;
-   ast_Stats_addExpr(ast_ExprKind_CharLiteral, 16);
    ast_Expr_setType(&e->base, ast_getBuiltinQT(ast_BuiltinKind_Char));
    return e;
 }
@@ -16627,7 +13220,6 @@ static ast_ConditionalOperator* ast_ConditionalOperator_create(ast_context_Conte
    e->cond = cond;
    e->lhs = lhs;
    e->rhs = rhs;
-   ast_Stats_addExpr(ast_ExprKind_ConditionalOperator, 48);
    return e;
 }
 
@@ -16705,7 +13297,6 @@ static ast_ExplicitCastExpr* ast_ExplicitCastExpr_create(ast_context_Context* c,
    e->inner = inner;
    e->dest_type = ast_QualType_Invalid;
    ast_TypeRef_init(&e->dest, ref);
-   ast_Stats_addExpr(ast_ExprKind_ExplicitCast, size);
    return e;
 }
 
@@ -16719,7 +13310,6 @@ static ast_Expr* ast_ExplicitCastExpr_instantiate(ast_ExplicitCastExpr* e, ast_I
    e2->inner = ast_Expr_instantiate(e->inner, inst);
    e2->dest_type = ast_QualType_Invalid;
    ast_TypeRef_instantiate(&e2->dest, &e->dest, inst);
-   ast_Stats_addExpr(ast_ExprKind_ExplicitCast, size);
    return (ast_Expr*)e2;
 }
 
@@ -16795,7 +13385,6 @@ static ast_FieldDesignatedInitExpr* ast_FieldDesignatedInitExpr_create(ast_conte
    e->field_name = field;
    e->initValue = initValue;
    e->fif = NULL;
-   ast_Stats_addExpr(ast_ExprKind_FieldDesignatedInit, 40);
    return e;
 }
 
@@ -16877,7 +13466,6 @@ static ast_FloatLiteral* ast_FloatLiteral_create(ast_context_Context* c, src_loc
    i->base.base.floatLiteralBits.radix = radix;
    i->base.base.floatLiteralBits.src_len = src_len;
    i->val = val;
-   ast_Stats_addExpr(ast_ExprKind_FloatLiteral, 24);
    ast_Expr_setType(&i->base, ast_getBuiltinQT(kind));
    return i;
 }
@@ -16941,18 +13529,18 @@ static const char* ast_IdentifierKind_str(ast_IdentifierKind k)
    return "";
 }
 
-static ast_IdentifierExpr* ast_IdentifierExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, uint32_t name)
+static ast_IdentifierExpr* ast_IdentifierExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, uint32_t name, uint32_t name_len)
 {
    ast_IdentifierExpr* e = ast_context_Context_alloc(c, 24);
    ast_Expr_init(&e->base, ast_ExprKind_Identifier, loc, 0, 0, 0, ast_ValType_NValue);
    e->name_idx = name;
-   ast_Stats_addExpr(ast_ExprKind_Identifier, 24);
+   e->base.base.identifierExprBits.name_len = name_len;
    return e;
 }
 
 static ast_Expr* ast_IdentifierExpr_instantiate(ast_IdentifierExpr* e, ast_Instantiator* inst)
 {
-   return (ast_Expr*)ast_IdentifierExpr_create(inst->c, e->base.base.loc, e->name_idx);
+   return (ast_Expr*)ast_IdentifierExpr_create(inst->c, e->base.base.loc, e->name_idx, e->base.base.identifierExprBits.name_len);
 }
 
 static ast_Expr* ast_IdentifierExpr_asExpr(ast_IdentifierExpr* e)
@@ -16964,6 +13552,11 @@ static void ast_IdentifierExpr_setDecl(ast_IdentifierExpr* e, ast_Decl* decl)
 {
    e->decl = decl;
    e->base.base.identifierExprBits.has_decl = true;
+}
+
+static bool ast_IdentifierExpr_hasDecl(const ast_IdentifierExpr* e)
+{
+   return e->base.base.identifierExprBits.has_decl;
 }
 
 static ast_Decl* ast_IdentifierExpr_getDecl(const ast_IdentifierExpr* e)
@@ -16996,7 +13589,7 @@ static const char* ast_IdentifierExpr_getName(const ast_IdentifierExpr* e)
 
 static src_loc_SrcLoc ast_IdentifierExpr_getEndLoc(const ast_IdentifierExpr* e)
 {
-   return e->base.base.loc + (uint32_t)strlen(ast_IdentifierExpr_getName(e));
+   return e->base.base.loc + e->base.base.identifierExprBits.name_len;
 }
 
 static uint32_t ast_IdentifierExpr_getNameIdx(const ast_IdentifierExpr* e)
@@ -17058,7 +13651,6 @@ static ast_ImplicitCastExpr* ast_ImplicitCastExpr_create(ast_context_Context* c,
       e->base.base.exprBits.is_ctc = false;
       break;
    }
-   ast_Stats_addExpr(ast_ExprKind_ImplicitCast, 24);
    return e;
 }
 
@@ -17118,7 +13710,6 @@ static ast_InitListExpr* ast_InitListExpr_create(ast_context_Context* c, src_loc
    if (num_values) {
       memcpy(e->values, values, num_values * 8);
    }
-   ast_Stats_addExpr(ast_ExprKind_InitList, size);
    return e;
 }
 
@@ -17133,7 +13724,6 @@ static ast_Expr* ast_InitListExpr_instantiate(ast_InitListExpr* e, ast_Instantia
    for (uint32_t i = 0; i < num_values; i++) {
       e2->values[i] = ast_Expr_instantiate(e->values[i], inst);
    }
-   ast_Stats_addExpr(ast_ExprKind_InitList, size);
    return (ast_Expr*)e2;
 }
 
@@ -17207,7 +13797,6 @@ static ast_IntegerLiteral* ast_IntegerLiteral_create(ast_context_Context* c, src
    i->base.base.integerLiteralBits.radix = radix;
    i->base.base.integerLiteralBits.src_len = src_len;
    i->val = val;
-   ast_Stats_addExpr(ast_ExprKind_IntegerLiteral, 24);
    ast_Expr_setType(&i->base, ast_getBuiltinQT(kind));
    return i;
 }
@@ -17284,40 +13873,29 @@ static void ast_IntegerLiteral_printLiteral(const ast_IntegerLiteral* e, string_
    }
 }
 
-static ast_MemberExpr* ast_MemberExpr_create(ast_context_Context* c, ast_Expr* base, const ast_Ref* refs, uint32_t refcount)
+static ast_MemberExpr* ast_MemberExpr_create(ast_context_Context* c, ast_Expr* base, uint32_t base_name_idx, uint32_t base_len, src_loc_SrcLoc loc, uint32_t member_name_idx)
 {
-   uint32_t size = 16 + refcount * 8 + (refcount - 1) * 4;
-   if (base) size += 8;
+   uint32_t size = 32;
    ast_MemberExpr* e = ast_context_Context_alloc(c, size);
-   ast_Expr_init(&e->base, ast_ExprKind_Member, refs[0].loc, 0, 0, 0, ast_ValType_NValue);
-   e->base.base.memberExprBits.num_refs = refcount;
-   uint32_t offset = 0;
+   ast_Expr_init(&e->base, ast_ExprKind_Member, loc, 0, 0, 0, ast_ValType_NValue);
+   e->base.base.memberExprBits.base_len = base_len;
+   e->refs[0].bits = 0;
+   e->refs[0].name_idx = base_name_idx;
    if (base) {
-      offset = 1;
       e->refs[0].expr = base;
       e->base.base.memberExprBits.has_expr = 1;
    }
-   for (uint32_t i = 0; i < refcount; i++) {
-      e->refs[i + offset].name_idx = refs[i].name_idx;
-   }
-   src_loc_SrcLoc* locs = (src_loc_SrcLoc*)&e->refs[refcount + offset];
-   for (uint32_t i = 0; i < refcount - 1; i++) {
-      locs[i] = refs[i + 1].loc;
-   }
-   ast_Stats_addExpr(ast_ExprKind_Member, size);
+   e->refs[1].bits = 0;
+   e->refs[1].name_idx = member_name_idx;
    return e;
 }
 
 static ast_Expr* ast_MemberExpr_instantiate(ast_MemberExpr* e, ast_Instantiator* inst)
 {
-   uint32_t refcount = e->base.base.memberExprBits.num_refs;
-   ast_Expr* base = ast_MemberExpr_getExprBase(e);
-   uint32_t size = 16 + refcount * 8 + (refcount - 1) * 4;
-   if (base) size += 8;
+   uint32_t size = 32;
    ast_MemberExpr* e2 = ast_context_Context_alloc(inst->c, size);
    memcpy(e2, e, size);
-   if (base) e2->refs[0].expr = ast_Expr_instantiate(base, inst);
-   ast_Stats_addExpr(ast_ExprKind_Member, size);
+   if (ast_MemberExpr_hasExpr(e2)) e2->refs[0].expr = ast_Expr_instantiate(e2->refs[0].expr, inst);
    return (ast_Expr*)e2;
 }
 
@@ -17326,7 +13904,7 @@ static bool ast_MemberExpr_hasExpr(const ast_MemberExpr* e)
    return e->base.base.memberExprBits.has_expr;
 }
 
-static ast_Expr* ast_MemberExpr_getExprBase(const ast_MemberExpr* e)
+static ast_Expr* ast_MemberExpr_getBaseExpr(const ast_MemberExpr* e)
 {
    if (ast_MemberExpr_hasExpr(e)) return e->refs[0].expr;
    return NULL;
@@ -17344,21 +13922,21 @@ static ast_MemberConversion ast_MemberExpr_getConversion(const ast_MemberExpr* e
 
 static const char* ast_MemberExpr_getName(const ast_MemberExpr* e, uint32_t ref_idx)
 {
-   const ast_MemberRef* ref = &e->refs[ref_idx + ast_MemberExpr_hasExpr(e)];
-   if (e->base.base.memberExprBits.num_decls > ref_idx) {
-      return ast_Decl_getName(ref->decl);
+   {
+      uint32_t name_idx = ast_MemberExpr_getNameIdx(e, ref_idx);
+      if (name_idx) return ast_idx2name(name_idx);
    }
-   return ast_idx2name(ref->name_idx);
-}
-
-static uint32_t ast_MemberExpr_getNumRefs(const ast_MemberExpr* e)
-{
-   return e->base.base.memberExprBits.num_refs;
+   return NULL;
 }
 
 static uint32_t ast_MemberExpr_getNameIdx(const ast_MemberExpr* e, uint32_t ref_idx)
 {
-   const ast_MemberRef* ref = &e->refs[ref_idx + ast_MemberExpr_hasExpr(e)];
+   if (ref_idx == 0 && ast_MemberExpr_hasExpr(e)) {
+      ast_Expr* base = ast_MemberExpr_getBaseExpr(e);
+      if (ast_Expr_isIdentifier(base)) return ast_IdentifierExpr_getNameIdx(((ast_IdentifierExpr*)base));
+      return 0;
+   }
+   const ast_MemberRef* ref = &e->refs[ref_idx];
    if (e->base.base.memberExprBits.num_decls > ref_idx) {
       ast_Decl* d = ref->decl;
       if (ast_Decl_isImport(d)) {
@@ -17373,23 +13951,54 @@ static uint32_t ast_MemberExpr_getNameIdx(const ast_MemberExpr* e, uint32_t ref_
 
 static src_loc_SrcLoc ast_MemberExpr_getLoc(const ast_MemberExpr* e, uint32_t ref_idx)
 {
-   if (ref_idx == 0) return ast_Expr_getLoc(&e->base);
-   src_loc_SrcLoc* locs = (src_loc_SrcLoc*)&e->refs[ast_MemberExpr_getNumRefs(e) + ast_MemberExpr_hasExpr(e)];
-   return locs[ref_idx - 1];
+   src_loc_SrcLoc loc = ast_Expr_getLoc(&e->base);
+   if (ref_idx) return loc;
+   if (ast_MemberExpr_hasExpr(e)) return ast_Expr_getLoc(ast_MemberExpr_getBaseExpr(e));
+   return loc - 1 - e->base.base.memberExprBits.base_len;
 }
 
-static src_loc_SrcRange ast_MemberExpr_getRange(const ast_MemberExpr* e, uint32_t ref_idx)
+static src_loc_SrcLoc ast_MemberExpr_getMemberLoc(const ast_MemberExpr* e)
 {
-   src_loc_SrcRange range = { ast_MemberExpr_getStartLoc(e), ast_MemberExpr_getLoc(e, ref_idx) - 1 };
-   return range;
+   return ast_Expr_getLoc(&e->base);
 }
 
-static ast_Ref ast_MemberExpr_getRef(const ast_MemberExpr* e, uint32_t ref_idx)
+static src_loc_SrcLoc ast_MemberExpr_getStartLoc(const ast_MemberExpr* e)
+{
+   if (ast_MemberExpr_hasExpr(e)) return ast_Expr_getStartLoc(e->refs[0].expr);
+   return ast_Expr_getLoc(&e->base) - 1 - e->base.base.memberExprBits.base_len;
+}
+
+static src_loc_SrcLoc ast_MemberExpr_getEndLoc(const ast_MemberExpr* e)
+{
+   return ast_Expr_getLoc(&e->base) + (uint32_t)strlen(ast_MemberExpr_getName(e, 1));
+}
+
+static src_loc_SrcLoc ast_MemberExpr_getBaseEndLoc(const ast_MemberExpr* e)
+{
+   if (ast_MemberExpr_hasExpr(e)) return ast_Expr_getEndLoc(ast_MemberExpr_getBaseExpr(e));
+   return ast_Expr_getLoc(&e->base) - 1;
+}
+
+static src_loc_SrcRange ast_MemberExpr_getBaseRange(const ast_MemberExpr* e)
+{
+   return (src_loc_SrcRange){ ast_MemberExpr_getStartLoc(e), ast_MemberExpr_getBaseEndLoc(e) };
+}
+
+static ast_Ref ast_MemberExpr_getBaseRef(const ast_MemberExpr* e)
 {
    ast_Ref ref;
-   ref.loc = ast_MemberExpr_getLoc(e, ref_idx);
-   ref.name_idx = ast_MemberExpr_getNameIdx(e, ref_idx);
-   ref.decl = ast_MemberExpr_getDecl(e, ref_idx);
+   ref.loc = ast_MemberExpr_getStartLoc(e);
+   ref.name_idx = ast_MemberExpr_getNameIdx(e, 0);
+   ref.decl = ast_MemberExpr_getDecl(e, 0);
+   return ref;
+}
+
+static ast_Ref ast_MemberExpr_getRef(const ast_MemberExpr* e)
+{
+   ast_Ref ref;
+   ref.loc = ast_MemberExpr_getLoc(e, 1);
+   ref.name_idx = ast_MemberExpr_getNameIdx(e, 1);
+   ref.decl = ast_MemberExpr_getDecl(e, 1);
    return ref;
 }
 
@@ -17453,68 +14062,48 @@ static bool ast_MemberExpr_isVolatileBase(const ast_MemberExpr* e)
    return e->base.base.memberExprBits.is_volatile_base;
 }
 
-static ast_Decl* ast_MemberExpr_getPrevLastDecl(const ast_MemberExpr* e)
+static ast_Decl* ast_MemberExpr_getBaseDecl(const ast_MemberExpr* e)
 {
-   uint32_t num = ast_MemberExpr_getNumRefs(e);
-   if (e->base.base.memberExprBits.num_decls < num) return NULL;
-   num += ast_MemberExpr_hasExpr(e);
-   return e->refs[num - 2].decl;
+   if (ast_MemberExpr_hasExpr(e)) {
+      ast_Expr* base = ast_MemberExpr_getBaseExpr(e);
+      if (ast_Expr_isIdentifier(base)) return ast_IdentifierExpr_getDecl(((ast_IdentifierExpr*)base));
+      if (ast_Expr_isMember(base)) return ast_MemberExpr_getFullDecl(((ast_MemberExpr*)base));
+      return NULL;
+   }
+   if (e->base.base.memberExprBits.num_decls < 1) return NULL;
+   return e->refs[0].decl;
 }
 
 static ast_Decl* ast_MemberExpr_getFullDecl(const ast_MemberExpr* e)
 {
-   uint32_t num = ast_MemberExpr_getNumRefs(e);
-   if (e->base.base.memberExprBits.num_decls < num) return NULL;
-   num += ast_MemberExpr_hasExpr(e);
-   return e->refs[num - 1].decl;
+   if (e->base.base.memberExprBits.num_decls < 2) return NULL;
+   return e->refs[1].decl;
 }
 
 static ast_Decl* ast_MemberExpr_getDecl(const ast_MemberExpr* e, uint32_t ref_idx)
 {
    if (e->base.base.memberExprBits.num_decls <= ref_idx) return NULL;
-   return e->refs[ref_idx + ast_MemberExpr_hasExpr(e)].decl;
+   return e->refs[ref_idx].decl;
 }
 
 static void ast_MemberExpr_setDecl(ast_MemberExpr* e, ast_Decl* d, uint32_t ref_idx)
 {
    e->base.base.memberExprBits.num_decls = ref_idx + 1;
-   e->refs[ref_idx + ast_MemberExpr_hasExpr(e)].decl = d;
-}
-
-static src_loc_SrcLoc ast_MemberExpr_getStartLoc(const ast_MemberExpr* e)
-{
-   if (ast_MemberExpr_hasExpr(e)) return ast_Expr_getStartLoc(e->refs[0].expr);
-   return ast_Expr_getLoc(&e->base);
-}
-
-static src_loc_SrcLoc ast_MemberExpr_getLastLoc(const ast_MemberExpr* e)
-{
-   return ast_MemberExpr_getLoc(e, ast_MemberExpr_getNumRefs(e) - 1);
-}
-
-static src_loc_SrcLoc ast_MemberExpr_getEndLoc(const ast_MemberExpr* e)
-{
-   uint32_t last = ast_MemberExpr_getNumRefs(e) - 1;
-   return ast_MemberExpr_getLoc(e, last) + (uint32_t)strlen(ast_MemberExpr_getName(e, last));
+   e->refs[ref_idx].decl = d;
 }
 
 static ast_QualType ast_MemberExpr_getBaseType(const ast_MemberExpr* m)
 {
-   uint32_t numRefs = ast_MemberExpr_getNumRefs(m);
-   ast_QualType qt;
-   if (ast_MemberExpr_hasExpr(m) && numRefs == 1) {
-      qt = ast_Expr_getType(m->refs[0].expr);
-   } else {
-      qt = ast_Decl_getType(m->refs[ast_MemberExpr_hasExpr(m) + numRefs - 2].decl);
-   }
+   if (ast_MemberExpr_hasExpr(m)) return ast_Expr_getType(m->refs[0].expr);
+   ast_QualType qt = ast_Decl_getType(m->refs[0].decl);
    if (ast_MemberExpr_isConstBase(m)) ast_QualType_setConst(&qt);
    if (ast_MemberExpr_isVolatileBase(m)) ast_QualType_setVolatile(&qt);
    return qt;
 }
 
-static const char* ast_MemberExpr_getLastMemberName(const ast_MemberExpr* e)
+static const char* ast_MemberExpr_getMemberName(const ast_MemberExpr* e)
 {
-   return ast_MemberExpr_getName(e, ast_MemberExpr_getNumRefs(e) - 1);
+   return ast_MemberExpr_getName(e, 1);
 }
 
 static void ast_MemberExpr_print(const ast_MemberExpr* e, string_buffer_Buf* out, uint32_t indent)
@@ -17542,7 +14131,7 @@ static void ast_MemberExpr_print(const ast_MemberExpr* e, string_buffer_Buf* out
       string_buffer_Buf_add(out, " Deref");
       break;
    }
-   string_buffer_Buf_print(out, " refs=%u/%u ", e->base.base.memberExprBits.num_decls, ast_MemberExpr_getNumRefs(e));
+   string_buffer_Buf_print(out, " refs=%u/2 ", e->base.base.memberExprBits.num_decls);
    string_buffer_Buf_color(out, ast_col_Value);
    ast_MemberExpr_printLiteral(e, out);
    string_buffer_Buf_newline(out);
@@ -17553,40 +14142,39 @@ static void ast_MemberExpr_printLiteral(const ast_MemberExpr* e, string_buffer_B
 {
    if (ast_MemberExpr_hasExpr(e)) {
       ast_Expr_printLiteral(e->refs[0].expr, out);
-      string_buffer_Buf_add1(out, '.');
+   } else {
+      string_buffer_Buf_add(out, ast_MemberExpr_getName(e, 0));
    }
-   for (uint32_t i = 0; i < ast_MemberExpr_getNumRefs(e); i++) {
-      if (i != 0) string_buffer_Buf_add1(out, '.');
-      string_buffer_Buf_add(out, ast_MemberExpr_getName(e, i));
-   }
+   string_buffer_Buf_add1(out, '.');
+   string_buffer_Buf_add(out, ast_MemberExpr_getName(e, 1));
 }
 
 static void ast_MemberExpr_dump(const ast_MemberExpr* m)
 {
    string_buffer_Buf* out = ast_getDumpBuf();
    string_buffer_Buf_color(out, ast_col_Expr);
-   string_buffer_Buf_print(out, "MemberExpr expr %d ref %u/%u\n", ast_MemberExpr_hasExpr(m), m->base.base.memberExprBits.num_decls, ast_MemberExpr_getNumRefs(m));
+   string_buffer_Buf_print(out, "MemberExpr loc %u expr %d decl %u/2\n", ast_Expr_getLoc(&m->base), ast_MemberExpr_hasExpr(m), m->base.base.memberExprBits.num_decls);
    const ast_MemberExprBits* bits = &m->base.base.memberExprBits;
    ast_IdentifierKind k = (ast_IdentifierKind)bits->kind;
-   string_buffer_Buf_print(out, "  bits: %u refs, kind %s, sf %u, ssf %u, conv %u, bitf %u\n", bits->num_refs, ast_IdentifierKind_str(k), bits->is_struct_func, bits->is_static_sf, bits->conversion, bits->is_bitfield);
+   string_buffer_Buf_print(out, "  bits: kind %s, sf %u, ssf %u, conv %u, bitf %u\n", ast_IdentifierKind_str(k), bits->is_struct_func, bits->is_static_sf, bits->conversion, bits->is_bitfield);
+   uint32_t start = 0;
    if (ast_MemberExpr_hasExpr(m)) {
       string_buffer_Buf_indent(out, 1);
       string_buffer_Buf_color(out, ast_col_Value);
       string_buffer_Buf_add(out, "<expr>\n");
-      ast_Expr* e = ast_MemberExpr_getExprBase(m);
+      ast_Expr* e = ast_MemberExpr_getBaseExpr(m);
       ast_Expr_print(e, out, 1);
+      start = 1;
    }
-   string_buffer_Buf_indent(out, 1);
-   string_buffer_Buf_print(out, "[0]   (loc %u)\n", ast_Expr_getLoc(&m->base));
-   for (uint32_t i = 0; i < ast_MemberExpr_getNumRefs(m); i++) {
-      const ast_MemberRef* ref = &m->refs[i + ast_MemberExpr_hasExpr(m)];
+   for (uint32_t i = start; i < 2; i++) {
+      const ast_MemberRef* ref = &m->refs[i];
       string_buffer_Buf_indent(out, 1);
       string_buffer_Buf_color(out, ast_col_Expr);
       if (m->base.base.memberExprBits.num_decls > i) {
          string_buffer_Buf_print(out, "[%u]\n", i);
          ast_Decl_print(ref->decl, out, 1);
       } else {
-         string_buffer_Buf_print(out, "[%u] %s  (loc %u)\n", i, ast_idx2name(ref->name_idx), ast_MemberExpr_getLoc(m, i));
+         string_buffer_Buf_print(out, "[%u] %s\n", i, ast_idx2name(ref->name_idx));
       }
    }
    ast_flushDumpBuf(out);
@@ -17598,7 +14186,6 @@ static ast_NamedArgument* ast_NamedArgument_create(ast_context_Context* c, src_l
    ast_Expr_init(&e->base, ast_ExprKind_NamedArgument, loc, 0, 0, false, ast_ValType_RValue);
    e->name = name;
    e->inner = inner;
-   ast_Stats_addExpr(ast_ExprKind_NamedArgument, 32);
    return e;
 }
 
@@ -17655,7 +14242,6 @@ static ast_NilExpr* ast_NilExpr_create(ast_context_Context* c, src_loc_SrcLoc lo
    ast_NilExpr* e = ast_context_Context_alloc(c, 16);
    ast_Expr_init(&e->base, ast_ExprKind_Nil, loc, 1, 1, 0, ast_ValType_RValue);
    ast_Expr_setType(&e->base, ast_getVoidPtr());
-   ast_Stats_addExpr(ast_ExprKind_Nil, 16);
    return e;
 }
 
@@ -17682,7 +14268,6 @@ static ast_ParenExpr* ast_ParenExpr_create(ast_context_Context* c, src_loc_SrcLo
    ast_Expr_init(&e->base, ast_ExprKind_Paren, loc, 0, 0, 0, ast_ValType_NValue);
    e->base.base.parenExprBits.src_len = src_len;
    e->inner = inner;
-   ast_Stats_addExpr(ast_ExprKind_Paren, 24);
    return e;
 }
 
@@ -17727,7 +14312,6 @@ static ast_RangeExpr* ast_RangeExpr_create(ast_context_Context* c, src_loc_SrcLo
    ast_Expr_init(&e->base, ast_ExprKind_Range, loc, 0, 0, false, ast_ValType_RValue);
    e->lhs = lhs;
    e->rhs = rhs;
-   ast_Stats_addExpr(ast_ExprKind_Range, 32);
    return e;
 }
 
@@ -17779,7 +14363,6 @@ static ast_StringLiteral* ast_StringLiteral_create(ast_context_Context* c, src_l
    e->base.base.stringLiteralBits.src_len = src_len;
    e->value = value;
    e->size = len + 1;
-   ast_Stats_addExpr(ast_ExprKind_StringLiteral, 24);
    ast_Expr_setType(&e->base, ast_getStringType(len + 1));
    return e;
 }
@@ -17833,7 +14416,6 @@ static ast_TypeExpr* ast_TypeExpr_create(ast_context_Context* c, src_loc_SrcLoc 
    ast_Expr_init(&e->base, ast_ExprKind_Type, loc, 0, 0, 0, ast_ValType_NValue);
    e->base.base.typeExprBits.src_len = src_len;
    ast_TypeRef_init(&e->typeRef, ref);
-   ast_Stats_addExpr(ast_ExprKind_Type, size);
    return e;
 }
 
@@ -17845,7 +14427,6 @@ static ast_Expr* ast_TypeExpr_instantiate(ast_TypeExpr* e, ast_Instantiator* ins
    ast_TypeExpr* e2 = ast_context_Context_alloc(inst->c, size);
    e2->base = e->base;
    ast_TypeRef_instantiate(&e2->typeRef, &e->typeRef, inst);
-   ast_Stats_addExpr(ast_ExprKind_Type, size);
    return (ast_Expr*)e2;
 }
 
@@ -17879,7 +14460,6 @@ static ast_UnaryOperator* ast_UnaryOperator_create(ast_context_Context* c, src_l
    ast_Expr_init(&e->base, ast_ExprKind_UnaryOperator, loc, 0, 0, kind <= ast_UnaryOpcode_PreDec, kind == ast_UnaryOpcode_Deref ? ast_ValType_LValue : ast_ValType_RValue);
    e->base.base.unaryOperatorBits.kind = kind;
    e->inner = inner;
-   ast_Stats_addExpr(ast_ExprKind_UnaryOperator, 24);
    return e;
 }
 
@@ -18205,7 +14785,6 @@ static ast_AliasType* ast_AliasType_create(ast_context_Context* c, ast_AliasType
    ast_AliasType* t = ast_context_Context_alloc(c, 24);
    ast_Type_init(&t->base, ast_TypeKind_Alias);
    t->decl = decl;
-   ast_Stats_addType(ast_TypeKind_Alias, 24);
    return t;
 }
 
@@ -18241,7 +14820,6 @@ static ast_ArrayType* ast_ArrayType_create(ast_context_Context* c, ast_QualType 
       t->base.arrayTypeBits.is_enum_index = true;
       t->index_type[0] = index_type;
    }
-   ast_Stats_addType(ast_TypeKind_Array, size);
    return t;
 }
 
@@ -18253,7 +14831,6 @@ static ast_ArrayType* ast_ArrayType_createIncremental(ast_context_Context* c, as
    t->base.arrayTypeBits.has_size = false;
    t->elem = elem;
    t->size = 0;
-   ast_Stats_addType(ast_TypeKind_Array, 32);
    return t;
 }
 
@@ -18334,7 +14911,6 @@ static ast_BuiltinType* ast_BuiltinType_create(ast_context_Context* c, ast_Built
    ast_Type_init(&b->base, ast_TypeKind_Builtin);
    b->base.builtinTypeBits.kind = kind;
    ast_Type_setCanonicalType(&b->base, ast_QualType_create(&b->base));
-   ast_Stats_addType(ast_TypeKind_Builtin, 16);
    return b;
 }
 
@@ -18348,14 +14924,19 @@ static ast_BuiltinKind ast_BuiltinType_getBaseKind(const ast_BuiltinType* b)
    return ast_globals->builtinType_baseTypes[ast_BuiltinType_getKind(b)];
 }
 
+static ast_BuiltinKind ast_BuiltinType_getBuiltinKind(const ast_BuiltinType* b)
+{
+   return (ast_BuiltinKind)b->base.builtinTypeBits.kind;
+}
+
 static bool ast_BuiltinType_isInt32(const ast_BuiltinType* b)
 {
-   return b->base.builtinTypeBits.kind == ast_BuiltinKind_Int32;
+   return ast_BuiltinType_getBuiltinKind(b) == ast_BuiltinKind_Int32;
 }
 
 static bool ast_BuiltinType_isBool(const ast_BuiltinType* b)
 {
-   return b->base.builtinTypeBits.kind == ast_BuiltinKind_Bool;
+   return ast_BuiltinType_getBuiltinKind(b) == ast_BuiltinKind_Bool;
 }
 
 static const char* ast_BuiltinType_kind2str(const ast_BuiltinType* b)
@@ -18419,7 +15000,6 @@ static ast_EnumType* ast_EnumType_create(ast_context_Context* c, ast_EnumTypeDec
    ast_EnumType* t = ast_context_Context_alloc(c, 24);
    ast_Type_init(&t->base, ast_TypeKind_Enum);
    t->decl = decl;
-   ast_Stats_addType(ast_TypeKind_Enum, 24);
    ast_Type_setCanonicalType(&t->base, ast_QualType_create((ast_Type*)t));
    return t;
 }
@@ -18458,7 +15038,6 @@ static ast_FunctionType* ast_FunctionType_create(ast_context_Context* c, ast_Fun
    ast_Type_init(&t->base, ast_TypeKind_Function);
    t->decl = decl;
    ast_Type_setCanonicalType(&t->base, ast_QualType_create(&t->base));
-   ast_Stats_addType(ast_TypeKind_Function, 24);
    return t;
 }
 
@@ -18489,7 +15068,6 @@ static ast_ModuleType* ast_ModuleType_create(ast_context_Context* c, ast_Module*
    ast_Type_init(&t->base, ast_TypeKind_Module);
    t->mod = mod;
    ast_Type_setCanonicalType(&t->base, ast_QualType_create(&t->base));
-   ast_Stats_addType(ast_TypeKind_Module, 24);
    return t;
 }
 
@@ -18514,7 +15092,6 @@ static ast_PointerType* ast_PointerType_create(ast_context_Context* c, ast_QualT
    ast_PointerType* t = ast_context_Context_alloc(c, 24);
    ast_Type_init(&t->base, ast_TypeKind_Pointer);
    t->inner = inner;
-   ast_Stats_addType(ast_TypeKind_Pointer, 24);
    return t;
 }
 
@@ -18593,7 +15170,7 @@ static bool ast_QualType_isConstant(const ast_QualType qt)
    ast_QualType canon = ast_QualType_getCanonicalType(qt);
    const ast_Type* t = ast_QualType_getTypeOrNil(canon);
    if (ast_QualType_isConst(canon)) return true;
-   if (ast_Type_getKind(t) == ast_TypeKind_Array) {
+   if (ast_Type_isArrayType(t)) {
       const ast_ArrayType* at = (ast_ArrayType*)t;
       canon = ast_ArrayType_getElemType(at);
       return ast_QualType_isConstant(canon);
@@ -18611,7 +15188,7 @@ static bool ast_QualType_isInvalid(const ast_QualType qt)
    return qt.ptr == 0;
 }
 
-static uint32_t ast_QualType_getBitFieldWidth(const ast_QualType qt)
+static uint32_t ast_QualType_getBitFieldWidth(const ast_QualType qt, bool precise)
 {
    ast_QualType canon = ast_QualType_getCanonicalType(qt);
    const ast_Type* t = ast_QualType_getTypeOrNil(canon);
@@ -18620,9 +15197,23 @@ static uint32_t ast_QualType_getBitFieldWidth(const ast_QualType qt)
       return ast_BuiltinType_getWidth(bi);
    }
    if (ast_Type_isEnumType(t)) {
-      ast_EnumType* et = (ast_EnumType*)t;
-      ast_QualType impl = ast_EnumType_getImplType(et);
-      return ast_QualType_getBitFieldWidth(impl);
+      ast_EnumTypeDecl* d = ast_EnumType_getDecl(((ast_EnumType*)t));
+      if (ast_EnumTypeDecl_isRegular(d) && precise) {
+         uint32_t n = ast_EnumTypeDecl_getNumConstants(d) - 1;
+         uint32_t bits = 1;
+         for (uint32_t i = 16; i != 0; i >>= 1) {
+            {
+               uint32_t m = n >> i;
+               if (m) {
+                  n = m;
+                  bits += i;
+               }
+            }
+         }
+         return bits;
+      }
+      ast_QualType impl = ast_EnumTypeDecl_getImplType(d);
+      return ast_QualType_getBitFieldWidth(impl, precise);
    }
    return 0;
 }
@@ -18643,7 +15234,7 @@ static bool ast_QualType_isScalar(const ast_QualType qt)
 static ast_Type* ast_QualType_getType(const ast_QualType qt)
 {
    size_t t = qt.ptr & ~ast_QualType_Mask;
-   (t) || c2_assert("ast/qualtype.c2", 135, "ast.QualType.getType", "t");
+   ;//assert(t);
    return (ast_Type*)t;
 }
 
@@ -18685,12 +15276,6 @@ static ast_QualType ast_QualType_getImplType(const ast_QualType* qt)
    }
    ast_QualType_copyQuals(&canon, *qt);
    return canon;
-}
-
-static bool ast_QualType_isConstPtr(const ast_QualType qt)
-{
-   ast_PointerType* pt = ast_QualType_getPointerType(qt);
-   return ast_QualType_isConst(pt->inner);
 }
 
 static ast_TypeKind ast_QualType_getKind(const ast_QualType qt)
@@ -18759,7 +15344,7 @@ static bool ast_QualType_isFloat32(const ast_QualType qt)
 static ast_BuiltinKind ast_QualType_getBuiltinKind(const ast_QualType* qt)
 {
    const ast_BuiltinType* bi = ast_QualType_getBuiltinTypeOrNil(*qt);
-   (bi) || c2_assert("ast/qualtype.c2", 234, "ast.QualType.getBuiltinKind", "bi");
+   ;//assert(bi);
    return ast_BuiltinType_getKind(bi);
 }
 
@@ -18833,7 +15418,7 @@ static ast_BuiltinType* ast_QualType_getBuiltin(const ast_QualType qt)
 static ast_BuiltinType* ast_QualType_getBuiltinTypeOrNil(const ast_QualType qt)
 {
    const ast_Type* t = ast_QualType_getTypeOrNil(qt);
-   if (t && ast_Type_getKind(t) == ast_TypeKind_Builtin) return (ast_BuiltinType*)t;
+   if (t && ast_Type_isBuiltinType(t)) return (ast_BuiltinType*)t;
    return NULL;
 }
 
@@ -18865,21 +15450,21 @@ static ast_EnumType* ast_QualType_getEnum(const ast_QualType qt)
 static ast_FunctionType* ast_QualType_getFunctionTypeOrNil(const ast_QualType qt)
 {
    const ast_Type* t = ast_QualType_getTypeOrNil(qt);
-   if (t && ast_Type_getKind(t) == ast_TypeKind_Function) return (ast_FunctionType*)t;
+   if (t && ast_Type_isFunctionType(t)) return (ast_FunctionType*)t;
    return NULL;
 }
 
 static ast_StructType* ast_QualType_getStructTypeOrNil(const ast_QualType qt)
 {
    const ast_Type* t = ast_QualType_getTypeOrNil(qt);
-   if (t && ast_Type_getKind(t) == ast_TypeKind_Struct) return (ast_StructType*)t;
+   if (t && ast_Type_isStructType(t)) return (ast_StructType*)t;
    return NULL;
 }
 
 static ast_ArrayType* ast_QualType_getArrayTypeOrNil(const ast_QualType qt)
 {
    const ast_Type* t = ast_QualType_getTypeOrNil(qt);
-   if (t && ast_Type_getKind(t) == ast_TypeKind_Array) return (ast_ArrayType*)t;
+   if (t && ast_Type_isArrayType(t)) return (ast_ArrayType*)t;
    return NULL;
 }
 
@@ -18891,7 +15476,7 @@ static ast_EnumType* ast_QualType_getEnumType(const ast_QualType qt)
 static ast_EnumType* ast_QualType_getEnumTypeOrNil(const ast_QualType qt)
 {
    const ast_Type* t = ast_QualType_getTypeOrNil(qt);
-   if (ast_Type_getKind(t) == ast_TypeKind_Enum) return (ast_EnumType*)t;
+   if (ast_Type_isEnumType(t)) return (ast_EnumType*)t;
    return NULL;
 }
 
@@ -18899,7 +15484,7 @@ static bool ast_QualType_isCharCompatible(const ast_QualType qt)
 {
    ast_QualType canon = ast_QualType_getCanonicalType(qt);
    const ast_Type* t = ast_QualType_getTypeOrNil(canon);
-   if (ast_Type_getKind(t) != ast_TypeKind_Builtin) return false;
+   if (!ast_Type_isBuiltinType(t)) return false;
    const ast_BuiltinType* bi = (ast_BuiltinType*)t;
    ast_BuiltinKind kind = ast_BuiltinType_getKind(bi);
    return kind == ast_BuiltinKind_Char || kind == ast_BuiltinKind_Int8 || kind == ast_BuiltinKind_UInt8;
@@ -18908,7 +15493,7 @@ static bool ast_QualType_isCharCompatible(const ast_QualType qt)
 static bool ast_QualType_isChar(const ast_QualType qt)
 {
    const ast_Type* t = ast_QualType_getTypeOrNil(qt);
-   if (ast_Type_getKind(t) != ast_TypeKind_Builtin) return false;
+   if (!ast_Type_isBuiltinType(t)) return false;
    const ast_BuiltinType* bi = (ast_BuiltinType*)t;
    return ast_BuiltinType_getKind(bi) == ast_BuiltinKind_Char;
 }
@@ -18916,7 +15501,7 @@ static bool ast_QualType_isChar(const ast_QualType qt)
 static bool ast_QualType_isUInt8(const ast_QualType qt)
 {
    const ast_Type* t = ast_QualType_getTypeOrNil(qt);
-   if (ast_Type_getKind(t) != ast_TypeKind_Builtin) return false;
+   if (!ast_Type_isBuiltinType(t)) return false;
    const ast_BuiltinType* bi = (ast_BuiltinType*)t;
    return ast_BuiltinType_getKind(bi) == ast_BuiltinKind_UInt8;
 }
@@ -18924,7 +15509,7 @@ static bool ast_QualType_isUInt8(const ast_QualType qt)
 static bool ast_QualType_promotesToInt32(const ast_QualType qt)
 {
    const ast_Type* t = ast_QualType_getTypeOrNil(qt);
-   if (ast_Type_getKind(t) != ast_TypeKind_Builtin) return false;
+   if (!ast_Type_isBuiltinType(t)) return false;
    const ast_BuiltinType* bi = (ast_BuiltinType*)t;
    return ast_BuiltinType_getKind(bi) == ast_BuiltinKind_Int32 || ast_BuiltinType_isPromotableIntegerType(bi);
 }
@@ -18938,7 +15523,7 @@ static bool ast_QualType_needsCtvInit(const ast_QualType qt)
       ast_QualType_dump_full(qt);
       return false;
    }
-   (t) || c2_assert("ast/qualtype.c2", 409, "ast.QualType.needsCtvInit", "t");
+   ;//assert(t);
    switch (ast_Type_getKind(t)) {
    case ast_TypeKind_Builtin:
       return true;
@@ -18970,7 +15555,7 @@ static const char* ast_QualType_diagName(const ast_QualType qt)
    msg_id = (msg_id + 1) % 4;
    string_buffer_Buf buf; string_buffer_Buf_init(&buf, msg, 128, false, false, 0);
    ast_QualType_printInner(qt, &buf, true, true, true);
-   return msg;
+   return string_buffer_Buf_str(&buf);
 }
 
 static const char* ast_QualType_diagNameBare(const ast_QualType qt)
@@ -18981,7 +15566,7 @@ static const char* ast_QualType_diagNameBare(const ast_QualType qt)
    msg_id = (msg_id + 1) % 4;
    string_buffer_Buf buf; string_buffer_Buf_init(&buf, msg, 128, false, false, 0);
    ast_QualType_printInner(qt, &buf, true, false, true);
-   return msg;
+   return string_buffer_Buf_str(&buf);
 }
 
 static void ast_QualType_dump(const ast_QualType qt)
@@ -19066,7 +15651,6 @@ static ast_StructType* ast_StructType_create(ast_context_Context* c, ast_StructT
    ast_StructType* t = ast_context_Context_alloc(c, 24);
    ast_Type_init(&t->base, ast_TypeKind_Struct);
    t->decl = decl;
-   ast_Stats_addType(ast_TypeKind_Struct, 24);
    return t;
 }
 
@@ -19158,7 +15742,7 @@ static bool ast_TypeRefHolder_isPointer(const ast_TypeRefHolder* h)
 static void ast_TypeRefHolder_addPointer(ast_TypeRefHolder* h)
 {
    ast_TypeRef* r = (ast_TypeRef*)&h->ref;
-   (r->flags.num_ptrs != 3) || c2_assert("ast/type_ref.c2", 120, "ast.TypeRefHolder.addPointer", "r.flags.num_ptrs != 3");
+   ;//assert(r->flags.num_ptrs != 3);
    r->flags.num_ptrs++;
 }
 
@@ -19189,7 +15773,7 @@ static bool ast_TypeRefHolder_isArray(const ast_TypeRefHolder* h)
 static void ast_TypeRefHolder_addArray(ast_TypeRefHolder* h, ast_Expr* array)
 {
    ast_TypeRef* r = (ast_TypeRef*)&h->ref;
-   (r->flags.num_arrays != 3) || c2_assert("ast/type_ref.c2", 153, "ast.TypeRefHolder.addArray", "r.flags.num_arrays != 3");
+   ;//assert(r->flags.num_arrays != 3);
    h->arrays[r->flags.num_arrays] = array;
    r->flags.num_arrays++;
 }
@@ -19307,7 +15891,7 @@ static void ast_TypeRef_instantiate(ast_TypeRef* r, const ast_TypeRef* r1, ast_I
 
 static void ast_TypeRef_setDest(ast_TypeRef* r, uint32_t dest)
 {
-   (ast_TypeRef_isUser(r)) || c2_assert("ast/type_ref.c2", 270, "ast.TypeRef.setDest", "r.isUser()");
+   ;//assert(ast_TypeRef_isUser(r));
    r->dest = dest;
 }
 
@@ -19480,14 +16064,14 @@ static void ast_TypeRef_printLiteral(const ast_TypeRef* r, string_buffer_Buf* ou
    if (ast_TypeRef_isVolatile(r)) string_buffer_Buf_add(out, "volatile ");
    switch ((ast_TypeRefKind)r->flags.kind) {
    case ast_TypeRefKind_Builtin:
-      string_buffer_Buf_add(out, ast_builtinType_names[r->flags.builtin_kind]);
+      string_buffer_Buf_add(out, ast_builtinType_names[ast_TypeRef_getBuiltinKind(r)]);
       break;
    case ast_TypeRefKind_Void:
       string_buffer_Buf_add(out, "void");
       break;
    case ast_TypeRefKind_User: {
       ast_Decl* d = r->refs[0].decl;
-      (d) || c2_assert("ast/type_ref.c2", 433, "ast.TypeRef.printLiteral", "d");
+      ;//assert(d);
       if (print_prefix) {
          string_buffer_Buf_add(out, ast_Decl_getFullName(d));
       } else {
@@ -19516,7 +16100,7 @@ static void ast_TypeRef_print(const ast_TypeRef* r, string_buffer_Buf* out, bool
    if (ast_TypeRef_isVolatile(r)) string_buffer_Buf_add(out, "volatile ");
    switch ((ast_TypeRefKind)r->flags.kind) {
    case ast_TypeRefKind_Builtin:
-      string_buffer_Buf_add(out, ast_builtinType_names[r->flags.builtin_kind]);
+      string_buffer_Buf_add(out, ast_builtinType_names[ast_TypeRef_getBuiltinKind(r)]);
       break;
    case ast_TypeRefKind_Void:
       string_buffer_Buf_add(out, "void");
@@ -19530,7 +16114,7 @@ static void ast_TypeRef_print(const ast_TypeRef* r, string_buffer_Buf* out, bool
       break;
    case ast_TypeRefKind_Function: {
       string_buffer_Buf_add(out, "fn ");
-      (r->refs[0].decl) || c2_assert("ast/type_ref.c2", 482, "ast.TypeRef.print", "r.refs[0].decl");
+      ;//assert(r->refs[0].decl);
       const ast_FunctionDecl* fd = (ast_FunctionDecl*)r->refs[0].decl;
       ast_FunctionDecl_printType(fd, out);
       break;
@@ -19586,7 +16170,7 @@ static const char* ast_TypeRef_diagName(const ast_TypeRef* r)
    static char result[128];
    string_buffer_Buf buf; string_buffer_Buf_init(&buf, result, 128, false, false, 0);
    ast_TypeRef_print(r, &buf, true);
-   return result;
+   return string_buffer_Buf_str(&buf);
 }
 
 static ast_VoidType* ast_VoidType_create(ast_context_Context* c)
@@ -19594,7 +16178,6 @@ static ast_VoidType* ast_VoidType_create(ast_context_Context* c)
    ast_VoidType* b = ast_context_Context_alloc(c, 16);
    ast_Type_init(&b->base, ast_TypeKind_Void);
    ast_Type_setCanonicalType(&b->base, ast_QualType_create(&b->base));
-   ast_Stats_addType(ast_TypeKind_Void, 16);
    return b;
 }
 
@@ -20221,7 +16804,7 @@ static ast_FunctionDecl* ast_InstanceTable_find(const ast_InstanceTable* t, cons
 static ast_FunctionDecl* ast_InstanceTable_get(const ast_InstanceTable* t, const ast_FunctionDecl* fd, uint32_t idx)
 {
    const ast_TemplateFunction* fi = ast_InstanceTable_findFunc(t, fd);
-   (fi) || c2_assert("ast/instance_table.c2", 120, "ast.InstanceTable.get", "fi");
+   ;//assert(fi);
    return ast_TemplateFunction_get(fi, idx);
 }
 
@@ -20530,7 +17113,7 @@ static void ast_PointerPool_resize(ast_PointerPool* p, uint32_t cap)
 static ast_Type* ast_PointerPool_getPointer(ast_PointerPool* p, ast_QualType qt)
 {
    ast_Type* t = ast_QualType_getTypeOrNil(qt);
-   (t) || c2_assert("ast/pointer_pool.c2", 70, "ast.PointerPool.getPointer", "t");
+   ;//assert(t);
    const uint32_t ptr_pool_idx = t->ptr_pool_idx;
    ast_PointerPoolSlot* slot = &p->slots[ptr_pool_idx];
    if (ptr_pool_idx == 0) {
@@ -20593,154 +17176,6 @@ static ast_StaticAssert* ast_StaticAssertList_getAt(const ast_StaticAssertList* 
 static ast_StaticAssert** ast_StaticAssertList_get(ast_StaticAssertList* l)
 {
    return l->asserts;
-}
-
-static void ast_Stats_reset(ast_Stats* s)
-{
-   memset(s, 0, 480);
-}
-
-static void ast_Stat_add(ast_Stat* ss, uint32_t size)
-{
-   if (ast_NCat > 1) {
-      uint32_t cat = (size + ast_BucketWidth - 1) / ast_BucketWidth;
-      if (cat >= ast_NCat) cat = ast_NCat - 1;
-      ss->count[cat]++;
-      ss->size[cat] += (size + 7) & ~0x7;
-   } else {
-      ss->count[0]++;
-      ss->size[0] += (size + 7) & ~0x7;
-   }
-}
-
-static void ast_Stats_addType(ast_TypeKind kind, uint32_t size)
-{
-   ast_Stat_add(&ast_globals->stats.types[kind], size);
-}
-
-static void ast_Stats_addExpr(ast_ExprKind kind, uint32_t size)
-{
-   ast_Stat_add(&ast_globals->stats.exprs[kind], size);
-}
-
-static void ast_Stats_addStmt(ast_StmtKind kind, uint32_t size)
-{
-   ast_Stat_add(&ast_globals->stats.stmts[kind], size);
-}
-
-static void ast_Stats_addDecl(ast_DeclKind kind, uint32_t size)
-{
-   ast_Stat_add(&ast_globals->stats.decls[kind], size);
-}
-
-static void ast_Stats_addArrayValue(uint32_t size)
-{
-   ast_Stat_add(&ast_globals->stats.others[0], size);
-}
-
-static void ast_Stats_addStaticAssert(uint32_t size)
-{
-   ast_Stat_add(&ast_globals->stats.others[1], size);
-}
-
-static void ast_Stats_addSwitchCase(uint32_t size)
-{
-   ast_Stat_add(&ast_globals->stats.others[2], size);
-}
-
-static void ast_Stat_slack(const ast_Stat* ss, uint32_t* countp, uint32_t* totalp)
-{
-   if (ast_BucketWidth & 0x7) {
-      for (uint32_t cat = 0; cat < ast_NCat; cat++) {
-         {
-            uint32_t frac = (cat * ast_BucketWidth) & 0x7;
-            if (frac) {
-               *countp += ss->count[cat];
-               *totalp += ss->count[cat] * (8 - frac);
-            }
-         }
-      }
-   }
-}
-
-static void ast_Stat_dump(const ast_Stat* ss, const char* name, uint32_t* countp, uint32_t* totalp)
-{
-   uint32_t count = 0;
-   uint32_t size = 0;
-   for (uint32_t cat = 0; cat < ast_NCat; cat++) {
-      count += ss->count[cat];
-      size += ss->size[cat];
-   }
-   printf("  %20s  %6u  %7u", name, count, size);
-   bool output = false;
-   for (uint32_t cat = 0; cat < ast_NCat; cat++) {
-      if (!ss->count[cat]) continue;
-      if (count == ss->count[cat]) {
-         if (ast_NCat > 1) printf("  %u", cat * ast_BucketWidth);
-         break;
-      }
-      printf("  %u:%u/%u", cat * ast_BucketWidth, ss->count[cat], ss->size[cat]);
-   }
-   printf("\n");
-   *countp += count;
-   *totalp += size;
-}
-
-static void ast_Stats_dump(const ast_Stats* s)
-{
-   printf("---------------------------------------\n");
-   printf("--- Types ---\n");
-   uint32_t typesTotal = 0;
-   uint32_t typesCount = 0;
-   for (uint32_t i = 0; i <= 8; i++) {
-      ast_Stat_dump(&s->types[i], ast_typeKind_names[i], &typesCount, &typesTotal);
-   }
-   printf("  %20s  %6u  %7u\n", "total", typesCount, typesTotal);
-   printf("--- Expressions ---\n");
-   uint32_t exprTotal = 0;
-   uint32_t exprCount = 0;
-   for (uint32_t i = 0; i <= 24; i++) {
-      ast_Stat_dump(&s->exprs[i], ast_exprKind_names[i], &exprCount, &exprTotal);
-   }
-   printf("  %20s  %6u  %7u\n", "total", exprCount, exprTotal);
-   printf("--- Statements ---\n");
-   uint32_t stmtTotal = 0;
-   uint32_t stmtCount = 0;
-   for (uint32_t i = 0; i <= 14; i++) {
-      ast_Stat_dump(&s->stmts[i], ast_stmtKind_names[i], &stmtCount, &stmtTotal);
-   }
-   printf("  %20s  %6u  %7u\n", "total", stmtCount, stmtTotal);
-   printf("--- Decls ---\n");
-   uint32_t declTotal = 0;
-   uint32_t declCount = 0;
-   for (uint32_t i = 0; i <= 7; i++) {
-      ast_Stat_dump(&s->decls[i], ast_declKind_names[i], &declCount, &declTotal);
-   }
-   printf("  %20s  %6u  %7u\n", "total", declCount, declTotal);
-   printf("--- Other ---\n");
-   uint32_t otherTotal = 0;
-   uint32_t otherCount = 0;
-   for (uint32_t i = 0; i < 3; i++) {
-      ast_Stat_dump(&s->others[i], ast_other_names[i], &otherCount, &otherTotal);
-   }
-   printf("  %20s  %6u  %7u\n", "total", otherCount, otherTotal);
-   printf("--- Total ---\n");
-   uint32_t totalCount = typesCount + exprCount + stmtCount + declCount + otherCount;
-   uint32_t totalSize = typesTotal + exprTotal + stmtTotal + declTotal + otherTotal;
-   printf("  %20s  %6u  %7u\n", "objects", totalCount, totalSize);
-   if (ast_NCat > 1 && ast_BucketWidth < 8) {
-      uint32_t slackCount = 0;
-      uint32_t slackTotal = 0;
-      uint32_t nStats = 480 / 8;
-      ast_Stat* sp = (ast_Stat*)s;
-      for (uint32_t i = 0; i < nStats; i++) {
-         ast_Stat_slack(&sp[i], &slackCount, &slackTotal);
-      }
-      if (slackCount) {
-         printf("  %20s  %6u  %7u\n", "slack", slackCount, slackTotal);
-      }
-   }
-   printf("---------------------------------------\n");
 }
 
 static void ast_StringTypePool_init(ast_StringTypePool* p, ast_context_Context* c)
@@ -20935,7 +17370,7 @@ static void ast_setGlobals(ast_Globals* g)
 
 static void ast_initialize(ast_context_Context* c, string_pool_Pool* astPool, uint32_t wordsize, bool use_color)
 {
-   ast_globals = malloc(824);
+   ast_globals = malloc(344);
    ast_PointerPool_init(&ast_globals->pointers, c);
    ast_StringTypePool_init(&ast_globals->string_types, c);
    ast_globals->wordsize = wordsize;
@@ -20945,9 +17380,8 @@ static void ast_initialize(ast_context_Context* c, string_pool_Pool* astPool, ui
    ast_globals->ast_capacity = 0;
    ast_globals->ast_list = NULL;
    ast_globals->dump_buf = string_buffer_create(4096, use_color, 2);
-   ast_Stats_reset(&ast_globals->stats);
-   for (uint32_t i = 0; i < 14; i++) {
-      ast_QualType_set(&ast_globals->builtins[i], (ast_Type*)ast_BuiltinType_create(c, (ast_BuiltinKind)i));
+   for (ast_BuiltinKind kind = ast_BuiltinKind_Char; kind <= ast_BuiltinKind_Bool; kind++) {
+      ast_QualType_set(&ast_globals->builtins[kind], (ast_Type*)ast_BuiltinType_create(c, kind));
    }
    ast_QualType_set(&ast_globals->void_type, (ast_Type*)ast_VoidType_create(c));
    ast_Type* void_ptr = ast_getPointerType(ast_globals->void_type);
@@ -20959,8 +17393,8 @@ static void ast_initialize(ast_context_Context* c, string_pool_Pool* astPool, ui
    memcpy(ast_globals->builtinType_width, ast_BuiltinType_default_widths, 56);
    ast_globals->builtinType_width[ast_BuiltinKind_ISize] = wordsize * 8;
    ast_globals->builtinType_width[ast_BuiltinKind_USize] = wordsize * 8;
-   for (uint32_t i = 0; i < 14; i++) {
-      ast_globals->builtinType_baseTypes[i] = (ast_BuiltinKind)i;
+   for (ast_BuiltinKind kind = ast_BuiltinKind_Char; kind <= ast_BuiltinKind_Bool; kind++) {
+      ast_globals->builtinType_baseTypes[kind] = kind;
    }
    if (wordsize == 4) {
       ast_globals->builtinType_baseTypes[ast_BuiltinKind_ISize] = ast_BuiltinKind_Int32;
@@ -20973,7 +17407,6 @@ static void ast_initialize(ast_context_Context* c, string_pool_Pool* astPool, ui
 
 static void ast_deinit(bool print_stats)
 {
-   if (print_stats) ast_Stats_dump(&ast_globals->stats);
    ast_globals->names_pool = NULL;
    ast_globals->ast_count = 0;
    ast_globals->ast_capacity = 0;
@@ -21130,7 +17563,7 @@ static ast_Value ast_Evaluator_get_value(ast_Evaluator* eval, const ast_Expr* e)
       return ast_CharLiteral_getValue(c);
    }
    case ast_ExprKind_StringLiteral:
-      (0) || c2_assert("ast/ast_evaluator.c2", 50, "ast.Evaluator.get_value", "0");
+      ;//assert(0);
       break;
    case ast_ExprKind_Nil:
       break;
@@ -21167,7 +17600,7 @@ static ast_Value ast_Evaluator_get_value(ast_Evaluator* eval, const ast_Expr* e)
       ast_Expr* index = ast_ArraySubscriptExpr_getIndex(a);
       if (!ast_Expr_isBitOffset(index)) break;
       ast_Value result = ast_Evaluator_get_value(eval, ast_ArraySubscriptExpr_getBase(a));
-      (ast_Value_isDecimal(&result) && !ast_Value_isNegative(&result)) || c2_assert("ast/ast_evaluator.c2", 89, "ast.Evaluator.get_value", "result.isDecimal() && !result.isNegative()");
+      ;//assert(ast_Value_isDecimal(&result) && !ast_Value_isNegative(&result));
       ast_BitOffsetExpr* bo = (ast_BitOffsetExpr*)index;
       ast_Value high = ast_Evaluator_get_value(eval, ast_BitOffsetExpr_getLHS(bo));
       ast_Value low = ast_Evaluator_get_value(eval, ast_BitOffsetExpr_getRHS(bo));
@@ -21186,7 +17619,7 @@ static ast_Value ast_Evaluator_get_value(ast_Evaluator* eval, const ast_Expr* e)
       return ast_Evaluator_get_value(eval, ast_ParenExpr_getInner(p));
    }
    case ast_ExprKind_BitOffset:
-      (0) || c2_assert("ast/ast_evaluator.c2", 106, "ast.Evaluator.get_value", "0");
+      ;//assert(0);
       break;
    case ast_ExprKind_ExplicitCast: {
       const ast_ExplicitCastExpr* i = (ast_ExplicitCastExpr*)e;
@@ -21198,7 +17631,7 @@ static ast_Value ast_Evaluator_get_value(ast_Evaluator* eval, const ast_Expr* e)
       return ast_Evaluator_get_value(eval, ast_ImplicitCastExpr_getInner(i));
    }
    case ast_ExprKind_Range:
-      (0) || c2_assert("ast/ast_evaluator.c2", 116, "ast.Evaluator.get_value", "0");
+      ;//assert(0);
       break;
    case ast_ExprKind_NamedArgument: {
       const ast_NamedArgument* n = (ast_NamedArgument*)e;
@@ -21271,7 +17704,7 @@ static ast_Value ast_Evaluator_get_binaryop_value(ast_Evaluator* eval, const ast
    case ast_BinaryOpcode_AndAssign:
    case ast_BinaryOpcode_XorAssign:
    case ast_BinaryOpcode_OrAssign:
-      (0) || c2_assert("ast/ast_evaluator.c2", 196, "ast.Evaluator.get_binaryop_value", "0");
+      ;//assert(0);
       break;
    }
    return ast_Value_error("unsupported operator");
@@ -21304,7 +17737,7 @@ static ast_Value ast_Evaluator_get_unaryop_value(ast_Evaluator* eval, const ast_
 
 static ast_Value ast_Evaluator_get_decl_value(ast_Evaluator* eval, const ast_Decl* d)
 {
-   (d) || c2_assert("ast/ast_evaluator.c2", 230, "ast.Evaluator.get_decl_value", "d");
+   ;//assert(d);
    switch (ast_Decl_getKind(d)) {
    case ast_DeclKind_EnumConstant: {
       const ast_EnumConstantDecl* ecd = (ast_EnumConstantDecl*)d;
@@ -21321,7 +17754,7 @@ static ast_Value ast_Evaluator_get_decl_value(ast_Evaluator* eval, const ast_Dec
       }
       case ast_VarDeclKind_FunctionParam: {
          uint32_t off = ast_VarDecl_getOffset(vd);
-         (off < eval->num_args) || c2_assert("ast/ast_evaluator.c2", 246, "ast.Evaluator.get_decl_value", "off < eval.num_args");
+         ;//assert(off < eval->num_args);
          return eval->args[off];
       }
       case ast_VarDeclKind_StructMember:
@@ -21330,7 +17763,7 @@ static ast_Value ast_Evaluator_get_decl_value(ast_Evaluator* eval, const ast_Dec
       return ast_Value_error("variable cannot be evaluated");
    }
    default:
-      (0) || c2_assert("ast/ast_evaluator.c2", 253, "ast.Evaluator.get_decl_value", "0");
+      ;//assert(0);
       break;
    }
    return ast_Value_error("not a constant value");
@@ -21431,7 +17864,7 @@ static ast_FunctionDecl* ast_expr2function(ast_Expr* e)
       return ast_expr2function(ast_ImplicitCastExpr_getInner(ic));
    }
    default:
-      (0) || c2_assert("ast/ast_evaluator.c2", 380, "ast.expr2function", "0");
+      ;//assert(0);
       break;
    }
    return NULL;
@@ -21710,6 +18143,7 @@ struct build_target_Target_ {
    build_target_BackEndKind backend;
    bool backend_no_build;
    bool backend_fast;
+   bool optional;
    string_list_List features;
    build_target_List libs;
    string_list_List exports;
@@ -21762,6 +18196,8 @@ static void build_target_Target_setNoBuild(build_target_Target* t);
 static bool build_target_Target_getNoBuild(const build_target_Target* t);
 static void build_target_Target_setFastBuild(build_target_Target* t);
 static bool build_target_Target_getFastBuild(const build_target_Target* t);
+static void build_target_Target_setOptional(build_target_Target* t);
+static bool build_target_Target_getOptional(const build_target_Target* t);
 struct build_target_Lib_ {
    uint32_t name;
    build_target_Kind kind;
@@ -22056,6 +18492,16 @@ static void build_target_Target_setFastBuild(build_target_Target* t)
 static bool build_target_Target_getFastBuild(const build_target_Target* t)
 {
    return t->backend_fast;
+}
+
+static void build_target_Target_setOptional(build_target_Target* t)
+{
+   t->optional = true;
+}
+
+static bool build_target_Target_getOptional(const build_target_Target* t)
+{
+   return t->optional;
 }
 
 static void build_target_List_init(build_target_List* l)
@@ -22433,7 +18879,7 @@ static void module_list_List_addList(module_list_List* list, module_list_List* o
 
 static void module_list_List_clear(module_list_List* l)
 {
-   (!l->owns_modules) || c2_assert("common/module_list.c2", 84, "module_list.List.clear", "!l.owns_modules");
+   ;//assert(!l->owns_modules);
    l->num_mods = 0;
 }
 
@@ -22717,7 +19163,7 @@ static void keywords_Info_init(keywords_Info* info, string_pool_Pool* pool)
       for (len = 0; p[len] && p[len] != ' '; len++) continue;
 
       idx = string_pool_Pool_add(pool, p, len, true);
-      (idx < 656) || c2_assert("parser/keywords.c2", 42, "keywords.Info.init", "idx < elemsof(info.indexes)");
+      ;//assert(idx < 656);
       info->indexes[idx] = token_Kind_Error;
       p += len;
       while (*p == ' ') p++;
@@ -22725,7 +19171,7 @@ static void keywords_Info_init(keywords_Info* info, string_pool_Pool* pool)
    for (token_Kind k = token_Kind_KW_bool; k <= token_Kind_KW_while; k++) {
       const char* s = token_Kind_str(k);
       idx = string_pool_Pool_add(pool, s, strlen(s), true);
-      (idx < 656) || c2_assert("parser/keywords.c2", 50, "keywords.Info.init", "idx < elemsof(info.indexes)");
+      ;//assert(idx < 656);
       info->indexes[idx] = k;
    }
    info->max_index = idx;
@@ -22820,7 +19266,7 @@ static bool ctv_analyser_checkRange(diagnostics_Diags* diags, ast_QualType qt, c
 {
    ast_QualType canon = ast_QualType_getCanonicalType(qt);
    if (!ast_QualType_isBuiltin(canon)) return true;
-   (ast_Expr_isCtv(e)) || c2_assert("analyser/ctv_analyser.c2", 42, "ctv_analyser.checkRange", "e.isCtv()");
+   ;//assert(ast_Expr_isCtv(e));
    ast_Value value = ast_evalExpr((e));
    if (value.kind == ast_ValueKind_Error) {
       diagnostics_Diags_errorRange(diags, ast_Expr_getLoc(e), ast_Expr_getRange(e), "%s", value.error_msg);
@@ -23124,7 +19570,7 @@ static void scope_Scope_addImports(scope_Scope* s)
       ast_Decl* decl = scope_Scope_stack_find(s, name_idx);
       if (decl) {
          diagnostics_Diags_error(s->diags, ast_ImportDecl_getLoc(id), "duplicate import name '%s'", ast_idx2name(name_idx));
-         (ast_Decl_isImport(decl)) || c2_assert("analyser/scope.c2", 120, "scope.Scope.addImports", "decl.isImport()");
+         ;//assert(ast_Decl_isImport(decl));
          ast_ImportDecl* other = (ast_ImportDecl*)decl;
          diagnostics_Diags_note(s->diags, ast_ImportDecl_getLoc(other), "previous definition is here");
          continue;
@@ -23143,7 +19589,7 @@ static void scope_Scope_enter(scope_Scope* s, uint32_t flags)
 {
    if (s->lvl == constants_MaxScopes) {
       diagnostics_Diags_error(s->diags, 0, "max scope depth reached");
-      (0) || c2_assert("analyser/scope.c2", 141, "scope.Scope.enter", "0");
+      ;//assert(0);
       return;
    }
    scope_Level* top = &s->levels[s->lvl];
@@ -23158,7 +19604,7 @@ static void scope_Scope_enter(scope_Scope* s, uint32_t flags)
 
 static void scope_Scope_exit(scope_Scope* s, bool has_error)
 {
-   (s->lvl != 0) || c2_assert("analyser/scope.c2", 155, "scope.Scope.exit", "s.lvl != 0");
+   ;//assert(s->lvl != 0);
    s->lvl--;
    uint32_t first = s->levels[s->lvl].first_index;
    if (s->warn_on_unused && !has_error) {
@@ -23226,35 +19672,35 @@ static void scope_Scope_cache_resize(scope_Scope* s, uint32_t capacity)
 
 static void scope_Scope_setUnreachable(scope_Scope* s)
 {
-   (s->lvl) || c2_assert("analyser/scope.c2", 222, "scope.Scope.setUnreachable", "s.lvl");
+   ;//assert(s->lvl);
    scope_Level* top = &s->levels[s->lvl - 1];
    top->flags |= scope_Unreachable;
 }
 
 static void scope_Scope_setReachable(scope_Scope* s)
 {
-   (s->lvl) || c2_assert("analyser/scope.c2", 228, "scope.Scope.setReachable", "s.lvl");
+   ;//assert(s->lvl);
    scope_Level* top = &s->levels[s->lvl - 1];
    top->flags &= ~scope_Unreachable;
 }
 
 static bool scope_Scope_isUnreachable(const scope_Scope* s)
 {
-   (s->lvl) || c2_assert("analyser/scope.c2", 234, "scope.Scope.isUnreachable", "s.lvl");
+   ;//assert(s->lvl);
    const scope_Level* top = &s->levels[s->lvl - 1];
    return (top->flags & scope_Unreachable);
 }
 
 static bool scope_Scope_allowBreak(const scope_Scope* s)
 {
-   (s->lvl) || c2_assert("analyser/scope.c2", 240, "scope.Scope.allowBreak", "s.lvl");
+   ;//assert(s->lvl);
    const scope_Level* top = &s->levels[s->lvl - 1];
    return (top->flags & scope_Break);
 }
 
 static bool scope_Scope_allowContinue(const scope_Scope* s)
 {
-   (s->lvl) || c2_assert("analyser/scope.c2", 246, "scope.Scope.allowContinue", "s.lvl");
+   ;//assert(s->lvl);
    const scope_Level* top = &s->levels[s->lvl - 1];
    return (top->flags & scope_Continue);
 }
@@ -23267,7 +19713,7 @@ static bool scope_Scope_inFunction(const scope_Scope* s)
 
 static bool scope_Scope_add(scope_Scope* s, ast_Decl* d)
 {
-   (s->lvl) || c2_assert("analyser/scope.c2", 258, "scope.Scope.add", "s.lvl");
+   ;//assert(s->lvl);
    const uint32_t name_idx = ast_Decl_getNameIdx(d);
    ast_Decl* decl = scope_Scope_stack_find(s, name_idx);
    if (decl) {
@@ -23338,7 +19784,7 @@ static bool scope_Scope_checkGlobalSymbol(scope_Scope* s, uint32_t name_idx, src
 
 static ast_ImportDecl* scope_Scope_findModule(scope_Scope* s, uint32_t name_idx, src_loc_SrcLoc loc)
 {
-   (s) || c2_assert("analyser/scope.c2", 340, "scope.Scope.findModule", "s");
+   ;//assert(s);
    ast_ImportDecl* d = ast_ImportDeclList_find(s->imports, name_idx);
    if (d) {
       ast_Decl_setUsed(ast_ImportDecl_asDecl(d));
@@ -23360,7 +19806,7 @@ static ast_ImportDecl* scope_Scope_findModule(scope_Scope* s, uint32_t name_idx,
 
 static ast_Decl* scope_Scope_findSymbolInModule(scope_Scope* s, ast_Module* mod, uint32_t name_idx, src_loc_SrcLoc loc)
 {
-   (s) || c2_assert("analyser/scope.c2", 363, "scope.Scope.findSymbolInModule", "s");
+   ;//assert(s);
    ast_Decl* d = ast_Module_findSymbol(mod, name_idx);
    if (!d) {
       diagnostics_Diags_error(s->diags, loc, "module '%s' has no symbol '%s'", ast_Module_getName(mod), ast_idx2name(name_idx));
@@ -23379,7 +19825,7 @@ static ast_Decl* scope_Scope_findSymbolInModule(scope_Scope* s, ast_Module* mod,
 
 static ast_Decl* scope_Scope_findType(scope_Scope* s, uint32_t name_idx, src_loc_SrcLoc loc, bool usedPublic)
 {
-   (s) || c2_assert("analyser/scope.c2", 383, "scope.Scope.findType", "s");
+   ;//assert(s);
    ast_Decl* decl = scope_Scope_stack_find(s, name_idx);
    if (decl) return decl;
    bool other_error = false;
@@ -23642,7 +20088,7 @@ static size_analyser_TypeSize size_analyser_sizeOfType(ast_QualType qt)
    case ast_TypeKind_Struct: {
       ast_StructType* st = (ast_StructType*)t;
       ast_StructTypeDecl* d = ast_StructType_getDecl(st);
-      (ast_Decl_isChecked(ast_StructTypeDecl_asDecl(d))) || c2_assert("analyser/size_analyser.c2", 214, "size_analyser.sizeOfType", "d.asDecl().isChecked()");
+      ;//assert(ast_Decl_isChecked(ast_StructTypeDecl_asDecl(d)));
       result.size = ast_StructTypeDecl_getSize(d);
       result.align = ast_StructTypeDecl_getAlignment(d);
       break;
@@ -23662,10 +20108,10 @@ static size_analyser_TypeSize size_analyser_sizeOfType(ast_QualType qt)
       result.is_signed = false;
       break;
    case ast_TypeKind_Alias:
-      (0) || c2_assert("analyser/size_analyser.c2", 232, "size_analyser.sizeOfType", "0");
+      ;//assert(0);
       break;
    case ast_TypeKind_Module:
-      (0) || c2_assert("analyser/size_analyser.c2", 235, "size_analyser.sizeOfType", "0");
+      ;//assert(0);
       break;
    }
    return result;
@@ -23732,14 +20178,14 @@ static ast_Decl* struct_func_list_List_getDecl(const struct_func_list_List* v, u
 
 static void struct_func_list_List_addFunc(struct_func_list_List* v, uint32_t index, ast_FunctionDecl* fd)
 {
-   (index < v->count) || c2_assert("analyser/struct_func_list.c2", 70, "struct_func_list.List.addFunc", "index < v.count");
+   ;//assert(index < v->count);
    struct_func_list_Info* info = &v->data[index];
    ast_FunctionDeclList_add(&info->functions, fd);
 }
 
 static ast_FunctionDecl* struct_func_list_List_findFunc(struct_func_list_List* v, uint32_t index, uint32_t name_idx)
 {
-   (index < v->count) || c2_assert("analyser/struct_func_list.c2", 76, "struct_func_list.List.findFunc", "index < v.count");
+   ;//assert(index < v->count);
    struct_func_list_Info* info = &v->data[index];
    return ast_FunctionDeclList_find(&info->functions, name_idx);
 }
@@ -23772,7 +20218,9 @@ static void unused_checker_check(diagnostics_Diags* diags, const warning_flags_F
 static void unused_checker_Checker_unused_module(void* arg, ast_AST* a)
 {
    unused_checker_Checker* c = arg;
-   diagnostics_Diags_warn(c->diags, ast_AST_getLoc(a), "unused module '%s'", ast_AST_getName(a));
+   if (!c->warnings->no_unused_public) {
+      diagnostics_Diags_warn(c->diags, ast_AST_getLoc(a), "unused module '%s'", ast_AST_getName(a));
+   }
 }
 
 static void unused_checker_Checker_check(void* arg, ast_Decl* d)
@@ -23891,6 +20339,7 @@ enum c2recipe_Kind {
    c2recipe_Kind_Export,
    c2recipe_Kind_Use,
    c2recipe_Kind_AsmFile,
+   c2recipe_Kind_Optional,
    c2recipe_Kind_Set,
    c2recipe_Kind_SetUse,
    c2recipe_Kind_Eof,
@@ -23925,7 +20374,7 @@ struct c2recipe_Parser_ {
    c2recipe_Set* sets;
 };
 
-static const char* c2recipe_kind_names[19] = {
+static const char* c2recipe_kind_names[20] = {
    "plugin",
    "[plugin_options]",
    "text",
@@ -23942,6 +20391,7 @@ static const char* c2recipe_kind_names[19] = {
    "$export",
    "$use",
    "$asm",
+   "$optional",
    "set",
    "(set)",
    "eof"
@@ -24311,12 +20761,12 @@ static void c2recipe_Parser_lex_option(c2recipe_Parser* p, c2recipe_Token* resul
    result->loc = p->loc_start + (src_loc_SrcLoc)(p->cur - p->input_start);
    const char* end = p->cur;
    while (*end && !isspace(*end)) end++;
-   uint32_t len = (uint32_t)(end - p->cur);
-   if (len >= 20) c2recipe_Parser_error(p, "unknown option");
    char option[24];
+   uint32_t len = (uint32_t)(end - p->cur);
+   if (len >= 24) c2recipe_Parser_error(p, "unknown option");
    memcpy(option, p->cur, len);
    option[len] = 0;
-   switch (c2_strswitch(option, "\010warnings" "\007backend" "\017disable-asserts" "\006nolibc" "\006config" "\006export" "\006plugin" "\003use" "\003asm")) {
+   switch (c2_strswitch(option, "\010warnings" "\007backend" "\017disable-asserts" "\006nolibc" "\006config" "\006export" "\006plugin" "\003use" "\003asm" "\010optional")) {
    case 2: // "warnings"
       result->kind = c2recipe_Kind_Warnings;
       break;
@@ -24344,8 +20794,11 @@ static void c2recipe_Parser_lex_option(c2recipe_Parser* p, c2recipe_Token* resul
    case 10: // "asm"
       result->kind = c2recipe_Kind_AsmFile;
       break;
+   case 11: // "optional"
+      result->kind = c2recipe_Kind_Optional;
+      break;
    default:
-      c2recipe_Parser_error(p, "unknown option '%s'", option);
+      c2recipe_Parser_warning(p, "unknown option '%s'", option);
       break;
    }
    p->cur += strlen(option);
@@ -24402,6 +20855,7 @@ static void c2recipe_Parser_parseTop(c2recipe_Parser* p)
       case c2recipe_Kind_Export:
       case c2recipe_Kind_Use:
       case c2recipe_Kind_AsmFile:
+      case c2recipe_Kind_Optional:
          c2recipe_Parser_error(p, "must be inside target");
          break;
       case c2recipe_Kind_Set:
@@ -24695,6 +21149,11 @@ static void c2recipe_Parser_parseTarget(c2recipe_Parser* p)
             c2recipe_Parser_error(p, "duplicate asm file '%s'", string_pool_Pool_idx2str(p->pool, p->token.value));
          }
          c2recipe_Parser_consumeToken(p);
+         break;
+      case c2recipe_Kind_Optional:
+         if (files_started) c2recipe_Parser_error(p, "$optional must come before files");
+         c2recipe_Parser_consumeToken(p);
+         build_target_Target_setOptional(p->target);
          break;
       case c2recipe_Kind_Set:
          c2recipe_Parser_error(p, "cannot define a set here");
@@ -24997,7 +21456,7 @@ static void ast_visitor_Visitor_handleCompoundStmt(ast_visitor_Visitor* v, ast_C
 
 static void ast_visitor_Visitor_handleExpr(ast_visitor_Visitor* v, ast_Expr* e)
 {
-   (e) || c2_assert("generator/ast_visitor_expr.c2", 21, "ast_visitor.Visitor.handleExpr", "e");
+   ;//assert(e);
    switch (ast_Expr_getKind(e)) {
    case ast_ExprKind_IntegerLiteral:
    case ast_ExprKind_FloatLiteral:
@@ -25121,11 +21580,15 @@ static void ast_visitor_Visitor_handleCallExpr(ast_visitor_Visitor* v, ast_CallE
 
 static void ast_visitor_Visitor_handleMemberExpr(ast_visitor_Visitor* v, ast_MemberExpr* m)
 {
-   if (ast_MemberExpr_hasExpr(m)) ast_visitor_Visitor_handleExpr(v, ast_MemberExpr_getExprBase(m));
-   for (uint32_t i = 0; i < ast_MemberExpr_getNumRefs(m); i++) {
-      ast_Ref ref = ast_MemberExpr_getRef(m, i);
+   ast_Ref ref;
+   if (ast_MemberExpr_hasExpr(m)) {
+      ast_visitor_Visitor_handleExpr(v, ast_MemberExpr_getBaseExpr(m));
+   } else {
+      ref = ast_MemberExpr_getBaseRef(m);
       v->on_ref(v->arg, &ref);
    }
+   ref = ast_MemberExpr_getRef(m);
+   v->on_ref(v->arg, &ref);
 }
 
 static void ast_visitor_Visitor_handleBuiltinExpr(ast_visitor_Visitor* v, ast_BuiltinExpr* b)
@@ -25200,7 +21663,7 @@ static void dep_finder_Finder_check(dep_finder_Finder* s, ast_Decl* d)
       break;
    case ast_DeclKind_EnumConstant:
       ast_Decl_dump(d);
-      (0) || c2_assert("generator/c/dep_finder.c2", 52, "dep_finder.Finder.check", "0");
+      ;//assert(0);
       break;
    case ast_DeclKind_FunctionType: {
       ast_FunctionTypeDecl* ftd = (ast_FunctionTypeDecl*)d;
@@ -25236,7 +21699,7 @@ static void dep_finder_Finder_handleStruct(dep_finder_Finder* s, ast_StructTypeD
       if (ast_Decl_isStructType(m)) {
          dep_finder_Finder_handleStruct(s, (ast_StructTypeDecl*)m);
       } else {
-         (ast_Decl_isVariable(m)) || c2_assert("generator/c/dep_finder.c2", 103, "dep_finder.Finder.handleStruct", "m.isVariable()");
+         ;//assert(ast_Decl_isVariable(m));
          dep_finder_Finder_handleVarDecl(s, (ast_VarDecl*)m);
       }
    }
@@ -25395,8 +21858,8 @@ static void dep_finder_Finder_handleMemberExpr(dep_finder_Finder* s, ast_MemberE
 {
    ast_Decl* d = ast_MemberExpr_getFullDecl(m);
    if (ast_Decl_isEnumConstant(d)) {
-      d = ast_MemberExpr_getPrevLastDecl(m);
-      (ast_Decl_isEnum(d)) || c2_assert("generator/c/dep_finder.c2", 249, "dep_finder.Finder.handleMemberExpr", "d.isEnum()");
+      d = ast_MemberExpr_getBaseDecl(m);
+      ;//assert(ast_Decl_isEnum(d));
    }
    dep_finder_Finder_onDep(s, d, true);
 }
@@ -25407,553 +21870,6 @@ static void dep_finder_Finder_onDep(dep_finder_Finder* s, const ast_Decl* d, boo
    if (ast_Decl_isGenerated(d)) return;
    if (d == s->current) return;
    s->on_decl(s->arg, (ast_Decl*)d);
-}
-
-
-// --- module array_init_sorter ---
-typedef struct array_init_sorter_InitEntry_ array_init_sorter_InitEntry;
-typedef struct array_init_sorter_Sorter_ array_init_sorter_Sorter;
-
-struct array_init_sorter_InitEntry_ {
-   uint32_t index;
-   const ast_Expr* expr;
-};
-
-struct array_init_sorter_Sorter_ {
-   array_init_sorter_InitEntry* entries;
-   uint32_t index;
-   uint32_t count;
-   uint32_t array_size;
-   uint32_t elem_size;
-};
-
-typedef void (*array_init_sorter_OnZeroFn)(void* arg, uint32_t size);
-
-typedef void (*array_init_sorter_OnExprFn)(void* arg, const ast_Expr* e, uint32_t elem_size);
-
-static array_init_sorter_Sorter array_init_sorter_create(uint32_t allocate, uint32_t array_size, uint32_t elem_size);
-static void array_init_sorter_Sorter_free(array_init_sorter_Sorter* s);
-static void array_init_sorter_Sorter_addAt(array_init_sorter_Sorter* s, uint32_t index, const ast_Expr* e);
-static void array_init_sorter_Sorter_add(array_init_sorter_Sorter* s, const ast_Expr* e);
-static void array_init_sorter_Sorter_iterate(const array_init_sorter_Sorter* s, array_init_sorter_OnExprFn on_expr, array_init_sorter_OnZeroFn on_zero, void* arg);
-
-static array_init_sorter_Sorter array_init_sorter_create(uint32_t allocate, uint32_t array_size, uint32_t elem_size)
-{
-   (array_size != 0) || c2_assert("generator/ir/array_init_sorter.c2", 36, "array_init_sorter.create", "array_size != 0");
-   array_init_sorter_Sorter s = { };
-   s.array_size = array_size;
-   s.elem_size = elem_size;
-   s.entries = malloc(allocate * 16);
-   return s;
-}
-
-static void array_init_sorter_Sorter_free(array_init_sorter_Sorter* s)
-{
-   free(s->entries);
-}
-
-static void array_init_sorter_Sorter_addAt(array_init_sorter_Sorter* s, uint32_t index, const ast_Expr* e)
-{
-   array_init_sorter_InitEntry entry = { .index = index, .expr = e };
-   if (s->count == 0) {
-      s->entries[0] = entry;
-      s->count = 1;
-      s->index = index + 1;
-      return;
-   }
-   uint32_t idx = s->count;
-   while (idx) {
-      array_init_sorter_InitEntry* ie = &s->entries[idx - 1];
-      if (index > ie->index) break;
-      s->entries[idx] = *ie;
-      idx--;
-   }
-   s->entries[idx] = entry;
-   s->count++;
-   s->index = index + 1;
-}
-
-static void array_init_sorter_Sorter_add(array_init_sorter_Sorter* s, const ast_Expr* e)
-{
-   array_init_sorter_Sorter_addAt(s, s->index, e);
-}
-
-static void array_init_sorter_Sorter_iterate(const array_init_sorter_Sorter* s, array_init_sorter_OnExprFn on_expr, array_init_sorter_OnZeroFn on_zero, void* arg)
-{
-   uint32_t last = 0;
-   for (uint32_t i = 0; i < s->count; i++) {
-      const array_init_sorter_InitEntry* ie = &s->entries[i];
-      if (ie->index > last + 1) {
-         on_zero(arg, (ie->index - last - 1) * s->elem_size);
-      }
-      last = ie->index;
-      on_expr(arg, ie->expr, s->elem_size);
-   }
-   if (last + 1 < s->array_size) {
-      on_zero(arg, (s->array_size - last - 1) * s->elem_size);
-   }
-}
-
-
-// --- module ir_gen_locals ---
-typedef struct ir_gen_locals_StackVar_ ir_gen_locals_StackVar;
-typedef struct ir_gen_locals_Locals_ ir_gen_locals_Locals;
-
-struct ir_gen_locals_StackVar_ {
-   ir_Ref ref;
-   ir_Type ir_type;
-   uint32_t size;
-};
-
-struct ir_gen_locals_Locals_ {
-   ir_gen_locals_StackVar* vars;
-   uint32_t count;
-   uint32_t capacity;
-   uint32_t index;
-};
-
-static void ir_gen_locals_Locals_init(ir_gen_locals_Locals* l);
-static void ir_gen_locals_Locals_free(ir_gen_locals_Locals* l);
-static void ir_gen_locals_Locals_clear(ir_gen_locals_Locals* l);
-static void ir_gen_locals_Locals_resize(ir_gen_locals_Locals* l, uint32_t capacity);
-static void ir_gen_locals_Locals_add(ir_gen_locals_Locals* l, ast_VarDecl* vd, uint32_t width, uint32_t align, uint32_t size, ir_Ref slot, ir_Type ir_type);
-static ir_gen_locals_StackVar* ir_gen_locals_Locals_find(const ir_gen_locals_Locals* l, const ast_VarDecl* vd);
-
-static void ir_gen_locals_Locals_init(ir_gen_locals_Locals* l)
-{
-   ir_gen_locals_Locals_clear(l);
-   ir_gen_locals_Locals_resize(l, 128);
-}
-
-static void ir_gen_locals_Locals_free(ir_gen_locals_Locals* l)
-{
-   free(l->vars);
-}
-
-static void ir_gen_locals_Locals_clear(ir_gen_locals_Locals* l)
-{
-   l->count = 0;
-   l->index = 1;
-}
-
-static void ir_gen_locals_Locals_resize(ir_gen_locals_Locals* l, uint32_t capacity)
-{
-   l->capacity = capacity;
-   ir_gen_locals_StackVar* vars2 = malloc(capacity * 12);
-   if (l->count) {
-      memcpy(vars2, l->vars, l->count * 12);
-      free(l->vars);
-   }
-   l->vars = vars2;
-}
-
-static void ir_gen_locals_Locals_add(ir_gen_locals_Locals* l, ast_VarDecl* vd, uint32_t width, uint32_t align, uint32_t size, ir_Ref slot, ir_Type ir_type)
-{
-   if (l->count == l->capacity) ir_gen_locals_Locals_resize(l, l->capacity * 2);
-   ir_gen_locals_StackVar* var = &l->vars[l->count];
-   var->ref = slot;
-   var->ir_type = ir_type;
-   var->size = size;
-   ast_Decl* d = (ast_Decl*)vd;
-   ast_Decl_setGenIdx(d, l->count);
-   l->count++;
-}
-
-static ir_gen_locals_StackVar* ir_gen_locals_Locals_find(const ir_gen_locals_Locals* l, const ast_VarDecl* vd)
-{
-   const ast_Decl* d = (ast_Decl*)vd;
-   if (!ast_Decl_hasGenIdx(d)) {
-      ast_Decl_dump(d);
-   }
-   (ast_Decl_hasGenIdx(d)) || c2_assert("generator/ir/ir_generator_locals.c2", 80, "ir_gen_locals.Locals.find", "d.hasGenIdx()");
-   uint32_t idx = ast_Decl_getGenIdx(d);
-   return &l->vars[idx];
-}
-
-
-// --- module ref_list ---
-typedef struct ref_list_RefList_ ref_list_RefList;
-
-struct ref_list_RefList_ {
-   uint32_t count;
-   uint32_t capacity;
-   ir_Ref* refs;
-   ir_Ref stack[4];
-};
-
-static void ref_list_RefList_init(ref_list_RefList* l);
-static void ref_list_RefList_free(ref_list_RefList* l);
-static void ref_list_RefList_resize(ref_list_RefList* l, uint32_t cap);
-static void ref_list_RefList_add(ref_list_RefList* l, ir_Ref ref);
-static uint32_t ref_list_RefList_getCount(const ref_list_RefList* l);
-static const ir_Ref* ref_list_RefList_get(const ref_list_RefList* l);
-
-static void ref_list_RefList_init(ref_list_RefList* l)
-{
-   l->count = 0;
-   l->capacity = 4;
-   l->refs = l->stack;
-}
-
-static void ref_list_RefList_free(ref_list_RefList* l)
-{
-   if (l->count > 4) free(l->refs);
-}
-
-static void ref_list_RefList_resize(ref_list_RefList* l, uint32_t cap)
-{
-   ir_Ref* refs2 = malloc(cap * 4);
-   if (l->count != 0) memcpy(refs2, l->refs, l->count * 4);
-   if (l->capacity > 4) free(l->refs);
-   l->capacity = cap;
-   l->refs = refs2;
-}
-
-static void ref_list_RefList_add(ref_list_RefList* l, ir_Ref ref)
-{
-   if (l->count == l->capacity) ref_list_RefList_resize(l, l->capacity * 2);
-   l->refs[l->count] = ref;
-   l->count++;
-}
-
-static uint32_t ref_list_RefList_getCount(const ref_list_RefList* l)
-{
-   return l->count;
-}
-
-static const ir_Ref* ref_list_RefList_get(const ref_list_RefList* l)
-{
-   return l->refs;
-}
-
-
-// --- module ir_slot_collector ---
-typedef struct ir_slot_collector_ReadSlotAccess_ ir_slot_collector_ReadSlotAccess;
-typedef struct ir_slot_collector_WriteSlotAccess_ ir_slot_collector_WriteSlotAccess;
-typedef struct ir_slot_collector_BlockIndex_ ir_slot_collector_BlockIndex;
-typedef struct ir_slot_collector_StaticSlot_ ir_slot_collector_StaticSlot;
-typedef struct ir_slot_collector_SlotCollector_ ir_slot_collector_SlotCollector;
-
-struct ir_slot_collector_ReadSlotAccess_ {
-   uint16_t done : 1;
-   uint16_t slot : 15;
-};
-
-struct ir_slot_collector_WriteSlotAccess_ {
-   uint16_t slot;
-   ir_Ref ref;
-};
-
-struct ir_slot_collector_BlockIndex_ {
-   uint16_t rd_start;
-   uint16_t rd_count;
-};
-
-struct ir_slot_collector_StaticSlot_ {
-   uint16_t slot;
-   uint32_t temp_idx;
-};
-
-struct ir_slot_collector_SlotCollector_ {
-   ir_slot_writes_map_Map* writes;
-   uint32_t read_idx;
-   uint32_t num_blocks;
-   ir_slot_collector_ReadSlotAccess* reads;
-   ir_slot_collector_BlockIndex* indexes;
-   ir_FunctionInfo* info;
-   uint32_t num_static_slots;
-   uint32_t slot_idx;
-   ir_BlockId cur_blk;
-   ir_slot_collector_StaticSlot static_slots[32];
-};
-
-static void ir_slot_collector_SlotCollector_create(ir_slot_collector_SlotCollector* c);
-static void ir_slot_collector_SlotCollector_free(ir_slot_collector_SlotCollector* c);
-static void ir_slot_collector_SlotCollector_addStaticSlot(ir_slot_collector_SlotCollector* c, uint16_t slot);
-static ir_slot_collector_StaticSlot* ir_slot_collector_SlotCollector_getStaticSlot(ir_slot_collector_SlotCollector* c, uint16_t slot);
-static void ir_slot_collector_SlotCollector_checkStaticSlots(ir_slot_collector_SlotCollector* c, ir_FunctionInfo* info);
-static void ir_slot_collector_SlotCollector_fill(ir_slot_collector_SlotCollector* c, ir_FunctionInfo* info);
-static ir_slot_collector_ReadSlotAccess* ir_slot_collector_SlotCollector_findRead(const ir_slot_collector_SlotCollector* c, ir_BlockId blk_id, uint16_t slot);
-static const ir_Ref* ir_slot_collector_SlotCollector_findWrite(const ir_slot_collector_SlotCollector* c, ir_BlockId blk_id, uint16_t slot);
-static void ir_slot_collector_SlotCollector_checkRef(ir_slot_collector_SlotCollector* c, ir_Ref* r);
-static void ir_slot_collector_SlotCollector_promoteBlockSlots(ir_slot_collector_SlotCollector* c, ir_BlockId blk_id);
-static void ir_slot_collector_SlotCollector_insertWriteIfNone(ir_slot_collector_SlotCollector* c, ir_BlockId blk_id, uint16_t slot, ir_Ref ref);
-static void ir_slot_collector_SlotCollector_insertWrite(ir_slot_collector_SlotCollector* c, ir_BlockId blk_id, uint16_t slot, ir_Ref ref);
-static void ir_slot_collector_SlotCollector_dump(const ir_slot_collector_SlotCollector* c);
-
-static void ir_slot_collector_SlotCollector_create(ir_slot_collector_SlotCollector* c)
-{
-   memset(c, 0, 312);
-   c->writes = ir_slot_writes_map_create(1024, 256);
-   c->reads = malloc(ir_SlotMax * 2);
-   c->indexes = malloc(256 * 4);
-}
-
-static void ir_slot_collector_SlotCollector_free(ir_slot_collector_SlotCollector* c)
-{
-   free(c->indexes);
-   free(c->reads);
-   ir_slot_writes_map_Map_free(c->writes);
-}
-
-static void ir_slot_collector_SlotCollector_addStaticSlot(ir_slot_collector_SlotCollector* c, uint16_t slot)
-{
-   for (uint32_t i = 0; i < c->num_static_slots; i++) {
-      if (c->static_slots[i].slot == slot) return;
-   }
-   (c->num_static_slots < 32) || c2_assert("ir/slot_collector.c2", 90, "ir_slot_collector.SlotCollector.addStaticSlot", "c.num_static_slots < elemsof(c.static_slots)");
-   c->static_slots[c->num_static_slots].slot = slot;
-   c->static_slots[c->num_static_slots].temp_idx = 0;
-   c->num_static_slots++;
-}
-
-static ir_slot_collector_StaticSlot* ir_slot_collector_SlotCollector_getStaticSlot(ir_slot_collector_SlotCollector* c, uint16_t slot)
-{
-   for (uint32_t i = 0; i < c->num_static_slots; i++) {
-      if (c->static_slots[i].slot == slot) return &c->static_slots[i];
-   }
-   return NULL;
-}
-
-static void ir_slot_collector_SlotCollector_checkStaticSlots(ir_slot_collector_SlotCollector* c, ir_FunctionInfo* info)
-{
-   ir_Instr* instrs = ir_InstrList_get(&c->info->instructions, 0);
-   uint32_t count = ir_InstrList_getCount(&c->info->instructions);
-   for (uint32_t i = 0; i < count; i++) {
-      const ir_Instr* ii = &instrs[i];
-      switch (ir_Instr_getKind(ii)) {
-      case ir_InstrKind_Load1 ... ir_InstrKind_Load8:
-         break;
-      case ir_InstrKind_Store1 ... ir_InstrKind_Store8:
-         if (ir_Ref_isSlot(&ii->args[0])) ir_slot_collector_SlotCollector_addStaticSlot(c, (uint16_t)ii->args[0].value);
-         break;
-      case ir_InstrKind_Alloc1 ... ir_InstrKind_Alloc8:
-         (ir_Ref_isValue(&ii->args[0])) || c2_assert("ir/slot_collector.c2", 121, "ir_slot_collector.SlotCollector.checkStaticSlots", "ii.args[0].isValue()");
-         if (ii->args[0].value > 8) ir_slot_collector_SlotCollector_addStaticSlot(c, (uint16_t)c->slot_idx);
-         c->slot_idx++;
-         break;
-      case ir_InstrKind_Switch:
-         break;
-      case ir_InstrKind_Phi:
-         break;
-      default:
-         if (ir_Ref_isSlot(&ii->args[0])) ir_slot_collector_SlotCollector_addStaticSlot(c, (uint16_t)ii->args[0].value);
-         if (ir_Ref_isSlot(&ii->args[1])) ir_slot_collector_SlotCollector_addStaticSlot(c, (uint16_t)ii->args[1].value);
-         break;
-      }
-   }
-}
-
-static void ir_slot_collector_SlotCollector_fill(ir_slot_collector_SlotCollector* c, ir_FunctionInfo* info)
-{
-   c->read_idx = 0;
-   c->num_blocks = ir_BlockList_getCount(&info->blocks);
-   c->info = info;
-   c->num_static_slots = 0;
-   c->slot_idx = 0;
-   ir_slot_writes_map_Map_clear(c->writes);
-   ir_slot_collector_SlotCollector_checkStaticSlots(c, info);
-   for (uint32_t i = 0; i < c->num_blocks; i++) ir_slot_collector_SlotCollector_promoteBlockSlots(c, i);
-}
-
-static ir_slot_collector_ReadSlotAccess* ir_slot_collector_SlotCollector_findRead(const ir_slot_collector_SlotCollector* c, ir_BlockId blk_id, uint16_t slot)
-{
-   const ir_slot_collector_BlockIndex* bi = &c->indexes[blk_id];
-   uint32_t slot_start = bi->rd_start;
-   uint32_t slot_end = bi->rd_start + bi->rd_count;
-   for (uint32_t i = slot_start; i < slot_end; i++) {
-      ir_slot_collector_ReadSlotAccess* ra = &c->reads[i];
-      if (ra->slot == slot) return ra;
-   }
-   return NULL;
-}
-
-static const ir_Ref* ir_slot_collector_SlotCollector_findWrite(const ir_slot_collector_SlotCollector* c, ir_BlockId blk_id, uint16_t slot)
-{
-   ir_slot_writes_map_Iter iter = ir_slot_writes_map_Map_getList(c->writes, (uint16_t)blk_id);
-   for (uint32_t i = 0; i < iter.count; i++) {
-      if (iter.ids[i].slot == slot) return &iter.ids[i].ref;
-   }
-   return NULL;
-}
-
-static void ir_slot_collector_SlotCollector_checkRef(ir_slot_collector_SlotCollector* c, ir_Ref* r)
-{
-   if (!ir_Ref_isSlot(r)) return;
-   uint16_t slot = (uint16_t)r->value;
-   const ir_slot_collector_StaticSlot* s = ir_slot_collector_SlotCollector_getStaticSlot(c, slot);
-   if (s) {
-      r->kind = ir_RefKind_Temp;
-      r->value = (int32_t)s->temp_idx;
-      return;
-   }
-   ir_slot_writes_map_Iter iter = ir_slot_writes_map_Map_getList(c->writes, (uint16_t)c->cur_blk);
-   for (uint32_t i = 0; i < iter.count; i++) {
-      ir_slot_writes_map_SlotWrite* wr = &iter.ids[i];
-      if (wr->slot == slot) {
-         *r = wr->ref;
-         return;
-      }
-   }
-}
-
-static void ir_slot_collector_SlotCollector_promoteBlockSlots(ir_slot_collector_SlotCollector* c, ir_BlockId blk_id)
-{
-   ir_Block* b = ir_BlockList_get(&c->info->blocks, blk_id);
-   ir_slot_collector_BlockIndex* bi = &c->indexes[blk_id];
-   c->cur_blk = blk_id;
-   bi->rd_start = (uint16_t)c->read_idx;
-   uint16_t alloc_slot = 0;
-   ir_Instr* ii = ir_InstrList_get(&c->info->instructions, b->instr.start);
-   for (uint32_t i = 0; i < b->instr.count; i++) {
-      ir_Instr* cur = &ii[i];
-      switch (ir_Instr_getKind(cur)) {
-      case ir_InstrKind_Load1:
-      case ir_InstrKind_Load2:
-      case ir_InstrKind_Load4:
-      case ir_InstrKind_Load8: {
-         ir_Ref* ref = &cur->args[0];
-         if (!ir_Ref_isSlot(ref)) continue;
-         cur->instrBits.kind = ir_InstrKind_Copy;
-         uint16_t slot = (uint16_t)ref->value;
-         const ir_slot_collector_StaticSlot* s = ir_slot_collector_SlotCollector_getStaticSlot(c, slot);
-         if (s) {
-            ref->kind = ir_RefKind_Temp;
-            ref->value = (int32_t)s->temp_idx;
-            break;
-         }
-         bool found = false;
-         ir_slot_writes_map_Iter iter = ir_slot_writes_map_Map_getList(c->writes, (uint16_t)blk_id);
-         for (uint32_t j = 0; j < iter.count; j++) {
-            ir_slot_writes_map_SlotWrite* wr = &iter.ids[j];
-            if (wr->slot == slot) {
-               cur->args[0] = wr->ref;
-               found = true;
-               break;
-            }
-         }
-         if (found) continue;
-         for (uint32_t j = bi->rd_start; j < c->read_idx; j++) {
-            if (c->reads[j].slot == slot) {
-               found = true;
-               break;
-            }
-         }
-         if (found) continue;
-         (c->read_idx < ir_SlotMax) || c2_assert("ir/slot_collector.c2", 272, "ir_slot_collector.SlotCollector.promoteBlockSlots", "c.read_idx < SlotMax");
-         ir_slot_collector_ReadSlotAccess* ra = &c->reads[c->read_idx++];
-         ra->done = 0;
-         ra->slot = slot;
-         break;
-      }
-      case ir_InstrKind_Store1:
-      case ir_InstrKind_Store2:
-      case ir_InstrKind_Store4:
-      case ir_InstrKind_Store8: {
-         ir_slot_collector_SlotCollector_checkRef(c, &cur->args[0]);
-         ir_Ref* ref = &cur->args[1];
-         if (!ir_Ref_isSlot(ref)) continue;
-         uint16_t slot = (uint16_t)ref->value;
-         const ir_slot_collector_StaticSlot* s = ir_slot_collector_SlotCollector_getStaticSlot(c, slot);
-         if (s) {
-            ref->kind = ir_RefKind_Temp;
-            ref->value = (int32_t)s->temp_idx;
-            break;
-         }
-         cur->instrBits.kind = ir_InstrKind_Copy;
-         cur->instrBits.has_result = 1;
-         ref->kind = ir_RefKind_None;
-         ref->value = 0;
-         uint16_t idx = (uint16_t)(b->instr.start + i);
-         ir_slot_writes_map_Iter iter = ir_slot_writes_map_Map_getList(c->writes, (uint16_t)blk_id);
-         ir_Ref tmp_ref = { ir_RefKind_Temp, idx };
-         for (uint32_t j = 0; j < iter.count; j++) {
-            ir_slot_writes_map_SlotWrite* wr = &iter.ids[j];
-            if (wr->slot == slot) {
-               wr->ref = tmp_ref;
-               goto next;
-            }
-         }
-         ir_slot_writes_map_Map_add(c->writes, (uint16_t)blk_id, slot, tmp_ref);
-      next:
-         break;
-      }
-      case ir_InstrKind_Alloc1:
-      case ir_InstrKind_Alloc2:
-      case ir_InstrKind_Alloc4:
-      case ir_InstrKind_Alloc8: {
-         ir_slot_collector_StaticSlot* s = ir_slot_collector_SlotCollector_getStaticSlot(c, alloc_slot);
-         if (s) {
-            s->temp_idx = i;
-         } else {
-            ir_Instr_clear(cur);
-            if (i + 1 < b->instr.count) {
-               ir_Instr* next = &ii[i + 1];
-               if (ir_Instr_isComment(next)) {
-                  ir_Instr_clear(next);
-                  i++;
-               }
-            }
-         }
-         alloc_slot++;
-         break;
-      }
-      case ir_InstrKind_Switch:
-         (0) || c2_assert("ir/slot_collector.c2", 354, "ir_slot_collector.SlotCollector.promoteBlockSlots", "0");
-         break;
-      case ir_InstrKind_Phi:
-         break;
-      default:
-         ir_slot_collector_SlotCollector_checkRef(c, &cur->args[0]);
-         ir_slot_collector_SlotCollector_checkRef(c, &cur->args[0]);
-         break;
-      }
-   }
-   bi->rd_count = (uint16_t)c->read_idx - bi->rd_start;
-}
-
-static void ir_slot_collector_SlotCollector_insertWriteIfNone(ir_slot_collector_SlotCollector* c, ir_BlockId blk_id, uint16_t slot, ir_Ref ref)
-{
-   ir_slot_writes_map_Iter iter = ir_slot_writes_map_Map_getList(c->writes, (uint16_t)blk_id);
-   for (uint32_t i = 0; i < iter.count; i++) {
-      ir_slot_writes_map_SlotWrite* wr = &iter.ids[i];
-      if (wr->slot == slot) return;
-   }
-   ir_slot_collector_SlotCollector_insertWrite(c, blk_id, slot, ref);
-}
-
-static void ir_slot_collector_SlotCollector_insertWrite(ir_slot_collector_SlotCollector* c, ir_BlockId blk_id, uint16_t slot, ir_Ref ref)
-{
-   ir_slot_writes_map_Map_add(c->writes, (uint16_t)blk_id, slot, ref);
-}
-
-static void ir_slot_collector_SlotCollector_dump(const ir_slot_collector_SlotCollector* c)
-{
-   printf("Access: [%u reads, %u blocks]\n", c->read_idx, c->num_blocks);
-   for (uint32_t i = 0; i < c->num_blocks; i++) {
-      const ir_slot_collector_BlockIndex* bi = &c->indexes[i];
-      printf("  B%u  %2d %2d", i, bi->rd_start, bi->rd_count);
-      printf(" R");
-      if (bi->rd_count) {
-         uint32_t start = bi->rd_start;
-         uint32_t end = bi->rd_start + bi->rd_count;
-         for (uint32_t j = start; j < end; j++) {
-            const ir_slot_collector_ReadSlotAccess* ra = &c->reads[j];
-            printf(" %d", ra->slot);
-         }
-      }
-      printf(" | W");
-      ir_slot_writes_map_Iter iter = ir_slot_writes_map_Map_getList(c->writes, (uint16_t)i);
-      if (iter.count) {
-         for (uint32_t j = 0; j < iter.count; j++) {
-            ir_slot_writes_map_SlotWrite* wr = &iter.ids[j];
-            printf(" %d", wr->slot);
-            printf("(%s %d)", ir_Ref_getKindName(&wr->ref), wr->ref.value);
-         }
-      }
-      printf("\n");
-   }
-   printf("\n");
 }
 
 
@@ -26489,7 +22405,7 @@ static ast_Stmt* ast_builder_Builder_actOnContinueStmt(ast_builder_Builder* b, s
 static ast_Stmt* ast_builder_Builder_actOnFallthroughStmt(ast_builder_Builder* b, src_loc_SrcLoc loc);
 static ast_Stmt* ast_builder_Builder_actOnLabelStmt(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc, ast_Stmt* stmt);
 static ast_Stmt* ast_builder_Builder_actOnGotoStmt(ast_builder_Builder* b, uint32_t name, src_loc_SrcLoc loc);
-static ast_IdentifierExpr* ast_builder_Builder_actOnIdentifier(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t name);
+static ast_Expr* ast_builder_Builder_actOnIdentifier(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t name, uint32_t name_len);
 static ast_Expr* ast_builder_Builder_actOnIntegerLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t src_len, uint64_t value, number_radix_Radix radix, ast_BuiltinKind kind);
 static ast_Expr* ast_builder_Builder_actOnFloatLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t src_len, double value, number_radix_Radix radix, ast_BuiltinKind kind);
 static ast_Expr* ast_builder_Builder_actOnCharLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t src_len, uint8_t value, number_radix_Radix radix);
@@ -26509,7 +22425,7 @@ static ast_Expr* ast_builder_Builder_actOnArraySubscriptExpr(ast_builder_Builder
 static ast_Expr* ast_builder_Builder_actOnCallExpr(ast_builder_Builder* b, src_loc_SrcLoc loc, src_loc_SrcLoc endLoc, ast_Expr* func, ast_Expr** args, uint32_t num_args);
 static ast_Expr* ast_builder_Builder_actOnTemplateCallExpr(ast_builder_Builder* b, src_loc_SrcLoc loc, src_loc_SrcLoc endLoc, ast_Expr* func, ast_Expr** args, uint32_t num_args, const ast_TypeRefHolder* ref);
 static ast_Expr* ast_builder_Builder_actOnExplicitCast(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t src_len, const ast_TypeRefHolder* ref, ast_Expr* inner, bool c_style);
-static ast_Expr* ast_builder_Builder_actOnMemberExpr(ast_builder_Builder* b, ast_Expr* base, const ast_Ref* refs, uint32_t refcount);
+static ast_Expr* ast_builder_Builder_actOnMemberExpr(ast_builder_Builder* b, ast_Expr* base, uint32_t base_name_idx, uint32_t base_len, src_loc_SrcLoc loc, uint32_t member_name_idx);
 static ast_Expr* ast_builder_Builder_actOnRange(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* lhs, ast_Expr* rhs);
 static ast_Expr* ast_builder_Builder_actOnInitList(ast_builder_Builder* b, src_loc_SrcLoc loc, src_loc_SrcLoc endLoc, ast_Expr** values, uint32_t num_values);
 static ast_Expr* ast_builder_Builder_actOnFieldDesignatedInit(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t field, ast_Expr* initValue);
@@ -26547,7 +22463,7 @@ static void ast_builder_Builder_setComponent(ast_builder_Builder* b, component_C
 
 static void ast_builder_Builder_actOnModule(ast_builder_Builder* b, uint32_t mod_name, src_loc_SrcLoc mod_loc, uint32_t filename, bool is_interface, bool is_generated)
 {
-   (b->comp) || c2_assert("common/ast_builder.c2", 84, "ast_builder.Builder.actOnModule", "b.comp");
+   ;//assert(b->comp);
    if (mod_name == b->c2_name && !is_interface) {
       diagnostics_Diags_error(b->diags, mod_loc, "module name 'c2' is reserved");
       exit(-1);
@@ -26964,15 +22880,15 @@ static void ast_builder_Builder_applyAttribute(ast_builder_Builder* b, ast_Decl*
       ast_builder_Builder_actOnVarAttr(b, d, a);
       break;
    default:
-      (0) || c2_assert("common/ast_builder.c2", 637, "ast_builder.Builder.applyAttribute", "0");
+      ;//assert(0);
       return;
    }
 }
 
 static void ast_builder_Builder_applyAttributes(ast_builder_Builder* b, ast_Decl* d, uint32_t count)
 {
-   (d) || c2_assert("common/ast_builder.c2", 643, "ast_builder.Builder.applyAttributes", "d");
-   (count <= b->num_attrs) || c2_assert("common/ast_builder.c2", 644, "ast_builder.Builder.applyAttributes", "count <= b.num_attrs");
+   ;//assert(d);
+   ;//assert(count <= b->num_attrs);
    for (uint32_t i = 0; i < count; i++) {
       const attr_Attr* a = &b->attrs[b->num_attrs - count + i];
       if (a->kind == attr_AttrKind_Unknown) {
@@ -27148,9 +23064,9 @@ static ast_Stmt* ast_builder_Builder_actOnGotoStmt(ast_builder_Builder* b, uint3
    return (ast_Stmt*)ast_GotoStmt_create(b->context, name, loc);
 }
 
-static ast_IdentifierExpr* ast_builder_Builder_actOnIdentifier(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t name)
+static ast_Expr* ast_builder_Builder_actOnIdentifier(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t name, uint32_t name_len)
 {
-   return ast_IdentifierExpr_create(b->context, loc, name);
+   return (ast_Expr*)ast_IdentifierExpr_create(b->context, loc, name, name_len);
 }
 
 static ast_Expr* ast_builder_Builder_actOnIntegerLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, uint32_t src_len, uint64_t value, number_radix_Radix radix, ast_BuiltinKind kind)
@@ -27248,9 +23164,9 @@ static ast_Expr* ast_builder_Builder_actOnExplicitCast(ast_builder_Builder* b, s
    return (ast_Expr*)ast_ExplicitCastExpr_create(b->context, loc, src_len, ref, inner, c_style);
 }
 
-static ast_Expr* ast_builder_Builder_actOnMemberExpr(ast_builder_Builder* b, ast_Expr* base, const ast_Ref* refs, uint32_t refcount)
+static ast_Expr* ast_builder_Builder_actOnMemberExpr(ast_builder_Builder* b, ast_Expr* base, uint32_t base_name_idx, uint32_t base_len, src_loc_SrcLoc loc, uint32_t member_name_idx)
 {
-   return (ast_Expr*)ast_MemberExpr_create(b->context, base, refs, refcount);
+   return (ast_Expr*)ast_MemberExpr_create(b->context, base, base_name_idx, base_len, loc, member_name_idx);
 }
 
 static ast_Expr* ast_builder_Builder_actOnRange(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* lhs, ast_Expr* rhs)
@@ -27319,7 +23235,7 @@ static uint32_t component_sorter_find_idx(component_Component** comps, uint32_t 
    for (uint32_t i = 0; i < count; i++) {
       if (component_Component_getNameIdx(comps[i]) == name) return i;
    }
-   (0) || c2_assert("common/component_sorter.c2", 30, "component_sorter.find_idx", "0");
+   ;//assert(0);
    return 0;
 }
 
@@ -27361,10 +23277,10 @@ static const char* manifest_writer_getKindStr(const component_Component* c)
    switch (component_Component_getKind(c)) {
    case component_Kind_Internal:
    case component_Kind_Image:
-      (0) || c2_assert("common/manifest_writer.c2", 32, "manifest_writer.getKindStr", "0");
+      ;//assert(0);
       break;
    case component_Kind_Executable:
-      (0) || c2_assert("common/manifest_writer.c2", 35, "manifest_writer.getKindStr", "0");
+      ;//assert(0);
       break;
    case component_Kind_StaticLibrary:
       return "static";
@@ -27375,7 +23291,7 @@ static const char* manifest_writer_getKindStr(const component_Component* c)
    case component_Kind_ExternalStaticLib:
    case component_Kind_ExternalDynamicLib:
    case component_Kind_ExternalSourceLib:
-      (0) || c2_assert("common/manifest_writer.c2", 43, "manifest_writer.getKindStr", "0");
+      ;//assert(0);
       break;
    }
    return "";
@@ -27768,7 +23684,7 @@ static void c2_tokenizer_Tokenizer_lex(c2_tokenizer_Tokenizer* t, token_Token* r
          c2_tokenizer_Tokenizer_lex_identifier(t, result);
          if (result->name_idx <= t->kwinfo->max_index) {
             token_Kind k = t->kwinfo->indexes[result->name_idx];
-            (k != token_Kind_None) || c2_assert("parser/c2_tokenizer.c2", 348, "c2_tokenizer.Tokenizer.lex", "k != Kind.None");
+            ;//assert(k != token_Kind_None);
             if (k == token_Kind_Error) {
                result->reserved = true;
                return;
@@ -28535,7 +24451,7 @@ static void c2_tokenizer_Tokenizer_lex_char_literal(c2_tokenizer_Tokenizer* t, t
          c2_tokenizer_Tokenizer_error(t, result, "multi-character character constant");
          return;
       }
-      result->char_value = *string_buffer_Buf_udata(t->buf);
+      result->char_value = string_buffer_Buf_at(t->buf, 0);
       break;
    }
    default: {
@@ -28857,7 +24773,7 @@ static bool c2_tokenizer_Tokenizer_parse_error_warn(c2_tokenizer_Tokenizer* t, t
       }
       last_loc = tok.loc + tok.len;
    }
-   string_buffer_Buf_size(&msg);
+   string_buffer_Buf_data(&msg);
    if (kind == token_Kind_Feat_error) {
       const char* start = t->input_start + (result->loc - t->loc_start);
       result->kind = token_Kind_Error;
@@ -30234,9 +26150,9 @@ static bool conversion_checker_Checker_conversionError(conversion_checker_Checke
 
 static bool conversion_checker_Checker_check(conversion_checker_Checker* c, ast_QualType lhs, ast_QualType rhs, ast_Expr** e_ptr, src_loc_SrcLoc loc)
 {
-   (lhs.ptr) || c2_assert("analyser/conversion_checker.c2", 131, "conversion_checker.Checker.check", "lhs.ptr");
-   (rhs.ptr) || c2_assert("analyser/conversion_checker.c2", 132, "conversion_checker.Checker.check", "rhs.ptr");
-   (!ast_Expr_isNValue((*e_ptr))) || c2_assert("analyser/conversion_checker.c2", 133, "conversion_checker.Checker.check", "!(*e_ptr).isNValue()");
+   ;//assert(lhs.ptr);
+   ;//assert(rhs.ptr);
+   ;//assert(!ast_Expr_isNValue((*e_ptr)));
    ast_QualType t1 = ast_QualType_getCanonicalType(lhs);
    ast_QualType t2 = ast_QualType_getCanonicalType(rhs);
    if (ast_Expr_isCtv((*e_ptr)) && ast_QualType_isBuiltin(t1) && !ast_QualType_isPointer(t2)) {
@@ -30246,10 +26162,6 @@ static bool conversion_checker_Checker_check(conversion_checker_Checker* c, ast_
    const ast_Type* lcanon = ast_QualType_getTypeOrNil(t1);
    const ast_Type* rcanon = ast_QualType_getTypeOrNil(t2);
    if (lcanon == rcanon) {
-      if (ast_Type_getKind(lcanon) == ast_TypeKind_Pointer && ast_QualType_isConst(rhs) && !ast_QualType_isConst(lhs)) {
-         diagnostics_Diags_error(c->diags, loc, "conversion discards const qualifier");
-         return false;
-      }
       return true;
    }
    c->lhs = lhs;
@@ -30267,7 +26179,7 @@ static bool conversion_checker_Checker_checkTypes(conversion_checker_Checker* c,
       diagnostics_Diags_error(c->diags, c->loc, "SHOULD NOT HAPPEN (%d - %d)\n", ast_Type_getKind(lcanon), ast_Type_getKind(rcanon));
       ast_QualType_dump_full(c->lhs);
       ast_QualType_dump_full(c->rhs);
-      (0) || c2_assert("analyser/conversion_checker.c2", 178, "conversion_checker.Checker.checkTypes", "0");
+      ;//assert(0);
       return false;
    case 1:
       return conversion_checker_Checker_conversionError(c, "invalid type conversion from");
@@ -30285,7 +26197,7 @@ static bool conversion_checker_Checker_checkTypes(conversion_checker_Checker* c,
       diagnostics_Diags_note(c->diags, c->loc, "SHOULD NOT HAPPEN (Array -> Ptr)");
       ast_QualType_dump_full(c->lhs);
       ast_QualType_dump_full(c->rhs);
-      (0) || c2_assert("analyser/conversion_checker.c2", 196, "conversion_checker.Checker.checkTypes", "0");
+      ;//assert(0);
       return false;
    case 8:
       return conversion_checker_Checker_conversionError(c, "invalid type conversion from");
@@ -30322,7 +26234,7 @@ static bool conversion_checker_Checker_checkBuiltins(conversion_checker_Checker*
    switch (res) {
    case 0:
       diagnostics_Diags_error(c->diags, c->loc, "BUILTIN SHOULD NOT HAPPEN (%d - %d)\n", ast_Type_getKind(lcanon), ast_Type_getKind(rcanon));
-      (0) || c2_assert("analyser/conversion_checker.c2", 236, "conversion_checker.Checker.checkBuiltins", "0");
+      ;//assert(0);
       return false;
    case 1:
       ast_builder_Builder_insertImplicitCast(c->builder, ast_ImplicitCastKind_IntegralCast, c->expr_ptr, c->lhs);
@@ -30356,7 +26268,7 @@ static bool conversion_checker_Checker_checkBuiltins(conversion_checker_Checker*
    case 7:
       break;
    default:
-      (0) || c2_assert("analyser/conversion_checker.c2", 275, "conversion_checker.Checker.checkBuiltins", "0");
+      ;//assert(0);
       return false;
    }
    return true;
@@ -30589,7 +26501,7 @@ static bool conversion_checker_Checker_checkCast(conversion_checker_Checker* c, 
       diagnostics_Diags_error(c->diags, lhsLoc, "SHOULD NOT HAPPEN (%d - %d)\n", ast_Type_getKind(lcanon), ast_Type_getKind(rcanon));
       ast_QualType_dump_full(c->lhs);
       ast_QualType_dump_full(c->rhs);
-      (0) || c2_assert("analyser/conversion_checker.c2", 562, "conversion_checker.Checker.checkCast", "0");
+      ;//assert(0);
       return false;
    case 1:
       return conversion_checker_Checker_conversionError(c, "invalid cast from");
@@ -30605,15 +26517,15 @@ static bool conversion_checker_Checker_checkCast(conversion_checker_Checker* c, 
       return true;
    case 7:
       diagnostics_Diags_note(c->diags, c->loc, "SHOULD NOT HAPPEN (Array -> Ptr)");
-      (0) || c2_assert("analyser/conversion_checker.c2", 579, "conversion_checker.Checker.checkCast", "0");
+      ;//assert(0);
       return false;
    case 8:
       diagnostics_Diags_error(c->diags, lhsLoc, "SHOULD NOT HAPPEN (%d - %d)\n", ast_Type_getKind(lcanon), ast_Type_getKind(rcanon));
-      (0) || c2_assert("analyser/conversion_checker.c2", 583, "conversion_checker.Checker.checkCast", "0");
+      ;//assert(0);
       return false;
    case 9:
       diagnostics_Diags_error(c->diags, lhsLoc, "SHOULD NOT HAPPEN (%d - %d)\n", ast_Type_getKind(lcanon), ast_Type_getKind(rcanon));
-      (0) || c2_assert("analyser/conversion_checker.c2", 587, "conversion_checker.Checker.checkCast", "0");
+      ;//assert(0);
       return false;
    case 10:
       return true;
@@ -30771,7 +26683,7 @@ static conversion_checker_ExprWidth conversion_checker_getExprWidth(const ast_Ex
    }
    }
    ast_Expr_dump(e);
-   (0) || c2_assert("analyser/conversion_checker_expr.c2", 112, "conversion_checker.getExprWidth", "0");
+   ;//assert(0);
    return result;
 }
 
@@ -30904,6 +26816,7 @@ static conversion_checker_ExprWidth conversion_checker_getTypeWidth(ast_QualType
 typedef struct module_analyser_Analyser_ module_analyser_Analyser;
 typedef struct module_analyser_StackLayer_ module_analyser_StackLayer;
 typedef struct module_analyser_MainMarker_ module_analyser_MainMarker;
+typedef struct module_analyser_FindMemberOffsetContext_ module_analyser_FindMemberOffsetContext;
 typedef struct module_analyser_FormatAnalyser_ module_analyser_FormatAnalyser;
 typedef struct module_analyser_FillInfo_ module_analyser_FillInfo;
 typedef struct module_analyser_StructFieldInitChecker_ module_analyser_StructFieldInitChecker;
@@ -31352,12 +27265,18 @@ static bool module_analyser_incompatible_opcodes(ast_BinaryOpcode op1, ast_Binar
 static bool module_analyser_Analyser_checkAmbiguousOperators(module_analyser_Analyser* ma, ast_BinaryOpcode opcode, ast_Expr* sub);
 static ast_QualType module_analyser_Analyser_analyseBinaryOperator(module_analyser_Analyser* ma, ast_Expr** e_ptr);
 static bool module_analyser_Analyser_checkZero(module_analyser_Analyser* ma, ast_Expr* e, const char* operation);
+struct module_analyser_FindMemberOffsetContext_ {
+   ast_StructTypeDecl* std;
+   uint32_t base_offset;
+};
+
 static ast_QualType module_analyser_Analyser_analyseBuiltin(module_analyser_Analyser* ma, ast_Expr** e_ptr);
 static ast_QualType module_analyser_Analyser_analyseSizeof(module_analyser_Analyser* ma, ast_BuiltinExpr* e);
 static ast_QualType module_analyser_Analyser_analyseElemsof(module_analyser_Analyser* ma, ast_BuiltinExpr* b);
 static ast_QualType module_analyser_Analyser_analyseEnumMinMax(module_analyser_Analyser* ma, ast_BuiltinExpr* b);
 static ast_QualType module_analyser_Analyser_analyseOffsetOf(module_analyser_Analyser* ma, ast_BuiltinExpr* b);
 static ast_QualType module_analyser_Analyser_analyseToContainer(module_analyser_Analyser* ma, ast_BuiltinExpr* b);
+static ast_Decl* module_analyser_Analyser_findMemberOffsetAux(module_analyser_Analyser* ma, module_analyser_FindMemberOffsetContext* ctx, ast_Expr* member);
 static ast_Decl* module_analyser_Analyser_findMemberOffset(module_analyser_Analyser* ma, ast_BuiltinExpr* b, ast_StructTypeDecl* std, ast_Expr* member);
 static ast_Decl* module_analyser_Analyser_findStructMemberOffset(module_analyser_Analyser* ma, ast_StructTypeDecl* s, uint32_t name_idx, src_loc_SrcLoc loc, uint32_t* base);
 struct module_analyser_FormatAnalyser_ {
@@ -31646,7 +27565,7 @@ static init_checker_Checker* module_analyser_Analyser_getInitChecker(module_anal
 
 static void module_analyser_Analyser_putInitChecker(module_analyser_Analyser* ma, init_checker_Checker* c)
 {
-   (ma->check_idx > 0) || c2_assert("analyser/module_analyser.c2", 172, "module_analyser.Analyser.putInitChecker", "ma.check_idx > 0");
+   ;//assert(ma->check_idx > 0);
    ma->check_idx--;
    if (ma->check_idx >= 4) {
       init_checker_Checker_free(c);
@@ -31810,9 +27729,9 @@ static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDec
    module_analyser_Analyser* ma = arg;
    ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
    ast_Decl* d = (ast_Decl*)fd;
-   (prefix) || c2_assert("analyser/module_analyser.c2", 347, "module_analyser.Analyser.handleStructFunc", "prefix");
+   ;//assert(prefix);
    uint32_t prefix_name_idx = prefix->name_idx;
-   (ma->type_fn_decls) || c2_assert("analyser/module_analyser.c2", 350, "module_analyser.Analyser.handleStructFunc", "ma.type_fn_decls");
+   ;//assert(ma->type_fn_decls);
    uint32_t index = 0;
    if (prefix_name_idx == ma->prefix_cache_name) {
       index = ma->prefix_cache_idx;
@@ -31903,7 +27822,7 @@ static bool module_analyser_Analyser_analyseGlobalDecl(module_analyser_Analyser*
       module_analyser_Analyser_analyseEnumType(ma, (ast_EnumTypeDecl*)d);
       break;
    case ast_DeclKind_EnumConstant:
-      (0) || c2_assert("analyser/module_analyser.c2", 455, "module_analyser.Analyser.analyseGlobalDecl", "0");
+      ;//assert(0);
       break;
    case ast_DeclKind_FunctionType:
       module_analyser_Analyser_analyseFunctionType(ma, d);
@@ -32093,7 +28012,7 @@ static bool module_analyser_Analyser_pushCheck(module_analyser_Analyser* ma, ast
       }
    }
    ma->scope = s;
-   (ma->checkIndex <= module_analyser_MaxDepth) || c2_assert("analyser/module_analyser.c2", 674, "module_analyser.Analyser.pushCheck", "ma.checkIndex <= MaxDepth");
+   ;//assert(ma->checkIndex <= module_analyser_MaxDepth);
    module_analyser_StackLayer* top = &ma->checkStack[ma->checkIndex];
    top->decl = d;
    top->scope = s;
@@ -32108,7 +28027,7 @@ static bool module_analyser_Analyser_pushCheck(module_analyser_Analyser* ma, ast
 
 static void module_analyser_Analyser_popCheck(module_analyser_Analyser* ma)
 {
-   (ma->checkIndex > 0) || c2_assert("analyser/module_analyser.c2", 690, "module_analyser.Analyser.popCheck", "ma.checkIndex > 0");
+   ;//assert(ma->checkIndex > 0);
    ma->checkIndex--;
    if (ma->checkIndex > 0) {
       module_analyser_StackLayer* top = &ma->checkStack[ma->checkIndex - 1];
@@ -32320,8 +28239,8 @@ static ast_QualType module_analyser_Analyser_checkBinopAddSubAssign(module_analy
 {
    ast_QualType lcanon = ast_QualType_getCanonicalType(lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(rhs);
-   (ast_QualType_isValid(lcanon)) || c2_assert("analyser/module_analyser_binop.c2", 303, "module_analyser.Analyser.checkBinopAddSubAssign", "lcanon.isValid()");
-   (ast_QualType_isValid(rcanon)) || c2_assert("analyser/module_analyser_binop.c2", 304, "module_analyser.Analyser.checkBinopAddSubAssign", "rcanon.isValid()");
+   ;//assert(ast_QualType_isValid(lcanon));
+   ;//assert(ast_QualType_isValid(rcanon));
    uint8_t res = module_analyser_BinOpConvAddSubAss[ast_QualType_getKind(lcanon)][ast_QualType_getKind(rcanon)];
    switch (res) {
    case 0:
@@ -32346,7 +28265,7 @@ static ast_QualType module_analyser_Analyser_checkBinopAddSubAssign(module_analy
    case 8:
       return module_analyser_Analyser_checkBinopIntArgs(ma, b, lhs, rhs, true);
    }
-   (0) || c2_assert("analyser/module_analyser_binop.c2", 331, "module_analyser.Analyser.checkBinopAddSubAssign", "0");
+   ;//assert(0);
    return ast_QualType_Invalid;
 }
 
@@ -32354,8 +28273,8 @@ static ast_QualType module_analyser_Analyser_checkBinopAddArgs(module_analyser_A
 {
    ast_QualType lcanon = ast_QualType_getCanonicalType(lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(rhs);
-   (ast_QualType_isValid(lcanon)) || c2_assert("analyser/module_analyser_binop.c2", 367, "module_analyser.Analyser.checkBinopAddArgs", "lcanon.isValid()");
-   (ast_QualType_isValid(rcanon)) || c2_assert("analyser/module_analyser_binop.c2", 368, "module_analyser.Analyser.checkBinopAddArgs", "rcanon.isValid()");
+   ;//assert(ast_QualType_isValid(lcanon));
+   ;//assert(ast_QualType_isValid(rcanon));
    uint8_t res = module_analyser_BinOpConvAdd[ast_QualType_getKind(lcanon)][ast_QualType_getKind(rcanon)];
    switch (res) {
    case 0:
@@ -32401,7 +28320,7 @@ static ast_QualType module_analyser_Analyser_checkBinopAddArgs(module_analyser_A
       if (!module_analyser_validIntegerType(rcanon)) goto invalid_rhs;
       return lhs;
    }
-   (0) || c2_assert("analyser/module_analyser_binop.c2", 415, "module_analyser.Analyser.checkBinopAddArgs", "0");
+   ;//assert(0);
    return ast_QualType_Invalid;
 }
 
@@ -32409,8 +28328,8 @@ static ast_QualType module_analyser_Analyser_checkBinopSubArgs(module_analyser_A
 {
    ast_QualType lcanon = ast_QualType_getCanonicalType(lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(rhs);
-   (ast_QualType_isValid(lcanon)) || c2_assert("analyser/module_analyser_binop.c2", 450, "module_analyser.Analyser.checkBinopSubArgs", "lcanon.isValid()");
-   (ast_QualType_isValid(rcanon)) || c2_assert("analyser/module_analyser_binop.c2", 451, "module_analyser.Analyser.checkBinopSubArgs", "rcanon.isValid()");
+   ;//assert(ast_QualType_isValid(lcanon));
+   ;//assert(ast_QualType_isValid(rcanon));
    uint8_t res = module_analyser_BinOpConvSub[ast_QualType_getKind(lcanon)][ast_QualType_getKind(rcanon)];
    switch (res) {
    case 0:
@@ -32473,8 +28392,8 @@ static ast_QualType module_analyser_Analyser_checkBinopComparison(module_analyse
    ast_QualType lcanon = ast_QualType_getCanonicalType(lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(rhs);
    ast_Expr* e = (ast_Expr*)b;
-   (ast_QualType_isValid(lcanon)) || c2_assert("analyser/module_analyser_binop.c2", 546, "module_analyser.Analyser.checkBinopComparison", "lcanon.isValid()");
-   (ast_QualType_isValid(rcanon)) || c2_assert("analyser/module_analyser_binop.c2", 547, "module_analyser.Analyser.checkBinopComparison", "rcanon.isValid()");
+   ;//assert(ast_QualType_isValid(lcanon));
+   ;//assert(ast_QualType_isValid(rcanon));
    uint8_t res = module_analyser_BinOpConvComparison[ast_QualType_getKind(lcanon)][ast_QualType_getKind(rcanon)];
    switch (res) {
    case 0:
@@ -32538,7 +28457,7 @@ static ast_QualType module_analyser_Analyser_checkBinopComparison(module_analyse
       return module_analyser_Analyser_invalidBinOp1(ma, b, ast_BinaryOperator_getRHS(b), rhs);
    }
    module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "TODO BINOP %d", res);
-   (0) || c2_assert("analyser/module_analyser_binop.c2", 617, "module_analyser.Analyser.checkBinopComparison", "0");
+   ;//assert(0);
    return ast_QualType_Invalid;
 }
 
@@ -32721,7 +28640,7 @@ static ast_QualType module_analyser_Analyser_analyseBuiltin(module_analyser_Anal
 static ast_QualType module_analyser_Analyser_analyseSizeof(module_analyser_Analyser* ma, ast_BuiltinExpr* e)
 {
    ast_Expr* inner = ast_BuiltinExpr_getInner(e);
-   (inner) || c2_assert("analyser/module_analyser_builtin.c2", 45, "module_analyser.Analyser.analyseSizeof", "inner");
+   ;//assert(inner);
    bool savedPublic = ma->usedPublic;
    ma->usedPublic = false;
    ast_QualType qt;
@@ -32844,47 +28763,62 @@ static ast_QualType module_analyser_Analyser_analyseToContainer(module_analyser_
    ast_Expr* member = ast_BuiltinExpr_getToContainerMember(b);
    ast_Decl* d = module_analyser_Analyser_findMemberOffset(ma, b, std, member);
    if (!d) return ast_QualType_Invalid;
-   ast_QualType qmem = ast_Decl_getType(d);
-   qmem = ast_builder_Builder_actOnPointerType(ma->builder, qmem);
-   ast_QualType qptr = module_analyser_Analyser_analyseExpr(ma, ast_BuiltinExpr_getToContainerPointer2(b), false, module_analyser_RHS);
+   ast_Expr** pptr = ast_BuiltinExpr_getToContainerPointer2(b);
+   ast_QualType qptr = module_analyser_Analyser_analyseExpr(ma, pptr, false, module_analyser_RHS);
    if (ast_QualType_isInvalid(qptr)) return ast_QualType_Invalid;
-   ast_Expr* eptr = ast_BuiltinExpr_getToContainerPointer(b);
-   if (!conversion_checker_Checker_check(&ma->checker, qptr, qmem, ast_BuiltinExpr_getToContainerPointer2(b), ast_Expr_getLoc(eptr))) {
+   ast_PointerType* pt = ast_QualType_getPointerType(qptr);
+   ast_QualType_copyQuals(&qt, ast_PointerType_getInner(pt));
+   ast_QualType qmem = ast_Decl_getType(d);
+   ast_QualType_copyQuals(&qmem, ast_PointerType_getInner(pt));
+   ast_QualType expectedType = ast_builder_Builder_actOnPointerType(ma->builder, qmem);
+   if (!conversion_checker_Checker_check(&ma->checker, expectedType, qptr, pptr, ast_Expr_getLoc((*pptr)))) {
       return ast_QualType_Invalid;
    }
-   if (ast_QualType_isConstPtr(qptr)) ast_QualType_setConst(&qt);
    return ast_builder_Builder_actOnPointerType(ma->builder, qt);
 }
 
-static ast_Decl* module_analyser_Analyser_findMemberOffset(module_analyser_Analyser* ma, ast_BuiltinExpr* b, ast_StructTypeDecl* std, ast_Expr* member)
+static ast_Decl* module_analyser_Analyser_findMemberOffsetAux(module_analyser_Analyser* ma, module_analyser_FindMemberOffsetContext* ctx, ast_Expr* member)
 {
-   uint32_t base_offset = 0;
    ast_Decl* d = NULL;
    if (ast_Expr_isIdentifier(member)) {
       ast_IdentifierExpr* i = (ast_IdentifierExpr*)member;
       uint32_t name_idx = ast_IdentifierExpr_getNameIdx(i);
-      d = module_analyser_Analyser_findStructMemberOffset(ma, std, name_idx, ast_Expr_getLoc(member), &base_offset);
+      d = module_analyser_Analyser_findStructMemberOffset(ma, ctx->std, name_idx, ast_Expr_getLoc(member), &ctx->base_offset);
       if (!d) return NULL;
       ast_IdentifierExpr_setDecl(i, d);
       ast_Decl_setUsed(d);
       ast_Expr_setLValue(member);
       ast_IdentifierExpr_setKind(i, ast_IdentifierKind_StructMember);
    } else {
-      (ast_Expr_isMember(member)) || c2_assert("analyser/module_analyser_builtin.c2", 222, "module_analyser.Analyser.findMemberOffset", "member.isMember()");
+      ;//assert(ast_Expr_isMember(member));
       ast_MemberExpr* m = (ast_MemberExpr*)member;
-      for (uint32_t i = 0; i < ast_MemberExpr_getNumRefs(m); i++) {
+      uint32_t start = 0;
+      if (ast_MemberExpr_hasExpr(m)) {
+         d = module_analyser_Analyser_findMemberOffsetAux(ma, ctx, ast_MemberExpr_getBaseExpr(m));
+         if (!d) return NULL;
+         if (ast_Decl_isStructType(d)) ctx->std = (ast_StructTypeDecl*)d;
+         start = 1;
+      }
+      for (uint32_t i = start; i < 2; i++) {
          uint32_t name_idx = ast_MemberExpr_getNameIdx(m, i);
          src_loc_SrcLoc loc = ast_MemberExpr_getLoc(m, i);
-         d = module_analyser_Analyser_findStructMemberOffset(ma, std, name_idx, loc, &base_offset);
+         d = module_analyser_Analyser_findStructMemberOffset(ma, ctx->std, name_idx, loc, &ctx->base_offset);
          if (!d) return NULL;
-         if (ast_Decl_isStructType(d)) std = (ast_StructTypeDecl*)d;
+         if (ast_Decl_isStructType(d)) ctx->std = (ast_StructTypeDecl*)d;
          ast_Decl_setUsed(d);
          ast_MemberExpr_setDecl(m, d, i);
       }
       ast_MemberExpr_setKind(m, ast_IdentifierKind_StructMember);
    }
    ast_Expr_setType(member, ast_Decl_getType(d));
-   ast_BuiltinExpr_setUValue(b, base_offset);
+   return d;
+}
+
+static ast_Decl* module_analyser_Analyser_findMemberOffset(module_analyser_Analyser* ma, ast_BuiltinExpr* b, ast_StructTypeDecl* std, ast_Expr* member)
+{
+   module_analyser_FindMemberOffsetContext ctx = { std, 0 };
+   ast_Decl* d = module_analyser_Analyser_findMemberOffsetAux(ma, &ctx, member);
+   if (d) ast_BuiltinExpr_setUValue(b, ctx.base_offset);
    return d;
 }
 
@@ -32946,7 +28880,7 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
       ast_Decl* fdd = (ast_Decl*)fd;
       switch (ast_FunctionDecl_getCallKind(fd)) {
       case ast_CallKind_Invalid:
-         (0) || c2_assert("analyser/module_analyser_call.c2", 101, "module_analyser.Analyser.analyseCallExpr", "0");
+         ;//assert(0);
          break;
       case ast_CallKind_Normal:
          break;
@@ -32955,7 +28889,7 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
             isTypeFuncCall = true;
             ast_CallExpr_setCallsTypeFunc(call);
             baseType = ast_MemberExpr_getBaseType(m);
-            loc = ast_MemberExpr_getLastLoc(m);
+            loc = ast_MemberExpr_getMemberLoc(m);
          }
          break;
       case ast_CallKind_StaticTypeFunc:
@@ -32975,13 +28909,13 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
    uint32_t func_arg_index = 0;
    uint32_t call_arg_index = 0;
    if (isTypeFuncCall) {
-      (ast_FunctionDecl_getNumParams(fd) >= 1) || c2_assert("analyser/module_analyser_call.c2", 135, "module_analyser.Analyser.analyseCallExpr", "fd.getNumParams() >= 1");
-      (m) || c2_assert("analyser/module_analyser_call.c2", 136, "module_analyser.Analyser.analyseCallExpr", "m");
+      ;//assert(ast_FunctionDecl_getNumParams(fd) >= 1);
+      ;//assert(m);
       ast_VarDecl* arg0 = func_args[0];
       ast_QualType expectedType = ast_Decl_getType(ast_VarDecl_asDecl(arg0));
       if (ast_QualType_isPointer(expectedType)) {
          if (!ast_QualType_isPointer(baseType)) {
-            ast_Expr* base = ast_MemberExpr_getExprBase(m);
+            ast_Expr* base = ast_MemberExpr_getBaseExpr(m);
             if (base && !ast_Expr_isLValue(base)) {
                module_analyser_Analyser_errorRange(ma, ast_MemberExpr_getLoc(m, 0), ast_Expr_getRange(base), "type function needs lvalue");
                return ast_QualType_Invalid;
@@ -33314,34 +29248,34 @@ static const char* module_analyser_get_format(ast_Expr* format, src_loc_SrcLoc* 
       }
       case ast_ExprKind_Identifier: {
          ast_QualType qt = ast_Expr_getType(format);
-         (ast_QualType_isArray(qt)) || c2_assert("analyser/module_analyser_call.c2", 534, "module_analyser.get_format", "qt.isArray()");
+         ;//assert(ast_QualType_isArray(qt));
          ast_ArrayType* at = ast_QualType_getArrayType(qt);
          qt = ast_ArrayType_getElemType(at);
          if (!ast_QualType_isConst(qt)) return NULL;
          ast_IdentifierExpr* id = (ast_IdentifierExpr*)format;
          ast_Decl* decl = ast_IdentifierExpr_getDecl(id);
-         (ast_Decl_isVariable(decl)) || c2_assert("analyser/module_analyser_call.c2", 541, "module_analyser.get_format", "decl.isVariable()");
+         ;//assert(ast_Decl_isVariable(decl));
          ast_VarDecl* vd = (ast_VarDecl*)decl;
          format = ast_VarDecl_getInit(vd);
-         (format) || c2_assert("analyser/module_analyser_call.c2", 544, "module_analyser.get_format", "format");
+         ;//assert(format);
          continue;
       }
       case ast_ExprKind_Member: {
          ast_QualType qt = ast_Expr_getType(format);
-         (ast_QualType_isArray(qt)) || c2_assert("analyser/module_analyser_call.c2", 548, "module_analyser.get_format", "qt.isArray()");
+         ;//assert(ast_QualType_isArray(qt));
          ast_ArrayType* at = ast_QualType_getArrayType(qt);
          qt = ast_ArrayType_getElemType(at);
          if (!ast_QualType_isConst(qt)) return NULL;
          ast_MemberExpr* m = (ast_MemberExpr*)format;
          ast_Decl* decl = ast_MemberExpr_getFullDecl(m);
-         (ast_Decl_isVariable(decl)) || c2_assert("analyser/module_analyser_call.c2", 555, "module_analyser.get_format", "decl.isVariable()");
+         ;//assert(ast_Decl_isVariable(decl));
          ast_VarDecl* vd = (ast_VarDecl*)decl;
          format = ast_VarDecl_getInit(vd);
-         (format) || c2_assert("analyser/module_analyser_call.c2", 558, "module_analyser.get_format", "format");
+         ;//assert(format);
          continue;
       }
       default:
-         (0) || c2_assert("analyser/module_analyser_call.c2", 561, "module_analyser.get_format", "0");
+         ;//assert(0);
          return NULL;
       }
    }
@@ -33504,7 +29438,7 @@ static ast_QualType module_analyser_Analyser_analysePureCallExpr(module_analyser
 
 static ast_QualType module_analyser_Analyser_analyseExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, bool need_rvalue, uint32_t side)
 {
-   (e_ptr) || c2_assert("analyser/module_analyser_expr.c2", 24, "module_analyser.Analyser.analyseExpr", "e_ptr");
+   ;//assert(e_ptr);
    ast_QualType result = module_analyser_Analyser_analyseExprInner(ma, e_ptr, side);
    if (ast_QualType_isInvalid(result)) return result;
    ast_Expr_setType((*e_ptr), result);
@@ -33517,7 +29451,7 @@ static ast_QualType module_analyser_Analyser_convertRvalue(module_analyser_Analy
    ast_Expr* e = *e_ptr;
    if (ast_Expr_isLValue(e)) {
       ast_QualType canon = ast_QualType_getCanonicalType(result);
-      (ast_QualType_isValid(canon)) || c2_assert("analyser/module_analyser_expr.c2", 36, "module_analyser.Analyser.convertRvalue", "canon.isValid()");
+      ;//assert(ast_QualType_isValid(canon));
       if (ast_QualType_isArray(canon)) {
          result = module_analyser_getPointerFromArray(ma->builder, canon);
          ast_builder_Builder_insertImplicitCast(ma->builder, ast_ImplicitCastKind_ArrayToPointerDecay, e_ptr, result);
@@ -33556,7 +29490,7 @@ static ast_QualType module_analyser_Analyser_analyseExprInner(module_analyser_An
    case ast_ExprKind_FieldDesignatedInit:
    case ast_ExprKind_ArrayDesignatedInit:
       ast_Expr_dump((*e_ptr));
-      (0) || c2_assert("analyser/module_analyser_expr.c2", 76, "module_analyser.Analyser.analyseExprInner", "0");
+      ;//assert(0);
       break;
    case ast_ExprKind_BinaryOperator:
       return module_analyser_Analyser_analyseBinaryOperator(ma, e_ptr);
@@ -33586,7 +29520,7 @@ static ast_QualType module_analyser_Analyser_analyseExprInner(module_analyser_An
       break;
    case ast_ExprKind_Range:
       ast_Expr_dump((*e_ptr));
-      (0) || c2_assert("analyser/module_analyser_expr.c2", 105, "module_analyser.Analyser.analyseExprInner", "0");
+      ;//assert(0);
       break;
    case ast_ExprKind_NamedArgument: {
       ast_NamedArgument* n = (ast_NamedArgument*)e;
@@ -33613,6 +29547,7 @@ static ast_Decl* module_analyser_Analyser_analyseIdentifier(module_analyser_Anal
 {
    ast_Expr* e = *e_ptr;
    ast_IdentifierExpr* i = (ast_IdentifierExpr*)e;
+   if (ast_IdentifierExpr_hasDecl(i)) return ast_IdentifierExpr_getDecl(i);
    ast_Decl* d = scope_Scope_find(ma->scope, ast_IdentifierExpr_getNameIdx(i), ast_Expr_getLoc(e), ma->usedPublic);
    if (!d) {
       ma->has_error = true;
@@ -33637,7 +29572,7 @@ static ast_Decl* module_analyser_Analyser_analyseIdentifier(module_analyser_Anal
    }
    ast_IdentifierKind kind = module_analyser_Analyser_setExprFlags(ma, e_ptr, d);
    ast_IdentifierExpr_setKind(i, kind);
-   if (ma->usedPublic && !ast_Decl_isPublic(d) && ast_Decl_isGlobal(d)) {
+   if (ma->usedPublic && !ast_Decl_isPublic(d) && ast_Decl_isGlobal(d) && !ast_Decl_isImport(d)) {
       const char* kind_str = module_analyser_type2str(qt);
       if (scope_Scope_inFunction(ma->scope)) {
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "public inline function using non-public %s '%s'", kind_str, ast_Decl_getFullName(d));
@@ -33721,8 +29656,8 @@ static ast_QualType module_analyser_Analyser_analyseConditionalOperator(module_a
    if (ast_QualType_isInvalid(lhs) || ast_QualType_isInvalid(rhs)) return ast_QualType_Invalid;
    ast_QualType lcanon = ast_QualType_getCanonicalType(lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(rhs);
-   (ast_QualType_isValid(lcanon)) || c2_assert("analyser/module_analyser_expr.c2", 296, "module_analyser.Analyser.analyseConditionalOperator", "lcanon.isValid()");
-   (ast_QualType_isValid(rcanon)) || c2_assert("analyser/module_analyser_expr.c2", 297, "module_analyser.Analyser.analyseConditionalOperator", "rcanon.isValid()");
+   ;//assert(ast_QualType_isValid(lcanon));
+   ;//assert(ast_QualType_isValid(rcanon));
    if (ast_Expr_isCtv(ast_ConditionalOperator_getCond(cond))) ast_Expr_combineConstantFlags(e, ast_ConditionalOperator_getLHS(cond), ast_ConditionalOperator_getRHS(cond));
    uint8_t res = module_analyser_CondOpTable[ast_QualType_getKind(lcanon)][ast_QualType_getKind(rcanon)];
    switch (res) {
@@ -33788,7 +29723,7 @@ static ast_QualType module_analyser_Analyser_analyseConditionalOperator(module_a
       return lhs;
    }
    ast_Expr_dump(e);
-   (0) || c2_assert("analyser/module_analyser_expr.c2", 367, "module_analyser.Analyser.analyseConditionalOperator", "0");
+   ;//assert(0);
    return ast_QualType_Invalid;
 }
 
@@ -33812,22 +29747,22 @@ static bool module_analyser_Analyser_checkAssignment(module_analyser_Analyser* m
          ast_MemberExpr* m = (ast_MemberExpr*)assignee;
          switch (ast_MemberExpr_getKind(m)) {
          case ast_IdentifierKind_Unresolved:
-            (0) || c2_assert("analyser/module_analyser_expr.c2", 393, "module_analyser.Analyser.checkAssignment", "0");
+            ;//assert(0);
             break;
          case ast_IdentifierKind_Module:
-            (0) || c2_assert("analyser/module_analyser_expr.c2", 396, "module_analyser.Analyser.checkAssignment", "0");
+            ;//assert(0);
             break;
          case ast_IdentifierKind_Function:
             break;
          case ast_IdentifierKind_Type:
             break;
          case ast_IdentifierKind_Var:
-            module_analyser_Analyser_error(ma, loc, "cannot assign to read-only variable '%s'", ast_MemberExpr_getLastMemberName(m));
+            module_analyser_Analyser_error(ma, loc, "cannot assign to read-only variable '%s'", ast_MemberExpr_getMemberName(m));
             return false;
          case ast_IdentifierKind_EnumConstant:
             break;
          case ast_IdentifierKind_StructMember:
-            module_analyser_Analyser_error(ma, loc, "assignment of member '%s' in read-only object", ast_MemberExpr_getLastMemberName(m));
+            module_analyser_Analyser_error(ma, loc, "assignment of member '%s' in read-only object", ast_MemberExpr_getMemberName(m));
             return false;
          case ast_IdentifierKind_Label:
             break;
@@ -34115,7 +30050,7 @@ static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* m
    if (num_params && ast_FunctionDecl_hasPrefix(fd)) {
       const ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
       const ast_Decl* pd = prefix->decl;
-      (pd) || c2_assert("analyser/module_analyser_function.c2", 134, "module_analyser.Analyser.analyseFunction", "pd");
+      ;//assert(pd);
       ast_QualType prefixType = ast_Decl_getType(pd);
       ast_TypeRef* ref = ast_VarDecl_getTypeRef(params[0]);
       const ast_Ref* param_ref = ast_TypeRef_getUser(ref);
@@ -34356,19 +30291,25 @@ static bool module_analyser_Analyser_analyseInitExpr(module_analyser_Analyser* m
 static bool module_analyser_Analyser_checkEnumArg(module_analyser_Analyser* ma, ast_Expr** e_ptr, ast_QualType expectedType)
 {
    ast_Expr* e = *e_ptr;
-   if (ast_Expr_isIdentifier(e) && ast_QualType_isEnum(expectedType)) {
+   if (ast_QualType_isEnum(expectedType)) {
       ast_EnumType* et = ast_QualType_getEnum(expectedType);
       ast_EnumTypeDecl* etd = ast_EnumType_getDecl(et);
-      ast_IdentifierExpr* ie = (ast_IdentifierExpr*)e;
-      ast_EnumConstantDecl* ecd = ast_EnumTypeDecl_findConstant(etd, ast_IdentifierExpr_getNameIdx(ie));
-      if (ecd) {
-         ast_Decl* d = (ast_Decl*)ecd;
-         ast_Decl_setUsed(d);
-         ast_Expr_setType(e, expectedType);
-         ast_IdentifierExpr_setDecl(ie, d);
-         ast_IdentifierKind kind = module_analyser_Analyser_setExprFlags(ma, e_ptr, d);
-         ast_IdentifierExpr_setKind(ie, kind);
-         return true;
+      if (ast_Expr_isIdentifier(e)) {
+         ast_IdentifierExpr* ie = (ast_IdentifierExpr*)e;
+         ast_EnumConstantDecl* ecd = ast_EnumTypeDecl_findConstant(etd, ast_IdentifierExpr_getNameIdx(ie));
+         if (ecd) {
+            ast_Decl* d = (ast_Decl*)ecd;
+            ast_Decl_setUsed(d);
+            ast_Expr_setType(e, expectedType);
+            ast_IdentifierExpr_setDecl(ie, d);
+            ast_IdentifierKind kind = module_analyser_Analyser_setExprFlags(ma, e_ptr, d);
+            ast_IdentifierExpr_setKind(ie, kind);
+            return true;
+         }
+      } else if (ast_Expr_getKind(e) == ast_ExprKind_ConditionalOperator) {
+         ast_ConditionalOperator* op = (ast_ConditionalOperator*)e;
+         module_analyser_Analyser_checkEnumArg(ma, ast_ConditionalOperator_getLHS2(op), expectedType);
+         module_analyser_Analyser_checkEnumArg(ma, ast_ConditionalOperator_getRHS2(op), expectedType);
       }
    }
    return false;
@@ -34694,16 +30635,18 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
    ast_ValType valtype = ast_ValType_NValue;
    ast_QualType baseType = ast_QualType_Invalid;
    ast_CallKind ck = ast_CallKind_Invalid;
+   uint32_t start = 0;
    if (ast_MemberExpr_hasExpr(m)) {
-      ast_Expr* exprBase = ast_MemberExpr_getExprBase(m);
+      ast_Expr* exprBase = ast_MemberExpr_getBaseExpr(m);
+      baseLoc = ast_Expr_getLoc(exprBase);
       baseType = module_analyser_Analyser_analyseExpr(ma, &exprBase, false, side);
       if (ast_QualType_isInvalid(baseType)) return ast_QualType_Invalid;
       valtype = ast_Expr_getValType(exprBase);
+      start = 1;
    }
    ast_Decl* d = NULL;
-   uint32_t refcount = ast_MemberExpr_getNumRefs(m);
-   bool is_substruct;
-   for (uint32_t i = 0; i < refcount; i++) {
+   bool is_substruct = false;
+   for (uint32_t i = start; i < 2; i++) {
       is_substruct = false;
       uint32_t name_idx = ast_MemberExpr_getNameIdx(m, i);
       src_loc_SrcLoc loc = ast_MemberExpr_getLoc(m, i);
@@ -34758,10 +30701,11 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
          case ast_TypeKind_Enum: {
             ast_EnumType* et = (ast_EnumType*)t;
             ast_EnumTypeDecl* etd = ast_EnumType_getDecl(et);
-            const char* last = ast_MemberExpr_getLastMemberName(m);
-            if (isupper(last[0]) || name_idx == ma->min_idx || name_idx == ma->max_idx) {
+            d = (ast_Decl*)etd;
+            const char* name = ast_MemberExpr_getMemberName(m);
+            if (isupper(name[0]) || name_idx == ma->min_idx || name_idx == ma->max_idx) {
                if (valtype != ast_ValType_NValue) {
-                  module_analyser_Analyser_error(ma, baseLoc, "invalid member reference base (enum constant/variable)");
+                  module_analyser_Analyser_errorRange(ma, baseLoc, ast_MemberExpr_getBaseRange(m), "invalid member reference base (enum constant/variable)");
                   return ast_QualType_Invalid;
                }
                ast_EnumConstantDecl* ecd;
@@ -34774,7 +30718,7 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
                } else {
                   ecd = ast_EnumTypeDecl_findConstant(etd, name_idx);
                   if (!ecd) {
-                     module_analyser_Analyser_error(ma, loc, "enum '%s' has no constant '%s'", ast_Decl_getFullName(d), ast_MemberExpr_getLastMemberName(m));
+                     module_analyser_Analyser_error(ma, loc, "enum '%s' has no constant '%s'", ast_Decl_getFullName(d), name);
                      return ast_QualType_Invalid;
                   }
                }
@@ -34784,13 +30728,12 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
                   return ast_QualType_Invalid;
                }
             } else {
-               d = (ast_Decl*)etd;
                ast_Decl* ef = ast_EnumTypeDecl_findFunction(etd, name_idx);
                if (!ef) {
-                  module_analyser_Analyser_error(ma, loc, "enum '%s' has no function '%s'", ast_Decl_getFullName(d), ast_MemberExpr_getLastMemberName(m));
+                  module_analyser_Analyser_error(ma, loc, "enum '%s' has no function '%s'", ast_Decl_getFullName(d), name);
                   return ast_QualType_Invalid;
                }
-               ck = valtype == ast_ValType_NValue ? ast_CallKind_StaticTypeFunc : ast_CallKind_TypeFunc;
+               ck = (valtype == ast_ValType_NValue) ? ast_CallKind_StaticTypeFunc : ast_CallKind_TypeFunc;
                d = ef;
                baseType = ast_Decl_getType(ef);
                if (!scope_Scope_checkAccess(ma->scope, d, loc)) return ast_QualType_Invalid;
@@ -34799,7 +30742,7 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
             break;
          }
          case ast_TypeKind_Alias:
-            (0) || c2_assert("analyser/module_analyser_member.c2", 173, "module_analyser.Analyser.analyseMemberExpr", "0");
+            ;//assert(0);
             break;
          case ast_TypeKind_Module: {
             ast_ModuleType* mt = (ast_ModuleType*)t;
@@ -34816,12 +30759,12 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
             break;
          }
          default:
-            module_analyser_Analyser_errorRange(ma, loc, ast_MemberExpr_getRange(m, i), "invalid member reference base");
+            module_analyser_Analyser_errorRange(ma, loc, ast_MemberExpr_getBaseRange(m), "invalid member reference base");
             return ast_QualType_Invalid;
          }
       }
       baseLoc = loc;
-      if (i == refcount - 1) {
+      if (i == 1) {
          if (side & module_analyser_RHS) ast_Decl_setUsed(d);
       } else {
          ast_Decl_setUsed(d);
@@ -34859,7 +30802,7 @@ static ast_Decl* module_analyser_Analyser_analyseStructMemberAccess(module_analy
    if (ast_Decl_isFunction(d)) {
       ast_FunctionDecl* fd = (ast_FunctionDecl*)d;
       ast_CallKind callkind = ast_FunctionDecl_getCallKind(fd);
-      (callkind != ast_CallKind_Normal) || c2_assert("analyser/module_analyser_member.c2", 247, "module_analyser.Analyser.analyseStructMemberAccess", "callkind != CallKind.Normal");
+      ;//assert(callkind != ast_CallKind_Normal);
       switch (valtype) {
       case ast_ValType_NValue:
          if (callkind != ast_CallKind_StaticTypeFunc) {
@@ -34871,7 +30814,7 @@ static ast_Decl* module_analyser_Analyser_analyseStructMemberAccess(module_analy
             module_analyser_Analyser_error(ma, loc, module_analyser_DiagStaticThoughVar);
             return NULL;
          }
-         (callkind == ast_CallKind_TypeFunc) || c2_assert("analyser/module_analyser_member.c2", 263, "module_analyser.Analyser.analyseStructMemberAccess", "callkind == CallKind.TypeFunc");
+         ;//assert(callkind == ast_CallKind_TypeFunc);
          *ck = ast_CallKind_TypeFunc;
          break;
       case ast_ValType_LValue:
@@ -34879,7 +30822,7 @@ static ast_Decl* module_analyser_Analyser_analyseStructMemberAccess(module_analy
             module_analyser_Analyser_error(ma, loc, module_analyser_DiagStaticThoughVar);
             return NULL;
          }
-         (callkind == ast_CallKind_TypeFunc) || c2_assert("analyser/module_analyser_member.c2", 271, "module_analyser.Analyser.analyseStructMemberAccess", "callkind == CallKind.TypeFunc");
+         ;//assert(callkind == ast_CallKind_TypeFunc);
          *ck = ast_CallKind_TypeFunc;
          break;
       }
@@ -35101,7 +31044,7 @@ static ast_QualType module_analyser_Analyser_analyseCondition(module_analyser_An
       }
       return qt;
    }
-   (ast_Stmt_isExpr(s)) || c2_assert("analyser/module_analyser_stmt.c2", 215, "module_analyser.Analyser.analyseCondition", "s.isExpr()");
+   ;//assert(ast_Stmt_isExpr(s));
    ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, (ast_Expr**)s_ptr, true, module_analyser_RHS);
    ast_Expr* e = (ast_Expr*)*s_ptr;
    if (ast_QualType_isValid(qt)) conversion_checker_Checker_check(&ma->checker, ast_getBuiltinQT(ast_BuiltinKind_Bool), qt, (ast_Expr**)s_ptr, ast_Expr_getLoc(e));
@@ -35336,7 +31279,7 @@ static void module_analyser_Analyser_checkReturnAddrOfLocal(module_analyser_Anal
    if (!ast_Expr_isIdentifier(inner)) return;
    ast_IdentifierExpr* id = (ast_IdentifierExpr*)inner;
    ast_Decl* d = ast_IdentifierExpr_getDecl(id);
-   (d) || c2_assert("analyser/module_analyser_stmt.c2", 478, "module_analyser.Analyser.checkReturnAddrOfLocal", "d");
+   ;//assert(d);
    if (!ast_Decl_isVarDecl(d)) return;
    ast_VarDecl* vd = (ast_VarDecl*)d;
    if ((ast_VarDecl_isLocal(vd) && !ast_VarDecl_hasLocalQualifier(vd)) || ast_VarDecl_isParameter(vd)) {
@@ -35378,7 +31321,7 @@ static void module_analyser_Analyser_analyseStructMembers(module_analyser_Analys
          ast_Expr* bitfield = ast_VarDecl_getBitfield(vd);
          if (bitfield) {
             ast_QualType qt = ast_Decl_getType(member);
-            uint32_t type_width = ast_QualType_getBitFieldWidth(qt);
+            uint32_t type_width = ast_QualType_getBitFieldWidth(qt, false);
             const char* name = ast_VarDecl_getName(vd);
             if (type_width == 0) {
                if (name) module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "bit-field '%s' has invalid type", name);
@@ -35402,9 +31345,13 @@ static void module_analyser_Analyser_analyseStructMembers(module_analyser_Analys
             }
             uint32_t field_width = ast_Value_as_u32(&value);
             ast_VarDecl_setBitfieldWidth(vd, (uint8_t)field_width);
-            if (ast_QualType_isEnum(qt) && field_width < type_width) {
-               if (name) module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "bit-field '%s' has insufficient bits for enum '%s'", name, ast_QualType_diagName(qt));
-               else module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "unnamed bit-field has insufficient bits for enum '%s'", ast_QualType_diagName(qt));
+            uint32_t minimum_type_width = ast_QualType_getBitFieldWidth(qt, true);
+            if (ast_QualType_isEnum(qt) && field_width < minimum_type_width) {
+               if (name) {
+                  module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "bit-field '%s' has insufficient bits for enum '%s' (need %u bits)", name, ast_QualType_diagName(qt), minimum_type_width);
+               } else {
+                  module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "unnamed bit-field has insufficient bits for enum '%s' (need %u bits)", ast_QualType_diagName(qt), minimum_type_width);
+               }
                return;
             }
             if (field_width > type_width) {
@@ -35499,7 +31446,7 @@ static ast_QualType module_analyser_Analyser_analyseSwitchExpr(module_analyser_A
       }
       return qt;
    }
-   (ast_Stmt_isExpr(s)) || c2_assert("analyser/module_analyser_switch.c2", 40, "module_analyser.Analyser.analyseSwitchExpr", "s.isExpr()");
+   ;//assert(ast_Stmt_isExpr(s));
    return module_analyser_Analyser_analyseExpr(ma, (ast_Expr**)s_ptr, true, module_analyser_RHS);
 }
 
@@ -35577,7 +31524,7 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseSwitchStmt(modul
                }
             }
             if (missing) {
-               module_analyser_Analyser_error(ma, ast_Stmt_getLoc(s), "unhandled enumeration value%s: %s", missing > 1 ? "s" : "", string_buffer_Buf_data(out));
+               module_analyser_Analyser_error(ma, ast_Stmt_getLoc(s), "unhandled enumeration value%s: %s", missing > 1 ? "s" : "", string_buffer_Buf_str(out));
                flow |= module_analyser_FlowError;
             }
             string_buffer_Buf_free(out);
@@ -35902,8 +31849,8 @@ static void module_analyser_Analyser_analyseEnumType(module_analyser_Analyser* m
 static ast_QualType module_analyser_Analyser_analyseStructMemberTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref)
 {
    const ast_Ref* member = ast_TypeRef_getStructMemberType(ref);
-   (member->decl) || c2_assert("analyser/module_analyser_type.c2", 115, "module_analyser.Analyser.analyseStructMemberTypeRef", "member.decl");
-   (ast_Decl_isFunction(member->decl)) || c2_assert("analyser/module_analyser_type.c2", 116, "module_analyser.Analyser.analyseStructMemberTypeRef", "member.decl.isFunction()");
+   ;//assert(member->decl);
+   ;//assert(ast_Decl_isFunction(member->decl));
    ast_FunctionDecl* fd = (ast_FunctionDecl*)member->decl;
    module_analyser_Analyser_analyseFunction(ma, fd);
    if (ma->has_error) return ast_QualType_Invalid;
@@ -35912,7 +31859,7 @@ static ast_QualType module_analyser_Analyser_analyseStructMemberTypeRef(module_a
 
 static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref)
 {
-   (ma->mod) || c2_assert("analyser/module_analyser_type.c2", 125, "module_analyser.Analyser.analyseUserTypeRef", "ma.mod");
+   ;//assert(ma->mod);
    const ast_Ref* user = ast_TypeRef_getUser(ref);
    if (user->decl) return ast_Decl_getType(user->decl);
    const ast_Ref* prefix = ast_TypeRef_getPrefix(ref);
@@ -35971,12 +31918,12 @@ static ast_QualType module_analyser_Analyser_analyseTypeRef(module_analyser_Anal
    case ast_TypeRefKind_Builtin: {
       ast_BuiltinKind kind = ast_TypeRef_getBuiltinKind(ref);
       base = ast_builder_Builder_actOnBuiltinType(ma->builder, kind);
-      (ast_QualType_isValid(base)) || c2_assert("analyser/module_analyser_type.c2", 198, "module_analyser.Analyser.analyseTypeRef", "base.isValid()");
+      ;//assert(ast_QualType_isValid(base));
       break;
    }
    case ast_TypeRefKind_Void:
       base = ast_builder_Builder_actOnVoidType(ma->builder);
-      (ast_QualType_isValid(base)) || c2_assert("analyser/module_analyser_type.c2", 202, "module_analyser.Analyser.analyseTypeRef", "base.isValid()");
+      ;//assert(ast_QualType_isValid(base));
       break;
    case ast_TypeRefKind_User:
       base = module_analyser_Analyser_analyseUserTypeRef(ma, ref);
@@ -36076,16 +32023,16 @@ static ast_QualType module_analyser_Analyser_analyseIncrTypeRef(module_analyser_
    case ast_TypeRefKind_Builtin: {
       ast_BuiltinKind kind = ast_TypeRef_getBuiltinKind(ref);
       base = ast_builder_Builder_actOnBuiltinType(ma->builder, kind);
-      (ast_QualType_isValid(base)) || c2_assert("analyser/module_analyser_type.c2", 315, "module_analyser.Analyser.analyseIncrTypeRef", "base.isValid()");
+      ;//assert(ast_QualType_isValid(base));
       break;
    }
    case ast_TypeRefKind_User:
       base = module_analyser_Analyser_analyseUserTypeRef(ma, ref);
       if (ast_QualType_isInvalid(base)) return base;
-      (ast_QualType_hasCanonicalType(base)) || c2_assert("analyser/module_analyser_type.c2", 320, "module_analyser.Analyser.analyseIncrTypeRef", "base.hasCanonicalType()");
+      ;//assert(ast_QualType_hasCanonicalType(base));
       break;
    default:
-      (0) || c2_assert("analyser/module_analyser_type.c2", 323, "module_analyser.Analyser.analyseIncrTypeRef", "0");
+      ;//assert(0);
       break;
    }
    if (ast_TypeRef_isConst(ref)) ast_QualType_setConst(&base);
@@ -36476,7 +32423,7 @@ static void module_sorter_ModuleSorter_handleImport(void* arg, ast_ImportDecl* d
 {
    module_sorter_ModuleSorter* s = arg;
    ast_Module* dest = ast_ImportDecl_getDest(d);
-   (dest) || c2_assert("analyser/module_sorter.c2", 102, "module_sorter.ModuleSorter.handleImport", "dest");
+   ;//assert(dest);
    if (!component_Component_hasModule(s->comp, dest)) return;
    uint32_t dest_idx = module_sorter_ModuleSorter_mod2idx(s, dest);
    dsm_sorter_Sorter_add_dep(s->dsm, s->cur_mod_idx, dest_idx);
@@ -36487,7 +32434,7 @@ static uint32_t module_sorter_ModuleSorter_mod2idx(const module_sorter_ModuleSor
    for (uint32_t i = 0; i < s->num_mods; i++) {
       if (s->modules[i] == mod) return i;
    }
-   (0) || c2_assert("analyser/module_sorter.c2", 115, "module_sorter.ModuleSorter.mod2idx", "0");
+   ;//assert(0);
    return 0;
 }
 
@@ -36551,7 +32498,7 @@ static bool manifest_getYamlInfo(yaml_Parser* parser, string_pool_Pool* astPool,
       iter = yaml_Parser_getNodeChildIter(parser, modulesNode);
       while (!yaml_Iter_done(&iter)) {
          const char* value = yaml_Iter_getValue(&iter);
-         (value) || c2_assert("compiler/manifest.c2", 95, "manifest.getYamlInfo", "value");
+         ;//assert(value);
          uint32_t modname = string_pool_Pool_addStr(astPool, value, true);
          string_list_List_add(mods, modname);
          yaml_Iter_next(&iter);
@@ -36573,7 +32520,7 @@ static bool manifest_getYamlInfo(yaml_Parser* parser, string_pool_Pool* astPool,
       iter = yaml_Parser_getNodeChildIter(parser, sourcesNode);
       while (!yaml_Iter_done(&iter)) {
          const char* value = yaml_Iter_getValue(&iter);
-         (value) || c2_assert("compiler/manifest.c2", 120, "manifest.getYamlInfo", "value");
+         ;//assert(value);
          uint32_t file_idx = string_pool_Pool_addStr(auxPool, value, true);
          component_Component_addFile(comp, file_idx, 0);
          yaml_Iter_next(&iter);
@@ -36825,932 +32772,10 @@ static void plugin_mgr_Mgr_postAnalysis(plugin_mgr_Mgr* m)
 }
 
 
-// --- module c2i_generator ---
-typedef struct c2i_generator_Generator_ c2i_generator_Generator;
-
-struct c2i_generator_Generator_ {
-   string_pool_Pool* astPool;
-   string_buffer_Buf* out;
-   const char* output_dir;
-   string_list_List imports;
-   ast_Module* mod;
-   const char* mod_name;
-   bool in_body;
-};
-
-static void c2i_generator_generate(string_pool_Pool* astPool, const char* output_dir, component_List* comps);
-static void c2i_generator_Generator_on_module(void* arg, ast_Module* m);
-static void c2i_generator_on_import(void* arg, ast_ImportDecl* i);
-static void c2i_generator_on_decl(void* arg, ast_Decl* d);
-static void c2i_generator_Generator_emitGlobalVarDecl(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d);
-static void c2i_generator_Generator_emitVarDecl(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_VarDecl* vd, bool first);
-static void c2i_generator_Generator_emitGlobalDecl(c2i_generator_Generator* gen, ast_Decl* d);
-static void c2i_generator_Generator_emitDeclName(c2i_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d);
-static void c2i_generator_Generator_emitTypePre(c2i_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt);
-static void c2i_generator_Generator_emitTypePost(c2i_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt);
-static void c2i_generator_Generator_emitType(c2i_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt);
-static void c2i_generator_Generator_emitEnumType(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d);
-static void c2i_generator_Generator_emitFunctionDecl(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d, bool as_type);
-static void c2i_generator_Generator_emitFunctionTypeDecl(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d);
-static void c2i_generator_Generator_emitAliasTypeDecl(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d);
-static void c2i_generator_Generator_emitStructMember(c2i_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d, uint32_t indent);
-static void c2i_generator_Generator_emitStruct(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d, uint32_t indent);
-static void c2i_generator_Generator_emitExpr(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_Expr* e);
-static void c2i_generator_Generator_emitBinaryOperator(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_BinaryOperator* b);
-static void c2i_generator_Generator_emitUnaryOperator(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_UnaryOperator* u);
-static void c2i_generator_Generator_emitMemberExpr(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_MemberExpr* m);
-static void c2i_generator_Generator_emitFieldDesigExpr(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_FieldDesignatedInitExpr* fdi);
-static void c2i_generator_Generator_emitArrayDesigExpr(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_ArrayDesignatedInitExpr* ad);
-static void c2i_generator_Generator_emitBuiltinExpr(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_BuiltinExpr* b);
-static void c2i_generator_Generator_emitCall(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_CallExpr* call);
-static void c2i_generator_Generator_emitStmt(c2i_generator_Generator* gen, ast_Stmt* s, uint32_t indent, bool newline);
-static void c2i_generator_emitAsmPart(string_buffer_Buf* out, bool multi_line, uint32_t indent);
-static void c2i_generator_Generator_emitAsmOperand(c2i_generator_Generator* gen, uint32_t name, const ast_Expr* c, ast_Expr* e);
-static void c2i_generator_Generator_emitAsmStmt(c2i_generator_Generator* gen, ast_AsmStmt* a, uint32_t indent);
-static void c2i_generator_Generator_emitSwitchStmt(c2i_generator_Generator* gen, ast_SwitchStmt* sw, uint32_t indent);
-static void c2i_generator_Generator_emitCase(c2i_generator_Generator* gen, ast_SwitchCase* c, uint32_t indent, uint32_t* lab);
-
-static void c2i_generator_generate(string_pool_Pool* astPool, const char* output_dir, component_List* comps)
-{
-   c2i_generator_Generator gen = { };
-   gen.astPool = astPool;
-   gen.out = string_buffer_create(64 * 1024, false, 3);
-   gen.output_dir = output_dir;
-   component_Component* mainComp = component_List_getLast(comps);
-   for (uint32_t i = 0; i < component_List_size(comps); i++) {
-      component_Component* c = component_List_get(comps, i);
-      component_Component_visitModules(c, c2i_generator_Generator_on_module, &gen);
-   }
-   component_Component_visitModules(mainComp, c2i_generator_Generator_on_module, &gen);
-   string_buffer_Buf_free(gen.out);
-}
-
-static void c2i_generator_Generator_on_module(void* arg, ast_Module* m)
-{
-   if (!ast_Module_isUsed(m) || !ast_Module_isExported(m)) return;
-   c2i_generator_Generator* gen = arg;
-   string_buffer_Buf_clear(gen->out);
-   gen->mod = m;
-   gen->mod_name = ast_Module_getName(m);
-   gen->in_body = false;
-   string_list_List_init(&gen->imports, NULL);
-   string_buffer_Buf_print(gen->out, "module %s;\n\n", gen->mod_name);
-   ast_Module_visitImports(m, c2i_generator_on_import, gen);
-   if (string_list_List_length(&gen->imports)) string_buffer_Buf_newline(gen->out);
-   ast_Module_visitDecls(m, c2i_generator_on_decl, gen);
-   file_utils_File file; file_utils_File_init_ext(&file, gen->output_dir, gen->mod_name, ".c2i");
-   if (!file_utils_File_write(&file, string_buffer_Buf_udata(gen->out), string_buffer_Buf_size(gen->out))) {
-      console_error("cannot write to %s: %s", file.path, file_utils_File_getError(&file));
-   }
-   string_list_List_free(&gen->imports);
-}
-
-static void c2i_generator_on_import(void* arg, ast_ImportDecl* i)
-{
-   c2i_generator_Generator* gen = arg;
-   ast_Decl* d = (ast_Decl*)i;
-   if (!ast_Decl_isUsedPublic(d)) return;
-   uint32_t name_idx = ast_Decl_getNameIdx(d);
-   if (string_list_List_contains_idx(&gen->imports, name_idx)) return;
-   string_list_List_add(&gen->imports, name_idx);
-   string_buffer_Buf_print(gen->out, "import %s;\n", ast_Decl_getName(d));
-}
-
-static void c2i_generator_on_decl(void* arg, ast_Decl* d)
-{
-   c2i_generator_Generator* gen = arg;
-   if (!ast_Decl_isPublic(d)) return;
-   if (ast_Decl_isImport(d)) return;
-   c2i_generator_Generator_emitGlobalDecl(gen, d);
-}
-
-static void c2i_generator_Generator_emitGlobalVarDecl(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d)
-{
-   ast_VarDecl* v = (ast_VarDecl*)d;
-   c2i_generator_Generator_emitType(gen, out, ast_Decl_getType(d));
-   string_buffer_Buf_space(out);
-   if (ast_Decl_getName(d)) string_buffer_Buf_add(out, ast_Decl_getName(d));
-   ast_QualType qt = ast_Decl_getType(d);
-   bool semi = true;
-   if (ast_QualType_isConst(qt) && ast_VarDecl_getInit(v)) {
-      ast_Expr* initExpr = ast_VarDecl_getInit(v);
-      string_buffer_Buf_add(out, " = ");
-      c2i_generator_Generator_emitExpr(gen, out, initExpr);
-      if (string_buffer_Buf_endsWith(out, '}')) semi = false;
-   }
-   if (semi) string_buffer_Buf_add1(out, ';');
-   string_buffer_Buf_newline(out);
-}
-
-static void c2i_generator_Generator_emitVarDecl(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_VarDecl* vd, bool first)
-{
-   ast_Decl* d = (ast_Decl*)vd;
-   if (first) {
-      if (ast_VarDecl_hasLocalQualifier(vd)) string_buffer_Buf_add(out, "local ");
-      c2i_generator_Generator_emitType(gen, out, ast_Decl_getType(d));
-   } else {
-      string_buffer_Buf_add1(out, ',');
-   }
-   ast_Expr* bitfield = ast_VarDecl_getBitfield(vd);
-   if (bitfield) {
-      string_buffer_Buf_add(out, " : ");
-      c2i_generator_Generator_emitExpr(gen, out, bitfield);
-   }
-   string_buffer_Buf_space(out);
-   const ast_Expr* ie = ast_VarDecl_getInit(vd);
-   if (ast_VarDecl_hasInitCall(vd)) {
-      c2i_generator_Generator_emitExpr(gen, out, ie);
-   } else {
-      if (ast_Decl_getName(d)) {
-         string_buffer_Buf_add(out, ast_Decl_getName(d));
-         if (ie) {
-            string_buffer_Buf_add(out, " = ");
-            c2i_generator_Generator_emitExpr(gen, out, ie);
-         }
-      }
-      if (ast_VarDecl_hasAutoAttr(vd)) {
-         if (ast_VarDecl_hasAttrAutoFile(vd)) string_buffer_Buf_add(out, " @(auto_file)");
-         if (ast_VarDecl_hasAttrAutoLine(vd)) string_buffer_Buf_add(out, " @(auto_line)");
-         if (ast_VarDecl_hasAttrAutoFunc(vd)) string_buffer_Buf_add(out, " @(auto_func)");
-      }
-   }
-}
-
-static void c2i_generator_Generator_emitGlobalDecl(c2i_generator_Generator* gen, ast_Decl* d)
-{
-   string_buffer_Buf* out = gen->out;
-   switch (ast_Decl_getKind(d)) {
-   case ast_DeclKind_Function:
-      c2i_generator_Generator_emitFunctionDecl(gen, out, d, false);
-      break;
-   case ast_DeclKind_Import:
-      break;
-   case ast_DeclKind_StructType:
-      c2i_generator_Generator_emitStruct(gen, out, d, 0);
-      break;
-   case ast_DeclKind_EnumType:
-      c2i_generator_Generator_emitEnumType(gen, out, d);
-      break;
-   case ast_DeclKind_EnumConstant:
-      (0) || c2_assert("generator/c2i/c2i_generator_decl.c2", 91, "c2i_generator.Generator.emitGlobalDecl", "0");
-      break;
-   case ast_DeclKind_FunctionType:
-      c2i_generator_Generator_emitFunctionTypeDecl(gen, out, d);
-      break;
-   case ast_DeclKind_AliasType:
-      c2i_generator_Generator_emitAliasTypeDecl(gen, out, d);
-      break;
-   case ast_DeclKind_Variable:
-      c2i_generator_Generator_emitGlobalVarDecl(gen, out, d);
-      break;
-   }
-   string_buffer_Buf_newline(out);
-}
-
-static void c2i_generator_Generator_emitDeclName(c2i_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d)
-{
-   if (!ast_Decl_isVariable(d)) {
-      ast_Module* mod = ast_Decl_getModule(d);
-      if (mod != gen->mod) {
-         string_buffer_Buf_add(out, ast_Module_getName(mod));
-         string_buffer_Buf_add1(out, '.');
-      }
-      if (ast_Decl_isFunction(d)) {
-         ast_FunctionDecl* fd = (ast_FunctionDecl*)d;
-         ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
-         if (prefix) {
-            string_buffer_Buf_add(out, string_pool_Pool_idx2str(gen->astPool, prefix->name_idx));
-            string_buffer_Buf_add1(out, '.');
-         }
-      }
-      if (ast_Decl_isEnumConstant(d)) {
-         ast_QualType qt = ast_Decl_getType(d);
-         ast_EnumType* et = (ast_EnumType*)ast_QualType_getType(qt);
-         string_buffer_Buf_add(out, ast_EnumType_getName(et));
-         string_buffer_Buf_add1(out, '.');
-      }
-   }
-   string_buffer_Buf_add(out, ast_Decl_getName(d));
-}
-
-static void c2i_generator_Generator_emitTypePre(c2i_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt)
-{
-   ast_Decl* decl = NULL;
-   if (ast_QualType_isConst(qt)) string_buffer_Buf_add(out, "const ");
-   if (ast_QualType_isVolatile(qt)) string_buffer_Buf_add(out, "volatile ");
-   switch (ast_QualType_getKind(qt)) {
-   case ast_TypeKind_Builtin: {
-      ast_BuiltinType* bt = (ast_BuiltinType*)ast_QualType_getType(qt);
-      string_buffer_Buf_add(out, ast_BuiltinType_kind2str(bt));
-      return;
-   }
-   case ast_TypeKind_Void:
-      string_buffer_Buf_add(out, "void");
-      return;
-   case ast_TypeKind_Pointer: {
-      ast_PointerType* pt = (ast_PointerType*)ast_QualType_getType(qt);
-      c2i_generator_Generator_emitTypePre(gen, out, ast_PointerType_getInner(pt));
-      string_buffer_Buf_add1(out, '*');
-      return;
-   }
-   case ast_TypeKind_Array: {
-      ast_ArrayType* at = (ast_ArrayType*)ast_QualType_getType(qt);
-      c2i_generator_Generator_emitTypePre(gen, out, ast_ArrayType_getElemType(at));
-      return;
-   }
-   case ast_TypeKind_Struct: {
-      ast_StructType* st = (ast_StructType*)ast_QualType_getType(qt);
-      ast_StructTypeDecl* std = ast_StructType_getDecl(st);
-      if (ast_StructTypeDecl_hasAttrNoTypeDef(std)) {
-         string_buffer_Buf_add(out, ast_StructTypeDecl_isStruct(std) ? "struct " : "union ");
-      }
-      decl = (ast_Decl*)ast_StructType_getDecl(st);
-      break;
-   }
-   case ast_TypeKind_Enum: {
-      ast_EnumType* et = (ast_EnumType*)ast_QualType_getType(qt);
-      decl = (ast_Decl*)ast_EnumType_getDecl(et);
-      break;
-   }
-   case ast_TypeKind_Function: {
-      ast_FunctionType* ft = (ast_FunctionType*)ast_QualType_getType(qt);
-      decl = (ast_Decl*)ast_FunctionType_getDecl(ft);
-      break;
-   }
-   case ast_TypeKind_Alias: {
-      ast_AliasType* at = (ast_AliasType*)ast_QualType_getType(qt);
-      decl = (ast_Decl*)ast_AliasType_getDecl(at);
-      break;
-   }
-   case ast_TypeKind_Module:
-      (0) || c2_assert("generator/c2i/c2i_generator_decl.c2", 176, "c2i_generator.Generator.emitTypePre", "0");
-      return;
-   }
-   c2i_generator_Generator_emitDeclName(gen, out, decl);
-}
-
-static void c2i_generator_Generator_emitTypePost(c2i_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt)
-{
-   if (!ast_QualType_isArray(qt)) return;
-   ast_ArrayType* at = (ast_ArrayType*)ast_QualType_getType(qt);
-   string_buffer_Buf_add1(out, '[');
-   if (ast_ArrayType_hasSize(at)) string_buffer_Buf_print(out, "%u", ast_ArrayType_getSize(at));
-   string_buffer_Buf_add1(out, ']');
-   c2i_generator_Generator_emitTypePost(gen, out, ast_ArrayType_getElemType(at));
-}
-
-static void c2i_generator_Generator_emitType(c2i_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt)
-{
-   c2i_generator_Generator_emitTypePre(gen, out, qt);
-   c2i_generator_Generator_emitTypePost(gen, out, qt);
-}
-
-static void c2i_generator_Generator_emitEnumType(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d)
-{
-   ast_EnumTypeDecl* etd = (ast_EnumTypeDecl*)d;
-   string_buffer_Buf_print(out, "type %s enum ", ast_Decl_getName(d));
-   ast_QualType implType = ast_EnumTypeDecl_getImplType(etd);
-   ast_QualType_print(implType, out);
-   string_buffer_Buf_add(out, " {\n");
-   uint32_t num_constants = ast_EnumTypeDecl_getNumConstants(etd);
-   ast_EnumConstantDecl** constants = ast_EnumTypeDecl_getConstants(etd);
-   for (uint32_t i = 0; i < num_constants; i++) {
-      ast_EnumConstantDecl* ecd = constants[i];
-      string_buffer_Buf_indent(out, 1);
-      string_buffer_Buf_add(out, ast_Decl_getName(ast_EnumConstantDecl_asDecl(ecd)));
-      ast_Expr* initExpr = ast_EnumConstantDecl_getInit(ecd);
-      if (initExpr) {
-         string_buffer_Buf_add(out, " = ");
-         c2i_generator_Generator_emitExpr(gen, out, initExpr);
-      }
-      string_buffer_Buf_add(out, ",\n");
-   }
-   string_buffer_Buf_add(out, "}\n");
-}
-
-static void c2i_generator_Generator_emitFunctionDecl(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d, bool as_type)
-{
-   ast_FunctionDecl* fd = (ast_FunctionDecl*)d;
-   if (!as_type) string_buffer_Buf_add(out, "fn ");
-   c2i_generator_Generator_emitType(gen, out, ast_FunctionDecl_getRType(fd));
-   if (!as_type) {
-      string_buffer_Buf_space(out);
-      const char* prefix = ast_FunctionDecl_getPrefixName(fd);
-      if (prefix) {
-         string_buffer_Buf_add(out, prefix);
-         string_buffer_Buf_add1(out, '.');
-      }
-      string_buffer_Buf_add(out, ast_Decl_getName(d));
-   }
-   string_buffer_Buf_lparen(out);
-   ast_VarDecl** params = ast_FunctionDecl_getParams(fd);
-   uint32_t num_params = ast_FunctionDecl_getNumParams(fd);
-   for (uint32_t i = 0; i < num_params; i++) {
-      if (i != 0) string_buffer_Buf_add(out, ", ");
-      c2i_generator_Generator_emitVarDecl(gen, out, params[i], true);
-   }
-   if (ast_FunctionDecl_isVariadic(fd)) {
-      if (num_params) string_buffer_Buf_add(out, ", ");
-      string_buffer_Buf_add(out, "...");
-   }
-   string_buffer_Buf_add1(out, ')');
-   if (ast_FunctionDecl_isInline(fd)) {
-      string_buffer_Buf_space(out);
-      gen->in_body = true;
-      c2i_generator_Generator_emitStmt(gen, (ast_Stmt*)ast_FunctionDecl_getBody(fd), 0, true);
-      gen->in_body = false;
-      string_buffer_Buf_newline(out);
-   } else {
-      string_buffer_Buf_add(out, ";\n");
-   }
-}
-
-static void c2i_generator_Generator_emitFunctionTypeDecl(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d)
-{
-   const ast_FunctionTypeDecl* ftd = (ast_FunctionTypeDecl*)d;
-   string_buffer_Buf_print(out, "type %s fn ", ast_Decl_getName(d));
-   c2i_generator_Generator_emitFunctionDecl(gen, out, (ast_Decl*)ast_FunctionTypeDecl_getDecl(ftd), true);
-}
-
-static void c2i_generator_Generator_emitAliasTypeDecl(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d)
-{
-   ast_AliasTypeDecl* a = (ast_AliasTypeDecl*)d;
-   string_buffer_Buf_print(out, "type %s ", ast_Decl_getName(d));
-   ast_QualType qt = ast_Decl_getType(ast_AliasTypeDecl_asDecl(a));
-   c2i_generator_Generator_emitType(gen, out, ast_QualType_getCanonicalType(qt));
-   string_buffer_Buf_add(out, ";\n");
-}
-
-static void c2i_generator_Generator_emitStructMember(c2i_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d, uint32_t indent)
-{
-   if (ast_Decl_isVariable(d)) {
-      string_buffer_Buf_indent(out, indent);
-      c2i_generator_Generator_emitVarDecl(gen, out, (ast_VarDecl*)d, true);
-      if (!string_buffer_Buf_endsWith(out, '}')) string_buffer_Buf_add1(out, ';');
-      string_buffer_Buf_newline(out);
-   } else {
-      (ast_Decl_isStructType(d)) || c2_assert("generator/c2i/c2i_generator_decl.c2", 281, "c2i_generator.Generator.emitStructMember", "d.isStructType()");
-      c2i_generator_Generator_emitStruct(gen, out, d, indent);
-   }
-}
-
-static void c2i_generator_Generator_emitStruct(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d, uint32_t indent)
-{
-   ast_StructTypeDecl* std = (ast_StructTypeDecl*)d;
-   if (indent == 0) {
-      string_buffer_Buf_add(out, "type ");
-      string_buffer_Buf_add(out, ast_Decl_getName(d));
-      if (ast_StructTypeDecl_isStruct(std)) string_buffer_Buf_add(out, " struct");
-      else string_buffer_Buf_add(out, " union");
-   } else {
-      string_buffer_Buf_indent(out, indent);
-      if (ast_StructTypeDecl_isStruct(std)) string_buffer_Buf_add(out, "struct");
-      else string_buffer_Buf_add(out, "union");
-      if (ast_Decl_getNameIdx(d)) {
-         string_buffer_Buf_space(out);
-         string_buffer_Buf_add(out, ast_Decl_getName(d));
-      }
-   }
-   if (ast_StructTypeDecl_isOpaque(std)) {
-      string_buffer_Buf_add(out, " @(opaque) {}\n");
-   } else {
-      string_buffer_Buf_add(out, " {\n");
-      uint32_t num_members = ast_StructTypeDecl_getNumMembers(std);
-      ast_Decl** members = ast_StructTypeDecl_getMembers(std);
-      for (uint32_t i = 0; i < num_members; i++) {
-         c2i_generator_Generator_emitStructMember(gen, out, members[i], indent + 1);
-      }
-      string_buffer_Buf_indent(out, indent);
-      string_buffer_Buf_add(out, "}\n");
-   }
-}
-
-static void c2i_generator_Generator_emitExpr(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_Expr* e)
-{
-   switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral:
-      ast_IntegerLiteral_printLiteral((ast_IntegerLiteral*)e, out, false);
-      break;
-   case ast_ExprKind_FloatLiteral:
-      ast_FloatLiteral_printLiteral((ast_FloatLiteral*)e, out);
-      break;
-   case ast_ExprKind_BooleanLiteral:
-      ast_BooleanLiteral_printLiteral((ast_BooleanLiteral*)e, out);
-      break;
-   case ast_ExprKind_CharLiteral:
-      ast_CharLiteral_printLiteral((ast_CharLiteral*)e, out);
-      break;
-   case ast_ExprKind_StringLiteral:
-      ast_StringLiteral_printLiteral((ast_StringLiteral*)e, out);
-      break;
-   case ast_ExprKind_Nil:
-      string_buffer_Buf_add(out, "nil");
-      break;
-   case ast_ExprKind_Identifier: {
-      const ast_IdentifierExpr* i = (ast_IdentifierExpr*)e;
-      ast_Decl* d = ast_IdentifierExpr_getDecl(i);
-      if (ast_Decl_getModule(d) != gen->mod) {
-         string_buffer_Buf_add(out, ast_Decl_getFullName(d));
-      } else {
-         string_buffer_Buf_add(out, ast_Decl_getName(d));
-      }
-      break;
-   }
-   case ast_ExprKind_Type:
-      c2i_generator_Generator_emitTypePre(gen, out, ast_Expr_getType(e));
-      c2i_generator_Generator_emitTypePost(gen, out, ast_Expr_getType(e));
-      break;
-   case ast_ExprKind_Call:
-      c2i_generator_Generator_emitCall(gen, out, (ast_CallExpr*)e);
-      break;
-   case ast_ExprKind_InitList: {
-      ast_InitListExpr* ile = (ast_InitListExpr*)e;
-      string_buffer_Buf_add1(out, '{');
-      uint32_t num_values = ast_InitListExpr_getNumValues(ile);
-      ast_Expr** values = ast_InitListExpr_getValues(ile);
-      bool newlines = false;
-      if (num_values > 6) newlines = true;
-      if (num_values && ast_Expr_isInitList(values[0])) {
-         newlines = true;
-      }
-      if (newlines) string_buffer_Buf_newline(out);
-      else string_buffer_Buf_space(out);
-      for (uint32_t i = 0; i < num_values; i++) {
-         if (newlines) string_buffer_Buf_indent(out, 1);
-         c2i_generator_Generator_emitExpr(gen, out, values[i]);
-         if (i + 1 != num_values) string_buffer_Buf_add1(out, ',');
-         if (newlines) string_buffer_Buf_newline(out);
-         else string_buffer_Buf_space(out);
-      }
-      string_buffer_Buf_add1(out, '}');
-      break;
-   }
-   case ast_ExprKind_FieldDesignatedInit:
-      c2i_generator_Generator_emitFieldDesigExpr(gen, out, (ast_FieldDesignatedInitExpr*)e);
-      break;
-   case ast_ExprKind_ArrayDesignatedInit:
-      c2i_generator_Generator_emitArrayDesigExpr(gen, out, (ast_ArrayDesignatedInitExpr*)e);
-      break;
-   case ast_ExprKind_BinaryOperator:
-      c2i_generator_Generator_emitBinaryOperator(gen, out, (ast_BinaryOperator*)e);
-      break;
-   case ast_ExprKind_UnaryOperator:
-      c2i_generator_Generator_emitUnaryOperator(gen, out, (ast_UnaryOperator*)e);
-      break;
-   case ast_ExprKind_ConditionalOperator: {
-      ast_ConditionalOperator* c = (ast_ConditionalOperator*)e;
-      c2i_generator_Generator_emitExpr(gen, out, ast_ConditionalOperator_getCond(c));
-      string_buffer_Buf_add(out, " ? ");
-      c2i_generator_Generator_emitExpr(gen, out, ast_ConditionalOperator_getLHS(c));
-      string_buffer_Buf_add(out, " : ");
-      c2i_generator_Generator_emitExpr(gen, out, ast_ConditionalOperator_getRHS(c));
-      break;
-   }
-   case ast_ExprKind_Builtin:
-      c2i_generator_Generator_emitBuiltinExpr(gen, out, (ast_BuiltinExpr*)e);
-      break;
-   case ast_ExprKind_ArraySubscript: {
-      const ast_ArraySubscriptExpr* a = (ast_ArraySubscriptExpr*)e;
-      c2i_generator_Generator_emitExpr(gen, out, ast_ArraySubscriptExpr_getBase(a));
-      string_buffer_Buf_add1(out, '[');
-      c2i_generator_Generator_emitExpr(gen, out, ast_ArraySubscriptExpr_getIndex(a));
-      string_buffer_Buf_add1(out, ']');
-      break;
-   }
-   case ast_ExprKind_Member:
-      c2i_generator_Generator_emitMemberExpr(gen, out, (ast_MemberExpr*)e);
-      break;
-   case ast_ExprKind_Paren: {
-      const ast_ParenExpr* p = (ast_ParenExpr*)e;
-      string_buffer_Buf_lparen(out);
-      c2i_generator_Generator_emitExpr(gen, out, ast_ParenExpr_getInner(p));
-      string_buffer_Buf_rparen(out);
-      break;
-   }
-   case ast_ExprKind_BitOffset: {
-      const ast_BitOffsetExpr* bo = (ast_BitOffsetExpr*)e;
-      c2i_generator_Generator_emitExpr(gen, out, ast_BitOffsetExpr_getLHS(bo));
-      string_buffer_Buf_add(out, " : ");
-      c2i_generator_Generator_emitExpr(gen, out, ast_BitOffsetExpr_getRHS(bo));
-      break;
-   }
-   case ast_ExprKind_ExplicitCast: {
-      ast_ExplicitCastExpr* c = (ast_ExplicitCastExpr*)e;
-      if (ast_ExplicitCastExpr_getCStyle(c)) {
-         string_buffer_Buf_add1(out, '(');
-         c2i_generator_Generator_emitTypePre(gen, out, ast_ExplicitCastExpr_getDestType(c));
-         string_buffer_Buf_add1(out, ')');
-         c2i_generator_Generator_emitExpr(gen, out, ast_ExplicitCastExpr_getInner(c));
-      } else {
-         string_buffer_Buf_add1(out, '(');
-         c2i_generator_Generator_emitTypePre(gen, out, ast_ExplicitCastExpr_getDestType(c));
-         string_buffer_Buf_add(out, ")(");
-         c2i_generator_Generator_emitExpr(gen, out, ast_ExplicitCastExpr_getInner(c));
-         string_buffer_Buf_add1(out, ')');
-      }
-      break;
-   }
-   case ast_ExprKind_ImplicitCast: {
-      const ast_ImplicitCastExpr* i = (ast_ImplicitCastExpr*)e;
-      c2i_generator_Generator_emitExpr(gen, out, ast_ImplicitCastExpr_getInner(i));
-      break;
-   }
-   case ast_ExprKind_Range: {
-      const ast_RangeExpr* b = (ast_RangeExpr*)e;
-      c2i_generator_Generator_emitExpr(gen, out, ast_RangeExpr_getLHS(b));
-      string_buffer_Buf_add(out, " ... ");
-      c2i_generator_Generator_emitExpr(gen, out, ast_RangeExpr_getRHS(b));
-      break;
-   }
-   case ast_ExprKind_NamedArgument:
-      ast_NamedArgument_printLiteral((ast_NamedArgument*)e, out);
-      break;
-   case ast_ExprKind_Alternate: {
-      const ast_AlternateExpr* n = (ast_AlternateExpr*)e;
-      c2i_generator_Generator_emitExpr(gen, out, ast_AlternateExpr_getOriginal(n));
-      break;
-   }
-   }
-}
-
-static void c2i_generator_Generator_emitBinaryOperator(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_BinaryOperator* b)
-{
-   c2i_generator_Generator_emitExpr(gen, out, ast_BinaryOperator_getLHS(b));
-   string_buffer_Buf_print(out, " %s ", ast_BinaryOperator_getOpcodeStr(b));
-   c2i_generator_Generator_emitExpr(gen, out, ast_BinaryOperator_getRHS(b));
-}
-
-static void c2i_generator_Generator_emitUnaryOperator(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_UnaryOperator* u)
-{
-   if (ast_UnaryOperator_isBefore(u)) {
-      string_buffer_Buf_add(out, ast_UnaryOperator_getOpcodeStr(u));
-      c2i_generator_Generator_emitExpr(gen, out, ast_UnaryOperator_getInner(u));
-   } else {
-      c2i_generator_Generator_emitExpr(gen, out, ast_UnaryOperator_getInner(u));
-      string_buffer_Buf_add(out, ast_UnaryOperator_getOpcodeStr(u));
-   }
-}
-
-static void c2i_generator_Generator_emitMemberExpr(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_MemberExpr* m)
-{
-   const ast_Expr* base = ast_MemberExpr_getExprBase(m);
-   if (base) {
-      c2i_generator_Generator_emitExpr(gen, out, base);
-   }
-   for (uint32_t i = 0; i < ast_MemberExpr_getNumRefs(m); i++) {
-      if (i != 0 || base) string_buffer_Buf_add1(out, '.');
-      ast_Ref r = ast_MemberExpr_getRef(m, i);
-      if (i == 0 && ast_Decl_getModule(r.decl) != gen->mod) {
-         string_buffer_Buf_add(out, ast_Decl_getFullName(r.decl));
-      } else {
-         string_buffer_Buf_add(out, ast_Decl_getName(r.decl));
-      }
-   }
-}
-
-static void c2i_generator_Generator_emitFieldDesigExpr(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_FieldDesignatedInitExpr* fdi)
-{
-   string_buffer_Buf_add1(out, '.');
-   string_buffer_Buf_add(out, ast_FieldDesignatedInitExpr_getFieldName(fdi));
-   string_buffer_Buf_add(out, " = ");
-   c2i_generator_Generator_emitExpr(gen, out, ast_FieldDesignatedInitExpr_getInit(fdi));
-}
-
-static void c2i_generator_Generator_emitArrayDesigExpr(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_ArrayDesignatedInitExpr* ad)
-{
-   string_buffer_Buf_add1(out, '[');
-   c2i_generator_Generator_emitExpr(gen, out, ast_ArrayDesignatedInitExpr_getDesignator(ad));
-   string_buffer_Buf_add(out, "] = ");
-   c2i_generator_Generator_emitExpr(gen, out, ast_ArrayDesignatedInitExpr_getInit(ad));
-}
-
-static void c2i_generator_Generator_emitBuiltinExpr(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_BuiltinExpr* b)
-{
-   switch (ast_BuiltinExpr_getKind(b)) {
-   case ast_BuiltinExprKind_Sizeof:
-      string_buffer_Buf_add(out, "sizeof(");
-      c2i_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getInner(b));
-      string_buffer_Buf_rparen(out);
-      break;
-   case ast_BuiltinExprKind_Elemsof:
-   case ast_BuiltinExprKind_EnumMin:
-   case ast_BuiltinExprKind_EnumMax:
-   case ast_BuiltinExprKind_OffsetOf: {
-      ast_Value v = ast_BuiltinExpr_getValue(b);
-      string_buffer_Buf_print(out, "%s", ast_Value_str(&v));
-      return;
-   }
-   case ast_BuiltinExprKind_ToContainer:
-      string_buffer_Buf_add(out, "to_container(");
-      c2i_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getInner(b));
-      string_buffer_Buf_add(out, ", ");
-      c2i_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getToContainerMember(b));
-      string_buffer_Buf_add(out, ", ");
-      c2i_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getToContainerPointer(b));
-      string_buffer_Buf_rparen(out);
-      break;
-   }
-}
-
-static void c2i_generator_Generator_emitCall(c2i_generator_Generator* gen, string_buffer_Buf* out, const ast_CallExpr* call)
-{
-   (!ast_CallExpr_isTemplateCall(call)) || c2_assert("generator/c2i/c2i_generator_expr.c2", 240, "c2i_generator.Generator.emitCall", "!call.isTemplateCall()");
-   ast_Expr* func = ast_CallExpr_getFunc(call);
-   (ast_Expr_getKind(func) == ast_ExprKind_ImplicitCast) || c2_assert("generator/c2i/c2i_generator_expr.c2", 243, "c2i_generator.Generator.emitCall", "func.getKind() == ExprKind.ImplicitCast");
-   ast_ImplicitCastExpr* ic = (ast_ImplicitCastExpr*)func;
-   func = ast_ImplicitCastExpr_getInner(ic);
-   c2i_generator_Generator_emitExpr(gen, out, func);
-   string_buffer_Buf_lparen(out);
-   uint32_t num_args = ast_CallExpr_getNumArgs(call);
-   ast_Expr** args = ast_CallExpr_getArgs(((ast_CallExpr*)call));
-   for (uint32_t i = 0; i < num_args; i++) {
-      if (i != 0) string_buffer_Buf_add(out, ", ");
-      c2i_generator_Generator_emitExpr(gen, out, args[i]);
-   }
-   string_buffer_Buf_rparen(out);
-}
-
-static void c2i_generator_Generator_emitStmt(c2i_generator_Generator* gen, ast_Stmt* s, uint32_t indent, bool newline)
-{
-   string_buffer_Buf* out = gen->out;
-   if (newline) string_buffer_Buf_indent(out, indent);
-   switch (ast_Stmt_getKind(s)) {
-   case ast_StmtKind_Return: {
-      string_buffer_Buf_add(out, "return");
-      ast_ReturnStmt* r = (ast_ReturnStmt*)s;
-      ast_Expr* val = ast_ReturnStmt_getValue(r);
-      if (val) {
-         string_buffer_Buf_space(out);
-         c2i_generator_Generator_emitExpr(gen, out, val);
-      }
-      if (!string_buffer_Buf_endsWith(out, '}')) string_buffer_Buf_add1(out, ';');
-      string_buffer_Buf_newline(out);
-      break;
-   }
-   case ast_StmtKind_Expr:
-      c2i_generator_Generator_emitExpr(gen, out, (ast_Expr*)s);
-      if (newline) {
-         if (!string_buffer_Buf_endsWith(out, '}')) string_buffer_Buf_add1(out, ';');
-         string_buffer_Buf_newline(out);
-      }
-      break;
-   case ast_StmtKind_If: {
-      ast_IfStmt* i = (ast_IfStmt*)s;
-      string_buffer_Buf_add(out, "if (");
-      c2i_generator_Generator_emitStmt(gen, ast_IfStmt_getCond(i), 0, false);
-      string_buffer_Buf_add(out, ") ");
-      ast_Stmt* thenStmt = ast_IfStmt_getThen(i);
-      c2i_generator_Generator_emitStmt(gen, thenStmt, indent, false);
-      if (!ast_Stmt_isCompound(thenStmt)) {
-         if (!string_buffer_Buf_endsWith(out, '\n')) {
-            if (!string_buffer_Buf_endsWith(out, '}')) string_buffer_Buf_add1(out, ';');
-         }
-      }
-      ast_Stmt* elseStmt = ast_IfStmt_getElse(i);
-      if (elseStmt) {
-         if (ast_Stmt_isCompound(thenStmt)) {
-            string_buffer_Buf_space(out);
-         } else {
-            if (!string_buffer_Buf_endsWith(out, '\n')) string_buffer_Buf_newline(out);
-            string_buffer_Buf_indent(out, indent);
-         }
-         string_buffer_Buf_add(out, "else ");
-         c2i_generator_Generator_emitStmt(gen, elseStmt, indent, false);
-         if (!ast_Stmt_isCompound(elseStmt)) {
-            if (!string_buffer_Buf_endsWith(out, '\n')) {
-               if (!string_buffer_Buf_endsWith(out, '}')) string_buffer_Buf_add1(out, ';');
-            }
-         }
-      }
-      if (!string_buffer_Buf_endsWith(out, '\n')) string_buffer_Buf_newline(out);
-      break;
-   }
-   case ast_StmtKind_While: {
-      ast_WhileStmt* w = (ast_WhileStmt*)s;
-      string_buffer_Buf_add(out, "while (");
-      c2i_generator_Generator_emitStmt(gen, ast_WhileStmt_getCond(w), 0, false);
-      string_buffer_Buf_add(out, ") ");
-      ast_Stmt* body = ast_WhileStmt_getBody(w);
-      c2i_generator_Generator_emitStmt(gen, body, indent, false);
-      if (!ast_Stmt_isCompound(body)) {
-         if (!string_buffer_Buf_endsWith(out, '\n')) {
-            if (!string_buffer_Buf_endsWith(out, '}')) string_buffer_Buf_add1(out, ';');
-         }
-      }
-      if (!string_buffer_Buf_endsWith(out, '\n')) string_buffer_Buf_newline(out);
-      break;
-   }
-   case ast_StmtKind_For: {
-      ast_ForStmt* f = (ast_ForStmt*)s;
-      string_buffer_Buf_add(out, "for (");
-      ast_Stmt* initStmt = ast_ForStmt_getInit(f);
-      if (initStmt) {
-         c2i_generator_Generator_emitStmt(gen, initStmt, 0, false);
-      }
-      string_buffer_Buf_add1(out, ';');
-      if (ast_ForStmt_getCond(f)) {
-         string_buffer_Buf_space(out);
-         c2i_generator_Generator_emitExpr(gen, out, ast_ForStmt_getCond(f));
-      }
-      string_buffer_Buf_add1(out, ';');
-      ast_Expr* cont = ast_ForStmt_getCont(f);
-      if (cont) {
-         string_buffer_Buf_space(out);
-         c2i_generator_Generator_emitExpr(gen, out, cont);
-      }
-      string_buffer_Buf_add(out, ") ");
-      ast_Stmt* body = ast_ForStmt_getBody(f);
-      c2i_generator_Generator_emitStmt(gen, body, indent, false);
-      if (!ast_Stmt_isCompound(body)) {
-         if (!string_buffer_Buf_endsWith(out, '\n')) {
-            if (!string_buffer_Buf_endsWith(out, '}')) string_buffer_Buf_add1(out, ';');
-         }
-      }
-      if (!string_buffer_Buf_endsWith(out, '\n')) string_buffer_Buf_newline(out);
-      break;
-   }
-   case ast_StmtKind_Switch:
-      c2i_generator_Generator_emitSwitchStmt(gen, (ast_SwitchStmt*)s, indent);
-      break;
-   case ast_StmtKind_Break:
-      string_buffer_Buf_add(out, "break;\n");
-      break;
-   case ast_StmtKind_Continue:
-      string_buffer_Buf_add(out, "continue;\n");
-      break;
-   case ast_StmtKind_Fallthrough:
-      string_buffer_Buf_add(out, "fallthrough;\n");
-      break;
-   case ast_StmtKind_Label: {
-      string_buffer_Buf_unindent(out);
-      ast_LabelStmt* ls = (ast_LabelStmt*)s;
-      ast_Stmt* stmt = ast_LabelStmt_getStmt(ls);
-      string_buffer_Buf_add(out, ast_LabelStmt_getName(ls));
-      string_buffer_Buf_add1(out, ':');
-      string_buffer_Buf_newline(out);
-      if (stmt) {
-         c2i_generator_Generator_emitStmt(gen, stmt, indent, true);
-      }
-      break;
-   }
-   case ast_StmtKind_Goto: {
-      ast_GotoStmt* g = (ast_GotoStmt*)s;
-      string_buffer_Buf_add(out, "goto ");
-      string_buffer_Buf_add(out, ast_GotoStmt_getName(g));
-      string_buffer_Buf_add(out, ";\n");
-      break;
-   }
-   case ast_StmtKind_Compound: {
-      ast_CompoundStmt* c = (ast_CompoundStmt*)s;
-      string_buffer_Buf_add(out, "{\n");
-      uint32_t count = ast_CompoundStmt_getCount(c);
-      ast_Stmt** stmts = ast_CompoundStmt_getStmts(c);
-      for (uint32_t i = 0; i < count; i++) {
-         c2i_generator_Generator_emitStmt(gen, stmts[i], indent + 1, true);
-      }
-      string_buffer_Buf_indent(out, indent);
-      string_buffer_Buf_add1(out, '}');
-      if (newline) string_buffer_Buf_newline(out);
-      break;
-   }
-   case ast_StmtKind_Decl: {
-      ast_DeclStmt* ds = (ast_DeclStmt*)s;
-      uint32_t count = ast_DeclStmt_getDeclCount(ds);
-      bool first = true;
-      for (uint32_t i = 0; i < count; i++) {
-         c2i_generator_Generator_emitVarDecl(gen, out, ast_DeclStmt_getDecl(ds, i), first);
-         first = false;
-      }
-      if (newline) {
-         if (!string_buffer_Buf_endsWith(out, '}')) string_buffer_Buf_add1(out, ';');
-         string_buffer_Buf_newline(out);
-      }
-      break;
-   }
-   case ast_StmtKind_Asm:
-      c2i_generator_Generator_emitAsmStmt(gen, (ast_AsmStmt*)s, indent);
-      break;
-   case ast_StmtKind_Assert: {
-      ast_AssertStmt* a = (ast_AssertStmt*)s;
-      string_buffer_Buf_add(out, "assert(");
-      c2i_generator_Generator_emitExpr(gen, out, ast_AssertStmt_getInner(a));
-      string_buffer_Buf_add(out, ");\n");
-      break;
-   }
-   }
-}
-
-static void c2i_generator_emitAsmPart(string_buffer_Buf* out, bool multi_line, uint32_t indent)
-{
-   if (multi_line) {
-      string_buffer_Buf_newline(out);
-      string_buffer_Buf_indent(out, indent);
-   } else {
-      string_buffer_Buf_space(out);
-   }
-   string_buffer_Buf_add(out, ": ");
-}
-
-static void c2i_generator_Generator_emitAsmOperand(c2i_generator_Generator* gen, uint32_t name, const ast_Expr* c, ast_Expr* e)
-{
-   string_buffer_Buf* out = gen->out;
-   if (name) {
-      string_buffer_Buf_print(out, "[%s] ", string_pool_Pool_idx2str(gen->astPool, name));
-   }
-   const ast_StringLiteral* cs = (ast_StringLiteral*)c;
-   ast_StringLiteral_printLiteral(cs, out);
-   string_buffer_Buf_add(out, " (");
-   c2i_generator_Generator_emitExpr(gen, out, e);
-   string_buffer_Buf_rparen(out);
-}
-
-static void c2i_generator_Generator_emitAsmStmt(c2i_generator_Generator* gen, ast_AsmStmt* a, uint32_t indent)
-{
-   string_buffer_Buf* out = gen->out;
-   string_buffer_Buf_add(out, "asm ");
-   if (ast_AsmStmt_isVolatile(a)) string_buffer_Buf_add(out, "volatile ");
-   string_buffer_Buf_lparen(out);
-   ast_StringLiteral* str = ast_AsmStmt_getString(a);
-   ast_StringLiteral_printLiteral(str, out);
-   uint32_t num_outputs = ast_AsmStmt_getNumOutputs(a);
-   uint32_t num_inputs = ast_AsmStmt_getNumInputs(a);
-   uint32_t num_clobbers = ast_AsmStmt_getNumClobbers(a);
-   bool multi_line = false;
-   if ((num_outputs + num_inputs + num_clobbers) > 4 || num_clobbers != 0) multi_line = true;
-   if (num_outputs + num_inputs + num_clobbers) {
-      uint32_t* names = ast_AsmStmt_getNames(a);
-      const ast_Expr** constraints = ast_AsmStmt_getConstraints(a);
-      ast_Expr** exprs = ast_AsmStmt_getExprs(a);
-      c2i_generator_emitAsmPart(out, multi_line, indent);
-      for (uint32_t i = 0; i < num_outputs; i++) {
-         if (i != 0) string_buffer_Buf_add(out, ", ");
-         c2i_generator_Generator_emitAsmOperand(gen, names[i], constraints[i], exprs[i]);
-      }
-      if (num_inputs | num_clobbers) {
-         c2i_generator_emitAsmPart(out, multi_line, indent);
-         for (uint32_t i = 0; i < num_inputs; i++) {
-            if (i != 0) string_buffer_Buf_add(out, ", ");
-            uint32_t idx = i + num_outputs;
-            c2i_generator_Generator_emitAsmOperand(gen, names[idx], constraints[idx], exprs[idx]);
-         }
-      }
-      if (num_clobbers) {
-         ast_Expr** clobbers = ast_AsmStmt_getClobbers(a);
-         c2i_generator_emitAsmPart(out, multi_line, indent);
-         for (uint32_t i = 0; i < num_clobbers; i++) {
-            if (i != 0) string_buffer_Buf_add(out, ", ");
-            ast_StringLiteral* l = (ast_StringLiteral*)clobbers[i];
-            ast_StringLiteral_printLiteral(l, out);
-         }
-      }
-   }
-   string_buffer_Buf_rparen(out);
-   string_buffer_Buf_add(out, ";\n");
-}
-
-static void c2i_generator_Generator_emitSwitchStmt(c2i_generator_Generator* gen, ast_SwitchStmt* sw, uint32_t indent)
-{
-   string_buffer_Buf* out = gen->out;
-   string_buffer_Buf_add(out, "switch (");
-   c2i_generator_Generator_emitStmt(gen, ast_SwitchStmt_getCond(sw), 0, false);
-   string_buffer_Buf_add(out, ") {\n");
-   const uint32_t num_cases = ast_SwitchStmt_getNumCases(sw);
-   ast_SwitchCase** cases = ast_SwitchStmt_getCases(sw);
-   for (uint32_t i = 0; i < num_cases; i++) {
-      c2i_generator_Generator_emitCase(gen, cases[i], indent, NULL);
-   }
-   string_buffer_Buf_indent(out, indent);
-   string_buffer_Buf_add(out, "}\n");
-}
-
-static void c2i_generator_Generator_emitCase(c2i_generator_Generator* gen, ast_SwitchCase* c, uint32_t indent, uint32_t* lab)
-{
-   string_buffer_Buf* out = gen->out;
-   string_buffer_Buf_indent(out, indent);
-   if (ast_SwitchCase_isDefault(c)) {
-      string_buffer_Buf_add(out, "default:\n");
-   } else {
-      string_buffer_Buf_add(out, "case ");
-      uint32_t num_conds = ast_SwitchCase_getNumConds(c);
-      for (uint32_t i = 0; i < num_conds; i++) {
-         if (i) string_buffer_Buf_add(out, ", ");
-         c2i_generator_Generator_emitExpr(gen, out, ast_SwitchCase_getCond(c, i));
-      }
-      string_buffer_Buf_add(out, ":\n");
-   }
-   const uint32_t num_stmts = ast_SwitchCase_getNumStmts(c);
-   if (num_stmts) {
-      ast_Stmt** stmts = ast_SwitchCase_getStmts(c);
-      for (uint32_t i = 0; i < num_stmts; i++) {
-         c2i_generator_Generator_emitStmt(gen, stmts[i], indent + 1, true);
-      }
-   }
-}
-
-
 // --- module c_generator ---
 typedef struct c_generator_Fragment_ c_generator_Fragment;
 typedef struct c_generator_Generator_ c_generator_Generator;
+typedef struct c_generator_MemberContext_ c_generator_MemberContext;
 typedef struct c_generator_TraceCall_ c_generator_TraceCall;
 typedef struct c_generator_TraceCallList_ c_generator_TraceCallList;
 typedef struct c_generator_StringList_ c_generator_StringList;
@@ -37908,6 +32933,12 @@ static void c_generator_build(const char* output_dir);
 static void c_generator_Generator_emit_external_header(c_generator_Generator* gen, bool enable_asserts, const char* target);
 static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
 static ast_FunctionDecl* c_generator_get_function(ast_Decl* dest);
+struct c_generator_MemberContext_ {
+   bool need_dot;
+   ast_QualType baseType;
+   bool is_local;
+};
+
 static void c_generator_Generator_emitExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
 static void c_generator_Generator_emitExpr2(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e, c_prec_C_Prec prec);
 static void c_generator_Generator_emitBitOffset(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* base, ast_Expr* index, c_prec_C_Prec prec);
@@ -37915,8 +32946,8 @@ static void c_generator_Generator_emitCast(c_generator_Generator* gen, string_bu
 static void c_generator_Generator_emitBinaryOperator(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e, c_prec_C_Prec prec);
 static void c_generator_Generator_emitUnaryOperator(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e, c_prec_C_Prec prec);
 static void c_generator_emitDotOrArrow(string_buffer_Buf* out, ast_QualType qt);
-static void c_generator_Generator_emitMemberExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
-static void c_generator_Generator_emitMemberExprBase(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
+static void c_generator_Generator_emitMemberDecl(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d, c_generator_MemberContext* mc);
+static void c_generator_Generator_emitMemberExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_MemberExpr* m, c_generator_MemberContext* mc, bool base_only);
 static void c_generator_Generator_emitFieldDesigExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
 static void c_generator_Generator_emitArrayDesigExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
 static void c_generator_Generator_emitBuiltinExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
@@ -38148,7 +33179,7 @@ static void c_generator_Generator_emitTypePre(c_generator_Generator* gen, string
       break;
    }
    case ast_TypeKind_Module:
-      (0) || c2_assert("generator/c/c_generator.c2", 304, "c_generator.Generator.emitTypePre", "0");
+      ;//assert(0);
       return;
    }
    c_generator_Generator_emitCNameMod(gen, out, decl, ast_Decl_getModule(decl));
@@ -38214,7 +33245,7 @@ static void c_generator_Generator_genTypeIfNeeded(c_generator_Generator* gen, as
       break;
    }
    case ast_TypeKind_Module:
-      (0) || c2_assert("generator/c/c_generator.c2", 366, "c_generator.Generator.genTypeIfNeeded", "0");
+      ;//assert(0);
       return;
    }
    if (!ast_Decl_isGenerated(d)) c_generator_Generator_emitGlobalDecl(gen, d);
@@ -38247,7 +33278,7 @@ static void c_generator_Generator_emitStructMember(c_generator_Generator* gen, s
       }
       string_buffer_Buf_add(out, ";\n");
    } else {
-      (ast_Decl_isStructType(d)) || c2_assert("generator/c/c_generator.c2", 403, "c_generator.Generator.emitStructMember", "d.isStructType()");
+      ;//assert(ast_Decl_isStructType(d));
       c_generator_Generator_emitStruct(gen, out, d, indent);
    }
 }
@@ -38526,7 +33557,7 @@ static void c_generator_Generator_emitForwardStructDecl(c_generator_Generator* g
 
 static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast_Decl* d)
 {
-   (!ast_Decl_isGenerated(d)) || c2_assert("generator/c/c_generator.c2", 705, "c_generator.Generator.emitGlobalDecl", "!d.isGenerated()");
+   ;//assert(!ast_Decl_isGenerated(d));
    if (gen->cur_external && !ast_Decl_isUsed(d)) {
       ast_Decl_setGenerated(d);
       return;
@@ -38602,7 +33633,7 @@ static void c_generator_Generator_flattenFragments(c_generator_Generator* gen)
       c_generator_Generator_freeFragment(gen, f);
    }
    if (!gen->fast_build) {
-      (linked_list_Element_isEmpty(&gen->header_fragments)) || c2_assert("generator/c/c_generator.c2", 789, "c_generator.Generator.flattenFragments", "gen.header_fragments.isEmpty()");
+      ;//assert(linked_list_Element_isEmpty(&gen->header_fragments));
    }
    while (!linked_list_Element_isEmpty(&gen->header_fragments)) {
       linked_list_Element* e = linked_list_Element_popFront(&gen->header_fragments);
@@ -38842,7 +33873,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       break;
    }
    case ast_DeclKind_Import:
-      (0) || c2_assert("generator/c/c_generator.c2", 1061, "c_generator.Generator.emitHeaderDecl", "0");
+      ;//assert(0);
       return;
    case ast_DeclKind_StructType:
       c_generator_Generator_emitStruct(gen, out, d, 0);
@@ -38851,7 +33882,7 @@ static void c_generator_Generator_emitHeaderDecl(c_generator_Generator* gen, ast
       c_generator_Generator_emitEnumType(gen, out, d);
       break;
    case ast_DeclKind_EnumConstant:
-      (0) || c2_assert("generator/c/c_generator.c2", 1070, "c_generator.Generator.emitHeaderDecl", "0");
+      ;//assert(0);
       return;
    case ast_DeclKind_FunctionType:
       c_generator_Generator_emitFunctionType(gen, out, d);
@@ -38954,7 +33985,7 @@ static void c_generator_Generator_on_module(void* arg, ast_Module* m)
 
 static void c_generator_Generator_write_files(c_generator_Generator* gen)
 {
-   (gen->fast_build) || c2_assert("generator/c/c_generator.c2", 1206, "c_generator.Generator.write_files", "gen.fast_build");
+   ;//assert(gen->fast_build);
    string_buffer_Buf_add(gen->header, "\n#endif\n\n");
    char outfile[64];
    if (!gen->cur_external) {
@@ -39008,7 +34039,7 @@ static void c_generator_Generator_free(c_generator_Generator* gen)
 static void c_generator_Generator_write(c_generator_Generator* gen, const char* output_dir, const char* filename, const string_buffer_Buf* buf)
 {
    file_utils_File file; file_utils_File_init(&file, output_dir, filename);
-   if (!file_utils_File_write(&file, string_buffer_Buf_udata(buf), string_buffer_Buf_size(buf))) {
+   if (!file_utils_File_write(&file, string_buffer_Buf_data(buf), string_buffer_Buf_size(buf))) {
       console_error("cannot write to %s: %s", file.path, file_utils_File_getError(&file));
    }
 }
@@ -39121,7 +34152,7 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
       ast_FunctionDecl* template_fd = ast_FunctionType_getDecl(ft);
       uint32_t idx = ast_CallExpr_getTemplateIdx(call);
       ast_FunctionDecl* instance = ast_Module_getInstance(gen->mod, template_fd, idx);
-      (instance) || c2_assert("generator/c/c_generator_call.c2", 34, "c_generator.Generator.emitCall", "instance");
+      ;//assert(instance);
       dest = ast_FunctionDecl_asDecl(instance);
       if (!ast_Decl_isGenerated(dest)) {
          c_generator_Generator_emitFunction(gen, instance);
@@ -39131,12 +34162,12 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
       string_buffer_Buf_lparen(out);
    } else {
       ast_Expr* func = ast_CallExpr_getFunc(call);
-      if (ast_Expr_getKind(func) == ast_ExprKind_ImplicitCast) {
+      if (ast_Expr_isImplicitCast(func)) {
          ast_ImplicitCastExpr* ic = (ast_ImplicitCastExpr*)func;
          func = ast_ImplicitCastExpr_getInner(ic);
       }
       if (is_tf || ast_CallExpr_isStaticTypeFunc(call)) {
-         (ast_Expr_getKind(func) == ast_ExprKind_Member) || c2_assert("generator/c/c_generator_call.c2", 51, "c_generator.Generator.emitCall", "func.getKind() == ExprKind.Member");
+         ;//assert(ast_Expr_isMember(func));
          ast_MemberExpr* m = (ast_MemberExpr*)func;
          dest = ast_MemberExpr_getFullDecl(m);
          if (gen->trace_calls && !gen->no_trace) {
@@ -39158,21 +34189,22 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
                string_buffer_Buf_add1(out, '*');
                break;
             }
-            c_generator_Generator_emitMemberExprBase(gen, out, func);
+            c_generator_MemberContext mc = { };
+            c_generator_Generator_emitMemberExpr(gen, out, m, &mc, true);
          }
       } else {
          bool no_trace = gen->no_trace;
-         if (ast_Expr_getKind(func) == ast_ExprKind_Identifier) {
+         if (ast_Expr_isIdentifier(func)) {
             ast_IdentifierExpr* i = (ast_IdentifierExpr*)func;
             const char* name = ast_IdentifierExpr_getName(i);
             if (name && name[0] == 'v' && name[1] == 'a' && name[2] == '_') no_trace = true;
             dest = ast_IdentifierExpr_getDecl(i);
-         } else if (ast_Expr_getKind(func) == ast_ExprKind_Member) {
+         } else if (ast_Expr_isMember(func)) {
             ast_MemberExpr* m = (ast_MemberExpr*)func;
             dest = ast_MemberExpr_getFullDecl(m);
          } else {
             ast_Expr_dump(func);
-            (0) || c2_assert("generator/c/c_generator_call.c2", 92, "c_generator.Generator.emitCall", "0");
+            ;//assert(0);
          }
          if (gen->trace_calls && !no_trace) {
             string_buffer_Buf_print(out, "(c2_trace_counts[%u]++, ", c_generator_Generator_addCall(gen, ast_Decl_getFullName(dest), ast_CallExpr_getStartLoc(call)));
@@ -39184,7 +34216,7 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
          string_buffer_Buf_lparen(out);
       }
    }
-   (dest) || c2_assert("generator/c/c_generator_call.c2", 106, "c_generator.Generator.emitCall", "dest");
+   ;//assert(dest);
    bool needs_comma = is_tf;
    uint32_t call_num_args = ast_CallExpr_getNumArgs(call);
    ast_Expr** args = ast_CallExpr_getArgs(call);
@@ -39250,14 +34282,14 @@ static void c_generator_Generator_emitCall(c_generator_Generator* gen, string_bu
 
 static ast_FunctionDecl* c_generator_get_function(ast_Decl* dest)
 {
-   if (ast_Decl_getKind(dest) == ast_DeclKind_Variable) {
+   if (ast_Decl_isVariable(dest)) {
       ast_QualType qt = ast_Decl_getType(dest);
-      (ast_QualType_isFunction(qt)) || c2_assert("generator/c/c_generator_call.c2", 183, "c_generator.get_function", "qt.isFunction()");
+      ;//assert(ast_QualType_isFunction(qt));
       ast_FunctionType* ft = ast_QualType_getFunctionType(qt);
       ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
       dest = (ast_Decl*)fd;
    }
-   (ast_Decl_getKind(dest) == ast_DeclKind_Function) || c2_assert("generator/c/c_generator_call.c2", 188, "c_generator.get_function", "dest.getKind() == DeclKind.Function");
+   ;//assert(ast_Decl_isFunction(dest));
    return (ast_FunctionDecl*)dest;
 }
 
@@ -39373,9 +34405,11 @@ static void c_generator_Generator_emitExpr2(c_generator_Generator* gen, string_b
       }
       break;
    }
-   case ast_ExprKind_Member:
-      c_generator_Generator_emitMemberExpr(gen, out, e);
+   case ast_ExprKind_Member: {
+      c_generator_MemberContext mc = { };
+      c_generator_Generator_emitMemberExpr(gen, out, (ast_MemberExpr*)e, &mc, false);
       break;
+   }
    case ast_ExprKind_Paren: {
       ast_ParenExpr* p = (ast_ParenExpr*)e;
       string_buffer_Buf_lparen(out);
@@ -39384,7 +34418,7 @@ static void c_generator_Generator_emitExpr2(c_generator_Generator* gen, string_b
       break;
    }
    case ast_ExprKind_BitOffset:
-      (0) || c2_assert("generator/c/c_generator_expr.c2", 137, "c_generator.Generator.emitExpr2", "0");
+      ;//assert(0);
       break;
    case ast_ExprKind_ExplicitCast: {
       ast_ExplicitCastExpr* c = (ast_ExplicitCastExpr*)e;
@@ -39503,121 +34537,68 @@ static void c_generator_emitDotOrArrow(string_buffer_Buf* out, ast_QualType qt)
    else string_buffer_Buf_add1(out, '.');
 }
 
-static void c_generator_Generator_emitMemberExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e)
+static void c_generator_Generator_emitMemberDecl(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d, c_generator_MemberContext* mc)
 {
-   ast_MemberExpr* m = (ast_MemberExpr*)e;
-   bool need_dot = false;
-   ast_QualType baseType = { };
-   if (ast_MemberExpr_hasExpr(m)) {
-      ast_Expr* base = ast_MemberExpr_getExprBase(m);
-      c_generator_Generator_emitExpr2(gen, out, base, c_prec_C_Prec_Postfix);
-      baseType = ast_Expr_getType(base);
-      need_dot = true;
+   switch (ast_Decl_getKind(d)) {
+   case ast_DeclKind_Function:
+      if (mc->need_dot) c_generator_emitDotOrArrow(out, mc->baseType);
+      mc->baseType = ast_Decl_getType(d);
+      c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
+      break;
+   case ast_DeclKind_Import:
+      break;
+   case ast_DeclKind_StructType: {
+      if (mc->need_dot) c_generator_emitDotOrArrow(out, mc->baseType);
+      ast_StructTypeDecl* std = (ast_StructTypeDecl*)d;
+      if (!ast_StructTypeDecl_isGlobal(std)) {
+         mc->baseType = ast_Decl_getType(d);
+         string_buffer_Buf_add(out, ast_Decl_getName(d));
+         mc->need_dot = true;
+      }
+      break;
    }
-   uint32_t numrefs = ast_MemberExpr_getNumRefs(m);
-   bool is_local = false;
-   for (uint32_t i = 0; i < numrefs; i++) {
-      ast_Decl* d = ast_MemberExpr_getDecl(m, i);
-      switch (ast_Decl_getKind(d)) {
-      case ast_DeclKind_Function:
-         if (need_dot) c_generator_emitDotOrArrow(out, baseType);
-         baseType = ast_Decl_getType(d);
-         c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
-         break;
-      case ast_DeclKind_Import:
-         break;
-      case ast_DeclKind_StructType: {
-         if (need_dot) c_generator_emitDotOrArrow(out, baseType);
-         ast_StructTypeDecl* std = (ast_StructTypeDecl*)d;
-         if (!ast_StructTypeDecl_isGlobal(std)) {
-            baseType = ast_Decl_getType(d);
-            string_buffer_Buf_add(out, ast_Decl_getName(d));
-            need_dot = true;
-         }
-         break;
+   case ast_DeclKind_EnumType:
+      c_generator_Generator_genDeclIfNeeded(gen, d);
+      break;
+   case ast_DeclKind_EnumConstant:
+      c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
+      break;
+   case ast_DeclKind_FunctionType:
+      ;//assert(0);
+      break;
+   case ast_DeclKind_AliasType:
+      c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
+      break;
+   case ast_DeclKind_Variable:
+      if (mc->need_dot) c_generator_emitDotOrArrow(out, mc->baseType);
+      mc->baseType = ast_Decl_getType(d);
+      if (mc->is_local) {
+         string_buffer_Buf_add(out, ast_Decl_getName(d));
+      } else {
+         c_generator_Generator_emitDeclName(gen, out, d);
       }
-      case ast_DeclKind_EnumType:
-         c_generator_Generator_genDeclIfNeeded(gen, d);
-         break;
-      case ast_DeclKind_EnumConstant:
-         c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
-         break;
-      case ast_DeclKind_FunctionType:
-         (0) || c2_assert("generator/c/c_generator_expr.c2", 295, "c_generator.Generator.emitMemberExpr", "0");
-         break;
-      case ast_DeclKind_AliasType:
-         c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
-         break;
-      case ast_DeclKind_Variable:
-         if (need_dot) c_generator_emitDotOrArrow(out, baseType);
-         baseType = ast_Decl_getType(d);
-         if (is_local) {
-            string_buffer_Buf_add(out, ast_Decl_getName(d));
-         } else {
-            c_generator_Generator_emitDeclName(gen, out, d);
-         }
-         need_dot = true;
-         is_local = true;
-         break;
-      }
+      mc->need_dot = true;
+      mc->is_local = true;
+      break;
    }
 }
 
-static void c_generator_Generator_emitMemberExprBase(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e)
+static void c_generator_Generator_emitMemberExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_MemberExpr* m, c_generator_MemberContext* mc, bool base_only)
 {
-   ast_MemberExpr* m = (ast_MemberExpr*)e;
-   bool need_dot = false;
-   ast_QualType baseType = { };
    if (ast_MemberExpr_hasExpr(m)) {
-      ast_Expr* base = ast_MemberExpr_getExprBase(m);
-      c_generator_Generator_emitExpr2(gen, out, base, c_prec_C_Prec_Postfix);
-      baseType = ast_Expr_getType(base);
-      need_dot = true;
-   }
-   uint32_t numrefs = ast_MemberExpr_getNumRefs(m);
-   numrefs -= 1;
-   bool is_local = false;
-   for (uint32_t i = 0; i < numrefs; i++) {
-      ast_Decl* d = ast_MemberExpr_getDecl(m, i);
-      switch (ast_Decl_getKind(d)) {
-      case ast_DeclKind_Function:
-         if (need_dot) c_generator_emitDotOrArrow(out, baseType);
-         baseType = ast_Decl_getType(d);
-         c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
-         break;
-      case ast_DeclKind_Import:
-         break;
-      case ast_DeclKind_StructType:
-         if (need_dot) c_generator_emitDotOrArrow(out, baseType);
-         baseType = ast_Decl_getType(d);
-         string_buffer_Buf_add(out, ast_Decl_getName(d));
-         need_dot = true;
-         break;
-      case ast_DeclKind_EnumType:
-         c_generator_Generator_genDeclIfNeeded(gen, d);
-         break;
-      case ast_DeclKind_EnumConstant:
-         c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
-         break;
-      case ast_DeclKind_FunctionType:
-         (0) || c2_assert("generator/c/c_generator_expr.c2", 358, "c_generator.Generator.emitMemberExprBase", "0");
-         break;
-      case ast_DeclKind_AliasType:
-         c_generator_Generator_emitCNameMod(gen, out, d, ast_Decl_getModule(d));
-         break;
-      case ast_DeclKind_Variable:
-         if (need_dot) c_generator_emitDotOrArrow(out, baseType);
-         baseType = ast_Decl_getType(d);
-         if (is_local) {
-            string_buffer_Buf_add(out, ast_Decl_getName(d));
-         } else {
-            c_generator_Generator_emitDeclName(gen, out, d);
-         }
-         need_dot = true;
-         is_local = true;
-         break;
+      ast_Expr* base = ast_MemberExpr_getBaseExpr(m);
+      if (ast_Expr_isMember(base)) {
+         ast_MemberExpr* e = (ast_MemberExpr*)base;
+         c_generator_Generator_emitMemberExpr(gen, out, e, mc, false);
+      } else {
+         c_generator_Generator_emitExpr2(gen, out, base, c_prec_C_Prec_Postfix);
+         mc->baseType = ast_Expr_getType(base);
+         mc->need_dot = true;
       }
+   } else {
+      c_generator_Generator_emitMemberDecl(gen, out, ast_MemberExpr_getDecl(m, 0), mc);
    }
+   if (!base_only) c_generator_Generator_emitMemberDecl(gen, out, ast_MemberExpr_getDecl(m, 1), mc);
 }
 
 static void c_generator_Generator_emitFieldDesigExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e)
@@ -39886,7 +34867,7 @@ static void c_generator_Generator_emitVarDecl(c_generator_Generator* gen, ast_Va
    ast_Expr* ie = ast_VarDecl_getInit(vd);
    if (ie && emit_init) {
       if (ast_VarDecl_hasInitCall(vd)) {
-         (first) || c2_assert("generator/c/c_generator_stmt.c2", 37, "c_generator.Generator.emitVarDecl", "first");
+         ;//assert(first);
          string_buffer_Buf_add(out, "; ");
       } else {
          string_buffer_Buf_add(out, " = ");
@@ -39932,7 +34913,7 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt*
          ast_VarDecl* vd = ast_DeclStmt_getDecl(ds, 0);
          string_buffer_Buf_add(out, ast_Decl_getName(ast_VarDecl_asDecl(vd)));
       } else {
-         (ast_Stmt_isExpr(cond)) || c2_assert("generator/c/c_generator_stmt.c2", 83, "c_generator.Generator.emitStmt", "cond.isExpr()");
+         ;//assert(ast_Stmt_isExpr(cond));
          string_buffer_Buf_add(out, "if (");
          c_generator_Generator_emitExpr(gen, out, (ast_Expr*)cond);
       }
@@ -39981,11 +34962,11 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, ast_Stmt*
          string_buffer_Buf_add(out, ast_Decl_getName(ast_VarDecl_asDecl(vd)));
          string_buffer_Buf_add(out, " = ");
          ast_Expr* ie = ast_VarDecl_getInit(vd);
-         (ie) || c2_assert("generator/c/c_generator_stmt.c2", 133, "c_generator.Generator.emitStmt", "ie");
+         ;//assert(ie);
          c_generator_Generator_emitExpr(gen, out, ie);
          string_buffer_Buf_add(out, ")) ");
       } else {
-         (ast_Stmt_isExpr(cond)) || c2_assert("generator/c/c_generator_stmt.c2", 137, "c_generator.Generator.emitStmt", "cond.isExpr()");
+         ;//assert(ast_Stmt_isExpr(cond));
          string_buffer_Buf_add(out, "while (");
          c_generator_Generator_emitExpr(gen, out, (ast_Expr*)cond);
          string_buffer_Buf_add(out, ") ");
@@ -40203,7 +35184,7 @@ static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast
          ast_VarDecl* vd = ast_DeclStmt_getDecl(ds, 0);
          string_buffer_Buf_add(out, ast_Decl_getName(ast_VarDecl_asDecl(vd)));
       } else {
-         (ast_Stmt_isExpr(cond)) || c2_assert("generator/c/c_generator_stmt.c2", 357, "c_generator.Generator.emitSwitchStmt", "cond.isExpr()");
+         ;//assert(ast_Stmt_isExpr(cond));
          c_generator_Generator_emitExpr(gen, out, (ast_Expr*)cond);
       }
       string_buffer_Buf_add1(out, ',');
@@ -40229,7 +35210,7 @@ static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast
             }
          } else {
             ast_Expr_dump(e);
-            (0) || c2_assert("generator/c/c_generator_stmt.c2", 386, "c_generator.Generator.emitSwitchStmt", "0");
+            ;//assert(0);
          }
       }
       if (!has_s2) string_buffer_Buf_add(out, " \"\"");
@@ -40247,7 +35228,7 @@ static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, ast
          ast_VarDecl* vd = ast_DeclStmt_getDecl(ds, 0);
          string_buffer_Buf_add(out, ast_Decl_getName(ast_VarDecl_asDecl(vd)));
       } else {
-         (ast_Stmt_isExpr(cond)) || c2_assert("generator/c/c_generator_stmt.c2", 405, "c_generator.Generator.emitSwitchStmt", "cond.isExpr()");
+         ;//assert(ast_Stmt_isExpr(cond));
          c_generator_Generator_emitExpr(gen, out, (ast_Expr*)cond);
       }
       string_buffer_Buf_add(out, ") {\n");
@@ -40295,7 +35276,7 @@ static void c_generator_Generator_emitCase(c_generator_Generator* gen, ast_Switc
             string_buffer_Buf_add(out, "\"\n");
          } else {
             ast_Expr_dump(e);
-            (0) || c2_assert("generator/c/c_generator_stmt.c2", 455, "c_generator.Generator.emitCase", "0");
+            ;//assert(0);
          }
       } else {
          uint32_t num_conds = ast_SwitchCase_getNumConds(c);
@@ -40460,33 +35441,6 @@ static void c_generator_Generator_writeCallExterns(c_generator_Generator* gen, s
 }
 
 
-// --- module source_lib_generator ---
-
-static void source_lib_generator_generate(build_target_Target* target, const char* target_name, const char* output_dir, component_Component* mainComp);
-static void source_lib_generator_copy_file(void* arg, const char* filename, uint32_t src_loc);
-
-static void source_lib_generator_generate(build_target_Target* target, const char* target_name, const char* output_dir, component_Component* mainComp)
-{
-   component_Component_visitFiles(mainComp, (void*)output_dir, source_lib_generator_copy_file);
-   manifest_writer_write(output_dir, mainComp, constants_manifest_name);
-}
-
-static void source_lib_generator_copy_file(void* arg, const char* filename, uint32_t src_loc)
-{
-   const char* output_dir = arg;
-   char dest[512];
-   if (!file_utils_make_path(dest, 512, output_dir, filename)) {
-      console_error("filename too long %s: %s", output_dir, filename);
-      exit(stdlib_EXIT_FAILURE);
-      return;
-   }
-   if (file_utils_copy_file(filename, dest)) {
-      console_error("cannot copy file to %s: %s", dest, strerror((*__errno_location())));
-      exit(stdlib_EXIT_FAILURE);
-   }
-}
-
-
 // --- module generator_utils ---
 typedef struct generator_utils_Wrapper_ generator_utils_Wrapper;
 
@@ -40571,1924 +35525,6 @@ static void generator_utils_mark_used(component_Component* mainComp, const modul
    wrapper.visitor = visitor;
    component_Component_visitModules(mainComp, generator_utils_check_module, &wrapper);
    ast_visitor_Visitor_free(visitor);
-}
-
-
-// --- module ir_tools ---
-typedef struct ir_tools_LiveVector_ ir_tools_LiveVector;
-typedef struct ir_tools_Target_ ir_tools_Target;
-typedef struct ir_tools_Tools_ ir_tools_Tools;
-
-static void ir_tools_Tools_generate_graphviz(ir_tools_Tools* t, ir_FunctionInfo* fi);
-struct ir_tools_LiveVector_ {
-   uint32_t count;
-   uint32_t cap;
-   uint32_t num_instr;
-   uint32_t* temps;
-   ir_interference_graph_InterferenceGraph* interferences;
-   ir_live_map_Map* live_in;
-   ir_live_map_Map* live_out;
-};
-
-static void ir_tools_LiveVector_init(ir_tools_LiveVector* v, uint32_t num_blocks, uint32_t num_instr);
-static void ir_tools_LiveVector_free(ir_tools_LiveVector* v);
-static void ir_tools_LiveVector_add(ir_tools_LiveVector* v, uint32_t idx);
-static void ir_tools_LiveVector_remove(ir_tools_LiveVector* v, uint32_t idx);
-static void ir_tools_LiveVector_addInterfere(ir_tools_LiveVector* v, uint16_t idx);
-static void ir_tools_LiveVector_addInterfereFilter(ir_tools_LiveVector* v, uint32_t idx);
-static void ir_tools_LiveVector_removeRegister(ir_tools_LiveVector* v, uint32_t reg);
-static void ir_tools_LiveVector_addRegister(ir_tools_LiveVector* v, uint32_t reg);
-static void ir_tools_LiveVector_clear(ir_tools_LiveVector* v);
-static void ir_tools_LiveVector_storeOut(ir_tools_LiveVector* v, uint16_t blk_id);
-static void ir_tools_LiveVector_storeIn(ir_tools_LiveVector* v, uint16_t blk_id);
-static void ir_tools_LiveVector_merge(ir_tools_LiveVector* v, uint32_t blk_id);
-static void ir_tools_LiveVector_dump(const ir_tools_LiveVector* v);
-static void ir_tools_LiveVector_dumpRanges(const ir_tools_LiveVector* v, uint32_t num_blocks);
-static void ir_tools_Tools_createBlockInterferences(ir_tools_Tools* t, uint32_t blk_id, ir_FunctionInfo* fi, ir_tools_LiveVector* v);
-static void ir_tools_Tools_checkBlockLiveness(ir_tools_Tools* t, uint32_t blk_id, ir_tools_LiveVector* v);
-static void ir_tools_Tools_replacePhis(ir_tools_Tools* t);
-static void ir_tools_Tools_insertSplitEdges(ir_tools_Tools* t);
-static void ir_tools_Tools_removeSplitEdges(ir_tools_Tools* t);
-static void ir_tools_Tools_removeSameCopies(ir_tools_Tools* t);
-static void ir_tools_Tools_allocateRegisters(ir_tools_Tools* t, ir_FunctionInfo* fi);
-static void ir_tools_Tools_fixReturn(ir_tools_Tools* t, ir_FunctionInfo* fi);
-static void ir_tools_Tools_createSSA(ir_tools_Tools* t);
-static ir_Ref ir_tools_Tools_checkBlockRead(ir_tools_Tools* t, ir_BlockId blk_id, uint16_t slot);
-static ir_Ref ir_tools_Tools_checkPredBlock(ir_tools_Tools* t, ir_BlockId blk_id, uint16_t slot, ir_FunctionInfo* fi);
-static uint32_t ir_tools_getSlotName(uint32_t slot);
-static ir_Ref ir_tools_Tools_addPhiInstr(ir_tools_Tools* t, ir_FunctionInfo* fi, const ir_PhiClauses* cache, uint32_t loc, uint16_t slot);
-static void ir_tools_Tools_eliminateCopies(ir_tools_Tools* t);
-static void ir_tools_Tools_checkRef(ir_tools_Tools* t, ir_Ref r);
-static void ir_tools_Tools_removeUnused(ir_tools_Tools* t);
-static bool ir_tools_Tools_propagateConstants(ir_tools_Tools* t);
-static void ir_tools_Tools_removeNone(ir_tools_Tools* t);
-static void ir_tools_Tools_fixup_function(ir_tools_Tools* t);
-static bool ir_tools_Tools_convert_switches(ir_tools_Tools* t);
-static void ir_tools_Tools_convert_switch_linear(ir_tools_Tools* t, ir_FunctionInfo* fi, uint32_t blk_id, index_list_List* block_order);
-struct ir_tools_Target_ {
-   void (*instructionSelection)(ir_tools_Tools* t, ir_FunctionInfo* f);
-   void (*applyCallingConv)(ir_tools_Tools* t, ir_FunctionInfo* f);
-   void (*generateAsm)(string_buffer_Buf* out, const char* name, const ir_FunctionInfo* f, bool is_external);
-   const char** instr_names;
-   uint32_t num_instr;
-   const char** register_names;
-   uint8_t num_args_in_regs;
-   uint8_t num_regs;
-   uint8_t num_temps;
-   uint8_t num_saved;
-   uint8_t arg0_reg;
-   uint8_t saved0_reg;
-   const uint8_t* regs;
-};
-
-typedef void (*ir_tools_PrintFn)(const void* arg1, const void* arg2, const ir_FunctionInfo* fi, const char* label);
-
-struct ir_tools_Tools_ {
-   ir_lookup_table_Table conversion;
-   ir_slot_values_SlotValues slot_values;
-   ir_slot_collector_SlotCollector collector;
-   ir_rev_list_RevList revlist;
-   ir_inserter_Inserter inserter;
-   bit_array_BitArray active_blocks;
-   ir_copy_list_CopyList copies;
-   usage_counter_Counter usage;
-   const ir_tools_Target* target;
-   const void* arg1;
-   ir_tools_PrintFn print;
-   const void* arg2;
-   ir_FunctionInfo* fi;
-};
-
-static void ir_tools_Tools_init(ir_tools_Tools* t, const ir_tools_Target* target, const void* arg1, ir_tools_PrintFn print);
-static void ir_tools_Tools_free(ir_tools_Tools* t);
-static void ir_tools_Tools_print_func(const ir_tools_Tools* t, const char* label);
-static void ir_tools_Tools_convert_fn(ir_tools_Tools* t);
-static void ir_tools_Tools_markUsedBlocks(ir_tools_Tools* t, ir_FunctionInfo* fi);
-static void ir_tools_Tools_reorder_blocks(ir_tools_Tools* t, ir_FunctionInfo* fi, const index_list_List* block_order);
-
-static void ir_tools_Tools_generate_graphviz(ir_tools_Tools* t, ir_FunctionInfo* fi)
-{
-   string_buffer_Buf* out = string_buffer_create(16 * 1024, false, 2);
-   string_buffer_Buf_add(out, "-------------\n");
-   string_buffer_Buf_add(out, "dot\ndigraph G {\nnode [shape=circle, style=filled]\n");
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   for (uint32_t i = 0; i < num_blocks; i++) {
-      string_buffer_Buf_print(out, "%u[label=\"%u\"];\n", i, i);
-   }
-   for (uint32_t i = 0; i < num_blocks; i++) {
-      ir_Block* b = ir_BlockList_get(&fi->blocks, i);
-      for (uint32_t j = 1; j < num_blocks; j++) {
-         if (ir_block_has_dest(b, &fi->cases, j)) {
-            string_buffer_Buf_print(out, "%u->%u;\n", i, j);
-         }
-      }
-   }
-   string_buffer_Buf_add(out, "}\n");
-   string_buffer_Buf_add(out, "-------------\n");
-   puts(string_buffer_Buf_data(out));
-   string_buffer_Buf_free(out);
-}
-
-static void ir_tools_LiveVector_init(ir_tools_LiveVector* v, uint32_t num_blocks, uint32_t num_instr)
-{
-   v->count = 0;
-   v->cap = 1024;
-   v->num_instr = num_instr;
-   v->temps = malloc(v->cap * 4);
-   (num_instr <= u16_max) || c2_assert("ir/register_alloc.c2", 43, "ir_tools.LiveVector.init", "num_instr <= u16.max");
-   uint16_t num_regs = 8;
-   v->interferences = ir_interference_graph_create(32 * 1024, (uint16_t)num_instr, num_regs);
-   v->live_in = ir_live_map_create(4096, (uint16_t)num_blocks);
-   v->live_out = ir_live_map_create(4096, (uint16_t)num_blocks);
-}
-
-static void ir_tools_LiveVector_free(ir_tools_LiveVector* v)
-{
-   ir_live_map_Map_free(v->live_out);
-   ir_live_map_Map_free(v->live_in);
-   ir_interference_graph_InterferenceGraph_free(v->interferences);
-   free(v->temps);
-}
-
-static void ir_tools_LiveVector_add(ir_tools_LiveVector* v, uint32_t idx)
-{
-   (idx <= 65535) || c2_assert("ir/register_alloc.c2", 62, "ir_tools.LiveVector.add", "idx <= 65535");
-   for (uint32_t i = 0; i < v->count; i++) {
-      if (v->temps[i] == idx) return;
-   }
-   (v->count < v->cap) || c2_assert("ir/register_alloc.c2", 68, "ir_tools.LiveVector.add", "v.count < v.cap");
-   v->temps[v->count++] = idx;
-}
-
-static void ir_tools_LiveVector_remove(ir_tools_LiveVector* v, uint32_t idx)
-{
-   for (uint32_t i = 0; i < v->count; i++) {
-      if (v->temps[i] == idx) {
-         v->count--;
-         if (i != v->count) v->temps[i] = v->temps[v->count];
-         return;
-      }
-   }
-}
-
-static void ir_tools_LiveVector_addInterfere(ir_tools_LiveVector* v, uint16_t idx)
-{
-   (v->count < v->cap) || c2_assert("ir/register_alloc.c2", 87, "ir_tools.LiveVector.addInterfere", "v.count < v.cap");
-   for (uint32_t i = 0; i < v->count; i++) {
-      ir_interference_graph_InterferenceGraph_add(v->interferences, (uint16_t)v->temps[i], idx);
-   }
-   v->temps[v->count++] = idx;
-}
-
-static void ir_tools_LiveVector_addInterfereFilter(ir_tools_LiveVector* v, uint32_t idx)
-{
-   for (uint32_t i = 0; i < v->count; i++) {
-      if (v->temps[i] == idx) return;
-   }
-   ir_tools_LiveVector_addInterfere(v, (uint16_t)idx);
-}
-
-static void ir_tools_LiveVector_removeRegister(ir_tools_LiveVector* v, uint32_t reg)
-{
-   ir_tools_LiveVector_remove(v, v->num_instr + reg);
-}
-
-static void ir_tools_LiveVector_addRegister(ir_tools_LiveVector* v, uint32_t reg)
-{
-   ir_tools_LiveVector_addInterfereFilter(v, v->num_instr + reg);
-}
-
-static void ir_tools_LiveVector_clear(ir_tools_LiveVector* v)
-{
-   v->count = 0;
-}
-
-static void ir_tools_LiveVector_storeOut(ir_tools_LiveVector* v, uint16_t blk_id)
-{
-   for (uint32_t i = 0; i < v->count; i++) {
-      ir_live_map_Map_addFiltered(v->live_out, blk_id, (uint16_t)v->temps[i]);
-   }
-}
-
-static void ir_tools_LiveVector_storeIn(ir_tools_LiveVector* v, uint16_t blk_id)
-{
-   for (uint32_t i = 0; i < v->count; i++) {
-      ir_live_map_Map_add(v->live_in, blk_id, (uint16_t)v->temps[i]);
-   }
-   v->count = 0;
-}
-
-static void ir_tools_LiveVector_merge(ir_tools_LiveVector* v, uint32_t blk_id)
-{
-   ir_live_map_Iter iter = ir_live_map_Map_getList(v->live_in, (uint16_t)blk_id);
-   (iter.count + iter.count < v->cap) || c2_assert("ir/register_alloc.c2", 133, "ir_tools.LiveVector.merge", "iter.count + iter.count < v.cap");
-   for (uint32_t i = 0; i < iter.count; i++) {
-      ir_tools_LiveVector_add(v, iter.ids[i]);
-   }
-}
-
-static void ir_tools_LiveVector_dump(const ir_tools_LiveVector* v)
-{
-   for (uint32_t i = 0; i < v->count; i++) {
-      printf(" %u", v->temps[i]);
-   }
-   printf("\n");
-}
-
-static void ir_tools_LiveVector_dumpRanges(const ir_tools_LiveVector* v, uint32_t num_blocks)
-{
-   for (uint32_t i = 0; i < num_blocks; i++) {
-      printf("B%u\n", i);
-      printf("  In [");
-      ir_live_map_Iter iter = ir_live_map_Map_getList(v->live_in, (uint16_t)i);
-      for (uint32_t j = 0; j < iter.count; j++) printf(" %d", iter.ids[j]);
-      printf(" ]\n  Out[");
-      iter = ir_live_map_Map_getList(v->live_out, (uint16_t)i);
-      for (uint32_t j = 0; j < iter.count; j++) printf(" %d", iter.ids[j]);
-      printf(" ]\n");
-   }
-}
-
-static void ir_tools_Tools_createBlockInterferences(ir_tools_Tools* t, uint32_t blk_id, ir_FunctionInfo* fi, ir_tools_LiveVector* v)
-{
-   ir_Block* b = ir_BlockList_get(&fi->blocks, blk_id);
-   ir_tools_LiveVector_clear(v);
-   ir_live_map_Iter iter = ir_live_map_Map_getList(v->live_out, (uint16_t)blk_id);
-   for (uint32_t i = 0; i < iter.count; i++) {
-      ir_tools_LiveVector_addInterfere(v, iter.ids[i]);
-   }
-   if (b->phi_source) {
-      const ir_PhiClause* clauses = ir_PhiList_get(&fi->phis, 0);
-      uint32_t num_clauses = ir_PhiList_getCount(&fi->phis);
-      for (uint32_t c = 0; c < num_clauses; c++) {
-         const ir_PhiClause* pc = &clauses[c];
-         if (pc->src != blk_id) continue;
-         ir_tools_LiveVector_remove(v, pc->dest_idx);
-         if (ir_Ref_isTemp(&pc->ref)) ir_tools_LiveVector_addInterfere(v, (uint16_t)pc->ref.value);
-      }
-   }
-   ir_Instr* instrs = ir_InstrList_get(&fi->instructions, 0);
-   uint32_t first = b->instr.start;
-   uint32_t last = b->instr.start + b->instr.count - 1;
-   uint32_t i = last;
-   while (1) {
-      const ir_Instr* ii = &instrs[i];
-      if (ir_Instr_hasResult(ii)) {
-         if (ir_Instr_hasRegister(ii)) {
-            ir_tools_LiveVector_removeRegister(v, ir_Instr_getRegister(ii));
-         } else {
-            ir_tools_LiveVector_remove(v, i);
-            ir_interference_graph_InterferenceGraph_enable(v->interferences, (uint16_t)i);
-         }
-      }
-      if (ir_Instr_isCall(ii)) {
-         uint32_t num_args = (uint32_t)ii->args[1].value;
-         for (uint32_t a = 0; a < num_args; a++) {
-            ir_tools_LiveVector_addRegister(v, a);
-         }
-         for (uint32_t a = num_args; a < 8; a++) {
-            ir_tools_LiveVector_addRegister(v, a);
-            ir_tools_LiveVector_removeRegister(v, a);
-         }
-      } else if (ir_Instr_isPhi(ii)) {
-      } else if (ir_Instr_isReturn(ii)) {
-      } else {
-         if (ir_Ref_isTemp(&ii->args[0])) ir_tools_LiveVector_addInterfereFilter(v, (uint32_t)ii->args[0].value);
-         else if (ir_Ref_isRegister(&ii->args[0])) ir_tools_LiveVector_addRegister(v, (uint32_t)ii->args[0].value);
-         if (ir_Ref_isTemp(&ii->args[1])) ir_tools_LiveVector_addInterfereFilter(v, (uint32_t)ii->args[1].value);
-         else if (ir_Ref_isRegister(&ii->args[1])) ir_tools_LiveVector_addRegister(v, (uint32_t)ii->args[1].value);
-      }
-      if (i == first) break;
-      i--;
-   }
-}
-
-static void ir_tools_Tools_checkBlockLiveness(ir_tools_Tools* t, uint32_t blk_id, ir_tools_LiveVector* v)
-{
-   ir_FunctionInfo* fi = t->fi;
-   ir_Block* b = ir_BlockList_get(&fi->blocks, blk_id);
-   ir_tools_LiveVector_clear(v);
-   if (b->dests[0]) ir_tools_LiveVector_merge(v, b->dests[0]);
-   if (b->dests[1]) ir_tools_LiveVector_merge(v, b->dests[1]);
-   ir_tools_LiveVector_storeOut(v, (uint16_t)blk_id);
-   if (b->phi_source) {
-      const ir_PhiClause* clauses = ir_PhiList_get(&fi->phis, 0);
-      uint32_t num_clauses = ir_PhiList_getCount(&fi->phis);
-      for (uint32_t i = 0; i < num_clauses; i++) {
-         const ir_PhiClause* c = &clauses[i];
-         if (c->src == blk_id) {
-            ir_tools_LiveVector_remove(v, c->dest_idx);
-            if (ir_Ref_isTemp(&c->ref)) {
-               ir_tools_LiveVector_add(v, (uint32_t)c->ref.value);
-            }
-         }
-      }
-   }
-   ir_Instr* instrs = ir_InstrList_get(&fi->instructions, 0);
-   (b->instr.count) || c2_assert("ir/register_alloc.c2", 298, "ir_tools.Tools.checkBlockLiveness", "b.instr.count");
-   uint32_t first = b->instr.start;
-   uint32_t last = b->instr.start + b->instr.count - 1;
-   uint32_t i = last;
-   while (1) {
-      const ir_Instr* ii = &instrs[i];
-      if (ir_Instr_isPhi(ii)) {
-         const ir_PhiClause* clauses = ir_PhiList_get(&fi->phis, (uint32_t)ii->args[0].value);
-         for (uint32_t c = 0; c < ii->args[1].value; c++) {
-            const ir_PhiClause* pc = &clauses[c];
-            ir_live_map_Map_addFiltered(v->live_out, (uint16_t)pc->src, (uint16_t)pc->dest_idx);
-         }
-      } else {
-         if (ir_Instr_hasResult(ii)) {
-            ir_tools_LiveVector_remove(v, i);
-         }
-         if (ir_Ref_isTemp(&ii->args[0])) ir_tools_LiveVector_add(v, (uint32_t)ii->args[0].value);
-         if (ir_Ref_isTemp(&ii->args[1])) ir_tools_LiveVector_add(v, (uint32_t)ii->args[1].value);
-      }
-      if (i == first) break;
-      i--;
-   }
-   ir_tools_LiveVector_storeIn(v, (uint16_t)blk_id);
-}
-
-static void ir_tools_Tools_replacePhis(ir_tools_Tools* t)
-{
-   ir_FunctionInfo* fi = t->fi;
-   ir_inserter_Inserter_clear(&t->inserter, ir_BlockList_getCount(&fi->blocks), ir_InstrList_getCount(&fi->instructions));
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   for (uint32_t blk_id = 0; blk_id < num_blocks; blk_id++) {
-      ir_Block* b = &blocks[blk_id];
-      uint32_t last = b->instr.start + b->instr.count;
-      for (uint32_t j = b->instr.start; j < last; j++) {
-         ir_Instr* ii = ir_InstrList_get(&fi->instructions, j);
-         if (ir_Instr_isComment(ii) || ir_Instr_isNone(ii)) continue;
-         if (!ir_Instr_isPhi(ii)) break;
-         const ir_PhiClause* clauses = ir_PhiList_get(&fi->phis, (uint32_t)ii->args[0].value);
-         for (uint32_t c = 0; c < ii->args[1].value; c++) {
-            const ir_PhiClause* pc = &clauses[c];
-            ir_Block* src = &blocks[pc->src];
-            if (pc->dest_idx == pc->ref.value && ir_Ref_isRegister(&pc->ref)) continue;
-            uint32_t insert_loc = src->instr.start + src->instr.count - 1;
-            uint32_t instr_idx = ir_inserter_Inserter_addInstr(&t->inserter, insert_loc);
-            ir_Instr* copy = ir_inserter_Inserter_getLastInstr(&t->inserter);
-            ir_Instr_initRegCopy(copy, (uint8_t)pc->dest_idx, pc->ref);
-         }
-         ir_Instr_clear(ii);
-         if (j + 1 < last) {
-            ii = ir_InstrList_get(&fi->instructions, j + 1);
-            if (ir_Instr_isComment(ii)) ir_Instr_clear(ii);
-         }
-      }
-   }
-   ir_PhiList_clear(&fi->phis);
-}
-
-static void ir_tools_Tools_insertSplitEdges(ir_tools_Tools* t)
-{
-   ir_FunctionInfo* fi = t->fi;
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   ir_Instr* instrs = ir_InstrList_get(&fi->instructions, 0);
-   uint32_t insert_loc = ir_InstrList_getCount(&fi->instructions);
-   for (uint32_t blk_id = 0; blk_id < num_blocks; blk_id++) {
-      ir_Block* b = &blocks[blk_id];
-      uint32_t last = b->instr.start + b->instr.count;
-      for (uint32_t j = b->instr.start; j < last; j++) {
-         const ir_Instr* ii = &instrs[j];
-         if (!ir_Instr_isPhi(ii)) continue;
-         ir_PhiClause* clauses = ir_PhiList_get(&fi->phis, (uint32_t)ii->args[0].value);
-         for (uint32_t c = 0; c < ii->args[1].value; c++) {
-            ir_PhiClause* pc = &clauses[c];
-            ir_Block* src = ir_BlockList_get(&fi->blocks, pc->src);
-            if (!src->dests[1]) continue;
-            ir_BlockId new_blk = ir_inserter_Inserter_findSplitEdge(&t->inserter, pc->src, blk_id);
-            if (!new_blk) {
-               new_blk = ir_inserter_Inserter_addBlock(&t->inserter, ir_BlockKind_PhiSplit);
-               ir_inserter_Inserter_addSplitEdge(&t->inserter, pc->src, blk_id, new_blk);
-               ir_Block* cur = ir_inserter_Inserter_getLastBlock(&t->inserter);
-               cur->used = 1;
-               cur->phi_source = 1;
-               cur->dests[0] = blk_id;
-               if (src->dests[0] == blk_id) src->dests[0] = new_blk;
-               else {
-                  (src->dests[1] == blk_id) || c2_assert("ir/register_alloc.c2", 489, "ir_tools.Tools.insertSplitEdges", "src.dests[1] == blk_id");
-                  src->dests[1] = new_blk;
-               }
-               uint32_t instr_idx = ir_inserter_Inserter_addInstr(&t->inserter, insert_loc);
-               ir_Instr* jmp = ir_inserter_Inserter_getLastInstr(&t->inserter);
-               ir_Ref jmp_ref = { .kind = ir_RefKind_JmpDest, .value = 0 };
-               ir_Instr_init1(jmp, ir_InstrKind_Jmp, jmp_ref);
-               cur->instr.start = instr_idx;
-               insert_loc++;
-            }
-            pc->src = new_blk;
-         }
-      }
-   }
-   ir_inserter_Inserter_insertBlocks(&t->inserter, &fi->blocks);
-}
-
-static void ir_tools_Tools_removeSplitEdges(ir_tools_Tools* t)
-{
-   ir_FunctionInfo* fi = t->fi;
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   uint32_t blk_id = num_blocks - 1;
-   while (1) {
-      ir_Block* b = &blocks[blk_id];
-      if (b->kind != ir_BlockKind_PhiSplit || b->instr.count != 1) break;
-      uint32_t dest = b->dests[0];
-      for (uint32_t i = 0; i < blk_id; i++) {
-         ir_Block* b2 = &blocks[i];
-         if (b2->dests[0] == blk_id) {
-            b2->dests[0] = dest;
-            break;
-         }
-         if (b2->dests[1] == blk_id) {
-            b2->dests[1] = dest;
-            break;
-         }
-      }
-      ir_InstrList_removeLastInstruction(&fi->instructions);
-      ir_BlockList_removeLastBlock(&fi->blocks);
-      blk_id--;
-   }
-}
-
-static void ir_tools_Tools_removeSameCopies(ir_tools_Tools* t)
-{
-   ir_FunctionInfo* fi = t->fi;
-   uint32_t num_instr = ir_InstrList_getCount(&fi->instructions);
-   ir_Instr* instrs = ir_InstrList_get(&fi->instructions, 0);
-   for (uint32_t i = 0; i < num_instr; i++) {
-      ir_Instr* ii = &instrs[i];
-      if (ir_Instr_isCopy(ii)) {
-         (ir_Instr_hasRegister(ii)) || c2_assert("ir/register_alloc.c2", 552, "ir_tools.Tools.removeSameCopies", "ii.hasRegister()");
-         if (ir_Ref_isRegister(&ii->args[0]) && ir_Instr_getRegister(ii) == ii->args[0].value) {
-            ir_Instr_clear(ii);
-         }
-      }
-   }
-}
-
-static void ir_tools_Tools_allocateRegisters(ir_tools_Tools* t, ir_FunctionInfo* fi)
-{
-   ir_tools_Tools_insertSplitEdges(t);
-   if (ir_inserter_Inserter_needsFixup(&t->inserter)) ir_tools_Tools_fixup_function(t);
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   ir_rpo_Rpo rpo; ir_rpo_Rpo_create(&rpo, fi);
-   ir_tools_LiveVector v; ir_tools_LiveVector_init(&v, num_blocks, ir_InstrList_getCount(&fi->instructions));
-   for (uint32_t i = 0; i < num_blocks; i++) {
-      uint32_t blk_id = rpo.blocks[i];
-      ir_tools_Tools_checkBlockLiveness(t, blk_id, &v);
-   }
-   ir_rpo_Rpo_free(&rpo);
-   bool changed = true;
-   while (changed) {
-      changed = false;
-      for (uint32_t i = 0; i < num_blocks; i++) {
-         ir_Block* b = &blocks[i];
-         uint16_t blk_id = (uint16_t)i;
-         ir_live_map_Iter iter = ir_live_map_Map_getList(v.live_out, blk_id);
-         for (uint32_t d = 0; d < 2; d++) {
-            uint16_t dest = (uint16_t)b->dests[d];
-            if (!dest) break;
-            ir_live_map_Iter iter2 = ir_live_map_Map_getList(v.live_in, dest);
-            for (uint32_t j = 0; j < iter2.count; j++) {
-               uint16_t var = iter2.ids[j];
-               if (!ir_live_map_Iter_contains(&iter, var)) {
-                  ir_live_map_Map_add(v.live_out, blk_id, var);
-                  iter = ir_live_map_Map_getList(v.live_out, blk_id);
-                  if (var < b->instr.start || var >= b->instr.start + b->instr.count) {
-                     ir_live_map_Map_addFiltered(v.live_in, blk_id, var);
-                  }
-                  changed = true;
-               }
-            }
-         }
-      }
-   }
-   for (uint32_t i = 0; i < num_blocks; i++) {
-      ir_tools_Tools_createBlockInterferences(t, i, fi, &v);
-   }
-   ir_interference_graph_InterferenceGraph_allocate(v.interferences, fi->num_args - 1);
-   const uint8_t* regmap = ir_interference_graph_InterferenceGraph_getRegs(v.interferences);
-   uint32_t num_instr = ir_InstrList_getCount(&fi->instructions);
-   ir_Instr* instrs = ir_InstrList_get(&fi->instructions, 0);
-   for (uint32_t i = 0; i < num_instr; i++) {
-      ir_Instr* ii = &instrs[i];
-      if (ir_Instr_hasResult(ii) && !ir_Instr_hasRegister(ii)) ir_Instr_setReg(ii, regmap[i]);
-      if (ir_Instr_isPhi(ii)) {
-      } else {
-         if (ir_Ref_isTemp(&ii->args[0])) {
-            ir_Ref_setRegister(&ii->args[0], regmap[ii->args[0].value]);
-         }
-         if (ir_Ref_isTemp(&ii->args[1])) {
-            ir_Ref_setRegister(&ii->args[1], regmap[ii->args[1].value]);
-         }
-      }
-   }
-   ir_PhiClause* clauses = ir_PhiList_get(&fi->phis, 0);
-   for (uint32_t i = 0; i < ir_PhiList_getCount(&fi->phis); i++) {
-      ir_PhiClause* pc = &clauses[i];
-      pc->dest_idx = regmap[pc->dest_idx];
-      if (ir_Ref_isTemp(&pc->ref)) {
-         ir_Ref_setRegister(&pc->ref, regmap[pc->ref.value]);
-      }
-   }
-   ir_tools_LiveVector_free(&v);
-   ir_tools_Tools_replacePhis(t);
-   ir_tools_Tools_removeSameCopies(t);
-   ir_Type ret_type = ir_FunctionInfo_getReturnType(fi);
-   if (ret_type != ir_Type_None) ir_tools_Tools_fixReturn(t, fi);
-}
-
-static void ir_tools_Tools_fixReturn(ir_tools_Tools* t, ir_FunctionInfo* fi)
-{
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   ir_Instr* instrs = ir_InstrList_get(&fi->instructions, 0);
-   for (uint32_t blk_id = 0; blk_id < num_blocks; blk_id++) {
-      ir_Block* b = &blocks[blk_id];
-      if (!b->instr.count) continue;
-      uint32_t instr_idx = b->instr.start + b->instr.count - 1;
-      ir_Instr* last = &instrs[instr_idx];
-      if (!ir_Instr_isReturn(last)) continue;
-      ir_Ref* ref = &last->args[0];
-      if (!ir_Ref_isConstant(ref)) continue;
-      uint32_t instr_idx2 = ir_inserter_Inserter_addInstr(&t->inserter, instr_idx);
-      ir_Instr* copy = ir_inserter_Inserter_getLastInstr(&t->inserter);
-      ir_Instr_initRegCopy(copy, 0, *ref);
-      ir_Ref_clear(ref);
-   }
-}
-
-static void ir_tools_Tools_createSSA(ir_tools_Tools* t)
-{
-   ir_FunctionInfo* fi = t->fi;
-   const uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   ir_inserter_Inserter_clear(&t->inserter, num_blocks, ir_InstrList_getCount(&fi->instructions));
-   ir_slot_collector_SlotCollector_fill(&t->collector, fi);
-   ir_rev_list_RevList_build(&t->revlist, fi);
-   bit_array_BitArray_reset(&t->active_blocks, num_blocks);
-   ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   for (uint32_t blk_id = 0; blk_id < num_blocks; blk_id++) {
-      ir_Block* b = &blocks[blk_id];
-      ir_slot_values_SlotValues_clear(&t->slot_values, fi->num_slots);
-      uint32_t last = b->instr.start + b->instr.count;
-      for (uint32_t j = b->instr.start; j < last; j++) {
-         ir_Instr* ii = ir_InstrList_get(&fi->instructions, j);
-         if (!ir_Instr_isCopy(ii)) continue;
-         if (!ir_Ref_isSlot(&ii->args[0])) continue;
-         uint16_t slot = (uint16_t)ii->args[0].value;
-         ir_Ref ref = ir_slot_values_SlotValues_find(&t->slot_values, slot);
-         if (ir_Ref_isNone(&ref)) {
-            ref = ir_tools_Tools_checkBlockRead(t, blk_id, slot);
-            if (ir_Ref_isNone(&ref)) {
-               printf("NONE for B%u  slot %d\n", blk_id, slot);
-            }
-            (!ir_Ref_isNone(&ref)) || c2_assert("ir/ssa.c2", 89, "ir_tools.Tools.createSSA", "!ref.isNone()");
-            ir_slot_values_SlotValues_set(&t->slot_values, slot, ref);
-         } else {
-         }
-         ii->args[0] = ref;
-      }
-      bit_array_BitArray_clear(&t->active_blocks, blk_id);
-   }
-}
-
-static ir_Ref ir_tools_Tools_checkBlockRead(ir_tools_Tools* t, ir_BlockId blk_id, uint16_t slot)
-{
-   ir_FunctionInfo* fi = t->fi;
-   ir_PhiClauses clauses; ir_PhiClauses_init(&clauses);
-   ir_rev_list_RevIndex revs = ir_rev_list_RevList_getBlockIndex(&t->revlist, blk_id);
-   for (uint32_t r = revs.start; r < revs.start + revs.count; r++) {
-      uint32_t rev_blk = ir_rev_list_RevList_getRev(&t->revlist, r);
-      if (!bit_array_BitArray_get(&t->active_blocks, rev_blk)) {
-         ir_Ref ref = ir_tools_Tools_checkPredBlock(t, rev_blk, slot, fi);
-         if (ir_Ref_isValid(&ref)) {
-            ir_PhiClauses_add(&clauses, rev_blk, ref);
-         }
-      }
-   }
-   ir_Ref ref = { };
-   if (ir_PhiClauses_getCount(&clauses)) {
-      if (ir_PhiClauses_getCount(&clauses) > 1) {
-         ir_Block* b = ir_BlockList_get(&fi->blocks, blk_id);
-         uint32_t loc = b->instr.start;
-         if (ir_Instr_isComment(ir_InstrList_get(&fi->instructions, loc))) loc++;
-         ref = ir_tools_Tools_addPhiInstr(t, fi, &clauses, loc, slot);
-      } else {
-         ref = clauses.stash[0].ref;
-      }
-      ir_slot_collector_SlotCollector_insertWriteIfNone(&t->collector, blk_id, slot, ref);
-   }
-   ir_PhiClauses_free(&clauses);
-   return ref;
-}
-
-static ir_Ref ir_tools_Tools_checkPredBlock(ir_tools_Tools* t, ir_BlockId blk_id, uint16_t slot, ir_FunctionInfo* fi)
-{
-   ir_Ref ref = { };
-   bit_array_BitArray_set(&t->active_blocks, blk_id);
-   const ir_Ref* wr = ir_slot_collector_SlotCollector_findWrite(&t->collector, blk_id, slot);
-   if (wr) {
-      bit_array_BitArray_clear(&t->active_blocks, blk_id);
-      return *wr;
-   }
-   ir_rev_list_RevIndex revs = ir_rev_list_RevList_getBlockIndex(&t->revlist, blk_id);
-   uint32_t rev_end = revs.start + revs.count;
-   ir_PhiClauses clauses; ir_PhiClauses_init(&clauses);
-   for (uint32_t j = revs.start; j < rev_end; j++) {
-      uint32_t rev_blk = ir_rev_list_RevList_getRev(&t->revlist, j);
-      if (!bit_array_BitArray_get(&t->active_blocks, rev_blk)) {
-         ir_Ref ref2 = ir_tools_Tools_checkPredBlock(t, rev_blk, slot, fi);
-         if (ir_Ref_isValid(&ref2)) {
-            ir_PhiClauses_add(&clauses, rev_blk, ref2);
-         }
-      }
-   }
-   if (ir_PhiClauses_getCount(&clauses) != 0) {
-      ir_slot_collector_ReadSlotAccess* my_read = ir_slot_collector_SlotCollector_findRead(&t->collector, blk_id, slot);
-      if (my_read) {
-         my_read->done = 1;
-      }
-      if (ir_PhiClauses_getCount(&clauses) != 0) {
-         if (ir_PhiClauses_getCount(&clauses) > 1) {
-            ir_Block* b = ir_BlockList_get(&fi->blocks, blk_id);
-            uint32_t loc = b->instr.start;
-            if (ir_Instr_isComment(ir_InstrList_get(&fi->instructions, loc))) loc++;
-            ref = ir_tools_Tools_addPhiInstr(t, fi, &clauses, loc, slot);
-            if (my_read) {
-            }
-         } else {
-            ref = clauses.stash[0].ref;
-         }
-         (ir_Ref_isValid(&ref)) || c2_assert("ir/ssa.c2", 194, "ir_tools.Tools.checkPredBlock", "ref.isValid()");
-         ir_slot_collector_SlotCollector_insertWrite(&t->collector, blk_id, slot, ref);
-         if (my_read) {
-         }
-      }
-   }
-   ir_PhiClauses_free(&clauses);
-   bit_array_BitArray_clear(&t->active_blocks, blk_id);
-   return ref;
-}
-
-static uint32_t ir_tools_getSlotName(uint32_t slot)
-{
-   return 4 + slot * 4;
-}
-
-static ir_Ref ir_tools_Tools_addPhiInstr(ir_tools_Tools* t, ir_FunctionInfo* fi, const ir_PhiClauses* cache, uint32_t loc, uint16_t slot)
-{
-   uint32_t instr_idx = ir_inserter_Inserter_addInstr(&t->inserter, loc);
-   ir_Ref out; ir_Ref_init(&out, ir_RefKind_Temp, instr_idx);
-   ir_Instr* ii = ir_inserter_Inserter_getLastInstr(&t->inserter);
-   uint32_t phi_start = ir_PhiList_addCache(&fi->phis, instr_idx, cache);
-   ir_Instr_initPhi(ii, phi_start, ir_PhiClauses_getCount(cache));
-   const ir_PhiClause* clauses = ir_PhiClauses_getClauses(cache);
-   for (uint32_t i = 0; i < ir_PhiClauses_getCount(cache); i++) {
-      ir_BlockId blk_id = clauses[i].src;
-      ir_Block* b = ir_BlockList_get(&fi->blocks, blk_id);
-      b->phi_source = 1;
-   }
-   ir_Ref comment_ref; ir_Ref_init(&comment_ref, ir_RefKind_Text, ir_tools_getSlotName(slot));
-   ir_inserter_Inserter_addInstr(&t->inserter, loc);
-   ir_Instr* ii2 = ir_inserter_Inserter_getLastInstr(&t->inserter);
-   ir_Instr_init1(ii2, ir_InstrKind_Comment, comment_ref);
-   return out;
-}
-
-static void ir_tools_Tools_eliminateCopies(ir_tools_Tools* t)
-{
-   ir_FunctionInfo* fi = t->fi;
-   ir_copy_list_CopyList_clear(&t->copies);
-   ir_Instr* all = ir_InstrList_get(&fi->instructions, 0);
-   for (uint32_t i = 0; i < ir_InstrList_getCount(&fi->instructions); i++) {
-      ir_Instr* instr = &all[i];
-      if (ir_Instr_isCopy(instr)) {
-         ir_copy_list_CopyList_add(&t->copies, i, instr->args[0]);
-         ir_Instr_clear(instr);
-      }
-   }
-   for (uint32_t i = 0; i < ir_InstrList_getCount(&fi->instructions); i++) {
-      ir_Instr* instr = &all[i];
-      if (ir_Instr_isPhi(instr)) {
-         ir_PhiClause* clauses = ir_PhiList_get(&fi->phis, (uint32_t)instr->args[0].value);
-         for (uint32_t j = 0; j < instr->args[1].value; j++) {
-            ir_Ref* r = &clauses[j].ref;
-            if (ir_Ref_isTemp(r)) {
-               ir_Ref* copy = ir_copy_list_CopyList_find(&t->copies, (uint32_t)r->value);
-               if (copy) {
-                  *r = *copy;
-               }
-            }
-         }
-      } else {
-         ir_Ref* r = &instr->args[0];
-         if (ir_Ref_isTemp(r)) {
-            ir_Ref* copy = ir_copy_list_CopyList_find(&t->copies, (uint32_t)r->value);
-            if (copy) {
-               instr->args[0] = *copy;
-            }
-         }
-         r = &instr->args[1];
-         if (ir_Ref_isTemp(r)) {
-            ir_Ref* copy = ir_copy_list_CopyList_find(&t->copies, (uint32_t)r->value);
-            if (copy) {
-               instr->args[1] = *copy;
-            }
-         }
-      }
-   }
-}
-
-static void ir_tools_Tools_checkRef(ir_tools_Tools* t, ir_Ref r)
-{
-   if (ir_Ref_isTemp(&r)) usage_counter_Counter_incr(&t->usage, (uint32_t)r.value);
-}
-
-static void ir_tools_Tools_removeUnused(ir_tools_Tools* t)
-{
-   ir_FunctionInfo* fi = t->fi;
-   usage_counter_Counter_clear(&t->usage, ir_InstrList_getCount(&fi->instructions));
-   ir_Instr* all = ir_InstrList_get(&fi->instructions, 0);
-   for (uint32_t i = 0; i < ir_InstrList_getCount(&fi->instructions); i++) {
-      ir_Instr* is = &all[i];
-      if (ir_Instr_hasResult(is)) usage_counter_Counter_incr(&t->usage, i);
-      switch (ir_Instr_getKind(is)) {
-      case ir_InstrKind_Call:
-         usage_counter_Counter_incr(&t->usage, i);
-         usage_counter_Counter_incr(&t->usage, i);
-         ir_tools_Tools_checkRef(t, is->args[0]);
-         ir_tools_Tools_checkRef(t, is->args[1]);
-         break;
-      case ir_InstrKind_Switch:
-         ir_tools_Tools_checkRef(t, is->args[0]);
-         break;
-      case ir_InstrKind_Phi: {
-         ir_PhiClause* clauses = ir_PhiList_get(&fi->phis, (uint32_t)is->args[0].value);
-         for (uint32_t p = 0; p < is->args[1].value; p++) {
-            ir_tools_Tools_checkRef(t, clauses[p].ref);
-         }
-         break;
-      }
-      default:
-         ir_tools_Tools_checkRef(t, is->args[0]);
-         ir_tools_Tools_checkRef(t, is->args[1]);
-         break;
-      }
-   }
-   usage_counter_Counter_fillQueue(&t->usage);
-   while (usage_counter_Counter_hasWork(&t->usage)) {
-      uint32_t i = usage_counter_Counter_popHead(&t->usage);
-      ir_Instr* is = &all[i];
-      ir_Ref* r = &is->args[0];
-      if (ir_Ref_isTemp(r)) usage_counter_Counter_decr(&t->usage, (uint32_t)r->value);
-      r = &is->args[1];
-      if (ir_Ref_isTemp(r)) usage_counter_Counter_decr(&t->usage, (uint32_t)r->value);
-      ir_Instr_clear(is);
-   }
-}
-
-static bool ir_tools_Tools_propagateConstants(ir_tools_Tools* t)
-{
-   ir_FunctionInfo* fi = t->fi;
-   bool changed = false;
-   uint32_t matches = 0;
-   ir_Instr* all = ir_InstrList_get(&fi->instructions, 0);
-   for (uint32_t i = 0; i < ir_InstrList_getCount(&fi->instructions); i++) {
-      ir_Instr* instr = &all[i];
-      if (!ir_Instr_isArithmetic(instr)) continue;
-      if (!ir_Ref_isConstant(&instr->args[0])) continue;
-      if (ir_Ref_isConstant(&instr->args[1])) {
-         matches++;
-         printf("MATCH %u  %u\n", i, matches);
-         changed = true;
-      } else {
-         switch (ir_Instr_getKind(instr)) {
-         case ir_InstrKind_Add:
-         case ir_InstrKind_Mul:
-            break;
-         default:
-            continue;
-         }
-         changed = true;
-         ir_Ref tmp = instr->args[0];
-         instr->args[0] = instr->args[1];
-         instr->args[1] = tmp;
-      }
-   }
-   return changed;
-}
-
-static void ir_tools_Tools_removeNone(ir_tools_Tools* t)
-{
-   ir_FunctionInfo* fi = t->fi;
-   ir_inserter_Inserter_clear(&t->inserter, ir_BlockList_getCount(&fi->blocks), ir_InstrList_getCount(&fi->instructions));
-   ir_tools_Tools_fixup_function(t);
-}
-
-static void ir_tools_Tools_fixup_function(ir_tools_Tools* t)
-{
-   ir_FunctionInfo* fi = t->fi;
-   uint32_t old_icount = ir_InstrList_getCount(&fi->instructions);
-   uint32_t total = old_icount + ir_inserter_Inserter_getInstrCount(&t->inserter);
-   ir_InstrList new_instrs; ir_InstrList_init(&new_instrs, total);
-   ir_lookup_table_Table_clear(&t->conversion, total);
-   ir_inserter_Inserter_start(&t->inserter);
-   const ir_Instr* old_instrs = ir_InstrList_get(&fi->instructions, 0);
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   uint32_t new_index = 0;
-   for (uint32_t blk_id = 0; blk_id < num_blocks; blk_id++) {
-      ir_Block* b = ir_BlockList_get(&fi->blocks, blk_id);
-      uint32_t i_start = b->instr.start;
-      uint32_t i_count = b->instr.count;
-      uint32_t new_start = new_index;
-      while (ir_inserter_Inserter_hasInsert(&t->inserter, i_start)) {
-         ir_Instr* is = ir_InstrList_add(&new_instrs);
-         ir_Instr_copy(is, ir_inserter_Inserter_getInstr(&t->inserter));
-         ir_lookup_table_Table_set(&t->conversion, ir_inserter_Inserter_getInstrIdx(&t->inserter), new_index);
-         ir_inserter_Inserter_next(&t->inserter);
-         new_index++;
-      }
-      for (uint32_t j = i_start; j < i_start + i_count; j++) {
-         while (ir_inserter_Inserter_hasInsert(&t->inserter, j)) {
-            ir_Instr* is = ir_InstrList_add(&new_instrs);
-            ir_Instr_copy(is, ir_inserter_Inserter_getInstr(&t->inserter));
-            ir_lookup_table_Table_set(&t->conversion, ir_inserter_Inserter_getInstrIdx(&t->inserter), new_index);
-            ir_inserter_Inserter_next(&t->inserter);
-            new_index++;
-         }
-         if (ir_Instr_isNone(&old_instrs[j])) continue;
-         ir_Instr* is = ir_InstrList_add(&new_instrs);
-         ir_Instr_copy(is, &old_instrs[j]);
-         ir_lookup_table_Table_set(&t->conversion, j, new_index);
-         new_index++;
-      }
-      b->instr.start = new_start;
-      b->instr.count = new_index - new_start;
-   }
-   ir_InstrList_swap(&new_instrs, &fi->instructions);
-   ir_InstrList_free(&new_instrs);
-   ir_inserter_Inserter_clear(&t->inserter, 0, 0);
-   ir_Instr* instrs = ir_InstrList_get(&fi->instructions, 0);
-   ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   for (uint32_t i = 0; i < num_blocks; i++) {
-      ir_Block* b = &blocks[i];
-      uint32_t i_start = b->instr.start;
-      uint32_t i_count = b->instr.count;
-      for (uint32_t j = i_start; j < i_start + i_count; j++) {
-         ir_Instr* is = &instrs[j];
-         if (ir_Instr_isPhi(is)) {
-            ir_PhiClause* clauses = ir_PhiList_get(&fi->phis, (uint32_t)is->args[0].value);
-            for (uint32_t p = 0; p < is->args[1].value; p++) {
-               ir_PhiClause* pc = &clauses[p];
-               pc->dest_idx = ir_lookup_table_Table_get(&t->conversion, pc->dest_idx);
-               ir_Ref* r = &pc->ref;
-               if (ir_Ref_isTemp(r)) r->value = (int32_t)ir_lookup_table_Table_get(&t->conversion, (uint32_t)r->value);
-            }
-         } else {
-            ir_Ref* r = &is->args[0];
-            if (ir_Ref_isTemp(r)) r->value = (int32_t)ir_lookup_table_Table_get(&t->conversion, (uint32_t)r->value);
-            r = &is->args[1];
-            if (ir_Ref_isTemp(r)) r->value = (int32_t)ir_lookup_table_Table_get(&t->conversion, (uint32_t)r->value);
-         }
-      }
-   }
-}
-
-static bool ir_tools_Tools_convert_switches(ir_tools_Tools* t)
-{
-   ir_FunctionInfo* fi = t->fi;
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   index_list_List block_order; index_list_List_init(&block_order, num_blocks + 16);
-   ir_inserter_Inserter* inserter = &t->inserter;
-   ir_inserter_Inserter_clear(inserter, num_blocks, ir_InstrList_getCount(&fi->instructions));
-   ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   for (uint32_t i = 0; i < num_blocks; i++) {
-      index_list_List_add(&block_order, i);
-      ir_Block* b = &blocks[i];
-      if (b->end_with_switch) ir_tools_Tools_convert_switch_linear(t, fi, i, &block_order);
-   }
-   if (ir_inserter_Inserter_hasBlocks(inserter)) {
-      ir_CaseList_clear(&fi->cases);
-      ir_inserter_Inserter_insertBlocks(inserter, &fi->blocks);
-      ir_tools_Tools_markUsedBlocks(t, fi);
-      ir_tools_Tools_reorder_blocks(t, fi, &block_order);
-      index_list_List_free(&block_order);
-      return true;
-   }
-   index_list_List_free(&block_order);
-   return false;
-}
-
-static void ir_tools_Tools_convert_switch_linear(ir_tools_Tools* t, ir_FunctionInfo* fi, uint32_t blk_id, index_list_List* block_order)
-{
-   ir_inserter_Inserter* inserter = &t->inserter;
-   ir_Block* b = ir_BlockList_get(&fi->blocks, blk_id);
-   uint32_t switch_loc = b->instr.start + b->instr.count - 1;
-   ir_Instr* ii = ir_InstrList_get(&fi->instructions, switch_loc);
-   ir_Ref cond = ii->args[0];
-   ir_BlockId join_blk = (uint32_t)ii->args[1].value;
-   ir_CaseId case_id = b->dests[0];
-   uint32_t num_cases = b->dests[1];
-   b->end_with_switch = 0;
-   ir_Ref jmp_ref; ir_Ref_init(&jmp_ref, ir_RefKind_JmpDest, 0);
-   ir_Instr_init1(ii, ir_InstrKind_Jmp, jmp_ref);
-   ir_Block_setDest(b, ir_inserter_Inserter_getNextBlockId(inserter), 0);
-   ir_InstrList_reserve(&fi->instructions, num_cases);
-   uint32_t loc = ir_InstrList_getCount(&fi->instructions);
-   for (uint32_t j = 0; j < num_cases; j++) {
-      bool last_case = (j == num_cases - 1);
-      ir_BlockId new_blk = ir_inserter_Inserter_addBlock(inserter, ir_BlockKind_SwitchCond);
-      index_list_List_add(block_order, new_blk);
-      ir_Block* cur = ir_inserter_Inserter_getLastBlock(inserter);
-      cur->used = 1;
-      cur->instr.start = loc;
-      cur->instr.count = 2;
-      ir_Case* cc = ir_CaseList_get(&fi->cases, case_id + j);
-      if (last_case) {
-         ir_Block* dest = ir_BlockList_get(&fi->blocks, cc->block);
-         if (cc->block == join_blk) {
-            cur->instr.count = 1;
-            ir_Block_setDest(cur, join_blk, 0);
-            ir_Instr* i = ir_InstrList_add(&fi->instructions);
-            ir_Instr_init1(i, ir_InstrKind_Jmp, jmp_ref);
-            return;
-         }
-         if (dest->kind == ir_BlockKind_SwitchDefault) {
-            cur->instr.count = 1;
-            ir_Block_setDest(cur, cc->block, 0);
-            ir_Instr* i = ir_InstrList_add(&fi->instructions);
-            ir_Instr_init1(i, ir_InstrKind_Jmp, jmp_ref);
-            return;
-         }
-      }
-      ir_BlockId next_blk = (last_case) ? join_blk : new_blk + 1;
-      ir_Block_setDest(cur, cc->block, next_blk);
-      ir_Ref cmp_result; ir_Ref_init(&cmp_result, ir_RefKind_Temp, loc);
-      ir_Ref case_value; ir_Ref_init(&case_value, ir_RefKind_Value, cc->value);
-      ir_Instr* i = ir_InstrList_add(&fi->instructions);
-      ir_Instr_init2b(i, ir_InstrKind_CmpEq, cond, case_value);
-      loc++;
-      i = ir_InstrList_add(&fi->instructions);
-      ir_Instr_init2(i, ir_InstrKind_JmpIf, cmp_result, jmp_ref);
-      loc++;
-   }
-}
-
-static void ir_tools_Tools_init(ir_tools_Tools* t, const ir_tools_Target* target, const void* arg1, ir_tools_PrintFn print)
-{
-   ir_lookup_table_Table_init(&t->conversion, 64);
-   ir_slot_values_SlotValues_create(&t->slot_values);
-   ir_slot_collector_SlotCollector_create(&t->collector);
-   ir_rev_list_RevList_create(&t->revlist, 256);
-   ir_inserter_Inserter_create(&t->inserter);
-   ir_copy_list_CopyList_init(&t->copies, 1024);
-   usage_counter_Counter_init(&t->usage, 1024);
-   t->target = target;
-   t->arg1 = arg1;
-   t->arg2 = NULL;
-   t->print = print;
-}
-
-static void ir_tools_Tools_free(ir_tools_Tools* t)
-{
-   usage_counter_Counter_free(&t->usage);
-   ir_copy_list_CopyList_free(&t->copies);
-   ir_inserter_Inserter_free(&t->inserter);
-   ir_rev_list_RevList_free(&t->revlist);
-   ir_slot_collector_SlotCollector_free(&t->collector);
-   ir_slot_values_SlotValues_free(&t->slot_values);
-   ir_lookup_table_Table_free(&t->conversion);
-}
-
-static void ir_tools_Tools_print_func(const ir_tools_Tools* t, const char* label)
-{
-   if (t->print) t->print(t->arg1, t->arg2, t->fi, label);
-}
-
-static void ir_tools_Tools_convert_fn(ir_tools_Tools* t)
-{
-   ir_FunctionInfo* fi = t->fi;
-   if (ir_BlockList_getCount(&fi->blocks) > 1) ir_tools_Tools_print_func(t, "after reorder");
-   bool changed = ir_tools_Tools_convert_switches(t);
-   if (changed) ir_tools_Tools_print_func(t, "after convert switch");
-   ir_tools_Tools_createSSA(t);
-   if (ir_inserter_Inserter_needsFixup(&t->inserter)) {
-      ir_tools_Tools_fixup_function(t);
-   }
-   if (ir_BlockList_getCount(&fi->blocks) > 1) ir_tools_Tools_print_func(t, "after create SSA");
-   ir_tools_Tools_eliminateCopies(t);
-   ir_tools_Tools_print_func(t, "after eliminate copies");
-   ir_tools_Tools_removeUnused(t);
-   ir_tools_Tools_removeNone(t);
-   ir_tools_Tools_print_func(t, "after remove none");
-   if (ir_tools_Tools_propagateConstants(t)) ir_tools_Tools_print_func(t, "after propagate constants");
-   ir_inserter_Inserter_clear(&t->inserter, ir_BlockList_getCount(&fi->blocks), ir_InstrList_getCount(&fi->instructions));
-   t->target->applyCallingConv(t, fi);
-   if (ir_inserter_Inserter_needsFixup(&t->inserter)) ir_tools_Tools_fixup_function(t);
-   ir_tools_Tools_print_func(t, "after ABI lowering");
-   (t->target->instructionSelection) || c2_assert("ir/tools.c2", 128, "ir_tools.Tools.convert_fn", "t.target.instructionSelection");
-   ir_inserter_Inserter_clear(&t->inserter, ir_BlockList_getCount(&fi->blocks), ir_InstrList_getCount(&fi->instructions));
-   t->target->instructionSelection(t, fi);
-   if (ir_inserter_Inserter_needsFixup(&t->inserter)) ir_tools_Tools_fixup_function(t);
-   ir_tools_Tools_print_func(t, "after instruction selection");
-   ir_tools_Tools_allocateRegisters(t, fi);
-   if (ir_inserter_Inserter_needsFixup(&t->inserter)) ir_tools_Tools_fixup_function(t);
-   ir_tools_Tools_print_func(t, "after register allocation + phi-removal");
-}
-
-static void ir_tools_Tools_markUsedBlocks(ir_tools_Tools* t, ir_FunctionInfo* fi)
-{
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   for (uint32_t i = 0; i < num_blocks; i++) {
-      blocks[i].checked = false;
-      blocks[i].used = blocks[i].phi_source;
-   }
-   ir_BlockId* blocks2 = malloc(num_blocks * 4);
-   blocks2[0] = 0;
-   blocks[0].checked = true;
-   blocks[0].used = true;
-   uint32_t head = 1;
-   uint32_t tail = 0;
-   while (head != tail) {
-      ir_BlockId blk_id = blocks2[tail];
-      ir_Block* b = &blocks[blk_id];
-      for (uint32_t d = 0; d < 2; d++) {
-         ir_BlockId dest_id = b->dests[d];
-         (dest_id < num_blocks) || c2_assert("ir/tools.c2", 168, "ir_tools.Tools.markUsedBlocks", "dest_id < num_blocks");
-         if (!dest_id) break;
-         ir_Block* dest = &blocks[dest_id];
-         if (!dest->checked) {
-            blocks2[head++] = dest_id;
-            dest->checked = true;
-            dest->used = true;
-         }
-      }
-      tail++;
-   }
-   free(blocks2);
-}
-
-static void ir_tools_Tools_reorder_blocks(ir_tools_Tools* t, ir_FunctionInfo* fi, const index_list_List* block_order)
-{
-   const uint32_t* order = index_list_List_getFrom(block_order, 0);
-   uint32_t num_blocks = index_list_List_getCount(block_order);
-   (num_blocks == ir_BlockList_getCount(&fi->blocks)) || c2_assert("ir/tools.c2", 194, "ir_tools.Tools.reorder_blocks", "num_blocks == fi.blocks.getCount()");
-   ir_BlockList list2; ir_BlockList_init(&list2, num_blocks);
-   ir_Block* blocks1 = ir_BlockList_get(&fi->blocks, 0);
-   ir_lookup_table_Table_clear(&t->conversion, num_blocks);
-   uint32_t blk_count = 0;
-   for (uint32_t i = 0; i < num_blocks; i++) {
-      ir_BlockId blk_id = order[i];
-      const ir_Block* old = &blocks1[blk_id];
-      if (!old->used) {
-         ir_Instr* instrs = ir_InstrList_get(&fi->instructions, old->instr.start);
-         for (uint32_t j = 0; j < old->instr.count; j++) ir_Instr_clear(&instrs[j]);
-         continue;
-      }
-      ir_BlockList_copy(&list2, old);
-      ir_lookup_table_Table_set(&t->conversion, blk_id, blk_count);
-      blk_count++;
-   }
-   ir_Block* blocks2 = ir_BlockList_get(&list2, 0);
-   (ir_lookup_table_Table_get(&t->conversion, 0) == 0) || c2_assert("ir/tools.c2", 216, "ir_tools.Tools.reorder_blocks", "t.conversion.get(0) == 0");
-   for (uint32_t i = 0; i < blk_count; i++) {
-      ir_Block* b = &blocks2[i];
-      if (b->end_with_switch) {
-         ir_CaseId case_id = b->dests[0];
-         uint32_t num_cases = b->dests[1];
-         for (uint32_t j = 0; j < num_cases; j++) {
-            ir_Case* cs = ir_CaseList_get(&fi->cases, case_id + j);
-            cs->block = ir_lookup_table_Table_get(&t->conversion, cs->block);
-         }
-         uint32_t instr_idx = b->instr.start + b->instr.count - 1;
-         ir_Instr* switch_instr = ir_InstrList_get(&fi->instructions, instr_idx);
-         (ir_Instr_isSwitch(switch_instr)) || c2_assert("ir/tools.c2", 230, "ir_tools.Tools.reorder_blocks", "switch_instr.isSwitch()");
-         ir_Ref* join_ref = &switch_instr->args[1];
-         join_ref->value = (int32_t)ir_lookup_table_Table_get(&t->conversion, (uint32_t)join_ref->value);
-      } else {
-         b->dests[0] = ir_lookup_table_Table_get(&t->conversion, b->dests[0]);
-         b->dests[1] = ir_lookup_table_Table_get(&t->conversion, b->dests[1]);
-      }
-   }
-   for (uint32_t i = 0; i < ir_PhiList_getCount(&fi->phis); i++) {
-      ir_PhiClause* pc = ir_PhiList_get(&fi->phis, i);
-      pc->src = ir_lookup_table_Table_get(&t->conversion, pc->src);
-   }
-   ir_InstrList_prune(&fi->instructions);
-   ir_BlockList_swap(&fi->blocks, &list2);
-   ir_BlockList_free(&list2);
-}
-
-
-// --- module arch_amd64 ---
-
-static void arch_amd64_applyCallingConv(ir_tools_Tools* t, ir_FunctionInfo* f);
-static void arch_amd64_instructionSelection(ir_tools_Tools* t, ir_FunctionInfo* f);
-static const ir_tools_Target arch_amd64_ArchInfo = {
-   .applyCallingConv = arch_amd64_applyCallingConv,
-   .instructionSelection = arch_amd64_instructionSelection,
-   .num_args_in_regs = 6,
-   .num_regs = 17,
-   .num_temps = 9,
-   .num_saved = 5,
-   .arg0_reg = 1,
-   .saved0_reg = 255,
-   .regs = NULL
-};
-static const ir_tools_Target* arch_amd64_getTarget(void);
-
-static void arch_amd64_instructionSelection(ir_tools_Tools* t, ir_FunctionInfo* f)
-{
-}
-
-static void arch_amd64_applyCallingConv(ir_tools_Tools* t, ir_FunctionInfo* f)
-{
-}
-
-static const ir_tools_Target* arch_amd64_getTarget(void)
-{
-   return &arch_amd64_ArchInfo;
-}
-
-
-// --- module arch_arm64 ---
-typedef struct arch_arm64_RegAlloc_ arch_arm64_RegAlloc;
-
-typedef uint8_t arch_arm64_Arm64_InstrKind;
-enum arch_arm64_Arm64_InstrKind {
-   arch_arm64_Arm64_InstrKind_Add,
-   arch_arm64_Arm64_InstrKind_Branch,
-   arch_arm64_Arm64_InstrKind_Beq,
-   arch_arm64_Arm64_InstrKind_Bne,
-   arch_arm64_Arm64_InstrKind_Cmp,
-   arch_arm64_Arm64_InstrKind_Mov,
-   arch_arm64_Arm64_InstrKind_Mul,
-   arch_arm64_Arm64_InstrKind_Lsl,
-   arch_arm64_Arm64_InstrKind_Ret,
-   arch_arm64_Arm64_InstrKind_Sub,
-};
-
-struct arch_arm64_RegAlloc_ {
-   uint32_t ngrn;
-   uint32_t nsrn;
-   uint32_t nprn;
-   int32_t nsaa;
-};
-
-static const char* arch_arm64_instr_names[10] = {
-   [arch_arm64_Arm64_InstrKind_Add] = "add",
-   [arch_arm64_Arm64_InstrKind_Branch] = "b",
-   [arch_arm64_Arm64_InstrKind_Beq] = "beq",
-   [arch_arm64_Arm64_InstrKind_Bne] = "bne",
-   [arch_arm64_Arm64_InstrKind_Cmp] = "cmp",
-   [arch_arm64_Arm64_InstrKind_Lsl] = "lsl",
-   [arch_arm64_Arm64_InstrKind_Mul] = "mul",
-   [arch_arm64_Arm64_InstrKind_Mov] = "mov",
-   [arch_arm64_Arm64_InstrKind_Ret] = "ret",
-   [arch_arm64_Arm64_InstrKind_Sub] = "sub"
-};
-static const char* arch_arm64_reg_names[32] = {
-   "w0",
-   "w1",
-   "w2",
-   "w3",
-   "w4",
-   "w5",
-   "w6",
-   "w7",
-   "w8",
-   "w9",
-   "w10",
-   "w11",
-   "w12",
-   "w13",
-   "w14",
-   "w15",
-   "w19",
-   "w20",
-   "w21",
-   "w22",
-   "w23",
-   "w24",
-   "w25",
-   "w26",
-   "w27",
-   "w28",
-   "w16",
-   "w17",
-   "w18",
-   "w29",
-   "w30",
-   "w31"
-};
-static void arch_arm64_applyCallingConv(ir_tools_Tools* t, ir_FunctionInfo* f);
-static void arch_arm64_instructionSelection(ir_tools_Tools* t, ir_FunctionInfo* f);
-static void arch_arm64_generateAsm(string_buffer_Buf* out, const char* name, const ir_FunctionInfo* fi, bool is_external);
-static const ir_tools_Target arch_arm64_ArchInfo = {
-   .applyCallingConv = arch_arm64_applyCallingConv,
-   .instructionSelection = arch_arm64_instructionSelection,
-   .generateAsm = arch_arm64_generateAsm,
-   .instr_names = arch_arm64_instr_names,
-   .num_instr = 10,
-   .register_names = arch_arm64_reg_names,
-   .num_args_in_regs = 8,
-   .num_regs = 32,
-   .num_temps = 8,
-   .num_saved = 10,
-   .arg0_reg = 0,
-   .saved0_reg = 16,
-   .regs = NULL
-};
-static const ir_tools_Target* arch_arm64_getTarget(void);
-
-static void arch_arm64_instructionSelection(ir_tools_Tools* t, ir_FunctionInfo* f)
-{
-   ir_FunctionInfo* fi = t->fi;
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   ir_Instr* instrs = ir_InstrList_get(&fi->instructions, 0);
-   arch_arm64_Arm64_InstrKind k;
-   for (uint32_t blk_id = 0; blk_id < num_blocks; blk_id++) {
-      ir_Block* b = &blocks[blk_id];
-      uint32_t last = b->instr.start + b->instr.count;
-      uint32_t num_arg = 0;
-      for (uint32_t j = b->instr.start; j < last; j++) {
-         ir_Instr* ii = &instrs[j];
-         switch (ir_Instr_getKind(ii)) {
-         case ir_InstrKind_None:
-            break;
-         case ir_InstrKind_Add:
-            ir_Instr_setArch(ii, arch_arm64_Arm64_InstrKind_Add);
-            break;
-         case ir_InstrKind_Sub:
-            ir_Instr_setArch(ii, arch_arm64_Arm64_InstrKind_Sub);
-            break;
-         case ir_InstrKind_Div:
-            break;
-         case ir_InstrKind_Rem:
-            break;
-         case ir_InstrKind_Mul:
-            if (ir_Ref_isConstant(&ii->args[1])) {
-               uint32_t power;
-               uint32_t value = (uint32_t)ii->args[1].value;
-               for (power = 1; power < 32; power++) {
-                  if (value == (1 << power)) {
-                     ir_Instr_setArch(ii, arch_arm64_Arm64_InstrKind_Lsl);
-                     ir_Ref_init(&ii->args[1], ir_RefKind_Value, power);
-                     goto next;
-                  }
-               }
-            }
-            ir_Instr_setArch(ii, arch_arm64_Arm64_InstrKind_Mul);
-            break;
-         case ir_InstrKind_IDiv:
-            break;
-         case ir_InstrKind_And:
-            break;
-         case ir_InstrKind_Or:
-            break;
-         case ir_InstrKind_Xor:
-            break;
-         case ir_InstrKind_Shr:
-            break;
-         case ir_InstrKind_Shl:
-            break;
-         case ir_InstrKind_CmpNe: {
-            (j + 1 != last) || c2_assert("ir/arch_arm64/arch_arm64.c2", 139, "arch_arm64.instructionSelection", "j + 1 != last");
-            ir_Instr* next = &instrs[j + 1];
-            ir_Instr_setArch(ii, arch_arm64_Arm64_InstrKind_Cmp);
-            ii->instrBits.has_result = 0;
-            (ir_Instr_getKind(next) == ir_InstrKind_JmpIf) || c2_assert("ir/arch_arm64/arch_arm64.c2", 143, "arch_arm64.instructionSelection", "next.getKind() == JmpIf");
-            ir_Instr_setArch(next, arch_arm64_Arm64_InstrKind_Beq);
-            ir_Ref_init(&next->args[0], ir_RefKind_Block, b->dests[1]);
-            ir_Ref_clear(&next->args[1]);
-            break;
-         }
-         case ir_InstrKind_CmpEq:
-            break;
-         case ir_InstrKind_CmpLt:
-            break;
-         case ir_InstrKind_CmpGt:
-            break;
-         case ir_InstrKind_CmpLe:
-            break;
-         case ir_InstrKind_CmpGe:
-            break;
-         case ir_InstrKind_Load1:
-            break;
-         case ir_InstrKind_Load2:
-            break;
-         case ir_InstrKind_Load4:
-            break;
-         case ir_InstrKind_Load8:
-            break;
-         case ir_InstrKind_Store1:
-            break;
-         case ir_InstrKind_Store2:
-            break;
-         case ir_InstrKind_Store4:
-            break;
-         case ir_InstrKind_Store8:
-            break;
-         case ir_InstrKind_Alloc1:
-         case ir_InstrKind_Alloc2:
-         case ir_InstrKind_Alloc4:
-         case ir_InstrKind_Alloc8:
-            (0) || c2_assert("ir/arch_arm64/arch_arm64.c2", 181, "arch_arm64.instructionSelection", "0");
-            break;
-         case ir_InstrKind_Jmp:
-            ir_Instr_setArch(ii, arch_arm64_Arm64_InstrKind_Branch);
-            ir_Ref_init(&ii->args[0], ir_RefKind_Block, b->dests[0]);
-            break;
-         case ir_InstrKind_JmpIf:
-            break;
-         case ir_InstrKind_Ret:
-            ir_Instr_setArch(ii, arch_arm64_Arm64_InstrKind_Ret);
-            break;
-         case ir_InstrKind_Halt:
-            break;
-         case ir_InstrKind_Call:
-            break;
-         case ir_InstrKind_Copy:
-            break;
-         case ir_InstrKind_Arch:
-         case ir_InstrKind_Param:
-         case ir_InstrKind_Arg:
-         case ir_InstrKind_Switch:
-         case ir_InstrKind_Phi:
-         case ir_InstrKind_Comment:
-            break;
-         }
-      next:;
-      }
-   }
-}
-
-static void arch_arm64_applyCallingConv(ir_tools_Tools* t, ir_FunctionInfo* f)
-{
-   ir_FunctionInfo* fi = t->fi;
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   ir_Instr* instrs = ir_InstrList_get(&fi->instructions, 0);
-   arch_arm64_RegAlloc regs = { };
-   for (uint32_t i = 0; i < f->num_args; i++) {
-      ir_Type tt = ir_FunctionInfo_getArg(f, i);
-   }
-   for (uint32_t i = 0; i < f->num_args; i++) {
-      ir_Type argtype = ir_FunctionInfo_getArg(f, i);
-      uint8_t size = 0;
-      uint8_t align = 0;
-      switch (argtype) {
-      case ir_Type_None:
-      case ir_Type_I8:
-      case ir_Type_I16:
-      case ir_Type_I32:
-      case ir_Type_I64:
-      case ir_Type_U8:
-      case ir_Type_U16:
-      case ir_Type_U32:
-      case ir_Type_U64:
-         if (regs.ngrn < 8) {
-            regs.ngrn++;
-            continue;
-         }
-         break;
-      case ir_Type_F32:
-      case ir_Type_F64:
-         if (regs.nsrn < 8) {
-            regs.nsrn++;
-            continue;
-         }
-         size = 8;
-         regs.nsaa += size;
-         continue;
-      }
-      if (align == 16) regs.ngrn = (regs.ngrn + 1) & ~0x1;
-   }
-   {
-      ir_Block* b0 = &blocks[0];
-      uint32_t num_arg = 0;
-      while (1) {
-         ir_Instr* ii = &instrs[b0->instr.start + num_arg];
-         if (!ir_Instr_isParam(ii)) break;
-         ii->instrBits.kind = ir_InstrKind_Copy;
-         ir_Ref_setRegister(&ii->args[0], num_arg);
-         num_arg++;
-      }
-   }
-   for (uint32_t blk_id = 0; blk_id < num_blocks; blk_id++) {
-      ir_Block* b = &blocks[blk_id];
-      uint32_t last = b->instr.start + b->instr.count;
-      uint32_t num_arg = 0;
-      for (uint32_t j = b->instr.start; j < last; j++) {
-         ir_Instr* ii = &instrs[j];
-         switch (ir_Instr_getKind(ii)) {
-         case ir_InstrKind_Call:
-            num_arg = 0;
-            break;
-         case ir_InstrKind_Ret:
-            if (!ir_Ref_isNone(&ii->args[0])) {
-               uint32_t instr_idx = ir_inserter_Inserter_addInstr(&t->inserter, j);
-               ir_Instr* ii2 = ir_inserter_Inserter_getLastInstr(&t->inserter);
-               ir_Instr_init1b(ii2, ir_InstrKind_Copy, ii->args[0]);
-               ir_Instr_setReg(ii2, 0);
-               ir_Ref_clear(&ii->args[0]);
-            }
-            break;
-         case ir_InstrKind_Arg:
-            ir_Instr_setReg(ii, (uint8_t)num_arg);
-            ii->instrBits.kind = ir_InstrKind_Copy;
-            num_arg++;
-            break;
-         default:
-            break;
-         }
-      }
-   }
-}
-
-static void arch_arm64_generateAsm(string_buffer_Buf* out, const char* name, const ir_FunctionInfo* fi, bool is_external)
-{
-   string_buffer_Buf_print(out, "\t.global %s\n", name);
-   string_buffer_Buf_print(out, "\t.type   %s, @function\n", name);
-   string_buffer_Buf_add(out, name);
-   string_buffer_Buf_add(out, ":\n");
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   const ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   ir_Instr* instrs = ir_InstrList_get(&fi->instructions, 0);
-   for (uint32_t blk_id = 0; blk_id < num_blocks; blk_id++) {
-      const ir_Block* b = &blocks[blk_id];
-      if (blk_id == 0) string_buffer_Buf_add(out, "# ");
-      string_buffer_Buf_print(out, ".BB%u_%u:\n", fi->id, blk_id);
-      uint32_t last = b->instr.start + b->instr.count;
-      uint32_t num_arg = 0;
-      for (uint32_t j = b->instr.start; j < last; j++) {
-         ir_Instr* ii = &instrs[j];
-         bool first = true;
-         if (ir_Instr_isNone(ii)) continue;
-         if (!ir_Instr_isArch(ii)) {
-            (ir_Instr_isCopy(ii)) || c2_assert("ir/arch_arm64/arch_arm64.c2", 356, "arch_arm64.generateAsm", "ii.isCopy()");
-            ir_Instr_setArch(ii, arch_arm64_Arm64_InstrKind_Mov);
-         }
-         string_buffer_Buf_print(out, "\t%-8s", arch_arm64_instr_names[ii->instrBits.arch_instr]);
-         if (ir_Instr_hasResult(ii)) {
-            (ir_Instr_hasRegister(ii)) || c2_assert("ir/arch_arm64/arch_arm64.c2", 361, "arch_arm64.generateAsm", "ii.hasRegister()");
-            string_buffer_Buf_print(out, "%s", arch_arm64_reg_names[ir_Instr_getRegister(ii)]);
-            first = false;
-         }
-         for (uint32_t i = 0; i < 2; i++) {
-            if (ir_Ref_isNone(&ii->args[i])) break;
-            if (!first) {
-               string_buffer_Buf_add(out, ", ");
-            }
-            first = false;
-            const ir_Ref* r = &ii->args[i];
-            switch (ir_Ref_getKind(r)) {
-            case ir_RefKind_None:
-            case ir_RefKind_Slot:
-            case ir_RefKind_Temp:
-               (0) || c2_assert("ir/arch_arm64/arch_arm64.c2", 376, "arch_arm64.generateAsm", "0");
-               break;
-            case ir_RefKind_JmpDest: {
-               (b->dests[0]) || c2_assert("ir/arch_arm64/arch_arm64.c2", 379, "arch_arm64.generateAsm", "b.dests[0]");
-               const ir_Block* dest = &blocks[b->dests[0]];
-               string_buffer_Buf_print(out, "@%s.%u", ir_Block_getKindName(dest), b->dests[0]);
-               break;
-            }
-            case ir_RefKind_Symbol:
-               (0) || c2_assert("ir/arch_arm64/arch_arm64.c2", 384, "arch_arm64.generateAsm", "0");
-               break;
-            case ir_RefKind_Value:
-               string_buffer_Buf_print(out, "#%d", r->value);
-               break;
-            case ir_RefKind_Integer:
-               (0) || c2_assert("ir/arch_arm64/arch_arm64.c2", 392, "arch_arm64.generateAsm", "0");
-               break;
-            case ir_RefKind_Float:
-               break;
-            case ir_RefKind_Double:
-               break;
-            case ir_RefKind_Text:
-               (0) || c2_assert("ir/arch_arm64/arch_arm64.c2", 403, "arch_arm64.generateAsm", "0");
-               break;
-            case ir_RefKind_Register:
-               string_buffer_Buf_print(out, "%s", arch_arm64_reg_names[r->value]);
-               break;
-            case ir_RefKind_Block:
-               string_buffer_Buf_print(out, ".BB%u_%d", fi->id, r->value);
-               break;
-            case ir_RefKind_PhiClause:
-            case ir_RefKind_CallNumArgs:
-               (0) || c2_assert("ir/arch_arm64/arch_arm64.c2", 414, "arch_arm64.generateAsm", "0");
-               break;
-            }
-         }
-         string_buffer_Buf_stripTrailingSpaces(out);
-         string_buffer_Buf_newline(out);
-      }
-   }
-   string_buffer_Buf_print(out, "\t.size   %s, .-%s\n", name, name);
-}
-
-static const ir_tools_Target* arch_arm64_getTarget(void)
-{
-   return &arch_arm64_ArchInfo;
-}
-
-
-// --- module arch_rv64 ---
-typedef struct arch_rv64_RegAlloc_ arch_rv64_RegAlloc;
-
-typedef uint8_t arch_rv64_RV64_InstrKind;
-enum arch_rv64_RV64_InstrKind {
-   arch_rv64_RV64_InstrKind_Add,
-   arch_rv64_RV64_InstrKind_AddIw,
-   arch_rv64_RV64_InstrKind_And,
-   arch_rv64_RV64_InstrKind_Beqz,
-   arch_rv64_RV64_InstrKind_Bnez,
-   arch_rv64_RV64_InstrKind_Divw,
-   arch_rv64_RV64_InstrKind_Jump,
-   arch_rv64_RV64_InstrKind_Li,
-   arch_rv64_RV64_InstrKind_Mul,
-   arch_rv64_RV64_InstrKind_Or,
-   arch_rv64_RV64_InstrKind_Remw,
-   arch_rv64_RV64_InstrKind_Ret,
-   arch_rv64_RV64_InstrKind_Slli,
-   arch_rv64_RV64_InstrKind_Sllw,
-   arch_rv64_RV64_InstrKind_Sraw,
-   arch_rv64_RV64_InstrKind_Sub,
-   arch_rv64_RV64_InstrKind_Xor,
-};
-
-struct arch_rv64_RegAlloc_ {
-   uint32_t ngrn;
-   int32_t nsaa;
-};
-
-static const char* arch_rv64_instr_names[17] = {
-   [arch_rv64_RV64_InstrKind_Add] = "add",
-   [arch_rv64_RV64_InstrKind_AddIw] = "addiw",
-   [arch_rv64_RV64_InstrKind_And] = "and",
-   [arch_rv64_RV64_InstrKind_Beqz] = "beqz",
-   [arch_rv64_RV64_InstrKind_Bnez] = "bnez",
-   [arch_rv64_RV64_InstrKind_Divw] = "divw",
-   [arch_rv64_RV64_InstrKind_Jump] = "j",
-   [arch_rv64_RV64_InstrKind_Mul] = "mul",
-   [arch_rv64_RV64_InstrKind_Li] = "li",
-   [arch_rv64_RV64_InstrKind_Or] = "or",
-   [arch_rv64_RV64_InstrKind_Remw] = "remw",
-   [arch_rv64_RV64_InstrKind_Ret] = "ret",
-   [arch_rv64_RV64_InstrKind_Slli] = "slli",
-   [arch_rv64_RV64_InstrKind_Sllw] = "sllw",
-   [arch_rv64_RV64_InstrKind_Sraw] = "sraw",
-   [arch_rv64_RV64_InstrKind_Sub] = "sub",
-   [arch_rv64_RV64_InstrKind_Xor] = "xor"
-};
-static const char* arch_rv64_reg_names[31] = {
-   "a0",
-   "a1",
-   "a2",
-   "a3",
-   "a4",
-   "a5",
-   "a6",
-   "a7",
-   "t0",
-   "t1",
-   "t2",
-   "t3",
-   "t4",
-   "t5",
-   "t6",
-   "s1",
-   "s2",
-   "s3",
-   "s4",
-   "s5",
-   "s6",
-   "s7",
-   "s8",
-   "s9",
-   "s10",
-   "s11",
-   "fp",
-   "sp",
-   "gp",
-   "tp",
-   "ra"
-};
-static void arch_rv64_applyCallingConv(ir_tools_Tools* t, ir_FunctionInfo* f);
-static void arch_rv64_instructionSelection(ir_tools_Tools* t, ir_FunctionInfo* f);
-static void arch_rv64_generateAsm(string_buffer_Buf* out, const char* name, const ir_FunctionInfo* fi, bool is_external);
-static const ir_tools_Target arch_rv64_ArchInfo = {
-   .applyCallingConv = arch_rv64_applyCallingConv,
-   .instructionSelection = arch_rv64_instructionSelection,
-   .generateAsm = arch_rv64_generateAsm,
-   .instr_names = arch_rv64_instr_names,
-   .num_instr = 17,
-   .register_names = arch_rv64_reg_names,
-   .num_args_in_regs = 8,
-   .num_regs = 32,
-   .num_temps = 7,
-   .num_saved = 11,
-   .arg0_reg = 0,
-   .saved0_reg = 15,
-   .regs = NULL
-};
-static const ir_tools_Target* arch_rv64_getTarget(void);
-
-static void arch_rv64_instructionSelection(ir_tools_Tools* t, ir_FunctionInfo* f)
-{
-   ir_FunctionInfo* fi = t->fi;
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   ir_Instr* instrs = ir_InstrList_get(&fi->instructions, 0);
-   arch_rv64_RV64_InstrKind k;
-   for (uint32_t blk_id = 0; blk_id < num_blocks; blk_id++) {
-      ir_Block* b = &blocks[blk_id];
-      uint32_t last = b->instr.start + b->instr.count;
-      uint32_t num_arg = 0;
-      for (uint32_t j = b->instr.start; j < last; j++) {
-         ir_Instr* ii = &instrs[j];
-         switch (ir_Instr_getKind(ii)) {
-         case ir_InstrKind_None:
-            break;
-         case ir_InstrKind_Add:
-            if (ir_Ref_isConstant(&ii->args[1])) {
-               ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_AddIw);
-               continue;
-            }
-            ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_Add);
-            break;
-         case ir_InstrKind_Sub:
-            if (ir_Ref_isConstant(&ii->args[1])) {
-               ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_AddIw);
-               ii->args[1].value *= -1;
-               continue;
-            }
-            break;
-         case ir_InstrKind_Div:
-            break;
-         case ir_InstrKind_Rem:
-            ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_Remw);
-            break;
-         case ir_InstrKind_Mul:
-            if (ir_Ref_isConstant(&ii->args[1])) {
-               uint32_t power;
-               uint32_t value = (uint32_t)ii->args[1].value;
-               for (power = 1; power < 32; power++) {
-                  if (value == (1 << power)) {
-                     ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_Slli);
-                     ir_Ref_init(&ii->args[1], ir_RefKind_Value, power);
-                     goto next;
-                  }
-               }
-            }
-            break;
-         case ir_InstrKind_IDiv:
-            ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_Divw);
-            break;
-         case ir_InstrKind_And:
-            ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_And);
-            break;
-         case ir_InstrKind_Or:
-            ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_Or);
-            break;
-         case ir_InstrKind_Xor:
-            ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_Xor);
-            break;
-         case ir_InstrKind_Shr:
-            ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_Sraw);
-            break;
-         case ir_InstrKind_Shl:
-            ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_Sllw);
-            break;
-         case ir_InstrKind_CmpNe: {
-            (j + 1 != last) || c2_assert("ir/arch_rv64/arch_rv64.c2", 162, "arch_rv64.instructionSelection", "j + 1 != last");
-            ir_Instr* next = &instrs[j + 1];
-            (ir_Instr_getKind(next) == ir_InstrKind_JmpIf) || c2_assert("ir/arch_rv64/arch_rv64.c2", 164, "arch_rv64.instructionSelection", "next.getKind() == JmpIf");
-            if (ir_Ref_isZero(&ii->args[1])) {
-               ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_Bnez);
-               ii->instrBits.has_result = 0;
-               ir_Ref_init(&ii->args[1], ir_RefKind_Block, b->dests[0]);
-            } else {
-               (0) || c2_assert("ir/arch_rv64/arch_rv64.c2", 171, "arch_rv64.instructionSelection", "0");
-            }
-            ir_Instr_setArch(next, arch_rv64_RV64_InstrKind_Jump);
-            ir_Ref_init(&next->args[0], ir_RefKind_Block, b->dests[1]);
-            ir_Ref_clear(&next->args[1]);
-            break;
-         }
-         case ir_InstrKind_CmpEq:
-            break;
-         case ir_InstrKind_CmpLt:
-            break;
-         case ir_InstrKind_CmpGt:
-            break;
-         case ir_InstrKind_CmpLe:
-            break;
-         case ir_InstrKind_CmpGe:
-            break;
-         case ir_InstrKind_Load1:
-            break;
-         case ir_InstrKind_Load2:
-            break;
-         case ir_InstrKind_Load4:
-            if (ir_Ref_isConstant(&ii->args[0])) {
-               ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_Li);
-            } else {
-            }
-            break;
-         case ir_InstrKind_Load8:
-            break;
-         case ir_InstrKind_Store1:
-            break;
-         case ir_InstrKind_Store2:
-            break;
-         case ir_InstrKind_Store4:
-            break;
-         case ir_InstrKind_Store8:
-            break;
-         case ir_InstrKind_Alloc1:
-         case ir_InstrKind_Alloc2:
-         case ir_InstrKind_Alloc4:
-         case ir_InstrKind_Alloc8:
-            (0) || c2_assert("ir/arch_rv64/arch_rv64.c2", 215, "arch_rv64.instructionSelection", "0");
-            break;
-         case ir_InstrKind_Jmp:
-            ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_Jump);
-            ir_Ref_init(&ii->args[0], ir_RefKind_Block, b->dests[0]);
-            break;
-         case ir_InstrKind_JmpIf:
-            (0) || c2_assert("ir/arch_rv64/arch_rv64.c2", 223, "arch_rv64.instructionSelection", "0");
-            break;
-         case ir_InstrKind_Ret:
-            ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_Ret);
-            break;
-         case ir_InstrKind_Halt:
-            break;
-         case ir_InstrKind_Call:
-            break;
-         case ir_InstrKind_Copy:
-            break;
-         case ir_InstrKind_Arch:
-         case ir_InstrKind_Param:
-         case ir_InstrKind_Arg:
-         case ir_InstrKind_Switch:
-         case ir_InstrKind_Phi:
-         case ir_InstrKind_Comment:
-            break;
-         }
-      next:;
-      }
-   }
-}
-
-static void arch_rv64_generateAsm(string_buffer_Buf* out, const char* name, const ir_FunctionInfo* fi, bool is_external)
-{
-   string_buffer_Buf_print(out, "\t.global %s\n", name);
-   string_buffer_Buf_print(out, "\t.type   %s, @function\n", name);
-   string_buffer_Buf_add(out, name);
-   string_buffer_Buf_add(out, ":\n");
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   const ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   ir_Instr* instrs = ir_InstrList_get(&fi->instructions, 0);
-   for (uint32_t blk_id = 0; blk_id < num_blocks; blk_id++) {
-      const ir_Block* b = &blocks[blk_id];
-      if (blk_id == 0) string_buffer_Buf_add(out, "# ");
-      string_buffer_Buf_print(out, ".BB%u_%u:\n", fi->id, blk_id);
-      uint32_t last = b->instr.start + b->instr.count;
-      uint32_t num_arg = 0;
-      for (uint32_t j = b->instr.start; j < last; j++) {
-         ir_Instr* ii = &instrs[j];
-         bool first = true;
-         if (ir_Instr_isNone(ii)) continue;
-         if (!ir_Instr_isArch(ii)) {
-            (ir_Instr_isCopy(ii)) || c2_assert("ir/arch_rv64/arch_rv64.c2", 278, "arch_rv64.generateAsm", "ii.isCopy()");
-            if (ir_Ref_isValue(&ii->args[0])) {
-               ir_Instr_setArch(ii, arch_rv64_RV64_InstrKind_Li);
-            } else {
-               (0) || c2_assert("ir/arch_rv64/arch_rv64.c2", 282, "arch_rv64.generateAsm", "0");
-            }
-         }
-         string_buffer_Buf_print(out, "\t%-8s", arch_rv64_instr_names[ii->instrBits.arch_instr]);
-         if (ir_Instr_hasResult(ii)) {
-            (ir_Instr_hasRegister(ii)) || c2_assert("ir/arch_rv64/arch_rv64.c2", 287, "arch_rv64.generateAsm", "ii.hasRegister()");
-            string_buffer_Buf_print(out, "%s", arch_rv64_reg_names[ir_Instr_getRegister(ii)]);
-            first = false;
-         }
-         for (uint32_t i = 0; i < 2; i++) {
-            if (ir_Ref_isNone(&ii->args[i])) break;
-            if (!first) {
-               string_buffer_Buf_add(out, ", ");
-            }
-            first = false;
-            const ir_Ref* r = &ii->args[i];
-            switch (ir_Ref_getKind(r)) {
-            case ir_RefKind_None:
-            case ir_RefKind_Slot:
-            case ir_RefKind_Temp:
-               (0) || c2_assert("ir/arch_rv64/arch_rv64.c2", 302, "arch_rv64.generateAsm", "0");
-               break;
-            case ir_RefKind_JmpDest: {
-               (b->dests[0]) || c2_assert("ir/arch_rv64/arch_rv64.c2", 305, "arch_rv64.generateAsm", "b.dests[0]");
-               const ir_Block* dest = &blocks[b->dests[0]];
-               string_buffer_Buf_print(out, "@%s.%u", ir_Block_getKindName(dest), b->dests[0]);
-               break;
-            }
-            case ir_RefKind_Symbol:
-               (0) || c2_assert("ir/arch_rv64/arch_rv64.c2", 310, "arch_rv64.generateAsm", "0");
-               break;
-            case ir_RefKind_Value:
-               string_buffer_Buf_print(out, "%d", r->value);
-               break;
-            case ir_RefKind_Integer:
-               (0) || c2_assert("ir/arch_rv64/arch_rv64.c2", 318, "arch_rv64.generateAsm", "0");
-               break;
-            case ir_RefKind_Float:
-               break;
-            case ir_RefKind_Double:
-               break;
-            case ir_RefKind_Text:
-               (0) || c2_assert("ir/arch_rv64/arch_rv64.c2", 329, "arch_rv64.generateAsm", "0");
-               break;
-            case ir_RefKind_Register:
-               string_buffer_Buf_print(out, "%s", arch_rv64_reg_names[r->value]);
-               break;
-            case ir_RefKind_Block:
-               string_buffer_Buf_print(out, ".BB%u_%d", fi->id, r->value);
-               break;
-            case ir_RefKind_PhiClause:
-            case ir_RefKind_CallNumArgs:
-               (0) || c2_assert("ir/arch_rv64/arch_rv64.c2", 340, "arch_rv64.generateAsm", "0");
-               break;
-            }
-         }
-         string_buffer_Buf_newline(out);
-      }
-   }
-   string_buffer_Buf_print(out, "\t.size   %s, .-%s\n", name, name);
-}
-
-static void arch_rv64_applyCallingConv(ir_tools_Tools* t, ir_FunctionInfo* f)
-{
-   ir_FunctionInfo* fi = t->fi;
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   ir_Block* blocks = ir_BlockList_get(&fi->blocks, 0);
-   ir_Instr* instrs = ir_InstrList_get(&fi->instructions, 0);
-   arch_rv64_RegAlloc regs = { };
-   {
-      ir_Block* b0 = &blocks[0];
-      uint32_t num_arg = 0;
-      while (1) {
-         ir_Instr* ii = &instrs[b0->instr.start + num_arg];
-         if (!ir_Instr_isParam(ii)) break;
-         ii->instrBits.kind = ir_InstrKind_Copy;
-         ir_Ref_setRegister(&ii->args[0], num_arg);
-         num_arg++;
-      }
-   }
-   for (uint32_t blk_id = 0; blk_id < num_blocks; blk_id++) {
-      ir_Block* b = &blocks[blk_id];
-      uint32_t last = b->instr.start + b->instr.count;
-      uint32_t num_arg = 0;
-      for (uint32_t j = b->instr.start; j < last; j++) {
-         ir_Instr* ii = &instrs[j];
-         switch (ir_Instr_getKind(ii)) {
-         case ir_InstrKind_Call:
-            num_arg = 0;
-            break;
-         case ir_InstrKind_Ret:
-            if (!ir_Ref_isNone(&ii->args[0])) {
-               uint32_t instr_idx = ir_inserter_Inserter_addInstr(&t->inserter, j);
-               ir_Instr* ii2 = ir_inserter_Inserter_getLastInstr(&t->inserter);
-               ir_Instr_init1b(ii2, ir_InstrKind_Copy, ii->args[0]);
-               ir_Instr_setReg(ii2, 0);
-               ir_Ref_clear(&ii->args[0]);
-            }
-            break;
-         case ir_InstrKind_Arg:
-            ir_Instr_setReg(ii, (uint8_t)num_arg);
-            ii->instrBits.kind = ir_InstrKind_Copy;
-            num_arg++;
-            break;
-         default:
-            break;
-         }
-      }
-   }
-}
-
-static const ir_tools_Target* arch_rv64_getTarget(void)
-{
-   return &arch_rv64_ArchInfo;
 }
 
 
@@ -42582,7 +35618,7 @@ static void c2_parser_Parser_dump_token(c2_parser_Parser* p, const token_Token* 
 static bool c2_parser_Parser_checkName(c2_parser_Parser* p, uint32_t name_idx, bool is_interface);
 static stmt_list_List* c2_parser_Parser_getStmtList(c2_parser_Parser* p);
 static void c2_parser_Parser_putStmtList(c2_parser_Parser* p);
-static const c2_prec_Prec c2_parser_BinOpPrecLookup[128] = {
+static const c2_prec_Prec c2_parser_BinOpPrecLookup[122] = {
    [token_Kind_Comma] = c2_prec_Prec_Comma,
    [token_Kind_Equal] = c2_prec_Prec_Assignment,
    [token_Kind_StarEqual] = c2_prec_Prec_Assignment,
@@ -42615,7 +35651,7 @@ static const c2_prec_Prec c2_parser_BinOpPrecLookup[128] = {
    [token_Kind_Slash] = c2_prec_Prec_Multiplicative,
    [token_Kind_Star] = c2_prec_Prec_Multiplicative
 };
-static const ast_BinaryOpcode c2_parser_BinOpTokenLookup[128] = {
+static const ast_BinaryOpcode c2_parser_BinOpTokenLookup[122] = {
    [token_Kind_Star] = ast_BinaryOpcode_Multiply,
    [token_Kind_Slash] = ast_BinaryOpcode_Divide,
    [token_Kind_Percent] = ast_BinaryOpcode_Remainder,
@@ -42646,7 +35682,7 @@ static const ast_BinaryOpcode c2_parser_BinOpTokenLookup[128] = {
    [token_Kind_CaretEqual] = ast_BinaryOpcode_XorAssign,
    [token_Kind_PipeEqual] = ast_BinaryOpcode_OrAssign
 };
-static const uint8_t c2_parser_CastExprTokenLookup[128] = {
+static const uint8_t c2_parser_CastExprTokenLookup[122] = {
    [token_Kind_Identifier] = 1,
    [token_Kind_IntegerLiteral] = 2,
    [token_Kind_FloatLiteral] = 3,
@@ -42696,7 +35732,6 @@ static ast_Expr* c2_parser_Parser_parseCallExpr(c2_parser_Parser* p, ast_Expr* f
 static ast_Expr* c2_parser_Parser_parseTemplateCallExpr(c2_parser_Parser* p, ast_Expr* func, const ast_TypeRefHolder* ref);
 static ast_Expr* c2_parser_Parser_parseImpureMemberExpr(c2_parser_Parser* p, ast_Expr* base);
 static ast_Expr* c2_parser_Parser_parsePureMemberExpr(c2_parser_Parser* p);
-static ast_IdentifierExpr* c2_parser_Parser_parseIdentifier(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseStringLiteral(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseParenExpr(c2_parser_Parser* p);
 static bool c2_parser_Parser_isTemplateFunctionCall(c2_parser_Parser* p);
@@ -42824,8 +35859,8 @@ static void c2_parser_Parser_consumeToken(c2_parser_Parser* p)
 
 static token_Kind c2_parser_Parser_peekToken(c2_parser_Parser* p, uint32_t n)
 {
-   (n > 0) || c2_assert("parser/c2_parser.c2", 195, "c2_parser.Parser.peekToken", "n > 0");
-   (n <= c2_parser_MaxLookahead) || c2_assert("parser/c2_parser.c2", 196, "c2_parser.Parser.peekToken", "n <= MaxLookahead");
+   ;//assert(n > 0);
+   ;//assert(n <= c2_parser_MaxLookahead);
    while (p->next_count < n) {
       const uint32_t slot = (p->next_head + p->next_count) % c2_parser_MaxLookahead;
       c2_tokenizer_Tokenizer_lex(&p->tokenizer, &p->next[slot]);
@@ -43438,7 +36473,7 @@ static bool c2_parser_Parser_checkName(c2_parser_Parser* p, uint32_t name_idx, b
 
 static stmt_list_List* c2_parser_Parser_getStmtList(c2_parser_Parser* p)
 {
-   (p->stmt_list_count < c2_parser_NumStmtLists) || c2_assert("parser/c2_parser.c2", 940, "c2_parser.Parser.getStmtList", "p.stmt_list_count < NumStmtLists");
+   ;//assert(p->stmt_list_count < c2_parser_NumStmtLists);
    stmt_list_List* l = &p->stmt_lists[p->stmt_list_count++];
    stmt_list_List_clear(l);
    return l;
@@ -43525,7 +36560,7 @@ static ast_UnaryOpcode c2_parser_convertTokenToUnaryOpcode(token_Kind kind)
    case token_Kind_Tilde:
       return ast_UnaryOpcode_Not;
    default:
-      (0) || c2_assert("parser/c2_parser_expr.c2", 229, "c2_parser.convertTokenToUnaryOpcode", "0");
+      ;//assert(0);
       break;
    }
    return ast_UnaryOpcode_PreInc;
@@ -43541,11 +36576,7 @@ static ast_Expr* c2_parser_Parser_parseCastExpr(c2_parser_Parser* p, bool _arg1,
       c2_parser_Parser_error(p, "expected expression");
       break;
    case 1:
-      if (c2_parser_Parser_peekToken(p, 1) == token_Kind_Dot) {
-         res = c2_parser_Parser_parsePureMemberExpr(p);
-      } else {
-         res = ast_IdentifierExpr_asExpr(c2_parser_Parser_parseIdentifier(p));
-      }
+      res = c2_parser_Parser_parsePureMemberExpr(p);
       couldBeTemplateCall = true;
       break;
    case 2: {
@@ -43720,49 +36751,29 @@ static ast_Expr* c2_parser_Parser_parseTemplateCallExpr(c2_parser_Parser* p, ast
 
 static ast_Expr* c2_parser_Parser_parseImpureMemberExpr(c2_parser_Parser* p, ast_Expr* base)
 {
-   c2_parser_Parser_consumeToken(p);
-   c2_parser_Parser_expectIdentifier(p);
-   ast_Ref ref[7];
-   ref[0].loc = p->tok.loc;
-   ref[0].name_idx = p->tok.name_idx;
-   uint32_t refcount = 1;
-   c2_parser_Parser_consumeToken(p);
-   while (p->tok.kind == token_Kind_Dot) {
+   for (;;) {
       c2_parser_Parser_consumeToken(p);
       c2_parser_Parser_expectIdentifier(p);
-      if (refcount == 7) c2_parser_Parser_error(p, "max member depth is %u", ast_MemberExprMaxDepth);
-      ref[refcount].loc = p->tok.loc;
-      ref[refcount].name_idx = p->tok.name_idx;
-      refcount++;
+      base = ast_builder_Builder_actOnMemberExpr(p->builder, base, 0, 0, p->tok.loc, p->tok.name_idx);
       c2_parser_Parser_consumeToken(p);
+      if (p->tok.kind != token_Kind_Dot) break;
    }
-   return ast_builder_Builder_actOnMemberExpr(p->builder, base, ref, refcount);
+   return base;
 }
 
 static ast_Expr* c2_parser_Parser_parsePureMemberExpr(c2_parser_Parser* p)
 {
-   ast_Ref ref[7];
-   ref[0].loc = p->tok.loc;
-   ref[0].name_idx = p->tok.name_idx;
-   uint32_t refcount = 1;
+   src_loc_SrcLoc loc = p->tok.loc;
+   uint32_t name_idx = p->tok.name_idx;
+   uint32_t name_len = p->tok.len;
    c2_parser_Parser_consumeToken(p);
-   while (p->tok.kind == token_Kind_Dot) {
-      c2_parser_Parser_consumeToken(p);
-      c2_parser_Parser_expectIdentifier(p);
-      if (refcount == 7) c2_parser_Parser_error(p, "max member depth is %u", ast_MemberExprMaxDepth);
-      ref[refcount].loc = p->tok.loc;
-      ref[refcount].name_idx = p->tok.name_idx;
-      refcount++;
-      c2_parser_Parser_consumeToken(p);
-   }
-   return ast_builder_Builder_actOnMemberExpr(p->builder, NULL, ref, refcount);
-}
-
-static ast_IdentifierExpr* c2_parser_Parser_parseIdentifier(c2_parser_Parser* p)
-{
-   ast_IdentifierExpr* e = ast_builder_Builder_actOnIdentifier(p->builder, p->tok.loc, p->tok.name_idx);
+   if (p->tok.kind != token_Kind_Dot) return ast_builder_Builder_actOnIdentifier(p->builder, loc, name_idx, name_len);
    c2_parser_Parser_consumeToken(p);
-   return e;
+   c2_parser_Parser_expectIdentifier(p);
+   ast_Expr* lhs = ast_builder_Builder_actOnMemberExpr(p->builder, NULL, name_idx, name_len, p->tok.loc, p->tok.name_idx);
+   c2_parser_Parser_consumeToken(p);
+   if (p->tok.kind != token_Kind_Dot) return lhs;
+   return c2_parser_Parser_parseImpureMemberExpr(p, lhs);
 }
 
 static ast_Expr* c2_parser_Parser_parseStringLiteral(c2_parser_Parser* p)
@@ -43820,7 +36831,7 @@ static ast_Expr* c2_parser_Parser_parseParenExpr(c2_parser_Parser* p)
 
 static bool c2_parser_Parser_isTemplateFunctionCall(c2_parser_Parser* p)
 {
-   (p->tok.kind == token_Kind_Less) || c2_assert("parser/c2_parser_expr.c2", 568, "c2_parser.Parser.isTemplateFunctionCall", "p.tok.kind == Kind.Less");
+   ;//assert(p->tok.kind == token_Kind_Less);
    token_Kind kind = c2_parser_Parser_peekToken(p, 1);
    if (kind != token_Kind_Identifier) {
       if (token_Kind_isQualifier(kind)) return true;
@@ -43874,7 +36885,6 @@ static ast_Expr* c2_parser_Parser_parseElemsof(c2_parser_Parser* p)
    src_loc_SrcLoc loc = p->tok.loc;
    c2_parser_Parser_consumeToken(p);
    c2_parser_Parser_expectAndConsume(p, token_Kind_LParen);
-   c2_parser_Parser_expectIdentifier(p);
    ast_Expr* res = c2_parser_Parser_parseFullIdentifier(p);
    res = c2_parser_Parser_parsePostfixExprSuffix(p, res, false);
    uint32_t src_len = p->tok.loc + 1 - loc;
@@ -44003,10 +37013,7 @@ static ast_Expr* c2_parser_Parser_parseToContainerExpr(c2_parser_Parser* p)
 static ast_Expr* c2_parser_Parser_parseFullIdentifier(c2_parser_Parser* p)
 {
    c2_parser_Parser_expectIdentifier(p);
-   if (c2_parser_Parser_peekToken(p, 1) == token_Kind_Dot) {
-      return c2_parser_Parser_parsePureMemberExpr(p);
-   }
-   return ast_IdentifierExpr_asExpr(c2_parser_Parser_parseIdentifier(p));
+   return c2_parser_Parser_parsePureMemberExpr(p);
 }
 
 static bool c2_parser_Parser_parseAsType(c2_parser_Parser* p)
@@ -44200,7 +37207,7 @@ static ast_Stmt* c2_parser_Parser_parseStmt(c2_parser_Parser* p)
 
 static bool c2_parser_Parser_isTypeSpec(c2_parser_Parser* p)
 {
-   (p->tok.kind == token_Kind_Identifier) || c2_assert("parser/c2_parser_stmt.c2", 106, "c2_parser.Parser.isTypeSpec", "p.tok.kind == Kind.Identifier");
+   ;//assert(p->tok.kind == token_Kind_Identifier);
    token_Kind kind;
    uint32_t state = 0;
    uint32_t ahead = 1;
@@ -44281,7 +37288,7 @@ static uint32_t c2_parser_Parser_skipArray(c2_parser_Parser* p, uint32_t ahead, 
 
 static ast_Stmt* c2_parser_Parser_parseDeclOrStmt(c2_parser_Parser* p)
 {
-   (p->tok.kind == token_Kind_Identifier) || c2_assert("parser/c2_parser_stmt.c2", 201, "c2_parser.Parser.parseDeclOrStmt", "p.tok.kind == Kind.Identifier");
+   ;//assert(p->tok.kind == token_Kind_Identifier);
    bool isDecl = c2_parser_Parser_isTypeSpec(p);
    if (isDecl) {
       return c2_parser_Parser_parseDeclStmt(p, true, true, false);
@@ -44542,13 +37549,9 @@ static ast_Stmt* c2_parser_Parser_parseDeclStmt(c2_parser_Parser* p, bool checkS
          if (c2_parser_Parser_peekToken(p, 1) == token_Kind_Identifier && c2_parser_Parser_peekToken(p, 2) == token_Kind_LParen) {
             if (has_local) c2_parser_Parser_error(p, "local qualified variables cannot have an init call");
             if (isCondition) c2_parser_Parser_error(p, "cannot use an init call inside a condition");
+            uint32_t name_len = p->tok.len;
             c2_parser_Parser_consumeToken(p);
-            ast_Ref refs[2];
-            refs[0].loc = loc;
-            refs[0].name_idx = name;
-            refs[1].loc = p->tok.loc;
-            refs[1].name_idx = p->tok.name_idx;
-            ast_Expr* func = ast_builder_Builder_actOnMemberExpr(p->builder, NULL, refs, 2);
+            ast_Expr* func = ast_builder_Builder_actOnMemberExpr(p->builder, NULL, name, name_len, p->tok.loc, p->tok.name_idx);
             c2_parser_Parser_consumeToken(p);
             initValue = c2_parser_Parser_parseCallExpr(p, func);
             has_init_call = true;
@@ -44934,3988 +37937,6 @@ static void c2_parser_Parser_parseAliasType(c2_parser_Parser* p, uint32_t name, 
 }
 
 
-// --- module ir_context ---
-typedef struct ir_context_Constant_ ir_context_Constant;
-typedef struct ir_context_ConstantList_ ir_context_ConstantList;
-typedef struct ir_context_Builder_ ir_context_Builder;
-typedef struct ir_context_Context_ ir_context_Context;
-typedef struct ir_context_BuildInfo_ ir_context_BuildInfo;
-typedef struct ir_context_InitValue_ ir_context_InitValue;
-typedef struct ir_context_InitValueList_ ir_context_InitValueList;
-typedef struct ir_context_PrintHelper_ ir_context_PrintHelper;
-typedef struct ir_context_Symbol_ ir_context_Symbol;
-typedef struct ir_context_SymbolList_ ir_context_SymbolList;
-typedef struct ir_context_WorkQueue_ ir_context_WorkQueue;
-typedef struct ir_context_QueueWorker_ ir_context_QueueWorker;
-
-struct ir_context_Constant_ {
-   union {
-      int64_t ivalue;
-      uint64_t uvalue;
-      float svalue;
-      double dvalue;
-   };
-};
-
-struct ir_context_ConstantList_ {
-   uint32_t count;
-   uint32_t capacity;
-   ir_context_Constant* constants;
-};
-
-static void ir_context_ConstantList_init(ir_context_ConstantList* l, uint32_t initial_size);
-static void ir_context_ConstantList_free(ir_context_ConstantList* l);
-static uint32_t ir_context_ConstantList_add(ir_context_ConstantList* l, const ir_context_Constant* c);
-static uint32_t ir_context_ConstantList_getCount(const ir_context_ConstantList* l);
-static ir_context_Constant* ir_context_ConstantList_get(const ir_context_ConstantList* l, uint32_t idx);
-typedef uint32_t ir_context_SymbolId;
-struct ir_context_Builder_ {
-   uint32_t slot_idx;
-   uint32_t num_scopes;
-   ir_context_SymbolId cur_func;
-   ir_context_SymbolId cur_global;
-   ir_BlockId cur_block;
-   uint32_t blk_start_instr;
-   bool block_terminated;
-   bool in_block;
-   index_list_List block_order;
-   ir_FunctionInfo* tmp_info;
-};
-
-struct ir_context_SymbolList_ {
-   uint32_t count;
-   uint32_t capacity;
-   ir_context_Symbol* symbols;
-};
-
-struct ir_context_InitValueList_ {
-   uint32_t count;
-   uint32_t capacity;
-   ir_context_InitValue* values;
-};
-
-struct ir_context_BuildInfo_ {
-   const char* compiler;
-   const char* linkerflags;
-};
-
-struct ir_context_WorkQueue_ {
-   pthread_mutex_t lock;
-   uint32_t idx;
-   uint32_t count;
-   uint32_t capacity;
-   ir_FunctionInfo** funcs;
-};
-
-struct ir_context_Context_ {
-   string_pool_Pool* pool;
-   ir_context_ConstantList constants;
-   ir_context_SymbolList symbols;
-   ir_context_InitValueList init_values;
-   ir_context_Builder b;
-   const target_info_Info* target_info;
-   ir_context_BuildInfo build_info;
-   const ir_tools_Target* target;
-   ir_tools_Tools tools;
-   bool single_thread;
-   bool print_all;
-   ir_context_WorkQueue queue;
-};
-
-static const ir_InstrKind ir_context_Type2Store[11] = {
-   [ir_Type_I8] = ir_InstrKind_Store1,
-   [ir_Type_I16] = ir_InstrKind_Store2,
-   [ir_Type_I32] = ir_InstrKind_Store4,
-   [ir_Type_I64] = ir_InstrKind_Store8,
-   [ir_Type_U8] = ir_InstrKind_Store1,
-   [ir_Type_U16] = ir_InstrKind_Store2,
-   [ir_Type_U32] = ir_InstrKind_Store4,
-   [ir_Type_U64] = ir_InstrKind_Store8,
-   [ir_Type_F32] = ir_InstrKind_Store4,
-   [ir_Type_F64] = ir_InstrKind_Store8
-};
-static void ir_context_Builder_init(ir_context_Builder* b);
-static void ir_context_Builder_free(ir_context_Builder* b);
-static ir_context_Context* ir_context_create(bool print, const target_info_Info* info, const ir_context_BuildInfo* buildInfo);
-static void ir_context_Context_free(ir_context_Context* c);
-static void ir_context_Context_convert_functions(ir_context_Context* c);
-static void ir_context_print_function(const void* arg1, const void* arg2, const ir_FunctionInfo* fi, const char* label);
-static ir_context_SymbolId ir_context_Context_addStringLiteral(ir_context_Context* c, const char* name, const char* text, uint32_t size);
-static ir_context_SymbolId ir_context_Context_addGlobalVar(ir_context_Context* c, const char* name, uint32_t align, bool is_external);
-static ir_context_SymbolId ir_context_Context_addFunction(ir_context_Context* c, const char* name, bool is_external);
-static void ir_context_Context_startFunc(ir_context_Context* c, ir_context_SymbolId id);
-static void ir_context_Context_endFunc(ir_context_Context* c);
-static void ir_context_Context_startGlobal(ir_context_Context* c, ir_context_SymbolId id);
-static void ir_context_Context_endGlobal(ir_context_Context* c);
-static void ir_context_Context_addInitZero(ir_context_Context* c, uint32_t size);
-static void ir_context_Context_addInitValueU8(ir_context_Context* c, uint8_t value);
-static void ir_context_Context_addInitValueU16(ir_context_Context* c, uint16_t value);
-static void ir_context_Context_addInitValueU32(ir_context_Context* c, uint32_t value);
-static void ir_context_Context_addInitValueU64(ir_context_Context* c, uint64_t value);
-static void ir_context_Context_addInitSymbol(ir_context_Context* c, ir_context_SymbolId id);
-static void ir_context_Context_addInitString(ir_context_Context* c, const char* text, uint32_t size);
-static void ir_context_Context_setFunctionReturnType(ir_context_Context* c, ir_Type t);
-static ir_Ref ir_context_Context_addFuncArg(ir_context_Context* c, ir_Type t);
-static ir_BlockId ir_context_Context_createBlock(ir_context_Context* c, ir_BlockKind kind);
-static bool ir_context_Context_isBlockTerminated(const ir_context_Context* c);
-static void ir_context_Context_startBlock(ir_context_Context* c, ir_BlockId id);
-static void ir_context_Context_endBlock(ir_context_Context* c);
-static ir_BlockId ir_context_Context_getCurBlock(const ir_context_Context* c);
-static void ir_context_Context_addJmpInstr(ir_context_Context* c, ir_BlockId dest);
-static void ir_context_Context_addJmpIfInstr(ir_context_Context* c, ir_Ref cond, ir_BlockId dest1, ir_BlockId dest2);
-static void ir_context_Context_addRet0Instr(ir_context_Context* c);
-static void ir_context_Context_addRet1Instr(ir_context_Context* c, ir_Ref ref);
-static ir_Ref ir_context_Context_addLoadInstr(ir_context_Context* c, ir_Type t, ir_Ref src);
-static void ir_context_Context_addStoreInstr(ir_context_Context* c, ir_Type t, ir_Ref src, ir_Ref dest);
-static ir_Ref ir_context_Context_addBinaryInstr(ir_context_Context* c, ir_InstrKind k, ir_Ref left, ir_Ref right);
-static ir_Ref ir_context_Context_addCallInstr(ir_context_Context* c, ir_Ref name, const ir_Ref* args, uint32_t num_args, bool has_result, bool noreturn);
-static ir_Ref ir_context_Context_addPhi2Instr(ir_context_Context* c, ir_BlockId b1, ir_Ref r1, ir_BlockId b2, ir_Ref r2);
-static ir_Ref ir_context_Context_addStackSlot(ir_context_Context* c, uint32_t align, ir_Ref size);
-static ir_Ref ir_context_Context_addIntegerConstant(ir_context_Context* c, int64_t size);
-static void ir_context_Context_addComment(ir_context_Context* c, const char* text);
-static ir_CaseId ir_context_Context_addSwitchInstr(ir_context_Context* c, ir_Ref cond, ir_BlockId join_blk, uint32_t num_cases);
-static void ir_context_Context_setCase(ir_context_Context* c, ir_CaseId case_id, uint32_t value, ir_BlockId blk_id);
-static void ir_context_Context_finalizeFunction(ir_context_Context* c, ir_context_SymbolId id);
-static bool ir_context_empty_block(const ir_Block* b, const ir_InstrList* instructions);
-static ir_BlockId ir_context_checkDest(ir_FunctionInfo* fi, ir_BlockId id);
-static void ir_context_Context_writeOutput(ir_context_Context* c, const char* output_dir, const char* target_name);
-static void ir_context_Context_write(ir_context_Context* c, const char* output_dir, const char* filename, const string_buffer_Buf* buf);
-static const ir_tools_Target* ir_context_getArchTarget(const target_info_Info* info);
-typedef uint8_t ir_context_InitValueKind;
-enum ir_context_InitValueKind {
-   ir_context_InitValueKind_None,
-   ir_context_InitValueKind_Byte,
-   ir_context_InitValueKind_Short,
-   ir_context_InitValueKind_Word,
-   ir_context_InitValueKind_Word2,
-   ir_context_InitValueKind_Long,
-   ir_context_InitValueKind_Long2,
-   ir_context_InitValueKind_Symbol,
-   ir_context_InitValueKind_Text,
-   ir_context_InitValueKind_Zero,
-};
-
-struct ir_context_InitValue_ {
-   uint32_t kind : 4;
-   uint32_t value : 28;
-};
-
-static const char* ir_context_InitValueKind_str(ir_context_InitValueKind k);
-static void ir_context_InitValue_init(ir_context_InitValue* r, ir_context_InitValueKind kind, uint32_t value);
-static const char* ir_context_InitValue_getKindName(const ir_context_InitValue* r);
-static ir_context_InitValueKind ir_context_InitValue_getKind(const ir_context_InitValue* r);
-static void ir_context_InitValueList_init(ir_context_InitValueList* l, uint32_t initial_size);
-static void ir_context_InitValueList_free(ir_context_InitValueList* l);
-static void ir_context_InitValueList_resize(ir_context_InitValueList* l, uint32_t cap);
-static ir_context_InitValue* ir_context_InitValueList_add(ir_context_InitValueList* l);
-static uint32_t ir_context_InitValueList_getCount(const ir_context_InitValueList* l);
-static ir_context_InitValue* ir_context_InitValueList_get(const ir_context_InitValueList* l, uint32_t idx);
-struct ir_context_PrintHelper_ {
-   const ir_context_Context* c;
-   const ir_BlockList* blocks;
-   string_buffer_Buf* out;
-   uint32_t* temp_ids;
-   uint32_t temp_count;
-   const ir_Block* cur_block;
-   const ir_FunctionInfo* cur_info;
-   uint32_t blk_instr_start;
-   uint32_t blk_instr_count;
-};
-
-static color_Color ir_context_col_Instr = color_Color_Normal;
-static color_Color ir_context_col_PseudoInstr = color_Color_Bred;
-static color_Color ir_context_col_Decl = color_Color_Magenta;
-static color_Color ir_context_col_Name = color_Color_White;
-static color_Color ir_context_col_Block = color_Color_Cyan;
-static color_Color ir_context_col_Symbol = color_Color_Bblue;
-static color_Color ir_context_col_Attr = color_Color_Bmagenta;
-static color_Color ir_context_col_Unknown = color_Color_Yellow;
-static color_Color ir_context_col_Value = color_Color_Magenta;
-static color_Color ir_context_col_Register = color_Color_Bgreen;
-static color_Color ir_context_col_Data = color_Color_Bcyan;
-static color_Color ir_context_col_Slot = color_Color_Bcyan;
-static color_Color ir_context_col_Temp = color_Color_Bgreen;
-static color_Color ir_context_col_Type = color_Color_Green;
-static color_Color ir_context_col_Comment = color_Color_Grey;
-static color_Color ir_context_col_Fixup = color_Color_Bred;
-static color_Color ir_context_col_Arch = color_Color_Bcyan;
-#define ir_context_MaxTemps 4096
-static void ir_context_PrintHelper_init(ir_context_PrintHelper* ph, const ir_context_Context* c);
-static void ir_context_PrintHelper_free(ir_context_PrintHelper* ph);
-static void ir_context_PrintHelper_print(const ir_context_PrintHelper* ph);
-static void ir_context_PrintHelper_resetTemps(ir_context_PrintHelper* ph, uint32_t num_args, uint32_t num_instr);
-static uint32_t ir_context_PrintHelper_addTemp(ir_context_PrintHelper* ph, uint32_t local_instr_idx);
-static uint32_t ir_context_PrintHelper_findTemp(ir_context_PrintHelper* ph, uint32_t instr_idx);
-static void ir_context_PrintHelper_collect_temps(ir_context_PrintHelper* ph);
-static void ir_context_PrintHelper_print_func(ir_context_PrintHelper* ph, const ir_context_Symbol* s, const ir_FunctionInfo* info);
-static void ir_context_Context_print_function(const ir_context_Context* c, const ir_context_Symbol* symbol, const ir_FunctionInfo* info, const char* version);
-static void ir_context_Context_print(const ir_context_Context* c);
-static void ir_context_PrintHelper_printInitValue(ir_context_PrintHelper* ph, const ir_context_InitValue* v, string_buffer_Buf* out);
-static void ir_context_PrintHelper_printInstr(ir_context_PrintHelper* ph, const ir_Instr* blk_instrs, uint32_t blk_instr_idx, uint32_t gbl_idx);
-static void ir_context_PrintHelper_printRef(ir_context_PrintHelper* ph, ir_Ref r, bool print_type);
-static void ir_context_dump_function(const ir_FunctionInfo* info, const char* name);
-static void ir_context_dump_function_info(string_buffer_Buf* out, const ir_FunctionInfo* info);
-static void ir_context_Context_dump(const ir_context_Context* c);
-static void ir_context_Context_report(const ir_context_Context* c);
-struct ir_context_Symbol_ {
-   uint32_t name;
-   uint32_t is_external : 1;
-   uint32_t is_function : 1;
-   uint32_t align : 8;
-   uint32_t size : 22;
-   union {
-      struct {
-         ir_FunctionInfo* info;
-      } f;
-      struct {
-         uint32_t init_value_idx;
-         uint32_t init_value_count;
-      } g;
-   };
-};
-
-static void ir_context_SymbolList_init(ir_context_SymbolList* l, uint32_t initial_size);
-static void ir_context_SymbolList_free(ir_context_SymbolList* l);
-static void ir_context_SymbolList_resize(ir_context_SymbolList* l, uint32_t cap);
-static ir_context_SymbolId ir_context_SymbolList_add(ir_context_SymbolList* l, uint32_t name, bool is_function, uint32_t align, bool is_external);
-static uint32_t ir_context_SymbolList_getCount(const ir_context_SymbolList* l);
-static ir_context_Symbol* ir_context_SymbolList_get(const ir_context_SymbolList* l, ir_context_SymbolId idx);
-struct ir_context_QueueWorker_ {
-   uint32_t index;
-   ir_context_WorkQueue* queue;
-   pthread_t thread;
-   ir_tools_Tools tools;
-};
-
-#define ir_context_MAX_THREADS 32
-static uint32_t ir_context_online_cpus(void);
-static ir_context_WorkQueue* ir_context_WorkQueue_init(ir_context_WorkQueue* q);
-static void ir_context_WorkQueue_free(ir_context_WorkQueue* q);
-static void ir_context_WorkQueue_add(ir_context_WorkQueue* q, ir_FunctionInfo* fi);
-static void ir_context_WorkQueue_resize(ir_context_WorkQueue* q, uint32_t capacity);
-static ir_FunctionInfo* ir_context_WorkQueue_get(ir_context_WorkQueue* q);
-static void* ir_context_worker_main(void* arg);
-static ir_context_QueueWorker* ir_context_QueueWorker_create(uint32_t idx, ir_context_WorkQueue* q, ir_context_Context* c);
-static void ir_context_QueueWorker_destroy(ir_context_QueueWorker* w);
-static void ir_context_QueueWorker_join(ir_context_QueueWorker* w);
-static void ir_context_WorkQueue_run(ir_context_WorkQueue* q, ir_context_Context* c, uint32_t num_threads);
-
-static void ir_context_ConstantList_init(ir_context_ConstantList* l, uint32_t initial_size)
-{
-   memset(l, 0, 16);
-   if (initial_size) {
-      l->capacity = initial_size;
-      l->constants = malloc(l->capacity * 8);
-   }
-}
-
-static void ir_context_ConstantList_free(ir_context_ConstantList* l)
-{
-   if (l->constants) free(l->constants);
-}
-
-static uint32_t ir_context_ConstantList_add(ir_context_ConstantList* l, const ir_context_Constant* c)
-{
-   for (uint32_t i = 0; i < l->count; i++) {
-      if (l->constants[i].ivalue == c->ivalue) return i;
-   }
-   if (l->count >= l->capacity) {
-      l->capacity *= 2;
-      void* constants2 = malloc(l->capacity * 8);
-      void* old = l->constants;
-      if (old) {
-         memcpy(constants2, old, l->count * 8);
-         free(old);
-      }
-      l->constants = constants2;
-   }
-   l->constants[l->count] = *c;
-   return l->count++;
-}
-
-static uint32_t ir_context_ConstantList_getCount(const ir_context_ConstantList* l)
-{
-   return l->count;
-}
-
-static ir_context_Constant* ir_context_ConstantList_get(const ir_context_ConstantList* l, uint32_t idx)
-{
-   return &l->constants[idx];
-}
-
-static void ir_context_Builder_init(ir_context_Builder* b)
-{
-   index_list_List_init(&b->block_order, 64);
-   b->tmp_info = NULL;
-}
-
-static void ir_context_Builder_free(ir_context_Builder* b)
-{
-   if (b->tmp_info) ir_FunctionInfo_free(b->tmp_info);
-   index_list_List_free(&b->block_order);
-}
-
-static ir_context_Context* ir_context_create(bool print, const target_info_Info* info, const ir_context_BuildInfo* buildInfo)
-{
-   ir_context_Context* c = calloc(1, 1032);
-   c->pool = string_pool_create(2 * 1024, 256);
-   ir_context_ConstantList_init(&c->constants, 128);
-   ir_context_SymbolList_init(&c->symbols, 128);
-   ir_context_InitValueList_init(&c->init_values, 128);
-   ir_context_WorkQueue_init(&c->queue);
-   c->single_thread = true;
-   c->print_all = print;
-   for (uint32_t slot = 0; slot < ir_SlotMax; slot++) {
-      char slot_name[8];
-      sprintf(slot_name, "s%u", slot);
-      uint32_t idx = string_pool_Pool_addStr(c->pool, slot_name, false);
-   }
-   ir_context_Builder_init(&c->b);
-   c->target_info = info;
-   c->build_info = *buildInfo;
-   c->target = ir_context_getArchTarget(info);
-   ir_tools_Tools_init(&c->tools, c->target, c, ir_context_print_function);
-   return c;
-}
-
-static void ir_context_Context_free(ir_context_Context* c)
-{
-   ir_context_WorkQueue_free(&c->queue);
-   ir_tools_Tools_free(&c->tools);
-   for (uint32_t i = 1; i < ir_context_SymbolList_getCount(&c->symbols); i++) {
-      const ir_context_Symbol* s = ir_context_SymbolList_get(&c->symbols, i);
-      if (s->is_function && s->f.info) {
-         ir_FunctionInfo_free(s->f.info);
-      }
-   }
-   ir_context_Builder_free(&c->b);
-   ir_context_InitValueList_free(&c->init_values);
-   ir_context_SymbolList_free(&c->symbols);
-   ir_context_ConstantList_free(&c->constants);
-   string_pool_Pool_free(c->pool);
-   free(c);
-}
-
-static void ir_context_Context_convert_functions(ir_context_Context* c)
-{
-   if (!c->single_thread) ir_context_WorkQueue_run(&c->queue, c, 0);
-}
-
-static void ir_context_print_function(const void* arg1, const void* arg2, const ir_FunctionInfo* fi, const char* label)
-{
-   const ir_context_Context* c = arg1;
-   if (!c->print_all) return;
-   ir_context_Context_print_function(c, arg2, fi, label);
-}
-
-static ir_context_SymbolId ir_context_Context_addStringLiteral(ir_context_Context* c, const char* name, const char* text, uint32_t size)
-{
-   ir_context_SymbolId id = ir_context_Context_addGlobalVar(c, name, 1, false);
-   uint32_t text_idx = string_pool_Pool_addStr(c->pool, text, false);
-   ir_context_Symbol* s = ir_context_SymbolList_get(&c->symbols, id);
-   s->g.init_value_idx = ir_context_InitValueList_getCount(&c->init_values);
-   s->g.init_value_count = 1;
-   ir_context_InitValue* v = ir_context_InitValueList_add(&c->init_values);
-   ir_context_InitValue_init(v, ir_context_InitValueKind_Text, text_idx);
-   return id;
-}
-
-static ir_context_SymbolId ir_context_Context_addGlobalVar(ir_context_Context* c, const char* name, uint32_t align, bool is_external)
-{
-   uint32_t name_idx = string_pool_Pool_addStr(c->pool, name, false);
-   ir_context_SymbolId id = ir_context_SymbolList_add(&c->symbols, name_idx, false, align, is_external);
-   return id;
-}
-
-static ir_context_SymbolId ir_context_Context_addFunction(ir_context_Context* c, const char* name, bool is_external)
-{
-   uint32_t name_idx = string_pool_Pool_addStr(c->pool, name, false);
-   ir_context_SymbolId id = ir_context_SymbolList_add(&c->symbols, name_idx, true, 4, is_external);
-   return id;
-}
-
-static void ir_context_Context_startFunc(ir_context_Context* c, ir_context_SymbolId id)
-{
-   ir_context_Builder* b = &c->b;
-   (b->tmp_info == NULL) || c2_assert("ir/context.c2", 178, "ir_context.Context.startFunc", "b.tmp_info == nil");
-   b->tmp_info = ir_FunctionInfo_create(id, 8, 16, 16);
-   (b->cur_func == 0) || c2_assert("ir/context.c2", 180, "ir_context.Context.startFunc", "b.cur_func == 0");
-   b->cur_func = id;
-   b->num_scopes = 0;
-   b->slot_idx = 0;
-}
-
-static void ir_context_Context_endFunc(ir_context_Context* c)
-{
-   ir_context_Builder* b = &c->b;
-   (b->num_scopes == 0) || c2_assert("ir/context.c2", 191, "ir_context.Context.endFunc", "b.num_scopes == 0");
-   (b->cur_func) || c2_assert("ir/context.c2", 192, "ir_context.Context.endFunc", "b.cur_func");
-   ir_context_Context_finalizeFunction(c, b->cur_func);
-   b->cur_func = 0;
-}
-
-static void ir_context_Context_startGlobal(ir_context_Context* c, ir_context_SymbolId id)
-{
-   ir_context_Builder* b = &c->b;
-   (b->cur_global == 0) || c2_assert("ir/context.c2", 204, "ir_context.Context.startGlobal", "b.cur_global == 0");
-   b->cur_global = id;
-   ir_context_Symbol* s = ir_context_SymbolList_get(&c->symbols, b->cur_global);
-   s->g.init_value_idx = ir_context_InitValueList_getCount(&c->init_values);
-}
-
-static void ir_context_Context_endGlobal(ir_context_Context* c)
-{
-   ir_context_Builder* b = &c->b;
-   (b->cur_global) || c2_assert("ir/context.c2", 215, "ir_context.Context.endGlobal", "b.cur_global");
-   ir_context_Symbol* s = ir_context_SymbolList_get(&c->symbols, b->cur_global);
-   s->g.init_value_count = ir_context_InitValueList_getCount(&c->init_values) - s->g.init_value_idx;
-   b->cur_global = 0;
-}
-
-static void ir_context_Context_addInitZero(ir_context_Context* c, uint32_t size)
-{
-   (size < 0xfffffff) || c2_assert("ir/context.c2", 225, "ir_context.Context.addInitZero", "size < 0xfffffff");
-   (c->b.cur_global) || c2_assert("ir/context.c2", 226, "ir_context.Context.addInitZero", "c.b.cur_global");
-   ir_context_InitValue* v = ir_context_InitValueList_add(&c->init_values);
-   ir_context_InitValue_init(v, ir_context_InitValueKind_Zero, size);
-}
-
-static void ir_context_Context_addInitValueU8(ir_context_Context* c, uint8_t value)
-{
-   ir_context_InitValue* v = ir_context_InitValueList_add(&c->init_values);
-   ir_context_InitValue_init(v, ir_context_InitValueKind_Byte, value);
-}
-
-static void ir_context_Context_addInitValueU16(ir_context_Context* c, uint16_t value)
-{
-   ir_context_InitValue* v = ir_context_InitValueList_add(&c->init_values);
-   ir_context_InitValue_init(v, ir_context_InitValueKind_Short, value);
-}
-
-static void ir_context_Context_addInitValueU32(ir_context_Context* c, uint32_t value)
-{
-   ir_context_InitValue* v = ir_context_InitValueList_add(&c->init_values);
-   if (value < 0xfffffff) {
-      ir_context_InitValue_init(v, ir_context_InitValueKind_Word, value);
-   } else {
-      ir_context_Constant constant = { .uvalue = value };
-      uint32_t idx = ir_context_ConstantList_add(&c->constants, &constant);
-      ir_context_InitValue_init(v, ir_context_InitValueKind_Word2, idx);
-   }
-}
-
-static void ir_context_Context_addInitValueU64(ir_context_Context* c, uint64_t value)
-{
-   ir_context_InitValue* v = ir_context_InitValueList_add(&c->init_values);
-   if (value < 0xfffffff) {
-      ir_context_InitValue_init(v, ir_context_InitValueKind_Long, (uint32_t)value);
-   } else {
-      ir_context_Constant constant = { .uvalue = value };
-      uint32_t idx = ir_context_ConstantList_add(&c->constants, &constant);
-      ir_context_InitValue_init(v, ir_context_InitValueKind_Long2, idx);
-   }
-}
-
-static void ir_context_Context_addInitSymbol(ir_context_Context* c, ir_context_SymbolId id)
-{
-   ir_context_InitValue* v = ir_context_InitValueList_add(&c->init_values);
-   ir_context_InitValue_init(v, ir_context_InitValueKind_Symbol, id);
-}
-
-static void ir_context_Context_addInitString(ir_context_Context* c, const char* text, uint32_t size)
-{
-   ir_context_InitValue* v = ir_context_InitValueList_add(&c->init_values);
-   uint32_t text_idx = string_pool_Pool_add(c->pool, text, size, false);
-   ir_context_InitValue_init(v, ir_context_InitValueKind_Text, text_idx);
-}
-
-static void ir_context_Context_setFunctionReturnType(ir_context_Context* c, ir_Type t)
-{
-   ir_FunctionInfo_setReturnType(c->b.tmp_info, t);
-}
-
-static ir_Ref ir_context_Context_addFuncArg(ir_context_Context* c, ir_Type t)
-{
-   ir_FunctionInfo_addArg(c->b.tmp_info, t);
-   uint32_t idx = ir_InstrList_getCount(&c->b.tmp_info->instructions);
-   ir_Instr* i = ir_InstrList_add(&c->b.tmp_info->instructions);
-   ir_Instr_init0b(i, ir_InstrKind_Param);
-   ir_Ref ref; ir_Ref_init(&ref, ir_RefKind_Temp, idx);
-   return ref;
-}
-
-static ir_BlockId ir_context_Context_createBlock(ir_context_Context* c, ir_BlockKind kind)
-{
-   ir_BlockId id = ir_BlockList_add(&c->b.tmp_info->blocks, kind);
-   return id;
-}
-
-static bool ir_context_Context_isBlockTerminated(const ir_context_Context* c)
-{
-   return c->b.block_terminated;
-}
-
-static void ir_context_Context_startBlock(ir_context_Context* c, ir_BlockId id)
-{
-   (!c->b.in_block) || c2_assert("ir/context.c2", 307, "ir_context.Context.startBlock", "!c.b.in_block");
-   c->b.in_block = true;
-   index_list_List_add(&c->b.block_order, id);
-   c->b.cur_block = id;
-   c->b.block_terminated = false;
-   c->b.blk_start_instr = ir_InstrList_getCount(&c->b.tmp_info->instructions);
-}
-
-static void ir_context_Context_endBlock(ir_context_Context* c)
-{
-   if (!c->b.block_terminated) {
-      ir_context_Context_addJmpInstr(c, c->b.cur_block + 1);
-   }
-   ir_Block* b = ir_BlockList_get(&c->b.tmp_info->blocks, c->b.cur_block);
-   ir_Block_setInstructions(b, c->b.blk_start_instr, ir_InstrList_getCount(&c->b.tmp_info->instructions) - c->b.blk_start_instr);
-   c->b.cur_block = 0;
-   c->b.in_block = false;
-}
-
-static ir_BlockId ir_context_Context_getCurBlock(const ir_context_Context* c)
-{
-   return c->b.cur_block;
-}
-
-static void ir_context_Context_addJmpInstr(ir_context_Context* c, ir_BlockId dest)
-{
-   (c->b.in_block) || c2_assert("ir/context.c2", 334, "ir_context.Context.addJmpInstr", "c.b.in_block");
-   ir_Block* b = ir_BlockList_get(&c->b.tmp_info->blocks, c->b.cur_block);
-   ir_Block_setDest(b, dest, 0);
-   ir_Ref ref; ir_Ref_init(&ref, ir_RefKind_JmpDest, 0);
-   ir_Instr* i = ir_InstrList_add(&c->b.tmp_info->instructions);
-   ir_Instr_init1(i, ir_InstrKind_Jmp, ref);
-   c->b.block_terminated = true;
-}
-
-static void ir_context_Context_addJmpIfInstr(ir_context_Context* c, ir_Ref cond, ir_BlockId dest1, ir_BlockId dest2)
-{
-   (c->b.in_block) || c2_assert("ir/context.c2", 348, "ir_context.Context.addJmpIfInstr", "c.b.in_block");
-   ir_Block* b = ir_BlockList_get(&c->b.tmp_info->blocks, c->b.cur_block);
-   ir_Block_setDest(b, dest1, dest2);
-   ir_Ref ref; ir_Ref_init(&ref, ir_RefKind_JmpDest, 0);
-   ir_Instr* i = ir_InstrList_add(&c->b.tmp_info->instructions);
-   ir_Instr_init2(i, ir_InstrKind_JmpIf, cond, ref);
-   c->b.block_terminated = true;
-}
-
-static void ir_context_Context_addRet0Instr(ir_context_Context* c)
-{
-   (c->b.in_block) || c2_assert("ir/context.c2", 366, "ir_context.Context.addRet0Instr", "c.b.in_block");
-   ir_Instr* i = ir_InstrList_add(&c->b.tmp_info->instructions);
-   ir_Instr_init0(i, ir_InstrKind_Ret);
-   c->b.block_terminated = true;
-   ir_Block* b = ir_BlockList_get(&c->b.tmp_info->blocks, c->b.cur_block);
-   b->end_block = 1;
-}
-
-static void ir_context_Context_addRet1Instr(ir_context_Context* c, ir_Ref ref)
-{
-   (c->b.in_block) || c2_assert("ir/context.c2", 378, "ir_context.Context.addRet1Instr", "c.b.in_block");
-   ir_Instr* i = ir_InstrList_add(&c->b.tmp_info->instructions);
-   ir_Instr_init1(i, ir_InstrKind_Ret, ref);
-   c->b.block_terminated = true;
-   ir_Block* b = ir_BlockList_get(&c->b.tmp_info->blocks, c->b.cur_block);
-   b->end_block = 1;
-}
-
-static ir_Ref ir_context_Context_addLoadInstr(ir_context_Context* c, ir_Type t, ir_Ref src)
-{
-   (c->b.in_block) || c2_assert("ir/context.c2", 390, "ir_context.Context.addLoadInstr", "c.b.in_block");
-   ir_Ref out; ir_Ref_init(&out, ir_RefKind_Temp, ir_InstrList_getCount(&c->b.tmp_info->instructions));
-   ir_InstrKind k = ir_InstrKind_None;
-   switch (t) {
-   case ir_Type_None:
-      (0) || c2_assert("ir/context.c2", 397, "ir_context.Context.addLoadInstr", "0");
-      return out;
-   case ir_Type_I8:
-      k = ir_InstrKind_Load1;
-      break;
-   case ir_Type_I16:
-      k = ir_InstrKind_Load2;
-      break;
-   case ir_Type_I32:
-      k = ir_InstrKind_Load4;
-      break;
-   case ir_Type_I64:
-      k = ir_InstrKind_Load8;
-      break;
-   case ir_Type_U8:
-      k = ir_InstrKind_Load1;
-      break;
-   case ir_Type_U16:
-      k = ir_InstrKind_Load2;
-      break;
-   case ir_Type_U32:
-      k = ir_InstrKind_Load4;
-      break;
-   case ir_Type_U64:
-      k = ir_InstrKind_Load8;
-      break;
-   case ir_Type_F32:
-      k = ir_InstrKind_Load4;
-      break;
-   case ir_Type_F64:
-      k = ir_InstrKind_Load8;
-      break;
-   }
-   ir_Instr* i = ir_InstrList_add(&c->b.tmp_info->instructions);
-   ir_Instr_init1b(i, k, src);
-   return out;
-}
-
-static void ir_context_Context_addStoreInstr(ir_context_Context* c, ir_Type t, ir_Ref src, ir_Ref dest)
-{
-   (c->b.in_block) || c2_assert("ir/context.c2", 454, "ir_context.Context.addStoreInstr", "c.b.in_block");
-   ir_Instr* i = ir_InstrList_add(&c->b.tmp_info->instructions);
-   (t != ir_Type_None) || c2_assert("ir/context.c2", 456, "ir_context.Context.addStoreInstr", "t != Type.None");
-   ir_InstrKind k = ir_context_Type2Store[t];
-   ir_Instr_init2(i, k, src, dest);
-}
-
-static ir_Ref ir_context_Context_addBinaryInstr(ir_context_Context* c, ir_InstrKind k, ir_Ref left, ir_Ref right)
-{
-   ir_Ref out; ir_Ref_init(&out, ir_RefKind_Temp, ir_InstrList_getCount(&c->b.tmp_info->instructions));
-   ir_Instr* i = ir_InstrList_add(&c->b.tmp_info->instructions);
-   ir_Instr_init2b(i, k, left, right);
-   return out;
-}
-
-static ir_Ref ir_context_Context_addCallInstr(ir_context_Context* c, ir_Ref name, const ir_Ref* args, uint32_t num_args, bool has_result, bool noreturn)
-{
-   for (uint32_t i = 0; i < num_args; i++) {
-      ir_Instr* ii = ir_InstrList_add(&c->b.tmp_info->instructions);
-      ir_Instr_init1(ii, ir_InstrKind_Arg, args[i]);
-   }
-   ir_Ref out; ir_Ref_init(&out, ir_RefKind_Temp, ir_InstrList_getCount(&c->b.tmp_info->instructions));
-   ir_Ref argsref; ir_Ref_init(&argsref, ir_RefKind_CallNumArgs, num_args);
-   ir_Instr* i = ir_InstrList_add(&c->b.tmp_info->instructions);
-   if (has_result) {
-      ir_Instr_init2b(i, ir_InstrKind_Call, name, argsref);
-   } else {
-      ir_Instr_init2(i, ir_InstrKind_Call, name, argsref);
-   }
-   if (noreturn) {
-      ir_Block* b = ir_BlockList_get(&c->b.tmp_info->blocks, c->b.cur_block);
-      b->end_block = 1;
-      c->b.block_terminated = true;
-   }
-   return out;
-}
-
-static ir_Ref ir_context_Context_addPhi2Instr(ir_context_Context* c, ir_BlockId b1, ir_Ref r1, ir_BlockId b2, ir_Ref r2)
-{
-   ir_Ref out; ir_Ref_init(&out, ir_RefKind_Temp, ir_InstrList_getCount(&c->b.tmp_info->instructions));
-   ir_Instr* i = ir_InstrList_add(&c->b.tmp_info->instructions);
-   ir_Instr_initPhi(i, ir_PhiList_getCount(&c->b.tmp_info->phis), 2);
-   ir_Block* blk = ir_BlockList_get(&c->b.tmp_info->blocks, b1);
-   blk->phi_source = 1;
-   blk = ir_BlockList_get(&c->b.tmp_info->blocks, b2);
-   blk->phi_source = 1;
-   ir_PhiList_add(&c->b.tmp_info->phis, (uint32_t)out.value, b1, r1);
-   ir_PhiList_add(&c->b.tmp_info->phis, (uint32_t)out.value, b2, r2);
-   return out;
-}
-
-static ir_Ref ir_context_Context_addStackSlot(ir_context_Context* c, uint32_t align, ir_Ref size)
-{
-   uint32_t idx = c->b.slot_idx;
-   c->b.slot_idx++;
-   (c->b.slot_idx < 65536) || c2_assert("ir/context.c2", 526, "ir_context.Context.addStackSlot", "c.b.slot_idx < 65536");
-   ir_Ref out; ir_Ref_init(&out, ir_RefKind_Slot, idx);
-   ir_Instr* i = ir_InstrList_add(&c->b.tmp_info->instructions);
-   ir_InstrKind kind;
-   switch (align) {
-   case 1:
-      kind = ir_InstrKind_Alloc1;
-      break;
-   case 2:
-      kind = ir_InstrKind_Alloc2;
-      break;
-   case 4:
-      kind = ir_InstrKind_Alloc4;
-      break;
-   case 8:
-      kind = ir_InstrKind_Alloc8;
-      break;
-   default:
-      kind = ir_InstrKind_Alloc8;
-      break;
-   }
-   ir_Instr_init1b(i, kind, size);
-   return out;
-}
-
-static ir_Ref ir_context_Context_addIntegerConstant(ir_context_Context* c, int64_t size)
-{
-   const int32_t min_27bits = -0x3ffffff - 1;
-   const int32_t max_27_bits = 0x3ffffff;
-   ir_Ref ref;
-   if (size >= min_27bits && size <= max_27_bits) {
-      ir_Ref_init(&ref, ir_RefKind_Value, (uint32_t)size);
-   } else {
-      ir_context_Constant constant = { .ivalue = size };
-      uint32_t idx = ir_context_ConstantList_add(&c->constants, &constant);
-      ir_Ref_init(&ref, ir_RefKind_Integer, idx);
-   }
-   return ref;
-}
-
-static void ir_context_Context_addComment(ir_context_Context* c, const char* text)
-{
-   ir_FunctionInfo* fi = c->b.tmp_info;
-   uint32_t idx = string_pool_Pool_addStr(c->pool, text, false);
-   ir_Ref out; ir_Ref_init(&out, ir_RefKind_Temp, ir_InstrList_getCount(&fi->instructions));
-   ir_Instr* i = ir_InstrList_add(&fi->instructions);
-   ir_Ref ref; ir_Ref_init(&ref, ir_RefKind_Text, idx);
-   ir_Instr_init1(i, ir_InstrKind_Comment, ref);
-}
-
-static ir_CaseId ir_context_Context_addSwitchInstr(ir_context_Context* c, ir_Ref cond, ir_BlockId join_blk, uint32_t num_cases)
-{
-   ir_CaseId case_id = ir_CaseList_reserve(&c->b.tmp_info->cases, num_cases);
-   (c->b.in_block) || c2_assert("ir/context.c2", 588, "ir_context.Context.addSwitchInstr", "c.b.in_block");
-   ir_Instr* i = ir_InstrList_add(&c->b.tmp_info->instructions);
-   ir_Ref join_ref; ir_Ref_init(&join_ref, ir_RefKind_Block, join_blk);
-   ir_Instr_init2(i, ir_InstrKind_Switch, cond, join_ref);
-   c->b.block_terminated = true;
-   ir_Block* b = ir_BlockList_get(&c->b.tmp_info->blocks, c->b.cur_block);
-   b->end_with_switch = 1;
-   ir_Block_setDest(b, case_id, num_cases);
-   return case_id;
-}
-
-static void ir_context_Context_setCase(ir_context_Context* c, ir_CaseId case_id, uint32_t value, ir_BlockId blk_id)
-{
-   ir_CaseList_set(&c->b.tmp_info->cases, case_id, value, blk_id);
-}
-
-static void ir_context_Context_finalizeFunction(ir_context_Context* c, ir_context_SymbolId id)
-{
-   ir_tools_Tools* t = &c->tools;
-   ir_context_Symbol* symbol = ir_context_SymbolList_get(&c->symbols, id);
-   ir_FunctionInfo* fi = c->b.tmp_info;
-   t->arg2 = symbol;
-   t->fi = fi;
-   uint32_t num_blocks = ir_BlockList_getCount(&fi->blocks);
-   fi->num_slots = (uint16_t)c->b.slot_idx;
-   ir_tools_Tools_print_func(t, "after generation");
-   ir_context_checkDest(fi, 0);
-   ir_tools_Tools_print_func(t, "after check dest");
-   ir_tools_Tools_reorder_blocks(t, fi, &c->b.block_order);
-   index_list_List_clear(&c->b.block_order);
-   symbol->f.info = fi;
-   c->b.tmp_info = NULL;
-   if (c->single_thread) {
-      ir_tools_Tools_convert_fn(t);
-   } else {
-      ir_context_WorkQueue_add(&c->queue, fi);
-   }
-}
-
-static bool ir_context_empty_block(const ir_Block* b, const ir_InstrList* instructions)
-{
-   if (b->instr.count == 1) return true;
-   if (b->instr.count == 2) {
-      ir_Instr* instr = ir_InstrList_get(instructions, b->instr.start);
-      if (ir_Instr_getKind(instr) == ir_InstrKind_Comment) return true;
-      instr = ir_InstrList_get(instructions, b->instr.start + 1);
-      if (ir_Instr_getKind(instr) == ir_InstrKind_Comment) return true;
-   }
-   return false;
-}
-
-static ir_BlockId ir_context_checkDest(ir_FunctionInfo* fi, ir_BlockId id)
-{
-   ir_Block* b = ir_BlockList_get(&fi->blocks, id);
-   if (b->checked) {
-      if (b->used) return id;
-      (!b->end_with_switch) || c2_assert("ir/context.c2", 661, "ir_context.checkDest", "!b.end_with_switch");
-      return b->dests[0];
-   }
-   b->checked = true;
-   if (b->end_with_switch) {
-      b->used = true;
-      ir_CaseId case_id = b->dests[0];
-      uint32_t num_cases = b->dests[1];
-      for (uint32_t i = 0; i < num_cases; i++) {
-         ir_Case* cs = ir_CaseList_get(&fi->cases, case_id + i);
-         ir_BlockId new_blk = ir_context_checkDest(fi, cs->block);
-         cs->block = new_blk;
-      }
-      uint32_t instr_idx = b->instr.start + b->instr.count - 1;
-      ir_Instr* switch_instr = ir_InstrList_get(&fi->instructions, instr_idx);
-      (ir_Instr_isSwitch(switch_instr)) || c2_assert("ir/context.c2", 679, "ir_context.checkDest", "switch_instr.isSwitch()");
-      ir_Ref* join_ref = &switch_instr->args[1];
-      join_ref->value = (int32_t)ir_context_checkDest(fi, (uint32_t)join_ref->value);
-      return id;
-   }
-   if (b->dests[0] == 0 && b->dests[1] == 0) {
-      b->used = true;
-      return id;
-   }
-   if (!b->phi_source && id != 0 && ir_context_empty_block(b, &fi->instructions)) {
-      ir_BlockId new_blk = ir_context_checkDest(fi, b->dests[0]);
-      if (new_blk == id) {
-         b->used = true;
-         b->dests[0] = id;
-      } else {
-         b->used = false;
-         b->dests[0] = new_blk;
-      }
-      return new_blk;
-   }
-   b->used = true;
-   if (b->dests[0]) {
-      b->dests[0] = ir_context_checkDest(fi, b->dests[0]);
-   }
-   if (b->dests[1]) {
-      b->dests[1] = ir_context_checkDest(fi, b->dests[1]);
-   }
-   if (b->dests[0] == b->dests[1]) {
-      ir_Instr* last = ir_InstrList_get(&fi->instructions, b->instr.start + b->instr.count - 1);
-      ir_Ref ref; ir_Ref_init(&ref, ir_RefKind_JmpDest, id);
-      ir_Instr_init1(last, ir_InstrKind_Jmp, ref);
-      b->dests[1] = 0;
-   }
-   return id;
-}
-
-static void ir_context_Context_writeOutput(ir_context_Context* c, const char* output_dir, const char* target_name)
-{
-   string_buffer_Buf* out = string_buffer_create(4096, false, 0);
-   string_buffer_Buf_add(out, "# This makefile is auto-generated, any modifications will be lost\n\n");
-   const char* compiler = "clang";
-   if (c->build_info.compiler) compiler = c->build_info.compiler;
-   const char* linker_flags = "";
-   if (c->build_info.linkerflags) linker_flags = c->build_info.linkerflags;
-   string_buffer_Buf_add(out, "../output:\n");
-   string_buffer_Buf_print(out, "\t%s output.s %s -o ../%s\n", compiler, linker_flags, target_name);
-   string_buffer_Buf_newline(out);
-   ir_context_Context_write(c, output_dir, "Makefile", out);
-   string_buffer_Buf_clear(out);
-   string_buffer_Buf_print(out, "\t.file   \"%s.c2\"\n", target_name);
-   string_buffer_Buf_add(out, "\t.text\n");
-   (c->target->generateAsm) || c2_assert("ir/context_output.c2", 47, "ir_context.Context.writeOutput", "c.target.generateAsm");
-   uint32_t block_start = 0;
-   uint32_t num_symbols = ir_context_SymbolList_getCount(&c->symbols);
-   const ir_context_Symbol* symbols = ir_context_SymbolList_get(&c->symbols, 0);
-   for (uint32_t i = 0; i < num_symbols; i++) {
-      const ir_context_Symbol* s = &symbols[i];
-      if (s->is_function) {
-         const ir_FunctionInfo* fi = s->f.info;
-         c->target->generateAsm(out, string_pool_Pool_idx2str(c->pool, s->name), fi, s->is_external);
-         block_start += ir_BlockList_getCount(&fi->blocks);
-      }
-   }
-   string_buffer_Buf_newline(out);
-   string_buffer_Buf_add(out, "\t.ident \"C2C\"\n");
-   if (1) {
-      puts(string_buffer_Buf_data(out));
-   }
-   ir_context_Context_write(c, output_dir, "output.s", out);
-   string_buffer_Buf_free(out);
-}
-
-static void ir_context_Context_write(ir_context_Context* c, const char* output_dir, const char* filename, const string_buffer_Buf* buf)
-{
-   file_utils_File file; file_utils_File_init(&file, output_dir, filename);
-   if (!file_utils_File_write(&file, string_buffer_Buf_udata(buf), string_buffer_Buf_size(buf))) {
-      console_error("cannot write to %s: %s", file.path, file_utils_File_getError(&file));
-   }
-}
-
-static const ir_tools_Target* ir_context_getArchTarget(const target_info_Info* info)
-{
-   switch (info->arch) {
-   case target_info_Arch_Unknown:
-   case target_info_Arch_I686:
-      break;
-   case target_info_Arch_Arm:
-      break;
-   case target_info_Arch_X86_64:
-      return arch_amd64_getTarget();
-   case target_info_Arch_Amd64:
-      return arch_amd64_getTarget();
-   case target_info_Arch_Arm64:
-      return arch_arm64_getTarget();
-   case target_info_Arch_Riscv_32:
-      break;
-   case target_info_Arch_Riscv_64:
-      return arch_rv64_getTarget();
-   }
-   (0) || c2_assert("ir/context_target.c2", 42, "ir_context.getArchTarget", "0");
-   return NULL;
-}
-
-static const char* ir_context_InitValueKind_str(ir_context_InitValueKind k)
-{
-   switch (k) {
-   case ir_context_InitValueKind_None:
-      return "none";
-   case ir_context_InitValueKind_Byte:
-      return "byte";
-   case ir_context_InitValueKind_Short:
-      return "short";
-   case ir_context_InitValueKind_Word:
-   case ir_context_InitValueKind_Word2:
-      return "word";
-   case ir_context_InitValueKind_Long:
-   case ir_context_InitValueKind_Long2:
-      return "long";
-   case ir_context_InitValueKind_Symbol:
-      return "symbol";
-   case ir_context_InitValueKind_Text:
-      return "text";
-   case ir_context_InitValueKind_Zero:
-      return "zero";
-   }
-   return "?";
-}
-
-static void ir_context_InitValue_init(ir_context_InitValue* r, ir_context_InitValueKind kind, uint32_t value)
-{
-   r->kind = kind;
-   r->value = value;
-}
-
-static const char* ir_context_InitValue_getKindName(const ir_context_InitValue* r)
-{
-   ir_context_InitValueKind k = ir_context_InitValue_getKind(r);
-   return ir_context_InitValueKind_str(k);
-}
-
-static ir_context_InitValueKind ir_context_InitValue_getKind(const ir_context_InitValue* r)
-{
-   return (ir_context_InitValueKind)r->kind;
-}
-
-static void ir_context_InitValueList_init(ir_context_InitValueList* l, uint32_t initial_size)
-{
-   memset(l, 0, 16);
-   if (initial_size) ir_context_InitValueList_resize(l, initial_size);
-}
-
-static void ir_context_InitValueList_free(ir_context_InitValueList* l)
-{
-   if (l->values) free(l->values);
-}
-
-static void ir_context_InitValueList_resize(ir_context_InitValueList* l, uint32_t cap)
-{
-   l->capacity = cap;
-   ir_context_InitValue* values2 = malloc(l->capacity * 4);
-   if (l->count != 0) memcpy(values2, l->values, l->count * 4);
-   if (l->values) free(l->values);
-   l->values = values2;
-}
-
-static ir_context_InitValue* ir_context_InitValueList_add(ir_context_InitValueList* l)
-{
-   if (l->count == l->capacity) ir_context_InitValueList_resize(l, l->capacity ? l->capacity * 2 : 4);
-   ir_context_InitValue* v = &l->values[l->count];
-   l->count++;
-   return v;
-}
-
-static uint32_t ir_context_InitValueList_getCount(const ir_context_InitValueList* l)
-{
-   return l->count;
-}
-
-static ir_context_InitValue* ir_context_InitValueList_get(const ir_context_InitValueList* l, uint32_t idx)
-{
-   return &l->values[idx];
-}
-
-static void ir_context_PrintHelper_init(ir_context_PrintHelper* ph, const ir_context_Context* c)
-{
-   ph->out = string_buffer_create(64 * 1024, color_useColor(), 2);
-   ph->blocks = NULL;
-   ph->c = c;
-   ph->temp_ids = calloc(ir_context_MaxTemps, 4);
-   ph->temp_count = 0;
-   ph->cur_block = NULL;
-   ph->cur_info = NULL;
-}
-
-static void ir_context_PrintHelper_free(ir_context_PrintHelper* ph)
-{
-   string_buffer_Buf_free(ph->out);
-   free(ph->temp_ids);
-}
-
-static void ir_context_PrintHelper_print(const ir_context_PrintHelper* ph)
-{
-   string_buffer_Buf_color(ph->out, color_Normal);
-   puts(string_buffer_Buf_data(ph->out));
-}
-
-static void ir_context_PrintHelper_resetTemps(ir_context_PrintHelper* ph, uint32_t num_args, uint32_t num_instr)
-{
-   ph->temp_count = num_args;
-   (num_instr < ir_context_MaxTemps) || c2_assert("ir/print.c2", 86, "ir_context.PrintHelper.resetTemps", "num_instr < MaxTemps");
-   memset(ph->temp_ids, 0, num_instr * 4);
-}
-
-static uint32_t ir_context_PrintHelper_addTemp(ir_context_PrintHelper* ph, uint32_t local_instr_idx)
-{
-   uint32_t temp_nr = ph->temp_count;
-   (local_instr_idx < ir_context_MaxTemps) || c2_assert("ir/print.c2", 92, "ir_context.PrintHelper.addTemp", "local_instr_idx < MaxTemps");
-   (ph->temp_ids[local_instr_idx] == 0) || c2_assert("ir/print.c2", 93, "ir_context.PrintHelper.addTemp", "ph.temp_ids[local_instr_idx] == 0");
-   ph->temp_ids[local_instr_idx] = temp_nr;
-   ph->temp_count++;
-   return temp_nr;
-}
-
-static uint32_t ir_context_PrintHelper_findTemp(ir_context_PrintHelper* ph, uint32_t instr_idx)
-{
-   (instr_idx < ir_context_MaxTemps) || c2_assert("ir/print.c2", 100, "ir_context.PrintHelper.findTemp", "instr_idx < MaxTemps");
-   return ph->temp_ids[instr_idx];
-}
-
-static void ir_context_PrintHelper_collect_temps(ir_context_PrintHelper* ph)
-{
-   const ir_Instr* instr = ir_InstrList_get(&ph->cur_info->instructions, 0);
-   for (uint32_t i = 0; i < ir_InstrList_getCount(&ph->cur_info->instructions); i++) {
-      const ir_Instr* ii = &instr[i];
-      if (ir_Instr_hasResult(ii)) ir_context_PrintHelper_addTemp(ph, i);
-   }
-}
-
-static void ir_context_PrintHelper_print_func(ir_context_PrintHelper* ph, const ir_context_Symbol* s, const ir_FunctionInfo* info)
-{
-   const ir_context_Context* c = ph->c;
-   if (!info) return;
-   ph->blocks = &info->blocks;
-   ph->cur_info = info;
-   string_buffer_Buf* out = ph->out;
-   ir_context_PrintHelper_resetTemps(ph, 1, ir_InstrList_getCount(&info->instructions));
-   if (s->is_external) {
-      string_buffer_Buf_color(out, ir_context_col_Attr);
-      string_buffer_Buf_add(out, "external ");
-   }
-   string_buffer_Buf_color(out, ir_context_col_Attr);
-   string_buffer_Buf_add(out, "fn");
-   ir_Type rt = ir_FunctionInfo_getReturnType(info);
-   if (rt != ir_Type_None) {
-      string_buffer_Buf_space(out);
-      string_buffer_Buf_color(out, ir_context_col_Type);
-      string_buffer_Buf_add(out, ir_Type_str(rt));
-      string_buffer_Buf_color(out, color_Normal);
-   }
-   string_buffer_Buf_color(out, ir_context_col_Symbol);
-   string_buffer_Buf_print(out, " %s(", string_pool_Pool_idx2str(c->pool, s->name));
-   for (uint32_t i = 1; i < info->num_args; i++) {
-      if (i != 1) string_buffer_Buf_add(out, ", ");
-      string_buffer_Buf_color(out, ir_context_col_Type);
-      ir_Type t = ir_FunctionInfo_getArg(info, i);
-      string_buffer_Buf_add(out, ir_Type_str(t));
-      string_buffer_Buf_color(out, color_Normal);
-   }
-   string_buffer_Buf_add(out, ") {");
-   string_buffer_Buf_add(out, "  ");
-   string_buffer_Buf_color(out, ir_context_col_Comment);
-   string_buffer_Buf_print(out, "# %u blocks, %u instr, %d slots", ir_BlockList_getCount(&info->blocks), ir_InstrList_getCount(&info->instructions), info->num_slots);
-   string_buffer_Buf_newline(out);
-   uint32_t num_blks = ir_BlockList_getCount(&info->blocks);
-   ir_context_PrintHelper_collect_temps(ph);
-   const ir_Block* blks = ir_BlockList_get(ph->blocks, 0);
-   uint32_t max = 0;
-   for (uint32_t blk_id = 0; blk_id < num_blks; blk_id++) {
-      ph->cur_block = &blks[blk_id];
-      const ir_Block* b = ph->cur_block;
-      string_buffer_Buf_color(out, color_Yellow);
-      string_buffer_Buf_print(out, "%s.%u:", ir_Block_getKindName(b), blk_id);
-      if (!b->used) {
-         string_buffer_Buf_color(out, color_Grey);
-         string_buffer_Buf_add(out, "  # unused");
-      }
-      ir_Index i_idx = ir_Block_getInstructions(b);
-      string_buffer_Buf_newline(out);
-      ph->blk_instr_start = i_idx.start;
-      ph->blk_instr_count = i_idx.count;
-      const ir_Instr* instrs = ir_InstrList_get(&info->instructions, i_idx.start);
-      for (uint32_t j = 0; j < i_idx.count; j++) {
-         ir_context_PrintHelper_printInstr(ph, instrs, j, i_idx.start + j);
-      }
-      if (i_idx.count == 0) {
-         string_buffer_Buf_color(out, ir_context_col_Fixup);
-         string_buffer_Buf_add(out, "  NO INSTRUCTIONS!!\n");
-      }
-      uint32_t last = i_idx.start + i_idx.count;
-      if (last > max) max = last;
-      ph->cur_block = NULL;
-   }
-   uint32_t instr_count = ir_InstrList_getCount(&info->instructions);
-   if (max != instr_count) {
-      string_buffer_Buf_color(out, ir_context_col_Fixup);
-      string_buffer_Buf_print(out, "Inserted (%u)\n", instr_count - max);
-      const ir_Instr* instrs = ir_InstrList_get(&info->instructions, 0);
-      while (max != instr_count) {
-         ir_context_PrintHelper_printInstr(ph, instrs, max, max);
-         max++;
-      }
-   }
-   string_buffer_Buf_color(out, color_Normal);
-   string_buffer_Buf_add(out, "}\n");
-}
-
-static void ir_context_Context_print_function(const ir_context_Context* c, const ir_context_Symbol* symbol, const ir_FunctionInfo* info, const char* version)
-{
-   ir_context_PrintHelper ph; ir_context_PrintHelper_init(&ph, c);
-   string_buffer_Buf_add(ph.out, "------ ");
-   string_buffer_Buf_add(ph.out, version);
-   string_buffer_Buf_add(ph.out, " ------\n");
-   ir_context_PrintHelper_print_func(&ph, symbol, info);
-   ir_context_PrintHelper_print(&ph);
-   ir_context_PrintHelper_free(&ph);
-}
-
-static void ir_context_Context_print(const ir_context_Context* c)
-{
-   ir_context_PrintHelper ph; ir_context_PrintHelper_init(&ph, c);
-   string_buffer_Buf* out = ph.out;
-   bool prev_is_var = false;
-   for (uint32_t i = 1; i < ir_context_SymbolList_getCount(&c->symbols); i++) {
-      const ir_context_Symbol* s = ir_context_SymbolList_get(&c->symbols, i);
-      if (s->is_function) {
-         if (prev_is_var) string_buffer_Buf_newline(out);
-         ir_context_PrintHelper_print_func(&ph, s, s->f.info);
-         string_buffer_Buf_newline(out);
-      } else {
-         if (s->is_external) {
-            string_buffer_Buf_color(out, ir_context_col_Attr);
-            string_buffer_Buf_add(out, "external ");
-         }
-         string_buffer_Buf_color(out, ir_context_col_Symbol);
-         string_buffer_Buf_print(out, "%s", string_pool_Pool_idx2str(c->pool, s->name));
-         string_buffer_Buf_space(out);
-         string_buffer_Buf_color(out, ir_context_col_Value);
-         string_buffer_Buf_print(out, "align %u ", s->align);
-         const ir_context_InitValue* v = ir_context_InitValueList_get(&c->init_values, s->g.init_value_idx);
-         if (s->g.init_value_count == 1) {
-            ir_context_PrintHelper_printInitValue(&ph, v, out);
-         } else {
-            string_buffer_Buf_color(out, ir_context_col_Data);
-            string_buffer_Buf_add(out, "[ ");
-            for (uint32_t j = 0; j < s->g.init_value_count; j++) {
-               if (j != 0) string_buffer_Buf_add(out, ", ");
-               ir_context_PrintHelper_printInitValue(&ph, &v[j], out);
-            }
-            string_buffer_Buf_color(out, ir_context_col_Data);
-            string_buffer_Buf_add(out, " ]");
-         }
-         string_buffer_Buf_newline(out);
-      }
-      prev_is_var = !s->is_function;
-   }
-   ir_context_PrintHelper_print(&ph);
-   ir_context_PrintHelper_free(&ph);
-}
-
-static void ir_context_PrintHelper_printInitValue(ir_context_PrintHelper* ph, const ir_context_InitValue* v, string_buffer_Buf* out)
-{
-   switch (ir_context_InitValue_getKind(v)) {
-   case ir_context_InitValueKind_None:
-      break;
-   case ir_context_InitValueKind_Byte:
-      string_buffer_Buf_color(out, ir_context_col_Data);
-      string_buffer_Buf_print(out, "b %u", v->value);
-      break;
-   case ir_context_InitValueKind_Short:
-      string_buffer_Buf_color(out, ir_context_col_Data);
-      string_buffer_Buf_print(out, "s %u", v->value);
-      break;
-   case ir_context_InitValueKind_Word:
-      string_buffer_Buf_color(out, ir_context_col_Data);
-      string_buffer_Buf_print(out, "w %u", v->value);
-      break;
-   case ir_context_InitValueKind_Word2: {
-      string_buffer_Buf_color(out, ir_context_col_Data);
-      const ir_context_Constant* con = ir_context_ConstantList_get(&ph->c->constants, v->value);
-      string_buffer_Buf_print(out, "w %lu", con->uvalue);
-      break;
-   }
-   case ir_context_InitValueKind_Long:
-      string_buffer_Buf_color(out, ir_context_col_Data);
-      string_buffer_Buf_print(out, "l %u", v->value);
-      break;
-   case ir_context_InitValueKind_Long2: {
-      const ir_context_Constant* con = ir_context_ConstantList_get(&ph->c->constants, v->value);
-      string_buffer_Buf_print(out, "l %lu", con->uvalue);
-      break;
-   }
-   case ir_context_InitValueKind_Symbol: {
-      const ir_context_Symbol* g = ir_context_SymbolList_get(&ph->c->symbols, v->value);
-      string_buffer_Buf_color(out, ir_context_col_Symbol);
-      string_buffer_Buf_print(out, "@%s", string_pool_Pool_idx2str(ph->c->pool, g->name));
-      break;
-   }
-   case ir_context_InitValueKind_Text: {
-      string_buffer_Buf_color(out, ir_context_col_Data);
-      const char* text = string_pool_Pool_idx2str(ph->c->pool, v->value);
-      string_buffer_Buf_add1(out, '"');
-      string_buffer_Buf_encodeBytes(out, text, (uint32_t)strlen(text) + 1, '"');
-      string_buffer_Buf_add1(out, '"');
-      break;
-   }
-   case ir_context_InitValueKind_Zero:
-      string_buffer_Buf_color(out, ir_context_col_Data);
-      string_buffer_Buf_print(out, "z %u", v->value);
-      break;
-   }
-}
-
-static void ir_context_PrintHelper_printInstr(ir_context_PrintHelper* ph, const ir_Instr* blk_instrs, uint32_t blk_instr_idx, uint32_t gbl_idx)
-{
-   const ir_Instr* i = &blk_instrs[blk_instr_idx];
-   string_buffer_Buf* out = ph->out;
-   ir_InstrKind k = ir_Instr_getKind(i);
-   if (ir_Instr_isComment(i)) {
-      string_buffer_Buf_resetToLastNewline(out);
-      string_buffer_Buf_add(out, "   ");
-      string_buffer_Buf_color(out, ir_context_col_Comment);
-      string_buffer_Buf_add(out, "# ");
-      string_buffer_Buf_add(out, string_pool_Pool_idx2str(ph->c->pool, (uint32_t)i->args[0].value));
-      string_buffer_Buf_color(out, color_Normal);
-      string_buffer_Buf_newline(out);
-      return;
-   }
-   string_buffer_Buf_color(out, ir_context_col_Comment);
-   string_buffer_Buf_print(out, "%-3u", gbl_idx);
-   string_buffer_Buf_indent(out, 2);
-   if (ir_Instr_isNone(i)) {
-      string_buffer_Buf_add(out, "-\n");
-      return;
-   }
-   if (ir_Instr_hasResult(i)) {
-      if (ir_Instr_hasRegister(i)) {
-         string_buffer_Buf_color(out, ir_context_col_Register);
-         string_buffer_Buf_print(out, "r%u", ir_Instr_getRegister(i));
-      } else {
-         string_buffer_Buf_color(out, ir_context_col_Temp);
-         uint32_t temp_nr = ir_context_PrintHelper_findTemp(ph, ph->blk_instr_start + blk_instr_idx);
-         string_buffer_Buf_print(out, "%%%u", temp_nr);
-      }
-      string_buffer_Buf_color(out, color_Normal);
-      string_buffer_Buf_add(out, " = ");
-   }
-   if (ir_Instr_isArch(i)) {
-      string_buffer_Buf_color(out, ir_context_col_Arch);
-      string_buffer_Buf_add(out, ph->c->target->instr_names[i->instrBits.arch_instr]);
-   } else {
-      if (ir_Instr_isPseudo(i)) {
-         string_buffer_Buf_color(out, ir_context_col_PseudoInstr);
-      } else {
-         string_buffer_Buf_color(out, ir_context_col_Instr);
-      }
-      string_buffer_Buf_add(out, ir_Instr_getKindName(i));
-   }
-   switch (ir_Instr_getKind(i)) {
-   case ir_InstrKind_Call: {
-      string_buffer_Buf_space(out);
-      ir_context_PrintHelper_printRef(ph, i->args[0], false);
-      int32_t num_args = i->args[1].value;
-      string_buffer_Buf_print(out, " %d", num_args);
-      break;
-   }
-   case ir_InstrKind_JmpIf:
-      for (uint32_t r = 0; r < 2; r++) {
-         if (ir_Ref_isValid(&i->args[r])) {
-            if (r > 0) string_buffer_Buf_add1(out, ',');
-            string_buffer_Buf_space(out);
-            ir_context_PrintHelper_printRef(ph, i->args[r], false);
-         }
-      }
-      if (!ph->cur_block->dests[1]) {
-         string_buffer_Buf_space(out);
-         string_buffer_Buf_color(out, ir_context_col_Fixup);
-         string_buffer_Buf_add(out, " MISSING DEST[1]");
-      }
-      break;
-   case ir_InstrKind_Switch: {
-      string_buffer_Buf_color(out, color_Normal);
-      string_buffer_Buf_space(out);
-      ir_context_PrintHelper_printRef(ph, i->args[0], false);
-      string_buffer_Buf_add(out, ", ");
-      string_buffer_Buf_color(out, ir_context_col_Block);
-      uint32_t join_blk = (uint32_t)i->args[1].value;
-      ir_Block* dest = ir_BlockList_get(ph->blocks, join_blk);
-      string_buffer_Buf_print(out, "@%s.%u", ir_Block_getKindName(dest), join_blk);
-      string_buffer_Buf_newline(out);
-      ir_CaseId case_id = ph->cur_block->dests[0];
-      uint32_t num_cases = ph->cur_block->dests[1];
-      for (uint32_t j = 0; j < num_cases; j++) {
-         ir_Case* cc = ir_CaseList_get(&ph->cur_info->cases, case_id + j);
-         string_buffer_Buf_indent(out, 5);
-         string_buffer_Buf_color(out, ir_context_col_Value);
-         string_buffer_Buf_print(out, "%u", cc->value);
-         string_buffer_Buf_space(out);
-         string_buffer_Buf_color(out, ir_context_col_Block);
-         dest = ir_BlockList_get(ph->blocks, cc->block);
-         string_buffer_Buf_print(out, "@%s.%u", ir_Block_getKindName(dest), cc->block);
-         string_buffer_Buf_color(out, color_Normal);
-         string_buffer_Buf_newline(out);
-      }
-      return;
-   }
-   case ir_InstrKind_Phi: {
-      string_buffer_Buf_color(out, color_Normal);
-      string_buffer_Buf_add(out, " [ ");
-      const ir_PhiClause* clauses = ir_PhiList_get(&ph->cur_info->phis, (uint32_t)i->args[0].value);
-      for (uint32_t j = 0; j < i->args[1].value; j++) {
-         if (j != 0) string_buffer_Buf_add(out, ", ");
-         const ir_PhiClause* pc = &clauses[j];
-         uint32_t blk_id = pc->src;
-         ir_Block* src = ir_BlockList_get(ph->blocks, blk_id);
-         string_buffer_Buf_color(out, ir_context_col_Block);
-         string_buffer_Buf_print(out, "@%s.%u", ir_Block_getKindName(src), blk_id);
-         string_buffer_Buf_color(out, color_Normal);
-         string_buffer_Buf_add(out, ": ");
-         ir_context_PrintHelper_printRef(ph, pc->ref, false);
-      }
-      string_buffer_Buf_add(out, " ]");
-      break;
-   }
-   default:
-      for (uint32_t r = 0; r < 2; r++) {
-         if (ir_Ref_isValid(&i->args[r])) {
-            if (r > 0) string_buffer_Buf_add1(out, ',');
-            string_buffer_Buf_space(out);
-            ir_context_PrintHelper_printRef(ph, i->args[r], false);
-         }
-      }
-      break;
-   }
-   string_buffer_Buf_newline(out);
-}
-
-static void ir_context_PrintHelper_printRef(ir_context_PrintHelper* ph, ir_Ref r, bool print_type)
-{
-   string_buffer_Buf* out = ph->out;
-   switch (ir_Ref_getKind(&r)) {
-   case ir_RefKind_None:
-      string_buffer_Buf_add(out, "(none)");
-      break;
-   case ir_RefKind_Slot:
-      string_buffer_Buf_color(out, ir_context_col_Slot);
-      string_buffer_Buf_print(out, "s%d", r.value);
-      break;
-   case ir_RefKind_Temp: {
-      string_buffer_Buf_color(out, ir_context_col_Temp);
-      uint32_t v = ir_context_PrintHelper_findTemp(ph, (uint32_t)r.value);
-      if (v == 0) string_buffer_Buf_color(out, ir_context_col_Fixup);
-      string_buffer_Buf_print(out, "%%%u", v);
-      break;
-   }
-   case ir_RefKind_JmpDest: {
-      (ph->cur_block) || c2_assert("ir/print.c2", 497, "ir_context.PrintHelper.printRef", "ph.cur_block");
-      const ir_Block* b = ph->cur_block;
-      string_buffer_Buf_color(out, ir_context_col_Block);
-      (b->dests[0]) || c2_assert("ir/print.c2", 500, "ir_context.PrintHelper.printRef", "b.dests[0]");
-      ir_Block* dest = ir_BlockList_get(ph->blocks, b->dests[0]);
-      string_buffer_Buf_print(out, "@%s.%u", ir_Block_getKindName(dest), b->dests[0]);
-      if (b->dests[1]) {
-         string_buffer_Buf_add(out, ", ");
-         dest = ir_BlockList_get(ph->blocks, b->dests[1]);
-         string_buffer_Buf_print(out, "@%s.%u", ir_Block_getKindName(dest), b->dests[1]);
-      }
-      break;
-   }
-   case ir_RefKind_Symbol: {
-      const ir_context_Symbol* g = ir_context_SymbolList_get(&ph->c->symbols, (uint32_t)r.value);
-      string_buffer_Buf_color(out, ir_context_col_Symbol);
-      string_buffer_Buf_print(out, "@%s", string_pool_Pool_idx2str(ph->c->pool, g->name));
-      break;
-   }
-   case ir_RefKind_Value:
-      string_buffer_Buf_color(out, ir_context_col_Value);
-      string_buffer_Buf_print(out, "%d", r.value);
-      break;
-   case ir_RefKind_Integer: {
-      string_buffer_Buf_color(out, ir_context_col_Value);
-      const ir_context_Constant* con = ir_context_ConstantList_get(&ph->c->constants, (uint32_t)r.value);
-      string_buffer_Buf_print(out, "%ld", con->ivalue);
-      break;
-   }
-   case ir_RefKind_Float:
-      break;
-   case ir_RefKind_Double:
-      break;
-   case ir_RefKind_Text:
-      string_buffer_Buf_color(out, ir_context_col_Block);
-      string_buffer_Buf_add(out, string_pool_Pool_idx2str(ph->c->pool, (uint32_t)r.value));
-      break;
-   case ir_RefKind_Register:
-      string_buffer_Buf_color(out, ir_context_col_Register);
-      string_buffer_Buf_print(out, "r%d", r.value);
-      break;
-   case ir_RefKind_Block: {
-      string_buffer_Buf_color(out, ir_context_col_Block);
-      ir_Block* b = ir_BlockList_get(ph->blocks, (uint32_t)r.value);
-      string_buffer_Buf_print(out, "@%s.%d", ir_Block_getKindName(b), r.value);
-      break;
-   }
-   case ir_RefKind_PhiClause:
-      string_buffer_Buf_color(out, ir_context_col_Value);
-      string_buffer_Buf_print(out, "%d", r.value);
-      break;
-   case ir_RefKind_CallNumArgs:
-      string_buffer_Buf_color(out, ir_context_col_Value);
-      string_buffer_Buf_print(out, "%d", r.value);
-      break;
-   }
-   string_buffer_Buf_color(out, color_Normal);
-}
-
-static void ir_context_dump_function(const ir_FunctionInfo* info, const char* name)
-{
-   string_buffer_Buf* out = string_buffer_create(16 * 1024, false, 1);
-   string_buffer_Buf_print(out, "function %s:\n", name);
-   ir_context_dump_function_info(out, info);
-   puts(string_buffer_Buf_data(out));
-   string_buffer_Buf_free(out);
-}
-
-static void ir_context_dump_function_info(string_buffer_Buf* out, const ir_FunctionInfo* info)
-{
-   string_buffer_Buf_add(out, "  blocks:\n");
-   for (uint32_t j = 0; j < ir_BlockList_getCount(&info->blocks); j++) {
-      const ir_Block* b = ir_BlockList_get(&info->blocks, j);
-      ir_Index b_idx = ir_Block_getInstructions(b);
-      string_buffer_Buf_print(out, "    [%3u] %14s  D %2u|%2u  I %3u-%3u", j, ir_Block_getKindName(b), b->dests[0], b->dests[1], b_idx.start, b_idx.start + b_idx.count - 1);
-      if (b->used) string_buffer_Buf_add(out, " unused");
-      if (b->end_with_switch) string_buffer_Buf_add(out, " switch");
-      if (b->end_block) string_buffer_Buf_add(out, " end");
-      if (b->phi_source) string_buffer_Buf_add(out, " phi-src");
-      string_buffer_Buf_newline(out);
-   }
-   string_buffer_Buf_print(out, "  instructions: %u\n", ir_InstrList_getCount(&info->instructions));
-   const ir_Instr* instr = ir_InstrList_get(&info->instructions, 0);
-   for (uint32_t i = 0; i < ir_InstrList_getCount(&info->instructions); i++) {
-      const ir_Instr* r = &instr[i];
-      string_buffer_Buf_print(out, "    [%3u] %c  %7s", i, ir_Instr_hasResult(r) ? 'r' : ' ', ir_Instr_getKindName(r));
-      string_buffer_Buf_print(out, "  %8s %4d  ", ir_Ref_getKindName(&r->args[0]), r->args[0].value);
-      string_buffer_Buf_print(out, "  %8s %4d", ir_Ref_getKindName(&r->args[01]), r->args[1].value);
-      string_buffer_Buf_newline(out);
-   }
-   uint32_t num_cases = ir_CaseList_getCount(&info->cases);
-   if (num_cases) {
-      string_buffer_Buf_print(out, " cases: (%u)\n", num_cases);
-      const ir_Case* cases = ir_CaseList_get(&info->cases, 0);
-      for (uint32_t i = 0; i < num_cases; i++) {
-         const ir_Case* c = &cases[i];
-         string_buffer_Buf_print(out, "    [%2u] %3u   blk %u\n", i, c->value, c->block);
-      }
-   }
-   uint32_t num_clauses = ir_PhiList_getCount(&info->phis);
-   if (num_clauses) {
-      string_buffer_Buf_print(out, " phi clauses: (%u)\n", num_clauses);
-      for (uint32_t i = 0; i < num_clauses; i++) {
-         const ir_PhiClause* pc = ir_PhiList_get(&info->phis, i);
-         string_buffer_Buf_print(out, "    [%2u] %2u <=  %8s %2d   blk %2u\n", i, pc->dest_idx, ir_Ref_getKindName(&pc->ref), pc->ref.value, pc->src);
-      }
-   }
-   string_buffer_Buf_newline(out);
-}
-
-static void ir_context_Context_dump(const ir_context_Context* c)
-{
-   string_buffer_Buf* out = string_buffer_create(16 * 1024, false, 1);
-   string_buffer_Buf_print(out, "symbols: (%u)\n", ir_context_SymbolList_getCount(&c->symbols));
-   for (uint32_t i = 1; i < ir_context_SymbolList_getCount(&c->symbols); i++) {
-      const ir_context_Symbol* s = ir_context_SymbolList_get(&c->symbols, i);
-      string_buffer_Buf_print(out, "  [%2u] %s", i, string_pool_Pool_idx2str(c->pool, s->name));
-      if (s->is_function) {
-         if (s->f.info) ir_context_dump_function_info(out, s->f.info);
-      } else {
-         uint32_t init_value_idx;
-         uint32_t init_value_count;
-         string_buffer_Buf_print(out, "  init_value %u-%u", s->g.init_value_idx, s->g.init_value_idx + s->g.init_value_count - 1);
-      }
-      string_buffer_Buf_newline(out);
-   }
-   string_buffer_Buf_newline(out);
-   if (ir_context_ConstantList_getCount(&c->constants)) {
-      string_buffer_Buf_print(out, "constants: (%u)\n", ir_context_ConstantList_getCount(&c->constants));
-      for (uint32_t i = 0; i < ir_context_ConstantList_getCount(&c->constants); i++) {
-         const ir_context_Constant* con = ir_context_ConstantList_get(&c->constants, i);
-         string_buffer_Buf_print(out, "  [%2u] %ld\n", i, con->ivalue);
-      }
-      string_buffer_Buf_newline(out);
-   }
-   if (ir_context_InitValueList_getCount(&c->init_values)) {
-      string_buffer_Buf_print(out, "init values: (%u)\n", ir_context_InitValueList_getCount(&c->init_values));
-      for (uint32_t i = 0; i < ir_context_InitValueList_getCount(&c->init_values); i++) {
-         const ir_context_InitValue* v = ir_context_InitValueList_get(&c->init_values, i);
-         string_buffer_Buf_print(out, "  [%2u] %6s  %u\n", i, ir_context_InitValue_getKindName(v), v->value);
-      }
-      string_buffer_Buf_newline(out);
-   }
-   puts(string_buffer_Buf_data(out));
-   string_buffer_Buf_free(out);
-}
-
-static void ir_context_Context_report(const ir_context_Context* c)
-{
-   string_buffer_Buf* out = string_buffer_create(256, false, 1);
-   uint32_t total_blocks = 0;
-   uint32_t total_instr = 0;
-   uint32_t total_functions = 0;
-   uint32_t total_globals = 0;
-   for (uint32_t i = 1; i < ir_context_SymbolList_getCount(&c->symbols); i++) {
-      const ir_context_Symbol* s = ir_context_SymbolList_get(&c->symbols, i);
-      if (s->is_function) {
-         total_functions++;
-         if (s->f.info) {
-            total_blocks += ir_BlockList_getCount(&s->f.info->blocks);
-            total_instr += ir_InstrList_getCount(&s->f.info->instructions);
-         } else {
-            string_buffer_Buf_print(out, "NO INFO: %s\n", string_pool_Pool_idx2str(c->pool, s->name));
-         }
-      } else {
-         total_globals++;
-      }
-   }
-   string_buffer_Buf_print(out, "IR: %u symbols (%u globals, %u funcs), %u const, %u blocks, %u instr, %u values\n", c->symbols.count, total_globals, total_functions, c->constants.count, total_blocks, total_instr, ir_context_InitValueList_getCount(&c->init_values));
-   puts(string_buffer_Buf_data(out));
-   string_buffer_Buf_free(out);
-}
-
-static void ir_context_SymbolList_init(ir_context_SymbolList* l, uint32_t initial_size)
-{
-   memset(l, 0, 16);
-   l->count = 1;
-   ir_context_SymbolList_resize(l, initial_size);
-}
-
-static void ir_context_SymbolList_free(ir_context_SymbolList* l)
-{
-   if (l->symbols) free(l->symbols);
-}
-
-static void ir_context_SymbolList_resize(ir_context_SymbolList* l, uint32_t cap)
-{
-   l->capacity = cap;
-   ir_context_Symbol* symbols2 = calloc(l->capacity, 16);
-   if (l->count > 1) memcpy(symbols2, l->symbols, l->count * 16);
-   if (l->symbols) free(l->symbols);
-   l->symbols = symbols2;
-}
-
-static ir_context_SymbolId ir_context_SymbolList_add(ir_context_SymbolList* l, uint32_t name, bool is_function, uint32_t align, bool is_external)
-{
-   if (l->count == l->capacity) ir_context_SymbolList_resize(l, l->capacity * 2);
-   ir_context_SymbolId idx = l->count;
-   ir_context_Symbol* s = &l->symbols[idx];
-   memset(s, 0, 16);
-   s->name = name;
-   s->align = align;
-   s->is_external = is_external;
-   s->is_function = is_function;
-   if (is_function) {
-      s->f.info = NULL;
-   } else {
-      s->g.init_value_count = 0;
-      s->g.init_value_idx = 0;
-   }
-   l->count++;
-   return idx;
-}
-
-static uint32_t ir_context_SymbolList_getCount(const ir_context_SymbolList* l)
-{
-   return l->count;
-}
-
-static ir_context_Symbol* ir_context_SymbolList_get(const ir_context_SymbolList* l, ir_context_SymbolId idx)
-{
-   return &l->symbols[idx];
-}
-
-static uint32_t ir_context_online_cpus(void)
-{
-   int64_t ncpus = sysconf(unistd__SC_NPROCESSORS_ONLN);
-   if (ncpus > 8) return 8;
-   if (ncpus > 0) return (uint32_t)ncpus;
-   return 1;
-}
-
-static ir_context_WorkQueue* ir_context_WorkQueue_init(ir_context_WorkQueue* q)
-{
-   memset(q, 0, 64);
-   pthread_mutex_init(&q->lock, NULL);
-   ir_context_WorkQueue_resize(q, 64);
-   return q;
-}
-
-static void ir_context_WorkQueue_free(ir_context_WorkQueue* q)
-{
-   free(q->funcs);
-}
-
-static void ir_context_WorkQueue_add(ir_context_WorkQueue* q, ir_FunctionInfo* fi)
-{
-   if (q->count == q->capacity) ir_context_WorkQueue_resize(q, q->capacity * 2);
-   q->funcs[q->count] = fi;
-   q->count++;
-}
-
-static void ir_context_WorkQueue_resize(ir_context_WorkQueue* q, uint32_t capacity)
-{
-   q->capacity = capacity;
-   ir_FunctionInfo** fns = malloc(capacity * 8);
-   if (q->count) {
-      memcpy(fns, q->funcs, q->count * 8);
-      free(q->funcs);
-   }
-   q->funcs = fns;
-}
-
-static ir_FunctionInfo* ir_context_WorkQueue_get(ir_context_WorkQueue* q)
-{
-   ir_FunctionInfo* fi = NULL;
-   pthread_mutex_lock(&q->lock);
-   if (q->idx != q->count) {
-      fi = q->funcs[q->idx++];
-   }
-   pthread_mutex_unlock(&q->lock);
-   return fi;
-}
-
-static void* ir_context_worker_main(void* arg)
-{
-   ir_context_QueueWorker* w = arg;
-   while (1) {
-      ir_FunctionInfo* fi = ir_context_WorkQueue_get(w->queue);
-      if (!fi) break;
-      w->tools.fi = fi;
-      w->tools.arg2 = NULL;
-      ir_tools_Tools_convert_fn(&w->tools);
-   }
-   return NULL;
-}
-
-static ir_context_QueueWorker* ir_context_QueueWorker_create(uint32_t idx, ir_context_WorkQueue* q, ir_context_Context* c)
-{
-   ir_context_QueueWorker* w = calloc(1, 840);
-   w->index = idx;
-   w->queue = q;
-   ir_tools_Tools_init(&w->tools, c->target, c, NULL);
-   pthread_create(&w->thread, NULL, ir_context_worker_main, w);
-   return w;
-}
-
-static void ir_context_QueueWorker_destroy(ir_context_QueueWorker* w)
-{
-   free(w);
-}
-
-static void ir_context_QueueWorker_join(ir_context_QueueWorker* w)
-{
-   if (w->thread) pthread_join(w->thread, NULL);
-   ir_tools_Tools_free(&w->tools);
-}
-
-static void ir_context_WorkQueue_run(ir_context_WorkQueue* q, ir_context_Context* c, uint32_t num_threads)
-{
-   if (num_threads == 0) num_threads = ir_context_online_cpus();
-   if (num_threads > ir_context_MAX_THREADS) num_threads = ir_context_MAX_THREADS;
-   if (num_threads > q->count) num_threads = q->count;
-   ir_context_QueueWorker* workers[32] = { NULL };
-   for (uint32_t i = 0; i < num_threads; i++) {
-      workers[i] = ir_context_QueueWorker_create(i, q, c);
-   }
-   for (uint32_t i = 0; i < num_threads; i++) {
-      ir_context_QueueWorker* w = workers[i];
-      ir_context_QueueWorker_join(w);
-      ir_context_QueueWorker_destroy(w);
-   }
-}
-
-
-// --- module ir_generator ---
-typedef struct ir_generator_BasicStructLayouter_ ir_generator_BasicStructLayouter;
-typedef struct ir_generator_FieldInit_ ir_generator_FieldInit;
-typedef struct ir_generator_FieldStructLayouter_ ir_generator_FieldStructLayouter;
-typedef struct ir_generator_JumpScope_ ir_generator_JumpScope;
-typedef struct ir_generator_Generator_ ir_generator_Generator;
-
-struct ir_generator_BasicStructLayouter_ {
-   ir_generator_Generator* gen;
-   const ast_StructLayout* layout;
-   uint32_t cur_offset;
-   uint32_t bitfield_base_size;
-   uint64_t bitfield_value;
-};
-
-static void ir_generator_BasicStructLayouter_init(ir_generator_BasicStructLayouter* l, ir_generator_Generator* gen, const ast_StructLayout* layout);
-static void ir_generator_BasicStructLayouter_add(ir_generator_BasicStructLayouter* l, uint32_t idx, const ast_Expr* e);
-static void ir_generator_BasicStructLayouter_flushBitfield(ir_generator_BasicStructLayouter* l);
-static void ir_generator_BasicStructLayouter_finalize(ir_generator_BasicStructLayouter* l);
-struct ir_generator_FieldInit_ {
-   const ast_FieldInitField* info;
-   ast_Expr* expr;
-};
-
-struct ir_generator_FieldStructLayouter_ {
-   ir_generator_Generator* gen;
-   uint32_t size;
-   ir_generator_FieldInit* inits;
-   uint32_t num_inits;
-   uint32_t max_inits;
-};
-
-static void ir_generator_FieldStructLayouter_init(ir_generator_FieldStructLayouter* l, ir_generator_Generator* gen, uint32_t struct_size, uint32_t num_members);
-static void ir_generator_FieldStructLayouter_resize(ir_generator_FieldStructLayouter* l, uint32_t max);
-static void ir_generator_FieldStructLayouter_add(ir_generator_FieldStructLayouter* l, const ast_FieldInitField* info, ast_Expr* value);
-static void ir_generator_FieldStructLayouter_finalize(ir_generator_FieldStructLayouter* l);
-static void ir_generator_FieldStructLayouter_finalizeExpr(ir_generator_FieldStructLayouter* l, const ast_StructTypeDecl* std, ir_Ref base_ref);
-struct ir_generator_JumpScope_ {
-   uint32_t break_block;
-   uint32_t continue_block;
-};
-
-struct ir_generator_Generator_ {
-   ir_context_Context* ctx;
-   string_pool_Pool* names;
-   value_maplist_List labels;
-   ir_generator_JumpScope scopes[32];
-   uint32_t num_scopes;
-   ir_gen_locals_Locals locals;
-   const ast_Decl* mainFunc;
-   string_buffer_Buf* name_buf;
-   bool assert_generated;
-   bool print;
-   bool enable_asserts;
-   ir_Type ptr_type;
-   uint32_t string_idx;
-   const char* target;
-   const char* output_dir;
-   source_mgr_SourceMgr* sm;
-   const target_info_Info* targetInfo;
-   ast_FunctionDecl* cur_function;
-};
-
-static const ir_Type ir_generator_Ast_type2ir_type[14] = {
-   [ast_BuiltinKind_Char] = ir_Type_I8,
-   [ast_BuiltinKind_Int8] = ir_Type_I8,
-   [ast_BuiltinKind_Int16] = ir_Type_I16,
-   [ast_BuiltinKind_Int32] = ir_Type_I32,
-   [ast_BuiltinKind_Int64] = ir_Type_I64,
-   [ast_BuiltinKind_UInt8] = ir_Type_U8,
-   [ast_BuiltinKind_UInt16] = ir_Type_U16,
-   [ast_BuiltinKind_UInt32] = ir_Type_U32,
-   [ast_BuiltinKind_UInt64] = ir_Type_U64,
-   [ast_BuiltinKind_Float32] = ir_Type_F32,
-   [ast_BuiltinKind_Float64] = ir_Type_F64,
-   [ast_BuiltinKind_ISize] = ir_Type_I64,
-   [ast_BuiltinKind_USize] = ir_Type_U64,
-   [ast_BuiltinKind_Bool] = ir_Type_I8
-};
-static void ir_generator_Generator_init(ir_generator_Generator* gen, source_mgr_SourceMgr* sm, const target_info_Info* targetInfo, const build_file_Info* buildInfo, const char* target, const char* output_dir, bool enable_asserts, bool print, bool print_all);
-static void ir_generator_Generator_free(ir_generator_Generator* gen);
-static void ir_generator_Generator_enterScope(ir_generator_Generator* gen, uint32_t break_block, uint32_t continue_block);
-static void ir_generator_Generator_leaveScope(ir_generator_Generator* gen);
-static const char* ir_generator_Generator_createLocalName(ir_generator_Generator* gen, const ast_Decl* d);
-static const char* ir_generator_Generator_createSymbolName(ir_generator_Generator* gen, const ast_Decl* d);
-static ir_context_SymbolId ir_generator_Generator_createSymbol(ir_generator_Generator* gen, ast_Decl* d);
-static const char* ir_generator_Generator_createStringVar(ir_generator_Generator* gen);
-static ir_Type ir_generator_builtin2irtype(ast_BuiltinKind k);
-static ir_Type ir_generator_Generator_type2irtype(ir_generator_Generator* gen, ast_QualType qt);
-static void ir_generator_Generator_emitInit(ir_generator_Generator* gen, const ast_Expr* e, uint32_t size);
-static void ir_generator_Generator_emitGlobalStructInit(ir_generator_Generator* gen, const ast_Expr* e);
-static void ir_generator_on_zero(void* arg, uint32_t size);
-static void ir_generator_on_expr(void* arg, const ast_Expr* e, uint32_t elem_size);
-static void ir_generator_Generator_emitArrayInit(ir_generator_Generator* gen, const ast_Expr* e);
-static bool ir_generator_Generator_isExternal(ir_generator_Generator* gen, const ast_Decl* d);
-static void ir_generator_Generator_emitFunction(ir_generator_Generator* gen, ast_FunctionDecl* fd);
-static void ir_generator_on_var_decl(void* arg, ast_VarDecl* vd);
-static void ir_generator_on_function_decl(void* arg, ast_FunctionDecl* d);
-static void ir_generator_Generator_on_ast(void* arg, ast_AST* a);
-static void ir_generator_Generator_on_module(void* arg, ast_Module* m);
-static void ir_generator_generate(const char* target, const char* output_dir, component_List* comps, source_mgr_SourceMgr* sm, const target_info_Info* targetInfo, const build_file_Info* buildInfo, const ast_Decl* mainFunc, bool enable_asserts, bool print, bool print_all);
-static void ir_generator_Generator_addLocalVar(ir_generator_Generator* gen, ast_VarDecl* vd);
-static void ir_generator_Generator_collectLocalVars(ir_generator_Generator* gen, ast_Stmt* s);
-static ir_BlockId ir_generator_Generator_getLabelBlock(ir_generator_Generator* gen, uint32_t label_idx);
-static void ir_generator_Generator_emitBitfield(ir_generator_Generator* gen, uint8_t size, uint64_t value);
-static void ir_generator_Generator_emitAssign(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* lhs, const ast_Expr* rhs);
-static void ir_generator_Generator_emitBinaryOperator(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e);
-static void ir_generator_Generator_emitLogicalAnd(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e);
-static void ir_generator_Generator_emitLogicalOr(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e);
-static void ir_generator_Generator_emitShift(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e);
-static void ir_generator_Generator_emitOpAssign(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e);
-static void ir_generator_Generator_emitBitfieldAssign(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* lhs, const ast_Expr* rhs);
-static void ir_generator_Generator_emitCallExpr(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e);
-static void ir_generator_Generator_emitExpr(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e);
-static void ir_generator_Generator_emitIdentifier(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e);
-static void ir_generator_Generator_emitSymbol(ir_generator_Generator* gen, ir_Ref* result, ast_Decl* d);
-static void ir_generator_Generator_emitVarDecl(ir_generator_Generator* gen, ir_Ref* result, ast_Decl* d);
-static void ir_generator_Generator_emitCondOperator(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e);
-static void ir_generator_Generator_emitUnaryOperator(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e);
-static void ir_generator_Generator_emitCond(ir_generator_Generator* gen, const ast_Expr* e, ir_BlockId true_blk, ir_BlockId false_blk, ir_BlockId start_blk);
-static void ir_generator_Generator_emitAssignCond(ir_generator_Generator* gen, ir_Type t, ir_Ref lhs, ir_Ref rhs, ir_BlockId left, ir_BlockId right, ir_BlockId start);
-static bool ir_generator_Generator_emitBinaryCond(ir_generator_Generator* gen, const ast_Expr* e, ir_BlockId left, ir_BlockId right, ir_BlockId start);
-static void ir_generator_Generator_emitAndCond(ir_generator_Generator* gen, const ast_BinaryOperator* b, ir_BlockId true_blk, ir_BlockId false_blk, ir_BlockId start_blk);
-static void ir_generator_Generator_emitOrCond(ir_generator_Generator* gen, const ast_BinaryOperator* b, ir_BlockId true_blk, ir_BlockId false_blk, ir_BlockId start_blk);
-static void ir_generator_Generator_emitBuiltin(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e);
-static void ir_generator_Generator_emitArraySubscript(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e);
-static ir_Type ir_generator_size2type(uint32_t size);
-static void ir_generator_Generator_emitStructInitExpr(ir_generator_Generator* gen, const ir_gen_locals_StackVar* var, const ast_Expr* e);
-static void ir_generator_Generator_emitArrayInitExpr(ir_generator_Generator* gen, const ir_gen_locals_StackVar* var, const ast_Expr* e);
-static void ir_generator_Generator_emitInitExpr(ir_generator_Generator* gen, const ast_VarDecl* vd, const ast_Expr* ie);
-static void ir_generator_Generator_emitMemberExpr(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e);
-static bool ir_generator_Generator_emitStmt(ir_generator_Generator* gen, const ast_Stmt* s);
-static void ir_generator_Generator_emitIfStmt(ir_generator_Generator* gen, const ast_Stmt* s);
-static void ir_generator_Generator_emitWhileStmt(ir_generator_Generator* gen, const ast_Stmt* s);
-static void ir_generator_Generator_emitForStmt(ir_generator_Generator* gen, const ast_Stmt* s);
-static void ir_generator_Generator_emitSwitchStmt(ir_generator_Generator* gen, const ast_Stmt* s);
-static bool ir_generator_Generator_emitSwitchCase(ir_generator_Generator* gen, ast_SwitchCase* sc, ir_BlockId join_blk, ir_CaseId caseId, bool prev_fallthrough);
-static void ir_generator_Generator_emitStmts(ir_generator_Generator* gen, ast_Stmt** stmts, uint32_t num_stmts);
-
-static void ir_generator_BasicStructLayouter_init(ir_generator_BasicStructLayouter* l, ir_generator_Generator* gen, const ast_StructLayout* layout)
-{
-   l->gen = gen;
-   l->layout = layout;
-   l->cur_offset = 0;
-   l->bitfield_value = 0;
-   l->bitfield_base_size = 0;
-}
-
-static void ir_generator_BasicStructLayouter_add(ir_generator_BasicStructLayouter* l, uint32_t idx, const ast_Expr* e)
-{
-   const ast_StructMemberLayout* ml = &l->layout->members[idx];
-   uint32_t offset = ml->offset;
-   uint32_t pad = offset - l->cur_offset;
-   if (pad) {
-      if (l->bitfield_base_size) {
-         pad -= l->bitfield_base_size;
-         ir_generator_BasicStructLayouter_flushBitfield(l);
-      }
-      if (pad) ir_context_Context_addInitZero(l->gen->ctx, pad);
-   }
-   if (ml->is_bitfield) {
-      l->bitfield_base_size = ml->size;
-      if (ast_Expr_isCtv(e)) {
-         ast_Value value = ast_evalExpr(e);
-         ast_Value_mask(&value, ml->bitfield_width);
-         ast_Value_left_shift2(&value, ml->bitfield_offset);
-         uint64_t v = ast_Value_as_u64(&value);
-         l->bitfield_value |= v;
-      } else {
-         (0) || c2_assert("generator/ir/basic_struct_layouter.c2", 63, "ir_generator.BasicStructLayouter.add", "0");
-      }
-   } else {
-      ir_generator_Generator_emitInit(l->gen, e, ml->size);
-      l->cur_offset = offset + ml->size;
-   }
-}
-
-static void ir_generator_BasicStructLayouter_flushBitfield(ir_generator_BasicStructLayouter* l)
-{
-   ir_generator_Generator_emitBitfield(l->gen, (uint8_t)l->bitfield_base_size, l->bitfield_value);
-   l->bitfield_value = 0;
-   l->cur_offset += l->bitfield_base_size;
-   l->bitfield_base_size = 0;
-}
-
-static void ir_generator_BasicStructLayouter_finalize(ir_generator_BasicStructLayouter* l)
-{
-   uint32_t pad = l->layout->size - l->cur_offset;
-   if (l->bitfield_base_size) {
-      pad -= l->bitfield_base_size;
-      ir_generator_BasicStructLayouter_flushBitfield(l);
-   }
-   if (pad) ir_context_Context_addInitZero(l->gen->ctx, pad);
-}
-
-static void ir_generator_FieldStructLayouter_init(ir_generator_FieldStructLayouter* l, ir_generator_Generator* gen, uint32_t struct_size, uint32_t num_members)
-{
-   l->gen = gen;
-   l->size = struct_size;
-   l->num_inits = 0;
-   l->inits = NULL;
-   ir_generator_FieldStructLayouter_resize(l, num_members);
-}
-
-static void ir_generator_FieldStructLayouter_resize(ir_generator_FieldStructLayouter* l, uint32_t max)
-{
-   l->max_inits = max;
-   ir_generator_FieldInit* inits = malloc(max * 16);
-   if (l->num_inits) memcpy(inits, l->inits, l->num_inits * 16);
-   if (l->inits) free(l->inits);
-   l->inits = inits;
-}
-
-static void ir_generator_FieldStructLayouter_add(ir_generator_FieldStructLayouter* l, const ast_FieldInitField* info, ast_Expr* value)
-{
-   if (l->num_inits == l->max_inits) ir_generator_FieldStructLayouter_resize(l, l->max_inits * 2);
-   ir_generator_FieldInit init;
-   init.info = info;
-   init.expr = value;
-   if (l->num_inits == 0) {
-      l->inits[0] = init;
-      l->num_inits = 1;
-      return;
-   }
-   uint32_t idx = l->num_inits;
-   uint32_t offset = info->offset;
-   while (idx) {
-      ir_generator_FieldInit* fi = &l->inits[idx - 1];
-      if (info->member_idx >= fi->info->member_idx) break;
-      l->inits[idx] = *fi;
-      idx--;
-   }
-   l->inits[idx] = init;
-   l->num_inits++;
-}
-
-static void ir_generator_FieldStructLayouter_finalize(ir_generator_FieldStructLayouter* l)
-{
-   uint32_t cur_offset = 0;
-   bool have_bitfield = false;
-   uint8_t bitfield_base_size = 0;
-   uint64_t bitfield_value = 0;
-   for (uint32_t i = 0; i < l->num_inits; i++) {
-      const ir_generator_FieldInit* fi = &l->inits[i];
-      const ast_Expr* e = fi->expr;
-      ast_QualType qt = ast_Expr_getType(e);
-      uint32_t size = ast_QualType_getSize(qt, false);
-      uint32_t pad = fi->info->offset - cur_offset;
-      if (pad) {
-         if (have_bitfield) {
-            ir_generator_Generator_emitBitfield(l->gen, bitfield_base_size, bitfield_value);
-            cur_offset += bitfield_base_size;
-            pad -= bitfield_base_size;
-            have_bitfield = false;
-            bitfield_value = 0;
-            bitfield_base_size = 0;
-            if (!pad) goto field;
-         }
-         (fi->info->offset > cur_offset) || c2_assert("generator/ir/field_struct_layouter.c2", 120, "ir_generator.FieldStructLayouter.finalize", "fi.info.offset > cur_offset");
-         ir_context_Context_addInitZero(l->gen->ctx, pad);
-         cur_offset = fi->info->offset;
-      }
-   field:
-      if (fi->info->is_bitfield) {
-         have_bitfield = true;
-         bitfield_base_size = (uint8_t)fi->info->bitfield_base_size;
-         if (ast_Expr_isCtv(e)) {
-            ast_Value value = ast_evalExpr(e);
-            ast_Value_mask(&value, fi->info->bitfield_width);
-            ast_Value_left_shift2(&value, fi->info->bitfield_offset);
-            uint64_t v = ast_Value_as_u64(&value);
-            bitfield_value |= v;
-         } else {
-            (0) || c2_assert("generator/ir/field_struct_layouter.c2", 141, "ir_generator.FieldStructLayouter.finalize", "0");
-         }
-      } else {
-         ir_generator_Generator_emitInit(l->gen, e, size);
-         cur_offset = fi->info->offset + size;
-      }
-   }
-   if (have_bitfield) {
-      ir_generator_Generator_emitBitfield(l->gen, bitfield_base_size, bitfield_value);
-      cur_offset += bitfield_base_size;
-   }
-   if (cur_offset != l->size) {
-      (l->size > cur_offset) || c2_assert("generator/ir/field_struct_layouter.c2", 157, "ir_generator.FieldStructLayouter.finalize", "l.size > cur_offset");
-      uint32_t pad = l->size - cur_offset;
-      ir_context_Context_addInitZero(l->gen->ctx, pad);
-   }
-   free(l->inits);
-}
-
-static void ir_generator_FieldStructLayouter_finalizeExpr(ir_generator_FieldStructLayouter* l, const ast_StructTypeDecl* std, ir_Ref base_ref)
-{
-   bool have_bitfield = false;
-   uint8_t bitfield_base_size = 0;
-   ir_context_Context* ctx = l->gen->ctx;
-   uint32_t num_members = ast_StructTypeDecl_getNumMembers(std);
-   ast_StructLayout* layout = ast_StructTypeDecl_getLayout(std);
-   uint32_t init_idx = 0;
-   uint32_t cur_offset = 0;
-   const ir_generator_FieldInit* fi = &l->inits[init_idx];
-   ir_Ref dest_ref = base_ref;
-   for (uint32_t i = 0; i < num_members; i++) {
-      const ast_StructMemberLayout* ml = &layout->members[i];
-      if (ml->is_bitfield) {
-         if (init_idx < l->num_inits && fi->info->member_idx == i) {
-            ir_Type t = ir_generator_size2type(ml->size);
-            ast_Expr* e = fi->expr;
-            ir_Ref value_ref;
-            if (ast_Expr_isCtv(e)) {
-               ast_Value value = ast_evalExpr(e);
-               ast_Value_mask(&value, fi->info->bitfield_width);
-               if (fi->info->bitfield_offset) ast_Value_left_shift2(&value, fi->info->bitfield_offset);
-               uint64_t v = ast_Value_as_u64(&value);
-               value_ref = ir_context_Context_addIntegerConstant(ctx, (int64_t)v);
-            } else {
-               ir_generator_Generator_emitExpr(l->gen, &value_ref, e);
-               ir_Ref mask_value = ir_context_Context_addIntegerConstant(ctx, (1 << ml->bitfield_width) - 1);
-               value_ref = ir_context_Context_addBinaryInstr(ctx, ir_InstrKind_And, mask_value, value_ref);
-               if (ml->bitfield_offset) {
-                  ir_Ref shift_value = ir_context_Context_addIntegerConstant(ctx, ml->bitfield_offset);
-                  value_ref = ir_context_Context_addBinaryInstr(ctx, ir_InstrKind_Shl, shift_value, value_ref);
-               }
-            }
-            if (!have_bitfield) {
-               ir_context_Context_addStoreInstr(ctx, t, value_ref, dest_ref);
-            } else {
-               ir_Ref bitfield_ref = ir_context_Context_addLoadInstr(ctx, t, dest_ref);
-               bitfield_ref = ir_context_Context_addBinaryInstr(ctx, ir_InstrKind_Or, bitfield_ref, value_ref);
-               ir_context_Context_addStoreInstr(ctx, t, bitfield_ref, dest_ref);
-            }
-            init_idx++;
-            fi = &l->inits[init_idx];
-         } else {
-         }
-         if (!have_bitfield) have_bitfield = true;
-         continue;
-      } else {
-         if (have_bitfield) {
-            have_bitfield = false;
-         }
-      }
-      if (ml->offset != 0) {
-         ir_Ref offset_ref = ir_context_Context_addIntegerConstant(ctx, ml->offset - cur_offset);
-         cur_offset = ml->offset;
-         dest_ref = ir_context_Context_addBinaryInstr(ctx, ir_InstrKind_Add, dest_ref, offset_ref);
-      }
-      ir_Ref value_ref;
-      if (init_idx < l->num_inits && fi->info->member_idx == i) {
-         ir_generator_Generator_emitExpr(l->gen, &value_ref, fi->expr);
-         init_idx++;
-         fi = &l->inits[init_idx];
-      } else {
-         value_ref = ir_context_Context_addIntegerConstant(ctx, 0);
-      }
-      ir_context_Context_addStoreInstr(ctx, ir_generator_size2type(ml->size), value_ref, dest_ref);
-   }
-   free(l->inits);
-}
-
-static void ir_generator_Generator_init(ir_generator_Generator* gen, source_mgr_SourceMgr* sm, const target_info_Info* targetInfo, const build_file_Info* buildInfo, const char* target, const char* output_dir, bool enable_asserts, bool print, bool print_all)
-{
-   memset(gen, 0, 384);
-   ir_context_BuildInfo build_info = { };
-   if (buildInfo) {
-      build_info.compiler = build_file_Info_getCC(buildInfo);
-      build_info.linkerflags = build_file_Info_getLinkerFlags(buildInfo);
-   }
-   gen->ctx = ir_context_create(print_all, targetInfo, &build_info);
-   value_maplist_List_init(&gen->labels);
-   gen->target = target;
-   gen->output_dir = output_dir;
-   gen->string_idx = 1;
-   ir_gen_locals_Locals_init(&gen->locals);
-   gen->print = print;
-   gen->enable_asserts = enable_asserts;
-   gen->ptr_type = targetInfo->intWidth == 64 ? ir_Type_U64 : ir_Type_U32;
-   gen->sm = sm;
-   gen->name_buf = string_buffer_create(128, false, 0);
-}
-
-static void ir_generator_Generator_free(ir_generator_Generator* gen)
-{
-   value_maplist_List_free(&gen->labels);
-   ir_context_Context_free(gen->ctx);
-   string_buffer_Buf_free(gen->name_buf);
-   ir_gen_locals_Locals_free(&gen->locals);
-}
-
-static void ir_generator_Generator_enterScope(ir_generator_Generator* gen, uint32_t break_block, uint32_t continue_block)
-{
-   (gen->num_scopes < 32) || c2_assert("generator/ir/ir_generator.c2", 104, "ir_generator.Generator.enterScope", "gen.num_scopes < elemsof(gen.scopes)");
-   ir_generator_JumpScope* s = &gen->scopes[gen->num_scopes];
-   s->break_block = break_block;
-   if (continue_block) {
-      s->continue_block = continue_block;
-   } else {
-      if (gen->num_scopes >= 1) s->continue_block = gen->scopes[gen->num_scopes - 1].continue_block;
-   }
-   gen->num_scopes++;
-}
-
-static void ir_generator_Generator_leaveScope(ir_generator_Generator* gen)
-{
-   (gen->num_scopes > 0) || c2_assert("generator/ir/ir_generator.c2", 118, "ir_generator.Generator.leaveScope", "gen.num_scopes > 0");
-   gen->num_scopes--;
-}
-
-static const char* ir_generator_Generator_createLocalName(ir_generator_Generator* gen, const ast_Decl* d)
-{
-   (gen->cur_function) || c2_assert("generator/ir/ir_generator.c2", 123, "ir_generator.Generator.createLocalName", "gen.cur_function");
-   string_buffer_Buf* out = gen->name_buf;
-   string_buffer_Buf_clear(out);
-   string_buffer_Buf_add(out, ast_Decl_getModuleName(d));
-   string_buffer_Buf_add1(out, '_');
-   string_buffer_Buf_add(out, ast_Decl_getName(ast_FunctionDecl_asDecl(gen->cur_function)));
-   string_buffer_Buf_add1(out, '.');
-   string_buffer_Buf_add(out, ast_Decl_getName(d));
-   return string_buffer_Buf_data(out);
-}
-
-static const char* ir_generator_Generator_createSymbolName(ir_generator_Generator* gen, const ast_Decl* d)
-{
-   string_buffer_Buf* out = gen->name_buf;
-   string_buffer_Buf_clear(out);
-   if (ast_Decl_isExternal(d) && ast_Module_isForeign(ast_Decl_getModule(d))) {
-      const char* cname = ast_Decl_getCName(d);
-      if (cname) {
-         string_buffer_Buf_add(out, cname);
-      } else {
-         string_buffer_Buf_add(out, ast_Decl_getName(d));
-      }
-   } else {
-      if (ast_Decl_isGlobal(d)) {
-         string_buffer_Buf_add(out, ast_Decl_getModuleName(d));
-         string_buffer_Buf_add1(out, '_');
-         if (ast_Decl_isFunction(d)) {
-            ast_FunctionDecl* fd = (ast_FunctionDecl*)d;
-            ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
-            if (prefix) {
-               string_buffer_Buf_add(out, ast_idx2name(prefix->name_idx));
-               string_buffer_Buf_add1(out, '_');
-            }
-         } else if (ast_Decl_isEnumConstant(d)) {
-            ast_QualType qt = ast_Decl_getType(d);
-            ast_EnumType* et = (ast_EnumType*)ast_QualType_getType(qt);
-            string_buffer_Buf_add(out, ast_EnumType_getName(et));
-            string_buffer_Buf_add1(out, '_');
-         }
-      }
-      string_buffer_Buf_add(out, ast_Decl_getName(d));
-   }
-   return string_buffer_Buf_data(out);
-}
-
-static ir_context_SymbolId ir_generator_Generator_createSymbol(ir_generator_Generator* gen, ast_Decl* d)
-{
-   uint32_t gen_idx = ast_Decl_getGenIdx(d);
-   if (!gen_idx) {
-      bool is_external = ir_generator_Generator_isExternal(gen, d);
-      if (ast_Decl_isFunction(d)) {
-         gen_idx = ir_context_Context_addFunction(gen->ctx, ir_generator_Generator_createSymbolName(gen, d), is_external);
-      } else {
-         ast_QualType qt = ast_Decl_getType(d);
-         gen_idx = ir_context_Context_addGlobalVar(gen->ctx, ir_generator_Generator_createSymbolName(gen, d), ast_QualType_getAlignment(qt), is_external);
-      }
-      ast_Decl_setGenIdx(d, gen_idx);
-   }
-   return gen_idx;
-}
-
-static const char* ir_generator_Generator_createStringVar(ir_generator_Generator* gen)
-{
-   string_buffer_Buf* out = gen->name_buf;
-   string_buffer_Buf_clear(out);
-   string_buffer_Buf_print(out, ".str%u", gen->string_idx);
-   gen->string_idx++;
-   return string_buffer_Buf_data(out);
-}
-
-static ir_Type ir_generator_builtin2irtype(ast_BuiltinKind k)
-{
-   return ir_generator_Ast_type2ir_type[k];
-}
-
-static ir_Type ir_generator_Generator_type2irtype(ir_generator_Generator* gen, ast_QualType qt)
-{
-   ast_QualType canon = ast_QualType_getCanonicalType(qt);
-   switch (ast_QualType_getKind(canon)) {
-   case ast_TypeKind_Builtin: {
-      ast_BuiltinType* bi = ast_QualType_getBuiltin(canon);
-      return ir_generator_builtin2irtype(ast_BuiltinType_getKind(bi));
-   }
-   case ast_TypeKind_Void:
-      return ir_Type_None;
-   case ast_TypeKind_Pointer:
-      return ir_Type_I64;
-   case ast_TypeKind_Array: {
-      ast_ArrayType* at = ast_QualType_getArrayType(canon);
-      return ir_generator_Generator_type2irtype(gen, ast_ArrayType_getElemType(at));
-   }
-   case ast_TypeKind_Struct: {
-      ast_StructType* st = ast_QualType_getStructType(canon);
-      const ast_StructTypeDecl* std = ast_StructType_getDecl(st);
-      uint32_t align = ast_StructTypeDecl_getAlignment(std);
-      switch (align) {
-      case 1:
-         return ir_Type_I8;
-      case 2:
-         return ir_Type_I16;
-      case 4:
-         return ir_Type_I32;
-      default:
-         return ir_Type_I64;
-      }
-   }
-   case ast_TypeKind_Enum: {
-      ast_EnumType* et = ast_QualType_getEnum(canon);
-      return ir_generator_Generator_type2irtype(gen, ast_EnumType_getImplType(et));
-   }
-   case ast_TypeKind_Function:
-      return ir_Type_I64;
-   case ast_TypeKind_Alias:
-      (0) || c2_assert("generator/ir/ir_generator.c2", 249, "ir_generator.Generator.type2irtype", "0");
-      break;
-   case ast_TypeKind_Module:
-      (0) || c2_assert("generator/ir/ir_generator.c2", 252, "ir_generator.Generator.type2irtype", "0");
-      break;
-   }
-   return ir_Type_None;
-}
-
-static void ir_generator_Generator_emitInit(ir_generator_Generator* gen, const ast_Expr* e, uint32_t size)
-{
-   if (ast_Expr_isCtv(e)) {
-      ast_Value v = ast_evalExpr(e);
-      switch (size) {
-      case 1:
-         ir_context_Context_addInitValueU8(gen->ctx, ast_Value_as_u8(&v));
-         break;
-      case 2:
-         ir_context_Context_addInitValueU16(gen->ctx, ast_Value_as_u16(&v));
-         break;
-      case 4:
-         ir_context_Context_addInitValueU32(gen->ctx, ast_Value_as_u32(&v));
-         break;
-      case 8:
-         ir_context_Context_addInitValueU64(gen->ctx, ast_Value_as_u64(&v));
-         break;
-      }
-      return;
-   }
-   switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral:
-   case ast_ExprKind_FloatLiteral:
-   case ast_ExprKind_BooleanLiteral:
-   case ast_ExprKind_CharLiteral:
-      (0) || c2_assert("generator/ir/ir_generator.c2", 283, "ir_generator.Generator.emitInit", "0");
-      break;
-   case ast_ExprKind_StringLiteral: {
-      const ast_StringLiteral* s = (ast_StringLiteral*)e;
-      ir_context_Context_addInitString(gen->ctx, ast_StringLiteral_getText(s), ast_StringLiteral_strlen(s));
-      break;
-   }
-   case ast_ExprKind_Nil:
-      (0) || c2_assert("generator/ir/ir_generator.c2", 290, "ir_generator.Generator.emitInit", "0");
-      break;
-   case ast_ExprKind_Identifier: {
-      const ast_IdentifierExpr* i = (ast_IdentifierExpr*)e;
-      ast_Decl* d = ast_IdentifierExpr_getDecl(i);
-      ir_context_SymbolId sid = ir_generator_Generator_createSymbol(gen, d);
-      ir_context_Context_addInitSymbol(gen->ctx, sid);
-      break;
-   }
-   case ast_ExprKind_Type:
-   case ast_ExprKind_Call:
-      ast_Expr_dump(e);
-      (0) || c2_assert("generator/ir/ir_generator.c2", 301, "ir_generator.Generator.emitInit", "0");
-      break;
-   case ast_ExprKind_InitList: {
-      const ast_InitListExpr* ile = (ast_InitListExpr*)e;
-      uint32_t num_values = ast_InitListExpr_getNumValues(ile);
-      if (num_values == 0) {
-         ir_context_Context_addInitZero(gen->ctx, size);
-      } else if (ast_InitListExpr_isArray(ile)) {
-         ir_generator_Generator_emitArrayInit(gen, e);
-      } else {
-         ir_generator_Generator_emitGlobalStructInit(gen, e);
-      }
-      break;
-   }
-   case ast_ExprKind_FieldDesignatedInit:
-   case ast_ExprKind_ArrayDesignatedInit:
-   case ast_ExprKind_BinaryOperator:
-      ast_Expr_dump(e);
-      (0) || c2_assert("generator/ir/ir_generator.c2", 318, "ir_generator.Generator.emitInit", "0");
-      break;
-   case ast_ExprKind_UnaryOperator: {
-      ast_UnaryOperator* uo = (ast_UnaryOperator*)e;
-      (ast_UnaryOperator_isAddrOf(uo)) || c2_assert("generator/ir/ir_generator.c2", 322, "ir_generator.Generator.emitInit", "uo.isAddrOf()");
-      ir_generator_Generator_emitInit(gen, ast_UnaryOperator_getInner(uo), size);
-      break;
-   }
-   case ast_ExprKind_ConditionalOperator:
-   case ast_ExprKind_Builtin:
-   case ast_ExprKind_ArraySubscript:
-      ast_Expr_dump(e);
-      (0) || c2_assert("generator/ir/ir_generator.c2", 329, "ir_generator.Generator.emitInit", "0");
-      break;
-   case ast_ExprKind_Member: {
-      const ast_MemberExpr* m = (ast_MemberExpr*)e;
-      ast_Decl* d = ast_MemberExpr_getFullDecl(m);
-      ir_context_SymbolId sid = ir_generator_Generator_createSymbol(gen, d);
-      ir_context_Context_addInitSymbol(gen->ctx, sid);
-      break;
-   }
-   case ast_ExprKind_Paren:
-   case ast_ExprKind_BitOffset:
-      ast_Expr_dump(e);
-      (0) || c2_assert("generator/ir/ir_generator.c2", 341, "ir_generator.Generator.emitInit", "0");
-      break;
-   case ast_ExprKind_ExplicitCast: {
-      const ast_ExplicitCastExpr* ec = (ast_ExplicitCastExpr*)e;
-      ir_generator_Generator_emitInit(gen, ast_ExplicitCastExpr_getInner(ec), size);
-      break;
-   }
-   case ast_ExprKind_ImplicitCast: {
-      const ast_ImplicitCastExpr* ic = (ast_ImplicitCastExpr*)e;
-      ir_generator_Generator_emitInit(gen, ast_ImplicitCastExpr_getInner(ic), size);
-      break;
-   }
-   case ast_ExprKind_Range:
-      (0) || c2_assert("generator/ir/ir_generator.c2", 354, "ir_generator.Generator.emitInit", "0");
-      break;
-   case ast_ExprKind_NamedArgument: {
-      ast_NamedArgument* n = (ast_NamedArgument*)e;
-      ir_generator_Generator_emitInit(gen, ast_NamedArgument_getInner(n), size);
-      break;
-   }
-   case ast_ExprKind_Alternate: {
-      ast_AlternateExpr* n = (ast_AlternateExpr*)e;
-      ir_generator_Generator_emitInit(gen, ast_AlternateExpr_getGenerated(n), size);
-      break;
-   }
-   }
-}
-
-static void ir_generator_Generator_emitGlobalStructInit(ir_generator_Generator* gen, const ast_Expr* e)
-{
-   const ast_InitListExpr* ile = (ast_InitListExpr*)e;
-   uint32_t num_values = ast_InitListExpr_getNumValues(ile);
-   const ast_Expr** values = ast_InitListExpr_getValues2(ile);
-   ast_QualType qt = ast_Expr_getType(e);
-   ast_StructType* st = ast_QualType_getStructType(qt);
-   ast_StructTypeDecl* std = ast_StructType_getDecl(st);
-   if (ast_InitListExpr_hasDesignators(ile)) {
-      ir_generator_FieldStructLayouter layouter;
-      ir_generator_FieldStructLayouter_init(&layouter, gen, ast_StructTypeDecl_getSize(std), ast_StructTypeDecl_getDesigMemberCount(std));
-      for (uint32_t i = 0; i < num_values; i++) {
-         ast_FieldDesignatedInitExpr* fdi = (ast_FieldDesignatedInitExpr*)values[i];
-         const ast_FieldInitField* fif = ast_FieldDesignatedInitExpr_getMemberInfo(fdi);
-         if (!ast_FieldInitField_isZeroSizeBitfield(fif)) {
-            ir_generator_FieldStructLayouter_add(&layouter, fif, ast_FieldDesignatedInitExpr_getInit(fdi));
-         }
-      }
-      ir_generator_FieldStructLayouter_finalize(&layouter);
-   } else {
-      ir_generator_BasicStructLayouter layouter;
-      ir_generator_BasicStructLayouter_init(&layouter, gen, ast_StructTypeDecl_getLayout(std));
-      for (uint32_t i = 0; i < num_values; i++) ir_generator_BasicStructLayouter_add(&layouter, i, values[i]);
-      ir_generator_BasicStructLayouter_finalize(&layouter);
-   }
-}
-
-static void ir_generator_on_zero(void* arg, uint32_t size)
-{
-   ir_generator_Generator* gen = arg;
-   ir_context_Context_addInitZero(gen->ctx, size);
-}
-
-static void ir_generator_on_expr(void* arg, const ast_Expr* e, uint32_t elem_size)
-{
-   ir_generator_Generator* gen = arg;
-   ir_generator_Generator_emitInit(gen, e, elem_size);
-}
-
-static void ir_generator_Generator_emitArrayInit(ir_generator_Generator* gen, const ast_Expr* e)
-{
-   const ast_InitListExpr* ile = (ast_InitListExpr*)e;
-   uint32_t num_values = ast_InitListExpr_getNumValues(ile);
-   ast_QualType qt = ast_Expr_getType(e);
-   ast_ArrayType* at = ast_QualType_getArrayType(qt);
-   uint32_t array_size = ast_ArrayType_getSize(at);
-   ast_QualType et = ast_ArrayType_getElemType(at);
-   uint32_t elem_size = ast_QualType_getSize(et, false);
-   if (ast_InitListExpr_hasDesignators(ile)) {
-      array_init_sorter_Sorter sorter = array_init_sorter_create(num_values, array_size, elem_size);
-      const ast_Expr** values = ast_InitListExpr_getValues2(ile);
-      for (uint32_t i = 0; i < num_values; i++) {
-         const ast_Expr* ie = values[i];
-         if (ast_Expr_isArrayDesignatedInit(ie)) {
-            const ast_ArrayDesignatedInitExpr* ad = (ast_ArrayDesignatedInitExpr*)ie;
-            const ast_Expr* desig = ast_ArrayDesignatedInitExpr_getDesignator(ad);
-            ast_Value v = ast_evalExpr(desig);
-            array_init_sorter_Sorter_addAt(&sorter, ast_Value_as_u32(&v), ast_ArrayDesignatedInitExpr_getInit(ad));
-         } else {
-            array_init_sorter_Sorter_add(&sorter, ie);
-         }
-      }
-      array_init_sorter_Sorter_iterate(&sorter, ir_generator_on_expr, ir_generator_on_zero, gen);
-      array_init_sorter_Sorter_free(&sorter);
-   } else {
-      const ast_Expr** values = ast_InitListExpr_getValues2(ile);
-      for (uint32_t i = 0; i < num_values; i++) {
-         ir_generator_Generator_emitInit(gen, values[i], elem_size);
-      }
-      uint32_t missing = array_size - num_values;
-      if (missing) {
-         ir_context_Context_addInitZero(gen->ctx, missing * elem_size);
-      }
-   }
-}
-
-static bool ir_generator_Generator_isExternal(ir_generator_Generator* gen, const ast_Decl* d)
-{
-   return ast_Decl_isExported(d);
-}
-
-static void ir_generator_Generator_emitFunction(ir_generator_Generator* gen, ast_FunctionDecl* fd)
-{
-   ir_context_Context* c = gen->ctx;
-   value_maplist_List_clear(&gen->labels);
-   ir_gen_locals_Locals_clear(&gen->locals);
-   ast_Decl* d = (ast_Decl*)fd;
-   gen->cur_function = fd;
-   uint32_t gen_idx = ast_Decl_getGenIdx(d);
-   if (!gen_idx) {
-      const char* name;
-      if (d == gen->mainFunc) {
-         name = "main";
-      } else {
-         name = ir_generator_Generator_createSymbolName(gen, d);
-      }
-      gen_idx = ir_context_Context_addFunction(c, name, ir_generator_Generator_isExternal(gen, d));
-      ast_Decl_setGenIdx(d, gen_idx);
-   }
-   ir_context_Context_startFunc(c, gen_idx);
-   ir_Type rt = ir_Type_None;
-   if (ast_FunctionDecl_hasReturn(fd)) {
-      rt = ir_generator_Generator_type2irtype(gen, ast_FunctionDecl_getRType(fd));
-      ir_context_Context_setFunctionReturnType(c, rt);
-   } else {
-      ir_context_Context_setFunctionReturnType(c, ir_Type_None);
-   }
-   ir_BlockId body_blk = ir_context_Context_createBlock(c, ir_BlockKind_FnStart);
-   ir_context_Context_startBlock(c, body_blk);
-   uint32_t num_params = ast_FunctionDecl_getNumParams(fd);
-   ast_VarDecl** params = ast_FunctionDecl_getParams(fd);
-   ir_Ref param_refs[24];
-   for (uint32_t i = 0; i < num_params; i++) {
-      ast_VarDecl* v = params[i];
-      ir_Type t2 = ir_generator_Generator_type2irtype(gen, ast_Decl_getType(ast_VarDecl_asDecl(v)));
-      param_refs[i] = ir_context_Context_addFuncArg(c, t2);
-   }
-   for (uint32_t i = 0; i < num_params; i++) {
-      ast_VarDecl* v = params[i];
-      ir_generator_Generator_addLocalVar(gen, v);
-   }
-   ir_generator_Generator_collectLocalVars(gen, (ast_Stmt*)ast_FunctionDecl_getBody(fd));
-   for (uint32_t i = 0; i < num_params; i++) {
-      ast_VarDecl* v = params[i];
-      ir_gen_locals_StackVar* var = ir_gen_locals_Locals_find(&gen->locals, v);
-      ir_context_Context_addStoreInstr(c, var->ir_type, param_refs[i], var->ref);
-   }
-   ir_generator_Generator_emitStmt(gen, (ast_Stmt*)ast_FunctionDecl_getBody(fd));
-   if (!ir_context_Context_isBlockTerminated(c)) {
-      ir_context_Context_addRet0Instr(c);
-   }
-   ir_context_Context_endBlock(c);
-   ir_context_Context_endFunc(c);
-}
-
-static void ir_generator_on_var_decl(void* arg, ast_VarDecl* vd)
-{
-   ir_generator_Generator* gen = arg;
-   ir_context_Context* c = gen->ctx;
-   ast_Decl* d = (ast_Decl*)vd;
-   if (!ast_Decl_isUsed(d)) return;
-   ast_QualType qt = ast_Decl_getType(d);
-   uint32_t gen_idx = ast_Decl_getGenIdx(d);
-   if (!gen_idx) {
-      gen_idx = ir_context_Context_addGlobalVar(gen->ctx, ir_generator_Generator_createSymbolName(gen, d), ast_QualType_getAlignment(qt), ir_generator_Generator_isExternal(gen, d));
-      ast_Decl_setGenIdx(d, gen_idx);
-   }
-   ir_context_Context_startGlobal(c, gen_idx);
-   const ast_Expr* ie = ast_VarDecl_getInit(vd);
-   uint32_t size = ast_QualType_getSize(qt, false);
-   if (ie) {
-      ir_generator_Generator_emitInit(gen, ie, size);
-   } else {
-      ir_context_Context_addInitZero(c, size);
-   }
-   ir_context_Context_endGlobal(c);
-}
-
-static void ir_generator_on_function_decl(void* arg, ast_FunctionDecl* d)
-{
-   if (!ast_Decl_isUsed(ast_FunctionDecl_asDecl(d))) return;
-   ir_generator_Generator* gen = arg;
-   ir_generator_Generator_emitFunction(gen, d);
-}
-
-static void ir_generator_Generator_on_ast(void* arg, ast_AST* a)
-{
-   ast_AST_visitVarDecls(a, ir_generator_on_var_decl, arg);
-   ast_AST_visitFunctions(a, ir_generator_on_function_decl, arg);
-}
-
-static void ir_generator_Generator_on_module(void* arg, ast_Module* m)
-{
-   if (!ast_Module_isUsed(m)) return;
-   ast_Module_visitASTs(m, ir_generator_Generator_on_ast, arg);
-}
-
-static void ir_generator_generate(const char* target, const char* output_dir, component_List* comps, source_mgr_SourceMgr* sm, const target_info_Info* targetInfo, const build_file_Info* buildInfo, const ast_Decl* mainFunc, bool enable_asserts, bool print, bool print_all)
-{
-   char ir_dir[512];
-   if (!file_utils_make_path(ir_dir, 512, output_dir, "ir") || file_utils_create_path(ir_dir)) {
-      console_error("cannot create directory %s: %s", ir_dir, strerror((*__errno_location())));
-      return;
-   }
-   ir_generator_Generator gen;
-   ir_generator_Generator_init(&gen, sm, targetInfo, buildInfo, target, ir_dir, enable_asserts, print, print_all);
-   gen.mainFunc = mainFunc;
-   component_Component* mainComp = component_List_getLast(comps);
-   component_Component_visitModules(mainComp, ir_generator_Generator_on_module, &gen);
-   ir_context_Context_convert_functions(gen.ctx);
-   if (gen.print) ir_context_Context_print(gen.ctx);
-   ir_context_Context_writeOutput(gen.ctx, ir_dir, target);
-   ir_generator_Generator_free(&gen);
-}
-
-static void ir_generator_Generator_addLocalVar(ir_generator_Generator* gen, ast_VarDecl* vd)
-{
-   ast_QualType qt = ast_Decl_getType(ast_VarDecl_asDecl(vd));
-   const ast_StructType* s = ast_QualType_getStructTypeOrNil(qt);
-   uint32_t width;
-   uint32_t align;
-   if (s) {
-      const ast_StructTypeDecl* std = ast_StructType_getDecl(s);
-      width = ast_StructTypeDecl_getSize(std);
-      align = ast_StructTypeDecl_getAlignment(std);
-   } else {
-      width = ast_QualType_getAlignment(qt);
-      align = width;
-   }
-   uint32_t size = ast_QualType_getSize(qt, false);
-   ir_Ref size_ref = ir_context_Context_addIntegerConstant(gen->ctx, size);
-   ir_Ref slot = ir_context_Context_addStackSlot(gen->ctx, align, size_ref);
-   ir_Type ir_type = ir_generator_Generator_type2irtype(gen, qt);
-   ir_gen_locals_Locals_add(&gen->locals, vd, width, align, size, slot, ir_type);
-   const char* name = ast_Decl_getName(ast_VarDecl_asDecl(vd));
-   string_buffer_Buf* out = gen->name_buf;
-   string_buffer_Buf_clear(out);
-   string_buffer_Buf_print(out, "s%d ", slot.value);
-   if (name) string_buffer_Buf_add(out, name);
-   else string_buffer_Buf_add(out, "(unnamed)");
-   ir_context_Context_addComment(gen->ctx, string_buffer_Buf_data(out));
-}
-
-static void ir_generator_Generator_collectLocalVars(ir_generator_Generator* gen, ast_Stmt* s)
-{
-   switch (ast_Stmt_getKind(s)) {
-   case ast_StmtKind_If: {
-      const ast_IfStmt* if_stmt = (ast_IfStmt*)s;
-      ir_generator_Generator_collectLocalVars(gen, ast_IfStmt_getCond(if_stmt));
-      ast_Stmt* then_stmt = ast_IfStmt_getThen(if_stmt);
-      if (then_stmt) ir_generator_Generator_collectLocalVars(gen, then_stmt);
-      ast_Stmt* else_stmt = ast_IfStmt_getElse(if_stmt);
-      if (else_stmt) ir_generator_Generator_collectLocalVars(gen, else_stmt);
-      break;
-   }
-   case ast_StmtKind_While: {
-      const ast_WhileStmt* while_stmt = (ast_WhileStmt*)s;
-      ir_generator_Generator_collectLocalVars(gen, ast_WhileStmt_getCond(while_stmt));
-      ir_generator_Generator_collectLocalVars(gen, ast_WhileStmt_getBody(while_stmt));
-      break;
-   }
-   case ast_StmtKind_For: {
-      const ast_ForStmt* for_stmt = (ast_ForStmt*)s;
-      ast_Stmt* init_stmt = ast_ForStmt_getInit(for_stmt);
-      if (init_stmt) ir_generator_Generator_collectLocalVars(gen, init_stmt);
-      ast_Stmt* body_stmt = ast_ForStmt_getBody(for_stmt);
-      if (body_stmt) ir_generator_Generator_collectLocalVars(gen, body_stmt);
-      break;
-   }
-   case ast_StmtKind_Switch: {
-      ast_SwitchStmt* sw = (ast_SwitchStmt*)s;
-      uint32_t num_cases = ast_SwitchStmt_getNumCases(sw);
-      ast_SwitchCase** cases = ast_SwitchStmt_getCases(sw);
-      for (uint32_t i = 0; i < num_cases; i++) {
-         ast_SwitchCase* sc = cases[i];
-         uint32_t num_stmts = ast_SwitchCase_getNumStmts(sc);
-         ast_Stmt** stmts = ast_SwitchCase_getStmts(sc);
-         for (uint32_t j = 0; j < num_stmts; j++) {
-            ir_generator_Generator_collectLocalVars(gen, stmts[j]);
-         }
-      }
-      break;
-   }
-   case ast_StmtKind_Label: {
-      ast_LabelStmt* ls = (ast_LabelStmt*)s;
-      ast_Stmt* inner = ast_LabelStmt_getStmt(ls);
-      if (inner) ir_generator_Generator_collectLocalVars(gen, inner);
-      break;
-   }
-   case ast_StmtKind_Compound: {
-      ast_CompoundStmt* c = (ast_CompoundStmt*)s;
-      const uint32_t num_stmts = ast_CompoundStmt_getCount(c);
-      ast_Stmt** stmts = ast_CompoundStmt_getStmts(c);
-      for (uint32_t i = 0; i < num_stmts; i++) {
-         ir_generator_Generator_collectLocalVars(gen, stmts[i]);
-      }
-      break;
-   }
-   case ast_StmtKind_Decl: {
-      const ast_DeclStmt* ds = (ast_DeclStmt*)s;
-      uint32_t count = ast_DeclStmt_getDeclCount(ds);
-      for (uint32_t i = 0; i < count; i++) {
-         ast_VarDecl* vd = ast_DeclStmt_getDecl(ds, i);
-         if (ast_VarDecl_hasLocalQualifier(vd)) {
-            ast_Decl* d = (ast_Decl*)vd;
-            ir_Ref ref;
-            ir_generator_Generator_emitVarDecl(gen, &ref, d);
-            ast_QualType qt = ast_Decl_getType(d);
-            uint32_t size = ast_QualType_getSize(qt, false);
-            const ast_Expr* ie = ast_VarDecl_getInit(vd);
-            ir_context_Context_startGlobal(gen->ctx, (uint32_t)ref.value);
-            if (ie) {
-               ir_generator_Generator_emitInit(gen, ie, size);
-            } else {
-               ir_context_Context_addInitZero(gen->ctx, size);
-            }
-            ir_context_Context_endGlobal(gen->ctx);
-         } else {
-            ir_generator_Generator_addLocalVar(gen, vd);
-         }
-      }
-      break;
-   }
-   default:
-      break;
-   }
-}
-
-static ir_BlockId ir_generator_Generator_getLabelBlock(ir_generator_Generator* gen, uint32_t label_idx)
-{
-   ir_BlockId b_id = value_maplist_List_get(&gen->labels, label_idx);
-   if (!b_id) {
-      b_id = ir_context_Context_createBlock(gen->ctx, ir_BlockKind_Label);
-      value_maplist_List_add(&gen->labels, label_idx, b_id);
-   }
-   return b_id;
-}
-
-static void ir_generator_Generator_emitBitfield(ir_generator_Generator* gen, uint8_t size, uint64_t value)
-{
-   switch (size) {
-   case 1:
-      ir_context_Context_addInitValueU8(gen->ctx, (uint8_t)value);
-      break;
-   case 2:
-      ir_context_Context_addInitValueU16(gen->ctx, (uint16_t)value);
-      break;
-   case 4:
-      ir_context_Context_addInitValueU32(gen->ctx, (uint32_t)value);
-      break;
-   case 8:
-      ir_context_Context_addInitValueU64(gen->ctx, value);
-      break;
-   default:
-      (0) || c2_assert("generator/ir/ir_generator.c2", 753, "ir_generator.Generator.emitBitfield", "0");
-      break;
-   }
-}
-
-static void ir_generator_Generator_emitAssign(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* lhs, const ast_Expr* rhs)
-{
-   if (ast_Expr_isBitfield(lhs)) {
-      ir_generator_Generator_emitBitfieldAssign(gen, result, lhs, rhs);
-   } else {
-      ir_generator_Generator_emitExpr(gen, result, rhs);
-      ir_Ref dest;
-      ir_generator_Generator_emitExpr(gen, &dest, lhs);
-      ir_context_Context_addStoreInstr(gen->ctx, ir_Type_I32, *result, dest);
-   }
-}
-
-static void ir_generator_Generator_emitBinaryOperator(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e)
-{
-   const ast_BinaryOperator* b = (ast_BinaryOperator*)e;
-   switch (ast_BinaryOperator_getOpcode(b)) {
-   case ast_BinaryOpcode_Multiply:
-   case ast_BinaryOpcode_Divide:
-   case ast_BinaryOpcode_Remainder:
-   case ast_BinaryOpcode_Add:
-   case ast_BinaryOpcode_Subtract:
-      break;
-   case ast_BinaryOpcode_ShiftLeft:
-   case ast_BinaryOpcode_ShiftRight:
-      ir_generator_Generator_emitShift(gen, result, e);
-      return;
-   case ast_BinaryOpcode_LessThan:
-   case ast_BinaryOpcode_GreaterThan:
-   case ast_BinaryOpcode_LessEqual:
-   case ast_BinaryOpcode_GreaterEqual:
-   case ast_BinaryOpcode_Equal:
-   case ast_BinaryOpcode_NotEqual:
-      break;
-   case ast_BinaryOpcode_And:
-   case ast_BinaryOpcode_Xor:
-   case ast_BinaryOpcode_Or:
-      break;
-   case ast_BinaryOpcode_LAnd:
-      ir_generator_Generator_emitLogicalAnd(gen, result, e);
-      return;
-   case ast_BinaryOpcode_LOr:
-      ir_generator_Generator_emitLogicalOr(gen, result, e);
-      return;
-   case ast_BinaryOpcode_Assign:
-      ir_generator_Generator_emitAssign(gen, result, ast_BinaryOperator_getLHS(b), ast_BinaryOperator_getRHS(b));
-      return;
-   case ast_BinaryOpcode_MulAssign:
-   case ast_BinaryOpcode_DivAssign:
-   case ast_BinaryOpcode_RemAssign:
-   case ast_BinaryOpcode_AddAssign:
-   case ast_BinaryOpcode_SubAssign:
-   case ast_BinaryOpcode_ShlAssign:
-   case ast_BinaryOpcode_ShrAssign:
-   case ast_BinaryOpcode_AndAssign:
-   case ast_BinaryOpcode_XorAssign:
-   case ast_BinaryOpcode_OrAssign:
-      ir_generator_Generator_emitOpAssign(gen, result, e);
-      return;
-   }
-   ir_InstrKind kind = ir_InstrKind_None;
-   switch (ast_BinaryOperator_getOpcode(b)) {
-   case ast_BinaryOpcode_Multiply:
-      kind = ir_InstrKind_Mul;
-      break;
-   case ast_BinaryOpcode_Divide:
-      kind = ir_InstrKind_IDiv;
-      break;
-   case ast_BinaryOpcode_Remainder:
-      kind = ir_InstrKind_Rem;
-      break;
-   case ast_BinaryOpcode_Add:
-      kind = ir_InstrKind_Add;
-      break;
-   case ast_BinaryOpcode_Subtract:
-      kind = ir_InstrKind_Sub;
-      break;
-   case ast_BinaryOpcode_LessThan:
-      kind = ir_InstrKind_CmpLt;
-      break;
-   case ast_BinaryOpcode_GreaterThan:
-      kind = ir_InstrKind_CmpGt;
-      break;
-   case ast_BinaryOpcode_LessEqual:
-      kind = ir_InstrKind_CmpLe;
-      break;
-   case ast_BinaryOpcode_GreaterEqual:
-      kind = ir_InstrKind_CmpGe;
-      break;
-   case ast_BinaryOpcode_Equal:
-      kind = ir_InstrKind_CmpEq;
-      break;
-   case ast_BinaryOpcode_NotEqual:
-      kind = ir_InstrKind_CmpNe;
-      break;
-   case ast_BinaryOpcode_And:
-      kind = ir_InstrKind_And;
-      break;
-   case ast_BinaryOpcode_Xor:
-      kind = ir_InstrKind_Xor;
-      break;
-   case ast_BinaryOpcode_Or:
-      kind = ir_InstrKind_Or;
-      break;
-   default:
-      (0) || c2_assert("generator/ir/ir_generator_binop.c2", 132, "ir_generator.Generator.emitBinaryOperator", "0");
-      break;
-   }
-   (kind != ir_InstrKind_None) || c2_assert("generator/ir/ir_generator_binop.c2", 135, "ir_generator.Generator.emitBinaryOperator", "kind != InstrKind.None");
-   ir_Ref left;
-   ir_generator_Generator_emitExpr(gen, &left, ast_BinaryOperator_getLHS(b));
-   ir_Ref right;
-   ir_generator_Generator_emitExpr(gen, &right, ast_BinaryOperator_getRHS(b));
-   *result = ir_context_Context_addBinaryInstr(gen->ctx, kind, left, right);
-}
-
-static void ir_generator_Generator_emitLogicalAnd(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e)
-{
-   const ast_BinaryOperator* b = (ast_BinaryOperator*)e;
-   ir_context_Context* c = gen->ctx;
-   ir_Ref left;
-   ir_generator_Generator_emitExpr(gen, &left, ast_BinaryOperator_getLHS(b));
-   ir_Ref zero;
-   ir_Ref_init(&zero, ir_RefKind_Value, 0);
-   ir_Ref cond1 = ir_context_Context_addBinaryInstr(c, ir_InstrKind_CmpNe, left, zero);
-   ir_BlockId true_blk = ir_context_Context_createBlock(c, ir_BlockKind_AndTrue);
-   ir_BlockId join_blk = ir_context_Context_createBlock(c, ir_BlockKind_LogicJoin);
-   ir_context_Context_addJmpIfInstr(c, cond1, true_blk, join_blk);
-   ir_BlockId block1 = ir_context_Context_getCurBlock(c);
-   ir_context_Context_endBlock(c);
-   ir_context_Context_startBlock(c, true_blk);
-   ir_Ref right;
-   ir_generator_Generator_emitExpr(gen, &right, ast_BinaryOperator_getRHS(b));
-   ir_Ref cond2 = ir_context_Context_addBinaryInstr(c, ir_InstrKind_CmpNe, right, zero);
-   ir_context_Context_addJmpInstr(c, join_blk);
-   (ir_context_Context_getCurBlock(c) == true_blk) || c2_assert("generator/ir/ir_generator_binop.c2", 189, "ir_generator.Generator.emitLogicalAnd", "c.getCurBlock() == true_blk");
-   ir_context_Context_endBlock(c);
-   ir_context_Context_startBlock(c, join_blk);
-   *result = ir_context_Context_addPhi2Instr(gen->ctx, block1, zero, true_blk, cond2);
-}
-
-static void ir_generator_Generator_emitLogicalOr(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e)
-{
-   const ast_BinaryOperator* b = (ast_BinaryOperator*)e;
-   ir_context_Context* c = gen->ctx;
-   ir_Ref left;
-   ir_generator_Generator_emitExpr(gen, &left, ast_BinaryOperator_getLHS(b));
-   ir_Ref zero;
-   ir_Ref_init(&zero, ir_RefKind_Value, 0);
-   ir_Ref cond1 = ir_context_Context_addBinaryInstr(gen->ctx, ir_InstrKind_CmpNe, left, zero);
-   ir_BlockId false_blk = ir_context_Context_createBlock(c, ir_BlockKind_OrFalse);
-   ir_BlockId join_blk = ir_context_Context_createBlock(c, ir_BlockKind_LogicJoin);
-   ir_context_Context_addJmpIfInstr(c, cond1, join_blk, false_blk);
-   ir_BlockId block1 = ir_context_Context_getCurBlock(c);
-   ir_context_Context_endBlock(c);
-   ir_context_Context_startBlock(c, false_blk);
-   ir_Ref right;
-   ir_generator_Generator_emitExpr(gen, &right, ast_BinaryOperator_getRHS(b));
-   ir_Ref cond2 = ir_context_Context_addBinaryInstr(gen->ctx, ir_InstrKind_CmpNe, right, zero);
-   ir_context_Context_addJmpInstr(c, join_blk);
-   false_blk = ir_context_Context_getCurBlock(c);
-   ir_context_Context_endBlock(c);
-   ir_context_Context_startBlock(c, join_blk);
-   ir_Ref one;
-   ir_Ref_init(&one, ir_RefKind_Value, 1);
-   *result = ir_context_Context_addPhi2Instr(gen->ctx, block1, one, false_blk, cond2);
-}
-
-static void ir_generator_Generator_emitShift(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e)
-{
-   const ast_BinaryOperator* b = (ast_BinaryOperator*)e;
-   ir_InstrKind k;
-   if (ast_BinaryOperator_getOpcode(b) == ast_BinaryOpcode_ShiftLeft) {
-      k = ir_InstrKind_Shl;
-   } else {
-      k = ir_InstrKind_Shr;
-   }
-   ir_Ref left;
-   ir_generator_Generator_emitExpr(gen, &left, ast_BinaryOperator_getLHS(b));
-   ir_Ref right;
-   ir_generator_Generator_emitExpr(gen, &right, ast_BinaryOperator_getRHS(b));
-   *result = ir_context_Context_addBinaryInstr(gen->ctx, k, left, right);
-}
-
-static void ir_generator_Generator_emitOpAssign(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e)
-{
-   const ast_BinaryOperator* b = (ast_BinaryOperator*)e;
-   ir_InstrKind k = ir_InstrKind_None;
-   switch (ast_BinaryOperator_getOpcode(b)) {
-   case ast_BinaryOpcode_MulAssign:
-      k = ir_InstrKind_Mul;
-      break;
-   case ast_BinaryOpcode_DivAssign:
-      k = ir_InstrKind_Div;
-      break;
-   case ast_BinaryOpcode_RemAssign:
-      k = ir_InstrKind_Rem;
-      break;
-   case ast_BinaryOpcode_AddAssign:
-      k = ir_InstrKind_Add;
-      break;
-   case ast_BinaryOpcode_SubAssign:
-      k = ir_InstrKind_Sub;
-      break;
-   case ast_BinaryOpcode_ShlAssign:
-      k = ir_InstrKind_Shl;
-      break;
-   case ast_BinaryOpcode_ShrAssign:
-      k = ir_InstrKind_Shr;
-      break;
-   case ast_BinaryOpcode_AndAssign:
-      k = ir_InstrKind_And;
-      break;
-   case ast_BinaryOpcode_XorAssign:
-      k = ir_InstrKind_Xor;
-      break;
-   case ast_BinaryOpcode_OrAssign:
-      k = ir_InstrKind_Or;
-      break;
-   default:
-      (0) || c2_assert("generator/ir/ir_generator_binop.c2", 314, "ir_generator.Generator.emitOpAssign", "0");
-      return;
-   }
-   (k != ir_InstrKind_None) || c2_assert("generator/ir/ir_generator_binop.c2", 317, "ir_generator.Generator.emitOpAssign", "k != InstrKind.None");
-   ir_Ref right;
-   ir_generator_Generator_emitExpr(gen, &right, ast_BinaryOperator_getRHS(b));
-   ir_Ref left;
-   ir_generator_Generator_emitExpr(gen, &left, ast_BinaryOperator_getLHS(b));
-   ir_Type t = ir_Type_I32;
-   ir_Ref left_val = ir_context_Context_addLoadInstr(gen->ctx, t, left);
-   right = ir_context_Context_addBinaryInstr(gen->ctx, k, left_val, right);
-   ir_context_Context_addStoreInstr(gen->ctx, t, right, left);
-   *result = right;
-}
-
-static void ir_generator_Generator_emitBitfieldAssign(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* lhs, const ast_Expr* rhs)
-{
-   ir_context_Context* c = gen->ctx;
-   const ast_MemberExpr* m = (ast_MemberExpr*)lhs;
-   const ast_Decl* d = ast_MemberExpr_getFullDecl(m);
-   const ast_VarDecl* vd = (ast_VarDecl*)d;
-   const ast_Expr* bitfield = ast_VarDecl_getBitfield(vd);
-   ast_Value val = ast_evalExpr(bitfield);
-   uint32_t width = ast_Value_as_u32(&val);
-   uint32_t mask = bit_utils_get_mask32(width);
-   uint32_t bit_offset = 0;
-   ir_Ref src;
-   ir_generator_Generator_emitExpr(gen, &src, rhs);
-   bool allBitsSet = false;
-   if (ast_Expr_isCtv(rhs)) {
-   } else {
-      ir_Ref mask_ref = ir_context_Context_addIntegerConstant(c, mask);
-      src = ir_context_Context_addBinaryInstr(c, ir_InstrKind_And, src, mask_ref);
-   }
-   *result = src;
-   ir_Ref base;
-   ir_generator_Generator_emitMemberExpr(gen, &base, lhs);
-   ir_Ref dest = base;
-   if (!allBitsSet) {
-      ir_Ref mask_ref = ir_context_Context_addIntegerConstant(c, ~(mask << bit_offset));
-      dest = ir_context_Context_addBinaryInstr(c, ir_InstrKind_And, base, mask_ref);
-   }
-   if (bit_offset) {
-      ir_Ref offset_ref = ir_context_Context_addIntegerConstant(c, bit_offset);
-      src = ir_context_Context_addBinaryInstr(c, ir_InstrKind_Shl, src, offset_ref);
-   }
-   dest = ir_context_Context_addBinaryInstr(c, ir_InstrKind_Or, dest, src);
-   ir_context_Context_addStoreInstr(gen->ctx, ir_Type_I32, dest, base);
-}
-
-static void ir_generator_Generator_emitCallExpr(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e)
-{
-   ast_CallExpr* call = (ast_CallExpr*)e;
-   ir_context_Context* c = gen->ctx;
-   uint32_t num_args = ast_CallExpr_getNumArgs(call);
-   ast_Expr** args = ast_CallExpr_getArgs(call);
-   ast_QualType qt = ast_Expr_getType(e);
-   bool has_result = !ast_QualType_isVoid(qt);
-   bool is_tf = ast_CallExpr_isTypeFunc(call);
-   ref_list_RefList arg_refs; ref_list_RefList_init(&arg_refs);
-   ir_Ref name_ref;
-   if (is_tf) {
-      ast_Expr* func = ast_CallExpr_getFunc(call);
-      ir_Ref ref;
-      ir_generator_Generator_emitMemberExpr(gen, &ref, func);
-      ref_list_RefList_add(&arg_refs, ref);
-      const ast_MemberExpr* m = (ast_MemberExpr*)func;
-      ir_generator_Generator_emitSymbol(gen, &name_ref, ast_MemberExpr_getFullDecl(m));
-   } else {
-      ir_generator_Generator_emitExpr(gen, &name_ref, ast_CallExpr_getFunc(call));
-   }
-   for (uint32_t i = 0; i < num_args; i++) {
-      ir_Ref ref;
-      ir_generator_Generator_emitExpr(gen, &ref, args[i]);
-      ref_list_RefList_add(&arg_refs, ref);
-   }
-   *result = ir_context_Context_addCallInstr(c, name_ref, ref_list_RefList_get(&arg_refs), ref_list_RefList_getCount(&arg_refs), has_result, ast_CallExpr_isNoreturn(call));
-   ref_list_RefList_free(&arg_refs);
-}
-
-static void ir_generator_Generator_emitExpr(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e)
-{
-   if (ast_Expr_isCtv(e)) {
-      ast_Value v = ast_evalExpr(e);
-      *result = ir_context_Context_addIntegerConstant(gen->ctx, ast_Value_as_u32(&v));
-      return;
-   }
-   switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral:
-   case ast_ExprKind_FloatLiteral:
-   case ast_ExprKind_BooleanLiteral:
-   case ast_ExprKind_CharLiteral:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 36, "ir_generator.Generator.emitExpr", "0");
-      break;
-   case ast_ExprKind_StringLiteral: {
-      ast_StringLiteral* s = (ast_StringLiteral*)e;
-      ir_context_SymbolId id = ir_context_Context_addStringLiteral(gen->ctx, ir_generator_Generator_createStringVar(gen), ast_StringLiteral_getText(s), ast_StringLiteral_getSize(s));
-      ir_Ref ref;
-      ir_Ref_init(&ref, ir_RefKind_Symbol, id);
-      *result = ref;
-      break;
-   }
-   case ast_ExprKind_Nil:
-      ir_Ref_init(result, ir_RefKind_Value, 0);
-      break;
-   case ast_ExprKind_Identifier:
-      ir_generator_Generator_emitIdentifier(gen, result, e);
-      break;
-   case ast_ExprKind_Type:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 53, "ir_generator.Generator.emitExpr", "0");
-      break;
-   case ast_ExprKind_Call:
-      ir_generator_Generator_emitCallExpr(gen, result, e);
-      break;
-   case ast_ExprKind_InitList:
-      ir_Ref_init(result, ir_RefKind_Value, 0);
-      break;
-   case ast_ExprKind_FieldDesignatedInit:
-   case ast_ExprKind_ArrayDesignatedInit:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 63, "ir_generator.Generator.emitExpr", "0");
-      break;
-   case ast_ExprKind_BinaryOperator:
-      ir_generator_Generator_emitBinaryOperator(gen, result, e);
-      break;
-   case ast_ExprKind_UnaryOperator:
-      ir_generator_Generator_emitUnaryOperator(gen, result, e);
-      break;
-   case ast_ExprKind_ConditionalOperator:
-      ir_generator_Generator_emitCondOperator(gen, result, e);
-      break;
-   case ast_ExprKind_Builtin:
-      ir_generator_Generator_emitBuiltin(gen, result, e);
-      break;
-   case ast_ExprKind_ArraySubscript:
-      ir_generator_Generator_emitArraySubscript(gen, result, e);
-      break;
-   case ast_ExprKind_Member:
-      ir_generator_Generator_emitMemberExpr(gen, result, e);
-      break;
-   case ast_ExprKind_Paren: {
-      ast_ParenExpr* p = (ast_ParenExpr*)e;
-      ir_generator_Generator_emitExpr(gen, result, ast_ParenExpr_getInner(p));
-      break;
-   }
-   case ast_ExprKind_BitOffset:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 88, "ir_generator.Generator.emitExpr", "0");
-      break;
-   case ast_ExprKind_ExplicitCast: {
-      ast_ExplicitCastExpr* ec = (ast_ExplicitCastExpr*)e;
-      ir_generator_Generator_emitExpr(gen, result, ast_ExplicitCastExpr_getInner(ec));
-      break;
-   }
-   case ast_ExprKind_ImplicitCast: {
-      ast_ImplicitCastExpr* ic = (ast_ImplicitCastExpr*)e;
-      switch (ast_ImplicitCastExpr_getKind(ic)) {
-      case ast_ImplicitCastKind_ArrayToPointerDecay:
-         ir_generator_Generator_emitExpr(gen, result, ast_ImplicitCastExpr_getInner(ic));
-         break;
-      case ast_ImplicitCastKind_LValueToRValue: {
-         ir_Ref src;
-         ir_generator_Generator_emitExpr(gen, &src, ast_ImplicitCastExpr_getInner(ic));
-         *result = ir_context_Context_addLoadInstr(gen->ctx, ir_Type_I32, src);
-         break;
-      }
-      case ast_ImplicitCastKind_PointerToBoolean:
-         ir_generator_Generator_emitExpr(gen, result, ast_ImplicitCastExpr_getInner(ic));
-         break;
-      case ast_ImplicitCastKind_PointerToInteger:
-         (0) || c2_assert("generator/ir/ir_generator_expr.c2", 113, "ir_generator.Generator.emitExpr", "0");
-         break;
-      case ast_ImplicitCastKind_IntegralCast:
-         ir_generator_Generator_emitExpr(gen, result, ast_ImplicitCastExpr_getInner(ic));
-         break;
-      case ast_ImplicitCastKind_BitCast:
-         (0) || c2_assert("generator/ir/ir_generator_expr.c2", 120, "ir_generator.Generator.emitExpr", "0");
-         break;
-      }
-      break;
-   }
-   case ast_ExprKind_Range:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 125, "ir_generator.Generator.emitExpr", "0");
-      break;
-   case ast_ExprKind_NamedArgument: {
-      ast_NamedArgument* n = (ast_NamedArgument*)e;
-      ir_generator_Generator_emitExpr(gen, result, ast_NamedArgument_getInner(n));
-      break;
-   }
-   case ast_ExprKind_Alternate: {
-      ast_AlternateExpr* n = (ast_AlternateExpr*)e;
-      ir_generator_Generator_emitExpr(gen, result, ast_AlternateExpr_getGenerated(n));
-      break;
-   }
-   }
-}
-
-static void ir_generator_Generator_emitIdentifier(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e)
-{
-   ast_IdentifierExpr* i = (ast_IdentifierExpr*)e;
-   switch (ast_IdentifierExpr_getKind(i)) {
-   case ast_IdentifierKind_Unresolved:
-   case ast_IdentifierKind_Module:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 144, "ir_generator.Generator.emitIdentifier", "0");
-      break;
-   case ast_IdentifierKind_Function:
-      ir_generator_Generator_emitSymbol(gen, result, ast_IdentifierExpr_getDecl(i));
-      break;
-   case ast_IdentifierKind_Type:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 150, "ir_generator.Generator.emitIdentifier", "0");
-      break;
-   case ast_IdentifierKind_Var:
-      ir_generator_Generator_emitVarDecl(gen, result, ast_IdentifierExpr_getDecl(i));
-      break;
-   case ast_IdentifierKind_EnumConstant:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 156, "ir_generator.Generator.emitIdentifier", "0");
-      break;
-   case ast_IdentifierKind_StructMember:
-   case ast_IdentifierKind_Label:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 160, "ir_generator.Generator.emitIdentifier", "0");
-      break;
-   }
-}
-
-static void ir_generator_Generator_emitSymbol(ir_generator_Generator* gen, ir_Ref* result, ast_Decl* d)
-{
-   ir_context_SymbolId sid = ir_generator_Generator_createSymbol(gen, d);
-   ir_Ref ref;
-   ir_Ref_init(&ref, ir_RefKind_Symbol, sid);
-   *result = ref;
-}
-
-static void ir_generator_Generator_emitVarDecl(ir_generator_Generator* gen, ir_Ref* result, ast_Decl* d)
-{
-   const ast_VarDecl* vd = (ast_VarDecl*)d;
-   if (ast_VarDecl_isGlobal(vd)) {
-      ir_generator_Generator_emitSymbol(gen, result, d);
-   } else if (ast_VarDecl_hasLocalQualifier(vd)) {
-      uint32_t gen_idx = ast_Decl_getGenIdx(d);
-      if (!gen_idx) {
-         ast_QualType qt = ast_Decl_getType(d);
-         gen_idx = ir_context_Context_addGlobalVar(gen->ctx, ir_generator_Generator_createLocalName(gen, d), ast_QualType_getAlignment(qt), ir_generator_Generator_isExternal(gen, d));
-         ast_Decl_setGenIdx(d, gen_idx);
-      }
-      ir_Ref ref;
-      ir_Ref_init(&ref, ir_RefKind_Symbol, gen_idx);
-      *result = ref;
-   } else if (ast_VarDecl_isLocal(vd) || ast_VarDecl_isParameter(vd)) {
-      ir_gen_locals_StackVar* var = ir_gen_locals_Locals_find(&gen->locals, vd);
-      *result = var->ref;
-   } else {
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 190, "ir_generator.Generator.emitVarDecl", "0");
-   }
-}
-
-static void ir_generator_Generator_emitCondOperator(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e)
-{
-   ir_context_Context* c = gen->ctx;
-   const ast_ConditionalOperator* co = (ast_ConditionalOperator*)e;
-   ir_BlockId then_blk = ir_context_Context_createBlock(c, ir_BlockKind_CondTrue);
-   ir_BlockId else_blk = ir_context_Context_createBlock(c, ir_BlockKind_CondFalse);
-   ir_BlockId join_blk = ir_context_Context_createBlock(c, ir_BlockKind_CondJoin);
-   ir_generator_Generator_emitCond(gen, ast_ConditionalOperator_getCond(co), then_blk, else_blk, then_blk);
-   ir_Ref ref1;
-   ir_generator_Generator_emitExpr(gen, &ref1, ast_ConditionalOperator_getLHS(co));
-   if (!ir_context_Context_isBlockTerminated(c)) ir_context_Context_addJmpInstr(c, join_blk);
-   ir_context_Context_endBlock(c);
-   ir_context_Context_startBlock(c, else_blk);
-   ir_Ref ref2;
-   ir_generator_Generator_emitExpr(gen, &ref2, ast_ConditionalOperator_getRHS(co));
-   if (!ir_context_Context_isBlockTerminated(c)) ir_context_Context_addJmpInstr(c, join_blk);
-   ir_context_Context_endBlock(c);
-   ir_context_Context_startBlock(c, join_blk);
-   *result = ir_context_Context_addPhi2Instr(gen->ctx, then_blk, ref1, else_blk, ref2);
-}
-
-static void ir_generator_Generator_emitUnaryOperator(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e)
-{
-   const ast_UnaryOperator* uo = (ast_UnaryOperator*)e;
-   switch (ast_UnaryOperator_getOpcode(uo)) {
-   case ast_UnaryOpcode_PostInc:
-   case ast_UnaryOpcode_PostDec:
-   case ast_UnaryOpcode_PreInc:
-   case ast_UnaryOpcode_PreDec: {
-      ir_Ref left;
-      ir_generator_Generator_emitExpr(gen, &left, ast_UnaryOperator_getInner(uo));
-      ir_Type t = ir_Type_I32;
-      ir_Ref left_val = ir_context_Context_addLoadInstr(gen->ctx, t, left);
-      ir_Ref value;
-      ir_Ref_init(&value, ir_RefKind_Value, 1);
-      ir_InstrKind k;
-      if (ast_UnaryOperator_getOpcode(uo) == ast_UnaryOpcode_PostInc || ast_UnaryOperator_getOpcode(uo) == ast_UnaryOpcode_PreInc) {
-         k = ir_InstrKind_Add;
-      } else {
-         k = ir_InstrKind_Sub;
-      }
-      ir_Ref right = ir_context_Context_addBinaryInstr(gen->ctx, k, left_val, value);
-      ir_context_Context_addStoreInstr(gen->ctx, t, right, left);
-      if (ast_UnaryOperator_getOpcode(uo) <= ast_UnaryOpcode_PostDec) {
-         *result = left_val;
-      } else {
-         *result = right;
-      }
-      break;
-   }
-   case ast_UnaryOpcode_AddrOf:
-   case ast_UnaryOpcode_Deref:
-      ir_generator_Generator_emitExpr(gen, result, ast_UnaryOperator_getInner(uo));
-      break;
-   case ast_UnaryOpcode_Plus:
-      (!ast_Expr_isCtv(e)) || c2_assert("generator/ir/ir_generator_expr.c2", 272, "ir_generator.Generator.emitUnaryOperator", "!e.isCtv()");
-      ir_generator_Generator_emitExpr(gen, result, ast_UnaryOperator_getInner(uo));
-      break;
-   case ast_UnaryOpcode_Minus: {
-      (!ast_Expr_isCtv(e)) || c2_assert("generator/ir/ir_generator_expr.c2", 277, "ir_generator.Generator.emitUnaryOperator", "!e.isCtv()");
-      ir_Ref left;
-      ir_Ref_init(&left, ir_RefKind_Value, 0);
-      ir_Ref right;
-      ir_generator_Generator_emitExpr(gen, &right, ast_UnaryOperator_getInner(uo));
-      *result = ir_context_Context_addBinaryInstr(gen->ctx, ir_InstrKind_Sub, left, right);
-      break;
-   }
-   case ast_UnaryOpcode_Not: {
-      ir_Ref lhs;
-      ir_generator_Generator_emitExpr(gen, &lhs, ast_UnaryOperator_getInner(uo));
-      ir_Ref rhs = ir_context_Context_addIntegerConstant(gen->ctx, -1);
-      *result = ir_context_Context_addBinaryInstr(gen->ctx, ir_InstrKind_Xor, lhs, rhs);
-      break;
-   }
-   case ast_UnaryOpcode_LNot: {
-      ir_Ref lhs;
-      ir_generator_Generator_emitExpr(gen, &lhs, ast_UnaryOperator_getInner(uo));
-      ir_Ref zero;
-      ir_Ref_init(&zero, ir_RefKind_Value, 0);
-      ir_Ref rhs = ir_context_Context_addBinaryInstr(gen->ctx, ir_InstrKind_CmpNe, lhs, zero);
-      ir_Ref one;
-      ir_Ref_init(&one, ir_RefKind_Value, 1);
-      rhs = ir_context_Context_addBinaryInstr(gen->ctx, ir_InstrKind_Xor, rhs, one);
-      *result = rhs;
-      break;
-   }
-   }
-}
-
-static void ir_generator_Generator_emitCond(ir_generator_Generator* gen, const ast_Expr* e, ir_BlockId true_blk, ir_BlockId false_blk, ir_BlockId start_blk)
-{
-   ir_context_Context* c = gen->ctx;
-   if (ast_Expr_isCtv(e)) {
-      ast_Value v = ast_evalExpr(e);
-      if (ast_Value_isZero(&v)) {
-         ir_context_Context_addJmpInstr(c, false_blk);
-      } else {
-         ir_context_Context_addJmpInstr(c, true_blk);
-      }
-      ir_context_Context_endBlock(c);
-      ir_context_Context_startBlock(c, start_blk);
-      return;
-   }
-   ir_Ref ref;
-   switch (ast_Expr_getKind(e)) {
-   case ast_ExprKind_IntegerLiteral:
-   case ast_ExprKind_FloatLiteral:
-   case ast_ExprKind_BooleanLiteral:
-   case ast_ExprKind_CharLiteral:
-   case ast_ExprKind_StringLiteral:
-   case ast_ExprKind_Nil:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 338, "ir_generator.Generator.emitCond", "0");
-      break;
-   case ast_ExprKind_Identifier:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 341, "ir_generator.Generator.emitCond", "0");
-      break;
-   case ast_ExprKind_Type:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 344, "ir_generator.Generator.emitCond", "0");
-      break;
-   case ast_ExprKind_Call:
-      break;
-   case ast_ExprKind_InitList:
-   case ast_ExprKind_FieldDesignatedInit:
-   case ast_ExprKind_ArrayDesignatedInit:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 351, "ir_generator.Generator.emitCond", "0");
-      break;
-   case ast_ExprKind_BinaryOperator:
-      if (ir_generator_Generator_emitBinaryCond(gen, e, true_blk, false_blk, start_blk)) return;
-      break;
-   case ast_ExprKind_UnaryOperator:
-      break;
-   case ast_ExprKind_ConditionalOperator:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 359, "ir_generator.Generator.emitCond", "0");
-      break;
-   case ast_ExprKind_Builtin:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 362, "ir_generator.Generator.emitCond", "0");
-      break;
-   case ast_ExprKind_ArraySubscript:
-   case ast_ExprKind_Member:
-      break;
-   case ast_ExprKind_Paren: {
-      ast_ParenExpr* p = (ast_ParenExpr*)e;
-      ir_generator_Generator_emitCond(gen, ast_ParenExpr_getInner(p), true_blk, false_blk, start_blk);
-      return;
-   }
-   case ast_ExprKind_BitOffset:
-   case ast_ExprKind_ExplicitCast:
-   case ast_ExprKind_ImplicitCast:
-      break;
-   case ast_ExprKind_Range:
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 376, "ir_generator.Generator.emitCond", "0");
-      break;
-   case ast_ExprKind_NamedArgument: {
-      ast_NamedArgument* n = (ast_NamedArgument*)e;
-      ir_generator_Generator_emitCond(gen, ast_NamedArgument_getInner(n), true_blk, false_blk, start_blk);
-      break;
-   }
-   case ast_ExprKind_Alternate: {
-      ast_AlternateExpr* n = (ast_AlternateExpr*)e;
-      ir_generator_Generator_emitCond(gen, ast_AlternateExpr_getGenerated(n), true_blk, false_blk, start_blk);
-      break;
-   }
-   }
-   ir_generator_Generator_emitExpr(gen, &ref, e);
-   ir_Ref zero;
-   ir_Ref_init(&zero, ir_RefKind_Value, 0);
-   ir_Ref cond = ir_context_Context_addBinaryInstr(gen->ctx, ir_InstrKind_CmpNe, ref, zero);
-   ir_context_Context_addJmpIfInstr(c, cond, true_blk, false_blk);
-   ir_context_Context_endBlock(c);
-   ir_context_Context_startBlock(c, start_blk);
-}
-
-static void ir_generator_Generator_emitAssignCond(ir_generator_Generator* gen, ir_Type t, ir_Ref lhs, ir_Ref rhs, ir_BlockId left, ir_BlockId right, ir_BlockId start)
-{
-   ir_context_Context* c = gen->ctx;
-   ir_context_Context_addStoreInstr(c, t, rhs, lhs);
-   ir_Ref zero;
-   ir_Ref_init(&zero, ir_RefKind_Value, 0);
-   ir_Ref cond = ir_context_Context_addBinaryInstr(gen->ctx, ir_InstrKind_CmpNe, rhs, zero);
-   ir_context_Context_addJmpIfInstr(c, cond, left, right);
-   ir_context_Context_endBlock(c);
-   ir_context_Context_startBlock(c, start);
-}
-
-static bool ir_generator_Generator_emitBinaryCond(ir_generator_Generator* gen, const ast_Expr* e, ir_BlockId left, ir_BlockId right, ir_BlockId start)
-{
-   const ast_BinaryOperator* b = (ast_BinaryOperator*)e;
-   ir_InstrKind k;
-   switch (ast_BinaryOperator_getOpcode(b)) {
-   case ast_BinaryOpcode_LessThan:
-      k = ir_InstrKind_CmpLt;
-      break;
-   case ast_BinaryOpcode_GreaterThan:
-      k = ir_InstrKind_CmpGt;
-      break;
-   case ast_BinaryOpcode_LessEqual:
-      k = ir_InstrKind_CmpLe;
-      break;
-   case ast_BinaryOpcode_GreaterEqual:
-      k = ir_InstrKind_CmpGe;
-      break;
-   case ast_BinaryOpcode_Equal:
-      k = ir_InstrKind_CmpEq;
-      break;
-   case ast_BinaryOpcode_NotEqual:
-      k = ir_InstrKind_CmpNe;
-      break;
-   case ast_BinaryOpcode_LAnd:
-      ir_generator_Generator_emitAndCond(gen, b, left, right, start);
-      return true;
-   case ast_BinaryOpcode_LOr:
-      ir_generator_Generator_emitOrCond(gen, b, left, right, start);
-      return true;
-   case ast_BinaryOpcode_Assign: {
-      ir_Ref rhs;
-      ir_generator_Generator_emitExpr(gen, &rhs, ast_BinaryOperator_getRHS(b));
-      ir_Ref lhs;
-      ir_generator_Generator_emitExpr(gen, &lhs, ast_BinaryOperator_getLHS(b));
-      ir_Type t = ir_Type_I32;
-      ir_generator_Generator_emitAssignCond(gen, t, lhs, rhs, left, right, start);
-      return true;
-   }
-   default:
-      return false;
-   }
-   ir_Ref lhs;
-   ir_generator_Generator_emitExpr(gen, &lhs, ast_BinaryOperator_getLHS(b));
-   ir_Ref rhs;
-   ir_generator_Generator_emitExpr(gen, &rhs, ast_BinaryOperator_getRHS(b));
-   ir_Ref cond = ir_context_Context_addBinaryInstr(gen->ctx, k, lhs, rhs);
-   ir_context_Context* c = gen->ctx;
-   ir_context_Context_addJmpIfInstr(c, cond, left, right);
-   ir_context_Context_endBlock(c);
-   ir_context_Context_startBlock(c, start);
-   return true;
-}
-
-static void ir_generator_Generator_emitAndCond(ir_generator_Generator* gen, const ast_BinaryOperator* b, ir_BlockId true_blk, ir_BlockId false_blk, ir_BlockId start_blk)
-{
-   ir_BlockId and_true = ir_context_Context_createBlock(gen->ctx, ir_BlockKind_AndTrue);
-   ir_generator_Generator_emitCond(gen, ast_BinaryOperator_getLHS(b), and_true, false_blk, and_true);
-   ir_generator_Generator_emitCond(gen, ast_BinaryOperator_getRHS(b), true_blk, false_blk, start_blk);
-}
-
-static void ir_generator_Generator_emitOrCond(ir_generator_Generator* gen, const ast_BinaryOperator* b, ir_BlockId true_blk, ir_BlockId false_blk, ir_BlockId start_blk)
-{
-   ir_BlockId or_false = ir_context_Context_createBlock(gen->ctx, ir_BlockKind_OrFalse);
-   ir_generator_Generator_emitCond(gen, ast_BinaryOperator_getLHS(b), true_blk, or_false, or_false);
-   ir_generator_Generator_emitCond(gen, ast_BinaryOperator_getRHS(b), true_blk, false_blk, start_blk);
-}
-
-static void ir_generator_Generator_emitBuiltin(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e)
-{
-   const ast_BuiltinExpr* bi = (ast_BuiltinExpr*)e;
-   switch (ast_BuiltinExpr_getKind(bi)) {
-   case ast_BuiltinExprKind_Sizeof:
-   case ast_BuiltinExprKind_Elemsof:
-   case ast_BuiltinExprKind_EnumMin:
-   case ast_BuiltinExprKind_EnumMax:
-   case ast_BuiltinExprKind_OffsetOf:
-      ast_Expr_dump(e);
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 489, "ir_generator.Generator.emitBuiltin", "0");
-      break;
-   case ast_BuiltinExprKind_ToContainer:
-      {
-         ir_Ref ptr_ref;
-         ir_generator_Generator_emitExpr(gen, &ptr_ref, ast_BuiltinExpr_getToContainerPointer(bi));
-         ast_Value v = ast_BuiltinExpr_getValue(bi);
-         uint32_t offset = ast_Value_as_u32(&v);
-         if (offset == 0) {
-            *result = ptr_ref;
-         } else {
-            ir_Ref offset_ref = ir_context_Context_addIntegerConstant(gen->ctx, offset);
-            *result = ir_context_Context_addBinaryInstr(gen->ctx, ir_InstrKind_Sub, ptr_ref, offset_ref);
-         }
-         break;
-      }
-   }
-}
-
-static void ir_generator_Generator_emitArraySubscript(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e)
-{
-   const ast_ArraySubscriptExpr* a = (ast_ArraySubscriptExpr*)e;
-   ast_Expr* base = ast_ArraySubscriptExpr_getBase(a);
-   ast_Expr* index = ast_ArraySubscriptExpr_getIndex(a);
-   ast_QualType qt = ast_Expr_getType(base);
-   uint32_t base_size = ast_QualType_getSize(qt, true);
-   if (ast_Expr_isCtv(index)) {
-      ir_Ref base_ref;
-      ir_generator_Generator_emitExpr(gen, &base_ref, base);
-      ast_Value v = ast_evalExpr(index);
-      uint32_t offset = ast_Value_as_u32(&v) * base_size;
-      if (offset == 0) {
-         *result = base_ref;
-      } else {
-         ir_Ref offset_ref = ir_context_Context_addIntegerConstant(gen->ctx, offset);
-         *result = ir_context_Context_addBinaryInstr(gen->ctx, ir_InstrKind_Add, base_ref, offset_ref);
-      }
-   } else {
-      ir_Ref base_ref;
-      ir_generator_Generator_emitExpr(gen, &base_ref, base);
-      ir_Ref idx_ref;
-      ir_generator_Generator_emitExpr(gen, &idx_ref, index);
-      if (base_size == 1) {
-         *result = ir_context_Context_addBinaryInstr(gen->ctx, ir_InstrKind_Add, base_ref, idx_ref);
-      } else {
-         ir_Ref size_ref = ir_context_Context_addIntegerConstant(gen->ctx, base_size);
-         ir_Ref offset_ref = ir_context_Context_addBinaryInstr(gen->ctx, ir_InstrKind_Mul, idx_ref, size_ref);
-         *result = ir_context_Context_addBinaryInstr(gen->ctx, ir_InstrKind_Add, base_ref, offset_ref);
-      }
-   }
-}
-
-static ir_Type ir_generator_size2type(uint32_t size)
-{
-   switch (size) {
-   case 1:
-      return ir_Type_I8;
-   case 2:
-      return ir_Type_I16;
-   case 4:
-      return ir_Type_I32;
-   default:
-      break;
-   }
-   return ir_Type_I64;
-}
-
-static void ir_generator_Generator_emitStructInitExpr(ir_generator_Generator* gen, const ir_gen_locals_StackVar* var, const ast_Expr* e)
-{
-   const ast_InitListExpr* ile = (ast_InitListExpr*)e;
-   ast_QualType qt = ast_Expr_getType(e);
-   ast_StructType* st = ast_QualType_getStructType(qt);
-   ast_StructTypeDecl* std = ast_StructType_getDecl(st);
-   uint32_t num_values = ast_InitListExpr_getNumValues(ile);
-   const ast_Expr** values = ast_InitListExpr_getValues2(ile);
-   if (ast_Expr_isCtc(e)) {
-   }
-   if (ast_InitListExpr_hasDesignators(ile)) {
-      ir_generator_FieldStructLayouter layouter;
-      ir_generator_FieldStructLayouter_init(&layouter, gen, ast_StructTypeDecl_getSize(std), ast_StructTypeDecl_getDesigMemberCount(std));
-      for (uint32_t i = 0; i < num_values; i++) {
-         ast_FieldDesignatedInitExpr* fdi = (ast_FieldDesignatedInitExpr*)values[i];
-         const ast_FieldInitField* fif = ast_FieldDesignatedInitExpr_getMemberInfo(fdi);
-         if (!ast_FieldInitField_isZeroSizeBitfield(fif)) {
-            ir_generator_FieldStructLayouter_add(&layouter, fif, ast_FieldDesignatedInitExpr_getInit(fdi));
-         }
-      }
-      ir_generator_FieldStructLayouter_finalizeExpr(&layouter, std, var->ref);
-      return;
-   }
-   uint32_t num_members = ast_StructTypeDecl_getNumMembers(std);
-   const ast_StructLayout* layout = ast_StructTypeDecl_getLayout(std);
-   uint32_t i;
-   uint32_t offset = 0;
-   ir_Ref dest_ref = var->ref;
-   for (i = 0; i < num_values; i++) {
-      const ast_StructMemberLayout* ml = &layout->members[i];
-      ir_Ref value_ref;
-      ir_generator_Generator_emitExpr(gen, &value_ref, values[i]);
-      if (ml->offset != 0) {
-         ir_Ref offset_ref = ir_context_Context_addIntegerConstant(gen->ctx, ml->offset - offset);
-         offset = ml->offset;
-         dest_ref = ir_context_Context_addBinaryInstr(gen->ctx, ir_InstrKind_Add, dest_ref, offset_ref);
-      }
-      ir_context_Context_addStoreInstr(gen->ctx, ir_generator_size2type(ml->size), value_ref, dest_ref);
-   }
-   ir_Ref value_ref = ir_context_Context_addIntegerConstant(gen->ctx, 0);
-   while (i < num_members) {
-      const ast_StructMemberLayout* ml = &layout->members[i];
-      if (ml->offset != 0) {
-         ir_Ref offset_ref = ir_context_Context_addIntegerConstant(gen->ctx, ml->offset - offset);
-         offset = ml->offset;
-         dest_ref = ir_context_Context_addBinaryInstr(gen->ctx, ir_InstrKind_Add, dest_ref, offset_ref);
-      }
-      ir_context_Context_addStoreInstr(gen->ctx, ir_generator_size2type(ml->size), value_ref, dest_ref);
-      i++;
-   }
-}
-
-static void ir_generator_Generator_emitArrayInitExpr(ir_generator_Generator* gen, const ir_gen_locals_StackVar* var, const ast_Expr* e)
-{
-   const ast_InitListExpr* ile = (ast_InitListExpr*)e;
-   ir_context_Context* ctx = gen->ctx;
-   if (ast_Expr_isCtc(e)) {
-   }
-   if (ast_InitListExpr_hasDesignators(ile)) {
-      (0) || c2_assert("generator/ir/ir_generator_expr.c2", 633, "ir_generator.Generator.emitArrayInitExpr", "0");
-   } else {
-      const uint32_t elem_size = ir_Type_size(var->ir_type);
-      ir_Ref dest_ref = var->ref;
-      ir_Ref step_ref = ir_context_Context_addIntegerConstant(ctx, elem_size);
-      uint32_t offset = 0;
-      uint32_t num_values = ast_InitListExpr_getNumValues(ile);
-      const ast_Expr** values = ast_InitListExpr_getValues2(ile);
-      for (uint32_t i = 0; i < num_values; i++) {
-         if (i != 0) {
-            dest_ref = ir_context_Context_addBinaryInstr(ctx, ir_InstrKind_Add, dest_ref, step_ref);
-         }
-         ir_Ref value_ref;
-         ir_generator_Generator_emitExpr(gen, &value_ref, values[i]);
-         ir_context_Context_addStoreInstr(ctx, var->ir_type, value_ref, dest_ref);
-         offset += elem_size;
-      }
-      ir_Ref value_ref = ir_context_Context_addIntegerConstant(ctx, 0);
-      while (offset != var->size) {
-         if (offset != 0) {
-            dest_ref = ir_context_Context_addBinaryInstr(ctx, ir_InstrKind_Add, dest_ref, step_ref);
-         }
-         ir_context_Context_addStoreInstr(ctx, var->ir_type, value_ref, dest_ref);
-         offset += elem_size;
-      }
-   }
-}
-
-static void ir_generator_Generator_emitInitExpr(ir_generator_Generator* gen, const ast_VarDecl* vd, const ast_Expr* ie)
-{
-   ir_gen_locals_StackVar* var = ir_gen_locals_Locals_find(&gen->locals, vd);
-   if (ast_Expr_isInitList(ie)) {
-      const ast_InitListExpr* ile = (ast_InitListExpr*)ie;
-      if (ast_InitListExpr_isArray(ile)) {
-         ir_generator_Generator_emitArrayInitExpr(gen, var, ie);
-      } else {
-         ir_generator_Generator_emitStructInitExpr(gen, var, ie);
-      }
-   } else {
-      ir_Ref res;
-      ir_generator_Generator_emitExpr(gen, &res, ie);
-      if (!ast_VarDecl_hasInitCall(vd)) {
-         ir_context_Context_addStoreInstr(gen->ctx, var->ir_type, res, var->ref);
-      }
-   }
-}
-
-static void ir_generator_Generator_emitMemberExpr(ir_generator_Generator* gen, ir_Ref* result, const ast_Expr* e)
-{
-   const ast_MemberExpr* m = (ast_MemberExpr*)e;
-   ir_context_Context* c = gen->ctx;
-   uint32_t tail = 0;
-   ast_IdentifierKind kind = ast_MemberExpr_getKind(m);
-   if (kind == ast_IdentifierKind_Var || kind == ast_IdentifierKind_Function) {
-      if (ast_MemberExpr_isTypeFunc(m)) {
-         tail = 1;
-         goto next;
-      }
-      if (ast_MemberExpr_hasExpr(m)) {
-         goto next;
-      }
-      (!ast_MemberExpr_hasExpr(m)) || c2_assert("generator/ir/ir_generator_member.c2", 44, "ir_generator.Generator.emitMemberExpr", "!m.hasExpr()");
-      ast_Decl* d = ast_MemberExpr_getFullDecl(m);
-      ir_generator_Generator_emitSymbol(gen, result, d);
-      return;
-   }
-   (kind == ast_IdentifierKind_StructMember) || c2_assert("generator/ir/ir_generator_member.c2", 50, "ir_generator.Generator.emitMemberExpr", "kind == IdentifierKind.StructMember");
-next:;
-   ir_Ref base_ref;
-   ast_QualType base_type;
-   uint32_t idx = 0;
-   if (ast_MemberExpr_hasExpr(m)) {
-      const ast_Expr* base = ast_MemberExpr_getExprBase(m);
-      ir_generator_Generator_emitExpr(gen, &base_ref, base);
-      base_type = ast_Expr_getType(base);
-   } else {
-      ast_Decl* base = ast_MemberExpr_getDecl(m, idx);
-      if (ast_Decl_isImport(base)) {
-         idx++;
-         base = ast_MemberExpr_getDecl(m, idx);
-      }
-      idx++;
-      (ast_Decl_isVarDecl(base)) || c2_assert("generator/ir/ir_generator_member.c2", 67, "ir_generator.Generator.emitMemberExpr", "base.isVarDecl()");
-      ir_generator_Generator_emitVarDecl(gen, &base_ref, base);
-      base_type = ast_Decl_getType(base);
-   }
-   uint32_t numrefs = ast_MemberExpr_getNumRefs(m);
-   numrefs -= tail;
-   for (uint32_t i = idx; i < numrefs; i++) {
-      bool is_pointer = ast_QualType_isPointer(base_type);
-      if (is_pointer) {
-         base_type = ast_QualType_getPointerBaseType(base_type);
-      }
-      (ast_QualType_isStruct(base_type)) || c2_assert("generator/ir/ir_generator_member.c2", 86, "ir_generator.Generator.emitMemberExpr", "base_type.isStruct()");
-      const ast_StructType* st = ast_QualType_getStructType(base_type);
-      const ast_StructTypeDecl* std = ast_StructType_getDecl(st);
-      ast_Decl* d = ast_MemberExpr_getDecl(m, i);
-      uint32_t offset = 0;
-      ast_Decl* dd = ast_StructTypeDecl_findMember(std, ast_Decl_getNameIdx(d), &offset);
-      if (!dd) {
-         ast_Expr_dump(e);
-      }
-      (dd) || c2_assert("generator/ir/ir_generator_member.c2", 97, "ir_generator.Generator.emitMemberExpr", "dd");
-      if (is_pointer && i < numrefs) {
-         base_ref = ir_context_Context_addLoadInstr(c, gen->ptr_type, base_ref);
-      }
-      if (offset != 0) {
-         ir_Ref offset_ref = ir_context_Context_addIntegerConstant(c, offset);
-         base_ref = ir_context_Context_addBinaryInstr(c, ir_InstrKind_Add, base_ref, offset_ref);
-      }
-      if (ast_Decl_isBitfield(dd)) {
-         const ast_VarDecl* vd = (ast_VarDecl*)d;
-         const ast_BitFieldLayout* layout = ast_VarDecl_getBitfieldLayout(vd);
-         uint32_t mask = bit_utils_get_mask32(layout->bit_width);
-         if (layout->bit_offset) {
-            ir_Ref shift_ref = ir_context_Context_addIntegerConstant(c, layout->bit_offset);
-            base_ref = ir_context_Context_addBinaryInstr(c, ir_InstrKind_Shr, base_ref, shift_ref);
-         }
-         ir_Ref mask_ref = ir_context_Context_addIntegerConstant(c, mask);
-         base_ref = ir_context_Context_addBinaryInstr(c, ir_InstrKind_And, base_ref, mask_ref);
-      }
-      base_type = ast_Decl_getType(d);
-   }
-   ast_MemberConversion conv = ast_MemberExpr_getConversion(m);
-   if (tail && conv != ast_MemberConversion_Addr) {
-      base_ref = ir_context_Context_addLoadInstr(c, gen->ptr_type, base_ref);
-   }
-   *result = base_ref;
-}
-
-static bool ir_generator_Generator_emitStmt(ir_generator_Generator* gen, const ast_Stmt* s)
-{
-   switch (ast_Stmt_getKind(s)) {
-   case ast_StmtKind_Return: {
-      const ast_ReturnStmt* r = (ast_ReturnStmt*)s;
-      const ast_Expr* retval = ast_ReturnStmt_getValue(r);
-      if (retval) {
-         ir_Ref ref;
-         ir_generator_Generator_emitExpr(gen, &ref, retval);
-         ir_context_Context_addRet1Instr(gen->ctx, ref);
-      } else {
-         ir_context_Context_addRet0Instr(gen->ctx);
-      }
-      return false;
-   }
-   case ast_StmtKind_Expr: {
-      ir_Ref dontcare;
-      ir_generator_Generator_emitExpr(gen, &dontcare, (ast_Expr*)s);
-      return true;
-   }
-   case ast_StmtKind_If:
-      ir_generator_Generator_emitIfStmt(gen, s);
-      return true;
-   case ast_StmtKind_While:
-      ir_generator_Generator_emitWhileStmt(gen, s);
-      return true;
-   case ast_StmtKind_For:
-      ir_generator_Generator_emitForStmt(gen, s);
-      return true;
-   case ast_StmtKind_Switch:
-      ir_generator_Generator_emitSwitchStmt(gen, s);
-      return true;
-   case ast_StmtKind_Break:
-      (gen->num_scopes) || c2_assert("generator/ir/ir_generator_stmt.c2", 53, "ir_generator.Generator.emitStmt", "gen.num_scopes");
-      ir_context_Context_addJmpInstr(gen->ctx, gen->scopes[gen->num_scopes - 1].break_block);
-      return false;
-   case ast_StmtKind_Continue:
-      (gen->num_scopes) || c2_assert("generator/ir/ir_generator_stmt.c2", 57, "ir_generator.Generator.emitStmt", "gen.num_scopes");
-      ir_context_Context_addJmpInstr(gen->ctx, gen->scopes[gen->num_scopes - 1].continue_block);
-      return false;
-   case ast_StmtKind_Fallthrough:
-      return false;
-   case ast_StmtKind_Label: {
-      const ast_LabelStmt* l = (ast_LabelStmt*)s;
-      ir_context_Context* c = gen->ctx;
-      if (ast_LabelStmt_isUsed(l)) {
-         ir_BlockId label_blk = ir_generator_Generator_getLabelBlock(gen, ast_LabelStmt_getNameIdx(l));
-         if (!ir_context_Context_isBlockTerminated(c)) ir_context_Context_addJmpInstr(c, label_blk);
-         ir_context_Context_endBlock(c);
-         ir_context_Context_startBlock(c, label_blk);
-         string_buffer_Buf_clear(gen->name_buf);
-         string_buffer_Buf_add(gen->name_buf, ast_LabelStmt_getName(l));
-         ir_context_Context_addComment(c, string_buffer_Buf_data(gen->name_buf));
-      }
-      const ast_Stmt* ls = ast_LabelStmt_getStmt(l);
-      if (ls) return ir_generator_Generator_emitStmt(gen, ls);
-      return true;
-   }
-   case ast_StmtKind_Goto: {
-      const ast_GotoStmt* g = (ast_GotoStmt*)s;
-      ir_BlockId label_blk = ir_generator_Generator_getLabelBlock(gen, ast_GotoStmt_getNameIdx(g));
-      ir_context_Context_addJmpInstr(gen->ctx, label_blk);
-      return false;
-   }
-   case ast_StmtKind_Compound: {
-      ast_CompoundStmt* c = (ast_CompoundStmt*)s;
-      const uint32_t num_stmts = ast_CompoundStmt_getCount(c);
-      ir_generator_Generator_emitStmts(gen, ast_CompoundStmt_getStmts(c), ast_CompoundStmt_getCount(c));
-      return true;
-   }
-   case ast_StmtKind_Decl: {
-      const ast_DeclStmt* ds = (ast_DeclStmt*)s;
-      uint32_t count = ast_DeclStmt_getDeclCount(ds);
-      for (uint32_t i = 0; i < count; i++) {
-         ast_VarDecl* vd = ast_DeclStmt_getDecl(ds, i);
-         if (ast_VarDecl_hasLocalQualifier(vd)) return true;
-         const ast_Expr* ie = ast_VarDecl_getInit(vd);
-         if (ie) {
-            ir_generator_Generator_emitInitExpr(gen, vd, ie);
-         }
-      }
-      return true;
-   }
-   case ast_StmtKind_Asm:
-      break;
-   case ast_StmtKind_Assert:
-      return true;
-   }
-   ast_Stmt_dump(s);
-   (0) || c2_assert("generator/ir/ir_generator_stmt.c2", 114, "ir_generator.Generator.emitStmt", "0");
-   return true;
-}
-
-static void ir_generator_Generator_emitIfStmt(ir_generator_Generator* gen, const ast_Stmt* s)
-{
-   ir_context_Context* c = gen->ctx;
-   const ast_IfStmt* if_stmt = (ast_IfStmt*)s;
-   const ast_Stmt* cond = ast_IfStmt_getCond(if_stmt);
-   const ast_Stmt* then_stmt = ast_IfStmt_getThen(if_stmt);
-   const ast_Stmt* else_stmt = ast_IfStmt_getElse(if_stmt);
-   ir_BlockId then_blk = ir_context_Context_createBlock(c, ir_BlockKind_IfTrue);
-   ir_BlockId else_blk = 0;
-   if (else_stmt) else_blk = ir_context_Context_createBlock(c, ir_BlockKind_IfFalse);
-   ir_BlockId join_blk = ir_context_Context_createBlock(c, ir_BlockKind_IfJoin);
-   ir_BlockId false_blk = join_blk;
-   if (else_stmt) false_blk = else_blk;
-   if (ast_Stmt_isDecl(cond)) {
-      ast_DeclStmt* ds = (ast_DeclStmt*)cond;
-      ast_VarDecl* vd = ast_DeclStmt_getDecl(ds, 0);
-      ast_Decl* d = (ast_Decl*)vd;
-      ir_Ref rhs;
-      ir_generator_Generator_emitExpr(gen, &rhs, ast_VarDecl_getInit(vd));
-      ir_Ref lhs;
-      ir_generator_Generator_emitVarDecl(gen, &lhs, d);
-      ir_Type t = ir_Type_I32;
-      ir_generator_Generator_emitAssignCond(gen, t, lhs, rhs, then_blk, join_blk, then_blk);
-   } else {
-      (ast_Stmt_isExpr(cond)) || c2_assert("generator/ir/ir_generator_stmt.c2", 162, "ir_generator.Generator.emitIfStmt", "cond.isExpr()");
-      ast_Expr* e = (ast_Expr*)cond;
-      ir_generator_Generator_emitCond(gen, e, then_blk, false_blk, then_blk);
-   }
-   ir_generator_Generator_emitStmt(gen, then_stmt);
-   if (!ir_context_Context_isBlockTerminated(c)) ir_context_Context_addJmpInstr(c, join_blk);
-   ir_context_Context_endBlock(c);
-   if (else_stmt) {
-      ir_context_Context_startBlock(c, else_blk);
-      ir_generator_Generator_emitStmt(gen, else_stmt);
-      if (!ir_context_Context_isBlockTerminated(c)) ir_context_Context_addJmpInstr(c, join_blk);
-      ir_context_Context_endBlock(c);
-   }
-   ir_context_Context_startBlock(c, join_blk);
-}
-
-static void ir_generator_Generator_emitWhileStmt(ir_generator_Generator* gen, const ast_Stmt* s)
-{
-   ir_context_Context* c = gen->ctx;
-   const ast_WhileStmt* w = (ast_WhileStmt*)s;
-   ir_BlockId cond_blk = ir_context_Context_createBlock(c, ir_BlockKind_WhileCond);
-   ir_BlockId body_blk = ir_context_Context_createBlock(c, ir_BlockKind_WhileBody);
-   ir_BlockId join_blk = ir_context_Context_createBlock(c, ir_BlockKind_WhileJoin);
-   (!ir_context_Context_isBlockTerminated(c)) || c2_assert("generator/ir/ir_generator_stmt.c2", 192, "ir_generator.Generator.emitWhileStmt", "!c.isBlockTerminated()");
-   ir_context_Context_addJmpInstr(c, cond_blk);
-   ir_context_Context_endBlock(c);
-   ir_context_Context_startBlock(c, cond_blk);
-   ast_Stmt* cond = ast_WhileStmt_getCond(w);
-   if (ast_Stmt_isDecl(cond)) {
-      ast_DeclStmt* ds = (ast_DeclStmt*)cond;
-      ast_VarDecl* vd = ast_DeclStmt_getDecl(ds, 0);
-      ast_Decl* d = (ast_Decl*)vd;
-      ir_Ref rhs;
-      ir_generator_Generator_emitExpr(gen, &rhs, ast_VarDecl_getInit(vd));
-      ir_Ref lhs;
-      ir_generator_Generator_emitVarDecl(gen, &lhs, d);
-      ir_Type t = ir_Type_I32;
-      ir_generator_Generator_emitAssignCond(gen, t, lhs, rhs, body_blk, join_blk, body_blk);
-   } else {
-      (ast_Stmt_isExpr(cond)) || c2_assert("generator/ir/ir_generator_stmt.c2", 213, "ir_generator.Generator.emitWhileStmt", "cond.isExpr()");
-      ast_Expr* e = (ast_Expr*)cond;
-      ir_generator_Generator_emitCond(gen, e, body_blk, join_blk, body_blk);
-   }
-   ir_generator_Generator_enterScope(gen, join_blk, cond_blk);
-   ir_generator_Generator_emitStmt(gen, ast_WhileStmt_getBody(w));
-   ir_generator_Generator_leaveScope(gen);
-   if (!ir_context_Context_isBlockTerminated(c)) ir_context_Context_addJmpInstr(c, cond_blk);
-   ir_context_Context_endBlock(c);
-   ir_context_Context_startBlock(c, join_blk);
-}
-
-static void ir_generator_Generator_emitForStmt(ir_generator_Generator* gen, const ast_Stmt* s)
-{
-   ir_context_Context* c = gen->ctx;
-   const ast_ForStmt* f = (ast_ForStmt*)s;
-   const ast_Stmt* ie = ast_ForStmt_getInit(f);
-   if (ie) ir_generator_Generator_emitStmt(gen, ie);
-   ir_BlockId cond_blk = ir_context_Context_createBlock(c, ir_BlockKind_ForCond);
-   ir_BlockId body_blk = ir_context_Context_createBlock(c, ir_BlockKind_ForBody);
-   ir_BlockId cont_blk = ir_context_Context_createBlock(c, ir_BlockKind_ForCont);
-   ir_BlockId join_blk = ir_context_Context_createBlock(c, ir_BlockKind_ForJoin);
-   (!ir_context_Context_isBlockTerminated(c)) || c2_assert("generator/ir/ir_generator_stmt.c2", 242, "ir_generator.Generator.emitForStmt", "!c.isBlockTerminated()");
-   ir_context_Context_addJmpInstr(c, cond_blk);
-   ir_context_Context_endBlock(c);
-   ir_context_Context_startBlock(c, cond_blk);
-   ast_Expr* cond = ast_ForStmt_getCond(f);
-   if (cond) {
-      ir_generator_Generator_emitCond(gen, cond, body_blk, join_blk, body_blk);
-   } else {
-      ir_context_Context_endBlock(c);
-      ir_context_Context_startBlock(c, body_blk);
-   }
-   ir_generator_Generator_enterScope(gen, join_blk, cont_blk);
-   ir_generator_Generator_emitStmt(gen, ast_ForStmt_getBody(f));
-   ir_generator_Generator_leaveScope(gen);
-   if (!ir_context_Context_isBlockTerminated(c)) ir_context_Context_addJmpInstr(c, cont_blk);
-   ir_context_Context_endBlock(c);
-   ir_context_Context_startBlock(c, cont_blk);
-   ast_Expr* cont = ast_ForStmt_getCont(f);
-   if (cont) {
-      ir_Ref dontcare;
-      ir_generator_Generator_emitExpr(gen, &dontcare, cont);
-   }
-   ir_context_Context_addJmpInstr(c, cond_blk);
-   ir_context_Context_endBlock(c);
-   ir_context_Context_startBlock(c, join_blk);
-}
-
-static void ir_generator_Generator_emitSwitchStmt(ir_generator_Generator* gen, const ast_Stmt* s)
-{
-   ir_context_Context* c = gen->ctx;
-   ast_SwitchStmt* sw = (ast_SwitchStmt*)s;
-   ast_Stmt* cond_stmt = ast_SwitchStmt_getCond(sw);
-   (ast_Stmt_isExpr(cond_stmt)) || c2_assert("generator/ir/ir_generator_switch.c2", 28, "ir_generator.Generator.emitSwitchStmt", "cond_stmt.isExpr()");
-   ast_Expr* cond = (ast_Expr*)cond_stmt;
-   if (ast_Expr_isCtv(cond)) {
-      (0) || c2_assert("generator/ir/ir_generator_switch.c2", 31, "ir_generator.Generator.emitSwitchStmt", "0");
-      return;
-   }
-   if (ast_SwitchStmt_isString(sw)) {
-      if (ast_Expr_isCtv(cond)) {
-         (0) || c2_assert("generator/ir/ir_generator_switch.c2", 38, "ir_generator.Generator.emitSwitchStmt", "0");
-         return;
-      }
-      return;
-   }
-   uint32_t num_cases = ast_SwitchStmt_getNumCases(sw);
-   ast_SwitchCase** cases = ast_SwitchStmt_getCases(sw);
-   if (num_cases == 1 && ast_SwitchStmt_hasDefault(sw)) {
-      return;
-   }
-   ir_BlockId join_blk = ir_context_Context_createBlock(c, ir_BlockKind_SwitchJoin);
-   ir_Ref ref;
-   ir_generator_Generator_emitExpr(gen, &ref, cond);
-   ir_CaseId caseId = ir_context_Context_addSwitchInstr(gen->ctx, ref, join_blk, num_cases);
-   ir_generator_Generator_enterScope(gen, join_blk, 0);
-   bool prev_fallthrough = false;
-   for (uint32_t i = 0; i < num_cases; i++) {
-      ast_SwitchCase* sc = cases[i];
-      prev_fallthrough = ir_generator_Generator_emitSwitchCase(gen, sc, join_blk, caseId + i, prev_fallthrough);
-   }
-   if (!ir_context_Context_isBlockTerminated(c)) ir_context_Context_addJmpInstr(c, join_blk);
-   ir_context_Context_endBlock(c);
-   ir_generator_Generator_leaveScope(gen);
-   ir_context_Context_startBlock(c, join_blk);
-}
-
-static bool ir_generator_Generator_emitSwitchCase(ir_generator_Generator* gen, ast_SwitchCase* sc, ir_BlockId join_blk, ir_CaseId caseId, bool prev_fallthrough)
-{
-   ir_context_Context* c = gen->ctx;
-   ast_Expr* case_cond = ast_SwitchCase_getCond(sc, 0);
-   ast_Value v = { };
-   if (case_cond) {
-      if (ast_Expr_isRange(case_cond)) {
-         const ast_RangeExpr* r = (ast_RangeExpr*)case_cond;
-         case_cond = ast_RangeExpr_getLHS(r);
-      }
-      v = ast_evalExpr(case_cond);
-   }
-   ir_BlockKind kind = ast_SwitchCase_isDefault(sc) ? ir_BlockKind_SwitchDefault : ir_BlockKind_SwitchCase;
-   ir_BlockId case_blk = ir_context_Context_createBlock(c, kind);
-   ir_context_Context_setCase(gen->ctx, caseId, ast_Value_as_u32(&v), case_blk);
-   if (!ir_context_Context_isBlockTerminated(c)) {
-      if (prev_fallthrough) {
-         ir_context_Context_addJmpInstr(c, case_blk);
-      } else {
-         ir_context_Context_addJmpInstr(c, join_blk);
-      }
-   }
-   ir_context_Context_endBlock(c);
-   ir_context_Context_startBlock(c, case_blk);
-   if (!ast_SwitchCase_isDefault(sc)) {
-      string_buffer_Buf_clear(gen->name_buf);
-      ast_Expr_printLiteral(case_cond, gen->name_buf);
-      ir_context_Context_addComment(c, string_buffer_Buf_data(gen->name_buf));
-   }
-   uint32_t num_stmts = ast_SwitchCase_getNumStmts(sc);
-   if (num_stmts == 0) {
-   } else {
-      ir_generator_Generator_emitStmts(gen, ast_SwitchCase_getStmts(sc), num_stmts);
-   }
-   return ast_SwitchCase_hasFallthrough(sc);
-}
-
-static void ir_generator_Generator_emitStmts(ir_generator_Generator* gen, ast_Stmt** stmts, uint32_t num_stmts)
-{
-   uint32_t i = 0;
-   while (i < num_stmts) {
-      if (ir_generator_Generator_emitStmt(gen, stmts[i])) {
-         i++;
-      } else {
-         i++;
-         while (i < num_stmts) {
-            if (ast_Stmt_isLabel(stmts[i])) {
-               const ast_LabelStmt* l = (ast_LabelStmt*)stmts[i];
-               if (ast_LabelStmt_isUsed(l)) break;
-            }
-            i++;
-         }
-      }
-   }
-}
-
-
 // --- module compiler ---
 typedef struct compiler_PluginHandler_ compiler_PluginHandler;
 typedef struct compiler_Options_ compiler_Options;
@@ -48934,6 +37955,7 @@ struct compiler_PluginHandler_ {
 };
 
 struct compiler_Options_ {
+   bool bootstrap;
    bool check_only;
    bool print_ast;
    bool print_ast_early;
@@ -49070,6 +38092,7 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
    c->target = target;
    c->opts = opts;
    c->pluginHandler = pluginHandler;
+   if (opts->bootstrap) build_target_Target_disableWarnings(c->target);
    diagnostics_Diags_setWarningAsError(diags, build_target_Target_getWarnings(target)->are_errors);
    diagnostics_Diags_clear(c->diags);
    c->context = ast_context_create(16 * 1024);
@@ -49121,6 +38144,7 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
       compiler_getNativeTarget(&c->targetInfo);
    }
    console_debug("triple: %s", target_info_Info_str(&c->targetInfo));
+   if (opts->bootstrap) compiler_Compiler_addFeature(c, "BOOTSTRAP", "1");
    compiler_Compiler_addGlobalDefine(c, "SYSTEM", target_info_Info_getSystemName(&c->targetInfo));
    compiler_Compiler_addGlobalDefine(c, "ARCH", target_info_Info_getArchName(&c->targetInfo));
    if (c->targetInfo.intWidth == 64) {
@@ -49132,7 +38156,6 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
    if (opts->msan) compiler_Compiler_addFeature(c, "__MSAN__", "1");
    if (opts->ubsan) compiler_Compiler_addFeature(c, "__UBSAN__", "1");
    compiler_Compiler_addFeature(c, "USE_NATIVE_CTYPES", "1");
-   compiler_Compiler_addFeature(c, "EXPERIMENTAL", "1");
    c->parser = c2_parser_create(sm, diags, c->astPool, c->builder, &c->kwinfo, build_target_Target_getFeatures(target));
    ast_initialize(c->context, c->astPool, c->targetInfo.intWidth / 8, color_useColor());
    c->analyser = module_analyser_create(c->diags, c->context, c->astPool, c->builder, &c->allmodules, build_target_Target_getWarnings(c->target));
@@ -49311,16 +38334,11 @@ static void compiler_Compiler_generate(compiler_Compiler* c, const char* target_
    component_Component* mainComp = component_List_getLast(&c->components);
    generator_utils_mark_used(mainComp, &c->allmodules, c->opts->test_mode);
    if (component_Component_isSourceLib(c->mainComp)) {
-      console_debug("generating source library");
-      source_lib_generator_generate(c->target, target_name, output_dir, c->mainComp);
+      console_error("Source library generator unavailable");
       return;
    }
    if (string_list_List_length(build_target_Target_getExports(c->target))) {
-      console_debug("generating C2 interfaces");
-      uint64_t gen3 = utils_now();
-      c2i_generator_generate(c->astPool, output_dir, &c->components);
-      uint64_t gen4 = utils_now();
-      console_log_time("C2i generation", gen4 - gen3);
+      console_error("C2i generator unavailable");
    }
    switch (build_target_Target_getBackEnd(c->target)) {
    case build_target_BackEndKind_None:
@@ -49347,14 +38365,9 @@ static void compiler_Compiler_generate(compiler_Compiler* c, const char* target_
       }
       break;
    }
-   case build_target_BackEndKind_IR: {
-      console_debug("generating IR");
-      uint64_t gen3 = utils_now();
-      ir_generator_generate(target_name, output_dir, &c->components, c->sm, &c->targetInfo, c->build_info, c->mainFunc, build_target_Target_hasAsserts(c->target), c->opts->print_ir, c->opts->print_all_ir);
-      uint64_t gen4 = utils_now();
-      console_log_time("IR generation", gen4 - gen3);
+   case build_target_BackEndKind_IR:
+      console_error("IR generator unavailable");
       break;
-   }
    }
 }
 
@@ -49431,7 +38444,7 @@ static component_Kind compiler_convertKind(build_target_Kind kind)
    switch (kind) {
    case build_target_Kind_Image:
    case build_target_Kind_Executable:
-      (0) || c2_assert("compiler/compiler_libs.c2", 42, "compiler.convertKind", "0");
+      ;//assert(0);
       break;
    case build_target_Kind_StaticLibrary:
       return component_Kind_ExternalStaticLib;
@@ -49504,7 +38517,7 @@ static void compiler_Compiler_open_lib(compiler_Compiler* c, component_Component
    for (uint32_t i = 0; i < string_list_List_length(&mods); i++) {
       uint32_t mod_name = string_list_List_get_idx(&mods, i);
       ast_Module* m = component_Component_getOrAddModule(comp, mod_name, false);
-      (m) || c2_assert("compiler/compiler_libs.c2", 138, "compiler.Compiler.open_lib", "m");
+      ;//assert(m);
       ast_Module_setForeign(m, component_Component_isForeign(comp));
    }
    string_list_List_free(&mods);
@@ -49723,7 +38736,7 @@ static bool compiler_Compiler_checkDuplicateModules(compiler_Compiler* c)
          ast_Module* m = mods[j];
          if (module_list_List_containsName(&c->allmodules, ast_Module_getNameIdx(m))) {
             component_Component* other = compiler_Compiler_findModuleComponent(c, ast_Module_getNameIdx(m));
-            (other) || c2_assert("compiler/compiler_analyse.c2", 98, "compiler.Compiler.checkDuplicateModules", "other");
+            ;//assert(other);
             console_error("module '%s' is defined in component %s and %s", ast_Module_getName(m), component_Component_getName(comp), component_Component_getName(other));
             return false;
          }
@@ -49912,8 +38925,8 @@ struct c2c_main_Context_ {
    uint32_t plugins_feature;
 };
 
-static const char c2c_main_Recipe_help[886] = "---- recipe.txt ----\n\nplugin <name> [<plugin-options>]\n\nconfig <options>\n\nset <name>\n   <.c2 files>\nend\n\nexecutable <name>\n   $warnings <no-unused>\n             <no-unused-variable>\n             <no-unused-function>\n             <no-unused-parameter>\n             <no-unused-type>\n             <no-unused-module>\n             <no-unused-import> \n             <no-unused-public>\n             <no-unused-label> \n             <no-unused-enum-constant>\n             <no-unreachable-code>\n             <promote-to-error> \n   $backend [c|ir] <check>\n              <fast>\n              <no-build>\n   $nolibc\n   $disable-asserts\n   $config <options>\n   $plugin <name> [<plugin-options>]\n   $use <library-name> dynamic/static/source\n   (set-name)\n   <file1.c2>\n   <file2.c2>\nend\n\nlib <name> dynamic/static\n   $export <module-names>\n   other options same as executable\nend\n\n--------------------\n";
-static const char c2c_main_Usage_help[1645] = "Usage: c2c <options> [<targets>]\n       c2c <options> <filenames>\nOptions:\n  -a                print ASTs\n  -A                print Library ASTs\n  -b [file]         use specified build file\n  -d [dir]          change to [dir] first\n  -h                print this help\n  -i                use IR backend\n  -I                use IR backend and print generated IR\n  -m                print modules\n  -o [file]         force the output name for a single target\n  -r                print reports\n  -s                print symbols\n  -S                print library symbols\n  -t                print timings\n  -T                print AST statistics\n  -v                verbose logging\n  -w                enable all warnings (overrides recipe)\n  --asan            generate code with address sanity checks\n  --msan            generate code with memory sanity checks\n  --ubsan           generate code with undefined behavior sanity checks\n  --check           only parse and check\n  --create [name]   create an empty project recipe.txt and main.c2\n  --fast            do fast, un-optimized build\n  --help            print this help\n  --help-recipe     print the recipe syntax\n  --I2              use IR backend and print generated IR (all versions)\n  --noplugins       do not use plugins\n  --showlibs        print available libraries\n  --showplugins     print available plugins\n  --target triple   cross compile for a specified architecture\n  --targets         show available targets in recipe\n  --test            test mode (do not check for main() function)\n  --trace-calls     generate code that traces function calls\n  --version         print version\n";
+static const char c2c_main_Recipe_help[909] = "---- recipe.txt ----\n\nplugin <name> [<plugin-options>]\n\nconfig <options>\n\nset <name>\n   <.c2 files>\nend\n\nexecutable <name>\n   $optional\n   $warnings <no-unused>\n             <no-unused-variable>\n             <no-unused-function>\n             <no-unused-parameter>\n             <no-unused-type>\n             <no-unused-module>\n             <no-unused-import> \n             <no-unused-public>\n             <no-unused-label> \n             <no-unused-enum-constant>\n             <no-unreachable-code>\n             <promote-to-error> \n   $backend [c|ir] <check>\n                   <fast>\n                   <no-build>\n   $nolibc\n   $disable-asserts\n   $config <options>\n   $plugin <name> [<plugin-options>]\n   $use <library-name> dynamic/static/source\n   (set-name)\n   <file1.c2>\n   <file2.c2>\nend\n\nlib <name> dynamic/static\n   $export <module-names>\n   other options same as executable\nend\n\n--------------------\n";
+static const char c2c_main_Usage_help[1718] = "Usage: c2c <options> [<targets>]\n       c2c <options> <filenames>\nOptions:\n  -a                print ASTs\n  -A                print Library ASTs\n  -b [file]         use specified build file\n  -d [dir]          change to [dir] first\n  -h                print this help\n  -i                use IR backend\n  -I                use IR backend and print generated IR\n  -m                print modules\n  -o [file]         force the output name for a single target\n  -r                print reports\n  -s                print symbols\n  -S                print library symbols\n  -t                print timings\n  -T                print AST statistics\n  -v                verbose logging\n  -w                enable all warnings (overrides recipe)\n  --asan            generate code with address sanity checks\n  --msan            generate code with memory sanity checks\n  --ubsan           generate code with undefined behavior sanity checks\n  --bootstrap       define BOOTSTRAP feature and disable unused warnings\n  --check           only parse and check\n  --create [name]   create an empty project recipe.txt and main.c2\n  --fast            do fast, un-optimized build\n  --help            print this help\n  --help-recipe     print the recipe syntax\n  --I2              use IR backend and print generated IR (all versions)\n  --noplugins       do not use plugins\n  --showlibs        print available libraries\n  --showplugins     print available plugins\n  --target triple   cross compile for a specified architecture\n  --targets         show available targets in recipe\n  --test            test mode (do not check for main() function)\n  --trace-calls     generate code that traces function calls\n  --version         print version\n";
 static void c2c_main_Options_init(c2c_main_Options* opts, string_pool_Pool* pool);
 static void c2c_main_Options_free(c2c_main_Options* opts);
 static void c2c_main_write_file_or_die(const char* filename, string_buffer_Buf* buf);
@@ -49959,7 +38972,7 @@ static void c2c_main_Options_free(c2c_main_Options* opts)
 static void c2c_main_write_file_or_die(const char* filename, string_buffer_Buf* buf)
 {
    file_utils_File file; file_utils_File_init(&file, "", filename);
-   if (!file_utils_File_write(&file, string_buffer_Buf_udata(buf), string_buffer_Buf_size(buf))) {
+   if (!file_utils_File_write(&file, string_buffer_Buf_data(buf), string_buffer_Buf_size(buf))) {
       console_error("c2c: cannot write to %s: %s", file.path, file_utils_File_getError(&file));
       exit(stdlib_EXIT_FAILURE);
    }
@@ -49989,7 +39002,7 @@ static void c2c_main_print_recipe_help(void)
 
 static void c2c_main_print_version(void)
 {
-   console_log("version: %s", git_version_Describe);
+   console_log("version: unknown");
 }
 
 static void c2c_main_ArgumentParser_init(c2c_main_ArgumentParser* ap, int32_t argc, char** argv, const char* prog, const char* help)
@@ -50033,57 +39046,60 @@ static void c2c_main_ArgumentParser_unknownOption(c2c_main_ArgumentParser* ap, c
 
 static void c2c_main_parse_long_opt(c2c_main_ArgumentParser* ap, const char* arg, compiler_Options* comp_opts, c2c_main_Options* opts)
 {
-   switch (c2_strswitch(arg + 2, "\002I2" "\005check" "\006create" "\004fast" "\004help" "\013help-recipe" "\011noplugins" "\010showlibs" "\013showplugins" "\006target" "\007targets" "\004test" "\013trace-calls" "\004asan" "\004msan" "\005ubsan" "\007version")) {
+   switch (c2_strswitch(arg + 2, "\002I2" "\011bootstrap" "\005check" "\006create" "\004fast" "\004help" "\013help-recipe" "\011noplugins" "\010showlibs" "\013showplugins" "\006target" "\007targets" "\004test" "\013trace-calls" "\004asan" "\004msan" "\005ubsan" "\007version")) {
    case 2: // "I2"
       opts->use_ir_backend = true;
       comp_opts->print_all_ir = true;
       break;
-   case 3: // "check"
+   case 3: // "bootstrap"
+      comp_opts->bootstrap = true;
+      break;
+   case 4: // "check"
       comp_opts->check_only = true;
       break;
-   case 4: // "create"
+   case 5: // "create"
       c2c_main_create_project(c2c_main_ArgumentParser_getOptionArgument(ap, arg));
       break;
-   case 5: // "fast"
+   case 6: // "fast"
       comp_opts->fast_build = true;
       break;
-   case 6: // "help"
+   case 7: // "help"
       c2c_main_ArgumentParser_showHelp(ap);
       exit(stdlib_EXIT_SUCCESS);
-   case 7: // "help-recipe"
+   case 8: // "help-recipe"
       c2c_main_print_recipe_help();
       exit(stdlib_EXIT_SUCCESS);
-   case 8: // "noplugins"
+   case 9: // "noplugins"
       opts->no_plugins = true;
       break;
-   case 9: // "showlibs"
+   case 10: // "showlibs"
       comp_opts->show_libs = true;
       break;
-   case 10: // "showplugins"
+   case 11: // "showplugins"
       opts->show_plugins = true;
       break;
-   case 11: // "target"
+   case 12: // "target"
       comp_opts->target_triple = c2c_main_ArgumentParser_getOptionArgument(ap, arg);
       break;
-   case 12: // "targets"
+   case 13: // "targets"
       opts->show_targets = true;
       break;
-   case 13: // "test"
+   case 14: // "test"
       comp_opts->test_mode = true;
       break;
-   case 14: // "trace-calls"
+   case 15: // "trace-calls"
       opts->trace_calls = true;
       break;
-   case 15: // "asan"
+   case 16: // "asan"
       comp_opts->asan = true;
       break;
-   case 16: // "msan"
+   case 17: // "msan"
       comp_opts->msan = true;
       break;
-   case 17: // "ubsan"
+   case 18: // "ubsan"
       comp_opts->ubsan = true;
       break;
-   case 18: // "version"
+   case 19: // "version"
       c2c_main_print_version();
       exit(stdlib_EXIT_SUCCESS);
    default:
@@ -50362,6 +39378,8 @@ static bool c2c_main_Context_build_targets(c2c_main_Context* c)
       if (has_filter) {
          if (!string_list_List_contains_idx(&c->opts.targets, target_idx)) continue;
          string_list_List_del(&c->opts.targets, target_idx);
+      } else {
+         if (build_target_Target_getOptional(target)) continue;
       }
       if (c->opts.show_targets) {
          console_log("%s", target_name);
