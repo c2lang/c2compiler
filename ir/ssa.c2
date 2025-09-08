@@ -279,21 +279,6 @@ fn void Tools.eliminateCopies(Tools* t) {
                     //printf("replace %s with %s\n", r.str(), copy.str());
                     instr.args[1] = *copy;
                 }
-            } else if (r.isRefList()) { // can only occur on args[1]
-                Ref* refs = fi.refs.get(r.value);
-                u32 idx = 0;
-                while (1) {
-                    Ref* r2 = &refs[idx];
-                    if (r2.isTemp()) {
-                        Ref* copy = t.copies.find(r2.value);
-                        if (copy) {
-                            //printf("replace %s with %s\n", refs[idx].str(), copy.str());
-                            refs[idx] = *copy;
-                        }
-                    }
-                    if (!r2.isValid()) break;
-                    idx++;
-                }
             }
         }
     }
@@ -326,14 +311,6 @@ fn void Tools.removeUnused(Tools* t) {
             t.usage.incr(i);
             t.checkRef(is.args[0]);
             t.checkRef(is.args[1]);
-            if (is.args[1].isRefList()) {
-                const Ref* refs = fi.refs.get(is.args[1].value);
-                u32 j = 0;
-                while (refs[j].kind != RefKind.None) {
-                    t.checkRef(refs[j]);
-                    j++;
-                }
-            }
             break;
         case Switch:
             t.checkRef(is.args[0]);
@@ -481,16 +458,6 @@ fn void Tools.fixup_function(Tools* t) {
                 if (r.isTemp()) r.value = t.conversion.get(r.value);
                 r = &is.args[1];
                 if (r.isTemp()) r.value = t.conversion.get(r.value);
-                else if (r.isRefList()) { // can only occur on args[1]
-                    Ref* refs = fi.refs.get(r.value);
-                    u32 idx = 0;
-                    while (1) {
-                        Ref* r2 = &refs[idx];
-                        if (r2.isTemp()) r2.value = t.conversion.get(r2.value);
-                        if (!r2.isValid()) break;
-                        idx++;
-                    }
-                }
             }
         }
     }

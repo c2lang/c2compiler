@@ -179,21 +179,8 @@ fn void Tools.createBlockInterferences(Tools* t, u32 blk_id, FunctionInfo* fi, L
         if (ii.isPhi()) {
             // TODO need to do something?
         } else {
-            if (ii.isCall()) {
-                if (ii.args[1].isRefList()) {
-                    Ref* refs = fi.refs.get(ii.args[1].value);
-                    u32 idx = 0;
-                    while (1) {
-                        Ref* r2 = &refs[idx];
-                        if (r2.isTemp()) v.addInterfereFilter(r2.value);
-                        if (!r2.isValid()) break;
-                        idx++;
-                    }
-                }
-            } else {
-                if (ii.args[0].isTemp()) v.addInterfereFilter(ii.args[0].value);
-                if (ii.args[1].isTemp()) v.addInterfereFilter(ii.args[1].value);
-            }
+            if (ii.args[0].isTemp()) v.addInterfereFilter(ii.args[0].value);
+            if (ii.args[1].isTemp()) v.addInterfereFilter(ii.args[1].value);
         }
         if (i == first) break;
         i--;
@@ -295,21 +282,8 @@ fn void Tools.checkBlockLiveness(Tools* t, u32 blk_id, LiveVector* v) {
                 //v.interferences.enable((u16)i);
             }
 
-            if (ii.isCall()) {
-                if (ii.args[1].isRefList()) {
-                    Ref* refs = fi.refs.get(ii.args[1].value);
-                    u32 idx = 0;
-                    while (1) {
-                        Ref* r2 = &refs[idx];
-                        if (r2.isTemp()) v.add(r2.value);
-                        if (!r2.isValid()) break;
-                        idx++;
-                    }
-                }
-            } else {
-                if (ii.args[0].isTemp()) v.add(ii.args[0].value);
-                if (ii.args[1].isTemp()) v.add(ii.args[1].value);
-            }
+            if (ii.args[0].isTemp()) v.add(ii.args[0].value);
+            if (ii.args[1].isTemp()) v.add(ii.args[1].value);
             //printf("[%d] ", i);
             //v.dump();
         }
@@ -562,17 +536,6 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
 
         if (ii.isPhi()) {
             // nothing to do
-        } else if (ii.isCall()) {
-            if (ii.args[1].isRefList()) {
-                Ref* refs = fi.refs.get(ii.args[1].value);
-                u32 idx = 0;
-                while (1) {
-                    Ref* r2 = &refs[idx];
-                    if (r2.isTemp()) r2.setRegister(regmap[r2.value]);
-                    if (!r2.isValid()) break;
-                    idx++;
-                }
-            }
         } else {
             if (ii.args[0].isTemp()) {
                 ii.args[0].setRegister(regmap[ii.args[0].value]);

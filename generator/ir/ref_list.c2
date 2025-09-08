@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-module ir;
+module ref_list;
+
+import ir;
 
 import string local;
 import stdlib;
@@ -21,52 +23,40 @@ import stdlib;
 public type RefList struct {
     u32 count;
     u32 capacity;
-    Ref* refs;
+    ir.Ref* refs;
+    ir.Ref[4] stack;
 }
 
-public fn void RefList.init(RefList* l, u32 initial_size) {
+public fn void RefList.init(RefList* l) {
     l.count = 0;
-    l.refs = nil;
-    if (initial_size) l.resize(initial_size);
+    l.capacity = elemsof(l.stack);
+    l.refs = l.stack;
 }
 
 public fn void RefList.free(RefList* l) {
-    if (l.refs) stdlib.free(l.refs);
+    if (l.count > elemsof(l.stack)) stdlib.free(l.refs);
 }
 
 fn void RefList.resize(RefList* l, u32 cap) {
+    ir.Ref* refs2 = stdlib.malloc(cap * sizeof(ir.Ref));
+    if (l.count != 0) memcpy(refs2, l.refs, l.count * sizeof(ir.Ref));
+    if (l.capacity > elemsof(l.stack)) stdlib.free(l.refs);
     l.capacity = cap;
-    // TODO only memset new part?
-    Ref* refs2 = stdlib.calloc(l.capacity, sizeof(Ref));
-    if (l.count != 0) memcpy(refs2, l.refs, l.count * sizeof(Ref));
-    if (l.refs) stdlib.free(l.refs);
     l.refs = refs2;
 }
 
-public fn void RefList.add(RefList* l, Ref ref) {
-    if (l.count == l.capacity) l.resize(l.capacity ? l.capacity * 2 : 4);
+public fn void RefList.add(RefList* l, ir.Ref ref) {
+    if (l.count == l.capacity) l.resize(l.capacity * 2);
 
     l.refs[l.count] = ref;
     l.count++;
-}
-
-public fn u32 RefList.addList(RefList* l, const RefList* l2) {
-    u32 start = l.count;
-    if (l.capacity < l.count + l2.count) l.resize(l.count + l2.count);
-    memcpy(&l.refs[l.count], l2.refs, l2.count * sizeof(Ref));
-    l.count += l2.count;
-    return start;
-}
-
-public fn void RefList.clear(RefList* l) {
-    l.count = 0;
 }
 
 public fn u32 RefList.getCount(const RefList* l) {
     return l.count;
 }
 
-public fn Ref* RefList.get(const RefList* l, u32 idx) {
-    return &l.refs[idx];
+public fn const ir.Ref* RefList.get(const RefList* l) {
+    return l.refs;
 }
 

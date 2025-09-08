@@ -329,10 +329,6 @@ public fn Ref Context.addFuncArg(Context* c, Type t) {
     return ref;
 }
 
-public fn u32 Context.addCallArgs(Context* c, const RefList* refs) {
-    return c.b.tmp_info.refs.addList(refs);
-}
-
 public fn BlockId Context.createBlock(Context* c, BlockKind kind) {
     BlockId id = c.b.tmp_info.blocks.add(kind);
 #if DebugIr
@@ -518,17 +514,22 @@ public fn Ref Context.addBinaryInstr(Context* c, InstrKind k, Ref left, Ref righ
     return out;
 }
 
-public fn Ref Context.addCallInstr(Context* c, Ref name, Ref args, bool has_result, bool noreturn) {
+public fn Ref Context.addCallInstr(Context* c, Ref name, const Ref* args, u32 num_args, bool has_result, bool noreturn) {
 #if DebugIr
     stdio.printf("  call %s%d\n", name.getKindName(), name.value);
 #endif
+    for (u32 i = 0; i < num_args; i++) {
+        Instr* ii = c.b.tmp_info.instructions.add();
+        ii.init1(InstrKind.Arg, args[i]);
+    }
+
     Ref out.init(RefKind.Temp, c.b.tmp_info.instructions.getCount());
 
     Instr* i = c.b.tmp_info.instructions.add();
     if (has_result) {
-        i.init2b(InstrKind.Call, name, args);
+        i.init1b(InstrKind.Call, name);
     } else {
-        i.init2(InstrKind.Call, name, args);
+        i.init1(InstrKind.Call, name);
     }
     if (noreturn) {
         Block* b = c.b.tmp_info.blocks.get(c.b.cur_block);

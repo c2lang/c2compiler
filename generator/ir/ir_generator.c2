@@ -25,7 +25,6 @@ import file_utils;
 import ir local;
 import ir_context local;
 import ir_gen_locals local;
-import ref_list_pool;
 import source_mgr;
 import string_buffer;
 import string_pool;
@@ -49,7 +48,6 @@ type Generator struct {
     u32 num_scopes;
 
     Locals locals;
-    ref_list_pool.Pool ref_pool;
 
     string_buffer.Buf* name_buf;
     bool assert_generated;
@@ -79,7 +77,6 @@ fn void Generator.init(Generator* gen,
     gen.output_dir = output_dir;
     gen.string_idx = 1; // starting at 1 looks nicer
     gen.locals.init();
-    gen.ref_pool.init(4);
     gen.print = print;
     gen.enable_asserts = enable_asserts;
     gen.ptr_type = targetInfo.intWidth == 64 ? ir.Type.U64 : ir.Type.U32;
@@ -88,7 +85,6 @@ fn void Generator.init(Generator* gen,
 }
 
 fn void Generator.free(Generator* gen) {
-    gen.ref_pool.free();
     gen.labels.free();
     gen.ctx.free();
     gen.name_buf.free();

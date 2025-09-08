@@ -22,21 +22,19 @@ public type FunctionInfo struct {
     BlockList blocks;
     InstrList instructions;
     CaseList cases;
-    RefList refs;   // for call arguments
     PhiList phis;   // for phi instructions
     u16 num_slots;
     u8 num_args;
     // args[0][low bits] is return type (None if no return value)
     u8[1 + constants.MaxCallArgs/2] args;   // stores 2 ir.Types per u8, first low, then high bits
 }
-static_assert(96, sizeof(FunctionInfo));
+static_assert(80, sizeof(FunctionInfo));
 
 public fn FunctionInfo* FunctionInfo.create(u32 num_blks, u32 num_instr, u32 num_refs) {
     FunctionInfo* fi = stdlib.malloc(sizeof(FunctionInfo));
     fi.blocks.init(num_blks);
     fi.instructions.init(num_instr);
     fi.cases.init();
-    fi.refs.init(num_refs);
     fi.phis.init();
     fi.num_args = 0;
     return fi;
@@ -44,7 +42,6 @@ public fn FunctionInfo* FunctionInfo.create(u32 num_blks, u32 num_instr, u32 num
 
 public fn void FunctionInfo.free(FunctionInfo* fi) {
     fi.phis.free();
-    fi.refs.free();
     fi.cases.free();
     fi.instructions.free();
     fi.blocks.free();

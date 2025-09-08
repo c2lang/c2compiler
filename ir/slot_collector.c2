@@ -125,16 +125,6 @@ fn void SlotCollector.checkStaticSlots(SlotCollector* c, FunctionInfo* info) {
             if (ii.args[0].value > 8) c.addStaticSlot((u16)c.slot_idx);
             c.slot_idx++;
             break;
-        case Call:
-            if (ii.args[1].isRefList()) {
-                Ref* refs = c.info.refs.get(ii.args[1].value);
-                u32 r = 0;
-                while (refs[r].kind != RefKind.None) {
-                    if (refs[r].isSlot()) c.addStaticSlot((u16)refs[r].value);
-                    r++;
-                }
-            }
-            break;
         case Switch:
             // TODO
             break;
@@ -359,16 +349,6 @@ next:
                 }
             }
             alloc_slot++;
-            break;
-        case Call:
-            if (cur.args[1].isRefList()) {
-                Ref* refs = c.info.refs.get(cur.args[1].value);
-                u32 r = 0;
-                while (refs[r].kind != RefKind.None) {
-                    c.checkRef(&refs[r]);
-                    r++;
-                }
-            }
             break;
         case Switch:
             assert(0); // TODO

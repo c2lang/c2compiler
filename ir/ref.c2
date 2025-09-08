@@ -22,7 +22,6 @@ public type RefKind enum u8 {
     Slot,      // slot_idx
     Temp,      // temp_idx (already resolved)
     JmpDest,   // for jmp/jmp_if, value is cur BlockId
-    RefList,   // for calls, index into refs
     Symbol,    // index into symbols
     Value,     // int value that fits 28 bits
     Integer,   // constant_idx
@@ -40,7 +39,6 @@ fn const char* RefKind.str(RefKind k) {
     case Slot:      return "slot";
     case Temp:      return "temp";
     case JmpDest:   return "jmp-dest";
-    case RefList:   return "ref-list";
     case Symbol:    return "symbol";
     case Value:     return "value";
     case Integer:   return "integer";
@@ -111,10 +109,6 @@ public fn bool Ref.isRegister(const Ref* r) {
 
 public fn bool Ref.isConstant(const Ref* r) @(unused) {
     return r.kind >= RefKind.Value && r.kind <= RefKind.Double;
-}
-
-public fn bool Ref.isRefList(const Ref* r) {
-    return r.kind == RefKind.RefList;
 }
 
 public fn const char* Ref.getKindName(const Ref* r) {

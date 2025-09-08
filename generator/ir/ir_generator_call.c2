@@ -18,6 +18,7 @@ module ir_generator;
 import ast local;
 import ir local;
 import ir_context;
+import ref_list local;
 
 fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     CallExpr* call = cast<CallExpr*>(e);
@@ -30,7 +31,7 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     bool has_result = !qt.isVoid();
     bool is_tf = call.isTypeFunc();
 
-    RefList* arg_refs = gen.ref_pool.get();
+    RefList arg_refs.init();
 
     ir.Ref name_ref;
     if (is_tf) {
@@ -52,22 +53,8 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         gen.emitExpr(&ref, args[i]);
         arg_refs.add(ref);
     }
-    // Terminate with Ref.Unspecified
-    if (arg_refs.getCount() != 0) {
-        ir.Ref ref;
-        ref.init(RefKind.None, 0);
-        arg_refs.add(ref);
-    }
 
-    ir.Ref args_ref;
-    if (arg_refs.getCount() == 0) {
-        args_ref.init(RefKind.None, 0);
-    } else {
-        u32 idx = c.addCallArgs(arg_refs);
-        args_ref.init(RefKind.RefList, idx);
-    }
-    gen.ref_pool.put(arg_refs);
-
-    *result = c.addCallInstr(name_ref, args_ref, has_result, call.isNoreturn());
+    *result = c.addCallInstr(name_ref, arg_refs.get(), arg_refs.getCount(), has_result, call.isNoreturn());
+    arg_refs.free();
 }
 

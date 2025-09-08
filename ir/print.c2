@@ -501,15 +501,6 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
             out.print("@%s.%d", dest.getKindName(), b.dests[1]);
         }
         break;
-    case RefList:
-        const Ref* refs = ph.cur_info.refs.get(r.value);
-        u32 i = 0;
-        while (refs[i].kind != RefKind.None) {
-            if (i != 0) out.add(", ");
-            ph.printRef(refs[i], false);
-            i++;
-        }
-        break;
     case Symbol:
         const Symbol* g = ph.c.symbols.get(r.value);
         out.color(col_Symbol);
@@ -581,16 +572,6 @@ fn void dump_function_info(string_buffer.Buf* out, const FunctionInfo* info) @(u
         out.print("  %8s %4d  ", r.args[0].getKindName(), r.args[0].value);
         out.print("  %8s %4d", r.args[01].getKindName(), r.args[1].value);
         out.newline();
-    }
-
-    u32 num_refs = info.refs.count;
-    if (num_refs) {
-        out.print(" refs: (%d/%d)\n", info.refs.count, info.refs.capacity);
-        const Ref* refs = info.refs.get(0);
-        for (u32 i=0; i<info.refs.getCount(); i++) {
-            Ref r = refs[i];
-            out.print("    [%2d] %8s  %d\n", i, r.getKindName(), r.value);
-        }
     }
 
     u32 num_cases = info.cases.getCount();
@@ -697,7 +678,6 @@ public fn void Context.report(const Context* c) @(unused) {
 
     u32 total_blocks = 0;
     u32 total_instr = 0;
-    u32 total_refs = 0;
     u32 total_functions = 0;
     u32 total_globals = 0;
 
@@ -708,7 +688,6 @@ public fn void Context.report(const Context* c) @(unused) {
             if (s.f.info) {
                 total_blocks += s.f.info.blocks.getCount();
                 total_instr += s.f.info.instructions.getCount();
-                total_refs += s.f.info.refs.getCount();
             } else {
                 out.print("NO INFO: %s\n", c.pool.idx2str(s.name));
             }
@@ -717,8 +696,8 @@ public fn void Context.report(const Context* c) @(unused) {
         }
     }
 
-    out.print("IR: %d symbols (%d globals, %d funcs), %d refs, %d const, %d blocks, %d instr, %d values\n",
-        c.symbols.count, total_globals, total_functions, total_refs, c.constants.count,
+    out.print("IR: %d symbols (%d globals, %d funcs), %d const, %d blocks, %d instr, %d values\n",
+        c.symbols.count, total_globals, total_functions, c.constants.count,
         total_blocks, total_instr, c.init_values.getCount());
 
     stdio.puts(out.data());

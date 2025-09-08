@@ -72,7 +72,7 @@ public fn InterferenceGraph* create(u32 max_elems, u16 num_variables) {
     g.variables = stdlib.calloc(num_variables, sizeof(Variable));
     g.num_variables = num_variables;
     g.max_elems = max_elems;
-    g.register_map = stdlib.malloc(num_variables *sizeof(u16));
+    g.register_map = stdlib.malloc(num_variables * sizeof(u8));
     string.memset(g.register_map, VAR_UNUSED, num_variables);
     g.queue = stdlib.malloc(num_variables * sizeof(u16));
 
@@ -389,6 +389,8 @@ fn void InterferenceGraph.handleQueue(InterferenceGraph* g) {
 
 public fn void InterferenceGraph.allocate(InterferenceGraph* g, u32 num_args) {
     // pre-alloc arguments as R0,R1,..
+
+    assert(num_args < g.num_variables);
     for (u8 v=0; v<num_args; v++) {
         g.register_map[v] = v;
     }

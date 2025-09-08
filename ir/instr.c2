@@ -159,10 +159,6 @@ public fn bool Instr.isSwitch(const Instr* i) {
     return i.getKind() == InstrKind.Switch;
 }
 
-public fn bool Instr.isCall(const Instr* i) {
-    return i.getKind() == InstrKind.Call;
-}
-
 public fn bool Instr.isPhi(const Instr* i) {
     return i.getKind() == InstrKind.Phi;
 }
