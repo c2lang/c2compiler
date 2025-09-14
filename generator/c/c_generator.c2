@@ -613,7 +613,7 @@ fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl
             // auto-initialize (only required for embedded targets)
             gen.emitAutoInit(out, d.getType());
         }
-        out.add(";\n\n");
+        out.add(";\n");
     }
     return false;    // put this part in .c file
 }

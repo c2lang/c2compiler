@@ -105,7 +105,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
                 if (!out.endsWith('\n')) out.add1(';');
             }
         }
-        out.newline();
+        if (!out.endsWith('\n')) out.newline();
         if (is_decl) {
             indent--;
             out.indent(indent);
@@ -237,22 +237,24 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         gen.emitAsmStmt(cast<AsmStmt*>(s), indent);
         break;
     case Assert:
-        if (!gen.enable_asserts) break;
-
+        if (!gen.enable_asserts) out.print(";//assert");
         AssertStmt* a = cast<AssertStmt*>(s);
-        source_mgr.Location loc = gen.sm.locate(s.getLoc());
-        const char* funcname = gen.cur_function.asDecl().getFullName();
-
         out.add1('(');
         Expr* inner = a.getInner();
         gen.emitExpr(out, inner);
-        out.print(") || c2_assert(\"%s\", %d, \"%s\", \"", loc.filename, loc.line, funcname);
-        // encode expression as a string
-        string_buffer.Buf* str = string_buffer.create(128, false, 0);
-        inner.printLiteral(str);
-        out.encodeBytes(str.data(), str.size(), '"');
-        str.free();
-        out.add("\");\n");
+        out.add1(')');
+        if (gen.enable_asserts) {
+            source_mgr.Location loc = gen.sm.locate(s.getLoc());
+            const char* funcname = gen.cur_function.asDecl().getFullName();
+            out.print(" || c2_assert(\"%s\", %d, \"%s\", \"", loc.filename, loc.line, funcname);
+            // encode expression as a string
+            string_buffer.Buf* str = string_buffer.create(128, false, 0);
+            inner.printLiteral(str);
+            out.encodeBytes(str.data(), str.size(), '"');
+            str.free();
+            out.add("\")");
+        }
+        out.add(";\n");
         break;
     }
 }
