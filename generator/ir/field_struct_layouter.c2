@@ -17,6 +17,8 @@ module ir_generator;
 
 import ast;
 import ctv_analyser;
+import ir local;
+import ir_context;
 
 import stdlib;
 import string;
@@ -75,7 +77,8 @@ fn void FieldStructLayouter.add(FieldStructLayouter* l,
     u32 offset = info.offset;
     while (idx) {
         FieldInit* fi = &l.inits[idx-1];
-        if (offset > fi.info.offset) break;
+        //if (offset > fi.info.offset) break;
+        if (info.member_idx >= fi.info.member_idx) break;
         l.inits[idx] = *fi; // move up
         idx--;
     }
@@ -83,18 +86,23 @@ fn void FieldStructLayouter.add(FieldStructLayouter* l,
     l.num_inits++;
 }
 
+// Note: finalize is used for GLOBALS and does initialize padding
 fn void FieldStructLayouter.finalize(FieldStructLayouter* l) {
     u32 cur_offset = 0;
     bool have_bitfield = false;
     u8 bitfield_base_size = 0;   // in bytes of whole field
     u64 bitfield_value = 0; // will be downsized to correct size later
 
+    // Iterator all members, check if there is an init, otherwise init to 0
+    // Generate init for all fields
     for (u32 i=0; i<l.num_inits; i++) {
         const FieldInit* fi = &l.inits[i];
         const ast.Expr* e = fi.expr;
         ast.QualType qt = e.getType();
         u32 size = qt.getSize(false);
         // TODO dont get from type, already set is Layout
+
+        // TODO merge bit-fields and/or other CTV fields
 
         //printf("[%d] off %d/%d  bit %d\n", i, cur_offset, fi.info.offset, have_bitfield);
         u32 pad = fi.info.offset - cur_offset;   // means offsets have changed
@@ -151,6 +159,102 @@ field:
         u32 pad = l.size - cur_offset;
         //printf("PAD2 %d (size %d off %d)\n", pad, l.size, cur_offset);
         l.gen.ctx.addInitZero(pad);
+    }
+
+    stdlib.free(l.inits);
+}
+
+// Note: finalizeExpr is used for non-GLOBALS and does NOT initialize padding
+fn void FieldStructLayouter.finalizeExpr(FieldStructLayouter* l, const ast.StructTypeDecl* std, Ref base_ref) {
+    bool have_bitfield = false;
+    u8 bitfield_base_size = 0;   // in bytes of whole field
+    ir_context.Context* ctx = l.gen.ctx;
+
+    u32 num_members = std.getNumMembers();
+    ast.StructLayout* layout = std.getLayout();
+
+    // TODO can also be {}, 0 inits
+    //printf("num_inits %d  num_members %d\n", l.num_inits, num_members);
+    u32 init_idx = 0;
+    u32 cur_offset = 0;
+    const FieldInit* fi = &l.inits[init_idx];
+    Ref dest_ref = base_ref;
+
+    for (u32 i = 0; i < num_members; i++) {
+        const ast.StructMemberLayout* ml = &layout.members[i];
+        //printf(" [%d|%d] offset %d  size %d\n", i, init_idx, ml.offset, ml.size);
+
+        if (ml.is_bitfield) {
+            //printf("member idx %d\n", fi.info.member_idx);
+            if (init_idx < l.num_inits && fi.info.member_idx == i) {
+                ir.Type t = size2type(ml.size);
+                ast.Expr* e = fi.expr;
+                Ref value_ref;
+                if (e.isCtv()) {
+                    ast.Value value = ctv_analyser.get_value(e);
+                    value.mask(fi.info.bitfield_width);
+                    if (fi.info.bitfield_offset) value.left_shift2(fi.info.bitfield_offset);
+                    u64 v = value.as_u64();
+
+                    // TODO handle 64-bit bitfields
+                    value_ref = ctx.addIntegerConstant((i64)v);
+                } else {
+                    l.gen.emitExpr(&value_ref, e);
+                    // mask
+                    Ref mask_value = ctx.addIntegerConstant((1 << ml.bitfield_width) -1);
+                    value_ref = ctx.addBinaryInstr(InstrKind.And, mask_value, value_ref);
+                    // shift (if needed)
+                    if (ml.bitfield_offset) {
+                        Ref shift_value = ctx.addIntegerConstant(ml.bitfield_offset);
+                        value_ref = ctx.addBinaryInstr(InstrKind.Shl, shift_value, value_ref);
+                    }
+                }
+                if (!have_bitfield) { // generate SET
+                    ctx.addStoreInstr(t, value_ref, dest_ref);
+                } else { // generate OR
+                    Ref bitfield_ref = ctx.addLoadInstr(t, dest_ref);
+                    bitfield_ref = ctx.addBinaryInstr(InstrKind.Or, bitfield_ref, value_ref);
+                    ctx.addStoreInstr(t, bitfield_ref, dest_ref);
+                }
+
+                init_idx++;
+                fi = &l.inits[init_idx];
+            } else {
+                // TODO init entire field to 0 if not initialized at all
+            }
+
+            //printf(" [%d] bitfield w %d s %d\n", i, fi.info.bitfield_width, fi.info.bitfield_offset);
+            // TODO if all bitfields CTV, merge (separate from whole InitListExpr CTC)
+            // TODO need to increment offset if needed
+            if (!have_bitfield) have_bitfield = true;
+            continue;
+            // if last member, always emit bitfields
+        } else {
+            if (have_bitfield) {
+                // flush bitfield
+                // TODO
+                have_bitfield = false;
+            }
+        }
+
+        if (ml.offset != 0) {
+            Ref offset_ref = ctx.addIntegerConstant(ml.offset - cur_offset);
+            cur_offset = ml.offset;
+            dest_ref = ctx.addBinaryInstr(InstrKind.Add, dest_ref, offset_ref);
+        }
+
+        Ref value_ref;
+        if (init_idx < l.num_inits && fi.info.member_idx == i) {
+            //printf("  have init\n");
+            l.gen.emitExpr(&value_ref, fi.expr);
+
+            init_idx++;
+            fi = &l.inits[init_idx];
+        } else {
+            value_ref = ctx.addIntegerConstant(0);
+        }
+
+        ctx.addStoreInstr(size2type(ml.size), value_ref, dest_ref);
     }
 
     stdlib.free(l.inits);

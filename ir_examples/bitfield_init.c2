@@ -1,20 +1,19 @@
 module test;
 
-public type Design struct {
-    u16 bla;
-    u8 stackable : 1;
-    u8 : 2;
-    u8 rarity : 3;
+type Iter struct {
+    u32 kind : 4;
+    u32 value : 28;
 }
 
-const Design[] Designs = {
-    { .stackable=1, .rarity=5, .bla=12345 },
-    { .rarity=5, .stackable=1, .bla=12345 },
-    { .bla=12345, .rarity=5, .stackable=1 },
+//Iter i1 = { .ids = 100, .count = 200 }
+
+fn Iter test1(u32 a, u32 b) {
+    Iter iter = { .kind = a, .value = b }
+    return iter;
 }
 
-public fn i32 main() {
-    return Designs[0].stackable;
+fn Iter test2() {
+    Iter iter = { .kind = 2, .value = 0x123456 }
+    return iter;
 }
-
 

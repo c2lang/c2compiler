@@ -23,11 +23,6 @@ import string;
 public type StackVar struct {
     ir.Ref ref;        // never changes
     ir.Type ir_type;
-    // TODO remove width/align/size, only use ir_type?
-/*
-    u32 width;
-    u32 align;
-*/
     u32 size;
 }
 

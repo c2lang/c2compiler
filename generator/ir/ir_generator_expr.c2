@@ -529,3 +529,140 @@ fn void Generator.emitArraySubscript(Generator* gen, ir.Ref* result, const Expr*
     }
 }
 
+// TODO handle larger structs
+fn ir.Type size2type(u32 size) {
+    // TEMP always signed for now
+    switch (size) {
+    case 1:
+        return ir.Type.I8;
+    case 2:
+        return ir.Type.I16;
+    case 4:
+        return ir.Type.I32;
+    default:
+        break;
+    }
+    return ir.Type.I64;
+}
+
+fn void Generator.emitStructInitExpr(Generator* gen, const StackVar* var, const Expr* e) {
+    const InitListExpr* ile = (InitListExpr*)e;
+
+    QualType qt = e.getType();
+    StructType* st = qt.getStructType();
+    StructTypeDecl* std = st.getDecl();
+
+    u32 num_values = ile.getNumValues();
+    const Expr** values = ile.getValues2();
+
+    if (e.isCtc()) {
+        // TODO if all members are CTC/CTV, generate a 'global' and copy that
+        // Note: also includes empty list: { }
+    }
+
+    if (ile.hasDesignators()) {
+        FieldStructLayouter layouter;
+        layouter.init(gen, std.getSize(), std.getDesigMemberCount());
+        for (u32 i=0; i<num_values; i++) {
+            FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(values[i]);
+            const FieldInitField* fif = fdi.getMemberInfo();
+            if (!fif.isZeroSizeBitfield()) {
+                layouter.add(fif, fdi.getInit());
+            }
+        }
+        layouter.finalizeExpr(std, var.ref);
+        return;
+    }
+
+    // TODO aggregate bit-fields
+    u32 num_members = std.getNumMembers();
+    const StructLayout* layout = std.getLayout();
+    u32 i;
+    u32 offset = 0;
+    ir.Ref dest_ref = var.ref;
+    for (i = 0; i < num_values; i++) {
+        const StructMemberLayout* ml = &layout.members[i];
+        ir.Ref value_ref;
+        gen.emitExpr(&value_ref, values[i]);
+        if (ml.offset != 0) {
+            ir.Ref offset_ref = gen.ctx.addIntegerConstant(ml.offset - offset);
+            offset = ml.offset;
+            dest_ref = gen.ctx.addBinaryInstr(InstrKind.Add, dest_ref, offset_ref);
+        }
+        gen.ctx.addStoreInstr(size2type(ml.size), value_ref, dest_ref);
+
+    }
+
+    ir.Ref value_ref = gen.ctx.addIntegerConstant(0);
+    while (i < num_members) {
+        const StructMemberLayout* ml = &layout.members[i];
+        if (ml.offset != 0) {
+            ir.Ref offset_ref = gen.ctx.addIntegerConstant(ml.offset - offset);
+            offset = ml.offset;
+            dest_ref = gen.ctx.addBinaryInstr(InstrKind.Add, dest_ref, offset_ref);
+        }
+        gen.ctx.addStoreInstr(size2type(ml.size), value_ref, dest_ref);
+        i++;
+    }
+}
+
+fn void Generator.emitArrayInitExpr(Generator* gen, const StackVar* var, const Expr* e) {
+    const InitListExpr* ile = (InitListExpr*)e;
+    ir_context.Context* ctx = gen.ctx;
+
+    if (e.isCtc()) {
+        // TODO if all members are CTC/CTV, generate a 'global' and copy that
+    }
+
+    if (ile.hasDesignators()) {
+        assert(0); // TODO
+    } else {
+        const u32 elem_size = var.ir_type.size();
+        ir.Ref dest_ref = var.ref;
+        ir.Ref step_ref = ctx.addIntegerConstant(elem_size);
+        u32 offset = 0;
+        u32 num_values = ile.getNumValues();
+        const Expr** values = ile.getValues2();
+        for (u32 i = 0; i < num_values; i++) {
+            if (i != 0) {
+                dest_ref = ctx.addBinaryInstr(InstrKind.Add, dest_ref, step_ref);
+            }
+
+            ir.Ref value_ref;
+            gen.emitExpr(&value_ref, values[i]);
+            ctx.addStoreInstr(var.ir_type, value_ref, dest_ref);
+
+            offset += elem_size;
+        }
+
+        ir.Ref value_ref = ctx.addIntegerConstant(0);
+        while (offset != var.size) {
+            if (offset != 0) {
+                dest_ref = ctx.addBinaryInstr(InstrKind.Add, dest_ref, step_ref);
+            }
+            ctx.addStoreInstr(var.ir_type, value_ref, dest_ref);
+            offset += elem_size;
+        }
+    }
+}
+
+fn void Generator.emitInitExpr(Generator* gen, const VarDecl* vd, const Expr* ie) {
+    StackVar* var = gen.locals.find(vd);
+
+    if (ie.isInitList()) {
+        // can be array (with/without designators), init (with/without field-init) (or combination)
+        const InitListExpr* ile = (InitListExpr*)ie;
+        if (ile.isArray()) {
+            gen.emitArrayInitExpr(var, ie);
+        } else {
+            gen.emitStructInitExpr(var, ie);
+        }
+    } else {
+        ir.Ref res;
+        gen.emitExpr(&res, ie);
+        if (!vd.hasInitCall()) { // otherwise already handled
+            gen.ctx.addStoreInstr(var.ir_type, res, var.ref);
+        }
+    }
+}
+

@@ -47,6 +47,23 @@ public fn const char* Type.str(Type t) {
     return "";
 }
 
+public fn u32 Type.size(Type t) {
+    switch (t) {
+    case None:  break;
+    case I8:    return 1;
+    case I16:   return 2;
+    case I32:   return 4;
+    case I64:   return 8;
+    case U8:    return 1;
+    case U16:   return 2;
+    case U32:   return 4;
+    case U64:   return 8;
+    case F32:   return 4;
+    case F64:   return 8;
+    }
+    return 0;
+}
+
 public type Index struct {
     u32 start;
     u32 count;

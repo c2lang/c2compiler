@@ -379,6 +379,7 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
     const FieldInitInfo* fii = ma.getFieldInfo(std);
     // TODO get from global stack, dont allocate+free
     StructFieldInitChecker checker.init(fii.num_indexes);
+    bool ctc = true;
 
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
@@ -417,6 +418,7 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
         if (!ok) goto out;
 
         Expr* inner = fdi.getInit();
+        ctc &= inner.isCtc();
         value.setType(inner.getType());
         if (fif.is_bitfield && inner.isCtv()) {
             if (!ctv_analyser.checkBitfield(ma.diags, fif.bitfield_width, fif.bitfield_signed, inner)) return false;
@@ -425,6 +427,7 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
 
     expectedType.clearQuals();
     Expr* e = (Expr*)ile;
+    if (ctc) e.setCtc();
     e.setType(expectedType);
     checker.free();
     return true;
@@ -445,6 +448,7 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
     // just init all values to 0
     if (numValues == 0) {
         e.setType(expectedType);
+        e.setCtc();
         return true;
     }
 
@@ -460,6 +464,7 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
         return ma.analyseStructFieldInit(std, ile, expectedType);
     }
 
+    bool ctc = true;
     const u32 num_members = std.getNumMembers();
     Decl** members = std.getMembers();
 
@@ -496,9 +501,11 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
             if (!ctv_analyser.checkBitfield(ma.diags, ml.bitfield_width, ml.bitfield_signed, value)) return false;
         }
 
+        ctc &= value.isCtc();
         member_idx++;
     }
 
+    if (ctc) e.setCtc();
     expectedType.clearQuals();
     e.setType(expectedType);
     return true;

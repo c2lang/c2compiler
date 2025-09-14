@@ -388,9 +388,10 @@ fn void InterferenceGraph.handleQueue(InterferenceGraph* g) {
 }
 
 public fn void InterferenceGraph.allocate(InterferenceGraph* g, u32 num_args) {
-    // pre-alloc arguments as R0,R1,..
+    //assert(num_args < g.num_variables); // otherwise out-of-bounds write
+    if (num_args >= g.num_variables) return;    // TEMP
 
-    assert(num_args < g.num_variables);
+    // pre-alloc arguments as R0,R1,..
     for (u8 v=0; v<num_args; v++) {
         g.register_map[v] = v;
     }

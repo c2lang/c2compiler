@@ -299,7 +299,7 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         } else if (ile.isArray()) {
             gen.emitArrayInit(e);
         } else {
-            gen.emitStructInit(e);
+            gen.emitGlobalStructInit(e);
         }
         break;
     case FieldDesignatedInit:
@@ -347,7 +347,7 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
     }
 }
 
-fn void Generator.emitStructInit(Generator* gen, const Expr* e) {
+fn void Generator.emitGlobalStructInit(Generator* gen, const Expr* e) {
     const InitListExpr* ile = cast<InitListExpr*>(e);
     u32 num_values = ile.getNumValues();
     const Expr** values = ile.getValues2();
@@ -357,7 +357,6 @@ fn void Generator.emitStructInit(Generator* gen, const Expr* e) {
     StructTypeDecl* std = st.getDecl();
 
     if (ile.hasDesignators()) {
-        // TODO have a stack of FieldStructLayouters? (for sub-structs)
         FieldStructLayouter layouter;
         layouter.init(gen, std.getSize(), std.getDesigMemberCount());
         for (u32 i=0; i<num_values; i++) {

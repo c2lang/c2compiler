@@ -18,7 +18,6 @@ module ir_generator;
 import ast local;
 import ir local;
 import ir_context;
-import ir_gen_locals local;
 
 // returns true if more stmts can follow
 fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
@@ -101,12 +100,7 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
 
             const Expr* ie = vd.getInit();
             if (ie) {
-                StackVar* var = gen.locals.find(vd);
-                ir.Ref res;
-                gen.emitExpr(&res, ie);
-                if (!vd.hasInitCall()) { // otherwise already handled
-                    gen.ctx.addStoreInstr(var.ir_type, res, var.ref);
-                }
+                gen.emitInitExpr(vd, ie);
             }
         }
         return true;
