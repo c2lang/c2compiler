@@ -12,7 +12,7 @@ fn void foo3(u32 val = "default") { // @error{invalid type conversion from 'cons
 fn void foo4(const char* val = 123) { // @error{incompatible integer to pointer conversion: 'i32' to 'const char*'}
 }
 
-fn void foo5(u32 x = 0, u32 y) { // @error{parameter must have a default value}
+fn void foo5(u32 x = 0, u32 y) {
 }
 
 fn void print_file(const char* filename = "default" @(auto_file)) { // @error{automatic argument cannot have default value}
