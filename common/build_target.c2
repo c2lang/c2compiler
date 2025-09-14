@@ -21,8 +21,7 @@ import string_list;
 import string_pool;
 import warning_flags;
 
-import stdlib;
-import string;
+import std;
 
 public type BackEndKind enum u8 {
     None,
@@ -64,11 +63,11 @@ public type PluginList struct {
 }
 
 public fn void PluginList.init(PluginList* l) {
-    string.memset(l, 0, sizeof(PluginList));
+    std.memset(l, 0, sizeof(PluginList));
 }
 
 public fn void PluginList.free(PluginList* l) {
-    stdlib.free(l.plugins);
+    std.free(l.plugins);
 }
 
 public fn u32 PluginList.size(const PluginList* l) { return l.count; }
@@ -80,10 +79,10 @@ public fn const Plugin* PluginList.get(const PluginList* l, u32 idx) {
 public fn void PluginList.add(PluginList* l, u32 name, u32 options, SrcLoc loc) {
     if (l.count == l.capacity) {
         l.capacity = l.capacity ? l.capacity * 2 : 4;
-        Plugin* plugins2 = stdlib.malloc(l.capacity * sizeof(Plugin));
+        Plugin* plugins2 = std.malloc(l.capacity * sizeof(Plugin));
         if (l.count) {
-            string.memcpy(plugins2, l.plugins, l.count * sizeof(Plugin));
-            stdlib.free(l.plugins);
+            std.memcpy(plugins2, l.plugins, l.count * sizeof(Plugin));
+            std.free(l.plugins);
         }
         l.plugins = plugins2;
     }
@@ -126,7 +125,7 @@ public type Target struct @(opaque) {
 }
 
 public fn Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool* pool) {
-    Target* t = stdlib.calloc(1, sizeof(Target));
+    Target* t = std.calloc(1, sizeof(Target));
     t.name_idx = name_idx;
     t.loc = loc;
     t.kind = kind;
@@ -134,9 +133,9 @@ public fn Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool* 
     t.features.init(pool);
     t.libs.init();
     t.exports.init(pool);
-    t.files = stdlib.malloc(t.max_files * sizeof(File));
+    t.files = std.malloc(t.max_files * sizeof(File));
     t.asm_file_max = 4;
-    t.asm_files = stdlib.malloc(t.asm_file_max * sizeof(File));
+    t.asm_files = std.malloc(t.asm_file_max * sizeof(File));
     return t;
 }
 
@@ -145,9 +144,9 @@ public fn void Target.free(Target* t) {
     t.plugins.free();
     t.libs.free();
     t.features.free();
-    stdlib.free(t.files);
-    stdlib.free(t.asm_files);
-    stdlib.free(t);
+    std.free(t.files);
+    std.free(t.asm_files);
+    std.free(t);
 }
 
 public fn u32 Target.getNameIdx(const Target* t) { return t.name_idx; }
@@ -251,9 +250,9 @@ public fn bool Target.addFile(Target* t, u32 filename, SrcLoc loc) {
 
     if (t.num_files == t.max_files) {
         t.max_files *= 2;
-        File* files2 = stdlib.malloc(t.max_files * sizeof(File));
-        string.memcpy(files2, t.files, t.num_files * sizeof(File));
-        stdlib.free(t.files);
+        File* files2 = std.malloc(t.max_files * sizeof(File));
+        std.memcpy(files2, t.files, t.num_files * sizeof(File));
+        std.free(t.files);
         t.files = files2;
     }
 
@@ -275,9 +274,9 @@ public fn bool Target.addAsmFile(Target* t, u32 filename, SrcLoc loc) {
 
     if (t.asm_file_count == t.asm_file_max) {
         t.asm_file_max *= 2;
-        File* files2 = stdlib.malloc(t.asm_file_max * sizeof(File));
-        string.memcpy(files2, t.files, t.asm_file_count * sizeof(File));
-        stdlib.free(t.asm_files);
+        File* files2 = std.malloc(t.asm_file_max * sizeof(File));
+        std.memcpy(files2, t.files, t.asm_file_count * sizeof(File));
+        std.free(t.asm_files);
         t.asm_files = files2;
     }
 

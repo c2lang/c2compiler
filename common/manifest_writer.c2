@@ -22,7 +22,7 @@ import file_utils;
 import string_buffer;
 import string_list;
 
-import stdlib local;
+import std local;
 
 fn const char* getKindStr(const component.Component* c) {
     switch (c.getKind()) {

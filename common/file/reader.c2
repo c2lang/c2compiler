@@ -15,11 +15,7 @@
 
 module file_utils;
 
-import libc_fcntl local;
-import c_errno local;
-import sys_stat local;
-import unistd local;
-import stdlib;
+import std local;
 
 fn isize read2(i32 hd, void* data, usize len) {
     u8* p = data;
@@ -42,7 +38,7 @@ public fn bool File.load(File* file) {
     if (file.error) return false;
     file.contents_size = 0;
     if (file.contents) {
-        stdlib.free(file.contents);
+        std.free(file.contents);
         file.contents = nil;
     }
     i32 fd = open(file.path, O_RDONLY | O_BINARY);
@@ -72,7 +68,7 @@ public fn bool File.load(File* file) {
         return false;
     }
 
-    u8* region = stdlib.malloc((usize)size + 1);
+    u8* region = std.malloc((usize)size + 1);
     if (!region) {
         file.error = ENOMEM;
         close(fd);
@@ -81,13 +77,13 @@ public fn bool File.load(File* file) {
     isize numread = read2(fd, region, size);
     if (numread < 0) {
         file.error = errno;
-        stdlib.free(region);
+        std.free(region);
         close(fd);
         return false;
     }
     if ((usize)numread != size) {
         file.error = Err_read_error;
-        stdlib.free(region);
+        std.free(region);
         close(fd);
         return false;
     }

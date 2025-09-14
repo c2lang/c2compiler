@@ -19,7 +19,7 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-import string;
+import std;
 
 type SwitchCaseBits struct {
     u32 num_conds : 8;
@@ -55,9 +55,9 @@ public fn SwitchCase* SwitchCase.create(ast_context.Context* c,
     s.bits.num_stmts = num_stmts;
     s.bits.is_default = is_default;
     s.loc = loc;
-    string.memcpy(s.conds, conds, num_conds * sizeof(Expr*));
+    std.memcpy(s.conds, conds, num_conds * sizeof(Expr*));
     Stmt** dst_stmts = s.getStmts();
-    string.memcpy(dst_stmts, stmts, num_stmts * sizeof(Stmt*));
+    std.memcpy(dst_stmts, stmts, num_stmts * sizeof(Stmt*));
 #if AstStatistics
     Stats.addSwitchCase(size);
 #endif

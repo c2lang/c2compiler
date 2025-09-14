@@ -20,8 +20,7 @@ import ir local;
 import ir_interference_graph local;
 import ir_live_map;
 
-import stdlib;
-import stdio local;
+import std;
 
 type LiveVector struct  {
     u32 count;
@@ -37,7 +36,7 @@ type LiveVector struct  {
 fn void LiveVector.init(LiveVector* v, u32 num_blocks, u32 num_instr) {
     v.count = 0;
     v.cap = 1024;
-    v.temps = stdlib.malloc(v.cap * sizeof(u32));
+    v.temps = std.malloc(v.cap * sizeof(u32));
     assert(num_instr <= u16.max);
 
     // TODO this should be re-used between functions (also LiveVector)
@@ -52,13 +51,13 @@ fn void LiveVector.free(LiveVector* v) {
     v.live_out.free();
     v.live_in.free();
     v.interferences.free();
-    stdlib.free(v.temps);
+    std.free(v.temps);
 }
 
 fn void LiveVector.add(LiveVector* v, u32 idx) {
     assert(idx <= 65535);
-    //if (v.count == v.cap) printf("add %d/%d  %d\n", v.count, v.cap, idx);
-    //printf("  add %d/%d  %d\n", v.count, v.cap, idx);
+    //if (v.count == v.cap) std.printf("add %d/%d  %d\n", v.count, v.cap, idx);
+    //std.printf("  add %d/%d  %d\n", v.count, v.cap, idx);
     for (u32 i=0; i<v.count; i++) {
         if (v.temps[i] == idx) return;    // already in, ignore
     }
@@ -67,7 +66,7 @@ fn void LiveVector.add(LiveVector* v, u32 idx) {
 }
 
 fn void LiveVector.remove(LiveVector* v, u32 idx) {
-    //printf("remove %d\n", idx);
+    //std.printf("remove %d\n", idx);
     for (u32 i=0; i<v.count; i++) {
         if (v.temps[i] == idx) {    // swap with last
             v.count--;
@@ -75,7 +74,7 @@ fn void LiveVector.remove(LiveVector* v, u32 idx) {
             return;
         }
     }
-    //printf("  not found\n");
+    //std.printf("  not found\n");
 }
 
 // Does not filter, but does add to interference graph
@@ -120,21 +119,21 @@ fn void LiveVector.merge(LiveVector* v, u32 blk_id) {
 
 fn void LiveVector.dump(const LiveVector* v) @(unused) {
     for (u32 i=0; i<v.count; i++) {
-        printf(" %d", v.temps[i]);
+        std.printf(" %d", v.temps[i]);
     }
-    printf("\n");
+    std.printf("\n");
 }
 
 fn void LiveVector.dumpRanges(const LiveVector* v, u32 num_blocks) @(unused) {
     for (u32 i=0; i<num_blocks; i++) {
-        printf("B%d\n", i);
-        printf("  In [");
+        std.printf("B%d\n", i);
+        std.printf("  In [");
         ir_live_map.Iter iter = v.live_in.getList((u16)i);
-        for (u32 j=0; j<iter.count; j++) printf(" %d", iter.ids[j]);
-        printf(" ]\n  Out[");
+        for (u32 j=0; j<iter.count; j++) std.printf(" %d", iter.ids[j]);
+        std.printf(" ]\n  Out[");
         iter = v.live_out.getList((u16)i);
-        for (u32 j=0; j<iter.count; j++) printf(" %d", iter.ids[j]);
-        printf(" ]\n");
+        for (u32 j=0; j<iter.count; j++) std.printf(" %d", iter.ids[j]);
+        std.printf(" ]\n");
     }
 }
 
@@ -157,7 +156,7 @@ fn void Tools.createBlockInterferences(Tools* t, u32 blk_id, FunctionInfo* fi, L
         for (u32 c=0; c<num_clauses; c++) {
             const PhiClause* pc = &clauses[c];
             if (pc.src != blk_id) continue;
-            //printf("  PHI CLAUSE %d  %s %d\n", pc.dest_idx, pc.ref.getKindName(), pc.ref.value);
+            //std.printf("  PHI CLAUSE %d  %s %d\n", pc.dest_idx, pc.ref.getKindName(), pc.ref.value);
             v.remove(pc.dest_idx);
             if (pc.ref.isTemp()) v.addInterfere((u16)pc.ref.value);
         }
@@ -185,14 +184,14 @@ fn void Tools.createBlockInterferences(Tools* t, u32 blk_id, FunctionInfo* fi, L
         if (i == first) break;
         i--;
     }
-    //printf("[%d] ", i);
+    //std.printf("[%d] ", i);
     //v.dump();
     //v.store((u16)blk_id);
 }
 
 fn void Tools.checkBlockLiveness(Tools* t, u32 blk_id, LiveVector* v) {
     FunctionInfo* fi = t.fi;
-    //printf("CHECK B%d\n", blk_id);
+    //std.printf("CHECK B%d\n", blk_id);
     Block* b = fi.blocks.get(blk_id);
 
     // modify LiveIn/LiveOut in Arena
@@ -223,7 +222,7 @@ fn void Tools.checkBlockLiveness(Tools* t, u32 blk_id, LiveVector* v) {
     if (b.dests[0]) v.merge(b.dests[0]);
     if (b.dests[1]) v.merge(b.dests[1]);
 
-    //printf("  LiveOut: "); v.dump();
+    //std.printf("  LiveOut: "); v.dump();
     v.storeOut((u16)blk_id);
 
     // step 3 - add phi-clauses
@@ -236,16 +235,16 @@ fn void Tools.checkBlockLiveness(Tools* t, u32 blk_id, LiveVector* v) {
         //     t = a; a = b; b = t;
         // Note: need to add instruction and add to Interference graph
 
-        //printf("B%d phi source\n", blk_id);
+        //std.printf("B%d phi source\n", blk_id);
         const PhiClause* clauses = fi.phis.get(0);
         u32 num_clauses = fi.phis.getCount();
         for (u32 i=0; i<num_clauses; i++) {
             const PhiClause* c = &clauses[i];
             if (c.src == blk_id) {
-                //printf("  B%d remove phi %d\n", blk_id, c.dest_idx);
+                //std.printf("  B%d remove phi %d\n", blk_id, c.dest_idx);
                 v.remove(c.dest_idx);
                 if (c.ref.isTemp()) {
-                    //printf("  B%d add phi clause %d\n", blk_id, c.ref.value);
+                    //std.printf("  B%d add phi clause %d\n", blk_id, c.ref.value);
                     v.add(c.ref.value);
                 }
             }
@@ -268,7 +267,7 @@ fn void Tools.checkBlockLiveness(Tools* t, u32 blk_id, LiveVector* v) {
             for (u32 c=0; c<ii.args[1].value; c++) {
                 const PhiClause* pc = &clauses[c];
                 v.live_out.addFiltered((u16)pc.src, (u16)pc.dest_idx);
-                //printf(" PHI ADD OUT B%d  %d\n", pc.src, pc.dest_idx);
+                //std.printf(" PHI ADD OUT B%d  %d\n", pc.src, pc.dest_idx);
 #if 0
                 // TODO dont know about this one..
                 if (pc.ref.isTemp()) {
@@ -284,13 +283,13 @@ fn void Tools.checkBlockLiveness(Tools* t, u32 blk_id, LiveVector* v) {
 
             if (ii.args[0].isTemp()) v.add(ii.args[0].value);
             if (ii.args[1].isTemp()) v.add(ii.args[1].value);
-            //printf("[%d] ", i);
+            //std.printf("[%d] ", i);
             //v.dump();
         }
         if (i == first) break;
         i--;
     }
-    //printf("  LiveIn:  "); v.dump();
+    //std.printf("  LiveIn:  "); v.dump();
 
     // 5. store in LiveVector in global list.
     v.storeIn((u16)blk_id);
@@ -364,7 +363,7 @@ fn void Tools.insertSplitEdges(Tools* t) {
     u32 num_blocks = fi.blocks.getCount();
     Block* blocks = fi.blocks.get(0);
     Instr* instrs = fi.instructions.get(0);
-    //printf("%d blocks, %d instructions\n", num_blocks, fi.instructions.getCount());
+    //std.printf("%d blocks, %d instructions\n", num_blocks, fi.instructions.getCount());
 
     // Extra:
     // if phi-clause argument is input param, never split or insert copy?
@@ -391,7 +390,7 @@ fn void Tools.insertSplitEdges(Tools* t) {
                 BlockId new_blk = t.inserter.findSplitEdge(pc.src, blk_id);
                 if (!new_blk) {
                     new_blk = t.inserter.addBlock(BlockKind.PhiSplit);
-                    //printf("new block %d (%d -> %d)\n", new_blk, pc.src, blk_id);
+                    //std.printf("new block %d (%d -> %d)\n", new_blk, pc.src, blk_id);
                     t.inserter.addSplitEdge(pc.src, blk_id, new_blk);
 
                     Block* cur = t.inserter.getLastBlock();
@@ -407,7 +406,7 @@ fn void Tools.insertSplitEdges(Tools* t) {
                     }
 
                     u32 instr_idx = t.inserter.addInstr(insert_loc);
-                    //printf("add instr %d  @ %d\n", instr_idx, insert_loc);
+                    //std.printf("add instr %d  @ %d\n", instr_idx, insert_loc);
                     Instr* jmp = t.inserter.getLastInstr();
                     Ref jmp_ref = { .kind = RefKind.JmpDest, .value = 0 }
                     jmp.init1(InstrKind.Jmp, jmp_ref);
@@ -500,7 +499,7 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
                 for (u32 j=0; j<iter2.count; j++) {
                     u16 var = iter2.ids[j];
                     if (!iter.contains(var)) {
-                        //printf("  ADD %d to LiveOut %d\n", var, blk_id);
+                        //std.printf("  ADD %d to LiveOut %d\n", var, blk_id);
                         v.live_out.add(blk_id, var);
                         iter = v.live_out.getList(blk_id);  // re-read in case of re-alloc
                         // if not generated in block, also add to LiveIn

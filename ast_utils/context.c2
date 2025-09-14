@@ -15,11 +15,7 @@
 
 module ast_context;
 
-import stdlib local;
-import stdio;
-#if __ASAN__ || __MSAN__ || __UBSAN__
-import string local;
-#endif
+import std local;
 
 type Block struct {
     Block* next;
@@ -138,6 +134,6 @@ public fn void Context.report(const Context* c) {
     }
     u32 avg = 0;
     if (c.num_allocs) avg = total / c.num_allocs;
-    stdio.printf("context: %d allocs, total %d (%d KB), avg %d bytes, %d blocks (%d), slack %d, avail %d\n",
+    printf("context: %d allocs, total %d (%d KB), avg %d bytes, %d blocks (%d), slack %d, avail %d\n",
         c.num_allocs, total, (total + 1023) / 1024, avg, blocks, c.blk_size, slack, avail);
 }

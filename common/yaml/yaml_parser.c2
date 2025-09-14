@@ -15,10 +15,7 @@
 
 module yaml;
 
-import stdlib local;
-import csetjmp local;
-import stdarg local;
-import stdio local;
+import std local;
 
 const u32 MaxDiag = 256;
 

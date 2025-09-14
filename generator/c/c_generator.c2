@@ -36,10 +36,7 @@ import string_pool;
 import string_utils;
 import target_info;
 
-import c_errno local;
-import string;
-import stdlib;
-import stdio;
+import std;
 
 type Fragment struct {
     string_buffer.Buf* buf;
@@ -47,7 +44,7 @@ type Fragment struct {
 }
 
 fn Fragment* Fragment.create() {
-    Fragment* f = stdlib.malloc(sizeof(Fragment));
+    Fragment* f = std.malloc(sizeof(Fragment));
     f.buf = string_buffer.create(128, false, 3);
     return f;
 }
@@ -58,7 +55,7 @@ fn void Fragment.clear(Fragment* f) {
 
 fn void Fragment.free(Fragment* f) {
     f.buf.free();
-    stdlib.free(f);
+    std.free(f);
 }
 
 type Generator struct {
@@ -274,9 +271,9 @@ fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType q
         return;
     case Struct:
         StructType* st = cast<StructType*>(qt.getType());
-        StructTypeDecl* std = st.getDecl();
-        if (std.hasAttrNoTypeDef()) {
-            out.add(std.isStruct() ? "struct " : "union ");
+        StructTypeDecl* sd = st.getDecl();
+        if (sd.hasAttrNoTypeDef()) {
+            out.add(sd.isStruct() ? "struct " : "union ");
         }
 
         decl = cast<Decl*>(st.getDecl());
@@ -398,28 +395,28 @@ fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl*
 }
 
 fn void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
-    StructTypeDecl* std = cast<StructTypeDecl*>(d);
-    if (std.isGlobal()) {
-        if (std.isStruct()) out.add("struct ");
+    StructTypeDecl* sd = cast<StructTypeDecl*>(d);
+    if (sd.isGlobal()) {
+        if (sd.isStruct()) out.add("struct ");
         else out.add("union ");
         gen.emitCName(out, d);
-        if (!std.hasAttrNoTypeDef()) out.add1('_'); // either generate 'struct stat_' or 'struct stat'
+        if (!sd.hasAttrNoTypeDef()) out.add1('_'); // either generate 'struct stat_' or 'struct stat'
     } else {
         out.indent(indent);
-        if (std.isStruct()) out.add("struct");
+        if (sd.isStruct()) out.add("struct");
         else out.add("union");
     }
     out.add(" {\n");
 
-    u32 num_members = std.getNumMembers();
-    Decl** members = std.getMembers();
+    u32 num_members = sd.getNumMembers();
+    Decl** members = sd.getMembers();
     for (u32 i=0; i<num_members; i++) {
         gen.emitStructMember(out, members[i], indent+1);
     }
 
-    if (std.isGlobal()) {
+    if (sd.isGlobal()) {
         out.add1('}');
-        if (std.isPacked()) out.add(" __attribute__((packed))");
+        if (sd.isPacked()) out.add(" __attribute__((packed))");
         out.add(";\n\n");
     } else {
         out.indent(indent);
@@ -680,11 +677,11 @@ fn void Generator.on_forward_structs(void* arg, Decl* d) {
 }
 
 fn void Generator.emitForwardStructDecl(Generator* gen, Decl* d, string_buffer.Buf* out) {
-    StructTypeDecl* std = cast<StructTypeDecl*>(d);
-    if (std.hasAttrNoTypeDef()) return;
+    StructTypeDecl* sd = cast<StructTypeDecl*>(d);
+    if (sd.hasAttrNoTypeDef()) return;
 
     out.add("typedef ");
-    if (std.isStruct()) out.add("struct");
+    if (sd.isStruct()) out.add("struct");
     else out.add("union");
     out.space();
     gen.emitCName(out, d);
@@ -724,10 +721,10 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     case Import:
         break;
     case StructType:
-        StructTypeDecl* std = cast<StructTypeDecl*>(d);
+        StructTypeDecl* sd = cast<StructTypeDecl*>(d);
         Fragment* f = gen.getFragment();
         gen.emitStruct(f.buf, d, 0);
-        gen.addFragment(f, d.isPublic() && !std.isOpaque());
+        gen.addFragment(f, d.isPublic() && !sd.isOpaque());
         break;
     case EnumType:
         Fragment* f = gen.getFragment();
@@ -965,8 +962,8 @@ fn void Generator.on_interface_decl(void* arg, Decl* d) {
     if (d.isStructType()) {
         gen.emitForwardStructDecl(d, gen.header);
         gen.header.newline();
-        StructTypeDecl* std = cast<StructTypeDecl*>(d);
-        if (std.isOpaque()) return; // dont add
+        StructTypeDecl* sd = cast<StructTypeDecl*>(d);
+        if (sd.isOpaque()) return; // dont add
     }
     // For C header we need to sort the decls, just collect all decls first
     gen.decls.add(d);
@@ -1111,7 +1108,7 @@ fn void Generator.on_module(void* arg, Module* m) {
     gen.mod = m;
 
     // Temporary disable call tracing when compiling the c2_trace module
-    gen.no_trace = !string.strcmp(gen.mod_name, "c2_trace");
+    gen.no_trace = !std.strcmp(gen.mod_name, "c2_trace");
 
     if (gen.fast_build) {
         out.clear();
@@ -1185,11 +1182,11 @@ fn void Generator.write_files(Generator* gen) {
 
     char[64] outfile;
     if (!gen.cur_external) {
-        stdio.sprintf(outfile, "%s.c", gen.mod_name);
+        std.sprintf(outfile, "%s.c", gen.mod_name);
         gen.write(gen.cgen_dir, outfile, gen.out);
     }
 
-    stdio.sprintf(outfile, "%s.h", gen.mod_name);
+    std.sprintf(outfile, "%s.h", gen.mod_name);
     gen.write(gen.cgen_dir, outfile, gen.header);
 
     gen.out.clear();
@@ -1207,7 +1204,7 @@ fn void Generator.init(Generator* gen,
                        const build_file.Info* build_info,
                        Decl* mainFunc)
 {
-    string.memset(gen, 0, sizeof(Generator));
+    std.memset(gen, 0, sizeof(Generator));
     gen.out = string_buffer.create(256*1024, false, 3);
     gen.target = target;
     gen.target_kind = kind;
@@ -1270,7 +1267,7 @@ public fn void generate(string_pool.Pool* astPool,
     char[file_utils.Max_path] dir;
     if (!file_utils.make_path(dir, elemsof(dir), output_dir, Dir)
     ||  file_utils.create_path(dir)) {
-        console.error("cannot create directory %s: %s", dir, string.strerror(errno));
+        console.error("cannot create directory %s: %s", dir, std.strerror(std.errno));
         return;
     }
 
@@ -1354,7 +1351,7 @@ public fn void build(const char* output_dir)
 
     char[file_utils.Max_path] dir;
     if (!file_utils.make_path_ext(dir, elemsof(dir), output_dir, Dir, "/")) {
-        console.error("cannot launch C compilation: %s", string.strerror(errno));
+        console.error("cannot launch C compilation: %s", std.strerror(std.errno));
         return;
     }
 

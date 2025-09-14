@@ -19,7 +19,7 @@ import ir local;
 import ir_rev_list local;
 import ir_slot_collector local;
 
-import stdio local;
+import std local;
 
 fn void Tools.createSSA(Tools* t) {
     FunctionInfo* fi = t.fi;

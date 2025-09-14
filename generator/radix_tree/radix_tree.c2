@@ -17,8 +17,7 @@ module radix_tree;
 
 import linked_list;
 
-import stdlib local;
-import string local;
+import std local;
 
 /*
     valgrind --leak-check=full -s  ./output/tree/tree

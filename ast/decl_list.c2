@@ -15,8 +15,7 @@
 
 module ast;
 
-import string local;
-import stdlib local;
+import std local;
 
 public type DeclList struct {
     u32 count;

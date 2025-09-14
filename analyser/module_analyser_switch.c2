@@ -21,7 +21,8 @@ import init_checker;
 import src_loc local;
 import scope;
 import string_buffer;
-import string;
+
+import std;
 
 fn void Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     SwitchStmt* sw = (SwitchStmt*)s;
@@ -294,7 +295,7 @@ fn bool Analyser.analyseCaseExpr(Analyser* ma,
                     ma.error(cond.getLoc(), "string switch case string is loo long (max 255 bytes)");
                     return false;
                 }
-                if (string.memchr(lit.getText(), 0, len)) {
+                if (std.memchr(lit.getText(), 0, len)) {
                     ma.error(cond.getLoc(), "case string value has embedded null byte");
                     return false;
                 }

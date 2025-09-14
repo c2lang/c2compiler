@@ -16,8 +16,9 @@
 module printf_utils;
 
 import ast local;
-import ctype;
 import src_loc local;
+
+import std;
 
 public fn const char* get_format(Expr* format, SrcLoc* format_loc) {
     const char* format_text = nil;
@@ -100,7 +101,7 @@ fn Specifier getSpecifier(const char* format, u32* len, i32 *pstars, char* c) {
         stars++;
         cp++;
     } else {
-        while (ctype.isdigit(*cp)) {
+        while (std.isdigit(*cp)) {
             cp++;
         }
     }
@@ -110,7 +111,7 @@ fn Specifier getSpecifier(const char* format, u32* len, i32 *pstars, char* c) {
             stars++;
             cp++;
         } else {
-            while (ctype.isdigit(*cp)) {
+            while (std.isdigit(*cp)) {
                 cp++;
             }
         }

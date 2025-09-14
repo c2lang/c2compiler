@@ -18,7 +18,8 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
-import string;
+
+import std;
 
 type EnumTypeDeclBits struct {
     u32 : NumDeclBits;
@@ -61,7 +62,7 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
         assert(num_constants == 0);
         d.incr_constants[0] = nil;
     } else {
-        string.memcpy(d.constants, constants, num_constants * sizeof(EnumConstantDecl*));
+        std.memcpy(d.constants, constants, num_constants * sizeof(EnumConstantDecl*));
 
         for (u32 i=0; i<num_constants; i++) {
             constants[i].asDecl().setType(qt);
@@ -76,7 +77,7 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
 /*
 public fn void EnumTypeDecl.setIncrMembers(EnumTypeDecl* d, Decl** constants, u32 num_constants) {
     d.base.enumTypeDeclBits.num_constants = num_constants;
-    string.memcpy(d.constants, constants, num_constants * sizeof(EnumConstantDecl*));
+    std.memcpy(d.constants, constants, num_constants * sizeof(EnumConstantDecl*));
 }
 */
 
@@ -139,7 +140,7 @@ public fn EnumConstantDecl* EnumTypeDecl.getConstant(const EnumTypeDecl* d, u32 
 public fn void EnumTypeDecl.setEnumFunctions(EnumTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u32 count) {
     const u32 size = count * sizeof(FunctionDecl*);
     FunctionDecl** dest = c.alloc(size);
-    string.memcpy(dest, funcs, size);
+    std.memcpy(dest, funcs, size);
     d.enum_functions = dest;
     d.num_enum_functions = count;
 }

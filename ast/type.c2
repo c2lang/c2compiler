@@ -17,7 +17,8 @@ module ast;
 
 import color;
 import string_buffer;
-import stdio;
+
+import std;
 
 public type TypeKind enum u8 {
     Builtin,
@@ -112,7 +113,7 @@ public fn void Type.dump(const Type* t) @(unused) {
     string_buffer.Buf* out = string_buffer.create(256, useColor(), 2);
     t.print(out);
     out.color(color.Normal);
-    stdio.printf("%s\n", out.data());
+    std.printf("%s\n", out.data());
     out.free();
 }
 
@@ -129,8 +130,8 @@ fn u32 Type.getAlignment(const Type* t) {
         return elem.getAlignment();
     case Struct:
         const StructType* s = (StructType*)t;
-        const StructTypeDecl* std = s.getDecl();
-        return std.getAlignment();
+        const StructTypeDecl* st = s.getDecl();
+        return st.getAlignment();
     case Enum:
         const EnumType * e = (EnumType*)t;
         const EnumTypeDecl* etd = e.getDecl();
@@ -166,8 +167,8 @@ fn u32 Type.getSize(const Type* t, bool deref_ptr) {
         return at.getSize() * elem.getSize(false);
     case Struct:
         const StructType* s = (StructType*)t;
-        const StructTypeDecl* std = s.getDecl();
-        return std.getSize();
+        const StructTypeDecl* st = s.getDecl();
+        return st.getSize();
     case Enum:
         const EnumType * e = (EnumType*)t;
         const EnumTypeDecl* etd = e.getDecl();

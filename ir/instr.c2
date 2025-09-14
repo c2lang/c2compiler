@@ -15,7 +15,7 @@
 
 module ir;
 
-import string local;
+import std local;
 
 public type InstrBits struct {
     InstrKind kind : 8;

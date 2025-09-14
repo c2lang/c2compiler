@@ -15,8 +15,7 @@
 
 module ir;
 
-import string local;
-import stdlib;
+import std;
 
 public type BlockList struct {
     u32 count;
@@ -31,15 +30,15 @@ public fn void BlockList.init(BlockList* l, u32 initial_size) {
 }
 
 public fn void BlockList.free(BlockList* l) {
-    if (l.blocks) stdlib.free(l.blocks);
+    if (l.blocks) std.free(l.blocks);
 }
 
 fn void BlockList.resize(BlockList* l, u32 cap) {
     l.capacity = cap;
-    Block* blocks2 = stdlib.calloc(l.capacity, sizeof(Block));
+    Block* blocks2 = std.calloc(l.capacity, sizeof(Block));
     if (l.count > 1) {
-        memcpy(blocks2, l.blocks, l.count * sizeof(Block));
-        stdlib.free(l.blocks);
+        std.memcpy(blocks2, l.blocks, l.count * sizeof(Block));
+        std.free(l.blocks);
     }
     l.blocks = blocks2;
 }
@@ -59,7 +58,7 @@ public fn BlockId BlockList.copy(BlockList* l, const Block* b2) {
 
     BlockId idx = l.count;
     Block* b = &l.blocks[idx];
-    memcpy(b, b2, sizeof(Block));
+    std.memcpy(b, b2, sizeof(Block));
     l.count++;
     return idx;
 }
@@ -74,7 +73,7 @@ public fn void BlockList.merge(BlockList* l1, const BlockList* l2) {
     u32 total = l1.count + l2.count;
     if (total > l1.capacity) l1.resize(total);
 
-    memcpy(&l1.blocks[l1.count], l2.blocks, l2.count * sizeof(Block));
+    std.memcpy(&l1.blocks[l1.count], l2.blocks, l2.count * sizeof(Block));
     l1.count = total;
 }
 

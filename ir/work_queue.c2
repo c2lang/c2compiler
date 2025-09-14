@@ -17,15 +17,13 @@ module ir_context;
 
 import ir;
 
-import stdlib local;
-import string local;
-import unistd;
+import std local;
 import pthread;
 
 const u32 MAX_THREADS = 32;
 
 fn u32 online_cpus() {
-    i64 ncpus = unistd.sysconf(unistd._SC_NPROCESSORS_ONLN);
+    i64 ncpus = sysconf(_SC_NPROCESSORS_ONLN);
     if (ncpus > 8) return 8;    // Hack around Ryzen virtual cores. Using only physical is faster
     if (ncpus > 0) return cast<u32>(ncpus);
     return 1;
@@ -45,7 +43,7 @@ type WorkQueue struct {
 // TEMP to workaround include bug in bootstrap
 #if 1
 fn WorkQueue* WorkQueue.create() {
-    WorkQueue* q = stdlib.malloc(sizeof(WorkQueue));
+    WorkQueue* q = std.malloc(sizeof(WorkQueue));
     memset(q, 0, sizeof(WorkQueue));
     q.lock.init(nil);
     q.resize(64);
@@ -53,8 +51,8 @@ fn WorkQueue* WorkQueue.create() {
 }
 
 fn void WorkQueue.free(WorkQueue* q) {
-    stdlib.free(q.funcs);
-    stdlib.free(q);
+    std.free(q.funcs);
+    std.free(q);
 }
 #else
 fn WorkQueue* WorkQueue.init(WorkQueue* q) {
@@ -65,7 +63,7 @@ fn WorkQueue* WorkQueue.init(WorkQueue* q) {
 }
 
 fn void WorkQueue.free(WorkQueue* q) {
-    stdlib.free(q.funcs);
+    std.free(q.funcs);
 }
 #endif
 
@@ -84,7 +82,7 @@ fn void WorkQueue.resize(WorkQueue* q, u32 capacity) {
     ir.FunctionInfo** fns = malloc(capacity * sizeof(ir.FunctionInfo*));
     if (q.count) {
         memcpy(fns, q.funcs, q.count * sizeof(ir.FunctionInfo*));
-        stdlib.free(q.funcs);
+        std.free(q.funcs);
     }
 
     q.funcs = fns;

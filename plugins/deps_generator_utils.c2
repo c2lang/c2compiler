@@ -16,7 +16,8 @@
 module deps_generator_utils;
 
 import ast local;
-import stdio;
+
+import std;
 
 public fn const char* getPrefixedName(const Decl* d) {
     switch (d.getKind()) {
@@ -24,7 +25,7 @@ public fn const char* getPrefixedName(const Decl* d) {
         const FunctionDecl* fd = cast<FunctionDecl*>(d);
         if (fd.hasPrefix()) {
             local char[64] fullname;
-            stdio.sprintf(fullname, "%s.%s", fd.getPrefixName(), d.getName());
+            std.sprintf(fullname, "%s.%s", fd.getPrefixName(), d.getName());
             return fullname;
         }
         break;
@@ -54,8 +55,8 @@ public fn bool isGlobal(const Decl* d) @(unused) {
     case Import:
         return false;
     case StructType:
-        const StructTypeDecl* std = cast<StructTypeDecl*>(d);
-        return std.isGlobal();
+        const StructTypeDecl* sd = cast<StructTypeDecl*>(d);
+        return sd.isGlobal();
     case EnumType:
         break;
     case EnumConstant:

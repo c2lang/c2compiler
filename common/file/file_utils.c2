@@ -15,10 +15,7 @@
 
 module file_utils;
 
-import c_errno local;
-import stdlib local;
-import string local;
-import sys_stat local;
+import std local;
 
 public const u32 Max_path = 512;
 
@@ -149,9 +146,9 @@ public fn bool is_file(const char* filename) @(unused) {
     return !stat(filename, &statbuf) && (statbuf.st_mode & S_IFMT) == S_IFREG;
 }
 
-public fn bool is_dir(const char* dirname) @(unused) {
+public fn bool is_dir(const char* dir_name) @(unused) {
     Stat statbuf;
-    return !stat(dirname, &statbuf) && (statbuf.st_mode & S_IFMT) == S_IFDIR;
+    return !stat(dir_name, &statbuf) && (statbuf.st_mode & S_IFMT) == S_IFDIR;
 }
 
 public type File struct @(unused) {
@@ -187,7 +184,7 @@ public fn bool File.init_ext(File* file, const char* dir, const char* filename, 
 
 public fn void File.close(File* file) @(unused) {
     if (file.contents) {
-        stdlib.free(file.contents);
+        free(file.contents);
         file.contents = nil;
     }
 }

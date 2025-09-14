@@ -23,9 +23,7 @@ import string_buffer;
 import string_list;
 import string_pool;
 
-import stdlib local;
-import string;
-import stdio local;
+import std local;
 
 /*
     Represents a library or the main-component
@@ -109,8 +107,8 @@ public fn u32 Component.getNameIdx(const Component* c) {
     return c.name_idx;
 }
 
-public fn void Component.setPath(Component* c, u32 dirname) {
-    c.dirname_idx = dirname;
+public fn void Component.setPath(Component* c, u32 dir_name) {
+    c.dirname_idx = dir_name;
 }
 
 public fn const char* Component.getPath(const Component* c) {
@@ -194,7 +192,7 @@ public fn void Component.print(const Component* c, bool show_funcs) {
     }
 
     out.color(color.Normal);
-    stdio.puts(out.data());
+    std.puts(out.data());
     out.free();
 }
 
@@ -211,7 +209,7 @@ public fn void Component.printModules(const Component* c) {
         out.print("   %s\n", m.getName());
     }
     out.color(color.Normal);
-    stdio.puts(out.data());
+    std.puts(out.data());
     out.free();
 }
 
@@ -228,7 +226,7 @@ public fn void Component.printSymbols(const Component* c, bool print_external) {
         table.print(out);
     }
     out.color(color.Normal);
-    stdio.puts(out.data());
+    std.puts(out.data());
     out.free();
 }
 
@@ -265,7 +263,7 @@ fn void List.resize(List* l, u32 capacity) {
     l.capacity = capacity;
     Component** comps2 = malloc(l.capacity * sizeof(Component*));
     if (l.count) {
-        string.memcpy(comps2, l.components, l.count * sizeof(Component*));
+        memcpy(comps2, l.components, l.count * sizeof(Component*));
         free(l.components);
     }
     l.components = comps2;

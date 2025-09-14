@@ -16,7 +16,8 @@
 module ir;
 
 import constants;
-import stdlib;
+
+import std;
 
 public type FunctionInfo struct {
     BlockList blocks;
@@ -31,7 +32,7 @@ public type FunctionInfo struct {
 static_assert(80, sizeof(FunctionInfo));
 
 public fn FunctionInfo* FunctionInfo.create(u32 num_blks, u32 num_instr, u32 num_refs) {
-    FunctionInfo* fi = stdlib.malloc(sizeof(FunctionInfo));
+    FunctionInfo* fi = std.malloc(sizeof(FunctionInfo));
     fi.blocks.init(num_blks);
     fi.instructions.init(num_instr);
     fi.cases.init();
@@ -45,7 +46,7 @@ public fn void FunctionInfo.free(FunctionInfo* fi) {
     fi.cases.free();
     fi.instructions.free();
     fi.blocks.free();
-    stdlib.free(fi);
+    std.free(fi);
 }
 
 // Note: must be called before addArg

@@ -15,7 +15,7 @@
 
 module ir;
 
-import stdio;
+import std;
 
 public type RefKind enum u8 {
     None,
@@ -120,7 +120,7 @@ public fn const char* Ref.str(const Ref* r) @(unused) {
     local u32 idx;
     idx = (idx+1) % 4;
     char* tmp = buf[idx++];
-    stdio.sprintf(tmp, "%s %d", r.getKind().str(), r.value);
+    std.sprintf(tmp, "%s %d", r.getKind().str(), r.value);
     return tmp;
 }
 

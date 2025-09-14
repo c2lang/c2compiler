@@ -31,8 +31,7 @@ import string_pool;
 import target_info;
 import value_maplist;
 
-import c_errno local;
-import string;
+import std;
 
 type JumpScope struct {
     u32 break_block;    // 0 means invalid (assert)
@@ -70,7 +69,7 @@ fn void Generator.init(Generator* gen,
                        bool enable_asserts,
                        bool print,
                        bool print_all) {
-    string.memset(gen, 0, sizeof(Generator));
+    std.memset(gen, 0, sizeof(Generator));
     gen.ctx = ir_context.create(print_all);
     gen.labels.init();
     gen.target = target;
@@ -217,8 +216,8 @@ fn ir.Type Generator.type2irtype(Generator* gen, QualType qt) {
         return gen.type2irtype(at.getElemType());
     case Struct:
         StructType* st = canon.getStructType();
-        const StructTypeDecl* std = st.getDecl();
-        u32 align = std.getAlignment();
+        const StructTypeDecl* sd = st.getDecl();
+        u32 align = sd.getAlignment();
         switch (align) {
         case 1:
             return ir.Type.I8;
@@ -354,11 +353,11 @@ fn void Generator.emitGlobalStructInit(Generator* gen, const Expr* e) {
 
     QualType qt = e.getType();
     StructType* st = qt.getStructType();
-    StructTypeDecl* std = st.getDecl();
+    StructTypeDecl* sd = st.getDecl();
 
     if (ile.hasDesignators()) {
         FieldStructLayouter layouter;
-        layouter.init(gen, std.getSize(), std.getDesigMemberCount());
+        layouter.init(gen, sd.getSize(), sd.getDesigMemberCount());
         for (u32 i=0; i<num_values; i++) {
             FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(values[i]);
             const FieldInitField* fif = fdi.getMemberInfo();
@@ -369,7 +368,7 @@ fn void Generator.emitGlobalStructInit(Generator* gen, const Expr* e) {
         layouter.finalize();
     } else {
         BasicStructLayouter layouter;
-        layouter.init(gen, std.getLayout());
+        layouter.init(gen, sd.getLayout());
         for (u32 i=0; i<num_values; i++) layouter.add(i, values[i]);
         layouter.finalize();
     }
@@ -444,7 +443,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     Decl* d = cast<Decl*>(fd);
     gen.cur_function = fd;
 
-    bool has_prefix = !d.isPublic() || (string.strcmp(d.getName(), "main") != 0);
+    bool has_prefix = !d.isPublic() || (std.strcmp(d.getName(), "main") != 0);
 
     u32 gen_idx = d.getGenIdx();
     if (!gen_idx) {
@@ -567,7 +566,7 @@ public fn void generate(const char* target,
     char[file_utils.Max_path] ir_dir;
     if (!file_utils.make_path(ir_dir, elemsof(ir_dir), output_dir, "ir")
     ||  file_utils.create_path(ir_dir)) {
-        console.error("cannot create directory %s: %s", ir_dir, string.strerror(errno));
+        console.error("cannot create directory %s: %s", ir_dir, std.strerror(std.errno));
         return;
     }
 
@@ -598,9 +597,9 @@ fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
     u32 width;
     u32 align;
     if (s) {
-        const StructTypeDecl* std = s.getDecl();
-        width = std.getSize();
-        align = std.getAlignment();
+        const StructTypeDecl* sd = s.getDecl();
+        width = sd.getSize();
+        align = sd.getAlignment();
     } else {
         width = qt.getAlignment();
         align = width;

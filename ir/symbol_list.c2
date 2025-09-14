@@ -17,8 +17,7 @@ module ir_context;
 
 import ir local;
 
-import string local;
-import stdlib;
+import std local;
 
 public type SymbolId u32;
 
@@ -55,14 +54,14 @@ fn void SymbolList.init(SymbolList* l, u32 initial_size) {
 }
 
 fn void SymbolList.free(SymbolList* l) {
-    if (l.symbols) stdlib.free(l.symbols);
+    if (l.symbols) free(l.symbols);
 }
 
 fn void SymbolList.resize(SymbolList* l, u32 cap) {
     l.capacity = cap;
-    Symbol* symbols2 = stdlib.calloc(l.capacity, sizeof(Symbol));
+    Symbol* symbols2 = calloc(l.capacity, sizeof(Symbol));
     if (l.count > 1) memcpy(symbols2, l.symbols, l.count * sizeof(Symbol));
-    if (l.symbols) stdlib.free(l.symbols);
+    if (l.symbols) free(l.symbols);
     l.symbols = symbols2;
 }
 

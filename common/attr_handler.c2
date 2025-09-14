@@ -19,8 +19,7 @@ import ast;
 import attr;
 import diagnostics;
 
-import stdlib;
-import string;
+import std;
 
 type Entry struct {
     u32 name;
@@ -37,14 +36,14 @@ public type Handler struct @(opaque) {
 }
 
 public fn Handler* create(diagnostics.Diags* diags) {
-    Handler* h = stdlib.calloc(1, sizeof(Handler));
+    Handler* h = std.calloc(1, sizeof(Handler));
     h.diags = diags;
     return h;
 }
 
 public fn void Handler.free(Handler* h) {
-    if (h.entries) stdlib.free(h.entries);
-    stdlib.free(h);
+    if (h.entries) std.free(h.entries);
+    std.free(h);
 }
 
 public fn bool Handler.register(Handler* h, u32 name, ast.AttrHandlerFn func, void* arg) {
@@ -52,10 +51,10 @@ public fn bool Handler.register(Handler* h, u32 name, ast.AttrHandlerFn func, vo
 
     if (h.count == h.capacity) {
         h.capacity += 2;
-        Entry* entries2 = stdlib.malloc(h.capacity * sizeof(Entry));
+        Entry* entries2 = std.malloc(h.capacity * sizeof(Entry));
         if (h.count) {
-            string.memcpy(entries2, h.entries, h.count * sizeof(Entry));
-            stdlib.free(h.entries);
+            std.memcpy(entries2, h.entries, h.count * sizeof(Entry));
+            std.free(h.entries);
         }
         h.entries = entries2;
     }

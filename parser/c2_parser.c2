@@ -35,11 +35,7 @@ import token local;
 import utils;
 #endif
 
-import stdarg local;
-import stdlib local;
-import csetjmp local;
-import ctype local;
-import stdio local;
+import std local;
 
 const u32 NumStmtLists = 16;    // max used for c2c is 8
 
@@ -58,7 +54,6 @@ public type Parser struct @(opaque) {
     bool is_interface;
     u32 va_list_idx;
     u32 varargs_idx;
-    u32 stdarg_idx;
 
     stmt_list.List* stmt_lists;
     u32 stmt_list_count;
@@ -83,7 +78,6 @@ public fn Parser* create(SourceMgr* sm,
     p.kwinfo = kwinfo;
     p.va_list_idx = pool.addStr("va_list", true);
     p.varargs_idx = pool.addStr("varargs", true);
-    p.stdarg_idx = pool.addStr("stdarg", true);
 
     // create a stack of stmt_lists to re-use (resize stack if needed)
     p.stmt_lists = malloc(NumStmtLists * sizeof(stmt_list.List));
@@ -235,7 +229,7 @@ fn void Parser.parseModule(Parser* p, bool is_interface, bool is_generated) {
         p.expectIdentifier();
 
     const char*modname = p.pool.idx2str(p.tok.name_idx);
-    if (!ctype.islower(modname[0])) {
+    if (!std.islower(modname[0])) {
         p.error("a module name must start with a lower case character");
     }
     p.builder.actOnModule(p.tok.name_idx,
@@ -279,10 +273,7 @@ fn void Parser.parseImports(Parser* p) {
         }
         p.expectAndConsume(Kind.Semicolon);
 
-        if (mod_name != p.stdarg_idx) {
-            // ignore import stdarg: vararg is imported implicitly from c2 library
-            p.builder.actOnImport(mod_name, mod_loc, alias_name, alias_loc, islocal);
-        }
+        p.builder.actOnImport(mod_name, mod_loc, alias_name, alias_loc, islocal);
     }
 }
 

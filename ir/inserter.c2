@@ -17,9 +17,7 @@ module ir_inserter;
 
 import ir local;
 
-import stdlib;
-import string;
-import stdio local;
+import std local;
 
 public type InstrInsertion struct {
     u32 location;   // instr to insert before
@@ -54,15 +52,15 @@ public type Inserter struct {
 static_assert(72, sizeof(Inserter));
 
 public fn void Inserter.create(Inserter* ins) {
-    string.memset(ins, 0, sizeof(Inserter));
+    memset(ins, 0, sizeof(Inserter));
     ins.resize(16);
     ins.new_blocks.init(4);
 }
 
 public fn void Inserter.free(Inserter* ins) {
     ins.new_blocks.free();
-    stdlib.free(ins.ins);
-    stdlib.free(ins.split_edges); // may be nil
+    free(ins.ins);
+    free(ins.split_edges); // may be nil
 }
 
 public fn void Inserter.clear(Inserter* ins, u32 num_blocks, u32 num_instr) {
@@ -78,10 +76,10 @@ public fn void Inserter.clear(Inserter* ins, u32 num_blocks, u32 num_instr) {
 
 fn void Inserter.resize(Inserter* ins, u32 capacity) {
     ins.capacity = capacity;
-    InstrInsertion* ins2 = stdlib.malloc(ins.capacity * sizeof(InstrInsertion));
+    InstrInsertion* ins2 = malloc(ins.capacity * sizeof(InstrInsertion));
     if (ins.count) {
-        string.memcpy(ins2, ins.ins, ins.count * sizeof(InstrInsertion));
-        stdlib.free(ins.ins);
+        memcpy(ins2, ins.ins, ins.count * sizeof(InstrInsertion));
+        free(ins.ins);
     }
     ins.ins = ins2;
 }
@@ -158,10 +156,10 @@ public fn u32 Inserter.findSplitEdge(const Inserter* ins, u32 src, u32 dest) {
 public fn void Inserter.addSplitEdge(Inserter* ins, u32 src, u32 dest, u32 blk_id) {
     if (ins.split_count == ins.split_cap) {
         ins.split_cap += 2;
-        SplitEdge* split_edges2 = stdlib.malloc(ins.split_cap * sizeof(SplitEdge));
+        SplitEdge* split_edges2 = malloc(ins.split_cap * sizeof(SplitEdge));
         if (ins.split_count) {
-            string.memcpy(split_edges2, ins.split_edges, ins.split_count * sizeof(SplitEdge));
-            stdlib.free(ins.split_edges);
+            memcpy(split_edges2, ins.split_edges, ins.split_count * sizeof(SplitEdge));
+            free(ins.split_edges);
         }
         ins.split_edges = split_edges2;
     }

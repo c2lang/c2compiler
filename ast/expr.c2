@@ -17,7 +17,8 @@ module ast;
 
 import src_loc local;
 import string_buffer;
-import stdio;
+
+import std;
 
 public type ExprKind enum u8 {
     IntegerLiteral,
@@ -488,7 +489,7 @@ public fn void Expr.dump(const Expr* e) {
     string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
     e.print(out, 0);
     out.color(col_Normal);
-    stdio.puts(out.data());
+    std.puts(out.data());
     out.free();
 }
 

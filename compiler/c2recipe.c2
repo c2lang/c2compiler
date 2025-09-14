@@ -20,8 +20,7 @@ import source_mgr;
 import src_loc local;
 import build_target;
 
-import stdlib;
-import string;
+import std;
 
 public type Recipe struct @(opaque) {
     string_pool.Pool* pool;
@@ -35,11 +34,11 @@ public type Recipe struct @(opaque) {
 }
 
 public fn Recipe* create(source_mgr.SourceMgr* sm, string_pool.Pool* pool) {
-    Recipe* r = stdlib.calloc(1, sizeof(Recipe));
+    Recipe* r = std.calloc(1, sizeof(Recipe));
     r.sm = sm;
     r.pool = pool;
     r.max_targets = 4;
-    r.targets = stdlib.calloc(r.max_targets, sizeof(build_target.Target*));
+    r.targets = std.calloc(r.max_targets, sizeof(build_target.Target*));
     r.plugins.init();
     return r;
 }
@@ -48,9 +47,9 @@ public fn void Recipe.free(Recipe* r) {
     for (u32 i=0; i<r.num_targets; i++) {
         r.targets[i].free();
     }
-    stdlib.free(r.targets);
+    std.free(r.targets);
     r.plugins.free();
-    stdlib.free(r);
+    std.free(r);
 }
 
 // always global
@@ -61,9 +60,9 @@ fn void Recipe.addPlugin(Recipe* r, u32 name, u32 options, SrcLoc loc) {
 public fn build_target.Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_target.Kind kind) {
     if (r.num_targets == r.max_targets) {
         r.max_targets *= 2;
-        build_target.Target** targets2 = stdlib.malloc(r.max_targets * sizeof(build_target.Target*));
-        string.memcpy(targets2, r.targets, r.num_targets * sizeof(build_target.Target*));
-        stdlib.free(r.targets);
+        build_target.Target** targets2 = std.malloc(r.max_targets * sizeof(build_target.Target*));
+        std.memcpy(targets2, r.targets, r.num_targets * sizeof(build_target.Target*));
+        std.free(r.targets);
         r.targets = targets2;
     }
     build_target.Target* t = build_target.create(name, loc, kind, r.pool);

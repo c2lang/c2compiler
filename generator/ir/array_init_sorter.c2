@@ -17,7 +17,8 @@ module array_init_sorter;
 
 import ast;
 
-import stdlib;
+import std;
+
 // TODO make 2 arrays, better for cache
 public type InitEntry struct {
     u32 index;
@@ -37,12 +38,12 @@ public fn Sorter create(u32 allocate, u32 array_size, u32 elem_size) {
     Sorter s = {}
     s.array_size = array_size;
     s.elem_size = elem_size;
-    s.entries = stdlib.malloc(allocate * sizeof(InitEntry));
+    s.entries = std.malloc(allocate * sizeof(InitEntry));
     return s;
 }
 
 public fn void Sorter.free(Sorter* s) {
-    stdlib.free(s.entries);
+    std.free(s.entries);
 }
 
 public fn void Sorter.addAt(Sorter* s, u32 index, const ast.Expr* e) {

@@ -15,7 +15,7 @@
 
 module dsm_sorter;
 
-import stdlib;
+import std;
 
 public type Sorter struct {
     u8* array;
@@ -23,13 +23,13 @@ public type Sorter struct {
 }
 
 public fn void Sorter.init(Sorter* s, u32 count) {
-    s.array = stdlib.calloc(1, count * (count + 2));  // one extra line for todo, one for results
+    s.array = std.calloc(1, count * (count + 2));  // one extra line for todo, one for results
     s.count = count;
     assert(count <= 256); // otherwise wont fit in u8 result
 
 }
 public fn void Sorter.free(Sorter* s) {
-    stdlib.free(s.array);
+    std.free(s.array);
 }
 
 public fn void Sorter.add_dep(Sorter* s, u32 src, u32 dst) {

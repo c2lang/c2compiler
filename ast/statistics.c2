@@ -16,26 +16,23 @@
 module ast;
 
 #if AstStatistics
-import string;
-import stdio local;
+import std local;
 
-type Stat struct {
+type StatCount struct {
     u32 count;
     u32 size;
 }
 
 type Stats struct {
-    Stat[elemsof(TypeKind)] types;
-    Stat[elemsof(ExprKind)] exprs;
-    Stat[elemsof(StmtKind)] stmts;
-    Stat[elemsof(DeclKind)] decls;
-    Stat[3] others; // 0=ArrayValue, 1=StaticAssert, 2=SwitchCase
-    //Stat arrayValues;
-    //Stat staticAsserts;
+    StatCount[elemsof(TypeKind)] types;
+    StatCount[elemsof(ExprKind)] exprs;
+    StatCount[elemsof(StmtKind)] stmts;
+    StatCount[elemsof(DeclKind)] decls;
+    StatCount[3] others; // 0=ArrayValue, 1=StatCounticAssert, 2=SwitchCase
 }
 
 fn void Stats.reset(Stats* s) {
-    string.memset(s, 0, sizeof(Stats));
+    std.memset(s, 0, sizeof(Stats));
 }
 
 fn void Stats.addType(TypeKind kind, u32 size) {
@@ -83,7 +80,7 @@ fn void Stats.dump(const Stats* s) {
     u32 typesCount = 0;
     //for (u32 i = TypeKind.min; i <= TypeKind.max; i++) {
     for (u32 i=enum_min(TypeKind); i<=enum_max(TypeKind); i++) {
-        const Stat* ss = &s.types[i];
+        const StatCount* ss = &s.types[i];
         printf("  %20s  %6d  %7d\n", typeKind_names[i], ss.count, ss.size);
         typesCount += ss.count;
         typesTotal += ss.size;
@@ -95,7 +92,7 @@ fn void Stats.dump(const Stats* s) {
     u32 exprCount = 0;
     //for (u32 i = ExprKind.min; i <= ExprKind.max; i++) {
     for (u32 i=enum_min(ExprKind); i<=enum_max(ExprKind); i++) {
-        const Stat* ss = &s.exprs[i];
+        const StatCount* ss = &s.exprs[i];
         printf("  %20s  %6d  %7d\n", exprKind_names[i], ss.count, ss.size);
         exprCount += ss.count;
         exprTotal += ss.size;
@@ -107,7 +104,7 @@ fn void Stats.dump(const Stats* s) {
     u32 stmtCount = 0;
     //for (u32 i = StmtKind.min; i <= StmtKind.max; i++) {
     for (u32 i=enum_min(StmtKind); i<=enum_max(StmtKind); i++) {
-        const Stat* ss = &s.stmts[i];
+        const StatCount* ss = &s.stmts[i];
         printf("  %20s  %6d  %7d\n", stmtKind_names[i], ss.count, ss.size);
         stmtCount += ss.count;
         stmtTotal += ss.size;
@@ -119,7 +116,7 @@ fn void Stats.dump(const Stats* s) {
     u32 declCount = 0;
     //for (u32 i = DeclKind.min; i <= DeclKind.max; i++) {
     for (u32 i=enum_min(DeclKind); i<=enum_max(DeclKind); i++) {
-        const Stat* ss = &s.decls[i];
+        const StatCount* ss = &s.decls[i];
         printf("  %20s  %6d  %7d\n", declKind_names[i], ss.count, ss.size);
         declCount += ss.count;
         declTotal += ss.size;
@@ -130,7 +127,7 @@ fn void Stats.dump(const Stats* s) {
     u32 otherTotal = 0;
     u32 otherCount = 0;
     for (u32 i=0; i<3; i++) {
-        const Stat* ss = &s.others[i];
+        const StatCount* ss = &s.others[i];
         printf("  %20s  %6d  %7d\n", other_names[i], ss.count, ss.size);
         otherCount += ss.count;
         otherTotal += ss.size;

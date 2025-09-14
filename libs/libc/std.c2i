@@ -1,0 +1,2406 @@
+// ---------- c_errno.c2i -------------
+module std;
+
+import c2 local;
+
+// NOTE: errno isn't working in case of REENTRANT LIBC, where errno is defined as
+// #define errno *errno_location()
+// TODO: define variables with functional getter/setter/getlvalue
+
+#if SYSTEM_LINUX
+fn c_int* __errno_location();
+fn c_int* errno2() @(cname="__errno_location");
+c_int errno @(cname="(*__errno_location())", cdef="int* __errno_location(void)");
+#endif
+#if SYSTEM_DARWIN
+fn c_int* __error();
+fn c_int* errno2() @(cname="__error");
+c_int errno @(cname="(*__error())", cdef="int* __error(void)");
+#endif
+#if SYSTEM_FREEBSD
+fn c_int* __error();
+fn c_int* errno2() @(cname="__error");
+c_int errno @(cname="(*__error())", cdef="int* __error(void)");
+#endif
+#if SYSTEM_OPENBSD
+fn c_int* __errno();
+fn c_int* errno2() @(cname="__errno");
+c_int errno @(cname="(*__errno())", cdef="int* __errno(void)");
+#endif
+
+#if SYSTEM_LINUX
+const i32 EPERM        = 1;  /* Operation not permitted */
+const i32 ENOENT       = 2;  /* No such file or directory */
+const i32 ESRCH        = 3;  /* No such process */
+const i32 EINTR        = 4;  /* Interrupted system call */
+const i32 EIO          = 5;  /* I/O error */
+const i32 ENXIO        = 6;  /* No such device or address */
+const i32 E2BIG        = 7;  /* Argument list too long */
+const i32 ENOEXEC      = 8;  /* Exec format error */
+const i32 EBADF        = 9;  /* Bad file number */
+const i32 ECHILD      = 10;  /* No child processes */
+const i32 EAGAIN      = 11;  /* Try again */
+const i32 ENOMEM      = 12;  /* Out of memory */
+const i32 EACCES      = 13;  /* Permission denied */
+const i32 EFAULT      = 14;  /* Bad address */
+const i32 ENOTBLK     = 15;  /* Block device required */
+const i32 EBUSY       = 16;  /* Device or resource busy */
+const i32 EEXIST      = 17;  /* File exists */
+const i32 EXDEV       = 18;  /* Cross-device link */
+const i32 ENODEV      = 19;  /* No such device */
+const i32 ENOTDIR     = 20;  /* Not a directory */
+const i32 EISDIR      = 21;  /* Is a directory */
+const i32 EINVAL      = 22;  /* Invalid argument */
+const i32 ENFILE      = 23;  /* File table overflow */
+const i32 EMFILE      = 24;  /* Too many open files */
+const i32 ENOTTY      = 25;  /* Not a typewriter */
+const i32 ETXTBSY     = 26;  /* Text file busy */
+const i32 EFBIG       = 27;  /* File too large */
+const i32 ENOSPC      = 28;  /* No space left on device */
+const i32 ESPIPE      = 29;  /* Illegal seek */
+const i32 EROFS       = 30;  /* Read-only file system */
+const i32 EMLINK      = 31;  /* Too many links */
+const i32 EPIPE       = 32;  /* Broken pipe */
+const i32 EDOM        = 33;  /* Math argument out of domain of func */
+const i32 ERANGE      = 34;  /* Math result not representable */
+const i32 ENAMETOOLONG = 36;  /* File name too long */
+
+const i32 EALREADY    = 114; /* Operation already in progress */
+const i32 EINPROGRESS = 115; /* Operation now in progress */
+const i32 ESTALE      = 116; /* Stale file handle */
+#else
+// same for Darwin, FreeBSD and OpenBSD
+const i32 EPERM        =   1;  /* Operation not permitted */
+const i32 ENOENT       =   2;  /* No such file or directory */
+const i32 ESRCH        =   3;  /* No such process */
+const i32 EINTR        =   4;  /* Interrupted system call */
+const i32 EIO          =   5;  /* I/O error */
+const i32 ENXIO        =   6;  /* No such device or address */
+const i32 E2BIG        =   7;  /* Argument list too long */
+const i32 ENOEXEC      =   8;  /* Exec format error */
+const i32 EBADF        =   9;  /* Bad file number */
+const i32 ECHILD       =  10;  /* No child processes */
+const i32 EAGAIN       =  35;  /* Try again */
+const i32 ENOMEM       =  12;  /* Out of memory */
+const i32 EACCES       =  13;  /* Permission denied */
+const i32 EFAULT       =  14;  /* Bad address */
+const i32 ENOTBLK      =  15;  /* Block device required */
+const i32 EBUSY        =  16;  /* Device or resource busy */
+const i32 EEXIST       =  17;  /* File exists */
+const i32 EXDEV        =  18;  /* Cross-device link */
+const i32 ENODEV       =  19;  /* No such device */
+const i32 ENOTDIR      =  20;  /* Not a directory */
+const i32 EISDIR       =  21;  /* Is a directory */
+const i32 EINVAL       =  22;  /* Invalid argument */
+const i32 ENFILE       =  23;  /* File table overflow */
+const i32 EMFILE       =  24;  /* Too many open files */
+const i32 ENOTTY       =  25;  /* Not a typewriter */
+const i32 ETXTBSY      =  26;  /* Text file busy */
+const i32 EFBIG        =  27;  /* File too large */
+const i32 ENOSPC       =  28;  /* No space left on device */
+const i32 ESPIPE       =  29;  /* Illegal seek */
+const i32 EROFS        =  30;  /* Read-only file system */
+const i32 EMLINK       =  31;  /* Too many links */
+const i32 EPIPE        =  32;  /* Broken pipe */
+const i32 EDOM         =  33;  /* Math argument out of domain of func */
+const i32 ERANGE       =  34;  /* Math result not representable */
+const i32 EALREADY     =  37;  /* Operation already in progress */
+const i32 EINPROGRESS  =  36;  /* Operation now in progress */
+const i32 ENAMETOOLONG =  63;  /* File name too long */
+const i32 ESTALE       =  70;  /* Stale file handle */
+#endif
+
+// ---------- csetjmp.c2i -------------
+
+type JmpBufTag struct @(cname="__jmp_buf_tag", aligned=8) {
+    // TODO: use actual sizes?
+#if SYSTEM_LINUX
+    char[200] data; // for 64-bit
+#endif
+#if SYSTEM_DARWIN
+    // Should be i32[((14 + 8 + 2) * 2)] data;
+    // but size is tested explicitly in
+    // test/globals/static_asserts/static_assert_jmpbuf.c2
+    // and 200 > 192, so this is just suboptimal.
+    //i32[((14 + 8 + 2) * 2)] data;
+    char[200] data;
+#endif
+#if SYSTEM_FREEBSD
+    //i64[12] data;
+    char[200] data;
+#endif
+#if SYSTEM_OPENBSD
+    //i64[11] data;
+    char[200] data;
+#endif
+}
+
+type JmpBuf JmpBufTag* @(cname="jmp_buf");
+
+// TODO alias setjmp -> _setjmp
+fn i32 setjmp(JmpBuf __env);
+
+fn i32 _setjmp(JmpBuf __env);
+
+
+fn void longjmp(JmpBuf __env, i32 __val) @(noreturn);
+
+// ---------- csignal.c2i -------------
+// NOTE: incomplete implementation
+
+const c_int SA_NOCLDSTOP = 1;
+const c_int SA_RESTART   = 2;
+
+/* Fake signal functions.  */
+// TODO
+//#define SIG_ERR ((__sighandler_t) -1)       /* Error return.  */
+//#define SIG_DFL ((__sighandler_t) 0)        /* Default action.  */
+//#define SIG_IGN ((__sighandler_t) 1)        /* Ignore signal.  */
+
+const c_int SIGHUP      = 1;
+const c_int SIGINT      = 2;
+const c_int SIGQUIT     = 3;
+const c_int SIGILL      = 4;
+const c_int SIGTRAP     = 5;
+const c_int SIGABRT     = 6;
+const c_int SIGIOT      = 6;
+const c_int SIGBUS      = 7;
+const c_int SIGFPE      = 8;
+const c_int SIGKILL     = 9;
+const c_int SIGUSR1     = 10;
+const c_int SIGSEGV     = 11;
+const c_int SIGUSR2     = 12;
+const c_int SIGPIPE     = 13;
+const c_int SIGALRM     = 14;
+const c_int SIGTERM     = 15;
+const c_int SIGSTKFLT   = 16;
+const c_int SIGCLD      = SIGCHLD;
+const c_int SIGCHLD     = 17;
+const c_int SIGCONT     = 18;
+const c_int SIGSTOP     = 19;
+const c_int SIGTSTP     = 20;
+const c_int SIGTTIN     = 21;
+const c_int SIGTTOU     = 22;
+const c_int SIGURG      = 23;
+const c_int SIGXCPU     = 24;
+const c_int SIGXFSZ     = 25;
+const c_int SIGVTALRM   = 26;
+const c_int SIGPROF     = 27;
+const c_int SIGWINCH    = 28;
+const c_int SIGPOLL     = SIGIO;
+const c_int SIGIO       = 29;
+const c_int SIGPWR      = 30;
+const c_int SIGSYS      = 31;
+const c_int SIGUNUSED   = 31;
+
+type SigactionHandler fn void(i32);
+type SigActionAction fn void(i32, Siginfo_t*, void*);
+type SigActionRestorer fn void();
+
+type Siginfo_t struct @(cname="siginfo_t") {
+    char[128] data; // for 64-bit
+}
+
+fn c_int sigaction(c_int signum, const Sigaction* act, Sigaction* oldact);
+
+// from bits/sigaction.h
+
+type Sigaction struct {
+    //if defined __USE_POSIX199309 || defined __USE_XOPEN_EXTENDED
+    union {
+        SigactionHandler sa_handler;
+        SigActionAction sa_sigaction;
+    }
+    // else
+    //SigactionHandler sa_handler;
+    // endif
+    Sigset sa_mask;
+    c_int sa_flags;
+    SigActionRestorer sa_restorer;
+}
+static_assert(152, sizeof(Sigaction));
+
+// from x86_64-linux-gnu/bits/types/sigset_t.h
+
+const u32 SIGSET_NWORDS = (1024 / (8 * sizeof (u64)));
+
+// sigset_t (__sigset_t)
+type Sigset struct {
+    u64[SIGSET_NWORDS] __val;
+}
+static_assert(128, sizeof(Sigset));
+
+fn c_int sigemptyset(Sigset* set);
+
+fn c_int sigaddset (Sigset* set, i32 signum);
+
+const u32 SIG_SETMASK = 0;   /* set mask with sigprocmask() */
+const u32 SIG_BLOCK = 1; /* set of signals to block */
+const u32 SIG_UNBLOCK = 2;   /* set of signals to, well, unblock */
+
+fn c_int sigprocmask(c_int how, const Sigset* set, Sigset* oldset);
+
+//fn void Sigset.set(Sigset* set, i32 signum) {
+//}
+
+// ---------- ctermios.c2i -------------
+
+type Flag c_uint;
+type Speed c_uint;
+type CC c_uchar;
+
+const u32 NCCS = 32;
+
+type Termios struct @(cname="termios") {
+    Flag c_iflag;       /* input mode flags */
+    Flag c_oflag;       /* output mode flags */
+    Flag c_cflag;       /* control mode flags */
+    Flag c_lflag;       /* local mode flags */
+    CC c_line;            /* line discipline */
+    CC[NCCS] c_cc;        /* control characters */
+    Speed c_ispeed;       /* input speed */
+    Speed c_ospeed;       /* output speed */
+}
+
+/* c_cc characters */
+const c_uint VINTR = 0;
+const c_uint VQUIT = 1;
+const c_uint VERASE = 2;
+const c_uint VKILL = 3;
+const c_uint VEOF = 4;
+const c_uint VTIME = 5;
+const c_uint VMIN = 6;
+const c_uint VSWTC = 7;
+const c_uint VSTART = 8;
+const c_uint VSTOP = 9;
+const c_uint VSUSP = 10;
+const c_uint VEOL = 11;
+const c_uint VREPRINT = 12;
+const c_uint VDISCARD = 13;
+const c_uint VWERASE = 14;
+const c_uint VLNEXT = 15;
+const c_uint VEOL2 = 16;
+
+/* c_iflag bits */
+const c_uint IGNBRK  = 0000001;
+const c_uint BRKINT  = 0000002;
+const c_uint IGNPAR  = 0000004;
+const c_uint PARMRK  = 0000010;
+const c_uint INPCK   = 0000020;
+const c_uint ISTRIP  = 0000040;
+const c_uint INLCR   = 0000100;
+const c_uint IGNCR   = 0000200;
+const c_uint ICRNL   = 0000400;
+const c_uint IUCLC   = 0001000;
+const c_uint IXON    = 0002000;
+const c_uint IXANY   = 0004000;
+const c_uint IXOFF   = 0010000;
+const c_uint IMAXBEL = 0020000;
+const c_uint IUTF8   = 0040000;
+
+/* c_oflag bits */
+const c_uint OPOST   = 0000001;
+const c_uint OLCUC   = 0000002;
+const c_uint ONLCR   = 0000004;
+const c_uint OCRNL   = 0000010;
+const c_uint ONOCR   = 0000020;
+const c_uint ONLRET  = 0000040;
+const c_uint OFILL   = 0000100;
+const c_uint OFDEL   = 0000200;
+const c_uint NLDLY   = 0000400;
+const c_uint NL0   = 0000000;
+const c_uint NL1   = 0000400;
+const c_uint CRDLY   = 0003000;
+const c_uint CR0   = 0000000;
+const c_uint CR1   = 0001000;
+const c_uint CR2   = 0002000;
+const c_uint CR3   = 0003000;
+const c_uint TABDLY  = 0014000;
+const c_uint TAB0  = 0000000;
+const c_uint TAB1  = 0004000;
+const c_uint TAB2  = 0010000;
+const c_uint TAB3  = 0014000;
+const c_uint XTABS = 0014000;
+const c_uint BSDLY   = 0020000;
+const c_uint BS0   = 0000000;
+const c_uint BS1   = 0020000;
+const c_uint VTDLY   = 0040000;
+const c_uint VT0   = 0000000;
+const c_uint VT1   = 0040000;
+const c_uint FFDLY   = 0100000;
+const c_uint FF0   = 0000000;
+const c_uint FF1   = 0100000;
+
+/* c_cflag bit meaning */
+const c_uint CBAUD   = 0010017;
+const c_uint B0 = 0000000;     /* hang up */
+const c_uint B50    = 0000001;
+const c_uint B75    = 0000002;
+const c_uint B110   = 0000003;
+const c_uint B134   = 0000004;
+const c_uint B150   = 0000005;
+const c_uint B200   = 0000006;
+const c_uint B300   = 0000007;
+const c_uint B600   = 0000010;
+const c_uint B1200  = 0000011;
+const c_uint B1800  = 0000012;
+const c_uint B2400  = 0000013;
+const c_uint B4800  = 0000014;
+const c_uint B9600  = 0000015;
+const c_uint B19200 = 0000016;
+const c_uint B38400 = 0000017;
+const c_uint EXTA = B19200;
+const c_uint EXTB = B38400;
+const c_uint CSIZE   = 0000060;
+const c_uint CS5   = 0000000;
+const c_uint CS6   = 0000020;
+const c_uint CS7   = 0000040;
+const c_uint CS8   = 0000060;
+const c_uint CSTOPB  = 0000100;
+const c_uint CREAD   = 0000200;
+const c_uint PARENB  = 0000400;
+const c_uint PARODD  = 0001000;
+const c_uint HUPCL   = 0002000;
+const c_uint CLOCAL  = 0004000;
+const c_uint CBAUDEX = 0010000;
+const c_uint BOTHER = 0010000;
+const c_uint B57600 = 0010001;
+const c_uint B115200 = 0010002;
+const c_uint B230400 = 0010003;
+const c_uint B460800 = 0010004;
+const c_uint B500000 = 0010005;
+const c_uint B576000 = 0010006;
+const c_uint B921600 = 0010007;
+const c_uint B1000000 = 0010010;
+const c_uint B1152000 = 0010011;
+const c_uint B1500000 = 0010012;
+const c_uint B2000000 = 0010013;
+const c_uint B2500000 = 0010014;
+const c_uint B3000000 = 0010015;
+const c_uint B3500000 = 0010016;
+const c_uint B4000000 = 0010017;
+const c_uint CIBAUD    = 002003600000;  /* input baud rate */
+const c_uint CMSPAR    = 010000000000;  /* mark or space (stick) parity */
+const c_uint CRTSCTS   = 020000000000;  /* flow control */
+
+
+/* c_lflag bits */
+const c_uint ISIG    = 0000001;
+const c_uint ICANON  = 0000002;
+const c_uint XCASE   = 0000004;
+const c_uint ECHO    = 0000010;
+const c_uint ECHOE   = 0000020;
+const c_uint ECHOK   = 0000040;
+const c_uint ECHONL  = 0000100;
+const c_uint NOFLSH  = 0000200;
+const c_uint TOSTOP  = 0000400;
+const c_uint ECHOCTL = 0001000;
+const c_uint ECHOPRT = 0002000;
+const c_uint ECHOKE  = 0004000;
+const c_uint FLUSHO  = 0010000;
+const c_uint PENDIN  = 0040000;
+const c_uint IEXTEN  = 0100000;
+const c_uint EXTPROC = 0200000;
+
+
+fn c_int tcgetattr(c_int fd, Termios* termios_p);
+fn c_int tcsetattr(c_int fd, c_int optional_actions, const Termios* termios_p);
+
+// ---------- ctype.c2i -------------
+
+fn c_int isalnum(c_int c) @(pure);
+fn c_int isalpha(c_int c) @(pure);
+fn c_int iscntrl(c_int c) @(pure);
+fn c_int isdigit(c_int c) @(pure);
+fn c_int isgraph(c_int c) @(pure);
+fn c_int islower(c_int c) @(pure);
+fn c_int isprint(c_int c) @(pure);
+fn c_int ispunct(c_int c) @(pure);
+fn c_int isspace(c_int c) @(pure);
+fn c_int isupper(c_int c) @(pure);
+fn c_int isxdigit(c_int c) @(pure);
+fn c_int tolower(c_int c) @(pure);
+fn c_int toupper(c_int c) @(pure);
+
+fn c_int isascii(c_int c) @(pure);
+fn c_int isblank(c_int c) @(pure);
+// ---------- ifaddrs.c2i -------------
+
+/* The `getifaddrs' function generates a linked list of these structures.
+   Each element of the list describes one network interface.  */
+type Ifaddrs struct {
+  Ifaddrs* ifa_next;    /* Pointer to the next structure.  */
+
+  char* ifa_name;       /* Name of this network interface.  */
+  u32   ifa_flags;      /* Flags as from SIOCGIFFLAGS ioctl.  */
+
+  Sockaddr* ifa_addr;    /* Network address of this interface.  */
+  Sockaddr* ifa_netmask; /* Netmask of this interface.  */
+  union ifa_ifu {
+    /* At most one of the following two is valid.  If the IFF_BROADCAST
+       bit is set in `ifa_flags', then `ifa_broadaddr' is valid.  If the
+       IFF_POINTOPOINT bit is set, then `ifa_dstaddr' is valid.
+       It is never the case that both these bits are set at once.  */
+    Sockaddr *ifu_broadaddr; /* Broadcast address of this interface. */
+    Sockaddr *ifu_dstaddr; /* Point-to-point destination address.  */
+  }
+  void* ifa_data;       /* Address-specific data (may be unused).  */
+}
+
+
+/* Create a linked list of `struct ifaddrs' structures, one for each
+   network interface on the host machine.  If successful, store the
+   list in *IFAP and return 0.  On errors, return -1 and set `errno'.
+
+   The storage returned in *IFAP is allocated dynamically and can
+   only be properly freed by passing it to `freeifaddrs'.
+*/
+fn c_int get(Ifaddrs** __ifap) @(cname="getifaddrs");
+
+/* Reclaim the storage allocated by a previous `getifaddrs' call.  */
+fn void Ifaddrs.free(Ifaddrs* __ifa) @(cname="freeifaddrs");
+
+// ---------- libc_dirent.c2i -------------
+
+type DIR struct @(opaque);
+
+fn DIR* opendir(const c_char* name);
+fn DIR* fdopendir(c_int fd);
+
+fn c_int closedir(DIR* dirp);
+
+#if SYSTEM_DARWIN
+#if ARCH_X86_64
+fn Dirent* readdir(DIR* dirp) @(cname="readdir$INODE64");
+#else
+fn Dirent *readdir(DIR *dirp);
+#endif
+#else
+fn Dirent* readdir(DIR* dirp);
+#endif
+
+type FilterFn fn i32(const Dirent*);
+type DirentCompareFn fn i32(const Dirent**, const Dirent**);
+
+fn c_int scandir(const c_char* dirp, Dirent*** namelist,
+                   FilterFn filter, DirentCompareFn compar);
+
+fn c_int alphasort(const Dirent**, const Dirent**);
+fn c_int versionsort(const Dirent**, const Dirent**);
+
+#if SYSTEM_LINUX
+type Dirent struct @(cname="dirent") {
+   c_ulonglong  d_ino;
+   c_longlong   d_off;
+   c_ushort     d_reclen;
+   u8           d_type;
+   char[256]    d_name;
+}
+static_assert(280, sizeof(Dirent));
+#endif
+#if SYSTEM_DARWIN
+type Dirent struct @(cname="dirent") {
+    c_ulonglong d_ino;
+    c_ulonglong d_seekoff;
+    c_ushort d_reclen;
+    c_ushort d_namlen;
+    u8 d_type;
+    char[1024] d_name;
+}
+static_assert(1048, sizeof(Dirent));
+#endif
+#if SYSTEM_FREEBSD
+type Dirent struct @(cname="dirent") {
+    c_ulonglong d_ino;      // d_fileno
+    c_ulonglong d_seekoff;  // d_off
+    u16 d_reclen;
+    u8 d_type;
+    u8 d_pad0;
+    u16 d_namlen;
+    u16 d_pad1;
+    char[256] d_name;
+}
+static_assert(280, sizeof(Dirent));
+#endif
+#if SYSTEM_OPENBSD
+type Dirent struct @(cname="dirent") {
+    c_ulonglong d_ino;
+    c_ulonglong d_seekoff;  // d_off
+    c_ushort d_reclen;
+    u8 d_type;
+    u8 d_namlen;
+    u8[4] __d_padding;
+    char[256] d_name;
+}
+static_assert(280, sizeof(Dirent));
+#endif
+
+const c_uint DT_UNKNOWN = 0;
+const c_uint DT_FIFO = 1;
+const c_uint DT_CHR = 2;
+const c_uint DT_DIR = 4;
+const c_uint DT_BLK = 6;
+const c_uint DT_REG = 8;
+const c_uint DT_LNK = 10;
+const c_uint DT_SOCK = 12;
+const c_uint DT_WHT = 14; // not in OpenBSD
+
+// ---------- libc_fcntl.c2i -------------
+
+#if SYSTEM_LINUX
+const u32 O_BINARY    =        0;
+const u32 O_RDONLY    =        0;
+const u32 O_WRONLY    =       01;
+const u32 O_RDWR      =       02;
+const u32 O_CREAT     =     0100;
+const u32 O_EXCL      =     0200;
+const u32 O_NOCTTY    =     0400;
+const u32 O_TRUNC     =    01000;
+const u32 O_APPEND    =    02000;
+const u32 O_NONBLOCK  =    04000;
+const u32 O_DIRECT    =   040000;
+const u32 O_LARGEFILE =  0100000;
+const u32 O_DIRECTORY =  0200000;
+const u32 O_NOFOLLOW =   0400000;
+const u32 O_SYNC      = 04010000;
+const u32 O_NOATIME   = 01000000;
+const u32 O_CLOEXEC   = 02000000;
+const u32 O_PATH      =010000000;
+const u32 O_TMPFILE   =020000000;
+const i32 AT_FDCWD = -100;  // Linux specific
+#else
+const u32 O_BINARY    =        0;
+const u32 O_RDONLY    =        0;
+const u32 O_WRONLY    =       01;
+const u32 O_RDWR      =       02;
+const u32 O_NONBLOCK  =       04;
+const u32 O_APPEND    =      010;
+const u32 O_SYNC      =     0200;
+const u32 O_NOFOLLOW  =     0400;
+const u32 O_CREAT     =    01000;
+const u32 O_TRUNC     =    02000;
+const u32 O_EXCL      =    04000;
+#if SYSTEM_DARWIN
+const u32 O_NOCTTY    =  0400000;
+const u32 O_DIRECTORY = 04000000;
+const u32 O_CLOEXEC   = 0100000000;
+const i32 AT_FDCWD = -2;
+#endif
+#if SYSTEM_FREEBSD
+const u32 O_NOCTTY    =  0100000;
+const u32 O_DIRECT    =  0200000;
+const u32 O_DIRECTORY =  0400000;
+const u32 O_CLOEXEC   = 04000000;
+const u32 O_PATH      =020000000;
+const i32 AT_FDCWD = -100;
+#endif
+#if SYSTEM_OPENBSD
+const u32 O_NOCTTY    =  0100000;
+const u32 O_DIRECT    =  0200000;
+const u32 O_DIRECTORY =  0400000;
+const u32 O_CLOEXEC   =  0200000;
+const i32 AT_FDCWD = -100;
+#endif
+#endif
+
+const u32 F_DUPFD = 0;
+const u32 F_GETFD = 1;
+const u32 F_SETFD = 2;
+const u32 F_GETFL = 3;
+const u32 F_SETFL = 4;
+
+const u32 FD_CLOEXEC = 1;
+
+fn c_int open(const char* __file, c_int __oflag, ...);
+
+fn c_int openat(i32 dirfd, const char* pathname, i32 flags, ...);
+
+fn c_int fcntl(i32 __fd, c_int __cmd, ...);
+
+// ---------- libc_poll.c2i -------------
+
+type Pollfd struct @(cname="pollfd") {
+    c_int fd;
+    i16 events;
+    i16 revents;
+}
+
+fn c_int poll(Pollfd* fds, c_ulong nfds, c_int timeout);
+
+const u32 POLLIN   = 0x01;
+const u32 POLLOUT  = 0x04;
+const u32 POLLERR  = 0x08;
+const u32 POLLHUP  = 0x10;
+const u32 POLLNVAL = 0x20;
+
+// ---------- libc_time.c2i -------------
+
+type Tm struct {
+    c_int tm_sec;    /* Seconds (0-60) */
+    c_int tm_min;    /* Minutes (0-59) */
+    c_int tm_hour;   /* Hours (0-23) */
+    c_int tm_mday;   /* Day of the month (1-31) */
+    c_int tm_mon;    /* Month (0-11) */
+    c_int tm_year;   /* Year - 1900 */
+    c_int tm_wday;   /* Day of the week (0-6, Sunday = 0) */
+    c_int tm_yday;   /* Day in the year (0-365, 1 Jan = 0) */
+    c_int tm_isdst;  /* Daylight saving time */
+
+    c_long tm_gmtoff;
+    const c_char* tm_zone;
+}
+
+fn Time time(Time* tloc);
+
+fn c_char* asctime(const Tm* tm);
+fn c_char* asctime_r(const Tm* tm, c_char* buf);
+
+fn c_char* ctime(const Time* timep);
+fn c_char* ctime_r(const Time* timep, char* buf);
+
+fn Time* gmtime(const Time* timep);
+fn Time* gmtime_r(const Time* timep, Tm* result);
+
+fn Tm* localtime(const Time* timep);
+fn Tm* localtime_r(const Time* timep, Tm* result);
+
+fn Time mktime(Tm* tm);
+
+fn c_size strftime(c_char *s, c_size max, const c_char *format, const Tm *tm);
+
+// ---------- libgen.c2i -------------
+
+fn c_char* dirname(c_char* path);
+
+fn c_char* basename(c_char* path);
+
+// ---------- linux_ifether.c2i -------------
+
+const u32 ETH_ALEN = 6;
+
+type Hdr struct @(cname="ethhdr", packed) {
+    c_uchar[ETH_ALEN] h_dest;
+    c_uchar[ETH_ALEN] h_source;
+    c_ushort h_proto;    // Big-Endian
+}
+
+// ---------- linux_sockios.c2i -------------
+
+/* Linux-specific socket ioctls */
+//#define SIOCINQ		FIONREAD
+//#define SIOCOUTQ	TIOCOUTQ        /* output queue size (not sent + not acked) */
+
+//#define SOCK_IOC_TYPE	0x89
+
+/* Routing table calls. */
+const u32 SIOCADDRT	= 0x890B;		/* add routing table entry	*/
+const u32 SIOCDELRT	= 0x890C;		/* delete routing table entry	*/
+const u32 SIOCRTMSG	= 0x890D;		/* unused			*/
+
+/* Socket configuration controls. */
+const u32 SIOCGIFNAME	= 0x8910;		/* get iface name		*/
+const u32 SIOCSIFLINK	= 0x8911;		/* set iface channel		*/
+const u32 SIOCGIFCONF	= 0x8912;		/* get iface list		*/
+const u32 SIOCGIFFLAGS	= 0x8913;		/* get flags			*/
+const u32 SIOCSIFFLAGS	= 0x8914;		/* set flags			*/
+const u32 SIOCGIFADDR	= 0x8915;		/* get PA address		*/
+const u32 SIOCSIFADDR	= 0x8916;		/* set PA address		*/
+const u32 SIOCGIFDSTADDR	= 0x8917;		/* get remote PA address	*/
+const u32 SIOCSIFDSTADDR	= 0x8918;		/* set remote PA address	*/
+const u32 SIOCGIFBRDADDR	= 0x8919;		/* get broadcast PA address	*/
+const u32 SIOCSIFBRDADDR	= 0x891a;		/* set broadcast PA address	*/
+const u32 SIOCGIFNETMASK	= 0x891b;		/* get network PA mask		*/
+const u32 SIOCSIFNETMASK	= 0x891c;		/* set network PA mask		*/
+const u32 SIOCGIFMETRIC	= 0x891d;		/* get metric			*/
+const u32 SIOCSIFMETRIC	= 0x891e;		/* set metric			*/
+const u32 SIOCGIFMEM	= 0x891f;		/* get memory address (BSD)	*/
+const u32 SIOCSIFMEM	= 0x8920;		/* set memory address (BSD)	*/
+const u32 SIOCGIFMTU	= 0x8921;		/* get MTU size			*/
+const u32 SIOCSIFMTU	= 0x8922;		/* set MTU size			*/
+const u32 SIOCSIFNAME	= 0x8923;		/* set interface name */
+const u32 SIOCSIFHWADDR	= 0x8924;		/* set hardware address 	*/
+const u32 SIOCGIFENCAP	= 0x8925;		/* get/set encapsulations       */
+const u32 SIOCSIFENCAP	= 0x8926;
+const u32 SIOCGIFHWADDR	= 0x8927;		/* Get hardware address		*/
+const u32 SIOCGIFSLAVE	= 0x8929;		/* Driver slaving support	*/
+const u32 SIOCSIFSLAVE	= 0x8930;
+const u32 SIOCADDMULTI	= 0x8931;		/* Multicast address lists	*/
+const u32 SIOCDELMULTI	= 0x8932;
+const u32 SIOCGIFINDEX	= 0x8933;		/* name -> if_index mapping	*/
+const u32 SIOCSIFPFLAGS	= 0x8934;		/* set/get extended flags set	*/
+const u32 SIOCGIFPFLAGS	= 0x8935;
+const u32 SIOCDIFADDR	= 0x8936;		/* delete PA address		*/
+const u32 SIOCSIFHWBROADCAST	= 0x8937;	/* set hardware broadcast addr	*/
+const u32 SIOCGIFCOUNT	= 0x8938;		/* get number of devices */
+
+const u32 SIOCGIFBR	= 0x8940;		/* Bridging support		*/
+const u32 SIOCSIFBR	= 0x8941;		/* Set bridging options 	*/
+
+const u32 SIOCGIFTXQLEN	= 0x8942;		/* Get the tx queue length	*/
+const u32 SIOCSIFTXQLEN	= 0x8943;		/* Set the tx queue length 	*/
+
+/* SIOCGIFDIVERT was:	0x8944		Frame diversion support */
+/* SIOCSIFDIVERT was:	0x8945		Set frame diversion options */
+
+const u32 SIOCETHTOOL	= 0x8946;		/* Ethtool interface		*/
+
+const u32 SIOCGMIIPHY	= 0x8947;		/* Get address of MII PHY in use. */
+const u32 SIOCGMIIREG	= 0x8948;		/* Read MII PHY register.	*/
+const u32 SIOCSMIIREG	= 0x8949;		/* Write MII PHY register.	*/
+
+const u32 SIOCWANDEV	= 0x894A;		/* get/set netdev parameters	*/
+
+const u32 SIOCOUTQNSD	= 0x894B;		/* output queue size (not sent only) */
+const u32 SIOCGSKNS	= 0x894C;		/* get socket network namespace */
+
+/* ARP cache control calls. */
+		    /*  0x8950 - 0x8952  * obsolete calls, don't re-use */
+const u32 SIOCDARP	= 0x8953;		/* delete ARP table entry	*/
+const u32 SIOCGARP	= 0x8954;		/* get ARP table entry		*/
+const u32 SIOCSARP	= 0x8955;		/* set ARP table entry		*/
+
+/* RARP cache control calls. */
+const u32 SIOCDRARP	= 0x8960;		/* delete RARP table entry	*/
+const u32 SIOCGRARP	= 0x8961;		/* get RARP table entry		*/
+const u32 SIOCSRARP	= 0x8962;		/* set RARP table entry		*/
+
+/* Driver configuration calls */
+
+const u32 SIOCGIFMAP	= 0x8970;		/* Get device parameters	*/
+const u32 SIOCSIFMAP	= 0x8971;		/* Set device parameters	*/
+
+/* DLCI configuration calls */
+
+const u32 SIOCADDDLCI	= 0x8980;		/* Create new DLCI device	*/
+const u32 SIOCDELDLCI	= 0x8981;		/* Delete DLCI device		*/
+
+const u32 SIOCGIFVLAN	= 0x8982;		/* 802.1Q VLAN support		*/
+const u32 SIOCSIFVLAN	= 0x8983;		/* Set 802.1Q VLAN options 	*/
+
+/* bonding calls */
+
+const u32 SIOCBONDENSLAVE	= 0x8990;		/* enslave a device to the bond */
+const u32 SIOCBONDRELEASE = 0x8991;		/* release a slave from the bond*/
+const u32 SIOCBONDSETHWADDR      = 0x8992;	/* set the hw addr of the bond  */
+const u32 SIOCBONDSLAVEINFOQUERY = 0x8993;   /* rtn info about slave state   */
+const u32 SIOCBONDINFOQUERY      = 0x8994;	/* rtn info about bond state    */
+const u32 SIOCBONDCHANGEACTIVE   = 0x8995;   /* update to a new active slave */
+
+/* bridge calls */
+const u32 SIOCBRADDBR     = 0x89a0;		/* create new bridge device     */
+const u32 SIOCBRDELBR     = 0x89a1;		/* remove bridge device         */
+const u32 SIOCBRADDIF	= 0x89a2;		/* add interface to bridge      */
+const u32 SIOCBRDELIF	= 0x89a3;		/* remove interface from bridge */
+
+/* hardware time stamping: parameters in linux/net_tstamp.h */
+const u32 SIOCSHWTSTAMP	= 0x89b0;		/* set and get config		*/
+const u32 SIOCGHWTSTAMP	= 0x89b1;		/* get config			*/
+
+/* Device private ioctl calls */
+
+/*
+ *	These 16 ioctls are available to devices via the do_ioctl() device
+ *	vector. Each device should include this file and redefine these names
+ *	as their own. Because these are device dependent it is a good idea
+ *	_NOT_ to issue them to random objects and hope.
+ *
+ *	THESE IOCTLS ARE _DEPRECATED_ AND WILL DISAPPEAR IN 2.5.X -DaveM
+ */
+
+const u32 SIOCDEVPRIVATE	= 0x89F0;	/* to 89FF */
+
+/*
+ *	These 16 ioctl calls are protocol private
+ */
+
+const u32 SIOCPROTOPRIVATE = 0x89E0; /* to 89EF */
+
+// ---------- linux_types.c2i -------------
+
+// ------ linux/time_types.h
+
+//__kernel_timespec
+type Timespec struct {
+    c_longlong tv_sec; // seconds
+    c_longlong tv_nsec; // nanoseconds
+}
+
+// incomplete
+
+// ---------- net_if.c2i -------------
+
+type CAddr char* @(cname="__caddr_t");
+
+type IfFlag enum u32 @(cname="ifflag") {
+    IFF_UP = 0x1,
+    IFF_BROADCAST = 0x2,
+    IFF_DEBUG = 0x4,
+    IFF_LOOPBACK = 0x8,
+    /* some entries skipped */
+    IFF_RUNNING = 0x40,
+    IFF_NOARP = 0x80,
+    IFF_PROMISC = 0x100,
+    /* some entries skipped */
+}
+
+type Addr struct @(cname="ifaddr") {
+    Sockaddr ifa_addr;
+    union ifa_ifu {
+        Sockaddr ifu_broadaddr;
+        Sockaddr ifu_dstaddr;
+    }
+    void* ifa_ifp; // TODO struct iface* ifa_ifp;
+    Addr* ifa_next;
+}
+
+type IfMap struct @(cname="ifmap") {
+    c_ulong mem_start;
+    c_ulong mem_end;
+    c_ushort base_addr;
+    c_uchar irq;
+    c_uchar dma;
+    c_uchar port;
+    // 3 bytes spare
+}
+
+const u32 IFNAMSIZ = 16;
+
+type Req struct @(cname="ifreq") {
+    union ifr_ifrn {
+        char[IFNAMSIZ] ifrn_name;
+    }
+    union ifr_ifru {
+        Sockaddr ifru_addr;
+        Sockaddr ifru_dstaddr;
+        Sockaddr ifru_broadaddr;
+        Sockaddr ifru_netmask;
+        Sockaddr ifru_hwaddr;
+        c_short ifru_flags;
+        c_int ifru_ivalue;
+        c_int ifru_mtu;
+        IfMap ifru_map;
+        char[IFNAMSIZ] ifru_slave;
+        char[IFNAMSIZ] ifru_newname;
+        CAddr ifru_data;
+    }
+}
+
+type Conf struct @(cname="ifconf") {
+    c_int ifc_len;
+    union ifc_ifcu {
+        CAddr ifcu_buf;
+        Req* ifcu_req;
+    }
+}
+
+// ---------- netinet_tcp.c2i -------------
+
+const c_int SOL_TCP = 6;
+
+// NOTE: , kept the TCP_ prefix for now (could be removed)
+
+// User-settable options (used with setsockopt).
+const c_int TCP_NODELAY              =  1;  /* Don't delay send to coalesce packets  */
+const c_int TCP_MAXSEG               =  2;  /* Set maximum segment size  */
+const c_int TCP_CORK                 =  3;  /* Control sending of partial frames  */
+const c_int TCP_KEEPIDLE             =  4;  /* Start keeplives after this period */
+const c_int TCP_KEEPINTVL            =  5;  /* Interval between keepalives */
+const c_int TCP_KEEPCNT              =  6;  /* Number of keepalives before death */
+const c_int TCP_SYNCNT               =  7;  /* Number of SYN retransmits */
+const c_int TCP_LINGER2              =  8;  /* Life time of orphaned FIN-WAIT-2 state */
+const c_int TCP_DEFER_ACCEPT         =  9;  /* Wake up listener only when data arrive */
+const c_int TCP_WINDOW_CLAMP         = 10; /* Bound advertised window */
+const c_int TCP_INFO                 = 11; /* Information about this connection. */
+const c_int TCP_QUICKACK             = 12; /* Bock/reenable quick ACKs.  */
+const c_int TCP_CONGESTION           = 13; /* Congestion control algorithm.  */
+const c_int TCP_MD5SIG               = 14; /* TCP MD5 Signature (RFC2385) */
+const c_int TCP_COOKIE_TRANSACTIONS  = 15; /* TCP Cookie Transactions */
+const c_int TCP_THIN_LINEAR_TIMEOUTS = 16; /* Use linear timeouts for thin streams*/
+const c_int TCP_THIN_DUPACK          = 17; /* Fast retrans. after 1 dupack */
+const c_int TCP_USER_TIMEOUT         = 18; /* How long for loss retry before timeout */
+const c_int TCP_REPAIR               = 19; /* TCP sock is under repair right now */
+const c_int TCP_REPAIR_QUEUE         = 20; /* Set TCP queue to repair */
+const c_int TCP_QUEUE_SEQ            = 21; /* Set sequence number of repaired queue. */
+const c_int TCP_REPAIR_OPTIONS       = 22; /* Repair TCP connection options */
+const c_int TCP_FASTOPEN             = 23; /* Enable FastOpen on listeners */
+const c_int TCP_TIMESTAMP            = 24; /* TCP time stamp */
+const c_int TCP_NOTSENT_LOWAT        = 25; /* Limit number of unsent bytes in write queue.  */
+const c_int TCP_CC_INFO              = 26; /* Get Congestion Control (optional) info.  */
+const c_int TCP_SAVE_SYN             = 27; /* Record SYN headers for new connections.  */
+const c_int TCP_SAVED_SYN            = 28; /* Get SYN headers recorded for connection.  */
+const c_int TCP_REPAIR_WINDOW        = 29; /* Get/set window parameters.  */
+const c_int TCP_FASTOPEN_CONNECT     = 30; /* Attempt FastOpen with connect.  */
+const c_int TCP_ULP                  = 31; /* Attach a ULP to a TCP connection.  */
+const c_int TCP_MD5SIG_EXT           = 32; /* TCP MD5 Signature with extensions.  */
+const c_int TCP_FASTOPEN_KEY         = 33; /* Set the key for Fast Open (cookie).  */
+const c_int TCP_FASTOPEN_NO_COOKIE   = 34; /* Enable TFO without a TFO cookie.  */
+const c_int TCP_ZEROCOPY_RECEIVE     = 35;
+const c_int TCP_INQ                  = 36; /* Notify bytes available to read as a cmsg on read.  */
+//const c_int TCP_CM_INQ       TCP_INQ
+const c_int TCP_TX_DELAY             = 37; /* Delay outgoing packets by XX usec.  */
+
+// ---------- regex.c2i -------------
+
+type Regex_t struct @(cname="regex_t") {
+    void *re_pcre;
+    c_size re_nsub;
+    c_size re_erroffset;
+}
+
+type RegOff c_int @(cname="regoff_t");
+
+type Regmatch_t struct @(cname="regmatch_t") {
+    RegOff rm_so;
+    RegOff rm_eo;
+}
+
+/* regcomp() flags */
+const c_int REG_BASIC = 0000;
+const c_int REG_EXTENDED = 0001;
+const c_int REG_ICASE = 0002;
+const c_int REG_NOSUB = 0004;
+const c_int REG_NEWLINE = 0010;
+const c_int REG_NOSPEC = 0020;
+const c_int REG_PEND = 0040;
+const c_int REG_DUMP = 0200;
+
+/* regerror() flags */
+const c_int REG_ENOSYS = -1;
+const c_int REG_NOERROR =  0;
+const c_int REG_NOMATCH =  1;
+const c_int REG_BADPAT =  2;
+const c_int REG_ECOLLATE =  3;
+const c_int REG_ECTYPE =  4;
+const c_int REG_EESCAPE =  5;
+const c_int REG_ESUBREG =  6;
+const c_int REG_EBRACK =  7;
+const c_int REG_EPAREN =  8;
+const c_int REG_EBRACE =  9;
+const c_int REG_BADBR = 10;
+const c_int REG_ERANGE = 11;
+const c_int REG_ESPACE = 12;
+const c_int REG_BADRPT = 13;
+const c_int REG_EMPTY = 14;
+const c_int REG_ASSERT = 15;
+const c_int REG_INVARG = 16;
+const c_int REG_ILLSEQ = 17;
+const c_int REG_ATOI = 255;
+const c_int REG_ITOA = 0400;
+
+/* regexec() flags */
+const c_int REG_NOTBOL = 00001;
+const c_int REG_NOTEOL = 00002;
+const c_int REG_STARTEND = 00004;
+const c_int REG_TRACE = 00400;
+const c_int REG_LARGE = 01000;
+const c_int REG_BACKR = 02000;
+
+fn c_int regcomp(Regex_t* preg, const c_char* pattern, c_int cflags);
+fn c_int regexec(const Regex_t* preg, const c_char* string, c_size nmatch, Regmatch_t* pmatch, c_int eflags);
+fn c_size regerror(c_int errcode, const Regex_t* preg, c_char* errbuf, c_size errbuf_size);
+fn void regfree(Regex_t* preg);
+
+// ---------- stdarg.c2i -------------
+// NOTE: because of va_list we generate the C file for this manually in C-generator!
+
+/*
+type va_list struct @(cname="va_list") {
+    c_char[24] pad;
+}
+
+fn void va_start(va_list ap, const c_char* last);
+fn void va_end(va_list ap);
+*/
+
+
+// ---------- stdio.c2i -------------
+
+// possibilities for the third argument to 'setvbuf'
+const u8 _IOFBF = 0; // fully buffered
+const u8 _IOLBF = 1; // line buffering
+const u8 _IONBF = 2; // no buffering
+
+const i8 EOF = -1;
+
+const u8 SEEK_SET = 0;   // Seek from beginning of file.
+const u8 SEEK_CUR = 1;   // Seek from current position.
+const u8 SEEK_END = 2;   // Seek from end of file.
+#if __USE_GNU
+const u8 SEEK_DATA = 3;  // Seek to next data.
+const u8 SEEK_HOLE = 4;  // Seek to next hole.
+#endif
+
+// from libio.h
+type IO_marker struct @(cname="_IO_marker") {
+    IO_marker* next;
+    FILE* sbuf;
+    i32 _pos;
+}
+
+type Offset u64 @(cname="off_t");
+
+//NOTE: _G_fpos_t is some struct(_G_fpos_t.h)
+//type fpos_t _G_fpos_t;
+
+#if SYSTEM_LINUX
+type FILE struct @(opaque) {}
+
+FILE* stdin;
+FILE* stdout;
+FILE* stderr;
+#endif
+#if SYSTEM_DARWIN
+type FILE struct @(opaque);
+
+FILE* stdin @(cname="__stdinp");
+FILE* stdout @(cname="__stdoutp");
+FILE* stderr @(cname="__stderrp");
+#endif
+#if SYSTEM_FREEBSD
+type FILE struct @(opaque);
+
+FILE* stdin @(cname="__stdinp");
+FILE* stdout @(cname="__stdoutp");
+FILE* stderr @(cname="__stderrp");
+#endif
+#if SYSTEM_OPENBSD
+type Sbuf__ struct {
+    u8 *_base;
+    c_int _size;
+}
+type FILE struct {
+    u8 *_p;
+    c_int _r;
+    c_int _w;
+    c_short _flags;
+    c_short _file;
+    Sbuf__ _bf;
+    c_int _lbfsize;
+    void *_cookie;
+    void *_close;   //int (*_close)(void *);
+    void *_read;    //int (*_read)(void *, char *, int);
+    void *_seek;    //fpos_t (*_seek)(void *, fpos_t, int);
+    void *_write;   //int (*_write)(void *, const char *, int);
+    Sbuf__ _ext;
+    u8 *_up;
+    c_int _ur;
+    u8[3] _ubuf;
+    u8[1] _nbuf;
+    Sbuf__ _lb;
+    c_int _blksize;
+    i64 _offset;
+}
+static_assert(152, sizeof(FILE));
+
+FILE* stdin @(cname="(&__sF[0])", cdef="FILE __sF[]");
+FILE* stdout @(cname="(&__sF[1])", cdef="FILE __sF[]");
+FILE* stderr @(cname="(&__sF[2])", cdef="FILE __sF[]");
+#endif
+
+fn c_int remove(const c_char* __filename);
+
+fn c_int rename(const c_char* __old, const c_char* __new);
+
+fn FILE* tmpfile();
+//fn c_char* tmpnam(c_char* __s); // deprecated
+fn c_char* tempnam(const c_char* __dir, const c_char* __pfx);
+
+fn c_int fclose(FILE* __stream);
+fn c_int fflush(FILE* __stream);
+fn FILE* fopen(const c_char* __filename, const c_char* __modes);
+fn FILE* freopen(const c_char* __filename, const c_char* __modes, FILE* __stream);
+fn FILE* fdopen(c_int __fd, const c_char* __modes);
+fn void setbuf(FILE* __stream, c_char* __buf);
+fn c_int setvbuf(FILE* __stream, c_char* __buf, c_int __modes, c_size __n);
+fn void setbuffer(FILE* __stream, c_char* __buf, c_size __size);
+fn void setlinebuf(FILE* __stream);
+fn c_int fprintf(FILE* __stream, const c_char* __format @(printf_format), ...);
+fn c_int printf(const c_char* __format @(printf_format), ...);
+fn c_int sprintf(c_char* __s, const c_char* __format @(printf_format), ...);
+fn c_int snprintf(c_char* __s, c_size size, const c_char* __format @(printf_format), ...);
+fn c_int dprintf(c_int __fd, const c_char* __fmt @(printf_format), ...);
+fn c_int fscanf(FILE* __stream, const c_char* __format, ...);
+fn c_int scanf(const c_char* __format, ...);
+fn c_int sscanf(const c_char* __s, const c_char* __format, ...);
+fn c_int fgetc(FILE* __stream);
+fn c_int getc(FILE* __stream);
+fn c_int getchar();
+fn c_int getc_unlocked(FILE* __stream);
+fn c_int getchar_unlocked();
+fn c_int fputc(c_int __c, FILE* __stream);
+fn c_int putc(c_int __c, FILE* __stream);
+fn c_int putchar(c_int __c);
+fn c_int putchar_unlocked(c_int __c);
+fn c_int getw(FILE* __stream);
+fn c_int putw(c_int __w, FILE* __stream);
+fn c_char* fgets(c_char* __s, c_int __n, FILE* __stream);
+fn c_ssize getdelim(c_char** __lineptr, c_size* __n, c_int __delimiter, FILE* __stream);
+fn c_ssize getline(c_char** __lineptr, c_size* __n, FILE* __stream);
+fn c_int fputs(const c_char* __s, FILE* __stream);
+fn c_int puts(const c_char* __s);
+fn c_int ungetc(c_int __c, FILE* __stream);
+fn c_int fread(void* __ptr, c_size __size, c_size __n, FILE* __stream);
+fn c_size fwrite(const void* __ptr, c_size __size, c_size __n, FILE* __s);
+fn c_int fseek(FILE* __stream, c_long __off, c_int __whence);
+fn c_long ftell(FILE* __stream);
+fn void rewind(FILE* __stream);
+fn c_int fseeko(FILE* __stream, Offset __off, c_int __whence);
+fn Offset ftello(FILE* __stream);
+//fn c_int fgetpos(FILE* __stream, fpos_t* __pos);
+//fn c_int fsetpos(FILE* __stream, const fpos_t* __pos);
+fn void clearerr(FILE* __stream);
+fn c_int feof(FILE* __stream);
+fn c_int ferror(FILE* __stream);
+fn void perror(const c_char* __s);
+fn c_int fileno(FILE* __stream);
+fn FILE* popen(const c_char* __command, const c_char* __modes);
+fn c_int pclose(FILE* __stream);
+fn c_char* ctermid(c_char* __s);
+fn void flockfile(FILE* __stream);
+fn c_int ftrylockfile(FILE* __stream);
+fn void funlockfile(FILE* __stream);
+
+// --- Linux only ---
+#if __USE_LARGEFILE64
+fn FILE* tmpfile64(void);
+#endif
+fn c_char* tmpnam_r(c_char* __s);
+fn c_int renameat(c_int __oldfd, const c_char* __old, c_int __newfd, const c_char* __new);
+fn FILE* fmemopen(void* __s, c_size __len, const c_char* __modes);
+fn FILE* open_memstream(c_char** __bufloc, c_size* __sizeloc);
+fn c_int fflush_unlocked(FILE* __stream);
+fn c_int fgetc_unlocked(FILE* __stream);
+fn c_int putc_unlocked(c_int __c, FILE* __stream);
+fn c_int fputc_unlocked(c_int __c, FILE* __stream);
+fn c_ssize __getdelim(c_char** __lineptr, c_size* __n, c_int __delimiter, FILE* __stream);
+fn c_int fread_unlocked(void* __ptr, c_size __size, c_size __n, FILE* __stream);
+fn c_size fwrite_unlocked(const void* __ptr, c_size __size, c_size __n, FILE* __stream);
+fn void clearerr_unlocked(FILE* __stream);
+fn c_int feof_unlocked(FILE* __stream);
+fn c_int ferror_unlocked(FILE* __stream);
+
+// --- Darwin/BSD only----
+// unlocked functions below exist, but as macro
+//fn void clearerr_unlocked(FILE* __stream);
+//fn c_int feof_unlocked(FILE* __stream);
+//fn c_int ferror_unlocked(FILE* __stream);
+//fn c_int fileno_unlocked(FILE* __stream);
+
+fn c_int asprintf(c_char**, const c_char* @(printf_format), ...);
+fn c_char* ctermid_r(c_char*);
+fn c_char* fgetln(FILE*, c_size*);
+fn const c_char* fmtcheck(const c_char*, const c_char*);
+fn c_int fpurge(FILE *);
+//fn c_int vasprintf(c_char**, const c_char*, va_list);
+fn FILE *zopen(const c_char*, const c_char*, c_int);
+
+fn c_int vdprintf(c_int __fd, const c_char *format, va_list ap);
+fn c_int vfprintf(FILE* stream, const c_char *format, va_list ap);
+fn c_int vprintf(const c_char* format, va_list ap);
+fn c_int vsprintf(c_char* str, const c_char *format, va_list ap);
+fn c_int vsnprintf(c_char* str, c_size size, const c_char *format, va_list ap);
+
+// ---------- stdlib.c2i -------------
+
+type Div_t struct @(cname="div_t") {
+    c_int quot;
+    c_int rem;
+}
+
+type Ldiv_t struct @(cname="Ldiv_t") {
+    c_long quot;
+    c_long rem;
+}
+
+const c_int RAND_MAX = 2147483647;      // same as Int32_max
+
+const i8 EXIT_FAILURE = 1;
+const i8 EXIT_SUCCESS = 0;
+
+fn void* calloc(c_size count, c_size size);
+#if __ASAN__ || __MSAN__ || __UBSAN__
+fn void* malloc(c_size size) {
+    // fill malloced blocks with junk if debugging
+    void *p = calloc(size, 1);
+    return p ? memset(p, 0xAA, size) : p;
+}
+#else
+fn void* malloc(c_size size);
+#endif
+fn void* realloc(void* ptr, c_size size);
+//fn void* reallocf(void* ptr, c_size size);
+fn void* valloc(c_size size);
+fn void free(void* ptr);
+
+fn c_double atof(const c_char* nptr);
+fn c_int atoi(const c_char* nptr);
+fn c_long atol(const c_char* nptr);
+fn c_longlong atoll(const c_char* nptr);
+
+fn c_double strtod(const c_char* nptr, c_char** endptr);
+fn c_float strtof(const c_char* nptr, c_char** endptr);
+// NOTE returns long double (16 bytes, bah!)
+//fn c_longdouble strtold(const c_char* nptr, c_char** endptr);
+fn c_long strtol(const c_char* nptr, c_char** endptr, c_int base);
+fn c_ulong strtoul(const c_char* nptr, c_char** endptr, c_int base);
+fn c_longlong strtoq(const c_char* nptr, c_char** endptr, c_int base);
+fn c_ulonglong strtouq(const c_char* nptr, c_char** endptr, c_int base);
+fn c_longlong strtoll(const c_char* nptr, c_char** endptr, c_int base);
+fn c_ulonglong strtoull(const c_char* nptr, c_char** endptr, c_int base);
+
+fn c_char* l64a(c_long n);
+fn c_long a64l(const c_char* s);
+
+fn c_long random();
+fn void srandom(c_uint __seed);
+fn c_char* initstate(c_uint __seed, c_char* __statebuf, c_size __statelen);
+fn c_char* setstate(c_char* __statebuf);
+
+type Random_data struct @(opaque, cname="random_data");
+
+fn c_int random_r(Random_data* __buf, c_int* __result);
+fn c_int srandom_r(c_uint __seed, Random_data* __buf);
+fn c_int initstate_r(c_uint __seed, c_char* __statebuf, c_size __statelen, Random_data* __buf);
+fn c_int setstate_r(c_char* __statebuf, Random_data* __buf);
+fn c_int rand();
+fn void srand(c_uint __seed);
+fn c_int rand_r(c_uint* __seed);
+fn c_double drand48();
+fn c_double erand48(u16* __xsubi);
+fn c_long lrand48();
+fn c_long nrand48(u16* __xsubi);
+fn c_long mrand48();
+fn c_long jrand48(u16* __xsubi);
+fn void srand48(c_long __seedval);
+fn u16* seed48(u16* __seed16v);
+fn void lcong48(u16* __param);
+
+type Drand48_data struct @(opaque, cname="drand48_data");
+
+fn c_int drand48_r(Drand48_data* __buffer, c_double* __result);
+fn c_int erand48_r(u16* __xsubi, Drand48_data* __buffer, c_double* __result);
+fn c_int lrand48_r(Drand48_data* __buffer, c_long* __result);
+fn c_int nrand48_r(u16* __xsubi, Drand48_data* __buffer, c_long* __result);
+fn c_int mrand48_r(Drand48_data* __buffer, c_long* __result);
+fn c_int jrand48_r(u16* __xsubi, Drand48_data* __buffer, c_long* __result);
+fn c_int srand48_r(c_long __seedval, Drand48_data* __buffer);
+fn c_int seed48_r(u16* __seed16v, Drand48_data* __buffer);
+fn c_int lcong48_r(u16* __param, Drand48_data* __buffer);
+
+fn c_int posix_memalign(void** __memptr, c_size __alignment, c_size __size);
+fn void* aligned_alloc(c_int __alignment, c_size __size);
+
+fn void abort() @(noreturn);
+type AtExitFn fn void();
+fn c_int atexit(AtExitFn __func);
+fn c_int at_quick_exit(AtExitFn __func);
+type OnExitFn fn void(i32, void*);
+fn c_int on_exit(OnExitFn __func, void* __arg);
+fn void exit(c_int __status) @(noreturn);
+fn void _exit(c_int __status) @(noreturn);
+fn void quick_exit(c_int __status);
+fn void _Exit(c_int __status) @(noreturn);
+
+fn c_char* getenv(const c_char* __name);
+fn c_int putenv(c_char* __string);
+fn c_int setenv(const c_char* __name, const c_char* __value, c_int __replace);
+fn c_int unsetenv(const c_char* __name);
+fn c_int clearenv();
+
+fn c_int mkstemp(c_char* __template);
+fn c_int mkstemps(c_char* __template, c_int __suffixlen);
+fn c_char* mkdtemp(c_char* __template);
+fn c_int system(const c_char* __command);
+fn c_char* realpath(const c_char* __name, c_char* __resolved);
+fn c_char* mktemp(c_char* __template);
+
+type StdlibCompareFn fn i32(const void*, const void*) @(cname="__compar_fn_t");
+fn void* bsearch(const void* __key, const void* __base, c_size __nmemb, c_size __size, StdlibCompareFn __compar);
+fn void qsort(void* __base, c_size __nmemb, c_size __size, StdlibCompareFn __compar);
+
+fn c_int abs(c_int __x);
+fn c_long labs(c_long __x);
+fn Div_t div(c_int __numer, c_int __denom);
+fn Ldiv_t ldiv(c_long __numer, c_long __denom);
+
+fn c_char* ecvt(c_double __value, c_int __ndigit, c_int* __decpt, c_int* __sign);
+fn c_char* fcvt(c_double __value, c_int __ndigit, c_int* __decpt, c_int* __sign);
+fn c_char* gcvt(c_double __value, c_int __ndigit, c_char* __buf);
+fn c_char* qecvt(c_double __value, c_int __ndigit, c_int* __decpt, c_int* __sign);
+fn c_char* qfcvt(c_double __value, c_int __ndigit, c_int* __decpt, c_int* __sign);
+fn c_char* qgcvt(c_double __value, c_int __ndigit, c_char* __buf);
+fn c_int ecvt_r(c_double __value, c_int __ndigit, c_int* __decpt, c_int* __sign, c_char* __buf, c_size __len);
+fn c_int fcvt_r(c_double __value, c_int __ndigit, c_int* __decpt, c_int* __sign, c_char* __buf, c_size __len);
+fn c_int qecvt_r(c_double __value, c_int __ndigit, c_int* __decpt, c_int* __sign, c_char* __buf, c_size __len);
+fn c_int qfcvt_r(c_double __value, c_int __ndigit, c_int* __decpt, c_int* __sign, c_char* __buf, c_size __len);
+
+fn c_int mblen(const c_char* __s, c_size __n);
+fn c_int mbtowc(c_int* __pwc, const c_char* __s, c_size __n);
+// needs wchar_t
+//fn c_int wctomb(c_char* __s, c_int __wc_char);
+fn c_int mbstowcs(c_int* __pwcs, const c_char* __s, c_size __n);
+fn c_int wcstombs(c_char* __s, const c_int* __pwcs, c_size __n);
+fn c_int rpmatch(const c_char* __response);
+// TODO need to parse c_char* const*
+//fn c_int getsubopt(c_char** __optionp, c_char*const* __tokens, c_char** __valuep);
+fn c_int getsubopt(c_char** __optionp, c_char** __tokens, c_char** __valuep);
+fn c_int getloadavg(c_double* __loadavg, c_int __nelem);
+
+// ---------- string.c2i -------------
+
+// TODO restrict, size_t
+// TODO use builtin functions
+
+/* 7.26 String handling <string.h> */
+
+/* 7.26.1 String function conventions */
+
+/* 7.26.2 Copying functions */
+fn void* memcpy(void* dest, const void* src, c_size n);
+fn void* memccpy(void* dest, const void* src, c_int c, c_size n);
+fn void* memmove(void* dest, const void* src, c_size n);
+fn c_char* strcpy(c_char* dest, const c_char* src);
+fn c_char* strncpy(c_char* dest, const c_char* src, c_size n);
+fn c_char* strdup(const c_char* s);
+fn c_char* strndup(const c_char* s, c_size n);
+
+/* 7.26.3 Concatenation functions */
+fn c_char* strcat(c_char* dest, const c_char* src);
+fn c_char* strncat(c_char* dest, const c_char* src, c_size n);
+
+/* 7.26.4 Comparison functions */
+fn c_int memcmp(const void* s1, const void* s2, c_size n);
+fn c_int strcmp(const c_char* s1, const c_char* s2);
+fn c_int strcoll(const c_char* s1, const c_char* s2);
+fn c_int strncmp(const c_char* s1, const c_char* s2, c_size n);
+fn c_size strxfrm(c_char* s1, const c_char* s2, c_size n);
+
+/* 7.26.5 Search functions */
+fn void* memchr(const void* s, c_int c, c_size n);
+fn c_char* strchr(const c_char* s, c_int c);
+fn c_size strcspn(const c_char* s1, const c_char* s2);
+fn c_char* strpbrk(const c_char* s1, const c_char* s2);
+fn c_char* strrchr(const c_char* s, c_int c);
+fn c_size strspn(const c_char* s1, const c_char* s2);
+fn c_char* strstr(const c_char* s1, const c_char* s2);
+fn c_char* strtok(c_char* s1, const c_char* s2);
+
+/* 7.26.6 Miscellaneous functions */
+fn void* memset(void* s, c_int c, c_size n);
+fn void* memset_explicit(void* s, c_int c, c_size n);
+fn c_char* strerror(c_int errnum);
+fn c_size strlen(const c_char* s);
+
+/* POSIX.1-1995 functions */
+fn c_char* strtok_r(c_char* s, const c_char* delim, c_char** save_ptr);
+
+/* POSIX.1-2001 functions */
+fn c_int strerror_r(c_int errnum, c_char* dest, c_size n);
+
+/* POSIX.1-2008 functions */
+fn c_char* stpcpy(c_char* dest, const c_char* src);
+fn c_char* stpncpy(c_char* dest, const c_char* src, c_size n);
+fn c_size strnlen(const c_char* s, c_size n);
+fn c_char* strsignal(c_int sig);
+
+/* BSD and GNU extensions */
+fn void* memmem(const void* s1, c_size size1, const void* s2, c_size size2);
+fn c_int strcasecmp(const c_char* s1, const c_char* s2);
+fn c_int strncasecmp(const c_char* s1, const c_char* s2, c_size n);
+fn c_char* strcasestr(const c_char* s1, const c_char* s2);
+fn c_char* strsep(c_char** stringp, const c_char* delim);
+fn void* mempcpy(void* dest, const void* src, c_size n);
+fn void* memrchr(const void* s, c_int c, c_size n);
+fn c_char* strchrnul(const c_char* s, c_int c);
+
+#if SYSTEM_DARWIN || SYSTEM_FREEBSD || SYSTEM_OPENBSD
+fn c_char* strnstr(const c_char* s1, const c_char* s2, c_size n);
+fn c_size strlcpy(c_char* dest, const c_char* src, c_size n);
+fn c_size strlcat(c_char* dest, const c_char* src, c_size n);
+#endif
+
+// ---------- strings.c2i -------------
+
+fn c_int bcmp(const void* s1, const void* s2, c_size n);
+
+fn c_char* libc_index(const c_char* s, c_int c) @(cname="index");
+fn c_char* libc_rindex(const c_char* s, c_int c) @(cname="rindex");
+
+fn c_int ffs(c_int value);
+
+//fn c_int ffsl(c_long value);
+//fn c_int ffsll(c_longlong value);
+
+//fn c_int fls(c_int value);
+
+//fn c_int flsl(c_long value);
+//fn c_int flsll(c_longlong value);
+
+// ---------- sys_ioctl.c2i -------------
+
+fn c_int ioctl(c_int __fd, c_ulong __request, ...);
+
+/* 0x54 is just a magic number to make these relatively unique ('T') */
+
+const c_uint TCGETS      = 0x5401;
+const c_uint TCSETS      = 0x5402;
+const c_uint TCSETSW     = 0x5403;
+const c_uint TCSETSF     = 0x5404;
+const c_uint TCGETA      = 0x5405;
+const c_uint TCSETA      = 0x5406;
+
+// ---------- sys_mman.c2i -------------
+
+fn void* mmap(void* addr, c_size length, c_int prot, c_int flags, c_int fd, Offset offset);
+
+fn c_int munmap(void* addr, c_size length);
+
+const u32 PROT_NONE  = 0x0;
+const u32 PROT_READ  = 0x1;
+const u32 PROT_WRITE = 0x2;
+const u32 PROT_EXEC  = 0x4;
+
+#if SYSTEM_LINUX
+//NOTE: not all constants have been added yet
+const u32 MAP_SHARED    = 0x01;
+const u32 MAP_PRIVATE   = 0x02;
+const u32 MAP_FIXED     = 0x10;
+const u32 MAP_ANONYMOUS = 0x20;
+const u32 MAP_POPULATE  = 0x8000;
+#else
+// Same for Darwin, FreeBSD and OpenBSD
+const u32 MAP_SHARED    = 0x01;
+const u32 MAP_PRIVATE   = 0x02;
+const u32 MAP_FIXED     = 0x10;
+const u32 MAP_ANONYMOUS = 0x1000;
+#endif
+
+const usize MAP_FAILED = (void*)(usize)(-1);
+
+// ---------- sys_sendfile.c2i -------------
+
+fn c_ssize sendfile(i32 __out_fd, i32 __in_fd, Offset* __offset, c_size __count);
+
+// ---------- sys_signalfd.c2i -------------
+
+type Siginfo struct {
+  u32 ssi_signo;
+  i32 ssi_errno;
+  i32 ssi_code;
+  u32 ssi_pid;
+  u32 ssi_uid;
+  i32 ssi_fd;
+  u32 ssi_tid;
+  u32 ssi_band;
+  u32 ssi_overrun;
+  u32 ssi_trapno;
+  i32 ssi_status;
+  i32 ssi_int;
+  u64 ssi_ptr;
+  u64 ssi_utime;
+  u64 ssi_stime;
+  u64 ssi_addr;
+  u16 ssi_addr_lsb;
+  u16 __pad2;
+  i32 ssi_syscall;
+  u64 ssi_call_addr;
+  u32 ssi_arch;
+  u8[28] __pad;
+}
+
+fn c_int signalfd(c_int __fd, const Sigset* mask, c_int flags) @(cname="signalfd");
+
+// ---------- sys_socket.c2i -------------
+
+// From linux/in.h
+const c_int PF_UNIX     =  1;
+
+const c_int AF_UNIX    =  PF_UNIX;
+const c_int AF_INET    =  2;
+const c_int AF_NETLINK = 16;
+const c_int AF_PACKET  = 17;
+
+const c_int IPPROTO_IP  =  0;
+const c_int IPPROTO_TCP =  6;
+const c_int IPPROTO_UDP = 22;
+
+const u32 IP_MULTICAST_IF         = 32;
+const u32 IP_MULTICAST_TTL        = 33;
+const u32 IP_MULTICAST_LOOP       = 34;
+const u32 IP_ADD_MEMBERSHIP       = 35;
+const u32 IP_DROP_MEMBERSHIP      = 36;
+const u32 IP_UNBLOCK_SOURCE       = 37;
+const u32 IP_BLOCK_SOURCE         = 38;
+const u32 IP_ADD_SOURCE_MEMBERSHIP  = 39;
+const u32 IP_DROP_SOURCE_MEMBERSHIP = 40;
+const u32 IP_MSFILTER             = 41;
+const u32 MCAST_JOIN_GROUP        = 42;
+const u32 MCAST_BLOCK_SOURCE      = 43;
+const u32 MCAST_UNBLOCK_SOURCE    = 44;
+const u32 MCAST_LEAVE_GROUP       = 45;
+const u32 MCAST_JOIN_SOURCE_GROUP = 46;
+const u32 MCAST_LEAVE_SOURCE_GROUP = 47;
+const u32 MCAST_MSFILTER          = 48;
+const u32 IP_MULTICAST_ALL        = 49;
+const u32 IP_UNICAST_IF           = 50;
+const u32 IP_LOCAL_PORT_RANGE     = 51;
+const u32 IP_PROTOCOL             = 52;
+
+type SocketType enum u32 @(cname="__socket_type") {
+  SOCK_STREAM    = 1,   /* Sequenced, reliable, connection-based byte streams.  */
+  SOCK_DGRAM     = 2,   /* Connectionless, unreliable datagrams of fixed maximum length.  */
+  SOCK_RAW       = 3,   /* Raw protocol interface.  */
+  SOCK_RDM       = 4,   /* Reliably-delivered messages.  */
+  SOCK_SEQPACKET = 5,   /* Sequenced, reliable, connection-based, datagrams of fixed maximum length.  */
+  SOCK_DCCP      = 6,   /* Datagram Congestion Control Protocol.  */
+  SOCK_PACKET    = 10,  /* Linux specific way of getting packets at the dev level.  For writing rarp and other similar things on the user level. */
+}
+/* Flags to be ORed into the type parameter of socket and socketpair and
+   used for the flags parameter of paccept.  */
+const u32 SOCK_NONBLOCK  = 00004000;  /* Atomically mark descriptor(s) as non-blocking.  */
+const u32 SOCK_CLOEXEC   = 02000000;  /* Atomically set close-on-exec flag for the new descriptor(s).  */
+
+
+fn c_int socket(c_int domain, c_int type_, c_int protocol);
+
+
+const c_int SOL_SOCKET = 1;
+
+const c_int SO_DEBUG     = 1;
+const c_int SO_REUSEADDR = 2;
+const c_int SO_ERROR     = 4;
+const c_int SO_DONTROUTE = 5;
+const c_int SO_BROADCAST = 6;
+const c_int SO_SNDBUF    = 7;
+const c_int SO_RCVBUF    = 8;
+const c_int SO_KEEPALIVE = 9;
+const c_int SO_OOBINLINE = 10;
+const c_int SO_NO_CHECK  = 11;
+const c_int SO_PRIORITY  = 12;
+const c_int SO_LINGER    = 13;
+const c_int SO_BSDCOMPAT = 14;
+const c_int SO_REUSEPORT = 15;
+
+
+
+type SaFamily u16 @(cname="sa_family_t");
+
+type Sockaddr struct @(cname="sockaddr") {
+    SaFamily sa_family;
+    char[14] sa_data;
+}
+
+type InPort u16 @(cname="in_port_t");
+type InAddr u32 @(cname="in_addr_t");
+type In_addr struct @(cname="in_addr") {
+    InAddr s_addr;
+}
+
+type Sockaddr_in struct @(cname="sockaddr_in") {
+    SaFamily sin_family;
+    InPort sin_port;
+    In_addr sin_addr;
+
+    u8[8] sin_zero; // on 64-bit Ubuntu
+}
+
+type Ip_Mreq struct @(cname="ip_mreq") {
+    In_addr imr_multiaddr;
+    In_addr imr_interface;
+}
+
+const u32 INADDR_ANY       = 0x00000000;
+const u32 INADDR_BROADCAST = 0xffffffff;
+const u32 INADDR_NONE      = 0xffffffff;
+
+fn c_int getsockopt(c_int sockfd, c_int level, c_int optname, void* optval, u32* optlen);
+fn c_int setsockopt(c_int sockfd, c_int level, c_int optname, const void* optval, u32 optlen);
+
+fn c_int bind(c_int sockfd, const Sockaddr* addr, u32 addrlen);
+
+fn c_int connect(c_int sockfd, const Sockaddr* addr, u32 addrlen);
+
+fn c_int listen(c_int sockfd, c_int backlog);
+
+fn c_int accept(c_int sockfd, Sockaddr *addr, u32 *addrlen);
+
+#if SYSTEM_LINUX
+
+fn c_int accept4(c_int sockfd, Sockaddr* addr, u32* addrlen, c_int flags);
+
+#else
+
+fn c_int accept4(c_int sockfd, Sockaddr *addr, u32 *addrlen, c_int flags) {
+    c_int new_sockfd = accept(sockfd, addr, addrlen);
+    if (new_sockfd < 0) {
+        return -1;
+    }
+    if (flags & SOCK_CLOEXEC) {
+        if (fcntl(new_sockfd, F_SETFD, FD_CLOEXEC) == -1) {
+            close(new_sockfd);
+            return -1;
+        }
+    }
+    if (flags & SOCK_NONBLOCK) {
+        if (fcntl(new_sockfd, F_SETFL, O_NONBLOCK) == -1) {
+            close(new_sockfd);
+            return -1;
+        }
+    }
+    return new_sockfd;
+}
+
+#endif
+
+// NOTE: some c-prototypes need to be converted
+//int inet_aton(const char *cp, struct in_addr *inp);
+fn InAddr inet_addr(const c_char* cp);
+fn char* inet_ntoa(In_addr in);
+//struct in_addr inet_makeaddr(in_addr_t net, in_addr_t host);
+//in_addr_t inet_lnaof(struct in_addr in);
+//in_addr_t inet_netof(struct in_addr in);
+
+// should be in arpa/inet.h
+fn u32 htonl(u32 hostlong);
+fn u16 htons(u16 hostshort);
+fn u32 ntohl(u32 netlong);
+fn u16 ntohs(u16 netshort);
+
+// From linux/if_packet.h
+type Sockaddr_ll struct @(cname="sockaddr_ll") {
+    c_ushort sll_family;
+    c_ushort sll_protocol;   // Big-Endian!
+    c_int sll_ifindex;
+    c_ushort sll_hatype;
+    c_uchar sll_pkttype;
+    c_uchar sll_halen;
+    c_uchar[8] sll_addr;
+}
+
+const u32 UNIX_PATH_MAX = 108;
+
+type Sockaddr_un struct @(cname="sockaddr_un") {
+    SaFamily sun_family;
+    char[UNIX_PATH_MAX] sun_path;
+}
+
+
+fn isize send(c_int fd, const void* buf, usize n, c_int flags);
+
+fn isize sendto(c_int fd, const void* buf, usize n, c_int flags, const Sockaddr* addr, u32 addr_len);
+
+// TODO sendmsg
+
+fn isize recv(c_int fd, void* buf, usize n, c_int flags);
+
+fn isize recvfrom(c_int fd, void* buf, usize n, c_int flags, Sockaddr* addr, u32* addrlen);
+
+// TODO recvmsg
+
+// ---------- sys_stat.c2i -------------
+
+#if SYSTEM_LINUX
+// Version for Ubuntu 18.04
+type Stat struct @(cname="stat", no_typedef) {
+    c_ulong st_dev;
+    c_ulong st_ino;
+    // NOTE: some libc versions have st_nlink and st_mode switched!
+    c_ulong st_nlink;
+    c_uint  st_mode;
+    c_uint  st_uid;
+    c_uint  st_gid;
+    c_ulong st_rdev;
+    c_long  st_size;
+    c_long  st_blksize;
+    c_long  st_blocks;
+    //Timespec st_atim;
+    //Timespec st_mtim;
+    //Timespec st_ctim;
+    c_long  st_atime;
+    c_long  st_atime_nsec;
+    c_long  st_mtime;
+    c_long  st_mtime_nsec;
+    c_long  st_ctime;
+    c_long  st_ctime_nsec;
+    c_long[3] reserved;
+}
+static_assert(144, sizeof(Stat));
+fn c_int fstat(c_int fd, Stat* buf);
+fn c_int lstat(const c_char* pathname, Stat* buf);
+fn c_int stat(const c_char* pathname, Stat* buf);
+#endif
+
+#if SYSTEM_DARWIN
+type Timespec struct @(cname="timespec", no_typedef) {
+    c_long tv_sec;
+    c_long tv_nsec;
+}
+type Stat struct @(cname="stat", no_typedef) {
+    c_int st_dev;
+    c_ushort st_mode;
+    c_ushort st_nlink;
+    c_ulong st_ino;
+    c_uint st_uid;
+    c_uint st_gid;
+    c_uint st_rdev;
+    Timespec st_atimespec;
+    Timespec st_mtimespec;
+    Timespec st_ctimespec;
+    Timespec st_birthtimespec;
+    c_ulong st_size;
+    c_ulong st_blocks;
+    c_uint st_blksize;
+    c_uint st_flags;
+    c_uint st_gen;
+    c_int st_lspare;
+    c_long[2] st_qspare;
+}
+static_assert(144, sizeof(Stat));
+#if ARCH_X86_64
+fn c_int fstat(c_int fd, Stat* buf) @(cname="fstat64");
+fn c_int lstat(const c_char* pathname, Stat* buf) @(cname="lstat64");
+fn c_int stat(const c_char* pathname, Stat* buf) @(cname="stat64");
+#else
+fn c_int fstat(c_int fd, Stat* buf) @(cname="fstat");
+fn c_int lstat(const c_char* pathname, Stat* buf) @(cname="lstat");
+fn c_int stat(const c_char* pathname, Stat* buf) @(cname="stat");
+#endif
+#endif
+
+#if SYSTEM_FREEBSD
+type Timespec struct @(cname="timespec", no_typedef) {
+    c_long tv_sec;
+    c_long tv_nsec;
+}
+type Stat struct @(cname="stat", no_typedef) {
+    u64 st_dev;
+    u64 st_ino;
+    u64 st_nlink;
+    c_ushort st_mode;
+    c_ushort st_padding0;
+    c_uint st_uid;
+    c_uint st_gid;
+    i32 st_padding1;
+    u64 st_rdev;
+    Timespec st_atimespec;  // st_atim
+    Timespec st_mtimespec;  // st_mtim
+    Timespec st_ctimespec;  // st_ctim
+    Timespec st_birthtimespec;  // st_birthtim
+    c_ulong st_size;
+    c_ulong st_blocks;
+    c_uint st_blksize;  // actually c_int
+    c_uint st_flags;
+    u64 st_gen;
+    u64[10] st_lspare;
+}
+static_assert(224, sizeof(Stat));
+fn c_int fstat(c_int fd, Stat* buf);
+fn c_int lstat(const c_char* pathname, Stat* buf);
+fn c_int stat(const c_char* pathname, Stat* buf);
+#endif
+
+#if SYSTEM_OPENBSD
+type Timespec struct @(cname="timespec", no_typedef) {
+    c_long tv_sec;
+    c_long tv_nsec;
+}
+type Stat struct @(cname="stat", no_typedef) {
+    u32 st_mode;
+    i32 st_dev;
+    u64 st_ino;
+    u32 st_nlink;
+    c_uint st_uid;
+    c_uint st_gid;
+    i32 st_rdev;
+    Timespec st_atimespec;  // st_atim
+    Timespec st_mtimespec;  // st_mtim
+    Timespec st_ctimespec;  // st_ctim
+
+    c_ulong st_size;
+    i64 st_blocks;
+    i32 st_blksize;  // actually c_int
+    u32 st_flags;
+    u32 st_gen;
+    Timespec st_birthtimespec;  // st_birthtim
+}
+static_assert(128, sizeof(Stat));
+fn c_int fstat(c_int fd, Stat* buf);
+fn c_int lstat(const c_char* pathname, Stat* buf);
+fn c_int stat(const c_char* pathname, Stat* buf);
+#endif
+
+const u32 S_IFMT =  00170000;
+const u32 S_IFSOCK = 0140000;
+const u32 S_IFLNK  = 0120000;
+const u32 S_IFREG  = 0100000;
+const u32 S_IFBLK  = 0060000;
+const u32 S_IFDIR  = 0040000;
+const u32 S_IFCHR  = 0020000;
+const u32 S_IFIFO  = 0010000;
+const u32 S_ISUID  = 0004000;
+const u32 S_ISGID  = 0002000;
+const u32 S_ISVTX  = 0001000;
+
+type Mode_t c_uint @(cname="mode_t");
+
+fn c_int chmod(const char* file, Mode_t mode);
+//fn c_int lchmod(const char* file, Mode_t mode);
+fn c_int fchmod(c_int fd, Mode_t mode);
+fn c_int fchmodat(c_int dirfd, const char* pathname, Mode_t mode, c_int flag);
+
+fn Mode_t umask(Mode_t mask);
+fn Mode_t getumask();
+
+fn c_int mkdir(const char* __file, c_uint mode);
+
+// TODO other functions
+
+// ---------- sys_time.c2i -------------
+
+#if SYSTEM_DARWIN
+type Time c_long @(cname="time_t");
+type SuSeconds c_int @(cname="suseconds_t");
+#else
+// Same for Linux, FreeBSD and OpenBSD
+type Time c_long @(cname="time_t");
+type SuSeconds c_long @(cname="suseconds_t");
+#endif
+
+type Timeval struct @(cname="timeval") {
+    Time tv_sec;
+    SuSeconds tv_usec;
+}
+static_assert(16, sizeof(Timeval));
+
+type Timezone struct @(cname="timezone") {
+    c_int tz_minuteswest;
+    c_int tz_dsttime;
+}
+
+fn c_int gettimeofday(Timeval* tv, Timezone* tz);
+
+fn c_int settimeofday(const Timeval* tv, const Timezone* tz);
+
+// ---------- sys_utsname.c2i -------------
+
+#if SYSTEM_LINUX
+const u32 NAME_LEN = 65;
+#else
+// Same for Darwin, FreeBSD and OpenBSD
+const u32 NAME_LEN = 256;
+#endif
+
+type Name struct @(cname="utsname") {
+    char[NAME_LEN] sysname;
+    char[NAME_LEN] nodename;
+    char[NAME_LEN] release;
+    char[NAME_LEN] version;
+    char[NAME_LEN] machine;
+    char[NAME_LEN] domainname;
+}
+
+#if SYSTEM_FREEBSD
+fn c_int __xuname(c_int len, void *);       /* Variable record size. */
+fn c_int uname(Name *name) {
+    return __xuname(NAME_LEN, name);
+}
+#else
+fn c_int uname(Name* buf);
+#endif
+
+// ---------- uio.c2i -------------
+
+// NOTE: incomplete implementation
+
+fn isize readv(c_int fd, const Iovec* iovec, c_int count);
+
+fn isize writev(c_int fd, const Iovec* iovec, c_int count);
+
+// ------ from bits/types/struct_iovec.h ------
+
+/* Structure for scatter/gather I/O.  */
+type Iovec struct {
+    void *iov_base; /* Pointer to data.  */
+    usize iov_len; /* Length of data.  */
+}
+
+// ---------- unistd.c2i -------------
+
+/* Standard file descriptors.  */
+const c_int STDIN_FILENO  = 0;
+const c_int STDOUT_FILENO = 1;
+const c_int STDERR_FILENO = 2;
+
+// ifdef USE_XOPEN_EXTENDED ..
+fn i32 usleep(c_ulonglong __useconds);
+
+fn c_uint sleep(c_uint __seconds);
+fn c_char* getcwd(char* buf, c_size size);
+fn c_int chdir(const c_char* path);
+fn c_int fchdir(c_int fd);
+
+fn c_int close(c_int fd);
+
+fn c_long read(c_int fd, void* buf, c_ulong count);
+
+const u8 R_OK = 4;
+const u8 W_OK = 2;
+const u8 X_OK = 1;
+const u8 F_OK = 0;
+
+fn c_int isatty(c_int fd);
+
+fn c_ssize write(c_int fd, const void* buf, c_size count);
+
+fn c_int pipe(c_int* pipefd);
+
+#if SYSTEM_LINUX
+
+//#ifdef_GNU_SOURCE             /* See feature_test_macros(7) */
+fn c_int pipe2(c_int* pipefd, c_int flags);
+
+#else
+
+fn c_int pipe2(c_int* pipefd, c_int flags) {
+    if (pipe(pipefd) < 0) {
+        return -1;
+    }
+    if (flags & O_CLOEXEC) {
+        if (fcntl(pipefd[0], F_SETFD, FD_CLOEXEC) == -1
+        ||  fcntl(pipefd[1], F_SETFD, FD_CLOEXEC) == -1) {
+            close(pipefd[0]);
+            close(pipefd[1]);
+            return -1;
+        }
+    }
+    if (flags & O_NONBLOCK) {
+        if (fcntl(pipefd[0], F_SETFD, O_NONBLOCK) == -1
+        ||  fcntl(pipefd[1], F_SETFD, O_NONBLOCK) == -1) {
+            close(pipefd[0]);
+            close(pipefd[1]);
+            return -1;
+        }
+    }
+    return 0;
+}
+
+#endif
+
+fn c_int unlink(const char* name);
+
+fn c_int rmdir(const char* path);
+
+
+fn c_int getopt(i32 argc, char** argv, const char* optstring);
+
+char* optarg;
+c_int optind;
+c_int opterr;
+c_int optopt;
+
+fn c_int fsync(c_int fd);
+
+fn void sync();
+
+type Pid c_int @(cname="pid_t");
+
+fn Pid fork();
+
+fn Pid wait(c_int* wstatus);
+
+fn Pid waitpid(Pid pid, c_int* wstatus, c_int options);
+
+fn c_int dup(c_int oldfd);
+
+fn c_int dup2(c_int oldfd, c_int newfd);
+
+fn c_int dup3(c_int oldfd, c_int newfd, c_int flags);
+
+fn c_int execl(const char *pathname, const char *arg, ...);
+fn c_int execlp(const char *file, const char *arg, ...);
+fn c_int execle(const char *pathname, const char *arg, ...);
+fn c_int execv(const char *pathname, char** argv); // actually char* const argv[]
+fn c_int execvp(const char *file, char** argv);    // actually char* const argv[]
+fn c_int execvpe(const char *file, char** argv, const char** envp); // actually char* const envp[]
+
+fn c_int kill(Pid pid, c_int signal);
+
+fn c_long sysconf(c_int name);
+
+#if SYSTEM_LINUX
+// sysconf names per IEEE Std 1003.1, 2008 Edition, values for Linux
+const u32 _SC_ARG_MAX = 0;
+const u32 _SC_CHILD_MAX = 1;
+const u32 _SC_CLK_TCK = 2;
+const u32 _SC_NGROUPS_MAX = 3;
+const u32 _SC_OPEN_MAX = 4;
+const u32 _SC_JOB_CONTROL = 7;
+const u32 _SC_SAVED_IDS = 8;
+const u32 _SC_VERSION = 29;
+const u32 _SC_PAGESIZE = 30;
+const u32 _SC_PAGE_SIZE = 30;
+const u32 _SC_NPROCESSORS_CONF = 83;
+const u32 _SC_NPROCESSORS_ONLN = 84;
+const u32 _SC_PHYS_PAGES = 85;
+const u32 _SC_AVPHYS_PAGES = 86;
+const u32 _SC_MQ_OPEN_MAX = 27;
+const u32 _SC_MQ_PRIO_MAX = 28;
+const u32 _SC_RTSIG_MAX = 31;
+const u32 _SC_SEM_NSEMS_MAX = 32;
+const u32 _SC_SEM_VALUE_MAX = 33;
+const u32 _SC_SIGQUEUE_MAX = 34;
+const u32 _SC_TIMER_MAX = 35;
+const u32 _SC_TZNAME_MAX = 6;
+const u32 _SC_ASYNCHRONOUS_IO = 12;
+const u32 _SC_FSYNC = 15;
+const u32 _SC_MAPPED_FILES = 16;
+const u32 _SC_MEMLOCK = 17;
+const u32 _SC_MEMLOCK_RANGE = 18;
+const u32 _SC_MEMORY_PROTECTION = 19;
+const u32 _SC_MESSAGE_PASSING = 20;
+const u32 _SC_PRIORITIZED_IO = 13;
+const u32 _SC_REALTIME_SIGNALS = 9;
+const u32 _SC_SEMAPHORES = 21;
+const u32 _SC_SHARED_MEMORY_OBJECTS = 22;
+const u32 _SC_SYNCHRONIZED_IO = 14;
+const u32 _SC_TIMERS = 11;
+const u32 _SC_AIO_LISTIO_MAX = 23;
+const u32 _SC_AIO_MAX = 24;
+const u32 _SC_AIO_PRIO_DELTA_MAX = 25;
+const u32 _SC_DELAYTIMER_MAX = 26;
+const u32 _SC_THREAD_KEYS_MAX = 74;
+const u32 _SC_THREAD_STACK_MIN = 75;
+const u32 _SC_THREAD_THREADS_MAX = 76;
+const u32 _SC_TTY_NAME_MAX = 72;
+const u32 _SC_THREADS = 67;
+const u32 _SC_THREAD_ATTR_STACKADDR = 77;
+const u32 _SC_THREAD_ATTR_STACKSIZE = 78;
+const u32 _SC_THREAD_PRIORITY_SCHEDULING = 79;
+const u32 _SC_THREAD_PRIO_INHERIT = 80;
+const u32 _SC_THREAD_PRIO_PROTECT = 81;
+const u32 _SC_THREAD_PROCESS_SHARED = 82;
+const u32 _SC_THREAD_SAFE_FUNCTIONS = 68;
+const u32 _SC_GETGR_R_SIZE_MAX = 69;
+const u32 _SC_GETPW_R_SIZE_MAX = 70;
+const u32 _SC_LOGIN_NAME_MAX = 71;
+const u32 _SC_ADVISORY_INFO = 132;
+const u32 _SC_ATEXIT_MAX = 87;
+const u32 _SC_BARRIERS = 133;
+const u32 _SC_BC_BASE_MAX = 36;
+const u32 _SC_BC_DIM_MAX = 37;
+const u32 _SC_BC_SCALE_MAX = 38;
+const u32 _SC_BC_STRING_MAX = 39;
+const u32 _SC_CLOCK_SELECTION = 137;
+const u32 _SC_COLL_WEIGHTS_MAX = 40;
+const u32 _SC_CPUTIME = 138;
+const u32 _SC_EXPR_NEST_MAX = 42;
+const u32 _SC_HOST_NAME_MAX = 180;
+const u32 _SC_IOV_MAX = 60;
+const u32 _SC_IPV6 = 235;
+const u32 _SC_LINE_MAX = 43;
+const u32 _SC_MONOTONIC_CLOCK = 149;
+const u32 _SC_RAW_SOCKETS = 236;
+const u32 _SC_READER_WRITER_LOCKS = 153;
+const u32 _SC_REGEXP = 155;
+const u32 _SC_RE_DUP_MAX = 44;
+const u32 _SC_SHELL = 157;
+const u32 _SC_SPAWN = 159;
+const u32 _SC_SPIN_LOCKS = 154;
+const u32 _SC_SPORADIC_SERVER = 160;
+const u32 _SC_SS_REPL_MAX = 241;
+const u32 _SC_SYMLOOP_MAX = 173;
+const u32 _SC_THREAD_CPUTIME = 139;
+const u32 _SC_THREAD_SPORADIC_SERVER = 161;
+const u32 _SC_TIMEOUTS = 164;
+const u32 _SC_TRACE = 181;
+const u32 _SC_TRACE_EVENT_FILTER = 182;
+const u32 _SC_TRACE_EVENT_NAME_MAX = 242;
+const u32 _SC_TRACE_INHERIT = 183;
+const u32 _SC_TRACE_LOG = 184;
+const u32 _SC_TRACE_NAME_MAX = 243;
+const u32 _SC_TRACE_SYS_MAX = 244;
+const u32 _SC_TRACE_USER_EVENT_MAX = 245;
+const u32 _SC_TYPED_MEMORY_OBJECTS = 165;
+const u32 _SC_V7_ILP32_OFF32 = 237;
+#endif
+
+#if SYSTEM_DARWIN
+const u32 _SC_ARG_MAX = 1;
+const u32 _SC_CHILD_MAX = 2;
+const u32 _SC_CLK_TCK = 3;
+const u32 _SC_NGROUPS_MAX = 4;
+const u32 _SC_OPEN_MAX = 5;
+const u32 _SC_JOB_CONTROL = 6;
+const u32 _SC_SAVED_IDS = 7;
+const u32 _SC_VERSION = 8;
+const u32 _SC_PAGESIZE = 29;
+const u32 _SC_PAGE_SIZE = 29;
+const u32 _SC_NPROCESSORS_CONF = 57;
+const u32 _SC_NPROCESSORS_ONLN = 58;
+const u32 _SC_PHYS_PAGES = 200;
+const u32 _SC_MQ_OPEN_MAX = 46;
+const u32 _SC_MQ_PRIO_MAX = 75;
+const u32 _SC_RTSIG_MAX = 48;
+const u32 _SC_SEM_NSEMS_MAX = 49;
+const u32 _SC_SEM_VALUE_MAX = 50;
+const u32 _SC_SIGQUEUE_MAX = 51;
+const u32 _SC_TIMER_MAX = 52;
+const u32 _SC_TZNAME_MAX = 27;
+const u32 _SC_ASYNCHRONOUS_IO = 28;
+const u32 _SC_FSYNC = 38;
+const u32 _SC_MAPPED_FILES = 47;
+const u32 _SC_MEMLOCK = 30;
+const u32 _SC_MEMLOCK_RANGE = 31;
+const u32 _SC_MEMORY_PROTECTION = 32;
+const u32 _SC_MESSAGE_PASSING = 33;
+const u32 _SC_PRIORITIZED_IO = 34;
+const u32 _SC_REALTIME_SIGNALS = 36;
+const u32 _SC_SEMAPHORES = 37;
+const u32 _SC_SHARED_MEMORY_OBJECTS = 39;
+const u32 _SC_SYNCHRONIZED_IO = 40;
+const u32 _SC_TIMERS = 41;
+const u32 _SC_AIO_LISTIO_MAX = 42;
+const u32 _SC_AIO_MAX = 43;
+const u32 _SC_AIO_PRIO_DELTA_MAX = 44;
+const u32 _SC_DELAYTIMER_MAX = 45;
+const u32 _SC_THREAD_KEYS_MAX = 86;
+const u32 _SC_THREAD_STACK_MIN = 93;
+const u32 _SC_THREAD_THREADS_MAX = 94;
+const u32 _SC_TTY_NAME_MAX = 101;
+const u32 _SC_THREADS = 96;
+const u32 _SC_THREAD_ATTR_STACKADDR = 82;
+const u32 _SC_THREAD_ATTR_STACKSIZE = 83;
+const u32 _SC_THREAD_PRIORITY_SCHEDULING = 89;
+const u32 _SC_THREAD_PRIO_INHERIT = 87;
+const u32 _SC_THREAD_PRIO_PROTECT = 88;
+const u32 _SC_THREAD_PROCESS_SHARED = 90;
+const u32 _SC_THREAD_SAFE_FUNCTIONS = 91;
+const u32 _SC_GETGR_R_SIZE_MAX = 70;
+const u32 _SC_GETPW_R_SIZE_MAX = 71;
+const u32 _SC_LOGIN_NAME_MAX = 73;
+const u32 _SC_ADVISORY_INFO = 65;
+const u32 _SC_ATEXIT_MAX = 107;
+const u32 _SC_BARRIERS = 66;
+const u32 _SC_BC_BASE_MAX = 9;
+const u32 _SC_BC_DIM_MAX = 10;
+const u32 _SC_BC_SCALE_MAX = 11;
+const u32 _SC_BC_STRING_MAX = 12;
+const u32 _SC_CLOCK_SELECTION = 67;
+const u32 _SC_COLL_WEIGHTS_MAX = 13;
+const u32 _SC_CPUTIME = 68;
+const u32 _SC_EXPR_NEST_MAX = 14;
+const u32 _SC_HOST_NAME_MAX = 72;
+const u32 _SC_IOV_MAX = 56;
+const u32 _SC_IPV6 = 118;
+const u32 _SC_LINE_MAX = 15;
+const u32 _SC_MONOTONIC_CLOCK = 74;
+const u32 _SC_RAW_SOCKETS = 119;
+const u32 _SC_READER_WRITER_LOCKS = 76;
+const u32 _SC_REGEXP = 77;
+const u32 _SC_RE_DUP_MAX = 16;
+const u32 _SC_SHELL = 78;
+const u32 _SC_SPAWN = 79;
+const u32 _SC_SPIN_LOCKS = 80;
+const u32 _SC_SPORADIC_SERVER = 81;
+const u32 _SC_SS_REPL_MAX = 126;
+const u32 _SC_SYMLOOP_MAX = 120;
+const u32 _SC_THREAD_CPUTIME = 84;
+const u32 _SC_THREAD_SPORADIC_SERVER = 92;
+const u32 _SC_TIMEOUTS = 95;
+const u32 _SC_TRACE = 97;
+const u32 _SC_TRACE_EVENT_FILTER = 98;
+const u32 _SC_TRACE_EVENT_NAME_MAX = 127;
+const u32 _SC_TRACE_INHERIT = 99;
+const u32 _SC_TRACE_LOG = 100;
+const u32 _SC_TRACE_NAME_MAX = 128;
+const u32 _SC_TRACE_SYS_MAX = 129;
+const u32 _SC_TRACE_USER_EVENT_MAX = 130;
+const u32 _SC_TYPED_MEMORY_OBJECTS = 102;
+#endif
+
+#if SYSTEM_FREEBSD
+const u32 _SC_ARG_MAX = 1;
+const u32 _SC_CHILD_MAX = 2;
+const u32 _SC_CLK_TCK = 3;
+const u32 _SC_NGROUPS_MAX = 4;
+const u32 _SC_OPEN_MAX = 5;
+const u32 _SC_JOB_CONTROL = 6;
+const u32 _SC_SAVED_IDS = 7;
+const u32 _SC_VERSION = 8;
+const u32 _SC_PAGESIZE = 47;
+const u32 _SC_PAGE_SIZE = 47;
+const u32 _SC_NPROCESSORS_CONF = 57;
+const u32 _SC_NPROCESSORS_ONLN = 58;
+const u32 _SC_PHYS_PAGES = 121;
+const u32 _SC_MQ_OPEN_MAX = 46;
+const u32 _SC_MQ_PRIO_MAX = 75;
+const u32 _SC_RTSIG_MAX = 48;
+const u32 _SC_SEM_NSEMS_MAX = 49;
+const u32 _SC_SEM_VALUE_MAX = 50;
+const u32 _SC_SIGQUEUE_MAX = 51;
+const u32 _SC_TIMER_MAX = 52;
+const u32 _SC_TZNAME_MAX = 27;
+const u32 _SC_ASYNCHRONOUS_IO = 28;
+const u32 _SC_FSYNC = 38;
+const u32 _SC_MAPPED_FILES = 29;
+const u32 _SC_MEMLOCK = 30;
+const u32 _SC_MEMLOCK_RANGE = 31;
+const u32 _SC_MEMORY_PROTECTION = 32;
+const u32 _SC_MESSAGE_PASSING = 33;
+const u32 _SC_PRIORITIZED_IO = 34;
+const u32 _SC_REALTIME_SIGNALS = 36;
+const u32 _SC_SEMAPHORES = 37;
+const u32 _SC_SHARED_MEMORY_OBJECTS = 39;
+const u32 _SC_SYNCHRONIZED_IO = 40;
+const u32 _SC_TIMERS = 41;
+const u32 _SC_AIO_LISTIO_MAX = 42;
+const u32 _SC_AIO_MAX = 43;
+const u32 _SC_AIO_PRIO_DELTA_MAX = 44;
+const u32 _SC_DELAYTIMER_MAX = 45;
+const u32 _SC_THREAD_KEYS_MAX = 86;
+const u32 _SC_THREAD_STACK_MIN = 93;
+const u32 _SC_THREAD_THREADS_MAX = 94;
+const u32 _SC_TTY_NAME_MAX = 101;
+const u32 _SC_THREADS = 96;
+const u32 _SC_THREAD_ATTR_STACKADDR = 82;
+const u32 _SC_THREAD_ATTR_STACKSIZE = 83;
+const u32 _SC_THREAD_PRIORITY_SCHEDULING = 89;
+const u32 _SC_THREAD_PRIO_INHERIT = 87;
+const u32 _SC_THREAD_PRIO_PROTECT = 88;
+const u32 _SC_THREAD_PROCESS_SHARED = 90;
+const u32 _SC_THREAD_SAFE_FUNCTIONS = 91;
+const u32 _SC_GETGR_R_SIZE_MAX = 70;
+const u32 _SC_GETPW_R_SIZE_MAX = 71;
+const u32 _SC_LOGIN_NAME_MAX = 73;
+const u32 _SC_ADVISORY_INFO = 65;
+const u32 _SC_ATEXIT_MAX = 107;
+const u32 _SC_BARRIERS = 66;
+const u32 _SC_BC_BASE_MAX = 9;
+const u32 _SC_BC_DIM_MAX = 10;
+const u32 _SC_BC_SCALE_MAX = 11;
+const u32 _SC_BC_STRING_MAX = 12;
+const u32 _SC_CLOCK_SELECTION = 67;
+const u32 _SC_COLL_WEIGHTS_MAX = 13;
+const u32 _SC_CPUTIME = 68;
+const u32 _SC_EXPR_NEST_MAX = 14;
+const u32 _SC_HOST_NAME_MAX = 72;
+const u32 _SC_IOV_MAX = 56;
+const u32 _SC_IPV6 = 118;
+const u32 _SC_LINE_MAX = 15;
+const u32 _SC_MONOTONIC_CLOCK = 74;
+const u32 _SC_RAW_SOCKETS = 119;
+const u32 _SC_READER_WRITER_LOCKS = 76;
+const u32 _SC_REGEXP = 77;
+const u32 _SC_RE_DUP_MAX = 16;
+const u32 _SC_SHELL = 78;
+const u32 _SC_SPAWN = 79;
+const u32 _SC_SPIN_LOCKS = 80;
+const u32 _SC_SPORADIC_SERVER = 81;
+const u32 _SC_SYMLOOP_MAX = 120;
+const u32 _SC_THREAD_CPUTIME = 84;
+const u32 _SC_THREAD_SPORADIC_SERVER = 92;
+const u32 _SC_TIMEOUTS = 95;
+const u32 _SC_TRACE = 97;
+const u32 _SC_TRACE_EVENT_FILTER = 98;
+const u32 _SC_TRACE_INHERIT = 99;
+const u32 _SC_TRACE_LOG = 100;
+const u32 _SC_TYPED_MEMORY_OBJECTS = 102;
+#endif
+#if SYSTEM_OPENBSD
+const u32 _SC_ARG_MAX = 1;
+const u32 _SC_CHILD_MAX = 2;
+const u32 _SC_CLK_TCK = 3;
+const u32 _SC_NGROUPS_MAX = 4;
+const u32 _SC_OPEN_MAX = 5;
+const u32 _SC_JOB_CONTROL = 6;
+const u32 _SC_SAVED_IDS = 7;
+const u32 _SC_VERSION = 8;
+const u32 _SC_PAGESIZE = 28;
+const u32 _SC_PAGE_SIZE = 28;
+const u32 _SC_NPROCESSORS_CONF = 502;
+const u32 _SC_NPROCESSORS_ONLN = 503;
+const u32 _SC_PHYS_PAGES = 500;
+const u32 _SC_AVPHYS_PAGES = 501;
+const u32 _SC_MQ_OPEN_MAX = 58;
+const u32 _SC_MQ_PRIO_MAX = 59;
+const u32 _SC_RTSIG_MAX = 66;
+const u32 _SC_SEM_NSEMS_MAX = 31;
+const u32 _SC_SEM_VALUE_MAX = 32;
+const u32 _SC_SIGQUEUE_MAX = 70;
+const u32 _SC_TIMER_MAX = 93;
+const u32 _SC_TZNAME_MAX = 27;
+const u32 _SC_ASYNCHRONOUS_IO = 45;
+const u32 _SC_FSYNC = 29;
+const u32 _SC_MAPPED_FILES = 53;
+const u32 _SC_MEMLOCK = 54;
+const u32 _SC_MEMLOCK_RANGE = 55;
+const u32 _SC_MEMORY_PROTECTION = 56;
+const u32 _SC_MESSAGE_PASSING = 57;
+const u32 _SC_PRIORITIZED_IO = 60;
+const u32 _SC_REALTIME_SIGNALS = 64;
+const u32 _SC_SEMAPHORES = 67;
+const u32 _SC_SHARED_MEMORY_OBJECTS = 68;
+const u32 _SC_SYNCHRONIZED_IO = 75;
+const u32 _SC_TIMERS = 94;
+const u32 _SC_AIO_LISTIO_MAX = 42;
+const u32 _SC_AIO_MAX = 43;
+const u32 _SC_AIO_PRIO_DELTA_MAX = 44;
+const u32 _SC_DELAYTIMER_MAX = 50;
+const u32 _SC_THREAD_KEYS_MAX = 81;
+const u32 _SC_THREAD_STACK_MIN = 89;
+const u32 _SC_THREAD_THREADS_MAX = 90;
+const u32 _SC_TTY_NAME_MAX = 107;
+const u32 _SC_THREADS = 91;
+const u32 _SC_THREAD_ATTR_STACKADDR = 77;
+const u32 _SC_THREAD_ATTR_STACKSIZE = 78;
+const u32 _SC_THREAD_PRIORITY_SCHEDULING = 84;
+const u32 _SC_THREAD_PRIO_INHERIT = 82;
+const u32 _SC_THREAD_PRIO_PROTECT = 83;
+const u32 _SC_THREAD_PROCESS_SHARED = 85;
+const u32 _SC_THREAD_SAFE_FUNCTIONS = 103;
+const u32 _SC_GETGR_R_SIZE_MAX = 100;
+const u32 _SC_GETPW_R_SIZE_MAX = 101;
+const u32 _SC_LOGIN_NAME_MAX = 102;
+const u32 _SC_ADVISORY_INFO = 41;
+const u32 _SC_ATEXIT_MAX = 46;
+const u32 _SC_BARRIERS = 47;
+const u32 _SC_BC_BASE_MAX = 9;
+const u32 _SC_BC_DIM_MAX = 10;
+const u32 _SC_BC_SCALE_MAX = 11;
+const u32 _SC_BC_STRING_MAX = 12;
+const u32 _SC_CLOCK_SELECTION = 48;
+const u32 _SC_COLL_WEIGHTS_MAX = 13;
+const u32 _SC_CPUTIME = 49;
+const u32 _SC_EXPR_NEST_MAX = 14;
+const u32 _SC_HOST_NAME_MAX = 33;
+const u32 _SC_IOV_MAX = 51;
+const u32 _SC_IPV6 = 52;
+const u32 _SC_LINE_MAX = 15;
+const u32 _SC_MONOTONIC_CLOCK = 34;
+const u32 _SC_RAW_SOCKETS = 62;
+const u32 _SC_READER_WRITER_LOCKS = 63;
+const u32 _SC_REGEXP = 65;
+const u32 _SC_RE_DUP_MAX = 16;
+const u32 _SC_SHELL = 69;
+const u32 _SC_SPAWN = 71;
+const u32 _SC_SPIN_LOCKS = 72;
+const u32 _SC_SPORADIC_SERVER = 73;
+const u32 _SC_SS_REPL_MAX = 74;
+const u32 _SC_SYMLOOP_MAX = 76;
+const u32 _SC_THREAD_CPUTIME = 79;
+const u32 _SC_THREAD_SPORADIC_SERVER = 88;
+const u32 _SC_TIMEOUTS = 92;
+const u32 _SC_TRACE = 95;
+const u32 _SC_TRACE_EVENT_FILTER = 96;
+const u32 _SC_TRACE_EVENT_NAME_MAX = 97;
+const u32 _SC_TRACE_INHERIT = 98;
+const u32 _SC_TRACE_LOG = 99;
+const u32 _SC_TRACE_NAME_MAX = 104;
+const u32 _SC_TRACE_SYS_MAX = 105;
+const u32 _SC_TRACE_USER_EVENT_MAX = 106;
+const u32 _SC_TYPED_MEMORY_OBJECTS = 108;
+const u32 _SC_V7_ILP32_OFF32 = 113;
+#endif
+
+fn c_ulong lseek (i32 fd, c_ulong offset, i32 whence);
+

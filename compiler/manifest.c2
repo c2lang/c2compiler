@@ -22,16 +22,14 @@ import string_list;
 import string_pool;
 import yaml;
 
-import stdlib;
-import stdio local;
-import string local;
+import std local;
 
 fn const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
     const yaml.Node* node = parser.findNode(path);
     if (!node) {
         // TODO print manifest filename
         fprintf(stderr, "error: missing node %s\n", path);
-        stdlib.exit(-1);
+        std.exit(-1);
     }
     return node;
 }
@@ -60,13 +58,13 @@ fn bool getYamlInfo(yaml.Parser* parser,
             break;
         default:
             fprintf(stderr, "error in manifest: invalid library kind '%s'\n", kind);
-            stdlib.exit(-1);
+            std.exit(-1);
         }
         iter.next();
     }
     if (!kind_dynamic && !kind_static) {
         fprintf(stderr, "error in manifest: a library must be dynamic and/or static\n");
-        stdlib.exit(-1);
+        std.exit(-1);
     }
 
     comp.setKind(kind_static, kind_dynamic);

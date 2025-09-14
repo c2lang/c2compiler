@@ -19,7 +19,7 @@ import ast_context;
 import constants local;
 import string_buffer;
 
-import string local;
+import std local;
 
 type DeclStmtBits struct {
     u32 : NumStmtBits;

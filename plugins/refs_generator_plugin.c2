@@ -22,7 +22,7 @@ import refs_generator;
 import plugin_info;
 import utils;
 
-import stdlib local;
+import std local;
 
 public plugin_info.Plugin handle @(export) = {
     .load = load,

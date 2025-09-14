@@ -17,25 +17,23 @@ module ir_slot_values;
 
 import ir local;
 
-import stdlib;
-import string;
-import stdio local;
+import std local;
 
 public type SlotValues struct {
     Ref* values;    // slot is index
 }
 
 public fn void SlotValues.create(SlotValues* v) {
-    v.values = stdlib.malloc(SlotMax * sizeof(Ref));
+    v.values = malloc(SlotMax * sizeof(Ref));
 }
 
 public fn void SlotValues.free(SlotValues* v) {
-    stdlib.free(v.values);
+    free(v.values);
 }
 
 public fn void SlotValues.clear(SlotValues* v, u32 num_slots) {
     assert(num_slots < SlotMax);
-    string.memset(v.values, 0, num_slots * sizeof(Ref));
+    memset(v.values, 0, num_slots * sizeof(Ref));
 }
 
 public fn Ref SlotValues.find(const SlotValues* v, u16 slot) {

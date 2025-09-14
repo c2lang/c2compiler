@@ -21,9 +21,7 @@ import src_loc local;
 import string_list;
 import yaml;
 
-import stdlib;
-import string;
-import stdio local;
+import std;
 
 public type Plugin struct {
     u32 name;    //  index into pool
@@ -56,10 +54,10 @@ public type Info struct @(opaque) {
 fn void Info.addPlugin(Info* info, const char* name, const char* options, SrcLoc loc) {
     if (info.plugin_count == info.plugin_max) {
         info.plugin_max += 2;
-        Plugin* plugins2 = stdlib.malloc(info.plugin_max * sizeof(Plugin));
+        Plugin* plugins2 = std.malloc(info.plugin_max * sizeof(Plugin));
         if (info.plugins) {
-            string.memcpy(plugins2, info.plugins, info.plugin_count * sizeof(Plugin));
-            stdlib.free(info.plugins);
+            std.memcpy(plugins2, info.plugins, info.plugin_count * sizeof(Plugin));
+            std.free(info.plugins);
         }
         info.plugins = plugins2;
     }
@@ -134,8 +132,8 @@ fn const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
     const yaml.Node* node = parser.findNode(path);
     if (!node) {
         // TODO print manifest filename
-        fprintf(stderr, "missing node %s\n", path);
-        stdlib.exit(-1);
+        std.fprintf(stderr, "missing node %s\n", path);
+        std.exit(-1);
     }
     return node;
 }
@@ -146,9 +144,9 @@ fn u32 Info.expand(Info* info, const char* raw) {
 
     if (raw[0] == '$') {
         // TODO expand with environment variable
-        const char* expand = stdlib.getenv(raw + 1);
+        const char* expand = std.getenv(raw + 1);
         if (!expand) {
-            fprintf(stderr, "[build-file] warning: environment variable '%s' not set!\n", raw + 1);
+            std.fprintf(std.stderr, "[build-file] warning: environment variable '%s' not set!\n", raw + 1);
             return 0;
         }
         raw = expand;
@@ -203,11 +201,11 @@ fn bool getYamlInfo(yaml.Parser* parser, Info* info) {
     iter = parser.getNodeChildIter(root);
     while (!iter.done()) {
         const char* name = iter.getName();
-        if (string.strncmp(name, "plugin.,", 7) == 0) {
+        if (std.strncmp(name, "plugin.,", 7) == 0) {
             const char* options = iter.getChildScalarValue("options");
             if (!options) {
-                fprintf(stderr, "[build-file] missing options for %s\n", name);
-                stdlib.exit(-1);
+                std.fprintf(std.stderr, "[build-file] missing options for %s\n", name);
+                std.exit(-1);
             }
             SrcLoc loc = 0; // TODO
             info.addPlugin(name+7, options, loc);
@@ -225,7 +223,7 @@ fn bool Info.parse(Info* info, const char* data) {
         //parser.dump(true);
         ok = getYamlInfo(parser, info);
     } else {
-        fprintf(stderr, "Error: %s\n", parser.getMessage());
+        std.fprintf(std.stderr, "Error: %s\n", parser.getMessage());
     }
 
     parser.destroy();
@@ -247,14 +245,14 @@ public fn Info* parse(source_mgr.SourceMgr* sm, string_pool.Pool* pool, const ch
 
     if (!ok) return nil;
 
-    Info* result = stdlib.malloc(sizeof(Info));
-    string.memcpy(result, &info, sizeof(Info));
+    Info* result = std.malloc(sizeof(Info));
+    std.memcpy(result, &info, sizeof(Info));
     return result;
 }
 
 public fn void Info.free(Info* info) {
     info.lib_dirs.free();
     info.plugin_dirs.free();
-    stdlib.free(info);
+    std.free(info);
 }
 

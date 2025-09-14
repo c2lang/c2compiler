@@ -21,8 +21,7 @@ import console;
 import plugin_info;
 import process_utils;
 
-import stdlib local;
-import string local;
+import std local;
 
 public plugin_info.Plugin handle @(export) = {
     .load = load,

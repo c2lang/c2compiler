@@ -17,9 +17,7 @@ module ir_rev_list;
 
 import ir local;
 
-import stdlib;
-import string;
-import stdio local;
+import std local;
 
 public type RevIndex struct {
     u16 start;
@@ -37,12 +35,12 @@ public type RevList struct {
 }
 
 public fn void RevList.create(RevList* r, u32 num_blocks) {
-    string.memset(r, 0, sizeof(RevList));
+    memset(r, 0, sizeof(RevList));
 
     r.capacity = 1024;
     r.block_capacity = num_blocks;
-    r.nodes = stdlib.malloc(r.capacity * sizeof(u8));
-    r.indexes = stdlib.malloc(num_blocks * sizeof(RevIndex));
+    r.nodes = malloc(r.capacity * sizeof(u8));
+    r.indexes = malloc(num_blocks * sizeof(RevIndex));
 }
 
 public fn void RevList.build(RevList* r, FunctionInfo* info) {
@@ -78,8 +76,8 @@ public fn void RevList.build(RevList* r, FunctionInfo* info) {
 }
 
 public fn void RevList.free(RevList* r) {
-    stdlib.free(r.nodes);
-    stdlib.free(r.indexes);
+    free(r.nodes);
+    free(r.indexes);
 }
 
 public fn RevIndex RevList.getBlockIndex(const RevList* r, BlockId blk_id) {

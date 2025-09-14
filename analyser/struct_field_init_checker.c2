@@ -17,18 +17,18 @@ module module_analyser;
 
 import src_loc local;
 
-import stdlib;
+import std;
 
 type StructFieldInitChecker struct {
     SrcLoc* inits;
 }
 
 fn void StructFieldInitChecker.init(StructFieldInitChecker* c, u32 capacity) {
-    c.inits = stdlib.calloc(capacity, sizeof(SrcLoc));
+    c.inits = std.calloc(capacity, sizeof(SrcLoc));
 }
 
 fn void StructFieldInitChecker.free(StructFieldInitChecker* c) {
-    stdlib.free(c.inits);
+    std.free(c.inits);
 }
 
 fn SrcLoc StructFieldInitChecker.add(StructFieldInitChecker* c, u32 idx, SrcLoc loc) {

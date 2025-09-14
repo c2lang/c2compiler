@@ -15,8 +15,7 @@
 
 module ir;
 
-import string local;
-import stdlib;
+import std;
 
 public type CaseId u32;
 
@@ -40,14 +39,14 @@ fn void CaseList.init(CaseList* l) {
 }
 
 fn void CaseList.free(CaseList* l) {
-    if (l.cases) stdlib.free(l.cases);
+    if (l.cases) std.free(l.cases);
 }
 
 fn void CaseList.resize(CaseList* l, u32 extra, bool copy) {
     l.capacity += extra;
-    Case* cases2 = stdlib.calloc(l.capacity, sizeof(Case));
-    if (l.count != 0 && copy) memcpy(cases2, l.cases, l.count * sizeof(Case));
-    if (l.cases) stdlib.free(l.cases);
+    Case* cases2 = std.calloc(l.capacity, sizeof(Case));
+    if (l.count != 0 && copy) std.memcpy(cases2, l.cases, l.count * sizeof(Case));
+    if (l.cases) std.free(l.cases);
     l.cases = cases2;
 }
 

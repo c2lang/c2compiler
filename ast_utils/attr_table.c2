@@ -17,8 +17,7 @@ module attr_table;
 
 import attr;
 
-import stdlib;
-import string;
+import std local;
 
 type Attr struct {
     void* decl;
@@ -36,22 +35,22 @@ public type Table struct @(opaque) {
 }
 
 public fn Table* create() {
-    Table* t = stdlib.calloc(1, sizeof(Table));
+    Table* t = calloc(1, sizeof(Table));
     t.resize(2);
     return t;
 }
 
 public fn void Table.free(Table* t) {
-    stdlib.free(t.attrs);
-    stdlib.free(t);
+    free(t.attrs);
+    free(t);
 }
 
 fn void Table.resize(Table* t, u32 capacity) {
     t.capacity = capacity;
-    Attr* attrs2 = stdlib.malloc(capacity * sizeof(Attr));
+    Attr* attrs2 = malloc(capacity * sizeof(Attr));
     if (t.count) {
-        string.memcpy(attrs2, t.attrs, t.count * sizeof(Attr));
-        stdlib.free(t.attrs);
+        memcpy(attrs2, t.attrs, t.count * sizeof(Attr));
+        free(t.attrs);
     }
     t.attrs = attrs2;
 }

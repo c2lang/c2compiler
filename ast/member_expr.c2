@@ -18,8 +18,8 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
-import stdio;
-import string;
+
+import std;
 
 public const u32 MemberExprMaxDepth = 7;
 
@@ -103,7 +103,7 @@ fn Expr* MemberExpr.instantiate(MemberExpr* e, Instantiator* inst) {
     size = (size + 7) & ~0x7; // round to 8-byte (temp)
     MemberExpr* e2 = inst.c.alloc(size);
 
-    string.memcpy(e2, e, size);
+    std.memcpy(e2, e, size);
     if (base) e2.refs[0].expr = base.instantiate(inst);
 
     return (Expr*)e2;
@@ -260,7 +260,7 @@ public fn SrcLoc MemberExpr.getLastLoc(const MemberExpr* e) {
 
 fn SrcLoc MemberExpr.getEndLoc(const MemberExpr* e) {
     u32 last = e.getNumRefs() - 1;
-    return e.getLoc(last) + (u32)string.strlen(e.getName(last));
+    return e.getLoc(last) + (u32)std.strlen(e.getName(last));
 }
 
 public fn QualType MemberExpr.getBaseType(const MemberExpr* m) {
@@ -351,7 +351,7 @@ public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
 
     }
     out.color(col_Normal);
-    stdio.puts(out.data());
+    std.puts(out.data());
     out.free();
 }
 

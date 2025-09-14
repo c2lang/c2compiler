@@ -21,10 +21,7 @@ import diagnostics;
 import module_list;
 import dsm_sorter;
 
-import stdlib;
-import string;
-
-import stdio local;
+import std local;
 
 // Sort modules according to imports. Modules without dependencies (inside this component) come first
 public fn void sort(component.Component* c, diagnostics.Diags* diags) {
@@ -52,14 +49,14 @@ public fn void sort(component.Component* c, diagnostics.Diags* diags) {
         diags.error(0, "circular dependency between modules");
         s.print();
         // TODO print dependency
-        stdlib.exit(-1);
+        std.exit(-1);
     }
 
     // re-order results
-    ast.Module** copy = stdlib.malloc(count * sizeof(ast.Module*));
-    string.memcpy(copy, orig, count * sizeof(ast.Module*));
+    ast.Module** copy = std.malloc(count * sizeof(ast.Module*));
+    std.memcpy(copy, orig, count * sizeof(ast.Module*));
     for (u32 i=0; i<count; i++) orig[i] = copy[sorted[i]];
-    stdlib.free(copy);
+    std.free(copy);
 
     dsm.free();
 }

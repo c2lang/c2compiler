@@ -25,8 +25,7 @@ import number_radix local;
 import src_loc local;
 import string_pool;
 
-import stdlib local;
-import string;
+import std local;
 
 public type Builder struct  @(opaque) {
     Context* context;           // no ownership
@@ -90,18 +89,18 @@ public fn void Builder.actOnModule(Builder* b,
     assert(b.comp);
     if (mod_name == b.c2_name && !is_interface) {
         b.diags.error(mod_loc, "module name 'c2' is reserved");
-        stdlib.exit(-1);
+        std.exit(-1);
     }
     if (mod_name == b.main_name) {
         b.diags.error(mod_loc, "module name 'main' is reserved");
-        stdlib.exit(-1);
+        std.exit(-1);
     }
 
     b.mod = b.comp.getOrAddModule(mod_name);
     if (!b.mod) {
         b.diags.error(mod_loc, "module '%s' is already defined in another component",
             idx2name(mod_name));
-        stdlib.exit(-1);
+        std.exit(-1);
     }
     b.ast = b.mod.add(b.auxPool, filename, is_interface, is_generated);
     b.ast_idx = b.ast.getIdx();
@@ -268,8 +267,8 @@ public fn VarDecl* Builder.actOnStructMember(Builder* b,
                                       bitfield);
 }
 
-public fn FieldInitInfo* Builder.actOnFieldInitInfo(Builder* b, StructTypeDecl* std) {
-    return std.createFieldInfo(b.context);
+public fn FieldInitInfo* Builder.actOnFieldInitInfo(Builder* b, StructTypeDecl* st) {
+    return st.createFieldInfo(b.context);
 }
 
 public fn Decl* Builder.actOnGlobalVarDecl(Builder* b,
@@ -425,14 +424,14 @@ fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
 }
 
 fn void Builder.actOnStructAttr(Builder* b, Decl* d, const Attr* a) {
-    StructTypeDecl* std =(StructTypeDecl*)d;
+    StructTypeDecl* st =(StructTypeDecl*)d;
 
     switch (a.kind) {
     case Export:
         d.setAttrExport();
         break;
     case Packed:
-        std.setPacked();
+        st.setPacked();
         break;
     case Unused:
         d.setAttrUnused();
@@ -442,20 +441,20 @@ fn void Builder.actOnStructAttr(Builder* b, Decl* d, const Attr* a) {
                 kind2name(a.kind));
         break;
     case Aligned:
-        std.setAttrAlignment(a.value.number);
+        st.setAttrAlignment(a.value.number);
         break;
     case Opaque:
         if (!d.isPublic()) {
             b.diags.error(a.loc, "opaque declaration must be public");
         }
-        std.setOpaque();
+        st.setOpaque();
         break;
     case CName:
         b.storeAttr(d, a);
         break;
     case NoTypeDef:
         if (b.is_interface) {
-            std.setAttrNoTypeDef();
+            st.setAttrNoTypeDef();
         } else {
             b.diags.error(a.loc, "attribute '%s' can only be used in interfaces",
                 kind2name(a.kind));
@@ -618,7 +617,7 @@ public fn void Builder.actOnAttr(Builder* b, attr.Attr* a) {
         return;
     }
 
-    string.memcpy(&b.attrs[b.num_attrs], a , sizeof(Attr));
+    memcpy(&b.attrs[b.num_attrs], a , sizeof(Attr));
     b.num_attrs++;
 }
 

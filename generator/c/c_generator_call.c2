@@ -20,7 +20,8 @@ import printf_utils;
 import source_mgr;
 import src_loc local;
 import string_buffer;
-import string;
+
+import std;
 
 fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     CallExpr* call = cast<CallExpr*>(e);
@@ -159,7 +160,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
                 out.add1('"');
                 printf_utils.parseFormat(format_text, on_format_specifier, &fc);
                 out.encodeBytes(format_text + fc.last_offset,
-                                cast<u32>(string.strlen(format_text + fc.last_offset)), '"');
+                                cast<u32>(std.strlen(format_text + fc.last_offset)), '"');
                 out.add1('"');
             } else {
                 Expr* arg = (call_index < call_num_args) ?

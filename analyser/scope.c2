@@ -21,9 +21,7 @@ import module_list;
 import constants;
 import src_loc local;
 
-import stdlib;
-import string;
-import stdio;
+import std;
 
 public const u32 Function    = 0x1;
 public const u32 Break       = 0x2;
@@ -73,7 +71,7 @@ public fn Scope* create(module_list.List* allmodules,
                           const ast.SymbolTable* symbols,
                           bool warn_on_unused)
 {
-    Scope* s = stdlib.calloc(1, sizeof(Scope));
+    Scope* s = std.calloc(1, sizeof(Scope));
     s.allmodules = allmodules;
     s.diags = diags;
     s.imports = imports;
@@ -89,12 +87,12 @@ public fn Scope* create(module_list.List* allmodules,
 }
 
 public fn void Scope.free(Scope* s) {
-    stdlib.free(s.cache_imports);
-    stdlib.free(s.cache_decls);
-    stdlib.free(s.stack_symbols);
-    stdlib.free(s.cache_symbols);
-    stdlib.free(s.stack_decls);
-    stdlib.free(s);
+    std.free(s.cache_imports);
+    std.free(s.cache_decls);
+    std.free(s.stack_symbols);
+    std.free(s.cache_symbols);
+    std.free(s.stack_decls);
+    std.free(s);
 }
 
 public fn void Scope.reset(Scope* s) {
@@ -187,31 +185,31 @@ fn void Scope.stack_add(Scope* s, u32 name_idx, ast.Decl* d) {
 }
 
 fn void Scope.stack_resize(Scope* s, u32 capacity) {
-    u32* symbols = stdlib.malloc(capacity * sizeof(u32));
-    ast.Decl** decls = stdlib.malloc(capacity * sizeof(ast.Decl*));
+    u32* symbols = std.malloc(capacity * sizeof(u32));
+    ast.Decl** decls = std.malloc(capacity * sizeof(ast.Decl*));
     s.stack_capacity = capacity;
     if (s.stack_count) {
-        string.memcpy(symbols, s.stack_symbols, s.stack_count * sizeof(u32));
-        string.memcpy(decls, s.stack_decls, s.stack_count * sizeof(ast.Decl*));
-        stdlib.free(s.stack_decls);
-        stdlib.free(s.stack_symbols);
+        std.memcpy(symbols, s.stack_symbols, s.stack_count * sizeof(u32));
+        std.memcpy(decls, s.stack_decls, s.stack_count * sizeof(ast.Decl*));
+        std.free(s.stack_decls);
+        std.free(s.stack_symbols);
     }
     s.stack_symbols = symbols;
     s.stack_decls = decls;
 }
 
 fn void Scope.cache_resize(Scope* s, u32 capacity) {
-    u32* symbols = stdlib.malloc(capacity * sizeof(u32));
-    ast.Decl** decls = stdlib.malloc(capacity * sizeof(ast.Decl*));
-    ast.ImportDecl** imports = stdlib.malloc(capacity * sizeof(ast.ImportDecl*));
+    u32* symbols = std.malloc(capacity * sizeof(u32));
+    ast.Decl** decls = std.malloc(capacity * sizeof(ast.Decl*));
+    ast.ImportDecl** imports = std.malloc(capacity * sizeof(ast.ImportDecl*));
     s.cache_capacity = capacity;
     if (s.cache_count) {
-        string.memcpy(symbols, s.cache_symbols, s.cache_count * sizeof(u32));
-        string.memcpy(decls, s.cache_decls, s.cache_count * sizeof(ast.Decl*));
-        string.memcpy(imports, s.cache_imports, s.cache_count * sizeof(ast.ImportDecl*));
-        stdlib.free(s.cache_imports);
-        stdlib.free(s.cache_decls);
-        stdlib.free(s.cache_symbols);
+        std.memcpy(symbols, s.cache_symbols, s.cache_count * sizeof(u32));
+        std.memcpy(decls, s.cache_decls, s.cache_count * sizeof(ast.Decl*));
+        std.memcpy(imports, s.cache_imports, s.cache_count * sizeof(ast.ImportDecl*));
+        std.free(s.cache_imports);
+        std.free(s.cache_decls);
+        std.free(s.cache_symbols);
     }
     s.cache_symbols = symbols;
     s.cache_decls = decls;
@@ -496,10 +494,10 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
 
 public fn void Scope.dump(const Scope* s) @(unused) {
     //s.local_scope.dump();
-    stdio.printf("Scope (lvl %d) %d\n", s.lvl, s.stack_count);
+    std.printf("Scope (lvl %d) %d\n", s.lvl, s.stack_count);
     for (u32 i=0; i<s.lvl; i++) {
         const Level* l = &s.levels[i];
-        stdio.printf("  [%d]  start %2d  flags 0x%02x\n", i, l.first_index, l.flags);
+        std.printf("  [%d]  start %2d  flags 0x%02x\n", i, l.first_index, l.flags);
     }
 }
 

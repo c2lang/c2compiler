@@ -20,8 +20,7 @@ import diagnostics;
 import dsm_sorter;
 import string_list;
 
-import stdlib;
-import string;
+import std;
 
 fn u32 find_idx(Component** comps, u32 count, u32 name) {
     for (u32 i=0; i<count; i++) {
@@ -55,14 +54,14 @@ public fn void sort(Component** orig, u32 count, diagnostics.Diags* diags) {
         diags.error(0, "circular dependency between libraries");
         //s.print();
         // TODO print dependency
-        stdlib.exit(-1);
+        std.exit(-1);
     }
 
     // re-order
-    Component** copy = stdlib.malloc(count * sizeof(Component*));
-    string.memcpy(copy, orig, count * sizeof(Component*));
+    Component** copy = std.malloc(count * sizeof(Component*));
+    std.memcpy(copy, orig, count * sizeof(Component*));
     for (u32 i=0; i<count; i++) orig[i] = copy[sorted[i]];
-    stdlib.free(copy);
+    std.free(copy);
 
     dsm.free();
 }

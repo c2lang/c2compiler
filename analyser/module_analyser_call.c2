@@ -20,7 +20,7 @@ import printf_utils;
 import scope;
 import src_loc local;
 
-import stdio;
+import std;
 
 const char[] DiagTooManyArgs = "too many arguments to %sfunction call, expected %d, have %d";
 const char[] DiagTooFewArgs = "too few arguments to %sfunction call, expected %d, have %d";
@@ -154,11 +154,11 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         func_arg_index++;
     }
 
-    //stdio.printf("CALL (%d | %d)\n", func_num_args, call_num_args);
+    //std.printf("CALL (%d | %d)\n", func_num_args, call_num_args);
     bool has_printf_format = false;
     u32 printf_call_idx = 0;
     while (1) {
-        //stdio.printf("ARG [%d | %d]\n", func_arg_index, call_arg_index);
+        //std.printf("ARG [%d | %d]\n", func_arg_index, call_arg_index);
         if (func_arg_index >= func_num_args) break;
         if (call_arg_index >= call_num_args) break;
 
@@ -354,7 +354,7 @@ not_constant:
 }
 
 fn void create_template_name(char* name, const char* orig, u16 idx) {
-    stdio.sprintf(name, "%s_%d_", orig, idx);
+    std.sprintf(name, "%s_%d_", orig, idx);
 }
 
 fn void Analyser.opaque_callback(void* arg, SrcLoc loc, Decl* d) {
@@ -374,9 +374,9 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
         bool used_opaque = false;
         StructType* st = templateType.getStructTypeOrNil();
         if (st) {
-            StructTypeDecl* std = st.getDecl();
-            Decl* d = (Decl*)std;
-            used_opaque = (std.isOpaque() && d.getModule() != ma.mod);
+            StructTypeDecl* sd = st.getDecl();
+            Decl* d = (Decl*)sd;
+            used_opaque = (sd.isOpaque() && d.getModule() != ma.mod);
         }
         Instantiator inst = {
             .c = ma.context,

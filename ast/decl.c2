@@ -18,7 +18,8 @@ module ast;
 import src_loc local;
 import attr;
 import string_buffer;
-import stdio;
+
+import std;
 
 // TODO better order
 public type DeclKind enum u8 {
@@ -253,7 +254,7 @@ public fn void Decl.dump(const Decl* d) {
     string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
     d.print(out, 0);
     out.color(col_Normal);
-    stdio.puts(out.data());
+    std.puts(out.data());
     out.free();
 }
 
@@ -328,23 +329,23 @@ public fn const char* Decl.getFullName(const Decl* d) {
     case Function:
         const FunctionDecl* fd = (FunctionDecl*)d;
         if (fd.hasPrefix()) {
-            stdio.snprintf(tmp, tmp_size, "%s.%s.%s", modname, fd.getPrefixName(), d.getName());
+            std.snprintf(tmp, tmp_size, "%s.%s.%s", modname, fd.getPrefixName(), d.getName());
         } else {
-            stdio.snprintf(tmp, tmp_size, "%s.%s", modname, d.getName());
+            std.snprintf(tmp, tmp_size, "%s.%s", modname, d.getName());
         }
         break;
     case Import:
-        stdio.snprintf(tmp, tmp_size, "%s", d.getName());
+        std.snprintf(tmp, tmp_size, "%s", d.getName());
         break;
     case EnumConstant:
         QualType qt = d.getType();
         EnumType* et = qt.getEnumType();
         EnumTypeDecl* etd = et.getDecl();
         Decl* ed = (Decl*)etd;
-        stdio.snprintf(tmp, tmp_size, "%s.%s.%s", modname, ed.getName(), d.getName());
+        std.snprintf(tmp, tmp_size, "%s.%s.%s", modname, ed.getName(), d.getName());
         break;
     default:
-        stdio.snprintf(tmp, tmp_size, "%s.%s", modname, d.getName());
+        std.snprintf(tmp, tmp_size, "%s.%s", modname, d.getName());
         break;
     }
 

@@ -8,36 +8,5 @@ info:
         - dynamic
 
 modules:
-    - c_errno
-    - csetjmp
-    - csignal
-    - ctermios
-    - ctype
-    - ifaddrs
-    - libc_dirent
-    - libc_fcntl
-    - libc_poll
-    - libc_time
-    - libgen
-    - linux_ifether
-    - linux_sockios
-    - linux_types
-    - net_if
-    - netinet_tcp
-    - regex
-    - stdarg
-    - stdio
-    - stdlib
-    - string
-    - strings
-    - sys_ioctl
-    - sys_mman
-    - sys_sendfile
-    - sys_signalfd
-    - sys_socket
-    - sys_stat
-    - sys_time
-    - sys_utsname
-    - uio
-    - unistd
+    - std
 

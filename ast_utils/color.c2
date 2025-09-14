@@ -14,7 +14,8 @@
  */
 
 module color;
-import unistd;
+
+import std;
 
 public const char[] Black    = "\033[0;30m";
 public const char[] Red      = "\033[0;31m";
@@ -35,6 +36,6 @@ public const char[] White    = "\033[01;37m";
 public const char[] Normal   = "\033[0m";
 
 public fn bool useColor() {
-    return unistd.isatty(1);
+    return std.isatty(1);
 }
 

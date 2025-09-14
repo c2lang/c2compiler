@@ -15,8 +15,7 @@
 
 module name_vector;
 
-import stdlib;
-import string;
+import std;
 
 public type NameVector struct {
     u32* data;
@@ -28,11 +27,11 @@ public fn void NameVector.init(NameVector* v, u32 capacity) @(unused) {
     v.data = nil;
     v.count = 0;
     v.capacity = capacity;
-    if (capacity) v.data = stdlib.malloc(capacity * sizeof(u32));
+    if (capacity) v.data = std.malloc(capacity * sizeof(u32));
 }
 
 public fn void NameVector.free(NameVector* v) {
-    if (v.data) stdlib.free(v.data);
+    if (v.data) std.free(v.data);
     v.count = 0;
     v.capacity = 0;
     v.data = nil;
@@ -44,10 +43,10 @@ public fn void NameVector.clear(NameVector* v) {
 
 fn void NameVector.resize(NameVector* v) {
     v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
-    void* data2 = stdlib.malloc(v.capacity * sizeof(u32));
+    void* data2 = std.malloc(v.capacity * sizeof(u32));
     if (v.data) {
-        string.memcpy(data2, v.data, v.count * sizeof(u32));
-        stdlib.free(v.data);
+        std.memcpy(data2, v.data, v.count * sizeof(u32));
+        std.free(v.data);
     }
     v.data = data2;
 }

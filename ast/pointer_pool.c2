@@ -17,8 +17,7 @@ module ast;
 
 import ast_context;
 
-import string local;
-import stdlib local;
+import std local;
 
 /*
     This pool is used to lookup pointers to a certain type. It keeps 4 variants:

@@ -25,8 +25,7 @@ import string_utils;
 import utils;
 import yaml;
 
-import stdlib local;
-import string local;
+import std local;
 
 type Cmd struct {
     const char* name;

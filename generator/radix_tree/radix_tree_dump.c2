@@ -17,7 +17,7 @@ module radix_tree;
 
 import linked_list;
 
-import stdio local;
+import std local;
 
 fn void Tree.dump_nodes(const Tree* t, u32 idx, u32 end) {
     while (idx < end) {

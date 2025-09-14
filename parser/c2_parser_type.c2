@@ -20,7 +20,7 @@ import ast local;
 import token local;
 import src_loc local;
 
-import ctype local;
+import std local;
 
 fn void Parser.parseTypeDecl(Parser* p, bool is_public) {
     p.consumeToken();
@@ -276,7 +276,7 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
             const char* name_str = p.pool.idx2str(const_name);
             // TODO interface?
 
-            if (ctype.islower(name_str[0])) {
+            if (std.islower(name_str[0])) {
                 p.error("an enum constant name must start with an upper case character");
             }
             SrcLoc const_loc = p.tok.loc;

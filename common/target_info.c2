@@ -17,11 +17,7 @@ module target_info;
 
 import console;
 
-import c_errno local;
-import stdio local;
-import stdlib local;
-import string local;
-import sys_utsname;
+import std local;
 
 public type Arch enum u8 { Unknown, I686, Arm, X86_64, Amd64, Arm64, Riscv_32 }
 public type System enum u8 { Unknown, Linux, Darwin, Cygwin, FreeBSD, OpenBSD }
@@ -80,8 +76,8 @@ public type Info struct {
 }
 
 public fn void Info.getNative(Info* info) {
-    sys_utsname.Name un;
-    if (sys_utsname.uname(&un) != 0) {
+    std.Name un;
+    if (std.uname(&un) != 0) {
         console.error("error getting system info: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }

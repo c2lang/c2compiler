@@ -19,7 +19,7 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-import string;
+import std;
 
 type StructTypeDeclBits struct {
     u32 : NumDeclBits;
@@ -137,8 +137,8 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     layout.attr_alignment = 1;
 
     if (num_members) {
-        string.memcpy(d.members, members, num_members * sizeof(Decl*));
-        string.memset(layout.members, 0, num_members * sizeof(StructMemberLayout));
+        std.memcpy(d.members, members, num_members * sizeof(Decl*));
+        std.memset(layout.members, 0, num_members * sizeof(StructMemberLayout));
     }
 #if AstStatistics
     Stats.addDecl(DeclKind.StructType, size);
@@ -231,7 +231,7 @@ public fn bool StructTypeDecl.hasAttrNoTypeDef(const StructTypeDecl* d) {
 public fn void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u32 count) {
     const u32 size = count * sizeof(FunctionDecl*);
     FunctionDecl** dest = c.alloc(size);
-    string.memcpy(dest, funcs, size);
+    std.memcpy(dest, funcs, size);
     d.struct_functions = dest;
     d.num_struct_functions = count;
 }

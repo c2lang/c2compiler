@@ -24,8 +24,7 @@ import file_utils;
 import source_mgr;
 import string_utils local;
 
-import string;
-import stdlib;
+import std;
 
 type Loc struct {
     u32 line;
@@ -45,7 +44,7 @@ fn void LineCounter.init(LineCounter* l) {
 }
 
 fn void LineCounter.free(LineCounter* l) {
-    stdlib.free(l.lengths);
+    std.free(l.lengths);
 }
 
 fn void LineCounter.add(LineCounter* l, u32 len) {
@@ -57,10 +56,10 @@ fn void LineCounter.add(LineCounter* l, u32 len) {
 
 fn void LineCounter.resize(LineCounter* l, u32 cap) {
     l.cap = cap;
-    u8* lengths2 = stdlib.malloc(l.cap * sizeof(u8));
+    u8* lengths2 = std.malloc(l.cap * sizeof(u8));
     if (l.count) {
-        string.memcpy(lengths2, l.lengths, l.count);
-        stdlib.free(l.lengths);
+        std.memcpy(lengths2, l.lengths, l.count);
+        std.free(l.lengths);
     }
     l.lengths = lengths2;
 }
@@ -167,7 +166,7 @@ fn void Generator.handleRef(Generator* gen, const Ref* ref) {
         console.warn("refs: Type Decl not set!");
         return;
     }
-    u16 len = cast<u16>(string.strlen(idx2name(ref.name_idx)));
+    u16 len = cast<u16>(std.strlen(idx2name(ref.name_idx)));
     assert(len <= 32);
     gen.refs.add_link(ref.loc, ref.decl.getLoc(), len);
 }

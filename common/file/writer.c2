@@ -15,9 +15,7 @@
 
 module file_utils;
 
-import libc_fcntl local;
-import c_errno local;
-import unistd local;
+import std local;
 
 fn isize write2(i32 hd, const void* data, usize len) {
     const u8* p = data;

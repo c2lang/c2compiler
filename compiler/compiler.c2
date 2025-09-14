@@ -46,12 +46,7 @@ import unused_checker;
 import utils;
 import warning_flags;
 
-import c_errno local;
-import ctype;
-import string;
-import stdlib;
-import stdio;
-
+import std;
 
 public type BeginTargetFn fn void (void* arg, plugin_info.Info* info);
 public type PluginFn fn void (void* arg);
@@ -137,7 +132,7 @@ fn void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
         c.diags.error(d.getLoc(), "module '%s' is in component '%s' that is not used directly",
             ast.idx2name(name_idx), co.getName());
         // TODO longjmp?
-        stdlib.exit(-1);
+        std.exit(-1);
     }
 
     if (c.current.isExternal() && !m.isLoaded()) {
@@ -215,7 +210,7 @@ fn void Compiler.build(Compiler* c,
                          plugin_info.Info* info)
 {
     // init phase
-    string.memset(c, 0, sizeof(Compiler));
+    std.memset(c, 0, sizeof(Compiler));
     c.auxPool = auxPool;
     c.sm = sm;
     c.diags = diags;
@@ -275,7 +270,7 @@ fn void Compiler.build(Compiler* c,
         if (c.is_image) {
             // TODO src loc
             console.error("images require a build-file");
-            stdlib.exit(-1);
+            std.exit(-1);
         }
         if (c.opts.libdir) c.libdirs.add(c.opts.libdir);
         c.targetInfo.getNative();
@@ -283,7 +278,7 @@ fn void Compiler.build(Compiler* c,
     if (target_str) {
         if (!c.targetInfo.fromString(target_str)) {
             console.error("invalid target triple: %s", target_str);
-            stdlib.exit(-1);
+            std.exit(-1);
         }
     } else {
         c.targetInfo.getNative();
@@ -324,7 +319,7 @@ fn void Compiler.build(Compiler* c,
     if (opts.show_libs) {
         c.showAllLibs();
         // since not all members have been initialized, just exit here, to avoid free() not working
-        stdlib.exit(0);
+        std.exit(0);
     }
     c.load_libs();
 
@@ -352,13 +347,13 @@ fn void Compiler.build(Compiler* c,
     info.addSource = Compiler.add_source;
     info.register_attr = Compiler.register_attr;
     info.fn_arg = c;
-    string.strcpy(info.target_name, c.auxPool.idx2str(target.getNameIdx()));
+    std.strcpy(info.target_name, c.auxPool.idx2str(target.getNameIdx()));
 
     // create output directory
     if (!file_utils.make_path(info.output_dir, elemsof(info.output_dir), output_base, c.auxPool.idx2str(target.getNameIdx()))
     ||  file_utils.create_path(info.output_dir)) {
-        console.error("cannot create directory %s: %s", info.output_dir, string.strerror(errno));
-        stdlib.exit(-1);
+        console.error("cannot create directory %s: %s", info.output_dir, std.strerror(std.errno));
+        std.exit(-1);
     }
 
     pluginHandler.start_target(pluginHandler.arg, info);
@@ -670,10 +665,10 @@ fn void Compiler.addFeature(Compiler* c, const char* str, const char* value) {
 
 fn void Compiler.addGlobalDefine(Compiler* c, const char* prefix, const char* tail) {
     char[32] tmp;
-    stdio.snprintf(tmp, 32, "%s_%s", prefix, tail);
+    std.snprintf(tmp, 32, "%s_%s", prefix, tail);
     for (usize i = 0; tmp[i]; i++) {
         u8 ch = cast<u8>(tmp[i]);
-        tmp[i] = (ch == '-') ? '_' : cast<char>(ctype.toupper(ch));
+        tmp[i] = (ch == '-') ? '_' : cast<char>(std.toupper(ch));
     }
 
     c.addFeature(tmp, "1");

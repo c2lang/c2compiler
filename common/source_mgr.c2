@@ -20,9 +20,7 @@ import file_utils;
 import string_pool;
 import src_loc local;
 
-import stdio;
-import stdlib;
-import string;
+import std;
 
 const u32 InitialMaxFiles = 32;
 const u32 FileIndexSize = 4096;
@@ -51,9 +49,9 @@ type File struct {
 }
 
 fn void File.clear(File* f) {
-    if (!f.is_const) stdlib.free(f.data);
+    if (!f.is_const) std.free(f.data);
     f.data = nil;
-    stdlib.free(f.checkpoints);
+    std.free(f.checkpoints);
     f.checkpoints = nil;
 }
 
@@ -79,7 +77,7 @@ fn CheckPoint update_checkpoint(CheckPoint cp, const char* src, u32 len) {
 
 fn void File.addCheckPoints(File* f) {
     u32 ncheck = f.data_size / CheckPointSize;
-    CheckPoint* cp = stdlib.malloc((ncheck + 1) * sizeof(CheckPoint));
+    CheckPoint* cp = std.malloc((ncheck + 1) * sizeof(CheckPoint));
     CheckPoint pos = { 0, 0 }
     const char* src = f.data;
     f.checkpoints = cp;
@@ -113,13 +111,13 @@ public type SourceMgr struct @(opaque) {
 }
 
 public fn SourceMgr* create(string_pool.Pool* pool) {
-    SourceMgr* sm = stdlib.calloc(1, sizeof(SourceMgr));
+    SourceMgr* sm = std.calloc(1, sizeof(SourceMgr));
     sm.pool = pool;
     sm.max_files = InitialMaxFiles;
-    sm.files = stdlib.malloc(sizeof(File) * sm.max_files);
+    sm.files = std.malloc(sizeof(File) * sm.max_files);
     sm.max_offset = FileIndexSize;
     sm.index_capacity = 1024 * 1024 / FileIndexSize;
-    sm.index = stdlib.malloc(sizeof(u16) * sm.index_capacity);
+    sm.index = std.malloc(sizeof(u16) * sm.index_capacity);
     sm.index[0] = 0;
     return sm;
 }
@@ -128,9 +126,9 @@ public fn void SourceMgr.free(SourceMgr* sm) {
     for (u32 i=0; i<sm.num_files; i++) {
         sm.files[i].clear();
     }
-    stdlib.free(sm.files);
-    stdlib.free(sm.index);
-    stdlib.free(sm);
+    std.free(sm.files);
+    std.free(sm.index);
+    std.free(sm);
 }
 
 // Note frees all files above the handle (excluding the handle)
@@ -152,22 +150,22 @@ public fn void SourceMgr.clear(SourceMgr* sm, i32 handle) {
 
 fn void SourceMgr.resize(SourceMgr* sm) {
     sm.max_files *= 2;
-    File* files2 = stdlib.malloc(sizeof(File) * sm.max_files);
-    string.memcpy(files2, sm.files, sm.num_files * sizeof(File));
-    stdlib.free(sm.files);
+    File* files2 = std.malloc(sizeof(File) * sm.max_files);
+    std.memcpy(files2, sm.files, sm.num_files * sizeof(File));
+    std.free(sm.files);
     sm.files = files2;
 }
 
 public fn i32 SourceMgr.addGenerated(SourceMgr* sm, const char* name, void* data, u32 size) @(unused) {
 #if PrintGenerated
-    stdio.printf("------ GENERATED (%s) ------\n%s\n", name, data);
+    std.printf("------ GENERATED (%s) ------\n%s\n", name, data);
 #endif
     return sm.addFile(name, data, size, true, false);
 }
 
 public fn i32 SourceMgr.addResource(SourceMgr* sm, const char* name, const void* data, u32 size) @(unused) {
 #if PrintGenerated
-    stdio.printf("------ RESOURCE (%s) ------\n%s\n", name, data);
+    std.printf("------ RESOURCE (%s) ------\n%s\n", name, data);
 #endif
     return sm.addFile(name, (void *)data, size, true, true);
 }
@@ -180,11 +178,11 @@ public fn i32 SourceMgr.loadFile(SourceMgr* sm, const char* filename, SrcLoc slo
         if (sloc) {
             Location loc = sm.locate(sloc);
             if (loc.line_start) {
-                stdio.snprintf(tmp, elemsof(tmp), "%s:%d:%d: ", loc.filename, loc.line, loc.column);
+                std.snprintf(tmp, elemsof(tmp), "%s:%d:%d: ", loc.filename, loc.line, loc.column);
             }
         }
         // TODO only color if enabled (cannot use console since we need source loc first)
-        stdio.fprintf(stdio.stderr, "%s%serror:%s cannot open %s: %s\n",
+        std.fprintf(std.stderr, "%s%serror:%s cannot open %s: %s\n",
                       tmp, color.Red, color.Normal, filename, file.getError());
         return -1;
     }
@@ -200,7 +198,7 @@ fn i32 SourceMgr.addFile(SourceMgr* sm, const char* filename, void* data, u32 si
 
     i32 file_id = cast<i32>(sm.num_files);
     File* f = &sm.files[sm.num_files];
-    string.memset(f, 0, sizeof(File));
+    std.memset(f, 0, sizeof(File));
 
     f.filename = sm.pool.addStr(filename, true);
     f.offset = sm.max_offset;
@@ -217,9 +215,9 @@ fn i32 SourceMgr.addFile(SourceMgr* sm, const char* filename, void* data, u32 si
         u32 new_capacity = sm.index_capacity;
         while ((new_capacity += new_capacity / 2 + 128) < index_max)
             continue;
-        u16* new_index = stdlib.malloc(new_capacity * sizeof(u16));
-        string.memcpy(new_index, sm.index, index_pos * sizeof(u16));
-        stdlib.free(sm.index);
+        u16* new_index = std.malloc(new_capacity * sizeof(u16));
+        std.memcpy(new_index, sm.index, index_pos * sizeof(u16));
+        std.free(sm.index);
         sm.index = new_index;
         sm.index_capacity = new_capacity;
     }
@@ -260,7 +258,7 @@ fn File* SourceMgr.find_file(SourceMgr* sm, SrcLoc loc) {
 }
 
 public fn Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
-    //stdio.printf("=== sm.locate(%d)  max_offset %d num_files %d\n", loc, sm.max_offset, sm.num_files);
+    //std.printf("=== sm.locate(%d)  max_offset %d num_files %d\n", loc, sm.max_offset, sm.num_files);
     Location l = { 1, 1, "-", nil }
     File* f = sm.find_file(loc);
     if (f) {
@@ -273,16 +271,16 @@ public fn Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
         l.line_start = f.data + offset - pos.column;
         l.filename = sm.pool.idx2str(f.filename);
     }
-    //stdio.printf("    -> %s:%d:%d\n", l.filename, l.line, l.column);
+    //std.printf("    -> %s:%d:%d\n", l.filename, l.line, l.column);
     return l;
 }
 
 public fn char* SourceMgr.loc2str(SourceMgr* sm, SrcLoc sloc, char* tmp, usize tmp_size) {
     Location loc = sm.locate(sloc);
     if (loc.line_start) {
-        stdio.snprintf(tmp, tmp_size, "%s:%d:%d", loc.filename, loc.line, loc.column);
+        std.snprintf(tmp, tmp_size, "%s:%d:%d", loc.filename, loc.line, loc.column);
     } else {
-        stdio.snprintf(tmp, tmp_size, "-");
+        std.snprintf(tmp, tmp_size, "-");
     }
     return tmp;
 }
@@ -304,7 +302,7 @@ public fn void SourceMgr.report(SourceMgr* sm, bool full) {
     u32 total_size = sizeof(SourceMgr) + sm.max_files * sizeof(File) + sm.index_capacity * sizeof(u16);
     u32 total_bytes = 0;
     u32 total_lines = 0;
-    if (full) stdio.printf("source-mgr: %d files\n", sm.num_files);
+    if (full) std.printf("source-mgr: %d files\n", sm.num_files);
     for (u32 i = 0; i < sm.num_files; i++) {
         File* f = &sm.files[i];
         total_bytes += f.data_size;
@@ -318,12 +316,12 @@ public fn void SourceMgr.report(SourceMgr* sm, bool full) {
             total_lines += lines;
         }
         if (full) {
-            stdio.printf("  %7d  %6d  %4d  %s%s\n",
+            std.printf("  %7d  %6d  %4d  %s%s\n",
                          f.offset, f.data_size, lines, sm.pool.idx2str(f.filename),
                          f.is_generated ? " (generated)" : "");
         }
     }
-    stdio.printf("source-mgr: %d files, %d bytes, %d total size, %d lines\n",
+    std.printf("source-mgr: %d files, %d bytes, %d total size, %d lines\n",
                  sm.num_files, total_bytes, total_size, total_lines);
 }
 

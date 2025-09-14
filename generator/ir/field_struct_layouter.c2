@@ -20,8 +20,7 @@ import ctv_analyser;
 import ir local;
 import ir_context;
 
-import stdlib;
-import string;
+import std;
 
 type FieldInit struct {
     const ast.FieldInitField* info;
@@ -51,9 +50,9 @@ fn void FieldStructLayouter.init(FieldStructLayouter* l,
 
 fn void FieldStructLayouter.resize(FieldStructLayouter* l, u32 max) {
     l.max_inits = max;
-    FieldInit* inits = stdlib.malloc(max * sizeof(FieldInit));
-    if (l.num_inits) string.memcpy(inits, l.inits, l.num_inits * sizeof(FieldInit));
-    if (l.inits) stdlib.free(l.inits);
+    FieldInit* inits = std.malloc(max * sizeof(FieldInit));
+    if (l.num_inits) std.memcpy(inits, l.inits, l.num_inits * sizeof(FieldInit));
+    if (l.inits) std.free(l.inits);
     l.inits = inits;
 }
 
@@ -161,17 +160,17 @@ field:
         l.gen.ctx.addInitZero(pad);
     }
 
-    stdlib.free(l.inits);
+    std.free(l.inits);
 }
 
 // Note: finalizeExpr is used for non-GLOBALS and does NOT initialize padding
-fn void FieldStructLayouter.finalizeExpr(FieldStructLayouter* l, const ast.StructTypeDecl* std, Ref base_ref) {
+fn void FieldStructLayouter.finalizeExpr(FieldStructLayouter* l, const ast.StructTypeDecl* sd, Ref base_ref) {
     bool have_bitfield = false;
     u8 bitfield_base_size = 0;   // in bytes of whole field
     ir_context.Context* ctx = l.gen.ctx;
 
-    u32 num_members = std.getNumMembers();
-    ast.StructLayout* layout = std.getLayout();
+    u32 num_members = sd.getNumMembers();
+    ast.StructLayout* layout = sd.getLayout();
 
     // TODO can also be {}, 0 inits
     //printf("num_inits %d  num_members %d\n", l.num_inits, num_members);
@@ -257,6 +256,6 @@ fn void FieldStructLayouter.finalizeExpr(FieldStructLayouter* l, const ast.Struc
         ctx.addStoreInstr(size2type(ml.size), value_ref, dest_ref);
     }
 
-    stdlib.free(l.inits);
+    std.free(l.inits);
 }
 

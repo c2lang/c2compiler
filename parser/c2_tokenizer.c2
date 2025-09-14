@@ -25,12 +25,9 @@ import string_pool;
 import token local;
 import utf8;
 
-import string;
-import stdlib;
 import c2 local;
-import ctype local;
-import stdarg local;
-import stdio local;
+
+import std;
 
 public const u32 MaxLookahead = 64;  // must be multiple of 2
 
@@ -297,7 +294,7 @@ public fn void Tokenizer.init(Tokenizer* t,
                               void* fn_arg,
                               bool raw_mode)
 {
-    string.memset(t, 0, sizeof(Tokenizer));
+    std.memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
     t.loc_start = loc_start;
     t.input_start = input;
@@ -316,7 +313,7 @@ public fn void Tokenizer.init(Tokenizer* t,
 
 public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
     if (t.next_count) {
-        string.memcpy(result, &t.next[t.next_head], sizeof(Token));
+        std.memcpy(result, &t.next[t.next_head], sizeof(Token));
 
         t.next_head = (t.next_head + 1) % MaxLookahead;
         t.next_count--;
@@ -346,7 +343,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 if (t.raw_mode) {
                     result.kind = Kind.Invalid;
                     result.len = (u16)len;
-                    string.memcpy(result.invalid, t.cur, len);
+                    std.memcpy(result.invalid, t.cur, len);
                     t.cur += len;
                     return;
                 }
@@ -487,7 +484,7 @@ fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
                 } else {
                     result.kind = Kind.Dot;
                 }
-            } else if (isdigit(t.cur[0])) {
+            } else if (std.isdigit(t.cur[0])) {
                 t.lex_number(result);
             } else {
                 result.kind = Kind.Dot;
@@ -705,7 +702,7 @@ public fn Kind Tokenizer.lookahead(Tokenizer* t, u32 n, Token *tok) {
 fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf_format), ...) {
     va_list args;
     va_start(args, format);
-    vsnprintf(t.error_msg, sizeof(t.error_msg), format, args);
+    std.vsnprintf(t.error_msg, sizeof(t.error_msg), format, args);
     va_end(args);
 
     result.loc = t.loc_start + (SrcLoc)(t.cur - t.input_start);
@@ -719,7 +716,7 @@ fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf
 fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const char* format @(printf_format), ...) {
     va_list args;
     va_start(args, format);
-    vsnprintf(t.error_msg, sizeof(t.error_msg), format, args);
+    std.vsnprintf(t.error_msg, sizeof(t.error_msg), format, args);
     va_end(args);
 
     // XXX: error position should be passed separately from token start
@@ -729,10 +726,10 @@ fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const ch
         if ((*p == 'e' || *p == 'E' || *p == 'p' || *p == 'P') && (p[1] == '+' || p[1] == '-')) {
             p += 2;
         } else
-        if (*p == '\'' && isalnum(p[1])) {
+        if (*p == '\'' && std.isalnum(p[1])) {
             p += 2;
         } else
-        if (isalnum(*p) || *p == '_' || (*p == '.' && p[1] != '.')) {
+        if (std.isalnum(*p) || *p == '_' || (*p == '.' && p[1] != '.')) {
             p++;
         } else {
             break;
@@ -774,7 +771,7 @@ fn bool is_binary(char c) {
 }
 
 fn void Tokenizer.lex_number_error(Tokenizer* t, Token* result, const char *p, const char *qual) {
-    if (isdigit(*p)) {
+    if (std.isdigit(*p)) {
         t.num_error(result, p, "invalid digit '%c' in %s constant", *p, qual);
         return;
     }
@@ -782,7 +779,7 @@ fn void Tokenizer.lex_number_error(Tokenizer* t, Token* result, const char *p, c
         t.num_error(result, p, "digit separator '%c' not surrounded by digits", *p);
         return;
     }
-    if (isalpha(*p)) {
+    if (std.isalpha(*p)) {
         t.num_error(result, p, "invalid character '%c' in %s constant", *p, qual);
         return;
     }
@@ -800,8 +797,8 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
         if (p[1] == 'x' || p[1] == 'X') {  // hexadecimal
             result.radix = Radix.Hex;
             p += 2;
-            if (isxdigit(*p)) {
-                while (isxdigit(*p)) {
+            if (std.isxdigit(*p)) {
+                while (std.isxdigit(*p)) {
                     if (value > max_u64 >> 4) {
                         value = max_u64;
                         overflow = true;
@@ -809,7 +806,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
                         value = (value << 4) + hex2val(*p);
                     }
                     p++;
-                    if (*p == '_' && isxdigit(p[1]))
+                    if (*p == '_' && std.isxdigit(p[1]))
                         p++;
                 }
                 if (*p == 'p' || *p == 'P' || (*p == '.' && p[1] != '.')) {
@@ -817,12 +814,12 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
                     return;
                 }
             } else {
-                if (*p == '.' && p[1] != '.' && isxdigit(p[1])) {
+                if (*p == '.' && p[1] != '.' && std.isxdigit(p[1])) {
                     t.lex_floating_point_hex(result, start);
                     return;
                 }
             }
-            if (*p == '_' || isalpha(*p) || p == start + 2) {
+            if (*p == '_' || std.isalpha(*p) || p == start + 2) {
                 t.lex_number_error(result, p, "hexadecimal");
                 return;
             }
@@ -839,10 +836,10 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
                     value = (value << 1) + (*p - '0');
                 }
                 p++;
-                if (*p == '_' && isdigit(p[1]))
+                if (*p == '_' && std.isdigit(p[1]))
                     p++;
             }
-            if (*p == '_' || isalnum(*p) || p == start + 2) {
+            if (*p == '_' || std.isalnum(*p) || p == start + 2) {
                 t.lex_number_error(result, p, "binary");
                 return;
             }
@@ -858,13 +855,13 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
                 value = (value << 3) + (*p - '0');
             }
             p++;
-            if (*p == '_' && isdigit(p[1]))
+            if (*p == '_' && std.isdigit(p[1]))
                 p++;
         }
         const char *p0 = p;
-        if (isdigit(*p)) {
+        if (std.isdigit(*p)) {
             // skip digits to check for floating point constant
-            while (isdigit(*p) || (*p == '_' && isdigit(p[1])))
+            while (std.isdigit(*p) || (*p == '_' && std.isdigit(p[1])))
                 p++;
         }
         if (*p == 'e' || *p == 'E' || (*p == '.' && p[1] != '.')) {
@@ -872,7 +869,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
             return;
         }
         p = p0;
-        if (*p == '_' || isalnum(*p)) {
+        if (*p == '_' || std.isalnum(*p)) {
             t.lex_number_error(result, p, "octal");
             return;
         }
@@ -885,7 +882,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
         goto check_overflow;
     }
 
-    while (isdigit(*p)) {
+    while (std.isdigit(*p)) {
         // ugly cast because u8 digit = *p++ - '0'; generates an error
         u32 digit = (u32)(*p++ - '0');
         if (value >= max_u64 / 10 && (value > max_u64 / 10 || digit > max_u64 % 10)) {
@@ -894,14 +891,14 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
         } else {
             value = value * 10 + digit;
         }
-        if (*p == '_' && isdigit(p[1]))
+        if (*p == '_' && std.isdigit(p[1]))
             p++;
     }
     if (*p == 'e' || *p == 'E' || (*p == '.' && p[1] != '.')) {
         t.lex_floating_point(result, start);
         return;
     }
-    if (*p == '_' || isalpha(*p)) {
+    if (*p == '_' || std.isalpha(*p)) {
         t.lex_number_error(result, p, "decimal");
         return;
     }
@@ -923,8 +920,8 @@ fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* st
     result.kind = Kind.FloatLiteral;
     result.float_value = 0;
     for (;;) {
-        if (!isdigit(*p)) {
-            if (*p == '_' && isdigit(p[1]))
+        if (!std.isdigit(*p)) {
+            if (*p == '_' && std.isdigit(p[1]))
                 p++;
             else
             if (*p != '.' || seen_dot++)
@@ -940,26 +937,26 @@ fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* st
         buf[pos++] = *p++;
         if (*p == '+' || *p == '-')
             buf[pos++] = *p++;
-        if (!isdigit(*p)) {
+        if (!std.isdigit(*p)) {
             t.num_error(result, p, "invalid exponent in floating point constant");
             return;
         }
-        while (isdigit(*p)) {
+        while (std.isdigit(*p)) {
             buf[pos++] = *p++;
             if (pos == elemsof(buf))
                 goto too_large;
-            if (*p == '_' && isdigit(p[1]))
+            if (*p == '_' && std.isdigit(p[1]))
                 p++;
         }
     }
-    if (*p == '_' || isalpha(*p)) {
+    if (*p == '_' || std.isalpha(*p)) {
         t.lex_number_error(result, p, "floating point");
         return;
     }
     t.cur = p;
     buf[pos] = '\0';
     result.len = (u16)(p - start);
-    result.float_value = stdlib.strtod(buf, nil);
+    result.float_value = std.strtod(buf, nil);
     return;
 too_large:
     t.num_error(result, p, "floating point constant too large");
@@ -978,8 +975,8 @@ fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char
         buf[pos++] = *p++;
     }
     for (;;) {
-        if (!isxdigit(*p)) {
-            if (*p == '_' && isxdigit(p[1]))
+        if (!std.isxdigit(*p)) {
+            if (*p == '_' && std.isxdigit(p[1]))
                 p++;
             else
             if (*p != '.' || seen_dot++)
@@ -995,22 +992,22 @@ fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char
         buf[pos++] = *p++;
         if (*p == '+' || *p == '-')
             buf[pos++] = *p++;
-        if (!isdigit(*p)) {
+        if (!std.isdigit(*p)) {
             t.num_error(result, p, "invalid exponent in floating point constant");
             return;
         }
-        while (isdigit(*p)) {
+        while (std.isdigit(*p)) {
             buf[pos++] = *p++;
             if (pos == elemsof(buf))
                 goto too_large;
-            if (*p == '_' && isdigit(p[1]))
+            if (*p == '_' && std.isdigit(p[1]))
                 p++;
         }
     } else {
         t.num_error(result, p, "hexadecimal floating constant requires an exponent");
         return;
     }
-    if (*p == '_' || isalpha(*p)) {
+    if (*p == '_' || std.isalpha(*p)) {
         t.lex_number_error(result, p, "floating point");
         return;
     }
@@ -1018,7 +1015,7 @@ fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char
     buf[pos] = '\0';
     // FIXME: do not use strtod() on platforms that do not support the syntax
     result.len = (u16)(p - start);
-    result.float_value = stdlib.strtod(buf, nil);
+    result.float_value = std.strtod(buf, nil);
     return;
 too_large:
     t.num_error(result, p, "floating point constant too large");
@@ -1210,7 +1207,7 @@ fn void Tokenizer.lex_raw_string_literal(Tokenizer* t, Token* result) {
     if (count >= 3) {
         // check if the rawstring is multi-line
         for (; *p && *p != '\n'; p++) {
-            if (*p == '`' && !string.memcmp(p, start, count))
+            if (*p == '`' && !std.memcmp(p, start, count))
                 break;
         }
         if (*p == '\n') {
@@ -1248,7 +1245,7 @@ fn void Tokenizer.lex_raw_string_literal(Tokenizer* t, Token* result) {
             t.cur = p;
             if (i < indent) {
                 // if blank line or end line, just skip the insufficient indentation
-                if (*p == '\n' || *p == '\r' || !*p || !string.strncmp(p, start, count)) continue;
+                if (*p == '\n' || *p == '\r' || !*p || !std.strncmp(p, start, count)) continue;
                 t.error(result, "raw string indentation error: expected %d %s%.*s", indent,
                         *bol == '\t' ? "tab" : "space", indent > 1 ? 1 : 0, "s");
                 return;
@@ -1441,7 +1438,7 @@ fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
     for (kind = Kind.Feat_if; kind < Kind.Invalid; kind++) {
         const char *word = kind.str() + 1;
         if (compare_word(t.cur, word)) {
-            t.cur += string.strlen(word);
+            t.cur += std.strlen(word);
             break;
         }
     }
@@ -1486,7 +1483,7 @@ fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
 fn bool Tokenizer.at_bol(Tokenizer* t) {
     const char *p = t.cur;
     while (p > t.line_start) {
-        if (!isblank(*--p))
+        if (!std.isblank(*--p))
             return false;
     }
     return true;
@@ -1502,7 +1499,7 @@ fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, Kind kind) {
         return true;
     }
     char[constants.MaxErrorMsgLen+1] msg;
-    string.memcpy(msg, start, len);
+    std.memcpy(msg, start, len);
     msg[len] = 0;
 
     if (kind == Kind.Feat_error) {
@@ -1510,7 +1507,7 @@ fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, Kind kind) {
         t.error(result, "%s", msg);
     } else {
         // TODO: output diagnostic synchronously
-        string.strcpy(t.error_msg, msg);
+        std.strcpy(t.error_msg, msg);
         result.kind = Kind.Warning;
         result.len = (u16)((t.cur - t.input_start) - (result.loc - t.loc_start));
         result.error_msg = t.error_msg;
@@ -1552,7 +1549,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
             case Identifier:
                 val = 0;
                 const char *id = t.pool.idx2str(result.name_idx);
-                if (!string.strcmp(id, "defined")) {
+                if (!std.strcmp(id, "defined")) {
                     bool has_paren = false;
                     if (t.lex_preproc(result) == Kind.LParen) {
                         has_paren = true;
@@ -1915,7 +1912,7 @@ fn bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
 }
 
 fn const char *skip_blanks(const char *p) {
-    while (isblank(*p)) p++;
+    while (std.isblank(*p)) p++;
     return p;
 }
 

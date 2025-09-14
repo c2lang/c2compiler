@@ -36,11 +36,7 @@ import string_pool;
 import string_utils;
 import utils;
 
-import stdio;
-import stdlib local;
-import unistd;
-import string local;
-import c_errno local;
+import std;
 
 type Options struct {
     bool log_verbose;
@@ -59,7 +55,7 @@ type Options struct {
 }
 
 fn void Options.init(Options* opts, string_pool.Pool* pool) {
-    memset(opts, 0, sizeof(Options));
+    std.memset(opts, 0, sizeof(Options));
     opts.targets.init(pool);
     opts.files.init(pool);
 }
@@ -73,7 +69,7 @@ fn void write_file_or_die(const char* filename, string_buffer.Buf* buf) {
     file_utils.File file.init("", filename);
     if (!file.write(buf.udata(), buf.size())) {
         console.error("c2c: cannot write to %s: %s", file.path, file.getError());
-        exit(EXIT_FAILURE);
+        std.exit(std.EXIT_FAILURE);
     }
 }
 
@@ -81,7 +77,7 @@ fn void create_project(const char* name) {
 
     if (file_utils.path_exists("main.c2") || file_utils.path_exists("recipe.txt")) {
         console.error("c2c: main.c2 and/or recipe.txt already exist");
-        exit(EXIT_FAILURE);
+        std.exit(std.EXIT_FAILURE);
     }
 
     string_buffer.Buf* buf = string_buffer.create(4096, false, 2);
@@ -109,7 +105,7 @@ fn void create_project(const char* name) {
 
     buf.free();
     console.log("created new project files");
-    exit(EXIT_SUCCESS);
+    std.exit(std.EXIT_SUCCESS);
 }
 
 const char[] Recipe_help =
@@ -207,12 +203,12 @@ const char[] Usage_help =
 
 fn void usage() {
     console.log(Usage_help);
-    exit(EXIT_FAILURE);
+    std.exit(std.EXIT_FAILURE);
 }
 
 fn void missing_arg(const char* option) {
     console.error("c2c: missing argument for option '%s'", option);
-    exit(EXIT_FAILURE);
+    std.exit(std.EXIT_FAILURE);
 }
 
 fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts, Options* opts) {
@@ -238,7 +234,7 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts,
         break;
     case "help-recipe":
         print_recipe_help();
-        exit(EXIT_SUCCESS);
+        std.exit(std.EXIT_SUCCESS);
     case "noplugins":
         opts.no_plugins = true;
         break;
@@ -273,10 +269,10 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts,
         break;
     case "version":
         print_version();
-        exit(EXIT_SUCCESS);
+        std.exit(std.EXIT_SUCCESS);
     default:
         console.error("c2c: unknown option: %s", arg);
-        exit(EXIT_FAILURE);
+        std.exit(std.EXIT_FAILURE);
     }
     return i;
 }
@@ -288,9 +284,9 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
             if (arg[1] == '-') {
                 i = parse_long_opt(i, argc, argv, comp_opts, opts);
             } else {
-                if (strlen(arg) != 2) {
+                if (std.strlen(arg) != 2) {
                     console.error("c2c: unknown option '%s'", arg);
-                    exit(EXIT_FAILURE);
+                    std.exit(std.EXIT_FAILURE);
                 }
                 switch (arg[1]) {
                 case '0':    // 'hidden' feature, print AST early after parsing, then quit
@@ -354,7 +350,7 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
                     break;
                 default:
                     console.error("c2c: unknown option '-%c'", arg[1]);
-                    exit(EXIT_FAILURE);
+                    std.exit(std.EXIT_FAILURE);
                     break;
                 }
             }
@@ -370,11 +366,11 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
     u32 num_files = opts.files.length();
     if (num_targets && num_files) {
         console.error("c2c: recipe targets cannot be combined with <files>");
-        exit(EXIT_FAILURE);
+        std.exit(std.EXIT_FAILURE);
     }
     if (opts.output_name && num_files == 0 && num_targets != 1) {
         console.error("c2c: option -o can only be used for a single target");
-        exit(EXIT_FAILURE);
+        std.exit(std.EXIT_FAILURE);
     }
 }
 
@@ -420,7 +416,7 @@ type Context struct {
 }
 
 fn void Context.init(Context* c) {
-    memset(c, 0, sizeof(Context));
+    std.memset(c, 0, sizeof(Context));
     // note: auxPool is used by recipe, build-file and manifests
     c.auxPool = string_pool.create(32*1024, 256);
     c.sm = source_mgr.create(c.auxPool);
@@ -438,9 +434,9 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
     console.setDebug(c.opts.log_verbose);
 
     if (c.opts.other_dir) {
-        if (unistd.chdir(c.opts.other_dir)) {
-            console.error("c2c: cannot chdir to %s: %s", c.opts.other_dir, strerror(errno));
-            exit(EXIT_FAILURE);
+        if (std.chdir(c.opts.other_dir)) {
+            console.error("c2c: cannot chdir to %s: %s", c.opts.other_dir, std.strerror(std.errno));
+            std.exit(std.EXIT_FAILURE);
         }
     }
 
@@ -463,11 +459,11 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
                           "     c2c requires a %s file in the project root,\n"
                           "     Use argument -h for c2c usage and a list of available options",
                           constants.recipe_name);
-            exit(EXIT_FAILURE);
+            std.exit(std.EXIT_FAILURE);
         }
         c.recipe_id = c.sm.loadFile(constants.recipe_name, 0);
-        if (c.recipe_id == -1) exit(EXIT_FAILURE);
-        if (!c.recipe.parse(c.recipe_id)) exit(EXIT_FAILURE);
+        if (c.recipe_id == -1) std.exit(std.EXIT_FAILURE);
+        if (!c.recipe.parse(c.recipe_id)) std.exit(std.EXIT_FAILURE);
         // keep c.recipe_id open so we can close source files in source_mgr
     }
 
@@ -481,7 +477,7 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
     if (c.opts.build_file) {
         console.log("using build-file %s", c.opts.build_file);
         c.build_info = build_file.parse(c.sm, c.auxPool, c.opts.build_file);
-        if (!c.build_info) exit(EXIT_FAILURE);
+        if (!c.build_info) std.exit(std.EXIT_FAILURE);
 
         const string_list.List* plugin_dirs = c.build_info.getPluginDirs();
         for (u32 i=0; i<plugin_dirs.length(); i++) {
@@ -495,21 +491,21 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
                 if (!c.plugins.loadGlobal(p.name, p.options)) {
                     source_mgr.Location loc = c.sm.locate(p.loc);
                     char[256] loc_str;
-                    stdio.sprintf(loc_str, "%s:%d:%d", loc.filename, loc.line, loc.column);
+                    std.sprintf(loc_str, "%s:%d:%d", loc.filename, loc.line, loc.column);
                     console.error_diag(loc_str, "%s", c.plugins.getError());
-                    exit(EXIT_FAILURE);
+                    std.exit(std.EXIT_FAILURE);
                 }
             }
         }
     } else {
-        const char* plugin_dir = getenv("C2_PLUGINDIR");
+        const char* plugin_dir = std.getenv("C2_PLUGINDIR");
         if (plugin_dir) {
             u32 path_name = c.auxPool.addStr(plugin_dir, true);
             c.plugins.addPath(path_name);
         }
     }
 
-    const char* libdir = getenv("C2_LIBDIR");
+    const char* libdir = std.getenv("C2_LIBDIR");
     if (libdir) c.comp_opts.libdir = c.auxPool.addStr(libdir, true);
     if (!libdir && !c.opts.build_file) {
         console.warn("environment variable C2_LIBDIR not set!");
@@ -519,7 +515,7 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
 fn void Context.handle_plugins(Context* c) {
     if (c.opts.show_plugins) {
         c.plugins.show();
-        exit(EXIT_SUCCESS);
+        std.exit(std.EXIT_SUCCESS);
     }
 
     // load global plugins from recipe
@@ -529,9 +525,9 @@ fn void Context.handle_plugins(Context* c) {
         if (!c.plugins.loadGlobal(p.name, p.options)) {
             source_mgr.Location loc = c.sm.locate(p.loc);
             char[256] loc_str;
-            stdio.sprintf(loc_str, "%s:%d:%d", loc.filename, loc.line, loc.column);
+            std.sprintf(loc_str, "%s:%d:%d", loc.filename, loc.line, loc.column);
             console.error_diag(loc_str, "%s", c.plugins.getError());
-            exit(EXIT_FAILURE);
+            std.exit(std.EXIT_FAILURE);
         }
     }
 
@@ -575,7 +571,7 @@ fn bool Context.build_target(Context* c,
         if (!c.plugins.loadLocal(p.name, p.options)) {
             source_mgr.Location loc = c.sm.locate(p.loc);
             char[256] loc_str;
-            stdio.sprintf(loc_str, "%s:%d:%d", loc.filename, loc.line, loc.column);
+            std.sprintf(loc_str, "%s:%d:%d", loc.filename, loc.line, loc.column);
             console.error_diag(loc_str, "%s", c.plugins.getError());
             continue;
         }

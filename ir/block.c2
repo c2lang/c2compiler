@@ -15,7 +15,7 @@
 
 module ir;
 
-import string;
+import std;
 
 public type BlockKind enum u8 {
     Unspecified,
@@ -87,7 +87,7 @@ public type Block struct {
 static_assert(20, sizeof(Block));
 
 fn void Block.init(Block* b, BlockKind kind) {
-    string.memset(b, 0, sizeof(Block));
+    std.memset(b, 0, sizeof(Block));
     b.kind = kind;
 }
 

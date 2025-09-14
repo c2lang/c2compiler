@@ -19,9 +19,7 @@ import ir local;
 import color local;
 import string_buffer;
 
-import stdio;
-import stdlib;
-import string;
+import std;
 
 const char* col_Instr = color.Normal;
 const char* col_PseudoInstr = color.Bred;
@@ -64,7 +62,7 @@ fn void PrintHelper.init(PrintHelper* ph, const Context* c) {
 
     ph.blocks = nil;
     ph.c = c;
-    ph.temp_ids = stdlib.calloc(MaxTemps, sizeof(u32));
+    ph.temp_ids = std.calloc(MaxTemps, sizeof(u32));
     ph.temp_count = 0;
     ph.cur_block = nil;
     ph.cur_info = nil;
@@ -72,18 +70,18 @@ fn void PrintHelper.init(PrintHelper* ph, const Context* c) {
 
 fn void PrintHelper.free(PrintHelper* ph) {
     ph.out.free();
-    stdlib.free(ph.temp_ids);
+    std.free(ph.temp_ids);
 }
 
 fn void PrintHelper.print(const PrintHelper* ph) {
     ph.out.color(color.Normal);
-    stdio.puts(ph.out.data());
+    std.puts(ph.out.data());
 }
 
 fn void PrintHelper.resetTemps(PrintHelper* ph, u32 num_args, u32 num_instr) {
     ph.temp_count = num_args;
     assert(num_instr < MaxTemps);
-    string.memset(ph.temp_ids, 0, num_instr*sizeof(u32));
+    std.memset(ph.temp_ids, 0, num_instr*sizeof(u32));
 }
 
 fn u32 PrintHelper.addTemp(PrintHelper* ph, u32 local_instr_idx) {
@@ -326,7 +324,7 @@ fn void PrintHelper.printInitValue(PrintHelper* ph, const InitValue* v, string_b
         out.color(col_Data);
         const char* text = ph.c.pool.idx2str(v.value);
         out.add1('"');
-        out.encodeBytes(text, cast<u32>(string.strlen(text))+1, '"');
+        out.encodeBytes(text, cast<u32>(std.strlen(text))+1, '"');
         out.add1('"');
         break;
     case Zero:
@@ -547,7 +545,7 @@ fn void dump_function(const FunctionInfo* info, const char* name) @(unused) {
     string_buffer.Buf* out = string_buffer.create(16*1024, false, 1);
     out.print("function %s:\n", name);
     dump_function_info(out, info);
-    stdio.puts(out.data());
+    std.puts(out.data());
     out.free();
 }
 
@@ -636,7 +634,7 @@ public fn void Context.dump(const Context* c) @(unused) {
         out.newline();
     }
 
-    stdio.puts(out.data());
+    std.puts(out.data());
     out.free();
 }
 
@@ -668,7 +666,7 @@ public fn void Context.dump_temps(const Context* c) @(unused) {
     }
     out.newline();
 
-    stdio.puts(out.data());
+    std.puts(out.data());
     out.free();
 }
 #endif
@@ -700,7 +698,7 @@ public fn void Context.report(const Context* c) @(unused) {
         c.symbols.count, total_globals, total_functions, c.constants.count,
         total_blocks, total_instr, c.init_values.getCount());
 
-    stdio.puts(out.data());
+    std.puts(out.data());
     out.free();
 }
 

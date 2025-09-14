@@ -26,8 +26,7 @@ import string_buffer;
 import string_list;
 import target_info;
 
-import string;
-import stdio;
+import std;
 
 fn void Generator.createMakefile(Generator* gen,
                                  const char* output_dir,
@@ -118,7 +117,7 @@ fn void Generator.createMakefile(Generator* gen,
     switch (gen.target_kind) {
     case Image:
     case Executable:
-        string.strcpy(target_name, gen.target);
+        std.strcpy(target_name, gen.target);
         out.print("all: ../%s\n\n", target_name);
 
         out.print("../%s: $(objects) $(headers)\n", target_name);
@@ -149,7 +148,7 @@ fn void Generator.createMakefile(Generator* gen,
             if (gen.targetInfo.sys == target_info.System.FreeBSD
             ||  gen.targetInfo.sys == target_info.System.OpenBSD) {
                 // ignore "dl" library on BSD systems: libc handles dlopen etc.
-                if (linkname && !string.strcmp(linkname, "dl"))
+                if (linkname && !std.strcmp(linkname, "dl"))
                     continue;
             }
             if (c.isStaticLib()) {
@@ -170,7 +169,7 @@ fn void Generator.createMakefile(Generator* gen,
         out.newline();
         break;
     case StaticLibrary:
-        stdio.sprintf(target_name, "lib%s.a", gen.target);
+        std.sprintf(target_name, "lib%s.a", gen.target);
         out.print("all: ../%s\n\n", target_name);
 
         out.print("../%s: $(objects) $(headers)\n", target_name);
@@ -179,9 +178,9 @@ fn void Generator.createMakefile(Generator* gen,
     case DynamicLibrary:
         out.add("CFLAGS+=-fPIC\n");
         if (gen.targetInfo.sys == target_info.System.Darwin) {
-            stdio.sprintf(target_name, "lib%s.dylib", gen.target);
+            std.sprintf(target_name, "lib%s.dylib", gen.target);
         } else {
-            stdio.sprintf(target_name, "lib%s.so", gen.target);
+            std.sprintf(target_name, "lib%s.so", gen.target);
         }
         out.print("all: ../%s\n\n", target_name);
 

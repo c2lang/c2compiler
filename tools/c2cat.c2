@@ -25,10 +25,7 @@ import string_pool;
 import number_radix;
 import token local;
 
-import ctype;
-import stdio local;
-import stdlib local;
-import string local;
+import std local;
 
 const char* col_keyword = color.Byellow;
 const char* col_type = color.Green;
@@ -233,7 +230,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
             len = sprintf(tmp, "'\\%o'", tok.char_value);
             break;
         default:
-            if (ctype.isprint(tok.char_value)) {
+            if (isprint(tok.char_value)) {
                 len = sprintf(tmp, "'%c'", tok.char_value);
             } else {
                 tmp[0] = 0;

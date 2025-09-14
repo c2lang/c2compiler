@@ -15,7 +15,7 @@
 
 module bit_array;
 
-import string;
+import std;
 
 public const u32 MaxBits = 256;    // must be 64-bit multiple
 
@@ -26,7 +26,7 @@ public type BitArray struct {
 public fn void BitArray.reset(BitArray* a, u32 cap) {
     assert(cap <= MaxBits);
     u32 num_words = (cap + 63) / 64;
-    string.memset(a.data, 0, num_words * sizeof(u64));
+    std.memset(a.data, 0, num_words * sizeof(u64));
 }
 
 public fn void BitArray.set(BitArray* a, u32 idx) {

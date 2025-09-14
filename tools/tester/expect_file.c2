@@ -15,10 +15,6 @@
 
 module expect_file;
 
-import stdlib local;
-import string local;
-import stdio local;
-
 #if TesterDebug
 import color;
 #endif
@@ -26,6 +22,8 @@ import file_utils;
 import line_db;
 import test_utils local;
 import string_buffer;
+
+import std local;
 
 /*
     Design:

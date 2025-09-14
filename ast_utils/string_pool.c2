@@ -15,9 +15,7 @@
 
 module string_pool;
 
-import string;
-import stdlib;
-import stdio;
+import std;
 
 #if 1
 /* 32-bit pools can store up to 32K unique string for a combined length of 512KB */
@@ -54,7 +52,7 @@ public type Pool struct @(opaque) {
 static_assert(48, sizeof(Pool));
 
 public fn Pool* create(u32 data_capacity, u32 hash_size) {
-    Pool* p = stdlib.calloc(1, sizeof(Pool));
+    Pool* p = std.calloc(1, sizeof(Pool));
     p.resize_data(data_capacity);
     p.data[0] = 0;
     p.data_size = DATA_ALIGN; // store empty string at index 0
@@ -74,15 +72,15 @@ public fn Pool* create(u32 data_capacity, u32 hash_size) {
     p.hash_mask = hash_size - 1;
     p.entry_size = hash_size;
     p.entry_capacity = hash_size * 2;
-    p.entries = stdlib.calloc(p.entry_capacity, sizeof(HashEntry));
+    p.entries = std.calloc(p.entry_capacity, sizeof(HashEntry));
 
     return p;
 }
 
 public fn void Pool.free(Pool* p) {
-    stdlib.free(p.entries);
-    stdlib.free(p.data);
-    stdlib.free(p);
+    std.free(p.entries);
+    std.free(p.data);
+    std.free(p);
 }
 
 const u32 HASH_INITIAL = 13;
@@ -159,7 +157,7 @@ public fn u32 Pool.add(Pool* p, const char* text, usize len, bool filter) {
     }
     u32 idx = p.data_size;
     char* dest = p.data + idx;
-    string.memcpy(dest, text, len);
+    std.memcpy(dest, text, len);
     dest[len] = 0;
     p.data_size += len / DATA_ALIGN * DATA_ALIGN + DATA_ALIGN;
     //assert(p.data_size <= p.data_capacity);
@@ -167,24 +165,24 @@ public fn u32 Pool.add(Pool* p, const char* text, usize len, bool filter) {
 }
 
 public fn u32 Pool.addStr(Pool* p, const char* text, bool filter) {
-    return p.add(text, string.strlen(text), filter);
+    return p.add(text, std.strlen(text), filter);
 }
 
 fn void Pool.resize_data(Pool* p, u32 capacity) {
     p.data_capacity = capacity;
-    char* data2 = stdlib.malloc(capacity);
+    char* data2 = std.malloc(capacity);
     if (p.data_size) {
-        string.memcpy(data2, p.data, p.data_size);
-        stdlib.free(p.data);
+        std.memcpy(data2, p.data, p.data_size);
+        std.free(p.data);
     }
     p.data = data2;
 }
 
 fn void Pool.resize_entries(Pool* p, u32 capacity) {
-    HashEntry* entries = stdlib.malloc(capacity * sizeof(HashEntry));
+    HashEntry* entries = std.malloc(capacity * sizeof(HashEntry));
     if (p.entries) {
-        string.memcpy(entries, p.entries, p.entry_size * sizeof(HashEntry));
-        stdlib.free(p.entries);
+        std.memcpy(entries, p.entries, p.entry_size * sizeof(HashEntry));
+        std.free(p.entries);
     }
     p.entry_capacity = capacity;
     p.entries = entries;
@@ -209,28 +207,28 @@ public fn void Pool.report(const Pool* p, const char* name) @(unused) {
             if (num) {
                 if (num > max) max = num;
                 if (num < min) min = num;
-                //stdio.printf("[%4d] %d\n", i, num);
+                //std.printf("[%4d] %d\n", i, num);
             }
         }
     }
-    stdio.printf("%s: count %d, adds %d, data %d/%d\n", name,
+    std.printf("%s: count %d, adds %d, data %d/%d\n", name,
                  p.hash_count, p.num_adds, p.data_size, p.data_capacity);
 
-    stdio.printf("  hash: entries: %d/%d/%d/%d, min %d, max %d, avg %.2f, memory %d\n",
+    std.printf("  hash: entries: %d/%d/%d/%d, min %d, max %d, avg %.2f, memory %d\n",
                  hash_size, count, p.entry_size, p.entry_capacity,
                  min, max, count ? (count + 0.0) / (hash_size - cc[0]) : 0.0,
                  p.entry_capacity * sizeof(HashEntry));
-    stdio.printf("  buckets: %d", cc[0]);
+    std.printf("  buckets: %d", cc[0]);
     for (u32 i = 1; i <= max; i++)
-        stdio.printf(", %d", cc[i]);
-    stdio.printf("\n");
+        std.printf(", %d", cc[i]);
+    std.printf("\n");
 
 #if 0
     const char* end = p.data + p.data_size;
     const char* cp = p.data;
     u32 idx = 0;
     while (cp < end) {
-        stdio.printf("  [%5u] %s\n", idx, cp);
+        std.printf("  [%5u] %s\n", idx, cp);
         idx++;
         while (*cp != 0) cp++;
         cp++;

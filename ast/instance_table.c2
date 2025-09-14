@@ -15,8 +15,7 @@
 
 module ast;
 
-import string;
-import stdlib;
+import std;
 
 type TemplateInstance struct {
     QualType qt;
@@ -40,10 +39,10 @@ fn void TemplateFunction.init(TemplateFunction* f, const FunctionDecl* fd) {
 
 fn void TemplateFunction.resize(TemplateFunction* f, u16 capacity) {
     f.capacity = capacity;
-    TemplateInstance* inst2 = stdlib.malloc(capacity* sizeof(TemplateInstance));
+    TemplateInstance* inst2 = std.malloc(capacity* sizeof(TemplateInstance));
     if (f.count) {
-        string.memcpy(inst2, f.instances, f.count * sizeof(TemplateInstance));
-        stdlib.free(f.instances);
+        std.memcpy(inst2, f.instances, f.count * sizeof(TemplateInstance));
+        std.free(f.instances);
     }
     f.instances = inst2;
 }
@@ -86,17 +85,17 @@ fn void InstanceTable.init(InstanceTable* t) {
 
 fn void InstanceTable.free(InstanceTable* t) {
     for (u32 i=0; i<t.count; i++) {
-        stdlib.free(t.funcs[i].instances);
+        std.free(t.funcs[i].instances);
     }
-    stdlib.free(t.funcs);
+    std.free(t.funcs);
 }
 
 fn void InstanceTable.resize(InstanceTable* t, u32 capacity) {
     t.capacity = capacity;
-    TemplateFunction* funcs2 = stdlib.malloc(capacity * sizeof(TemplateFunction));
+    TemplateFunction* funcs2 = std.malloc(capacity * sizeof(TemplateFunction));
     if (t.count) {
-        string.memcpy(funcs2, t.funcs, t.count * sizeof(TemplateFunction));
-        stdlib.free(t.funcs);
+        std.memcpy(funcs2, t.funcs, t.count * sizeof(TemplateFunction));
+        std.free(t.funcs);
     }
     t.funcs = funcs2;
 }

@@ -15,8 +15,7 @@
 
 module library_list;
 
-import stdlib;
-import string;
+import std;
 
 public type Lib struct {
     u32 name; // into auxPool
@@ -30,12 +29,12 @@ public type List struct {
 }
 
 public fn void List.init(List* l) {
-    string.memset(l, 0, sizeof(List));
+    std.memset(l, 0, sizeof(List));
     l.resize(2);
 }
 
 public fn void List.free(List* l) {
-    stdlib.free(l.libs);
+    std.free(l.libs);
 }
 
 public type Visitor fn void (void* arg, u32 name, bool is_static);
@@ -67,10 +66,10 @@ public fn bool List.contains(const List* l, u32 name) {
 
 fn void List.resize(List* l, u32 cap) {
     l.capacity = cap;
-    Lib* libs2 = stdlib.malloc(l.capacity * sizeof(Lib));
+    Lib* libs2 = std.malloc(l.capacity * sizeof(Lib));
     if (l.libs) {
-        string.memcpy(libs2, l.libs, l.count * sizeof(Lib));
-        stdlib.free(l.libs);
+        std.memcpy(libs2, l.libs, l.count * sizeof(Lib));
+        std.free(l.libs);
     }
     l.libs = libs2;
 }

@@ -17,8 +17,7 @@ module ir_copy_list;
 
 import ir local;
 
-import stdlib local;
-import string local;
+import std local;
 
 public type CopyInfo struct {
     u32 instr_idx;

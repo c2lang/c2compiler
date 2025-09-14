@@ -18,7 +18,7 @@ module module_analyser;
 import ast local;
 import src_loc local;
 
-import ctype;
+import std;
 
 const char[] DiagStaticThoughVar = "cannot access static type-function through variable";
 
@@ -86,8 +86,8 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 //stdio.printf("STRUCT BASE (ptr %d, const %d, inner const %d)\n", is_ptr, baseType.isConst(), inner_const);
                 // TODO use valType (if ValType.NValue then Foo.x)
                 StructType* st = (StructType*)t;
-                StructTypeDecl* std = st.getDecl();
-                d = ma.analyseStructMemberAccess(std, name_idx, loc, valtype, side, &ck);
+                StructTypeDecl* sd = st.getDecl();
+                d = ma.analyseStructMemberAccess(sd, name_idx, loc, valtype, side, &ck);
                 if (!d) return QualType_Invalid;
 
                 // simulate 'dereference' pointers and adding LValueToRValue (possibly strips const)
@@ -110,7 +110,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
 
                 // check if constant/enum-function (by first casing)
                 const char* last = m.getLastMemberName();
-                if (ctype.isupper(last[0]) || name_idx == ma.min_idx || name_idx == ma.max_idx) {   // search for constants
+                if (std.isupper(last[0]) || name_idx == ma.min_idx || name_idx == ma.max_idx) {   // search for constants
                     if (valtype != ValType.NValue) {    // variable of Enum type (eg Enum a; a.x)
                         // TODO reset msg to normal invalid base
                         // TODO use range
@@ -214,9 +214,9 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     return baseType;
 }
 
-fn Decl* Analyser.analyseStructMemberAccess(Analyser* ma, StructTypeDecl* std, u32 name_idx, SrcLoc loc, ValType valtype, u32 side, CallKind* ck) {
+fn Decl* Analyser.analyseStructMemberAccess(Analyser* ma, StructTypeDecl* sd, u32 name_idx, SrcLoc loc, ValType valtype, u32 side, CallKind* ck) {
     *ck = CallKind.Invalid; // TODO convert to bool isSFCall
-    Decl* d = ma.findStructMember(std, name_idx, loc);
+    Decl* d = ma.findStructMember(sd, name_idx, loc);
     if (!d) return nil;
 
     if (!d.isChecked()) {
@@ -256,12 +256,12 @@ fn Decl* Analyser.analyseStructMemberAccess(Analyser* ma, StructTypeDecl* std, u
         }
         if (!ma.scope.checkAccess(d, loc)) return nil;
     } else {
-        if (!ma.checkOpaque(std, loc)) return nil;
+        if (!ma.checkOpaque(sd, loc)) return nil;
         // StructTypeDecl for substruct or VarDecl for normal members
         // TODO FIX THIS (do in outer?)
 #if 1
         if (side && valtype == ValType.NValue) {
-            QualType t = std.asDecl().getType();
+            QualType t = sd.asDecl().getType();
             ma.error(loc, "member access needs an instantiation of type '%s'", t.diagName());
             return nil;
         }

@@ -18,7 +18,8 @@ module ast;
 import ast_context;
 import src_loc local;
 import string_buffer;
-import string;
+
+import std;
 
 public type CallKind enum u8 {
     Invalid,
@@ -116,7 +117,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     }
     if (num_params) {
         VarDecl** tail = d.rtype.getPointerAfter();
-        string.memcpy(tail, params, num_params * sizeof(VarDecl*));
+        std.memcpy(tail, params, num_params * sizeof(VarDecl*));
     }
 
 #if AstStatistics
@@ -158,7 +159,7 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     d.rtype.init(rtype);
     if (num_params) {
         VarDecl** tail = d.rtype.getPointerAfter();
-        string.memcpy(tail, params, num_params * sizeof(VarDecl*));
+        std.memcpy(tail, params, num_params * sizeof(VarDecl*));
     }
 
 #if AstStatistics

@@ -18,7 +18,8 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
-import string local;
+
+import std local;
 
 public type IdentifierKind enum u8 {
     Unresolved,

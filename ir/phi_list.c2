@@ -15,8 +15,7 @@
 
 module ir;
 
-import string local;
-import stdlib local;
+import std local;
 
 public type PhiClause struct {
     BlockId src;

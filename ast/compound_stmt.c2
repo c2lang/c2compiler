@@ -19,7 +19,7 @@ import ast_context;
 import src_loc local;
 import string_buffer;
 
-import string;
+import std;
 
 type CompoundStmtBits struct {
     u32 : NumStmtBits;
@@ -40,7 +40,7 @@ public fn CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc endLo
     s.base.compoundStmtBits.count = count;
 
     if (count) {
-        string.memcpy(s.stmts, stmts, count * sizeof(Stmt*));
+        std.memcpy(s.stmts, stmts, count * sizeof(Stmt*));
     }
 #if AstStatistics
     Stats.addStmt(StmtKind.Compound, size);

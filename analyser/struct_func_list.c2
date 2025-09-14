@@ -17,8 +17,7 @@ module struct_func_list;
 
 import ast;
 
-import string;
-import stdlib;
+import std;
 
 // this component is used to collect struct functions
 
@@ -37,7 +36,7 @@ public fn void List.free(List* v) {
     for (u32 i=0; i<v.count; i++) {
         v.data[i].functions.free();
     }
-    stdlib.free(v.data);
+    std.free(v.data);
     v.count = 0;
     v.capacity = 0;
     v.data = nil;
@@ -45,10 +44,10 @@ public fn void List.free(List* v) {
 
 fn void List.resize(List* v) {
     v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
-    Info* data2 = stdlib.malloc(v.capacity * sizeof(Info));
+    Info* data2 = std.malloc(v.capacity * sizeof(Info));
     if (v.data) {
-        string.memcpy(data2, v.data, v.count * sizeof(Info));
-        stdlib.free(v.data);
+        std.memcpy(data2, v.data, v.count * sizeof(Info));
+        std.free(v.data);
     }
     v.data = data2;
 }

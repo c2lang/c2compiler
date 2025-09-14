@@ -19,8 +19,7 @@ import src_loc local;
 import source_mgr;
 import string_buffer;
 
-import string;
-import stdlib;
+import std;
 
 type TraceCall struct {
     u8 filename_idx;
@@ -39,10 +38,10 @@ type TraceCallList struct {
 fn u32 TraceCallList.add(TraceCallList *cl, TraceCall call) {
     if (cl.count >= cl.capacity) {
         cl.capacity += cl.capacity / 2 + 16;
-        TraceCall *array2 = stdlib.malloc(cl.capacity * sizeof(TraceCall));
+        TraceCall *array2 = std.malloc(cl.capacity * sizeof(TraceCall));
         if (cl.array) {
-            string.memcpy(array2, cl.array, cl.count * sizeof(TraceCall));
-            stdlib.free(cl.array);
+            std.memcpy(array2, cl.array, cl.count * sizeof(TraceCall));
+            std.free(cl.array);
         }
         cl.array = array2;
     }
@@ -53,7 +52,7 @@ fn u32 TraceCallList.add(TraceCallList *cl, TraceCall call) {
 
 fn void TraceCallList.free(TraceCallList* cl) {
     if (cl.array) {
-        stdlib.free(cl.array);
+        std.free(cl.array);
         cl.array = nil;
         cl.count = 0;
         cl.capacity = 0;
@@ -74,11 +73,11 @@ type StringList struct {
 fn void StringList.free(StringList* sl) {
     if (sl.strings) {
         for (u32 i = 0; i < sl.string_count; i++) {
-            stdlib.free(sl.strings[i]);
+            std.free(sl.strings[i]);
         }
-        stdlib.free(sl.strings);
-        stdlib.free(sl.hash_array);
-        string.memset(sl, 0, sizeof(StringList));
+        std.free(sl.strings);
+        std.free(sl.hash_array);
+        std.memset(sl, 0, sizeof(StringList));
     }
 }
 
@@ -109,7 +108,7 @@ fn u32 StringList.add(StringList* sl, const char* s, bool check_last) {
         for (u32 i = bucket;; i--) {
             u32 ii = sl.hash_array[i];
             u32 n = cast<u16>(ii);
-            if (!string.strcmp(sl.strings[n], s)) return sl.last_index = n;
+            if (!std.strcmp(sl.strings[n], s)) return sl.last_index = n;
             i = ii >> 16;
             if (i == 0) break;
         }
@@ -117,15 +116,15 @@ fn u32 StringList.add(StringList* sl, const char* s, bool check_last) {
     if (!sl.hash_capacity) {
         sl.hash_capacity = HASH_BUCKETS + 32;
         sl.hash_count = HASH_BUCKETS;
-        sl.hash_array = stdlib.calloc(sl.hash_capacity * sizeof(u32), 1);
+        sl.hash_array = std.calloc(sl.hash_capacity * sizeof(u32), 1);
     }
     u32 slot = sl.string_count;
     if (sl.hash_array[bucket]) {
         if (sl.hash_count >= sl.hash_capacity) {
             sl.hash_capacity += sl.hash_capacity / 2;
-            u32 *hash_array2 = stdlib.malloc(sl.hash_capacity * sizeof(u32));
-            string.memcpy(hash_array2, sl.hash_array, sl.hash_count * sizeof(u32));
-            stdlib.free(sl.hash_array);
+            u32 *hash_array2 = std.malloc(sl.hash_capacity * sizeof(u32));
+            std.memcpy(hash_array2, sl.hash_array, sl.hash_count * sizeof(u32));
+            std.free(sl.hash_array);
             sl.hash_array = hash_array2;
         }
         u32 next = sl.hash_count++;
@@ -135,20 +134,20 @@ fn u32 StringList.add(StringList* sl, const char* s, bool check_last) {
     sl.hash_array[bucket] = slot;
 #if 0
     for (u32 i = sl.string_count; i-- > 0;) {
-        if (!string.strcmp(sl.strings[i], s)) return i;
+        if (!std.strcmp(sl.strings[i], s)) return i;
     }
 #endif
     if (sl.string_count >= sl.string_capacity) {
         sl.string_capacity += sl.string_capacity / 2 + 16;
-        char **strings2 = stdlib.malloc(sl.string_capacity * sizeof(char *));
+        char **strings2 = std.malloc(sl.string_capacity * sizeof(char *));
         if (sl.strings) {
-            string.memcpy(strings2, sl.strings, sl.string_count * sizeof(char *));
-            stdlib.free(sl.strings);
+            std.memcpy(strings2, sl.strings, sl.string_count * sizeof(char *));
+            std.free(sl.strings);
         }
         sl.strings = strings2;
     }
     u32 index = sl.string_count++;
-    sl.strings[index] = string.strdup(s);
+    sl.strings[index] = std.strdup(s);
     return sl.last_index = index;
 }
 

@@ -15,8 +15,8 @@
 
 module ast;
 
+import std local;
 import dlfcn local;
-import stdio local;
 
 const u32 Max_depth = 100;
 const u32 Max_complexity = 1000000;

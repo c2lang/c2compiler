@@ -15,8 +15,7 @@
 
 module ir_lookup_table;
 
-import stdlib;
-import string;
+import std;
 
 public type Table struct {
     u32 capacity;
@@ -30,12 +29,12 @@ public fn void Table.init(Table* t, u32 initial) {
 }
 
 public fn void Table.free(Table* t) {
-    stdlib.free(t.data);
+    std.free(t.data);
 }
 
 public fn void Table.clear(Table* t, u32 amount) {
     if (amount > t.capacity) t.resize(amount, false);
-    string.memset(t.data, 0, amount * sizeof(u32));
+    std.memset(t.data, 0, amount * sizeof(u32));
 }
 
 public fn void Table.set(Table* t, u32 idx, u32 value) {
@@ -50,10 +49,10 @@ public fn u32 Table.get(const Table* t, u32 idx) {
 
 fn void Table.resize(Table* t, u32 capacity2, bool copy) {
     // Note: could memset only new part, for now just clear whole new area
-    u32* data2 = stdlib.calloc(capacity2, sizeof(u32));
+    u32* data2 = std.calloc(capacity2, sizeof(u32));
     if (t.data) {
-        if (copy) string.memcpy(data2, t.data, t.capacity * sizeof(u32));
-        stdlib.free(t.data);
+        if (copy) std.memcpy(data2, t.data, t.capacity * sizeof(u32));
+        std.free(t.data);
     }
     t.capacity = capacity2;
     t.data = data2;

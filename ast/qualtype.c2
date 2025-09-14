@@ -17,7 +17,8 @@ module ast;
 
 import color;
 import string_buffer;
-import stdio local;
+
+import std local;
 
 public const usize QualType_Const    = 0x1;
 public const usize QualType_Volatile = 0x2;
@@ -373,7 +374,7 @@ public fn bool QualType.needsCtvInit(const QualType* qt) {
     const Type* t = canon.getTypeOrNil();
 
     if (!t) {
-        stdio.printf("MISSING CANONICAL\n");
+        printf("MISSING CANONICAL\n");
         qt.dump_full();
         return false;
     }
@@ -425,14 +426,14 @@ public fn void QualType.dump(const QualType* qt) @(unused) {
     string_buffer.Buf* out = string_buffer.create(512, useColor(), 2);
     qt.printInner(out, false, true, false);
     out.color(color.Normal);
-    stdio.puts(out.data());
+    puts(out.data());
     out.free();
 }
 
 public fn void QualType.dump_full(const QualType* qt) {
     string_buffer.Buf* out = string_buffer.create(512, useColor(), 1);
     qt.fullPrint(out, 0);
-    stdio.puts(out.data());
+    puts(out.data());
     out.free();
 }
 

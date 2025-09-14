@@ -16,8 +16,8 @@
 module ast;
 
 import c2 local;
-import stdio;
-import stdlib;
+
+import std;
 
 public type ValueKind enum u8 {
     Integer,
@@ -814,7 +814,7 @@ public fn char *ftoa(char *dest, usize size, f64 d) {
     }
     if (!isfinite(d)) {
         // TODO: use normalized strings
-        stdio.snprintf(dest, size, "%f", d);
+        std.snprintf(dest, size, "%f", d);
         return dest;
     }
     if (signbit(d)) {
@@ -823,19 +823,19 @@ public fn char *ftoa(char *dest, usize size, f64 d) {
         d = fabs(d);
     }
     if (!d) {
-        stdio.snprintf(dest + pos, size - pos, "0.0");
+        std.snprintf(dest + pos, size - pos, "0.0");
         return dest;
     }
     if (d < 0.0001 || d > 1000000) {
         for (i32 prec = 14; prec < 17; prec++) {
-            stdio.snprintf(buf, sizeof(buf), "%.*e", prec, d);
-            if (stdlib.atof(buf) == d)
+            std.snprintf(buf, sizeof(buf), "%.*e", prec, d);
+            if (std.atof(buf) == d)
                 break;
         }
     } else {
         for (i32 prec = 17 - 4; prec < 17 + 4; prec++) {
-            stdio.snprintf(buf, sizeof(buf), "%.*f", prec, d);
-            if (stdlib.atof(buf) == d)
+            std.snprintf(buf, sizeof(buf), "%.*f", prec, d);
+            if (std.atof(buf) == d)
                 break;
         }
     }
@@ -870,7 +870,7 @@ public fn const char* Value.str(const Value* v) {
     switch (v.kind) {
     case Integer:
         *out = '-';
-        stdio.snprintf(out + v.negative, 64 - 1, "%d", v.uvalue);
+        std.snprintf(out + v.negative, 64 - 1, "%d", v.uvalue);
         break;
     case Float:
         ftoa(out, 64, v.fvalue);

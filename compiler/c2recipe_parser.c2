@@ -17,18 +17,13 @@ module c2recipe;
 
 import build_target;
 import color;
-import ctype;
 import source_mgr;
 import src_loc local;
 import string_list;
 import string_pool;
 import warning_flags;
 
-import csetjmp local;
-import stdarg local;
-import stdio local;
-import string;
-import stdlib;
+import std;
 
 type Kind enum u8 {
     // global
@@ -84,7 +79,7 @@ type Token struct {
 }
 
 fn void Token.init(Token* t) {
-    string.memset(t, 0, sizeof(Token));
+    std.memset(t, 0, sizeof(Token));
 }
 
 
@@ -100,19 +95,19 @@ type Set struct {
 }
 
 fn Set* Set.create(u32 name, SrcLoc loc, Set* next) {
-    Set* s = stdlib.calloc(1, sizeof(Set));
+    Set* s = std.calloc(1, sizeof(Set));
     s.name_idx = name;
     s.loc = loc;
     s.next = next;
 
     s.max_files = 8;
-    s.files = stdlib.malloc(8*sizeof(build_target.File));
+    s.files = std.malloc(8*sizeof(build_target.File));
     return s;
 }
 
 fn void Set.free(Set* s) {
-    stdlib.free(s.files);
-    stdlib.free(s);
+    std.free(s.files);
+    std.free(s);
 }
 
 fn bool Set.addFile(Set* s, u32 filename, SrcLoc loc) {
@@ -122,9 +117,9 @@ fn bool Set.addFile(Set* s, u32 filename, SrcLoc loc) {
 
     if (s.num_files == s.max_files) {
         s.max_files *= 2;
-        build_target.File* files2 = stdlib.malloc(s.max_files * sizeof(build_target.File));
-        string.memcpy(files2, s.files, s.num_files * sizeof(build_target.File));
-        stdlib.free(s.files);
+        build_target.File* files2 = std.malloc(s.max_files * sizeof(build_target.File));
+        std.memcpy(files2, s.files, s.num_files * sizeof(build_target.File));
+        std.free(s.files);
         s.files = files2;
     }
 
@@ -143,7 +138,7 @@ type Parser struct {
     const char* input_start;
     const char* cur;
     SrcLoc loc_start;
-    JmpBufTag jmpbuf;
+    std.JmpBufTag jmpbuf;
     Token token;
     bool new_line;
     bool targets_started;
@@ -175,7 +170,7 @@ fn bool Parser.parse(Recipe* recipe, string_pool.Pool* pool, source_mgr.SourceMg
 
     p.token.init();
 
-    i32 res = setjmp(&p.jmpbuf);
+    i32 res = std.setjmp(&p.jmpbuf);
     if (res == 0) {
         p.consumeToken();
         p.parseTop();
@@ -195,18 +190,18 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
     char[128] msg;
     va_list args;
     va_start(args, format);
-    vsnprintf(msg, sizeof(msg), format, args);
+    std.vsnprintf(msg, sizeof(msg), format, args);
     va_end(args);
 
     char[256] locstr;
     p.sm.loc2str(p.token.loc, locstr, elemsof(locstr));
 
     if (color.useColor()) {
-        fprintf(stderr, "%s: %serror:%s %s\n", locstr, color.Red, color.Normal, msg);
+        std.fprintf(std.stderr, "%s: %serror:%s %s\n", locstr, color.Red, color.Normal, msg);
     } else {
-        fprintf(stderr, "%s: error: %s\n", locstr, msg);
+        std.fprintf(std.stderr, "%s: error: %s\n", locstr, msg);
     }
-    longjmp(&p.jmpbuf, 1);
+    std.longjmp(&p.jmpbuf, 1);
 }
 
 fn void Parser.consumeToken(Parser* p) {
@@ -273,7 +268,7 @@ fn void Parser.lex(Parser* p, Token* result) {
             // filename
             // lex until whitespace
             const char* start = p.cur;
-            while (*p.cur && !ctype.isspace(*p.cur)) p.cur++;
+            while (*p.cur && !std.isspace(*p.cur)) p.cur++;
             result.kind = p.new_line ? Kind.File : Kind.Text;
             if (*p.cur == 0) result.kind = Kind.Eof;
             p.new_line = false;
@@ -281,7 +276,7 @@ fn void Parser.lex(Parser* p, Token* result) {
             result.value = p.pool.add(start, len, true);
             return;
         default:
-            if (ctype.isalnum(*p.cur)) {
+            if (std.isalnum(*p.cur)) {
                 result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
                 if (equals(p.cur, "plugin ", 7)) {
                     result.kind = Kind.Plugin;
@@ -328,7 +323,7 @@ fn void Parser.lex(Parser* p, Token* result) {
 
                 // lex until whitespace
                 const char* start = p.cur;
-                while (*p.cur && !ctype.isspace(*p.cur)) p.cur++;
+                while (*p.cur && !std.isspace(*p.cur)) p.cur++;
                 // TODO check EOF
                 result.kind = p.new_line ? Kind.File : Kind.Text;
                 p.new_line = false;
@@ -400,13 +395,13 @@ fn void Parser.lex_option(Parser* p, Token* result) {
     result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
 
     const char* end = p.cur;
-    while (*end && !ctype.isspace(*end)) end++;
+    while (*end && !std.isspace(*end)) end++;
 
     u32 len = cast<u32>(end - p.cur);
     if (len >= 20) p.error("unknown option");
 
     char[24] option;
-    string.memcpy(option, p.cur, len);
+    std.memcpy(option, p.cur, len);
     option[len] = 0;
 
     switch (option) {
@@ -441,7 +436,7 @@ fn void Parser.lex_option(Parser* p, Token* result) {
         p.error("unknown option '%s'", option);
         break;
     }
-    p.cur += string.strlen(option);
+    p.cur += std.strlen(option);
 }
 
 fn void Parser.skip_comments(Parser* p) {

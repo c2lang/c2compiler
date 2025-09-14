@@ -17,7 +17,7 @@ module ir_rpo;
 
 import ir local;
 
-import stdlib;
+import std;
 
 public type Rpo struct {
     u16* blocks;
@@ -30,7 +30,7 @@ public fn void Rpo.create(Rpo* rpo, const FunctionInfo* fi) {
 
     for (u32 i=0; i<num_blocks; i++) blocks[i].checked = false;
 
-    rpo.blocks = stdlib.malloc(num_blocks * sizeof(u16));
+    rpo.blocks = std.malloc(num_blocks * sizeof(u16));
     //rpo.num_blocks = num_blocks;
 
     u32 todo = num_blocks-1;  // insert point
@@ -64,6 +64,6 @@ public fn void Rpo.create(Rpo* rpo, const FunctionInfo* fi) {
 }
 
 public fn void Rpo.free(Rpo* rpo) {
-    stdlib.free(rpo.blocks);
+    std.free(rpo.blocks);
 }
 

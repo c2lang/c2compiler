@@ -22,13 +22,7 @@ import refs_finder;
 import string_pool;
 import utils;
 
-import c_errno local;
-import stdio local;
-import stdlib local;
-import string local;
-#if MeasureTime
-import sys_time;
-#endif
+import std local;
 
 type Options struct {
     const char* target;

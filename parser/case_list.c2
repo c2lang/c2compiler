@@ -17,8 +17,7 @@ module case_list;
 
 import ast local;
 
-import string local;
-import stdlib local;
+import std local;
 
 // Use stack for small lists, heap for larger ones
 

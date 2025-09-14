@@ -17,9 +17,7 @@ module ir_slot_writes_map;
 
 import ir;
 
-import stdlib;
-import string;
-import stdio local;
+import std;
 
 public type SlotWrite struct {
     u16 slot;
@@ -65,9 +63,9 @@ static_assert(168, sizeof(Map));
 
 // Note: map size must be a multiple of largest arena size (so 256)
 public fn Map* create(u32 max_elems, u16 num_blocks) {
-    Map* m = stdlib.calloc(1, sizeof(Map));
-    m.map = stdlib.malloc(max_elems * sizeof(SlotWrite));
-    m.blocks = stdlib.malloc(num_blocks * sizeof(BlockWrites));
+    Map* m = std.calloc(1, sizeof(Map));
+    m.map = std.malloc(max_elems * sizeof(SlotWrite));
+    m.blocks = std.malloc(num_blocks * sizeof(BlockWrites));
     m.num_blocks = num_blocks;
     m.max_elems = max_elems;
 
@@ -76,14 +74,14 @@ public fn Map* create(u32 max_elems, u16 num_blocks) {
 }
 
 public fn void Map.free(Map* m) {
-    stdlib.free(m.map);
-    stdlib.free(m.blocks);
-    stdlib.free(m);
+    std.free(m.map);
+    std.free(m.blocks);
+    std.free(m);
 }
 
 public fn void Map.clear(Map* m) {
-    string.memset(m.arenas, 0, sizeof(m.arenas));
-    string.memset(m.blocks, 0, m.num_blocks * sizeof(BlockWrites));
+    std.memset(m.arenas, 0, sizeof(m.arenas));
+    std.memset(m.blocks, 0, m.num_blocks * sizeof(BlockWrites));
 
     // initialize arenas
     for (u32 i=0; i<NumArenas; i++) {
@@ -243,7 +241,7 @@ public fn void Map.add(Map* m, u16 blk_id, u16 slot, ir.Ref ref) {
         u16 src_idx = r.start;
         // copy BlockWrites's data to new head of a2
         //printf("  copy data %d -> %d\n", src_idx, dest_idx);
-        string.memcpy(&m.map[dest_idx], &m.map[src_idx], r.count*sizeof(SlotWrite));
+        std.memcpy(&m.map[dest_idx], &m.map[src_idx], r.count*sizeof(SlotWrite));
 
         assert(dest_idx < 65536);
         r.start = (u16)dest_idx;
@@ -253,7 +251,7 @@ public fn void Map.add(Map* m, u16 blk_id, u16 slot, ir.Ref ref) {
             // fix hole in map by moving data of last BlockWrites in arena
             BlockWrites* last = &m.blocks[last_idx];
             //printf("  PLUG HOLE %d -> %d\n", last.start, src_idx);
-            string.memcpy(&m.map[src_idx], &m.map[last.start], last.count*sizeof(SlotWrite));
+            std.memcpy(&m.map[src_idx], &m.map[last.start], last.count*sizeof(SlotWrite));
             last.start = src_idx;
         }
     } else {    // just move to next arena
@@ -270,12 +268,12 @@ public fn void Map.add(Map* m, u16 blk_id, u16 slot, ir.Ref ref) {
         //printf("  DEST %d\n", dest_idx);
         if (r.count) { // was in arena[0], no need to plug holes
             // copy variable's data to end end of a2
-            string.memcpy(&m.map[dest_idx], &m.map[src_idx], r.count*sizeof(SlotWrite));
+            std.memcpy(&m.map[dest_idx], &m.map[src_idx], r.count*sizeof(SlotWrite));
             if (last_idx != NULL) {
                 // fix hole in map by moving data of last BlockWrites in arena
                 BlockWrites* last = &m.blocks[last_idx];
                 //printf("  PLUG HOLE %d -> %d\n", last.start, src_idx);
-                string.memcpy(&m.map[src_idx], &m.map[last.start], last.count*sizeof(SlotWrite));
+                std.memcpy(&m.map[src_idx], &m.map[last.start], last.count*sizeof(SlotWrite));
                 last.start = src_idx;
             }
         }
@@ -329,7 +327,7 @@ fn u16 Map.shiftArenaRight(Map* m, u32 arena_idx) {
     u32 dest_idx = a.map_start + a.max_elems - a.free_slots * cap;
     //printf("  DEST %d <- %d\n", dest_idx, src_idx);
     // move data
-    string.memcpy(&m.map[dest_idx], &m.map[src_idx], r.count*sizeof(SlotWrite));
+    std.memcpy(&m.map[dest_idx], &m.map[src_idx], r.count*sizeof(SlotWrite));
     r.start = (u16)dest_idx;
 
     if (a.first_var != a.last_var) {  // several members, move variable to tail
@@ -352,8 +350,8 @@ fn u16 Map.shiftArenaRight(Map* m, u32 arena_idx) {
 }
 
 fn void print_idx(u16 idx) {
-    if (idx == NULL) printf("   -");
-    else printf("%4d", idx);
+    if (idx == NULL) std.printf("   -");
+    else std.printf("%4d", idx);
 }
 
 public fn void Map.dump(const Map* m, bool verbose) @(unused) {
@@ -361,8 +359,8 @@ public fn void Map.dump(const Map* m, bool verbose) @(unused) {
         u32 mem_blocks = m.num_blocks * sizeof(BlockWrites);
         u32 mem_map = m.max_elems * sizeof(u16);
         u32 mem_usage = mem_blocks + mem_map;
-        printf("Map: (%d users, map %d, %d/%d Kb)\n", m.num_blocks, m.max_elems, (mem_blocks + 512) / 1024, (mem_usage + 512) / 1024);
-        printf("Arenas:\n");
+        std.printf("Map: (%d users, map %d, %d/%d Kb)\n", m.num_blocks, m.max_elems, (mem_blocks + 512) / 1024, (mem_usage + 512) / 1024);
+        std.printf("Arenas:\n");
         u32 total = 0;
         for (u32 i=0; i<NumArenas; i++) {
             const Arena* a = &m.arenas[i];
@@ -374,39 +372,39 @@ public fn void Map.dump(const Map* m, bool verbose) @(unused) {
                 count++;
             }
             total += count;
-            printf("  [%d] size %4d  blocks ", i, Caps[i]);
+            std.printf("  [%d] size %4d  blocks ", i, Caps[i]);
             print_idx(a.first_var);
-            printf(",");
+            std.printf(",");
             print_idx(a.last_var);
-            printf("  (%4d)  map %5d(%4d)  free: ", count, a.map_start, a.max_elems);
-            if (i == 0) printf("-");
-            else printf("%d", a.free_slots);
-            printf("\n");
+            std.printf("  (%4d)  map %5d(%4d)  free: ", count, a.map_start, a.max_elems);
+            if (i == 0) std.printf("-");
+            else std.printf("%d", a.free_slots);
+            std.printf("\n");
         }
         if (total != m.num_blocks) {
-            printf("WARNING: invalid num_blocks, expect %d, got %d\n", m.num_blocks, total);
+            std.printf("WARNING: invalid num_blocks, expect %d, got %d\n", m.num_blocks, total);
         }
 
-        printf("BlockWritess (%d)\n", m.num_blocks);
+        std.printf("BlockWritess (%d)\n", m.num_blocks);
         for (u32 i=0; i<m.num_blocks; i++) {
             const BlockWrites* r = &m.blocks[i];
-            printf("  [%4d] %4d  %4d/%4d  prev ", i, r.start, r.count, r.capacity);
+            std.printf("  [%4d] %4d  %4d/%4d  prev ", i, r.start, r.count, r.capacity);
             print_idx(r.prev);
-            printf("  next ");
+            std.printf("  next ");
             print_idx(r.next);
-            printf("\n");
+            std.printf("\n");
         }
     }
 
     for (u32 i=0; i<m.num_blocks; i++) {
         Iter iter = m.getList((u16)i);
         if (iter.count == 0) continue;
-        printf(" B%2d ", i);
+        std.printf(" B%2d ", i);
         for (u32 j = 0; j < iter.count; j++) {
             const SlotWrite* w = &iter.ids[j];
-            printf("  s%d:%s%d", w.slot, w.ref.getKindName(), w.ref.value);
+            std.printf("  s%d:%s%d", w.slot, w.ref.getKindName(), w.ref.value);
         }
-        printf("\n");
+        std.printf("\n");
     }
 }
 

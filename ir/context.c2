@@ -27,8 +27,7 @@ import ir_slot_values local;
 import string_pool;
 import usage_counter;
 
-import stdio;
-import stdlib;
+import std;
 
 type Tools struct {
     ir_lookup_table.Table conversion;
@@ -128,7 +127,7 @@ public type Context struct @(opaque) {
 }
 
 public fn Context* create(bool print) {
-    Context* c = stdlib.calloc(1, sizeof(Context));
+    Context* c = std.calloc(1, sizeof(Context));
     c.pool = string_pool.create(2*1024, 256);
     c.constants.init(128);
     c.symbols.init(128);
@@ -143,7 +142,7 @@ public fn Context* create(bool print) {
         char[8] slot_name;
         // Result: starts at 4, then +4 each
         // Note: just 4,8,12,
-        stdio.sprintf(slot_name, "s%d", slot);
+        std.sprintf(slot_name, "s%d", slot);
         u32 idx = c.pool.addStr(slot_name, false);
     }
 
@@ -169,7 +168,7 @@ public fn void Context.free(Context* c) {
     c.symbols.free();
     c.constants.free();
     c.pool.free();
-    stdlib.free(c);
+    std.free(c);
 }
 
 public fn void Context.convert_functions(Context* c) {
@@ -180,7 +179,7 @@ public fn void Context.convert_functions(Context* c) {
 
 public fn SymbolId Context.addStringLiteral(Context* c, const char* name, const char* text, u32 size) {
 #if DebugIr
-    stdio.printf("addStringLiteral(%s)\n", text);
+    std.printf("addStringLiteral(%s)\n", text);
 #endif
     SymbolId id = c.addGlobalVar(name, 1, false);
     u32 text_idx = c.pool.addStr(text, false);
@@ -198,7 +197,7 @@ public fn SymbolId Context.addGlobalVar(Context* c, const char* name, u32 align,
     u32 name_idx = c.pool.addStr(name, false);
     SymbolId id = c.symbols.add(name_idx, false, align, is_external);
 #if DebugIr
-    stdio.printf("addGlobalVar(%s) id=%d external=%d\n", name, id, is_external);
+    std.printf("addGlobalVar(%s) id=%d external=%d\n", name, id, is_external);
 #endif
     return id;
 }
@@ -208,7 +207,7 @@ public fn SymbolId Context.addFunction(Context* c, const char* name, bool is_ext
     // TODO 4/8 bytes, ARCH
     SymbolId id = c.symbols.add(name_idx, true, 4, is_external);
 #if DebugIr
-    stdio.printf("addFunction(%s) id=%d external=%d\n", name, id, is_external);
+    std.printf("addFunction(%s) id=%d external=%d\n", name, id, is_external);
 #endif
     return id;
 }
@@ -216,7 +215,7 @@ public fn SymbolId Context.addFunction(Context* c, const char* name, bool is_ext
 public fn void Context.startFunc(Context* c, SymbolId id) {
     Builder* b = &c.b;
 #if DebugIr
-    stdio.printf("startFunc(%d)  cur %d\n", id, b.cur_func);
+    std.printf("startFunc(%d)  cur %d\n", id, b.cur_func);
 #endif
     assert(b.tmp_info == nil);
     b.tmp_info = FunctionInfo.create(8, 16, 16);
@@ -229,7 +228,7 @@ public fn void Context.startFunc(Context* c, SymbolId id) {
 public fn void Context.endFunc(Context* c) {
     Builder* b = &c.b;
 #if DebugIr
-    stdio.printf("endFunc() cur %d\n", b.cur_func);
+    std.printf("endFunc() cur %d\n", b.cur_func);
 #endif
     assert(b.num_scopes == 0);
     assert(b.cur_func);
@@ -242,7 +241,7 @@ public fn void Context.endFunc(Context* c) {
 public fn void Context.startGlobal(Context* c, SymbolId id) {
     Builder* b = &c.b;
 #if DebugIr
-    stdio.printf("startGlobal(%d)  cur %d\n", id, b.cur_global);
+    std.printf("startGlobal(%d)  cur %d\n", id, b.cur_global);
 #endif
     assert(b.cur_global == 0);
     b.cur_global = id;
@@ -253,7 +252,7 @@ public fn void Context.startGlobal(Context* c, SymbolId id) {
 public fn void Context.endGlobal(Context* c) {
     Builder* b = &c.b;
 #if DebugIr
-    stdio.printf("endGlobal()  cur %d\n", b.cur_global);
+    std.printf("endGlobal()  cur %d\n", b.cur_global);
 #endif
     assert(b.cur_global);
     Symbol* s = c.symbols.get(b.cur_global);
@@ -263,7 +262,7 @@ public fn void Context.endGlobal(Context* c) {
 
 public fn void Context.addInitZero(Context* c, u32 size) {
 #if DebugIr
-    stdio.printf("addInitZero()  %d\n", size);
+    std.printf("addInitZero()  %d\n", size);
 #endif
     assert(size < 0x0FFFFFFF);
     assert(c.b.cur_global);
@@ -332,7 +331,7 @@ public fn Ref Context.addFuncArg(Context* c, Type t) {
 public fn BlockId Context.createBlock(Context* c, BlockKind kind) {
     BlockId id = c.b.tmp_info.blocks.add(kind);
 #if DebugIr
-    stdio.printf(" createBlock(%s) id=%d\n", kind.str(), id);
+    std.printf(" createBlock(%s) id=%d\n", kind.str(), id);
 #endif
     return id;
 }
@@ -345,7 +344,7 @@ public fn bool Context.isBlockTerminated(const Context* c) {
 public fn void Context.startBlock(Context* c, BlockId id) {
 #if DebugIr
     Block* b = c.b.tmp_info.blocks.get(id);
-    stdio.printf(" startBlock(%s.%d) cur %d\n", b.getKindName(), id, c.b.cur_block);
+    std.printf(" startBlock(%s.%d) cur %d\n", b.getKindName(), id, c.b.cur_block);
 #endif
     assert(!c.b.in_block);
     c.b.in_block = true;
@@ -357,7 +356,7 @@ public fn void Context.startBlock(Context* c, BlockId id) {
 
 public fn void Context.endBlock(Context* c) {
 #if DebugIr
-    stdio.printf(" endBlock()\n");
+    std.printf(" endBlock()\n");
 #endif
     if (!c.b.block_terminated) {
         // always close block with jmp to next block
@@ -377,7 +376,7 @@ public fn void Context.addJmpInstr(Context* c, BlockId dest) {
     assert(c.b.in_block);
     Block* b = c.b.tmp_info.blocks.get(c.b.cur_block);
 #if DebugIr
-    stdio.printf("  jmp(%s.%d)\n", b.getKindName(), dest);
+    std.printf("  jmp(%s.%d)\n", b.getKindName(), dest);
 #endif
     // destination blocks are stored inside Block, not jmp instr
     b.setDest(dest, 0);
@@ -393,7 +392,7 @@ public fn void Context.addJmpIfInstr(Context* c, Ref cond, BlockId dest1, BlockI
 #if DebugIr
     Block* d1 = c.b.tmp_info.blocks.get(dest1);
     Block* d2 = c.b.tmp_info.blocks.get(dest2);
-    stdio.printf("  jmp_if %s.%d, %s.%d\n", d1.getKindName(), dest1, d2.getKindName(), dest2);
+    std.printf("  jmp_if %s.%d, %s.%d\n", d1.getKindName(), dest1, d2.getKindName(), dest2);
 #endif
     b.setDest(dest1, dest2);
     Ref ref.init(RefKind.JmpDest, 0);
@@ -404,7 +403,7 @@ public fn void Context.addJmpIfInstr(Context* c, Ref cond, BlockId dest1, BlockI
 
 public fn void Context.addRet0Instr(Context* c) {
 #if DebugIr
-    stdio.printf("  ret\n");
+    std.printf("  ret\n");
 #endif
     assert(c.b.in_block);
     Instr* i = c.b.tmp_info.instructions.add();
@@ -416,7 +415,7 @@ public fn void Context.addRet0Instr(Context* c) {
 
 public fn void Context.addRet1Instr(Context* c, Ref ref) {
 #if DebugIr
-    stdio.printf("  ret <val>\n");
+    std.printf("  ret <val>\n");
 #endif
     assert(c.b.in_block);
     Instr* i = c.b.tmp_info.instructions.add();
@@ -428,7 +427,7 @@ public fn void Context.addRet1Instr(Context* c, Ref ref) {
 
 public fn Ref Context.addLoadInstr(Context* c, Type t, Ref src) {
 #if DebugIr
-    stdio.printf("  load %s %s %d\n", t.str(), src.getKindName(), src.value);
+    std.printf("  load %s %s %d\n", t.str(), src.getKindName(), src.value);
 #endif
     assert(c.b.in_block);
 
@@ -490,7 +489,7 @@ const InstrKind[elemsof(Type)] Type2Store = {
 
 public fn void Context.addStoreInstr(Context* c, Type t, Ref src, Ref dest) {
 #if DebugIr
-    stdio.printf("  store %s  %s %d -> %s %d\n", t.str(),
+    std.printf("  store %s  %s %d -> %s %d\n", t.str(),
         src.getKindName(), src.value,
         dest.getKindName(), dest.value);
 #endif
@@ -503,7 +502,7 @@ public fn void Context.addStoreInstr(Context* c, Type t, Ref src, Ref dest) {
 
 public fn Ref Context.addBinaryInstr(Context* c, InstrKind k, Ref left, Ref right) {
 #if DebugIr
-    stdio.printf("  binary Instr %s (%s %d, %s %d) \n", k.str(),
+    std.printf("  binary Instr %s (%s %d, %s %d) \n", k.str(),
         left.getKindName(), left.value,
         right.getKindName(), right.value);
 #endif
@@ -516,7 +515,7 @@ public fn Ref Context.addBinaryInstr(Context* c, InstrKind k, Ref left, Ref righ
 
 public fn Ref Context.addCallInstr(Context* c, Ref name, const Ref* args, u32 num_args, bool has_result, bool noreturn) {
 #if DebugIr
-    stdio.printf("  call %s%d\n", name.getKindName(), name.value);
+    std.printf("  call %s%d\n", name.getKindName(), name.value);
 #endif
     for (u32 i = 0; i < num_args; i++) {
         Instr* ii = c.b.tmp_info.instructions.add();
@@ -542,7 +541,7 @@ public fn Ref Context.addCallInstr(Context* c, Ref name, const Ref* args, u32 nu
 // Temp only for 2 refs, could be more
 public fn Ref Context.addPhi2Instr(Context* c, BlockId b1, Ref r1, BlockId b2, Ref r2) {
 #if DebugIr
-    stdio.printf("  phi2  %d, %d\n", b1, b2);
+    std.printf("  phi2  %d, %d\n", b1, b2);
 #endif
     Ref out.init(RefKind.Temp, c.b.tmp_info.instructions.getCount());
 
@@ -561,7 +560,7 @@ public fn Ref Context.addPhi2Instr(Context* c, BlockId b1, Ref r1, BlockId b2, R
 
 public fn Ref Context.addStackSlot(Context* c, u32 align, Ref size) {
 #if DebugIr
-    stdio.printf("  slot (%d)\n", c.b.slot_idx);
+    std.printf("  slot (%d)\n", c.b.slot_idx);
 #endif
     u32 idx = c.b.slot_idx;
     c.b.slot_idx++;
@@ -586,7 +585,7 @@ public fn Ref Context.addStackSlot(Context* c, u32 align, Ref size) {
         kind = InstrKind.Alloc8;
         break;
     default:
-        //stdio.printf("WARN: implement other alignment (%d)\n", align);
+        //std.printf("WARN: implement other alignment (%d)\n", align);
         kind = InstrKind.Alloc8;
         break;
     }
@@ -596,7 +595,7 @@ public fn Ref Context.addStackSlot(Context* c, u32 align, Ref size) {
 
 public fn Ref Context.addIntegerConstant(Context* c, i64 size) {
 #if DebugIr
-    stdio.printf("  integer (%d)\n", size);
+    std.printf("  integer (%d)\n", size);
 #endif
     // if signed value fits in 27 bits, store it in Ref directly
     const i32 min_27bits = -0x3FFFFFF-1;
@@ -623,7 +622,7 @@ public fn void Context.addComment(Context* c, const char* text) {
 
 public fn CaseId Context.addSwitchInstr(Context* c, Ref cond, BlockId join_blk, u32 num_cases) {
 #if DebugIr
-    stdio.printf("  switch (join %d, %d cases)\n", join_blk, num_cases);
+    std.printf("  switch (join %d, %d cases)\n", join_blk, num_cases);
 #endif
     CaseId case_id = c.b.tmp_info.cases.reserve(num_cases);
 
@@ -640,7 +639,7 @@ public fn CaseId Context.addSwitchInstr(Context* c, Ref cond, BlockId join_blk, 
 
 public fn void Context.setCase(Context* c, CaseId case_id, u32 value, BlockId blk_id) {
 #if DebugIr
-    stdio.printf("  case (%d) value %d blk %d\n", case_id, value, blk_id);
+    std.printf("  case (%d) value %d blk %d\n", case_id, value, blk_id);
 #endif
     c.b.tmp_info.cases.set(case_id, value, blk_id);
 }
@@ -818,7 +817,7 @@ fn void Tools.markUsedBlocks(Tools* t, FunctionInfo* fi) {
         blocks[i].used = blocks[i].phi_source;
     }
 
-    BlockId* blocks2 = stdlib.malloc(num_blocks * sizeof(BlockId));
+    BlockId* blocks2 = std.malloc(num_blocks * sizeof(BlockId));
     //rpo.num_blocks = num_blocks;
 
     blocks2[0] = 0; // add start block to todo-list
@@ -853,8 +852,7 @@ fn void Tools.markUsedBlocks(Tools* t, FunctionInfo* fi) {
     printf("USED: \n");
     for (u32 i = 0; i < num_blocks; i++) printf("  B%d  used %d\n", i, blocks[i].used);
 #endif
-    stdlib.free(blocks2);
-
+    std.free(blocks2);
 }
 
 // NOTE: also removes unused blocks, clears instructions in removed blocks

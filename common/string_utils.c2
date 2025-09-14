@@ -15,8 +15,7 @@
 
 module string_utils;
 
-import ctype local;
-import string local;
+import std local;
 
 public fn char* toLower(const char* input, char* output) @(unused) {
     usize i;

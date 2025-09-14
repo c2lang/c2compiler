@@ -15,8 +15,7 @@
 
 module ast;
 
-import string local;
-import stdlib local;
+import std local;
 
 type StaticAssertList struct {
     u32 count;

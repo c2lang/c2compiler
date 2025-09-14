@@ -19,7 +19,7 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-import string;
+import std;
 
 type AsmStmtBits struct {
     u32 : NumStmtBits;
@@ -73,22 +73,22 @@ public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
     u8* tail = (u8*)s.constraints;
     if (s.num_constraints) {
         u32 sz = s.num_constraints * sizeof(Expr*);
-        string.memcpy(tail, constraints.getExprs(), sz);
+        std.memcpy(tail, constraints.getExprs(), sz);
         tail += sz;
     }
     if (s.num_exprs) {
         u32 sz = s.num_exprs * sizeof(Expr*);
-        string.memcpy(tail, exprs.getExprs(), sz);
+        std.memcpy(tail, exprs.getExprs(), sz);
         tail += sz;
     }
     if (s.num_clobbers) {
         u32 sz = s.num_clobbers * sizeof(Expr*);
-        string.memcpy(tail, clobbers.getExprs(), sz);
+        std.memcpy(tail, clobbers.getExprs(), sz);
         tail += sz;
     }
     u32 num_names = num_outputs + num_inputs;
     if (num_names) {
-        string.memcpy(tail, names, num_names * sizeof(u32));
+        std.memcpy(tail, names, num_names * sizeof(u32));
     }
 
 #if AstStatistics

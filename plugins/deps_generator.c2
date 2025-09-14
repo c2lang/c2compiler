@@ -24,9 +24,7 @@ import string_buffer;
 import string_list;
 import string_pool;
 
-import string local;
-import stdlib local;
-import stdio local;
+import std local;
 
 type Dir struct {
     u32 name_idx;
@@ -79,10 +77,10 @@ fn void Dir.flatten(const Dir* d, string_buffer.Buf* out, string_pool.Pool* pool
     // flattens subdirs into passed buf
     for (u32 i=0; i<d.count; i++) {
         const Dir* subdir = &d.subdirs[i];
-        const char* dirname = pool.idx2str(subdir.name_idx);
+        const char* dir_name = pool.idx2str(subdir.name_idx);
 
         out.indent(d.indent);
-        out.print("<group name='%s' full='dir:%s' collapsed='1'>\n", dirname, dirname);
+        out.print("<group name='%s' full='dir:%s' collapsed='1'>\n", dir_name, dir_name);
 
         out.add2(subdir.buf.data(), subdir.buf.size());
         subdir.flatten(out, pool);

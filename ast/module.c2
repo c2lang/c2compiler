@@ -20,8 +20,7 @@ import string_buffer;
 import string_pool;
 import color;
 
-import stdlib;
-import string;
+import std;
 
 public type Module struct @(opaque) {
     u32 name_idx;
@@ -45,7 +44,7 @@ static_assert(88, sizeof(Module));
 
 // Note: name must be allocated in target StringPool
 public fn Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_external, bool is_direct) {
-    Module* m = stdlib.calloc(1, sizeof(Module));
+    Module* m = std.calloc(1, sizeof(Module));
     m.mt = ModuleType.create(c, m);
     m.name_idx = name_idx;
     m.is_external = is_external;
@@ -63,10 +62,10 @@ public fn void Module.free(Module* m) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].free();
     }
-    stdlib.free(m.files);
+    std.free(m.files);
     m.symbols.free();
     m.instances.free();
-    stdlib.free(m);
+    std.free(m);
 }
 
 public fn void Module.setUsed(Module* m) { m.is_used = true; }
@@ -182,11 +181,11 @@ public fn u32 Module.getNameIdx(const Module* m) { return m.name_idx; }
 
 fn void Module.resizeFiles(Module* m, u32 cap) {
     m.max_files = cap;
-    void* buf = stdlib.malloc(m.max_files * sizeof(ast.AST*));
+    void* buf = std.malloc(m.max_files * sizeof(ast.AST*));
     if (m.files) {
         void* old = m.files;
-        string.memcpy(buf, old, m.num_files * sizeof(ast.AST*));
-        stdlib.free(old);
+        std.memcpy(buf, old, m.num_files * sizeof(ast.AST*));
+        std.free(old);
     }
     m.files = buf;
 }

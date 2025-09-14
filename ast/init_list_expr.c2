@@ -18,7 +18,8 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
-import string;
+
+import std;
 
 type InitListExprBits struct {
     u32 : NumExprBits;
@@ -40,7 +41,7 @@ public fn InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc loc, 
     e.endLoc = endLoc;
     e.num_values = num_values;
     if (num_values) {
-        string.memcpy(e.values, values, num_values * sizeof(Expr*));
+        std.memcpy(e.values, values, num_values * sizeof(Expr*));
     }
 #if AstStatistics
     Stats.addExpr(ExprKind.InitList, size);

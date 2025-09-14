@@ -18,7 +18,7 @@ module keywords;
 import string_pool;
 import token local;
 
-import string;
+import std local;
 
 public type Info struct {
     // Note: should be big enough to hold all keywords (4+436+216 with alignment)
@@ -32,7 +32,7 @@ const char[] C_keywords = "alignas alignof auto constexpr do double extern"
 
 public fn void Info.init(Info* info, string_pool.Pool* pool) {
     u32 idx = 0;
-    string.memset(info, 0, sizeof(Info));
+    memset(info, 0, sizeof(Info));
     const char *p = C_keywords;
     while (*p) {
         u32 len;
@@ -46,7 +46,7 @@ public fn void Info.init(Info* info, string_pool.Pool* pool) {
     }
     for (Kind k = Kind.KW_bool; k <= Kind.KW_while; k++) {
         const char *s = k.str();
-        idx = pool.add(s, string.strlen(s), true);
+        idx = pool.add(s, strlen(s), true);
         assert(idx < elemsof(info.indexes));
         info.indexes[idx] = k;
     }

@@ -15,8 +15,7 @@
 
 module ast;
 
-import string;
-import stdlib;
+import std;
 
 public type FunctionDeclList struct {
     u32 count;
@@ -25,11 +24,11 @@ public type FunctionDeclList struct {
 }
 
 public fn void FunctionDeclList.init(FunctionDeclList* l) {
-    string.memset(l, 0, sizeof(FunctionDeclList));
+    std.memset(l, 0, sizeof(FunctionDeclList));
 }
 
 public fn void FunctionDeclList.free(FunctionDeclList* l) {
-    if (l.decls) stdlib.free(l.decls);
+    if (l.decls) std.free(l.decls);
 }
 
 public fn void FunctionDeclList.clear(FunctionDeclList* l) @(unused) {
@@ -39,11 +38,11 @@ public fn void FunctionDeclList.clear(FunctionDeclList* l) @(unused) {
 public fn void FunctionDeclList.add(FunctionDeclList* l, FunctionDecl* d) {
     if (l.count >= l.capacity) {
         l.capacity = (l.capacity == 0) ? 4 : l.capacity * 2;
-        void* decls2 = stdlib.malloc(l.capacity * sizeof(FunctionDecl*));
+        void* decls2 = std.malloc(l.capacity * sizeof(FunctionDecl*));
         void* old = l.decls;
         if (old) {
-            string.memcpy(decls2, old, l.count * sizeof(FunctionDecl*));
-            stdlib.free(old);
+            std.memcpy(decls2, old, l.count * sizeof(FunctionDecl*));
+            std.free(old);
         }
         l.decls = decls2;
     }

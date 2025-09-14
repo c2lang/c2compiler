@@ -15,8 +15,7 @@
 
 module ir;
 
-import string local;
-import stdlib;
+import std local;
 
 public type InstrList struct {
     u32 count;
@@ -28,12 +27,12 @@ public fn void InstrList.init(InstrList* l, u32 initial_size) {
     memset(l, 0, sizeof(InstrList));
     if (initial_size) {
         l.capacity = initial_size;
-        l.instrs = stdlib.malloc(l.capacity * sizeof(Instr));
+        l.instrs = std.malloc(l.capacity * sizeof(Instr));
     }
 }
 
 public fn void InstrList.free(InstrList* l) {
-    if (l.instrs) stdlib.free(l.instrs);
+    if (l.instrs) std.free(l.instrs);
 }
 
 public fn void InstrList.reserve(InstrList* l, u32 extra) {
@@ -43,9 +42,9 @@ public fn void InstrList.reserve(InstrList* l, u32 extra) {
 
 fn void InstrList.resize(InstrList* l, u32 cap) {
     l.capacity = cap;
-    Instr* instrs2 = stdlib.malloc(l.capacity * sizeof(Instr));
+    Instr* instrs2 = malloc(l.capacity * sizeof(Instr));
     if (l.count) memcpy(instrs2, l.instrs, l.count * sizeof(Instr));
-    if (l.instrs) stdlib.free(l.instrs);
+    if (l.instrs) free(l.instrs);
     l.instrs = instrs2;
 }
 

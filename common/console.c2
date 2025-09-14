@@ -15,8 +15,7 @@
 
 module console;
 
-import stdio local;
-import stdarg local;
+import std local;
 
 import color local;
 

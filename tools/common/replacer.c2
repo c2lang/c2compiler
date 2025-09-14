@@ -18,10 +18,7 @@ module replacer;
 import file_utils;
 import quicksort;
 
-import stdio local;
-import stdlib;
-import string;
-import c_errno local;
+import std local;
 
 type Loc struct {
     const char* filename;
@@ -52,7 +49,7 @@ public type Replacer struct @(opaque) {
 }
 
 public fn Replacer* create(const char* new_name) {
-    Replacer* r = stdlib.calloc(1, sizeof(Replacer));
+    Replacer* r = calloc(1, sizeof(Replacer));
     r.new_name = new_name;
     r.resize(16);
     r.f_resize(16);
@@ -61,28 +58,28 @@ public fn Replacer* create(const char* new_name) {
 
 public fn void Replacer.free(Replacer* r) {
     if (r.file.isOpen()) r.file.close();
-    if (r.dest) stdlib.free(r.dest);
-    stdlib.free(r.locs);
-    stdlib.free(r.fragments);
-    stdlib.free(r);
+    if (r.dest) free(r.dest);
+    free(r.locs);
+    free(r.fragments);
+    free(r);
 }
 
 fn void Replacer.resize(Replacer* r, u32 capacity) {
     r.capacity = capacity;
-    Loc* locs2 = stdlib.malloc(capacity * sizeof(Loc));
+    Loc* locs2 = malloc(capacity * sizeof(Loc));
     if (r.count) {
-        string.memcpy(locs2, r.locs, r.count * sizeof(Loc));
-        stdlib.free(r.locs);
+        memcpy(locs2, r.locs, r.count * sizeof(Loc));
+        free(r.locs);
     }
     r.locs = locs2;
 }
 
 fn void Replacer.f_resize(Replacer* r, u32 capacity) {
     r.f_capacity = capacity;
-    Fragment* frags2 = stdlib.malloc(capacity * sizeof(Fragment));
+    Fragment* frags2 = malloc(capacity * sizeof(Fragment));
     if (r.f_count) {
-        string.memcpy(frags2, r.fragments, r.f_count * sizeof(Fragment));
-        stdlib.free(r.fragments);
+        memcpy(frags2, r.fragments, r.f_count * sizeof(Fragment));
+        free(r.fragments);
     }
     r.fragments = frags2;
 }
@@ -96,13 +93,13 @@ fn void Replacer.addFragment(Replacer* r, u32 start, u32 end) {
 }
 
 fn void Replacer.flushFragments(Replacer* r, const char* filename) {
-    u32 new_len = cast<u32>(string.strlen(r.new_name));
+    u32 new_len = cast<u32>(strlen(r.new_name));
     u32 new_size = r.file.data_size();
     new_size += (r.f_count - 1) * (new_len - r.old_len);
     if (new_size + 1 > r.dest_capacity) {
-        if (r.dest) stdlib.free(r.dest);
+        if (r.dest) free(r.dest);
         r.dest_capacity = new_size+1; // add 1 for 0-terminator
-        r.dest = stdlib.malloc(r.dest_capacity);
+        r.dest = malloc(r.dest_capacity);
         assert(r.dest);
     }
 
@@ -113,11 +110,11 @@ fn void Replacer.flushFragments(Replacer* r, const char* filename) {
         Fragment* f = &r.fragments[i];
         //printf("  [%d] %5u - %5u\n", i, f.start, f.end);
         if (i != 0) {
-            string.memcpy(r.dest + dest_idx, r.new_name, new_len);
+            memcpy(r.dest + dest_idx, r.new_name, new_len);
             dest_idx += new_len;
         }
         u32 len = f.end - f.start;
-        string.memcpy(r.dest + dest_idx, src + f.start, len);
+        memcpy(r.dest + dest_idx, src + f.start, len);
         dest_idx += len;
     }
     r.dest[dest_idx] = 0;
@@ -175,7 +172,7 @@ fn u32 Replacer.findOffset(Replacer* r, u32 line, u32 column) {
 fn bool compareLoc(void* arg, const void* left, const void* right) {
     const Loc* l = left;
     const Loc* r = right;
-    i32 cmp = string.strcmp(l.filename, r.filename);
+    i32 cmp = strcmp(l.filename, r.filename);
     if (cmp != 0) return cmp < 0;
     if (l.line != r.line) return l.line < r.line;
     return l.column < r.column;

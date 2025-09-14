@@ -15,21 +15,14 @@
 
 module tester_main;
 
-import stdio local;
-import stdlib local;
-import string local;
-import sys_stat local;
-import sys_time;
-import libc_dirent local;
-import c_errno local;
-import unistd;
-import pthread;
-
 import test_utils local;
 import test_db local;
 import string_buffer;
 import string_utils local;
 import file_utils;
+
+import std local;
+import pthread;
 
 /*
     Syntax:
@@ -133,7 +126,7 @@ fn void TestQueue.summarizeFailed(const TestQueue* q) {
 }
 
 fn u32 online_cpus() {
-    i64 ncpus = unistd.sysconf(unistd._SC_NPROCESSORS_ONLN);
+    i64 ncpus = sysconf(_SC_NPROCESSORS_ONLN);
     if (ncpus > 8) return 8;    // Hack around Ryzen virtual cores. Using only physical is faster
     if (ncpus > 0) return cast<u32>(ncpus);
     return 1;
@@ -200,14 +193,14 @@ fn void* tester_thread_main(void* arg) {
     return nil;
 }
 
-fn Tester* Tester.create(u32 idx, TestQueue* q, const char* cwd, bool sync) {
+fn Tester* Tester.create(u32 idx, TestQueue* q, const char* cwd, bool sync_) {
     Tester* t = calloc(1, sizeof(Tester));
     t.index = idx;
     t.queue = q;
     t.cwd = cwd;
     t.thread = 0;
     snprintf(t.tmp_dir, sizeof(t.tmp_dir), "/tmp/tester%d", idx);
-    if (sync)
+    if (sync_)
         tester_thread_main(t);
     else
         pthread.create(&t.thread, nil, tester_thread_main, t);
@@ -301,8 +294,8 @@ fn void usage(const char* name) {
 }
 
 fn u64 now() {
-    sys_time.Timeval tv;
-    sys_time.gettimeofday(&tv, nil);
+    Timeval tv;
+    gettimeofday(&tv, nil);
     u64 now64 = cast<u64>(tv.tv_sec);
     now64 *= 1000000;
     now64 += tv.tv_usec;
@@ -316,7 +309,7 @@ public fn i32 main(i32 argc, char** argv) {
 
     u64 t1 = now();
 
-    set_color_output(argv[0], unistd.isatty(1));
+    set_color_output(argv[0], isatty(1));
 
     for (i32 i = 1; i < argc; i++) {
         char *arg = argv[i];
@@ -365,16 +358,16 @@ public fn i32 main(i32 argc, char** argv) {
     if (num_threads > MAX_THREADS) num_threads = MAX_THREADS;
     if (num_threads > queue.count) num_threads = queue.count;
 
-    char* cwd = unistd.getcwd(nil, 0);
+    char* cwd = getcwd(nil, 0);
     if (cwd == nil) {
         print_error("cannot get current directory: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
-    bool sync = (num_threads == 1);
+    bool sync_ = (num_threads == 1);
     Tester*[MAX_THREADS] testers = { nil }
     for (u32 i=0; i<num_threads; i++) {
-        testers[i] = Tester.create(i, queue, cwd, sync);
+        testers[i] = Tester.create(i, queue, cwd, sync_);
     }
 
     // TODO handle Ctrl-C

@@ -19,7 +19,7 @@ import ir local;
 
 import string_buffer;
 
-import stdio;
+import std;
 
 // Note: Tools not used
 fn void Tools.generate_graphviz(Tools* t, FunctionInfo* fi) @(unused) {
@@ -50,7 +50,7 @@ fn void Tools.generate_graphviz(Tools* t, FunctionInfo* fi) @(unused) {
     out.add("}\n");
     out.add("-------------\n");
 
-    stdio.puts(out.data());
+    std.puts(out.data());
     out.free();
 }
 

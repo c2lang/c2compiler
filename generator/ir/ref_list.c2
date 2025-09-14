@@ -17,8 +17,7 @@ module ref_list;
 
 import ir;
 
-import string local;
-import stdlib;
+import std;
 
 public type RefList struct {
     u32 count;
@@ -34,13 +33,13 @@ public fn void RefList.init(RefList* l) {
 }
 
 public fn void RefList.free(RefList* l) {
-    if (l.count > elemsof(l.stack)) stdlib.free(l.refs);
+    if (l.count > elemsof(l.stack)) std.free(l.refs);
 }
 
 fn void RefList.resize(RefList* l, u32 cap) {
-    ir.Ref* refs2 = stdlib.malloc(cap * sizeof(ir.Ref));
-    if (l.count != 0) memcpy(refs2, l.refs, l.count * sizeof(ir.Ref));
-    if (l.capacity > elemsof(l.stack)) stdlib.free(l.refs);
+    ir.Ref* refs2 = std.malloc(cap * sizeof(ir.Ref));
+    if (l.count != 0) std.memcpy(refs2, l.refs, l.count * sizeof(ir.Ref));
+    if (l.capacity > elemsof(l.stack)) std.free(l.refs);
     l.capacity = cap;
     l.refs = refs2;
 }

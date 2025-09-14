@@ -18,8 +18,7 @@ module label_vector;
 import ast;
 import src_loc local;
 
-import stdlib;
-import string;
+import std;
 
 public type Label struct {
     u32 name_idx;
@@ -39,11 +38,11 @@ public fn void LabelVector.init(LabelVector* v, u32 capacity) @(unused) {
     v.data = nil;
     v.count = 0;
     v.capacity = capacity;
-    if (capacity) v.data = stdlib.malloc(capacity * sizeof(Label));
+    if (capacity) v.data = std.malloc(capacity * sizeof(Label));
 }
 
 public fn void LabelVector.free(LabelVector* v) {
-    if (v.data) stdlib.free(v.data);
+    if (v.data) std.free(v.data);
     v.count = 0;
     v.capacity = 0;
     v.data = nil;
@@ -55,10 +54,10 @@ public fn void LabelVector.reset(LabelVector* v) {
 
 fn void LabelVector.resize(LabelVector* v) {
     v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
-    void* data2 = stdlib.malloc(v.capacity * sizeof(Label));
+    void* data2 = std.malloc(v.capacity * sizeof(Label));
     if (v.data) {
-        string.memcpy(data2, v.data, v.count * sizeof(Label));
-        stdlib.free(v.data);
+        std.memcpy(data2, v.data, v.count * sizeof(Label));
+        std.free(v.data);
     }
     v.data = data2;
 }

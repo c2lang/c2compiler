@@ -15,13 +15,6 @@
 
 module test_db;
 
-import c_errno local;
-import stdio local;
-import stdarg local;
-import stdlib local;
-import string local;
-import unistd local;
-
 import color;
 import expect_file local;
 import file_utils;
@@ -29,6 +22,8 @@ import issues local;
 import string_buffer;
 import string_utils local;
 import test_utils local;
+
+import std local;
 
 public const u32 MAX_LINE = 512;
 

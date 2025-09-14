@@ -34,9 +34,7 @@ import warning_flags;
 import struct_func_list as sf_list;
 import incr_array_list as ia_list;
 
-import ctype;
-import stdarg local;
-import stdlib;
+import std;
 
 const u32 MaxDepth = 8;
 const u32 LHS = 0x01;
@@ -87,7 +85,7 @@ public fn Analyser* create(diagnostics.Diags* diags,
                              module_list.List* allmodules,
                              const warning_flags.Flags* warnings)
 {
-    Analyser* ma = stdlib.calloc(1, sizeof(Analyser));
+    Analyser* ma = std.calloc(1, sizeof(Analyser));
     ma.diags = diags;
     ma.checker.init(diags, builder);
     ma.context = context;
@@ -107,7 +105,7 @@ public fn void Analyser.free(Analyser* ma) {
     }
     ma.prefixes.free();  // Note: safe to be freed twice
     ma.labels.free();
-    stdlib.free(ma);
+    std.free(ma);
 }
 
 public fn void Analyser.check(Analyser* ma, Module* mod) {
@@ -161,7 +159,7 @@ public fn void Analyser.check(Analyser* ma, Module* mod) {
 fn init_checker.Checker* Analyser.getInitChecker(Analyser* ma) {
     if (ma.check_idx >= elemsof(ma.init_checkers)) {
         ma.check_idx++;
-        return stdlib.calloc(1, sizeof(init_checker.Checker));
+        return std.calloc(1, sizeof(init_checker.Checker));
     } else {
         init_checker.Checker* c = &ma.init_checkers[ma.check_idx++];
         c.clear();
@@ -174,7 +172,7 @@ fn void Analyser.putInitChecker(Analyser* ma, init_checker.Checker* c) {
     ma.check_idx--;
     if (ma.check_idx >= elemsof(ma.init_checkers)) {
         c.free();
-        stdlib.free(c);
+        std.free(c);
     }
 }
 
@@ -396,8 +394,8 @@ fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
     prefix.decl = ma.type_fn_decls.getDecl(index);
     // Note: no need to check for enum constants, since they always start with Capital case
     if (prefix.decl.isStructType()) {
-        StructTypeDecl* std = (StructTypeDecl*)prefix.decl;
-        Decl* match = std.findMember(d.getNameIdx(), nil);
+        StructTypeDecl* sd = (StructTypeDecl*)prefix.decl;
+        Decl* match = sd.findMember(d.getNameIdx(), nil);
         if (match) {
             ma.error(match.getLoc(), "member '%s' conflicts with type-function '%s'", match.getName(), d.getFullName());
             ma.note(d.getLoc(), "previous declaration is here");
@@ -520,11 +518,11 @@ fn void Analyser.handleVarDecl(void* arg, VarDecl* v) {
 fn void Analyser.checkName(Analyser* ma, Decl* d, bool is_constant) {
     const char* name = d.getName();
     if (is_constant) {
-        if (ctype.islower(name[0])) {
+        if (std.islower(name[0])) {
             ma.error(d.getLoc(), "a global constant name must start with an upper case character");
         }
     } else {
-        if (ctype.isupper(name[0])) {
+        if (std.isupper(name[0])) {
             ma.error(d.getLoc(), "a variable name must start with a lower case character");
         }
     }

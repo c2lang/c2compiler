@@ -18,7 +18,8 @@ module ast;
 import ast_context;
 import src_loc local;
 import string_buffer;
-import string;
+
+import std;
 
 type CallExprBits struct {
     u32 : NumExprBits;
@@ -57,7 +58,7 @@ public fn CallExpr* CallExpr.create(ast_context.Context* c,
     e.template_idx = 0;
     e.instance_ast_idx = 0;
     e.func = func;
-    string.memcpy(e.args, args, num_args * sizeof(Expr*));
+    std.memcpy(e.args, args, num_args * sizeof(Expr*));
 #if AstStatistics
     Stats.addExpr(ExprKind.Call, size);
 #endif
@@ -83,7 +84,7 @@ public fn CallExpr* CallExpr.createTemplate(ast_context.Context* c,
     e.template_idx = 0;
     e.instance_ast_idx = (u16)ast_idx;
     e.func = func;
-    string.memcpy(e.args, args, num_args * sizeof(Expr*));
+    std.memcpy(e.args, args, num_args * sizeof(Expr*));
     TypeRef* destRef = cast<TypeRef*>(&e.args[num_args]);
     destRef.init(ref);
 #if AstStatistics

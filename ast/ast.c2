@@ -21,7 +21,7 @@ import src_loc local;
 import string_buffer;
 import string_pool;
 
-import stdlib;
+import std;
 
 /*
     Represents a single file with all its imports, decls, etc
@@ -48,7 +48,7 @@ public type AST struct @(opaque) {
 static_assert(144+64, sizeof(AST));
 
 fn AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod, bool is_interface, bool is_generated) {
-    AST* a = stdlib.calloc(1, sizeof(AST));
+    AST* a = std.calloc(1, sizeof(AST));
     a.mod = mod;
     a.auxPool = auxPool;
     a.name = name;
@@ -72,7 +72,7 @@ fn void AST.free(AST* a) {
     a.static_asserts.free();
     a.array_values.free();
     if (a.attrs) a.attrs.free();
-    stdlib.free(a);
+    std.free(a);
 }
 
 public fn const char* AST.getFilename(const AST* a) @(unused) {

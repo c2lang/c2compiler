@@ -15,8 +15,7 @@
 
 module index_list;
 
-import stdlib;
-import string;
+import std;
 
 public type List struct {
     u32 count;
@@ -31,7 +30,7 @@ public fn void List.init(List* l, u32 initial) {
 }
 
 public fn void List.free(List* l) {
-    stdlib.free(l.data);
+    std.free(l.data);
 }
 
 public fn void List.clear(List* l) {
@@ -54,10 +53,10 @@ public fn u32 List.getCount(const List* l) {
 
 fn void List.resize(List* l, u32 cap) {
     l.capacity = cap;
-    u32* data2 = stdlib.malloc(l.capacity * sizeof(u32));
+    u32* data2 = std.malloc(l.capacity * sizeof(u32));
     if (l.data) {
-        string.memcpy(data2, l.data, l.count * sizeof(u32));
-        stdlib.free(l.data);
+        std.memcpy(data2, l.data, l.count * sizeof(u32));
+        std.free(l.data);
     }
     l.data = data2;
 }

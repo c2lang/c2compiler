@@ -18,16 +18,11 @@ module utils;
 import constants;
 import file_utils;
 
-import c_errno local;
-import stdio local;
-import string local;
-import sys_stat local;
-import sys_time;
-import unistd;
+import std local;
 
 public fn u64 now() @(unused) {
-    sys_time.Timeval tv;
-    sys_time.gettimeofday(&tv, nil);
+    std.Timeval tv;
+    std.gettimeofday(&tv, nil);
     u64 now64 = cast<u64>(tv.tv_sec);
     now64 *= 1000000;
     now64 += tv.tv_usec;
@@ -56,7 +51,7 @@ public fn bool findProjectDir(PathInfo* info) {
 
     char[file_utils.Max_path] buffer;
     while (1) {
-        char* path = unistd.getcwd(buffer, elemsof(buffer));
+        char* path = getcwd(buffer, elemsof(buffer));
         if (path == nil) {
             perror("getcwd");
             return false;
@@ -82,7 +77,7 @@ public fn bool findProjectDir(PathInfo* info) {
                 return true;
             }
         }
-        if (unistd.chdir("..")) {
+        if (chdir("..")) {
             perror("chdir");
             return false;
         }

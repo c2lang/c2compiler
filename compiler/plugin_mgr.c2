@@ -22,12 +22,8 @@ import string_list;
 import string_pool;
 import string_utils;
 
-import c_errno local;
+import std;
 import dlfcn local;
-import libc_dirent local;
-import stdio;
-import stdlib;
-import string local;
 
 #if SYSTEM_DARWIN
 const char *lib_ext = ".dylib";
@@ -59,7 +55,7 @@ public type Mgr struct @(opaque) {
 }
 
 public fn Mgr* create(string_pool.Pool* auxPool, bool console_timing, bool console_debug, bool no_plugins) {
-    Mgr* m = stdlib.calloc(1, sizeof(Mgr));
+    Mgr* m = std.calloc(1, sizeof(Mgr));
     m.auxPool = auxPool;
     m.console_timing = console_timing;
     m.console_debug = console_debug;
@@ -76,9 +72,9 @@ public fn void Mgr.free(Mgr* m) {
         dlclose(p.handle);
     }
 
-    stdlib.free(m.plugins);
+    std.free(m.plugins);
     m.paths.free();
-    stdlib.free(m);
+    std.free(m);
 }
 
 public fn const char* Mgr.getError(const Mgr* m) {
@@ -92,10 +88,10 @@ public fn void Mgr.addPath(Mgr* m, u32 path) {
 fn void Mgr.addPlugin(Mgr* m, Plugin* p) {
     if (m.plugin_count == m.plugin_max) {
         m.plugin_max = m.plugin_max ? m.plugin_max * 2 : 4;
-        Plugin* plugins2 = stdlib.malloc(m.plugin_max * sizeof(Plugin));
+        Plugin* plugins2 = std.malloc(m.plugin_max * sizeof(Plugin));
         if (m.plugin_count) {
-            memcpy(plugins2, m.plugins, m.plugin_count * sizeof(Plugin));
-            stdlib.free(m.plugins);
+            std.memcpy(plugins2, m.plugins, m.plugin_count * sizeof(Plugin));
+            std.free(m.plugins);
         }
         m.plugins = plugins2;
     }
@@ -104,9 +100,9 @@ fn void Mgr.addPlugin(Mgr* m, Plugin* p) {
     m.plugin_count++;
 }
 
-fn bool is_plugin(const Dirent* entry) {
+fn bool is_plugin(const std.Dirent* entry) {
     const char* filename = entry.d_name;
-    if (entry.d_type != DT_REG) return false;
+    if (entry.d_type != std.DT_REG) return false;
     if (filename[0] == '.') return false;
     return string_utils.endsWith(filename, lib_ext);
 }
@@ -115,17 +111,17 @@ public fn void Mgr.show(const Mgr* m) {
     console.log("Plugins:");
     for (u32 i=0; i<m.paths.length(); i++) {
         const char* path = m.paths.get(i);
-        DIR* dir = opendir(path);
+        std.DIR* dir = std.opendir(path);
         if (dir == nil) {
-            console.warn("cannot read '%s': %s", path, strerror(errno));
+            console.warn("cannot read '%s': %s", path, std.strerror(std.errno));
             continue;
         }
-        while (Dirent* entry = readdir(dir)) {
+        while (std.Dirent* entry = std.readdir(dir)) {
             if (is_plugin(entry)) {
                 console.log("  %s/%s", path, entry.d_name);
             }
         }
-        closedir(dir);
+        std.closedir(dir);
     }
 }
 
@@ -144,11 +140,11 @@ fn bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
     const char* name_str = m.auxPool.idx2str(name);
 
     char[128] filename;
-    stdio.snprintf(filename, elemsof(filename), "lib%s%s", name_str, lib_ext);
+    std.snprintf(filename, elemsof(filename), "lib%s%s", name_str, lib_ext);
 
     char[file_utils.Max_path] fullname;
     if (!m.find_file(fullname, elemsof(fullname), filename)) {
-        stdio.snprintf(m.error_msg, elemsof(m.error_msg), "cannot find plugin %s (%s)", name_str, filename);
+        std.snprintf(m.error_msg, elemsof(m.error_msg), "cannot find plugin %s (%s)", name_str, filename);
         return false;
     }
 
@@ -158,13 +154,13 @@ fn bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
     p.is_active = true;
     p.handle = dlopen(fullname, RTLD_NOW | RTLD_LOCAL);
     if (p.handle == nil) {
-        stdio.snprintf(m.error_msg, elemsof(m.error_msg), "cannot load plugin %s: %s", fullname, dlerror());
+        std.snprintf(m.error_msg, elemsof(m.error_msg), "cannot load plugin %s: %s", fullname, dlerror());
         return false;
     }
 
     void* handle_symbol = dlsym(p.handle, "plugin_main_handle");
     if (!handle_symbol) {
-        stdio.snprintf(m.error_msg, elemsof(m.error_msg), "invalid plugin %s: %s", fullname, dlerror());
+        std.snprintf(m.error_msg, elemsof(m.error_msg), "invalid plugin %s: %s", fullname, dlerror());
         dlclose(p.handle);
         return false;
     }
@@ -173,7 +169,7 @@ fn bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
     p.arg = p.functions.load(m.auxPool.idx2str(options), m.console_timing, m.console_debug);
     if (!p.arg) {
         dlclose(p.handle);
-        stdio.snprintf(m.error_msg, elemsof(m.error_msg), "plugin %s failed to load", fullname);
+        std.snprintf(m.error_msg, elemsof(m.error_msg), "plugin %s failed to load", fullname);
         return false;
     }
 

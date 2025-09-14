@@ -17,9 +17,7 @@ module radix_tree;
 
 import linked_list;
 
-import stdlib local;
-import string local;
-import unistd;
+import std local;
 
 type Trimmer struct {
     Nodes* nodes;
@@ -94,7 +92,7 @@ fn u32 section_size(const void* section) {
 
 fn  bool section_write(i32 fd, void* section) {
     const u32 size = section_size(section);
-    isize written = unistd.write(fd, section, size);
+    isize written = write(fd, section, size);
     return (size == written);
 }
 

@@ -20,8 +20,7 @@ import color;
 import ast_context local;
 import string_pool;
 
-import stdlib;
-import string;
+import std;
 
 #if Arch32
 #else
@@ -131,7 +130,7 @@ public fn void setGlobals(Globals* g) @(unused){
 
 // wordsize in bytes, must NOT be called from Plugin!
 public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, bool use_color) {
-    globals = stdlib.malloc(sizeof(Globals));
+    globals = std.malloc(sizeof(Globals));
     globals.pointers.init(c);
     globals.string_types.init(c);
     globals.wordsize = wordsize;
@@ -145,7 +144,7 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
 #endif
 
     // create all Qualtypes for builtin-types, 1 extra for void-ptr
-    builtins = stdlib.malloc((elemsof(BuiltinKind) + 1) * sizeof(QualType));
+    builtins = std.malloc((elemsof(BuiltinKind) + 1) * sizeof(QualType));
     for (u32 i=0; i<elemsof(BuiltinKind); i++) {
         builtins[i].set((Type*)BuiltinType.create(c, (BuiltinKind)i));
     }
@@ -155,11 +154,11 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
     builtins[elemsof(BuiltinKind)].set(void_ptr);
     void_ptr.setCanonicalType(builtins[elemsof(BuiltinKind)]);
 
-    string.memcpy(globals.builtinType_sizes, BuiltinType_default_sizes, sizeof(BuiltinType_default_sizes));
+    std.memcpy(globals.builtinType_sizes, BuiltinType_default_sizes, sizeof(BuiltinType_default_sizes));
     globals.builtinType_sizes[BuiltinKind.ISize] = wordsize;
     globals.builtinType_sizes[BuiltinKind.USize] = wordsize;
 
-    string.memcpy(globals.builtinType_width, BuiltinType_default_widths, sizeof(BuiltinType_default_widths));
+    std.memcpy(globals.builtinType_width, BuiltinType_default_widths, sizeof(BuiltinType_default_widths));
     globals.builtinType_width[BuiltinKind.ISize] = wordsize * 8;
     globals.builtinType_width[BuiltinKind.USize] = wordsize * 8;
 
@@ -185,12 +184,12 @@ public fn void deinit(bool print_stats) {
     globals.names_pool = nil;
     globals.ast_count = 0;
     globals.ast_capacity = 0;
-    stdlib.free(globals.ast_list);
+    std.free(globals.ast_list);
     globals.ast_list = nil;
     globals.pointers.clear();
     globals.string_types.clear();
-    stdlib.free(globals);
-    stdlib.free(builtins);
+    std.free(globals);
+    std.free(builtins);
 }
 
 public fn u32 getWordSize() {
@@ -223,11 +222,11 @@ fn u32 addAST(AST* ast_) {
         if (globals.ast_capacity == 0) globals.ast_capacity = 16;
         else globals.ast_capacity *= 2;
 
-        void* buf = stdlib.malloc(globals.ast_capacity * sizeof(ast.AST*));
+        void* buf = std.malloc(globals.ast_capacity * sizeof(ast.AST*));
         if (globals.ast_list) {
             void* old = globals.ast_list;
-            string.memcpy(buf, old, globals.ast_count * sizeof(ast.AST*));
-            stdlib.free(old);
+            std.memcpy(buf, old, globals.ast_count * sizeof(ast.AST*));
+            std.free(old);
         }
         globals.ast_list = buf;
     }

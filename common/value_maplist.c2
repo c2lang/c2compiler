@@ -15,8 +15,7 @@
 
 module value_maplist;
 
-import stdlib;
-import string;
+import std;
 
 public type Value struct {
     u32 key;
@@ -30,12 +29,12 @@ public type List struct {
 }
 
 public fn void List.init(List* l) {
-    string.memset(l, 0, sizeof(List));
+    std.memset(l, 0, sizeof(List));
     l.resize(8);
 }
 
 public fn void List.free(List* l) {
-    stdlib.free(l.values);
+    std.free(l.values);
 }
 
 public fn void List.clear(List* l) {
@@ -61,9 +60,9 @@ public fn u32 List.get(const List* l, u32 key) {
 
 fn void List.resize(List* l, u32 cap) {
     l.capacity = cap;
-    Value* values2 = stdlib.malloc(l.capacity * sizeof(Value));
-    if (l.count) string.memcpy(values2, l.values, l.count * sizeof(Value));
-    if (l.values) stdlib.free(l.values);
+    Value* values2 = std.malloc(l.capacity * sizeof(Value));
+    if (l.count) std.memcpy(values2, l.values, l.count * sizeof(Value));
+    if (l.values) std.free(l.values);
     l.values = values2;
 }
 

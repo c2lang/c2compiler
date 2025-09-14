@@ -17,16 +17,7 @@ module c2refs;
 
 import radix_tree;
 
-import libc_fcntl local;
-#if C2TagsGenerate
-#else
-import stdio local;
-import sys_stat local;
-#endif
-import stdlib local;
-import string local;
-import sys_mman local;
-import unistd local;
+import std local;
 
 const u32 NOT_FOUND = u32.max;
 

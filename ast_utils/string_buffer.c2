@@ -15,10 +15,7 @@
 
 module string_buffer;
 
-import stdio local;
-import stdarg local;
-import stdlib local;
-import string local;
+import std local;
 
 public type Buf struct {
     u32 capacity;

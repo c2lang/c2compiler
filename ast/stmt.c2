@@ -18,7 +18,7 @@ module ast;
 import string_buffer;
 import src_loc local;
 
-import stdio;
+import std;
 
 public type StmtKind enum u8 {
     Return,
@@ -174,7 +174,7 @@ public fn void Stmt.dump(const Stmt* s) {
     string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
     s.print(out, 0);
     out.color(col_Normal);
-    stdio.puts(out.data());
+    std.puts(out.data());
     out.free();
 }
 

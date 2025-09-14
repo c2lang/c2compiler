@@ -22,8 +22,7 @@ import plugin_info;
 import string_buffer;
 import utils;
 
-import stdlib local;
-import string;
+import std;
 
 public plugin_info.Plugin handle @(export) = {
     .load = load,
@@ -48,7 +47,7 @@ type Plugin struct {
 }
 
 fn void* load(const char* options, bool show_timing, bool show_debug) {
-    Plugin* p = calloc(1, sizeof(Plugin));
+    Plugin* p = std.calloc(1, sizeof(Plugin));
     p.decls.init();
     p.tests.init();
 
@@ -63,7 +62,7 @@ fn void unload(void* arg) {
     Plugin* p = arg;
     p.decls.free();
     p.tests.free();
-    free(arg);
+    std.free(arg);
 }
 
 fn void plugin_init(void* arg, plugin_info.Info* info) {
@@ -125,7 +124,7 @@ fn void Plugin.handleTypeFunc(void* arg, FunctionDecl* fd) {
     }
 
     const char* name = d.getName();
-    if (string.strncmp("test", name, 4) != 0) return;
+    if (std.strncmp("test", name, 4) != 0) return;
 
     p.tests.add(fd);
 }

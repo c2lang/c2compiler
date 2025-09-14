@@ -18,9 +18,7 @@ module ast;
 import string_buffer;
 import color;
 
-import stdio local;
-import stdlib;
-import string;
+import std local;
 
 public type SymbolTable struct {
     u32 num_public;
@@ -39,8 +37,8 @@ fn void SymbolTable.init(SymbolTable* t, u32 initial) {
 }
 
 fn void SymbolTable.free(SymbolTable* t) {
-    stdlib.free(t.decls);
-    stdlib.free(t.symbols);
+    free(t.decls);
+    free(t.symbols);
 }
 
 public fn u32 SymbolTable.size(const SymbolTable* t) {
@@ -52,15 +50,15 @@ public fn Decl** SymbolTable.getDecls(const SymbolTable* t) {
 }
 
 fn void SymbolTable.resize(SymbolTable* t, u32 capacity) {
-    u32* symbols = stdlib.malloc(capacity * sizeof(u32));
-    ast.Decl** decls = stdlib.malloc(capacity * sizeof(ast.Decl*));
+    u32* symbols = malloc(capacity * sizeof(u32));
+    ast.Decl** decls = malloc(capacity * sizeof(ast.Decl*));
     t.capacity = capacity;
     u32 count = t.num_public + t.num_private;
     if (count) {
-        string.memcpy(symbols, t.symbols, count * sizeof(u32));
-        string.memcpy(decls, t.decls, count * sizeof(ast.Decl*));
-        stdlib.free(t.decls);
-        stdlib.free(t.symbols);
+        memcpy(symbols, t.symbols, count * sizeof(u32));
+        memcpy(decls, t.decls, count * sizeof(ast.Decl*));
+        free(t.decls);
+        free(t.symbols);
     }
     t.symbols = symbols;
     t.decls = decls;
@@ -125,9 +123,9 @@ public fn void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
         }
         out.newline();
         if (d.isStructType()) {
-            StructTypeDecl* std = (StructTypeDecl*)d;
-            const FunctionDecl** fds = std.getStructFunctions();
-            for (u32 j=0; j<std.getNumStructFunctions(); j++) {
+            StructTypeDecl* st = (StructTypeDecl*)d;
+            const FunctionDecl** fds = st.getStructFunctions();
+            for (u32 j=0; j<st.getNumStructFunctions(); j++) {
                 Decl* fd = (Decl*)fds[j];
                 col = fd.isUsed() ? color.Normal : color.Grey;
                 out.color(col);

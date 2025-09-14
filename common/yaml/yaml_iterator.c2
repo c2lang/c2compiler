@@ -15,7 +15,7 @@
 
 module yaml;
 
-import string;
+import std;
 
 public fn bool Node.isMap(const Node* n) @(unused) { return n.kind == NodeKind.Map; }
 
@@ -130,8 +130,8 @@ public fn const char* Iter.getChildScalarValue(Iter* iter, const char* path) {
 }
 
 fn const char* starts_with(const char* full, const char* start) {
-    u32 len = cast<u32>(string.strlen(start));
-    if (string.strncmp(full, start, len) == 0) {
+    u32 len = cast<u32>(std.strlen(start));
+    if (std.strncmp(full, start, len) == 0) {
         full += len;
         if (full[0] == '.') return full+1;
         if (full[0] == 0) return full;
