@@ -157,7 +157,7 @@ fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     //TODO already checked in findSymbolInModule
     //if (!ma.scope.checkAccess(d, user.loc)) return QualType_Invalid;
 
-    bool full = (ref.getNumPointers() == 0);
+    bool full = !ref.isPointer();
     DeclCheckState state = d.getCheckState();
 
     if (full && state == DeclCheckState.InProgress) {

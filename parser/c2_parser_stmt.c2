@@ -534,7 +534,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
 
     bool need_semi = true;
     TypeRefHolder ref.init();
-    p.parseTypeSpecifier(&ref, true, true);
+    p.parseTypeSpecifier(&ref);
 
     for (;;) {
         p.expectIdentifier();
@@ -596,7 +596,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
         p.consumeToken();
         if (isCondition)
             p.error("cannot define multiple variables in a condition");
-        if (ref.getNumPointers() || ref.getNumArrays())
+        if (ref.isPointer() || ref.isArray())
             p.error("pointer and array variables must be defined separately");
         if (num_decls >= elemsof(decls))
             p.error("too many variables defined in a single statement");

@@ -55,7 +55,7 @@ fn void Parser.parseFunctionType(Parser* p, u32 name, SrcLoc loc, bool is_public
     p.consumeToken(); // fn
 
     TypeRefHolder rtype.init();
-    p.parseSingleTypeSpecifier(&rtype, true);
+    p.parseSingleTypeSpecifier(&rtype);
 
     DeclList params.init();
 
@@ -156,7 +156,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             p.consumeToken(); // fn
 
             TypeRefHolder rtype.init();
-            p.parseSingleTypeSpecifier(&rtype, true);
+            p.parseSingleTypeSpecifier(&rtype);
 
             DeclList params.init();
 
@@ -185,7 +185,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             goto semi_colon;
         }
         TypeRefHolder ref.init();
-        p.parseTypeSpecifier(&ref, true, true);
+        p.parseTypeSpecifier(&ref);
 
         for (;;) {
             u32 name = 0;
@@ -211,7 +211,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             if (p.tok.kind != Kind.Comma)
                 break;
             p.consumeToken();
-            if (ref.getNumPointers() || ref.getNumArrays())
+            if (ref.isPointer() || ref.isArray())
                 p.error("pointer and array members must be defined separately");
         }
 semi_colon:
@@ -320,7 +320,7 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
 
 fn void Parser.parseAliasType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
     TypeRefHolder ref.init();
-    p.parseTypeSpecifier(&ref, true, true);
+    p.parseTypeSpecifier(&ref);
 
     Decl* d = p.builder.actOnAliasType(name, loc, is_public, &ref);
     p.parseOptionalAttributes();

@@ -109,6 +109,11 @@ public fn void TypeRefHolder.setVolatile(TypeRefHolder* h) {
     r.flags.is_volatile = 1;
 }
 
+public fn bool TypeRefHolder.isPointer(const TypeRefHolder* h) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    return r.flags.num_ptrs != 0;
+}
+
 public fn void TypeRefHolder.addPointer(TypeRefHolder* h) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     assert(r.flags.num_ptrs != 3);
@@ -130,9 +135,16 @@ public fn u32 TypeRefHolder.getNumArrays(const TypeRefHolder* h) {
     return r.getNumArrays();
 }
 
+#if 0
 public fn u32 TypeRefHolder.getNumPointers(const TypeRefHolder* h) {
     TypeRef* r = cast<TypeRef*>(&h.ref);
     return r.getNumPointers();
+}
+#endif
+
+public fn bool TypeRefHolder.isArray(const TypeRefHolder* h) {
+    TypeRef* r = cast<TypeRef*>(&h.ref);
+    return r.flags.num_arrays != 0;
 }
 
 public fn void TypeRefHolder.addArray(TypeRefHolder* h, Expr* array) {
@@ -337,6 +349,10 @@ public fn SrcLoc TypeRef.getLoc(const TypeRef* r) {
     return r.loc;
 }
 
+public fn bool TypeRef.isPointer(const TypeRef* r) {
+    return r.flags.num_ptrs != 0;
+}
+
 public fn u32 TypeRef.getNumPointers(const TypeRef* r) {
     return r.flags.num_ptrs;
 }
@@ -367,6 +383,10 @@ public fn void TypeRef.setPrefix(TypeRef* r, Decl* d) {
 
 public fn void TypeRef.setUser(TypeRef* r, Decl* d) {
     r.refs[0].decl = d;
+}
+
+public fn bool TypeRef.isArray(const TypeRef* r) {
+    return r.flags.num_arrays != 0;
 }
 
 public fn u32 TypeRef.getNumArrays(const TypeRef* r) {

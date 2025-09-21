@@ -369,7 +369,7 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
                 p.consumeToken();
 
                 TypeRefHolder ref.init();
-                p.parseTypeSpecifier(&ref, false, false);
+                p.parseTypeSpecifier(&ref);
 
                 p.expectAndConsume(Kind.Greater);
                 if (p.tok.kind != Kind.LParen) {
@@ -522,17 +522,16 @@ fn Expr* Parser.parseParenExpr(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
-    bool has_brackets = false;
-    if (p.parseAsCastType(0, Kind.RParen, &has_brackets)) {
+    if (p.parseAsCastType(0, Kind.RParen)) {
         TypeRefHolder ref.init();
-        p.parseTypeSpecifier(&ref, true, has_brackets);
+        p.parseTypeSpecifier(&ref);
         p.expectAndConsume(Kind.RParen);
         if (p.tok.kind == Kind.LBrace) {
             // compound literal
             p.error("Compound literals are not supported");
         } else {
             // C cast expression
-            if (has_brackets) p.error("array types are not allowed here");
+            if (ref.isArray()) p.error("array types are not allowed here");
             Expr* expr = p.parseCastExpr(false, false);
             u32 src_len = p.prev_loc - loc;
             return p.builder.actOnExplicitCast(loc, src_len, &ref, expr, true);
@@ -550,27 +549,34 @@ fn bool Parser.isTemplateFunctionCall(Parser* p) {
     assert(p.tok.kind == Kind.Less);
     // check if tokens after < could be type, followed by >(
     // longest token line could be mod.type**
-    u32 ahead = 1;
 
-    // fast path, just for builtintype
-    Kind kind = p.tokenizer.lookahead(ahead, nil);
-    if (kind.isBuiltinType()) return true;
+    // type must start with either a qualifier or an identifier
+    //   or a builtin not followed by a dot.
+    Kind kind = p.tokenizer.lookahead(1, nil);
+    if (kind != Kind.Identifier) {
+        if (kind.isQualifier()) return true;
+        return kind.isBuiltinType() && (p.tokenizer.lookahead(2, nil) != Kind.Dot);
+    }
 
-    // TODO keep mini state machine: 0 initial, 1-> seen id (dot changes nothing), 3-> * seen. if id in 3, return false (a*b)
-    while (ahead < 8) {
+    u32 stars = 0;
+    for (u32 ahead = 2; ahead < 8; ahead++) {
         switch (p.tokenizer.lookahead(ahead, nil)) {
         case Identifier:
+            if (stars) return false;
+            break;
         case Star:
+            stars++;
+            break;
         case Dot:
             break;
         case Greater:
             return p.tokenizer.lookahead(ahead+1, nil) == Kind.LParen;
         case KW_const:
+        case KW_volatile:
             return true;
         default:
             return false;
         }
-        ahead++;
     }
     return false;
 }
@@ -582,32 +588,16 @@ fn Expr* Parser.parseSizeof(Parser* p) {
     p.expectAndConsume(Kind.LParen);
 
     Expr* res = nil;
-    bool has_brackets = false;
-    SrcLoc type_loc = p.tok.loc;
-    if (p.parseAsType(&has_brackets)) {
-        if (has_brackets) {
-            while (p.tok.kind != Kind.LSquare) p.consumeToken();
-            p.error("arrays or subscripts expressions are not allowed inside a sizeof expression");
-        }
+    if (p.parseAsType()) {
+        // argument is unambiguously a type
+        SrcLoc type_loc = p.tok.loc;
         TypeRefHolder ref.init();
-        p.parseTypeSpecifier(&ref, false, true);
+        p.parseTypeSpecifier(&ref);
         u32 src_len = p.prev_loc - type_loc;
         res = p.builder.actOnTypeExpr(type_loc, src_len, &ref);
-    } else { // parse as variable
-        if (p.tok.kind != Kind.Identifier) {
-            p.error("expect a type or variable name");
-        }
-        res = p.parseFullIdentifier();
-
-        // parse optional array indexes (like array[0])
-        while (p.tok.kind == Kind.LSquare) {
-            SrcLoc loc1 = p.tok.loc;
-            p.consumeToken();
-            Expr* idx = p.parseExpr();
-            u32 src_len = p.tok.loc + 1 - loc1;
-            p.expectAndConsume(Kind.RSquare);
-            res = p.builder.actOnArraySubscriptExpr(loc1, src_len, res, idx);
-        }
+    } else {
+        // argument is an expression or an ambiguous name, parse as expression
+        res = p.parseExpr();
     }
 
     u32 src_len = p.tok.loc + 1 - loc;
@@ -706,8 +696,10 @@ fn Expr* Parser.parseExplicitCastExpr(Parser* p) {
 
     p.expectAndConsume(Kind.Less);
     TypeRefHolder ref.init();
-    p.parseTypeSpecifier(&ref, true, false);
+    p.parseTypeSpecifier(&ref);
     p.expectAndConsume(Kind.Greater);
+
+    if (ref.isArray()) p.error("array types are not allowed here");
 
     p.expectAndConsume(Kind.LParen);
     Expr* expr = p.parseExpr();
@@ -812,34 +804,52 @@ fn Expr* Parser.parseFullIdentifier(Parser* p) {
     test.Foo.a   - error (need instantiation)
     (test.)a*    - type (but will give error later)
 */
-fn bool Parser.parseAsType(Parser* p, bool* has_brackets) {
-    const Kind kind = p.tok.kind;
-    if (kind.isQualifier()) return true;
-    if (p.tok.kind != Kind.Identifier) {
-        if (kind.isBuiltinType())
-            return (p.tokenizer.lookahead(1, nil) != Kind.Dot);
+fn bool Parser.parseAsType(Parser* p) {
+    // type must start with either a qualifier or an identifier
+    //   or a builtin not followed by a dot.
+    Kind kind = p.tok.kind;
+    if (kind != Kind.Identifier) {
+        if (kind.isQualifier()) return true;
+        return kind.isBuiltinType() && (p.tokenizer.lookahead(1, nil) != Kind.Dot);
+    }
+    Token t2 = p.tok;
+    // parse potential member expression
+    u32 ahead = 1;
+    while (p.tokenizer.lookahead(ahead, nil) == Kind.Dot) {
+        if (p.tokenizer.lookahead(ahead + 1, &t2) != Kind.Identifier)
+            return false;
+        ahead += 2;
     }
 
-    u32 lookahead = 1;
-    while (1) {
-        switch (p.tokenizer.lookahead(lookahead, nil)) {
-        case Identifier:
-            break;
-        case Star:
-            return true;
-        case Dot:
-            break;
+    i32 stars = 0;
+    for (;; ahead++) {
+        switch (p.tokenizer.lookahead(ahead, nil)) {
+        case RParen:
+            if (stars) return true;
+            // ambiguous: could be a global constant or a type name
+            return false;   // resolve in analyser
         case LSquare:
-            *has_brackets = true;
-            return true;
+            if (stars) return true;  // sizeof(MyType*[...])
+            // if identifier is not uppercase, argument is not a type
+            if (!isupper(*p.pool.idx2str(t2.name_idx))) return false;
+            // ambiguous: could be a global constant element or an array type
+            return true;    // assume array type
+        case Star:
+            stars++;
+            break;
         case Less:
+            // if identifier is not uppercase, argument is not a type
+            if (!isupper(*p.pool.idx2str(t2.name_idx))) return false;
+            // ambiguous: could be a parametric type or a comparison with a global constant
+            return true;   // assume parametric type
+        case KW_const:
+        case KW_volatile:
             return true;
         default:
             return false;
         }
-        lookahead++;
     }
-
+    // never reached
     return false;
 }
 
@@ -852,31 +862,28 @@ fn bool Parser.parseAsType(Parser* p, bool* has_brackets) {
    Array syntax is rejected if `brackets` is nil, otherwise `*brackets` is
    set if an array type is parsed.
 */
-fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok, bool* brackets) {
+fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
     Token t2 = p.tok;
-    bool is_lower = false;
     bool ambiguous = true;
     for (;;) {
         if (ahead) p.tokenizer.lookahead(ahead, &t2);
         ahead++;
         Kind kind = t2.kind;
-        if (kind.isQualifier()) {
-            // const and volatile qualifiers must introduce a type
-            ambiguous = false;
-            continue;
-        }
         if (kind.isBuiltinType()) {
             // builtin type, non ambiguous
             ambiguous = false;
             break;
+        }
+        if (kind.isQualifier()) {
+            // const and volatile qualifiers must introduce a type
+            ambiguous = false;
+            continue;
         }
         // must have an identifier or a member expression
         // but still potentially ambiguous.
         if (kind != Kind.Identifier)
             return 0;
         for (;;) {
-            // is_lower is true if the last identifier starts with a lowercase letter
-            is_lower = islower(p.pool.idx2str(t2.name_idx)[0]);
             if (p.tokenizer.lookahead(ahead, nil) != Kind.Dot)
                 break;
             ahead++;
@@ -930,7 +937,7 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok, bool* bracke
             case Star:       // ambiguous: (func)*b
                 // for ambiguous combinations, rely on identifier case
                 // (A)(...) is a cast, (a)(...) is a function call
-                if (is_lower)
+                if (!isupper(p.pool.idx2str(t2.name_idx)[0]))
                     return 0;
                 return ahead;
             default:
@@ -938,9 +945,6 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok, bool* bracke
             }
             return 0;
         case LSquare:
-            if (!brackets)
-                return 0;
-            *brackets = true;
             // skip expression
             ahead = p.skipArray(ahead);
             if (!ahead)
@@ -949,7 +953,7 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok, bool* bracke
             break;
         case Less:
             // parametric type X<type>
-            ahead = p.parseAsCastType(ahead, Kind.Greater, nil);
+            ahead = p.parseAsCastType(ahead, Kind.Greater);
             if (!ahead)
                 return 0;
             stars = 0;

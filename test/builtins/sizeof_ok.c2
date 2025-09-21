@@ -1,0 +1,11 @@
+module test;
+
+static_assert(sizeof(i8), sizeof(u8));
+static_assert(sizeof(i16), sizeof(u16));
+static_assert(sizeof(i32), sizeof(u32));
+static_assert(sizeof(i64), sizeof(u64));
+static_assert(sizeof(isize), sizeof(usize));
+static_assert(sizeof(void*), sizeof(usize));
+static_assert(sizeof(const char*), sizeof(char*));
+static_assert(sizeof(volatile char*), sizeof(char*));
+static_assert(sizeof(char*), sizeof(void*));

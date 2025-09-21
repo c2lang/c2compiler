@@ -422,7 +422,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
 
     TypeRefHolder rtype.init();
     // Note: dont check arrays in this phase, but in Analyser
-    p.parseTypeSpecifier(&rtype, true, true);
+    p.parseTypeSpecifier(&rtype);
 
     p.expectIdentifier();
     u32 func_name = p.tok.name_idx;
@@ -544,7 +544,7 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool accept_default
 
     TypeRefHolder ref.init();
     // Note: dont check arrays in this phase, but in Analyser
-    p.parseTypeSpecifier(&ref, true, true);
+    p.parseTypeSpecifier(&ref);
 
     u32 name = 0;
     SrcLoc loc = p.tok.loc;
@@ -577,51 +577,32 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool accept_default
     return param;
 }
 
-fn void Parser.parseTypeSpecifier(Parser* p,
-                                  TypeRefHolder* ref,
-                                  bool allow_qualifier,
-                                  bool allow_array) {
-    p.parseSingleTypeSpecifier(ref, allow_qualifier);
-    p.parseOptionalArray(ref, QualType_Invalid, allow_array);
+fn void Parser.parseTypeSpecifier(Parser* p, TypeRefHolder* ref) {
+    p.parseSingleTypeSpecifier(ref);
+    p.parseOptionalArray(ref);
 }
 
-fn void Parser.parseOptionalArray(Parser* p,
-                                  TypeRefHolder* ref,
-                                  QualType base,
-                                  bool allow_array) {
-    if (p.tok.kind != Kind.LSquare) return;
+fn void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref) {
+    while (p.tok.kind == Kind.LSquare) {
+        if (ref.getNumArrays() == 3) p.error("arrays cannot have more than 3 dimensions");
+        if (ref.isIncrArray()) p.error("incremental arrays cannot have more than 1 dimension");
 
-    if (!allow_array) p.error("array types are not allowed here");
-
-    if (ref.getNumArrays() == 3) p.error("arrays cannot have more than 3 dimensions");
-    if (ref.isIncrArray()) p.error("incremental arrays cannot have more than 1 dimension");
-
-    p.consumeToken();
-
-    //bool is_incremental = false;
-
-    // NOTE: 'inverse' order, so char[2][4] -> 2 x ( 4 x char )
-
-    Expr* size = nil;
-    if (p.tok.kind == Kind.RSquare) {
-        // []
-        ref.addArray(nil);
         p.consumeToken();
-    } else if (p.tok.kind == Kind.Plus && p.tokenizer.lookahead(1, nil) == Kind.RSquare) {
-        // [+]
-        if (ref.getNumArrays()) p.error("incremental arrays cannot have more than 1 dimension");
-        p.consumeToken();
-        ref.setIncrArray();
-        //is_incremental = true;
-        p.expectAndConsume(Kind.RSquare);
-    } else {
-        // [<expr>]
-        size = p.parseExpr();
-        ref.addArray(size);
+
+        // NOTE: 'transposed' order, so char[2][4] -> 2 x ( 4 x char )
+        if (p.tok.kind == Kind.Plus && p.tokenizer.lookahead(1, nil) == Kind.RSquare) {
+            // [+]
+            if (ref.isArray()) p.error("incremental arrays cannot have more than 1 dimension");
+            p.consumeToken();
+            ref.setIncrArray();
+        } else {
+            // [<expr>?]
+            Expr* size = nil;
+            if (p.tok.kind != Kind.RSquare) size = p.parseExpr();
+            ref.addArray(size);
+        }
         p.expectAndConsume(Kind.RSquare);
     }
-
-    p.parseOptionalArray(ref, base, true);
 }
 
 fn void Parser.parseArrayEntry(Parser* p) {
@@ -642,7 +623,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
 
     bool need_semi = true;
     TypeRefHolder ref.init();
-    p.parseTypeSpecifier(&ref, true, true);
+    p.parseTypeSpecifier(&ref);
 
     for (;;) {
         p.expectIdentifier();
@@ -674,7 +655,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
         if (p.tok.kind != Kind.Comma)
             break;
         p.consumeToken();
-        if (ref.getNumPointers() || ref.getNumArrays())
+        if (ref.isPointer() || ref.isArray())
             p.error("pointer and array variables must be defined separately");
     }
     p.consumeSemicolon(need_semi);
@@ -742,12 +723,9 @@ fn BuiltinKind tokKindToBuiltinKind(token.Kind kind) {
     return Tok2builtin[kind - Kind.KW_bool];
 }
 
-fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref, bool allow_qualifier) {
-    if (allow_qualifier) {
-        // TODO give error if we get a qualifier
-        u32 type_qualifier = p.parseOptionalTypeQualifier();
-        ref.setQualifiers(type_qualifier);
-    }
+fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref) {
+    u32 type_qualifier = p.parseOptionalTypeQualifier();
+    ref.setQualifiers(type_qualifier);
 
     Kind kind = p.tok.kind;
 

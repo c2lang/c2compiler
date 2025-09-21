@@ -27,7 +27,7 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
 
         // check rtype for array-type
         TypeRef* rtype = fd.getReturnTypeRef();
-        if (rtype.getNumArrays()) {
+        if (rtype.isArray()) {
             ma.error(rtype.getLoc(), "functions are not allowed to return array types");
         }
 
@@ -37,7 +37,7 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         for (u32 i=0; i<num_params; i++) {
             VarDecl* v = params[i];
             TypeRef* ref = v.getTypeRef();
-            if (ref.getNumArrays()) {
+            if (ref.isArray()) {
                 ma.error(ref.getLoc(), "array types are not allowed here");
             }
         }

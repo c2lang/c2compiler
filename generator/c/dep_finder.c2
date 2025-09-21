@@ -120,11 +120,11 @@ fn void Finder.handleEnumType(Finder* s, EnumTypeDecl* etd) {
 fn void Finder.handleTypeRef(Finder* f, TypeRef* r) {
     const Decl* refDecl = r.getUserDecl();
     if (refDecl) {
-        if (r.getNumPointers() && refDecl.isStructType()) {
+        if (r.isPointer() && refDecl.isStructType()) {
             // if pointing to another struct, dont add dep, since we already have a forward decl
             // note: this also filters 'self' pointers
         } else {
-            f.onDep(refDecl, r.getNumPointers() == 0);
+            f.onDep(refDecl, !r.isPointer());
         }
     }
 
