@@ -18,7 +18,7 @@ module ast_visitor;
 import ast local;
 
 fn void Visitor.handleExpr(Visitor* v, Expr* e) {
-    assert(e);
+    if (!e) return;
 
     switch (e.getKind()) {
     case IntegerLiteral:
@@ -92,10 +92,18 @@ fn void Visitor.handleExpr(Visitor* v, Expr* e) {
         ParenExpr* p = (ParenExpr*)e;
         v.handleExpr(p.getInner());
         break;
-    case BitOffset:
-        BitOffsetExpr* bi = (BitOffsetExpr*)e;
-        v.handleExpr(bi.getLHS());
-        v.handleExpr(bi.getRHS());
+    case ArraySelection:
+        ArraySelectionExpr* a = (ArraySelectionExpr*)e;
+        v.handleExpr(a.getBase());
+        v.handleExpr(a.getIndex());
+        v.handleExpr(a.getCount());
+        v.handleExpr(a.getStep());
+        break;
+    case BitSelection:
+        BitSelectionExpr* bs = (BitSelectionExpr*)e;
+        v.handleExpr(bs.getBase());
+        v.handleExpr(bs.getHigh());
+        v.handleExpr(bs.getLow());
         break;
     case ExplicitCast:
         ExplicitCastExpr* ec = (ExplicitCastExpr*)e;
