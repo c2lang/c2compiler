@@ -80,16 +80,21 @@ fn ExprWidth getExprWidth(const Expr* e) {
     case Builtin:
         // TODO ToContainer -> width = 64
         break;
+    case BitSelection:
+        // if the bit selection is fixed, the value range could
+        // be computed.
+        //result.width = ((BitSelectionExpr*)e).getWidth();
+        //result.is_signed = false;
+        //return result;
+        return getTypeWidth(e.getType());
+    case ArraySelection:
+        break;
     case ArraySubscript:
-        // TODO BitOffset -> specific width
-        fallthrough;
     case Member:
         return getTypeWidth(e.getType());
     case Paren:
         const ParenExpr* p = (ParenExpr*)e;
         return getExprWidth(p.getInner());
-    case BitOffset:
-        break;
     case ExplicitCast:
         // TODO: explicit cast may reduce signed values
         return getTypeWidth(e.getType());
@@ -97,10 +102,7 @@ fn ExprWidth getExprWidth(const Expr* e) {
         const ImplicitCastExpr* c = (ImplicitCastExpr*)e;
         return getExprWidth(c.getInner());
     case Range:
-        RangeExpr* b = (RangeExpr*)e;
-        ExprWidth lhs = getExprWidth(b.getLHS());
-        ExprWidth rhs = getExprWidth(b.getRHS());
-        return ExprWidth.mergeWider(lhs, rhs);
+        break;
     case NamedArgument:
         const NamedArgument* n = (NamedArgument*)e;
         return getExprWidth(n.getInner());
