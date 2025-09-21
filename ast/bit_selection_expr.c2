@@ -1,0 +1,105 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import ast_context;
+import string_buffer;
+import src_loc local;
+
+type BitSelectionExprBits struct {
+    u32 : NumExprBits;
+    i32 width : 8;  // in bits
+    u32 src_len : 32 - NumExprBits - 8;
+}
+
+public type BitSelectionExpr struct @(opaque) {
+    // Note: loc is that of left bracket
+    Expr base;
+    Expr* lhs;
+    Expr* high;
+    Expr* low;
+}
+
+public fn BitSelectionExpr* BitSelectionExpr.create(ast_context.Context* c,
+                                                    SrcLoc loc, u32 src_len,
+                                                    Expr* lhs, Expr* high, Expr* low, i32 width)
+{
+    BitSelectionExpr* e = c.alloc(sizeof(BitSelectionExpr));
+    e.base.init(ExprKind.BitSelection, loc, 0, 0, 0, ValType.LValue);
+    e.base.base.bitSelectionExprBits.src_len = src_len;
+    e.base.base.bitSelectionExprBits.width = width;
+    e.lhs = lhs;
+    e.high = high;
+    e.low = low;
+#if AstStatistics
+    Stats.addExpr(ExprKind.BitSelection, sizeof(BitSelectionExpr));
+#endif
+    return e;
+}
+
+fn Expr* BitSelectionExpr.instantiate(BitSelectionExpr* e, Instantiator* inst) {
+    BitSelectionExpr* a = BitSelectionExpr.create(inst.c,
+                                                  e.base.base.loc,
+                                                  e.base.base.bitSelectionExprBits.src_len,
+                                                  e.lhs.instantiate(inst),
+                                                  e.high.instantiate(inst),
+                                                  e.low.instantiate(inst),
+                                                  e.base.base.bitSelectionExprBits.width);
+    return (Expr*)a;
+}
+
+public fn Expr* BitSelectionExpr.getBase(const BitSelectionExpr* e) { return e.lhs; }
+//public fn Expr** BitSelectionExpr.getBase2(BitSelectionExpr* e) { return &e.lhs; }
+
+public fn Expr* BitSelectionExpr.getHigh(const BitSelectionExpr* e) { return e.high; }
+//public fn Expr** BitSelectionExpr.getHigh2(BitSelectionExpr* e) { return &e.high; }
+
+public fn Expr* BitSelectionExpr.getLow(const BitSelectionExpr* e) { return e.low; }
+//public fn Expr** BitSelectionExpr.getLow2(BitSelectionExpr* e) { return &e.low; }
+
+public fn i32 BitSelectionExpr.getWidth(const BitSelectionExpr* e) {
+    return e.base.base.bitSelectionExprBits.width;
+}
+
+fn SrcLoc BitSelectionExpr.getStartLoc(const BitSelectionExpr* e) {
+    return e.getBase().getStartLoc();
+}
+
+fn SrcLoc BitSelectionExpr.getEndLoc(const BitSelectionExpr* e) {
+    return e.base.base.loc + e.base.base.bitSelectionExprBits.src_len;
+}
+
+fn void BitSelectionExpr.printLiteral(const BitSelectionExpr* e, string_buffer.Buf* out) {
+    e.lhs.printLiteral(out);
+    out.add1('[');
+    e.high.printLiteral(out);
+    out.add1(':');
+    e.low.printLiteral(out);
+    out.add1(']');
+}
+
+fn void BitSelectionExpr.print(const BitSelectionExpr* e, string_buffer.Buf* out, u32 indent) {
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
+    out.space();
+    out.color(col_Calc);
+    out.print("width=%d", e.base.base.bitSelectionExprBits.width);
+    out.newline();
+    e.lhs.print(out, indent + 1);
+    e.high.print(out, indent + 1);
+    e.low.print(out, indent + 1);
+}
+
