@@ -1,0 +1,108 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import ast_context { Context }
+import src_loc { SrcLoc }
+import string_buffer { Buf }
+
+type BitSelectionExprBits struct {
+    u32 : NumExprBits;
+    u32 src_len : 32 - NumExprBits;
+}
+
+public type BitSelectionExpr struct @(opaque) {
+    // Note: loc is that of left bracket
+    Expr base;
+    i32 high_val, low_val; // a bit wasteful
+    Expr* lhs;
+    Expr* high;
+    Expr* low;
+}
+
+public fn BitSelectionExpr* BitSelectionExpr.create(Context* c,
+                                                    SrcLoc loc, u32 src_len,
+                                                    Expr* lhs, Expr* high, Expr* low,
+                                                    i32 high_val, i32 low_val)
+{
+    BitSelectionExpr* e = c.alloc(sizeof(BitSelectionExpr));
+    e.base.init(BitSelection, loc, 0, 0, 0, LValue);
+    e.base.base.bitSelectionExprBits.src_len = src_len;
+    e.high_val = high_val;
+    e.low_val = low_val;
+    e.lhs = lhs;
+    e.high = high;
+    e.low = low;
+#if AstStatistics
+    Stats.addExpr(BitSelection, sizeof(BitSelectionExpr));
+#endif
+    return e;
+}
+
+fn Expr* BitSelectionExpr.instantiate(BitSelectionExpr* e, Instantiator* inst) {
+    return (Expr*)BitSelectionExpr.create(inst.c,
+                                          e.base.base.loc,
+                                          e.base.base.bitSelectionExprBits.src_len,
+                                          e.lhs.instantiate(inst),
+                                          e.high.instantiate(inst),
+                                          e.low.instantiate(inst),
+                                          e.high_val, e.low_val);
+}
+
+public fn Expr* BitSelectionExpr.getBase(const BitSelectionExpr* e) { return e.lhs; }
+//public fn Expr** BitSelectionExpr.getBase2(BitSelectionExpr* e) { return &e.lhs; }
+
+public fn Expr* BitSelectionExpr.getHigh(const BitSelectionExpr* e) { return e.high; }
+//public fn Expr** BitSelectionExpr.getHigh2(BitSelectionExpr* e) { return &e.high; }
+
+public fn Expr* BitSelectionExpr.getLow(const BitSelectionExpr* e) { return e.low; }
+//public fn Expr** BitSelectionExpr.getLow2(BitSelectionExpr* e) { return &e.low; }
+
+//public fn void BitSelectionExpr.setHighVal(BitSelectionExpr* e, i32 high_val) { e.high_val = high_val; }
+public fn i32 BitSelectionExpr.getHighVal(const BitSelectionExpr* e) { return e.high_val; }
+
+//public fn void BitSelectionExpr.setLowVal(BitSelectionExpr* e, i32 low_val) { e.low_val = low_val; }
+public fn i32 BitSelectionExpr.getLowVal(const BitSelectionExpr* e) { return e.low_val; }
+
+fn SrcLoc BitSelectionExpr.getStartLoc(const BitSelectionExpr* e) {
+    return e.lhs.getStartLoc();
+}
+
+fn SrcLoc BitSelectionExpr.getEndLoc(const BitSelectionExpr* e) {
+    return e.base.base.loc + e.base.base.bitSelectionExprBits.src_len;
+}
+
+fn void BitSelectionExpr.printLiteral(const BitSelectionExpr* e, Buf* out) {
+    e.lhs.printLiteral(out);
+    out.add1('[');
+    e.high.printLiteral(out);
+    out.add1(':');
+    e.low.printLiteral(out);
+    out.add1(']');
+}
+
+fn void BitSelectionExpr.print(const BitSelectionExpr* e, Buf* out, u32 indent) {
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
+    out.space();
+    out.color(col_Calc);
+    out.print("high_val=%d, low_val=%d", e.high_val, e.low_val);
+    out.newline();
+    e.lhs.print(out, indent + 1);
+    e.high.print(out, indent + 1);
+    e.low.print(out, indent + 1);
+}
+

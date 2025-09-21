@@ -7,6 +7,7 @@ attributes to do all sorts of funky things the compilers do.
 The currently supported attributes are:
 
 * __aligned__ (type, fn, var), requires a numeric argument
+* __auto_expr__ (parameter)
 * __auto_file__ (parameter)
 * __auto_func__ (parameter)
 * __auto_line__ (parameter)
@@ -186,11 +187,12 @@ struct stat {
 
 ### Auto-arguments
 
-There are three attributes for function parameters: *auto_file*, *auto_line* and
-*auto_func*. What's special about them is that a parameter carrying one of these
+There are four attributes for function parameters: *auto_file*, *auto_line*,
+*auto_func* and *auto_expr*. What's special about them is that a parameter carrying one of these
 attributes gets _auto-filled_ at every call site, instead of the caller having to
 pass it explicitly — hence *auto-arguments*. They exist so C2 code never needs
-macros to get at `__FILE__`, `__LINE__` and `__func__`.
+macros to get at `__FILE__`, `__LINE__` and `__func__`.  *auto_expr* can be used in place of
+the stringization operator used in C to convert expressions to string literals.
 
 Example:
 ```c
@@ -208,7 +210,7 @@ fn void test() {
 
 - Auto-arguments come after the self-pointer for type-functions
 - Auto-arguments come before other arguments
-- The type for _auto\_file_ and _auto\_func_ needs to be _const char*_
+- The type for _auto\_file_, _auto\_func_ and _auto\_expr_ needs to be _const char*_
 - The type for _auto\_line_ needs to be _u32_
 - The filename that is generated is *project relative* (no more /home/bas/project_x/..)
 - _auto\_func_ is filled with the name of the calling function
@@ -244,6 +246,17 @@ fn void test2(const char* file @(auto_file), u32 line @(auto_line), void* arg) {
     // ...
 }
 Callback f2 = test2; // error: test2 cannot have auto-arguments
+```
+
+Example for the _auto\_expr_ attribute:
+```c
+fn void trace(const char* s @(auto_expr), u64 e) {
+    printf("%s -> %u\n", s, e);
+}
+
+fn void test() {
+    trace(1 + 1); // outputs "1 + 1 -> 2"
+}
 ```
 
 #### Unit test framework ####

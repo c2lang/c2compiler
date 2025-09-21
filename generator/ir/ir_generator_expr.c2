@@ -84,7 +84,8 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         ParenExpr* p = (ParenExpr*)e;
         gen.emitExpr(result, p.getInner());
         break;
-    case BitOffset:
+    case ArraySelection:
+    case BitSelection:
         assert(0); // TODO
         break;
     case ExplicitCast:
@@ -362,7 +363,10 @@ fn void Generator.emitCond(Generator* gen, const Expr* e, BlockId true_blk, Bloc
         ParenExpr* p = (ParenExpr*)e;
         gen.emitCond(p.getInner(), true_blk, false_blk, start_blk);
         return;
-    case BitOffset:
+    case ArraySelection:
+        assert(0);
+        break;
+    case BitSelection:
     case ExplicitCast:
     case ImplicitCast:
         break;

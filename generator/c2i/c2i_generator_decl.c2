@@ -68,6 +68,7 @@ fn void Generator.emitVarDecl(Generator* gen, Buf* out, const VarDecl* vd, bool 
             if (vd.hasAttrAutoFile()) out.add(" @(auto_file)");
             if (vd.hasAttrAutoLine()) out.add(" @(auto_line)");
             if (vd.hasAttrAutoFunc()) out.add(" @(auto_func)");
+            if (vd.hasAttrAutoExpr()) out.add(" @(auto_expr)");
         }
     }
 }

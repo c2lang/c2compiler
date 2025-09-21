@@ -3,7 +3,7 @@ module test;
 
 fn void test1(u32 a) {
     u8 b = a[20:13];
-    u8 c = a[30:22]; // @error{implicit conversion loses integer precision: 'u16' to 'u8'}
+    u8 c = a[30:22]; // @error{implicit conversion loses integer precision: 'u32' to 'u8'}
 
     u16 d = a[30:20];
     u16 e = a[30:10]; // @error{implicit conversion loses integer precision: 'u32' to 'u16'}
