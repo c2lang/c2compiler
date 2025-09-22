@@ -421,7 +421,7 @@ fn void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
 
 fn void Analyser.checkReturnAddrOfLocal(Analyser* ma, Expr* arg) {
     //checks for: return &a;
-    if (!(*arg).isUnaryOp()) return;
+    if (!arg.isUnaryOp()) return;
 
     UnaryOperator* uo = (UnaryOperator*)arg;
     Expr* inner = uo.getInner();
