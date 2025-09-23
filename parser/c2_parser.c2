@@ -42,12 +42,17 @@ import ctype local;
 import stdio local;
 
 const u32 NumStmtLists = 16;    // max used for c2c is 8
+const u32 MaxLookahead = 64;    // must be power of 2
 
 public type Parser struct @(opaque) {
     c2_tokenizer.Tokenizer tokenizer;
     Token tok;
     SrcLoc prev_loc;
     i32 file_id;
+
+    u32 next_count;
+    u32 next_head;  // index of next token (circular index into next)
+    Token[MaxLookahead] next;
 
     SourceMgr* sm;
     diagnostics.Diags* diags;
@@ -169,9 +174,33 @@ fn void on_tokenizer_warning(void* arg, SrcLoc loc) {
 
 fn void Parser.consumeToken(Parser* p) {
     p.prev_loc = p.tok.loc + p.tok.len;
+    if (p.next_count) {
+        p.tok = p.next[p.next_head];
+        p.next_head = (p.next_head + 1) % MaxLookahead;
+        p.next_count--;
+        return;
+    }
     p.tokenizer.lex(&p.tok);
-
     // p.dump_token(&p.tok);
+}
+
+fn Kind Parser.peekToken(Parser* p, u32 n) {
+    assert(n > 0);
+    assert(n <= MaxLookahead);
+    while (p.next_count < n) {
+        const u32 slot = (p.next_head + p.next_count) % MaxLookahead;
+        p.tokenizer.lex(&p.next[slot]);
+        p.next_count++;
+    }
+    u32 slot = (p.next_head + n - 1) % MaxLookahead;
+    return p.next[slot].kind;
+}
+
+fn Kind Parser.peekToken2(Parser* p, u32 n, Token *tok) {
+    Kind kind = p.peekToken(n);
+    u32 slot = (p.next_head + n - 1) % MaxLookahead;
+    *tok = p.next[slot];
+    return p.next[slot].kind;
 }
 
 fn void Parser.consumeSemicolon(Parser* p, bool need_semi) {
@@ -310,8 +339,7 @@ fn void Parser.parseTopLevel(Parser* p) {
         case Eof:
             break;
         case Identifier:
-            Kind kind = p.tokenizer.lookahead(1, nil);
-            if (kind == Kind.PlusEqual) {
+            if (p.peekToken(1) == Kind.PlusEqual) {
                 if (is_public) p.error("incremental array entries cannot be public");
                 p.parseArrayEntry();
                 break;
@@ -590,7 +618,7 @@ fn void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref) {
         p.consumeToken();
 
         // NOTE: 'transposed' order, so char[2][4] -> 2 x ( 4 x char )
-        if (p.tok.kind == Kind.Plus && p.tokenizer.lookahead(1, nil) == Kind.RSquare) {
+        if (p.tok.kind == Kind.Plus && p.peekToken(1) == Kind.RSquare) {
             // [+]
             if (ref.isArray()) p.error("incremental arrays cannot have more than 1 dimension");
             p.consumeToken();

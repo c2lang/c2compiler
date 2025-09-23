@@ -257,7 +257,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
     case 1: // Identifier
         // Fast-path, keep checking multiple identifier.identifier. etc
         // parse them all in a single MemberExpr
-        if (p.tokenizer.lookahead(1, nil) == Kind.Dot) {
+        if (p.peekToken(1) == Kind.Dot) {
             res = p.parsePureMemberExpr();
         } else {
             res = p.parseIdentifier().asExpr();
@@ -318,7 +318,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         res = p.parseToContainerExpr();
         break;
     case 16: // builtin type
-        if (p.tokenizer.lookahead(1, nil) == Kind.Dot) {
+        if (p.peekToken(1) == Kind.Dot) {
             p.addImplicitImport(p.tok.name_idx, false);
             res = p.parsePureMemberExpr();
         } else {
@@ -552,15 +552,15 @@ fn bool Parser.isTemplateFunctionCall(Parser* p) {
 
     // type must start with either a qualifier or an identifier
     //   or a builtin not followed by a dot.
-    Kind kind = p.tokenizer.lookahead(1, nil);
+    Kind kind = p.peekToken(1);
     if (kind != Kind.Identifier) {
         if (kind.isQualifier()) return true;
-        return kind.isBuiltinType() && (p.tokenizer.lookahead(2, nil) != Kind.Dot);
+        return kind.isBuiltinType() && (p.peekToken(2) != Kind.Dot);
     }
 
     u32 stars = 0;
     for (u32 ahead = 2; ahead < 8; ahead++) {
-        switch (p.tokenizer.lookahead(ahead, nil)) {
+        switch (p.peekToken(ahead)) {
         case Identifier:
             if (stars) return false;
             break;
@@ -570,7 +570,7 @@ fn bool Parser.isTemplateFunctionCall(Parser* p) {
         case Dot:
             break;
         case Greater:
-            return p.tokenizer.lookahead(ahead+1, nil) == Kind.LParen;
+            return p.peekToken(ahead + 1) == Kind.LParen;
         case KW_const:
         case KW_volatile:
             return true;
@@ -773,7 +773,7 @@ fn Expr* Parser.parseToContainerExpr(Parser* p) {
 fn Expr* Parser.parseFullIdentifier(Parser* p) {
     p.expectIdentifier();
 
-    if (p.tokenizer.lookahead(1, nil) == Kind.Dot) {
+    if (p.peekToken(1) == Kind.Dot) {
         return p.parsePureMemberExpr();
     }
     return p.parseIdentifier().asExpr();
@@ -782,11 +782,9 @@ fn Expr* Parser.parseFullIdentifier(Parser* p) {
 /*
     parsing sizeof() is nasty, since the inner argument can be either an Expr or a Type!
 
-    The reason we forbid brackets [] inside a sizeof is that its ambiguous; it can be
-    an array (eg Foo[2]) or a subscript expression (a[2]). Also there is no real reason
-    to keep them. Keep it simple.
-
-    also: Foo can be type or Constant, just return Identifier (or Member if prefixed)
+    The reason we test brackets [] inside a sizeof is that it is potentially ambiguous;
+    it can be an array (eg Foo[2]) or a subscript expression (a[2]). We assume Foo to be
+    a type, but it could be a global Constant, in which case an error will be generated later.
 
     i8,u8,.      - type
     X*           - type
@@ -797,12 +795,14 @@ fn Expr* Parser.parseFullIdentifier(Parser* p) {
     test.Foo     - member (upper case, can be Constant or Type)
     f.a          - member (lower case)
     test.f.a     - member (lower case)
-    Foo[..]      - error ([] not allowed)
-    test.Foo[..] - error ([] not allowed)
-    (test.)a[..] - error ([] not allowed)
-    Foo.a        - error (need instantiation)
-    test.Foo.a   - error (need instantiation)
-    (test.)a*    - type (but will give error later)
+    Foo[..]      - can be Constant element or Type array, assume Type array
+    test.Foo[..] - can be Constant element or Type array, assume Type array
+    a[..]        - subscript expression
+    test.a[..]   - subscript expression
+    Foo.a        - error (need instantiation, should accept as extension)
+    test.Foo.a   - error (need instantiation, should accept as extension)
+    a*)          - type (but will give error later)
+    test.a*)     - type (but will give error later)
 */
 fn bool Parser.parseAsType(Parser* p) {
     // type must start with either a qualifier or an identifier
@@ -810,20 +810,20 @@ fn bool Parser.parseAsType(Parser* p) {
     Kind kind = p.tok.kind;
     if (kind != Kind.Identifier) {
         if (kind.isQualifier()) return true;
-        return kind.isBuiltinType() && (p.tokenizer.lookahead(1, nil) != Kind.Dot);
+        return kind.isBuiltinType() && (p.peekToken(1) != Kind.Dot);
     }
     Token t2 = p.tok;
     // parse potential member expression
     u32 ahead = 1;
-    while (p.tokenizer.lookahead(ahead, nil) == Kind.Dot) {
-        if (p.tokenizer.lookahead(ahead + 1, &t2) != Kind.Identifier)
+    while (p.peekToken(ahead) == Kind.Dot) {
+        if (p.peekToken2(ahead + 1, &t2) != Kind.Identifier)
             return false;
         ahead += 2;
     }
 
     i32 stars = 0;
     for (;; ahead++) {
-        switch (p.tokenizer.lookahead(ahead, nil)) {
+        switch (p.peekToken(ahead)) {
         case RParen:
             if (stars) return true;
             // ambiguous: could be a global constant or a type name
@@ -835,6 +835,7 @@ fn bool Parser.parseAsType(Parser* p) {
             // ambiguous: could be a global constant element or an array type
             return true;    // assume array type
         case Star:
+            if (stars) return true;  // sizeof(a**...)
             stars++;
             break;
         case Less:
@@ -866,7 +867,7 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
     Token t2 = p.tok;
     bool ambiguous = true;
     for (;;) {
-        if (ahead) p.tokenizer.lookahead(ahead, &t2);
+        if (ahead) p.peekToken2(ahead, &t2);
         ahead++;
         Kind kind = t2.kind;
         if (kind.isBuiltinType()) {
@@ -883,19 +884,16 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
         // but still potentially ambiguous.
         if (kind != Kind.Identifier)
             return 0;
-        for (;;) {
-            if (p.tokenizer.lookahead(ahead, nil) != Kind.Dot)
-                break;
-            ahead++;
-            if (p.tokenizer.lookahead(ahead, &t2) != Kind.Identifier)
+        while (p.peekToken(ahead) == Kind.Dot) {
+            if (p.peekToken2(ahead + 1, &t2) != Kind.Identifier)
                 return 0;
-            ahead++;
+            ahead += 2;
         }
         break;
     }
     i32 stars = 0;
     while (1) {
-        switch (p.tokenizer.lookahead(ahead, nil)) {
+        switch (p.peekToken(ahead)) {
         case Star:
             if (stars < 0) return 0;
             if (stars > 0) ambiguous = false;
@@ -908,7 +906,7 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
             ahead++;
             if (!ambiguous) return ahead;
             // disambiguate depending on the next token
-            switch (p.tokenizer.lookahead(ahead, nil)) {
+            switch (p.peekToken(ahead)) {
             case Identifier:
             case IntegerLiteral:
             case FloatLiteral:
@@ -946,7 +944,7 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
             return 0;
         case LSquare:
             // skip expression
-            ahead = p.skipArray(ahead);
+            ahead = p.skipArray(ahead + 1, RSquare);
             if (!ahead)
                 return 0;
             stars = -1; // no longer accept stars

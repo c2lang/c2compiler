@@ -32,8 +32,6 @@ import ctype local;
 import stdarg local;
 import stdio local;
 
-public const u32 MaxLookahead = 64;  // must be multiple of 2
-
 type Action enum u8 {
     INVALID = 0,  // ensure the default Action in Char_lookup is INVALID
     TABSPACE,
@@ -263,9 +261,6 @@ public type Tokenizer struct {
     const char* input_start;
 
     const keywords.Info* kwinfo;
-    Token[MaxLookahead] next;
-    u32 next_count;
-    u32 next_head;  // index of next token (circular index into next)
     const char* line_start;
 
     string_pool.Pool* pool; // no ownership
@@ -283,7 +278,7 @@ public type Tokenizer struct {
 
     char[256] error_msg;
 }
-static_assert(1448, sizeof(Tokenizer));
+static_assert(416, sizeof(Tokenizer));
 
 public fn void Tokenizer.init(Tokenizer* t,
                               string_pool.Pool* pool,
@@ -315,17 +310,6 @@ public fn void Tokenizer.init(Tokenizer* t,
 }
 
 public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
-    if (t.next_count) {
-        string.memcpy(result, &t.next[t.next_head], sizeof(Token));
-
-        t.next_head = (t.next_head + 1) % MaxLookahead;
-        t.next_count--;
-        return;
-    }
-    t.lex_internal(result);
-}
-
-fn void Tokenizer.lex_internal(Tokenizer* t, Token* result) {
     // TODO if end/error stop (dont retry) (t.done = 1)
 
     while (1) {
@@ -686,20 +670,6 @@ invalid_char:
             t.error(result, "invalid char 0x%02X", *t.cur & 0xFF);
         return;
     }
-}
-
-public fn Kind Tokenizer.lookahead(Tokenizer* t, u32 n, Token *tok) {
-    assert(n > 0);
-    assert(n <= MaxLookahead);
-    while (t.next_count < n) {
-        const u32 slot = (t.next_head + t.next_count) % MaxLookahead;
-        t.lex_internal(&t.next[slot]);
-        t.next_count++;
-    }
-
-    u32 slot = (t.next_head + n - 1) % MaxLookahead;
-    if (tok) *tok = t.next[slot];
-    return t.next[slot].kind;
 }
 
 fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf_format), ...) {
@@ -1524,7 +1494,7 @@ fn bool Tokenizer.is_enabled(const Tokenizer* t) {
 
 fn Kind Tokenizer.lex_preproc(Tokenizer* t, Token* result) {
     t.stop_at_eol = true;
-    t.lex_internal(result);
+    t.lex(result);
     t.stop_at_eol = false;
     return result.kind;
 }
