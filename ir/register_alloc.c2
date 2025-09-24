@@ -26,7 +26,8 @@ import stdio local;
 type LiveVector struct  {
     u32 count;
     u32 cap;
-    u32* temps;
+    u32 num_instr;
+    u32* temps;     // [num_instr + num_regs(32)]
 
     // TEMP HERE, should be placed in tools and created once
     InterferenceGraph* interferences;   // temp_id is index
@@ -37,12 +38,14 @@ type LiveVector struct  {
 fn void LiveVector.init(LiveVector* v, u32 num_blocks, u32 num_instr) {
     v.count = 0;
     v.cap = 1024;
+    v.num_instr = num_instr;
     v.temps = stdlib.malloc(v.cap * sizeof(u32));
     assert(num_instr <= u16.max);
+    u16 num_regs = 8;  // always 8 for now (just for call return+args)
 
     // TODO this should be re-used between functions (also LiveVector)
     // TODO let number of variables depend on nr of instructions
-    v.interferences = ir_interference_graph.create(32*1024, (u16)num_instr);
+    v.interferences = ir_interference_graph.create(32*1024, (u16)num_instr, num_regs);
     // TODO dynamically resize maps
     v.live_in = ir_live_map.create(4096, (u16)num_blocks);
     v.live_out = ir_live_map.create(4096, (u16)num_blocks);
@@ -56,6 +59,7 @@ fn void LiveVector.free(LiveVector* v) {
 }
 
 fn void LiveVector.add(LiveVector* v, u32 idx) {
+    //printf("live add %d\n", idx);
     assert(idx <= 65535);
     //if (v.count == v.cap) printf("add %d/%d  %d\n", v.count, v.cap, idx);
     //printf("  add %d/%d  %d\n", v.count, v.cap, idx);
@@ -67,7 +71,7 @@ fn void LiveVector.add(LiveVector* v, u32 idx) {
 }
 
 fn void LiveVector.remove(LiveVector* v, u32 idx) {
-    //printf("remove %d\n", idx);
+    //printf("live remove %d\n", idx);
     for (u32 i=0; i<v.count; i++) {
         if (v.temps[i] == idx) {    // swap with last
             v.count--;
@@ -80,6 +84,7 @@ fn void LiveVector.remove(LiveVector* v, u32 idx) {
 
 // Does not filter, but does add to interference graph
 fn void LiveVector.addInterfere(LiveVector* v, u16 idx) {
+    //printf("live interfere %d\n", idx);
     assert(v.count < v.cap);
     for (u32 i=0; i<v.count; i++) {
         v.interferences.add((u16)v.temps[i], idx);
@@ -92,6 +97,19 @@ fn void LiveVector.addInterfereFilter(LiveVector* v, u32 idx) {
         if (v.temps[i] == idx) return;
     }
     v.addInterfere((u16)idx);
+}
+
+fn void LiveVector.removeRegister(LiveVector* v, u32 reg) {
+    //printf("del reg %d (%d)\n", reg, v.num_instr + reg);
+    // Note: idx = v.num_instr + reg
+    v.remove(v.num_instr + reg);
+}
+
+fn void LiveVector.addRegister(LiveVector* v, u32 reg) {
+    //printf("add reg %d (%d)\n", reg, v.num_instr + reg);
+    // Note: idx = v.num_instr + reg
+    // TODO only 1 way interference, not both ways (in v.interferences.add)
+    v.addInterfereFilter(v.num_instr + reg);
 }
 
 fn void LiveVector.clear(LiveVector* v) {
@@ -172,15 +190,34 @@ fn void Tools.createBlockInterferences(Tools* t, u32 blk_id, FunctionInfo* fi, L
         const Instr* ii = &instrs[i];
 
         if (ii.hasResult()) {
-            v.remove(i);
-            v.interferences.enable((u16)i);
+            if (ii.hasRegister()) {
+                v.removeRegister(ii.getRegister());
+            } else {
+                v.remove(i);
+                v.interferences.enable((u16)i);
+            }
         }
 
-        if (ii.isPhi()) {
+        // create 'vars' for each Caller-saved register and for arg/param registers
+        if (ii.isCall()) {
+            // interfere all live vars with  non-callee-saved registers
+            // TODO
+            // Start var with r0/r1 for all real args (will be removed on arg)
+            // TODO get number from somewhere, TEMP hardcoded to 2
+            // TODO nested calls?
+            // TODO also add 1000 to R0, 1001 to R1
+            v.addRegister(0);
+            v.addRegister(1);
+        } else if (ii.isPhi()) {
             // TODO need to do something?
+        } else if (ii.isReturn()) {
+            //set return value register
+            // TODO
         } else {
             if (ii.args[0].isTemp()) v.addInterfereFilter(ii.args[0].value);
+            else if (ii.args[0].isRegister()) v.addRegister(ii.args[0].value);
             if (ii.args[1].isTemp()) v.addInterfereFilter(ii.args[1].value);
+            else if (ii.args[1].isRegister()) v.addRegister(ii.args[1].value);
         }
         if (i == first) break;
         i--;
@@ -206,7 +243,7 @@ fn void Tools.checkBlockLiveness(Tools* t, u32 blk_id, LiveVector* v) {
 
     // step 1 - get LiveIn from successors
     // TEST since blocks are ordered, back jumps are loops. These are already handled by phi.
-    // so try ignoring them.
+    // so ignore them.
 
     // step 2 - merge these into own start-set
     v.clear();
@@ -358,6 +395,47 @@ fn void Tools.replacePhis(Tools* t) {
 }
 
 
+// %1 = param   =>   %1 = copy R0
+// arg %1       =>   R0 = copy %1
+fn void Tools.implementAbi(Tools* t) {
+    FunctionInfo* fi = t.fi;
+    u32 num_blocks = fi.blocks.getCount();
+    Block* blocks = fi.blocks.get(0);
+    Instr* instrs = fi.instructions.get(0);
+
+    // Params, replace %1 = param with  %1 = copy R0
+    {
+        Block* b0 = &blocks[0];
+        u32 num_arg = 0;
+        while (1) {
+            Instr* ii = &instrs[b0.instr.start + num_arg];
+            if (!ii.isParam()) break;
+            ii.instrBits.kind = InstrKind.Copy;
+            ii.args[0].setRegister(num_arg);    // start with R0
+            num_arg++;
+        }
+    }
+
+    // replace args with copy (if arg is Temp)
+    // arg %1 =>  R0 = copy %1
+    for (u32 blk_id = 0; blk_id < num_blocks; blk_id++) {
+        Block* b = &blocks[blk_id];
+        u32 last = b.instr.start + b.instr.count;
+        u32 num_arg = 0;
+        for (u32 j = b.instr.start; j < last; j++) {
+            Instr* ii = &instrs[j];
+            if (ii.isArg()) {
+                ii.setReg((u8)num_arg);
+                ii.instrBits.kind = InstrKind.Copy;
+                num_arg++;
+            } else if (ii.isCall()) {
+                num_arg = 0;
+            }
+            // TODO is Ret, just add copy r0 = copy %1
+        }
+    }
+}
+
 fn void Tools.insertSplitEdges(Tools* t) {
     FunctionInfo* fi = t.fi;
 
@@ -458,15 +536,33 @@ fn void Tools.removeSplitEdges(Tools* t) {
     }
 }
 
+fn void Tools.removeSameCopies(Tools* t) {
+    FunctionInfo* fi = t.fi;
+    u32 num_instr = fi.instructions.getCount();
+    Instr* instrs = fi.instructions.get(0);
+    for (u32 i = 0; i < num_instr; i++) {
+        Instr* ii = &instrs[i];
+        if (ii.isCopy()) {
+            assert(ii.hasRegister());
+            if (ii.args[0].isRegister() && ii.getRegister() == ii.args[0].value) {
+                ii.clear();
+            }
+        }
+    }
+}
+
 fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
     // TODO can manually allocate registers to params here already (R0..Rx)
     // that would still be ISA independent
 
     t.inserter.clear(fi.blocks.getCount(), fi.instructions.getCount());
 
+    t.implementAbi();
+
     t.insertSplitEdges();
 
     if (t.inserter.needsFixup()) t.fixup_function();
+    if (t.print_all) t.print_func("after ABI lowering");
 
     u32 num_blocks = fi.blocks.getCount();
     Block* blocks = fi.blocks.get(0);
@@ -516,8 +612,6 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
 
     //v.dumpRanges(num_blocks);
 
-    // THIS STEP GOES WRONG for c2c itself
-
     // Liveness part 3: create full Liveness + interference graph
     for (u32 i=0; i<num_blocks; i++) {
         t.createBlockInterferences(i, fi, &v);
@@ -532,7 +626,7 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
     Instr* instrs = fi.instructions.get(0);
     for (u32 i=0; i<num_instr; i++) {
         Instr* ii = &instrs[i];
-        if (ii.hasResult()) ii.setReg(regmap[i]);
+        if (ii.hasResult() && !ii.hasRegister()) ii.setReg(regmap[i]);
 
         if (ii.isPhi()) {
             // nothing to do
@@ -558,6 +652,7 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
     v.free();
     t.replacePhis();
     t.removeSplitEdges();
+    t.removeSameCopies();
     // TODO sort Blocks (not instructions)
 
     // TODO move somewhere else

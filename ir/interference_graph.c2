@@ -66,15 +66,21 @@ public type InterferenceGraph struct @(opaque) {
 static_assert(224, sizeof(InterferenceGraph));
 
 // Note: map size must be a multiple of largest arena size (so 256)
-public fn InterferenceGraph* create(u32 max_elems, u16 num_variables) {
+public fn InterferenceGraph* create(u32 max_elems, u16 num_variables, u16 num_regs) {
     InterferenceGraph* g = stdlib.calloc(1, sizeof(InterferenceGraph));
     g.map = stdlib.malloc(max_elems * sizeof(u16));
-    g.variables = stdlib.calloc(num_variables, sizeof(Variable));
-    g.num_variables = num_variables;
+    u16 total = num_variables + num_regs;
+    g.variables = stdlib.calloc(total, sizeof(Variable));
+    // TODO only store temp -> reg dep, not reg -> .., so dont need a var for it
+    g.num_variables = total;
     g.max_elems = max_elems;
-    g.register_map = stdlib.malloc(num_variables * sizeof(u8));
-    string.memset(g.register_map, VAR_UNUSED, num_variables);
-    g.queue = stdlib.malloc(num_variables * sizeof(u16));
+    g.register_map = stdlib.malloc(total * sizeof(u8));
+    string.memset(g.register_map, VAR_UNUSED, total);
+    u32 offset = num_variables;
+    for (u32 i = 0; i < num_regs; i++) {
+        g.register_map[offset + i] = (u8)i;
+    }
+    g.queue = stdlib.malloc(total * sizeof(u16));
 
     // initialize arenas
     for (u32 i=0; i<NumArenas; i++) {
@@ -88,7 +94,7 @@ public fn InterferenceGraph* create(u32 max_elems, u16 num_variables) {
     g.arenas[NumArenas-1].free_slots = (u16)max_elems / Caps[NumArenas-1];
 
     // all Variables start in first arena
-    for (u16 i=0; i<num_variables; i++) g.addVariableToArenaTail(&g.arenas[0], i);
+    for (u16 i=0; i<total; i++) g.addVariableToArenaTail(&g.arenas[0], i);
 
     return g;
 }
@@ -201,20 +207,22 @@ fn void InterferenceGraph.addVariableToArenaTail(InterferenceGraph* g, Arena* a,
 }
 
 public fn void InterferenceGraph.enable(InterferenceGraph* g, u16 var_idx) {
+    //printf("IG enable %d\n", var_idx);
     g.register_map[var_idx] = VAR_TODO;
 }
 
 public fn void InterferenceGraph.add(InterferenceGraph* g, u16 var1, u16 var2) {
+    //printf("IG add %d - %d\n", var1, var2);
     // check for duplicates
     const Variable* r = &g.variables[var1];
     u32 idx = r.start + r.count;
     for (u32 i=r.start; i<idx; i++) {
         if (g.map[i] == var2) {
-            //printf("ALREADY IN %d %d\n", var1, var2);
+            //printf("IG ALREADY IN %d %d\n", var1, var2);
             return;
         }
     }
-    //printf("ADD %d %d\n", var1, var2);
+    //printf("IG ADD %d %d\n", var1, var2);
     // adds interference both ways, var1->var2 and var2->var1
     g.addInternal(var1, var2);
     g.addInternal(var2, var1);
@@ -388,13 +396,9 @@ fn void InterferenceGraph.handleQueue(InterferenceGraph* g) {
 }
 
 public fn void InterferenceGraph.allocate(InterferenceGraph* g, u32 num_args) {
+    //printf("IG allocate\n");
     //assert(num_args < g.num_variables); // otherwise out-of-bounds write
     if (num_args >= g.num_variables) return;    // TEMP
-
-    // pre-alloc arguments as R0,R1,..
-    for (u8 v=0; v<num_args; v++) {
-        g.register_map[v] = v;
-    }
 
     // will go breadth-first from each variable, skipping already done
     for (u16 v=0; v<g.num_variables; v++) {

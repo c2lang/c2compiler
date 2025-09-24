@@ -47,7 +47,6 @@ type Tools struct {
     // change per function
     const void* arg2;   // Symbol*
     FunctionInfo* fi;   // no ownership
-
 }
 static_assert(808, sizeof(Tools));
 

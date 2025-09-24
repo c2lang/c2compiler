@@ -391,11 +391,6 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
     case Call:
         out.space();
         ph.printRef(i.args[0], false);
-        out.add(" (");
-        if (i.args[1].kind != RefKind.None) {
-            ph.printRef(i.args[1], false);
-        }
-        out.add1(')');
         break;
     case JmpIf:
         for (u32 r=0; r<elemsof(i.args); r++) {

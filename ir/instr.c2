@@ -35,6 +35,7 @@ public type Instr struct {
 static_assert(12, sizeof(Instr));
 
 public fn void Instr.setReg(Instr* i, u8 reg) {
+    i.instrBits.has_result = 1;
     i.instrBits.has_register = 1;
     i.instrBits.register_nr = reg;
 }
@@ -159,8 +160,20 @@ public fn bool Instr.isSwitch(const Instr* i) {
     return i.getKind() == InstrKind.Switch;
 }
 
+public fn bool Instr.isCall(const Instr* i) {
+    return i.getKind() == InstrKind.Call;
+}
+
 public fn bool Instr.isPhi(const Instr* i) {
     return i.getKind() == InstrKind.Phi;
+}
+
+public fn bool Instr.isParam(const Instr* i) {
+    return i.getKind() == InstrKind.Param;
+}
+
+public fn bool Instr.isArg(const Instr* i) {
+    return i.getKind() == InstrKind.Arg;
 }
 
 public fn bool Instr.isComment(const Instr* i) {
