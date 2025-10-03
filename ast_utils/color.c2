@@ -16,25 +16,70 @@
 module color;
 import unistd;
 
-public const char[] Black    = "\033[0;30m";
-public const char[] Red      = "\033[0;31m";
-public const char[] Green    = "\033[0;32m";
-public const char[] Yellow   = "\033[0;33m";
-public const char[] Blue     = "\033[0;34m";
-public const char[] Magenta  = "\033[0;35m";
-public const char[] Cyan     = "\033[0;36m";
-public const char[] Grey     = "\033[0;37m";
-public const char[] Darkgrey = "\033[01;30m";
-public const char[] Bred     = "\033[01;31m";
-public const char[] Bgreen   = "\033[01;32m";
-public const char[] Byellow  = "\033[01;33m";
-public const char[] Bblue    = "\033[01;34m";
-public const char[] Bmagenta = "\033[01;35m";
-public const char[] Bcyan    = "\033[01;36m";
-public const char[] White    = "\033[01;37m";
-public const char[] Normal   = "\033[0m";
+public type Color enum u8 {
+    None,
+    Black,
+    Red,
+    Green,
+    Yellow,
+    Blue,
+    Magenta,
+    Cyan,
+    Grey,
+    Darkgrey,
+    Bred,
+    Bgreen,
+    Byellow,
+    Bblue,
+    Bmagenta,
+    Bcyan,
+    White,
+    Normal,
+}
+
+public const Color Black    = Black;
+public const Color Red      = Red;
+public const Color Green    = Green;
+public const Color Yellow   = Yellow;
+public const Color Blue     = Blue;
+public const Color Magenta  = Magenta;
+public const Color Cyan     = Cyan;
+public const Color Grey     = Grey;
+public const Color Darkgrey = Darkgrey;
+public const Color Bred     = Bred;
+public const Color Bgreen   = Bgreen;
+public const Color Byellow  = Byellow;
+public const Color Bblue    = Bblue;
+public const Color Bmagenta = Bmagenta;
+public const Color Bcyan    = Bcyan;
+public const Color White    = White;
+public const Color Normal   = Normal;
+
+const char*[elemsof(Color)] defaultColors = {
+    [Color.None]     = "",
+    [Color.Black]    = "\033[0;30m",
+    [Color.Red]      = "\033[0;31m",
+    [Color.Green]    = "\033[0;32m",
+    [Color.Yellow]   = "\033[0;33m",
+    [Color.Blue]     = "\033[0;34m",
+    [Color.Magenta]  = "\033[0;35m",
+    [Color.Cyan]     = "\033[0;36m",
+    [Color.Grey]     = "\033[0;37m",
+    [Color.Darkgrey] = "\033[1;30m",
+    [Color.Bred]     = "\033[1;31m",
+    [Color.Bgreen]   = "\033[1;32m",
+    [Color.Byellow]  = "\033[1;33m",
+    [Color.Bblue]    = "\033[1;34m",
+    [Color.Bmagenta] = "\033[1;35m",
+    [Color.Bcyan]    = "\033[1;36m",
+    [Color.White]    = "\033[1;37m",
+    [Color.Normal]   = "\033[0m",
+}
 
 public fn bool useColor() {
     return unistd.isatty(1);
 }
 
+public fn const char* Color.str(Color col) {
+    return defaultColors[col];
+}

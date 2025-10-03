@@ -16,7 +16,7 @@
 module ast;
 
 import attr;
-import color;
+import color local;
 import ast_context local;
 import string_buffer;
 import string_pool;
@@ -307,17 +307,17 @@ public fn BuiltinKind getNativeKind() {
     return globals.wordsize == 8 ? BuiltinKind.UInt64 : BuiltinKind.UInt32;
 }
 
-const char* col_Stmt = color.Bmagenta;
-const char* col_Decl = color.Bgreen;
-const char* col_Expr = color.Bmagenta;
-const char* col_Attr = color.Blue;
-const char* col_Template = color.Green;
-//const char* col_Cast = color.Red;
-const char* col_Type = color.Green;
-const char* col_Value = color.Bcyan;
-const char* col_Error = color.Red;
-const char* col_Calc = color.Yellow;    // all calculated value
-const char* col_Normal = color.Normal;
+Color col_Stmt = Color.Bmagenta;
+Color col_Decl = Color.Bgreen;
+Color col_Expr = Color.Bmagenta;
+Color col_Attr = Color.Blue;
+Color col_Template = Color.Green;
+//Color col_Cast = Color.Red;
+Color col_Type = Color.Green;
+Color col_Value = Color.Bcyan;
+Color col_Error = Color.Red;
+Color col_Calc = Color.Yellow;    // all calculated value
+Color col_Normal = Color.Normal;
 
 public type AttrHandlerFn fn bool (void* arg, Decl* d, const attr.Attr* a);
 

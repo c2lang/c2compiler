@@ -113,8 +113,7 @@ public fn void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
     u32 count = t.num_public + t.num_private;
     for (u32 i=0; i<count; i++) {
         const Decl* d = t.decls[i];
-        const char* col = d.isUsed() ? color.Normal : color.Grey;
-        out.color(col);
+        out.color(d.isUsed() ? color.Normal : color.Grey);
         const char* name = ast.idx2name(t.symbols[i]);
         out.print("    %s", name);
         if (d.isFunction()) out.add("()");
@@ -128,8 +127,7 @@ public fn void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
             const FunctionDecl** fds = std.getStructFunctions();
             for (u32 j=0; j<std.getNumStructFunctions(); j++) {
                 Decl* fd = (Decl*)fds[j];
-                col = fd.isUsed() ? color.Normal : color.Grey;
-                out.color(col);
+                out.color(fd.isUsed() ? color.Normal : color.Grey);
                 out.indent(6);
                 out.print("%s.%s()", name, fd.getName());
                 if (fd.isPublic()) {

@@ -111,7 +111,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
     p.file_id = file_id;
     p.is_interface = is_interface;
 
-    string_buffer.Buf* buf = string_buffer.create(1024, true, 0);
+    string_buffer.Buf* buf = string_buffer.create(1024, false, 0);
 #if DumpTokens
     u64 t1 = utils.now();
     p.tokenizer.init(p.pool,

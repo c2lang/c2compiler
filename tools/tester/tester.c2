@@ -389,9 +389,11 @@ public fn i32 main(i32 argc, char** argv) {
 
     u64 t2 = now();
 
-    const char* col = (numerrors ? colError : colOk);
-    color_print(col, "RESULTS: %d test%s, %d threads (%d ok, %d failed, %d skipped) ran in %d ms",
-        numtests, numtests == 1 ? "" : "s", num_threads, numtests - (numerrors+numskipped), numerrors, numskipped, (t2-t1)/1000);
+    color_print(numerrors ? colError : colOk,
+                "RESULTS: %d test%s, %d threads (%d ok, %d failed, %d skipped) ran in %d ms",
+                numtests, numtests == 1 ? "" : "s",
+                num_threads, numtests - (numerrors + numskipped), numerrors, numskipped,
+                (t2 - t1) / 1000);
     if (numerrors) queue.summarizeFailed();
 
     queue.destroy();

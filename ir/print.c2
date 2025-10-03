@@ -23,22 +23,22 @@ import stdio;
 import stdlib;
 import string;
 
-const char* col_Instr = color.Normal;
-const char* col_PseudoInstr = color.Bred;
-const char* col_Decl = color.Magenta;
-const char* col_Name = color.White;
-const char* col_Block = color.Cyan;
-const char* col_Symbol = color.Bblue;
-const char* col_Attr = color.Bmagenta;
-const char* col_Unknown = color.Yellow;
-const char* col_Value = color.Magenta;
-const char* col_Register = color.Bgreen;
-const char* col_Data = color.Bcyan;
-const char* col_Slot = color.Bcyan;
-const char* col_Temp = color.Bgreen;
-const char* col_Type = color.Green;
-const char* col_Comment = color.Grey;
-const char* col_Fixup = color.Bred;
+Color col_Instr       = Normal;
+Color col_PseudoInstr = Bred;
+Color col_Decl        = Magenta;
+Color col_Name        = White;
+Color col_Block       = Cyan;
+Color col_Symbol      = Bblue;
+Color col_Attr        = Bmagenta;
+Color col_Unknown     = Yellow;
+Color col_Value       = Magenta;
+Color col_Register    = Bgreen;
+Color col_Data        = Bcyan;
+Color col_Slot        = Bcyan;
+Color col_Temp        = Bgreen;
+Color col_Type        = Green;
+Color col_Comment     = Grey;
+Color col_Fixup       = Bred;
 
 const u32 MaxTemps = 4096;
 

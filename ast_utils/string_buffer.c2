@@ -15,6 +15,8 @@
 
 module string_buffer;
 
+import color local;
+
 import stdio local;
 import stdarg local;
 import stdlib local;
@@ -126,8 +128,8 @@ public fn void Buf.clear(Buf* buf) {
     buf.truncated = false;
 }
 
-public fn void Buf.color(Buf* buf, const char* color) {
-    if (buf.colors) buf.add(color);
+public fn void Buf.color(Buf* buf, Color col) {
+    if (buf.colors) buf.add(col.str());
 }
 
 public fn void Buf.add1(Buf* buf, char c) {

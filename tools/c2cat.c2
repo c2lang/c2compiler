@@ -16,7 +16,7 @@
 module c2cat_main;
 
 import c2_tokenizer;
-import color;
+import color local;
 import file_utils;
 import keywords;
 import string_buffer;
@@ -30,19 +30,19 @@ import stdio local;
 import stdlib local;
 import string local;
 
-const char* col_keyword = color.Byellow;
-const char* col_type = color.Green;
-const char* col_feature = color.Blue;
-const char* col_attr = color.Blue;
-const char* col_identifier = "";
-const char* col_integer = color.Magenta;
-const char* col_float = color.Magenta;
-const char* col_charconst = color.Magenta;
-const char* col_string = color.Magenta;
-const char* col_comment = color.Bcyan;
-const char* col_invalid = color.Bred;
-const char* col_error = color.Bred;
-const char* col_normal = color.Normal;
+Color col_keyword    = Byellow;
+Color col_type       = Green;
+Color col_feature    = Blue;
+Color col_attr       = Blue;
+Color col_identifier = Normal;
+Color col_integer    = Magenta;
+Color col_float      = Magenta;
+Color col_charconst  = Magenta;
+Color col_string     = Magenta;
+Color col_comment    = Bcyan;
+Color col_invalid    = Bred;
+Color col_error      = Bred;
+Color col_normal     = Normal;
 
 fn void usage(const char* me) {
     printf("Usage: %s file.c2 ...\n", me);
@@ -78,25 +78,6 @@ const char*[] attr_names = {
     "auto_file",
     "auto_line",
     "auto_func",
-}
-
-
-fn void init_colors() {
-    if (!color.useColor()) {
-        col_keyword = "";
-        col_type = "";
-        col_feature = "";
-        col_attr = "";
-        col_identifier = "";
-        col_integer = "";
-        col_float = "";
-        col_charconst = "";
-        col_string = "";
-        col_comment = "";
-        col_invalid = "";
-        col_error = "";
-        col_normal = "";
-    }
 }
 
 fn bool is_attribute(const char* str) {
@@ -284,7 +265,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
     out.color(col_normal);
 }
 
-public fn i32 c2cat(const char* filename)
+public fn i32 c2cat(const char* filename, bool use_color)
 {
     file_utils.File file.init("", filename);
     if (!file.load()) {
@@ -294,7 +275,7 @@ public fn i32 c2cat(const char* filename)
 
     C2cat ctx = { }
     ctx.pool = string_pool.create(16*1024, 1024);
-    ctx.out = string_buffer.create(16*1024, true, 2);
+    ctx.out = string_buffer.create(16*1024, use_color, 2);
     ctx.offset = 0;
     ctx.input = file.data();
     ctx.in_attributes = 0;
@@ -344,12 +325,12 @@ public fn i32 c2cat(const char* filename)
 
 public fn i32 main(i32 argc, const char** argv)
 {
+    bool use_color = color.useColor();
     if (argc == 1) usage(argv[0]);
-    init_colors();
     for (i32 i = 1; i < argc; i++) {
         if (argc > 2)
             printf("==> %s <==\n", argv[i]);
-        c2cat(argv[i]);
+        c2cat(argv[i], use_color);
     }
     return 0;
 }

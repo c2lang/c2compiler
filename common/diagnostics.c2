@@ -15,7 +15,7 @@
 
 module diagnostics;
 
-import color;
+import color local;
 import source_mgr;
 import string_buffer;
 import src_loc local;
@@ -69,10 +69,10 @@ const char*[] category_names = {
     "error",
 }
 
-const char*[] category_colors = {
-    color.Grey,
-    color.Bmagenta,
-    color.Bred,
+Color[] category_colors = {
+    Color.Grey,
+    Color.Bmagenta,
+    Color.Bred,
 }
 
 public fn void Diags.error(Diags* diags, SrcLoc loc, const char* format @(printf_format), ...) {

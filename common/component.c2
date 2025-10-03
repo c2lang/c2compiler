@@ -205,8 +205,7 @@ public fn void Component.printModules(const Component* c) {
     const ast.Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {
         const ast.Module* m = mods[i];
-        const char* col = m.isUsed() ? color.Normal : color.Grey;
-        out.color(col);
+        out.color(m.isUsed() ? color.Normal : color.Grey);
         out.print("   %s\n", m.getName());
     }
     out.color(color.Normal);

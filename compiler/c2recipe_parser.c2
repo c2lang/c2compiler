@@ -202,7 +202,7 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
     p.sm.loc2str(p.token.loc, locstr, elemsof(locstr));
 
     if (color.useColor()) {
-        fprintf(stderr, "%s: %serror:%s %s\n", locstr, color.Red, color.Normal, msg);
+        fprintf(stderr, "%s: %serror:%s %s\n", locstr, color.Red.str(), color.Normal.str(), msg);
     } else {
         fprintf(stderr, "%s: error: %s\n", locstr, msg);
     }
@@ -220,7 +220,7 @@ fn void Parser.warning(Parser* p, const char* format @(printf_format), ...) {
     p.sm.loc2str(p.token.loc, locstr, elemsof(locstr));
 
     if (color.useColor()) {
-        fprintf(stderr, "%s: %swarning:%s %s\n", locstr, color.Red, color.Normal, msg);
+        fprintf(stderr, "%s: %swarning:%s %s\n", locstr, color.Red.str(), color.Normal.str(), msg);
     } else {
         fprintf(stderr, "%s: warning: %s\n", locstr, msg);
     }

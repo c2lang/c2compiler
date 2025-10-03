@@ -183,9 +183,13 @@ public fn i32 SourceMgr.loadFile(SourceMgr* sm, const char* filename, SrcLoc slo
                 stdio.snprintf(tmp, elemsof(tmp), "%s:%d:%d: ", loc.filename, loc.line, loc.column);
             }
         }
-        // TODO only color if enabled (cannot use console since we need source loc first)
-        stdio.fprintf(stdio.stderr, "%s%serror:%s cannot open %s: %s\n",
-                      tmp, color.Red, color.Normal, filename, file.getError());
+        // Cannot use console since we need source loc first
+        if (color.useColor()) {
+            stdio.fprintf(stdio.stderr, "%s%serror:%s cannot open %s: %s\n",
+                          tmp, color.Red.str(), color.Normal.str(), filename, file.getError());
+        } else {
+            stdio.fprintf(stdio.stderr, "%serror: cannot open %s: %s\n", tmp, filename, file.getError());
+        }
         return -1;
     }
     u32 size;
