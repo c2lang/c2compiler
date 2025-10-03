@@ -48,6 +48,18 @@ fn Expr* getCondExpr(const Stmt* cond) {
     return nil;
 }
 
+fn bool Analyser.isNoReturn(Analyser* ma, Expr* e) {
+    if (!e.isCall()) return false;
+    // get from CallExpr -> FunctionDecl
+    const CallExpr* c = (CallExpr*)e;
+    e = c.getFunc();
+    QualType qt = e.getType();
+    const FunctionType* ft = qt.getFunctionTypeOrNil();
+    if (!ft) return false;
+    const FunctionDecl* fd = ft.getDecl();
+    return fd.hasAttrNoReturn();
+}
+
 fn FlowBits Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
     FlowBits flow = 0;
     if (ma.scope.isUnreachable()) {
@@ -66,7 +78,8 @@ fn FlowBits Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
         ma.analyseExpr((Expr**)&s, false, 0);
         Expr* e = (Expr*)s;
         if (checkEffect && !e.hasEffect()) ma.errorRange(e.getLoc(), e.getRange(), "expression without effect");
-        return FlowNext;  // TODO: check for call to noreturn function
+        if (!ma.has_error && ma.isNoReturn(e)) return FlowNoReturn;
+        return FlowNext;
     case If:
         flow = ma.analyseIfStmt(s);
         break;

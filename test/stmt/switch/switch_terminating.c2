@@ -89,8 +89,7 @@ fn void foo5(i32 x, bool cond) {
 fn void foo6(i32 x) {
     switch (x) {
     case 0:
-        // TODO: this should not be an error
-        while (true) // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
+        while (true)
             return;
     default:
         break;
@@ -100,8 +99,7 @@ fn void foo6(i32 x) {
 fn void foo7(i32 x) {
     switch (x) {
     case 0:
-        // TODO: this should not be an error
-        for (;;) // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
+        for (;;)
             return;
     default:
         break;
@@ -111,8 +109,8 @@ fn void foo7(i32 x) {
 fn void foo8(i32 x) {
     switch (x) {
     case 0:
-        // TODO: this should not be an error but could be diagnosed as an infinite loop
-        while (true) // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
+        // TODO: this is not an error but could be diagnosed as an infinite loop
+        while (true)
             continue;
     default:
         break;
@@ -122,8 +120,8 @@ fn void foo8(i32 x) {
 fn void foo9(i32 x) {
     switch (x) {
     case 0:
-        // TODO: this should not be an error but could be diagnosed as an infinite loop
-        for (;;) // @error{no terminating statement (break|fallthrough|goto|return|continue|noreturn-func) at end of case}
+        // TODO: this is not an error but could be diagnosed as an infinite loop
+        for (;;)
             continue;
     default:
         break;

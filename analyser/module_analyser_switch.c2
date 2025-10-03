@@ -170,12 +170,12 @@ fn FlowBits Analyser.analyseCase(Analyser* ma,
     flow |= flow2;
     if (has_decls) c.setHasDecls();
 
-    Stmt* last = c.getStmt(count-1);
-    if (isTerminatingStmt(last, is_default))
-        return flow;
+    if (!(flow & FlowNext) || c.hasFallthrough()) return flow;
 
+    Stmt* last = c.getStmt(count-1);
     SrcLoc loc = last.getLoc();
     if (!loc) loc = c.getLoc();
+    // TODO: use simpler error message
     if (is_default) {
         ma.error(loc, "no terminating statement (break|return|continue|goto|noreturn-func) at end of default case");
     } else {
@@ -387,52 +387,3 @@ fn bool Analyser.checkEnumConstantCase(Analyser* ma,
     }
     return true;
 }
-
-fn bool isTerminatingStmt(const Stmt* s, bool is_default) {
-    if (!s) return false;
-    switch (s.getKind()) {
-    case Return:
-        return true;
-    case Expr:
-        const Expr* e = (Expr*)s;
-        if (!e.isCall()) break;
-        // get from CallExpr -> FunctionDecl
-        const CallExpr* c = (CallExpr*)e;
-        e = c.getFunc();
-        QualType qt = e.getType();
-        const FunctionType* ft = qt.getFunctionTypeOrNil();
-        assert(ft);
-        const FunctionDecl* fd = ft.getDecl();
-        if (fd.hasAttrNoReturn()) return true;
-        break;
-    case If:
-        const IfStmt* is = (IfStmt*)s;
-        return isTerminatingStmt(is.getThen(), is_default)
-        &&     isTerminatingStmt(is.getElse(), is_default);
-    case While:
-    case For:
-        // TODO: check constant condition and no break
-        break;
-    case Switch:
-        // TODO: check if unreachable
-        break;
-    case Break:
-    case Continue:
-    case Fallthrough:
-        return true;
-    case Label:
-        const LabelStmt* ls = (LabelStmt*)s;
-        const Stmt* stmt = ls.getStmt();
-        if (!stmt) return false;
-        return isTerminatingStmt(stmt, is_default);
-    case Goto:
-        return true;
-    case Compound:
-        CompoundStmt* c = (CompoundStmt*)s;
-        return isTerminatingStmt(c.getLastStmt(), is_default);
-    default:
-        break;
-    }
-    return false;
-}
-

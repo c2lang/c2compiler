@@ -71,12 +71,6 @@ public fn Stmt** CompoundStmt.getStmts(CompoundStmt* s) {
     return nil;
 }
 
-public fn Stmt* CompoundStmt.getLastStmt(const CompoundStmt* s) {
-    u32 count = s.getCount();
-    if (count) return s.stmts[count-1];
-    return nil;
-}
-
 public fn SrcLoc CompoundStmt.getEndLoc(const CompoundStmt* e) {
     // e.base.loc is the location of the closing brace '}'
     return e.base.loc + 1;
