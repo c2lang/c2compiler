@@ -350,7 +350,7 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
                     //fprintf(stderr, "calling funDD at %p\n", cname, fun.address);
                     return Value.createFloat(fun.funDD(eval.args[0].toFloat()));
                 }
-                printf("function prototype not supported");
+                fprintf(stderr, "function prototype not supported: %s\n", fd.getCName());
                 qt1.dump_full();
                 rt.dump_full();
                 return Value.error("function prototype not supported");

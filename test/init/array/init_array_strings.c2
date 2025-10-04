@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+module test;
+
+char[][16] a1 = {
+    "Hello",
+    "world",
+    "this",
+    "is",
+    "c2",
+}
+
+char[][16] a2 = {
+    [0] = "Hello",
+    [1] = "world",
+    [2] = "this",
+    [3] = "is",
+    [4] = "c2",
+}

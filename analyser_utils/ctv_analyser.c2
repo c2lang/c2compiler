@@ -274,7 +274,7 @@ public fn bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
         diags.errorRange(e.getLoc(), e.getRange(), "%s", value.error_msg);
         return false;
     }
-    return checkRange(diags, qt, &value, 0, e);
+    return checkTypeRange(diags, qt, &value, 0, e);
 }
 
 public fn bool checkBitfield(diagnostics.Diags* diags, u8 bitfield_width, bool bitfield_signed, const Expr* e) {
@@ -294,7 +294,7 @@ public fn bool checkBitfield(diagnostics.Diags* diags, u8 bitfield_width, bool b
 }
 
 // Expr* e can be nil
-public fn bool checkRange(diagnostics.Diags* diags, QualType qt, Value* value, SrcLoc loc, const Expr* e) {
+public fn bool checkTypeRange(diagnostics.Diags* diags, QualType qt, Value* value, SrcLoc loc, const Expr* e) {
     QualType canon = qt.getCanonicalType();
     if (!canon.isBuiltin()) return true;  // TODO find out cases
     // hack to accept `u32 x = ~1;`

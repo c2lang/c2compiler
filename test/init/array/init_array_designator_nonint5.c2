@@ -1,0 +1,24 @@
+// @warnings{no-unused}
+module test;
+
+i32[] a1 = {
+    [0.0] = 0,  // @error{array designator expression must have integer type}
+}
+
+i32[] a2 = {
+    [0 / 0] = 0,  // @error{division by zero is undefined}
+}
+
+i32[] a3 = {
+    [0xFFFFFFFF] = 0,  // @error{array index 4294967295 is too large}
+}
+
+i32[] a4 = {
+    [0xFFFFFFFE] = 0,
+    0  // @error{array index 4294967295 is too large}
+}
+
+i32[] a5 = {
+    [0x100000000] = 0,  // @error{array index 4294967296 is too large}
+}
+
