@@ -168,7 +168,7 @@ fn bool Analyser.checkIncrDecr(Analyser* ma, Expr* inner, QualType t, bool is_in
     return true;
 }
 
-fn bool Analyser.getIdentifierKind(Analyser* ma, Expr* e) {
+fn bool Analyser.getIdentifierKind(Analyser* ma, const Expr* e) {
     IdentifierKind kind = getInnerExprAddressOf(e);
     const char* arg = "";
     switch (kind) {
@@ -201,7 +201,7 @@ fn bool Analyser.getIdentifierKind(Analyser* ma, Expr* e) {
     return false;
 }
 
-fn IdentifierKind getInnerExprAddressOf(Expr* e) {
+fn IdentifierKind getInnerExprAddressOf(const Expr* e) {
     // TODO change return type to IdentifierKind, use Unresolved for not-IdentifiersExpr/MemberExpr
 
     switch (e.getKind()) {

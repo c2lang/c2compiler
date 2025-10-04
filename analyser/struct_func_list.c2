@@ -62,7 +62,7 @@ public fn void List.addDecl(List* v, ast.Decl* decl) {
     v.count++;
 }
 
-public fn ast.Decl* List.getDecl(List* v, u32 index) {
+public fn ast.Decl* List.getDecl(const List* v, u32 index) {
     return v.data[index].decl;
 }
 

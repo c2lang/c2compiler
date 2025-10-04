@@ -86,7 +86,7 @@ fn u32 StringList.length(StringList* sl) {
     return sl.string_count;
 }
 
-fn const char* StringList.get(StringList* sl, u32 i) {
+fn const char* StringList.get(const StringList* sl, u32 i) {
     return sl.strings[i];
 }
 
