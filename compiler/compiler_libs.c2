@@ -139,9 +139,9 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
     }
 }
 
-fn bool Compiler.has_component(Compiler* c, u32 name) {
+fn bool Compiler.has_component(const Compiler* c, u32 name) {
     for (u32 i=0; i<c.components.size(); i++) {
-        Component* comp = c.components.get(i);
+        const Component* comp = c.components.get(i);
         if (comp.getNameIdx() == name) return true;
     }
     return false;

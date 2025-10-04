@@ -140,21 +140,21 @@ fn f64 Value.toFloat(const Value* v) {
     }
 }
 
-public fn u8 Value.as_u8(Value* v) {
+public fn u8 Value.as_u8(const Value* v) {
     assert (v.kind == ValueKind.Integer);
     u64 res = v.uvalue;
     if (v.negative) res = ~res + 1;
     return (u8)res;
 }
 
-public fn u16 Value.as_u16(Value* v) {
+public fn u16 Value.as_u16(const Value* v) {
     assert (v.kind == ValueKind.Integer);
     u64 res = v.uvalue;
     if (v.negative) res = ~res + 1;
     return (u16)res;
 }
 
-public fn i32 Value.as_i32(Value* v) @(unused) {
+public fn i32 Value.as_i32(const Value* v) @(unused) {
     u64 res = 0;
     if (v.kind == ValueKind.Integer) {
         res = v.uvalue;
@@ -163,7 +163,7 @@ public fn i32 Value.as_i32(Value* v) @(unused) {
     return (i32)res;
 }
 
-public fn u32 Value.as_u32(Value* v) {
+public fn u32 Value.as_u32(const Value* v) {
     u64 res = 0;
     if (v.kind == ValueKind.Integer) {
         res = v.uvalue;
@@ -172,7 +172,7 @@ public fn u32 Value.as_u32(Value* v) {
     return (u32)res;
 }
 
-public fn u64 Value.as_u64(Value* v) {
+public fn u64 Value.as_u64(const Value* v) {
     u64 res = 0;
     if (v.kind == ValueKind.Integer) {
         res = v.uvalue;
