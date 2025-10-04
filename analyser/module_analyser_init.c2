@@ -179,18 +179,6 @@ fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expe
     bool ok = ma.analyseInitExpr(ad.getInit2(), expectedType, val.getLoc(), false, false);
     if (!ok) return false;
 
-    if (!ma.curFunction) {
-        if (!val.isCtc()) {
-            ma.errorRange(val.getLoc(), val.getRange(), "initializer element is not a compile-time constant");
-            return false;
-        }
-
-        if (!val.isCtv() && expectedType.needsCtvInit()) {
-            ma.errorRange(val.getLoc(), val.getRange(), "initializer element is not a compile-time value");
-            return false;
-        }
-    }
-
     val = ad.getInit(); // re-read because of ImplicitCasts
     e.copyConstantFlags(val);
     e.setType(expectedType);
@@ -223,9 +211,9 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
         if (value.isArrayDesignatedInit()) {
             ok &= ma.analyseArrayDesignatedInit(value, et);
             have_designators = true;
-            continue;
+        } else {
+            ok &= ma.analyseInitExpr(&values[i], et, values[i].getLoc(), false, false);
         }
-        ok &= ma.analyseInitExpr(&values[i], et, values[i].getLoc(), false, false);
         ctc &= values[i].isCtc();
     }
     current_index = numValues;   // TODO also keep track of ArrayDesignatedInit
@@ -234,16 +222,17 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
     if (!ok) return false;
 
     if (have_designators) {
+        // Check for out of bound array designators or compute implied array length
         ile.setHasDesignators();
 
-        i32 array_size = -1; // will be determined by init-expr
-        if (at.hasSize()) array_size = (i32)at.getSize();
+        bool has_size = at.hasSize();
+        u32 array_size = at.getSize();
 
         init_checker.Checker* checker = ma.getInitChecker();
-        ok = ma.checkArrayDesignators(ile, &array_size, checker);
+        ok = ma.checkArrayDesignators(ile, has_size, &array_size, checker);
         ma.putInitChecker(checker);
 
-        if (!at.hasSize()) at.setSize((u32)array_size);
+        if (!has_size) at.setSize(array_size);
 
     } else {
         if (at.hasSize()) {
@@ -261,12 +250,13 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
     return ok;
 }
 
-fn bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* size, init_checker.Checker* checker) {
+fn bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, bool has_size, u32 *size, init_checker.Checker* checker) {
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
 
-    i32 max_index = 0;
-    i32 current_index = -1;
+    bool ok = true;
+    u32 max_index = 0;
+    u64 index64 = u64.max;
     for (u32 i=0; i<numValues; i++) {
         SrcLoc loc;
         Expr* value = values[i];
@@ -275,37 +265,47 @@ fn bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, i32* siz
             Expr* desig = ad.getDesignator();
             loc = desig.getLoc();
             Value idx = ctv_analyser.get_value(desig);
+            if (!idx.isDecimal()) {
+                ma.error(loc, "array designator expression must have integer type");
+                return false;
+            }
             if (idx.isNegative()) {
                 ma.error(loc, "array designator value '%s' is negative", idx.str());
                 return false;
             }
-            if (*size != -1 && (*size <= 0 || !idx.checkRange(0, (u64)*size - 1))) {
-                ma.error(loc, "array designator index (%s) exceeds array bounds (%d)", idx.str(), *size);
+            index64 = idx.as_u64();
+            if (has_size && index64 >= *size) {
+                ma.error(loc, "array designator index (%d) exceeds array bounds (%d)", index64, *size);
                 return false;
             }
-            current_index = idx.as_i32();
         } else {
             loc = value.getLoc();
-            current_index++;
+            index64++;
+            if (has_size && index64 >= *size) {
+                ma.error(value.getLoc(), "excess elements in array initializer");
+                return false;
+            }
         }
-        if (*size != -1 && current_index >= *size) {
-            ma.error(value.getLoc(), "excess elements in array initializer");
+        if (index64 >= u32.max) {
+            ma.error(loc, "array index %d is too large", index64);
             return false;
         }
 
+        u32 current_index = (u32)index64;
+
         // check for duplicate entries
-        SrcLoc duplicate = checker.find((u32)current_index);
+        SrcLoc duplicate = checker.find(current_index);
         if (duplicate) {
             ma.error(loc, "duplicate initialization of array index");
             ma.note(duplicate, "previous initialization is here");
+            ok = false;
         } else {
-            checker.add((u32)current_index, loc);
+            checker.add(current_index, loc);
         }
-
         if (current_index > max_index) max_index = current_index;
     }
-    if (*size == -1) *size = max_index + 1;
-    return true;
+    if (!has_size) *size = max_index + 1;
+    return ok;
 }
 
 type FillInfo struct {

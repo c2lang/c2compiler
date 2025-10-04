@@ -79,7 +79,7 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
             }
             Value ctv = ctv_analyser.get_value(initval);
 
-            if (!ctv_analyser.checkRange(ma.diags, implType, &ctv, 0, initval)) return;
+            if (!ctv_analyser.checkTypeRange(ma.diags, implType, &ctv, 0, initval)) return;
 
             if (i > 0 && ctv.is_less(&value)) {
                 value.decr(); // to get the previous value
@@ -88,7 +88,7 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
             }
             value = ctv;
         } else {
-            if (!ctv_analyser.checkRange(ma.diags, implType, &value, cd.getLoc(), nil)) return;
+            if (!ctv_analyser.checkTypeRange(ma.diags, implType, &value, cd.getLoc(), nil)) return;
         }
         c.setValue(value);
         ecd.setChecked();

@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+type S struct {
+    char[16] s1;
+    char[16] s2;
+    char[16] s3;
+}
+
+S s1 = { "hello", "world", "!" }
+
+S s2 = {
+    .s1 = "hello",
+    .s2 = "world",
+    .s3 = "!",
+}

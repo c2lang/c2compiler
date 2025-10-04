@@ -154,7 +154,7 @@ public fn u16 Value.as_u16(Value* v) {
     return (u16)res;
 }
 
-public fn i32 Value.as_i32(Value* v) {
+public fn i32 Value.as_i32(Value* v) @(unused) {
     u64 res = 0;
     if (v.kind == ValueKind.Integer) {
         res = v.uvalue;
