@@ -136,6 +136,13 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         if (expectedType.isPointer()) { // NOTE: will always be single pointer (i.e. not Foo**)
             // auto convert Foo -> Foo*
             if (!baseType.isPointer()) {
+                // TODO: Check if structure is lvalue. If not, we should add a local object to
+                // store the rvalue and use that as the lvalue
+                Expr* base = m.getExprBase();
+                if (base && !base.isLValue()) {
+                    ma.errorRange(m.getLoc(0), base.getRange(), "type function needs lvalue");
+                    return QualType_Invalid;
+                }
                 baseType = ma.builder.actOnPointerType(baseType);
                 m.setConversion(MemberConversion.Addr);
             }

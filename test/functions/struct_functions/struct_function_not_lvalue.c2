@@ -1,0 +1,46 @@
+module test;
+
+import stdio;
+
+type Point struct { i32 x, y; }
+
+fn Point makePoint(i32 x, i32 y) {
+    return { x, y }
+}
+
+fn void Point.print(Point* p) {
+    stdio.printf("{ x=%d, y=%d }\n", p.x, p.y);
+}
+
+fn void f1() {
+    makePoint(3, 4).print();  // @error{type function needs lvalue}
+}
+
+fn void f2() {
+    Point.print(&makePoint(7, 8));  // @error{cannot take the address of an rvalue of type 'test.Point'}
+}
+
+fn void f3() {
+    Point.print(makePoint(7, 8));  // @error{invalid type conversion from 'test.Point' to 'test.Point*'}
+}
+
+fn void f4() {
+    Point.print({ 5, 6 }); // @error{cannot initialize variable of type 'test.Point*' with initializer list}
+}
+
+fn void f5() {
+    //Point.print(&{ 5, 6 }); // generates 'error: expected expression'
+}
+
+fn void f6() {
+    Point p = { 1, 2 }
+    Point.print(p);  // @error{invalid type conversion from 'test.Point' to 'test.Point*'}
+}
+
+public fn i32 main() {
+    Point p = { 1, 2 }
+    p.print();
+    p = makePoint(3, 4);
+    p.print();
+    return 0;
+}
