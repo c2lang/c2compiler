@@ -472,6 +472,7 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
                     result.kind = Kind.Dot;
                 }
             } else if (isdigit(t.cur[0])) {
+                t.cur--;
                 t.lex_number(result);
             } else {
                 result.kind = Kind.Dot;
@@ -639,6 +640,7 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             }
             if (t.stop_at_eol) {
                 result.kind = Kind.Eof;
+                result.len = 0;
                 return;
             }
             t.cur++;
@@ -809,7 +811,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
                     value = (value << 1) + (*p - '0');
                 }
                 p++;
-                if (*p == '_' && isdigit(p[1]))
+                if (*p == '_' && is_binary(p[1]))
                     p++;
             }
             if (*p == '_' || isalnum(*p) || p == start + 2) {
@@ -1374,7 +1376,8 @@ fn bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
                 if (t.raw_mode) {
                     usize len = (usize)(t.cur - start - 2);
                     result.kind = Kind.BlockComment;
-                    result.len = (u16)(len + 2);
+                    result.len = (u16)(len + 4);
+                    result.text_len = (u32)len;
                     result.text_idx = t.pool.add(start, len, false);
                     return true;
                 }
@@ -1420,9 +1423,9 @@ fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
     if (t.raw_mode) {
         if (kind == Kind.Invalid) {
             result.invalid[0] = '#';
-            result.invalid[1] = '\0';
             t.cur = start + 1;
         }
+        result.len = (u16)(t.cur - start);
         return true;
     }
 
