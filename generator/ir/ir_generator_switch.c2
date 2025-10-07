@@ -22,7 +22,7 @@ import ir_context;
 
 fn void Generator.emitSwitchStmt(Generator* gen, const Stmt* s) {
     ir_context.Context* c = gen.ctx;
-    SwitchStmt* sw = cast<SwitchStmt*>(s);
+    SwitchStmt* sw = (SwitchStmt*)s;
 
     Expr* cond = sw.getCond();
     if (cond.isCtv()) {
@@ -132,7 +132,7 @@ fn void Generator.emitStmts(Generator* gen, Stmt** stmts, u32 num_stmts) {
             // skip dead code until a used-label
             while (i<num_stmts) {
                 if (stmts[i].isLabel()) {
-                    const LabelStmt* l = cast<LabelStmt*>(stmts[i]);
+                    const LabelStmt* l = (LabelStmt*)stmts[i];
                     if (l.isUsed()) break;
                 }
                 i++;

@@ -20,7 +20,7 @@ import source_mgr;
 import string_buffer;
 
 fn void Generator.emitVarDecl(Generator* gen, VarDecl* vd, string_buffer.Buf* out, bool emit_init, bool first) {
-    Decl* d = cast<Decl*>(vd);
+    Decl* d = (Decl*)vd;
     if (first) {
         if (vd.hasLocalQualifier()) out.add("static ");
         gen.emitTypePre(out, d.getType());
@@ -51,7 +51,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
     switch (s.getKind()) {
     case Return:
         out.add("return");
-        ReturnStmt* r = cast<ReturnStmt*>(s);
+        ReturnStmt* r = (ReturnStmt*)s;
         ast.Expr* val = r.getValue();
         if (val) {
             out.space();
@@ -63,11 +63,11 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         out.add(";\n");
         break;
     case Expr:
-        gen.emitExpr(out, cast<Expr*>(s));
+        gen.emitExpr(out, (Expr*)s);
         if (newline) out.add(";\n");
         break;
     case If:
-        IfStmt* i = cast<IfStmt*>(s);
+        IfStmt* i = (IfStmt*)s;
         Stmt* cond = i.getCond();
         bool is_decl = cond.isDecl();
         if (is_decl) {
@@ -76,7 +76,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
             gen.emitStmt(cond, indent, true);
             out.indent(indent);
             out.add("if (");
-            DeclStmt* ds = cast<DeclStmt*>(cond);
+            DeclStmt* ds = (DeclStmt*)cond;
             VarDecl* vd = ds.getDecl(0);
             out.add(vd.asDecl().getName());
         } else {
@@ -113,13 +113,13 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         }
         break;
     case While:
-        WhileStmt* w = cast<WhileStmt*>(s);
+        WhileStmt* w = (WhileStmt*)s;
         Stmt* cond = w.getCond();
         bool is_decl = cond.isDecl();
         if (is_decl) {
             out.add("{\n");
             indent++;
-            DeclStmt* ds = cast<DeclStmt*>(cond);
+            DeclStmt* ds = (DeclStmt*)cond;
             VarDecl* vd = ds.getDecl(0);
             out.indent(indent);
             gen.emitVarDecl(vd, out, false, true);
@@ -152,7 +152,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         }
         break;
     case For:
-        ForStmt* f = cast<ForStmt*>(s);
+        ForStmt* f = (ForStmt*)s;
         out.add("for (");
         Stmt* initStmt = f.getInit();
         if (initStmt) {
@@ -178,7 +178,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         out.newline();
         break;
     case Switch:
-        gen.emitSwitchStmt(cast<SwitchStmt*>(s), indent);
+        gen.emitSwitchStmt((SwitchStmt*)s, indent);
         break;
     case Break:
         out.add("break;\n");
@@ -191,7 +191,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         break;
     case Label:
         out.unindent();
-        LabelStmt* ls = cast<LabelStmt*>(s);
+        LabelStmt* ls = (LabelStmt*)s;
         Stmt* stmt = ls.getStmt();
         out.add(ls.getName());
         out.add1(':');
@@ -204,13 +204,13 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         }
         break;
     case Goto:
-        GotoStmt* g = cast<GotoStmt*>(s);
+        GotoStmt* g = (GotoStmt*)s;
         out.add("goto ");
         out.add(g.getName());
         out.add(";\n");
         break;
     case Compound:
-        CompoundStmt* c = cast<CompoundStmt*>(s);
+        CompoundStmt* c = (CompoundStmt*)s;
         out.add("{\n");
         u32 count = c.getCount();
         Stmt** stmts = c.getStmts();
@@ -223,7 +223,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         if (newline) out.newline();
         break;
     case Decl:
-        DeclStmt* ds = cast<DeclStmt*>(s);
+        DeclStmt* ds = (DeclStmt*)s;
         u32 count = ds.getDeclCount();
         bool first = true;
         for (u32 i = 0; i < count; i++) {
@@ -234,11 +234,11 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         if (newline) out.add(";\n");
         break;
     case Asm:
-        gen.emitAsmStmt(cast<AsmStmt*>(s), indent);
+        gen.emitAsmStmt((AsmStmt*)s, indent);
         break;
     case Assert:
         if (!gen.enable_asserts) out.print(";//assert");
-        AssertStmt* a = cast<AssertStmt*>(s);
+        AssertStmt* a = (AssertStmt*)s;
         out.add1('(');
         Expr* inner = a.getInner();
         gen.emitExpr(out, inner);
@@ -274,7 +274,7 @@ fn void Generator.emitAsmOperand(Generator* gen, u32 name, const Expr* c, Expr* 
     if (name) {
         out.print("[%s] ", ast.idx2name(name));
     }
-    const StringLiteral* cs = cast<StringLiteral*>(c);
+    const StringLiteral* cs = (StringLiteral*)c;
     cs.printLiteral(out);
     out.add(" (");
     gen.emitExpr(out, e);
@@ -322,7 +322,7 @@ fn void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
             emitAsmPart(out, multi_line, indent);
             for (u32 i=0; i<num_clobbers; i++) {
                 if (i!=0) out.add(", ");
-                StringLiteral* l = cast<StringLiteral*>(clobbers[i]);
+                StringLiteral* l = (StringLiteral*)clobbers[i];
                 l.printLiteral(out);
             }
         }
@@ -349,13 +349,13 @@ fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
                 continue;
             Expr* e = c.getCond(0);
             if (e.isImplicitCast()) {
-                const ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
+                const ImplicitCastExpr* ic = (ImplicitCastExpr*)e;
                 e = ic.getInner();
             }
             if (e.isNil())
                 continue;
             if (e.isStringLiteral()) {
-                StringLiteral* lit = cast<StringLiteral*>(e);
+                StringLiteral* lit = (StringLiteral*)e;
                 const char *str = lit.getText();
                 u32 slen = (lit.getSize() - 1) & 0xFF;
                 if (slen) {
@@ -404,14 +404,14 @@ fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) 
         if (lab) {  /* string case */
             Expr* e = c.getCond(0);
             if (e.isImplicitCast()) {
-                const ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
+                const ImplicitCastExpr* ic = (ImplicitCastExpr*)e;
                 e = ic.getInner();
             }
             if (e.isNil()) {
                 out.print("0:%s // nil\n", brace);
             } else
             if (e.isStringLiteral()) {
-                StringLiteral* lit = cast<StringLiteral*>(e);
+                StringLiteral* lit = (StringLiteral*)e;
                 const char *str = lit.getText();
                 u32 slen = (lit.getSize() - 1) & 0xFF;
                 u32 num = 1;

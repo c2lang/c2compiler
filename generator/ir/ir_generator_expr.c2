@@ -37,7 +37,7 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         assert(0);  // should be handled by CTV above
         break;
     case StringLiteral:
-        StringLiteral* s = cast<StringLiteral*>(e);
+        StringLiteral* s = (StringLiteral*)e;
 
         SymbolId id = gen.ctx.addStringLiteral(gen.createStringVar(), s.getText(), s.getSize());
         ir.Ref ref;
@@ -82,18 +82,18 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         gen.emitMemberExpr(result, e);
         break;
     case Paren:
-        ParenExpr* p = cast<ParenExpr*>(e);
+        ParenExpr* p = (ParenExpr*)e;
         gen.emitExpr(result, p.getInner());
         break;
     case BitOffset:
         assert(0); // TODO
         break;
     case ExplicitCast:
-        ExplicitCastExpr* ec = cast<ExplicitCastExpr*>(e);
+        ExplicitCastExpr* ec = (ExplicitCastExpr*)e;
         gen.emitExpr(result, ec.getInner());
         break;
     case ImplicitCast:
-        ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
+        ImplicitCastExpr* ic = (ImplicitCastExpr*)e;
         switch (ic.getKind()) {
         case ArrayToPointerDecay:
             // just ignore, pass inner
@@ -129,7 +129,7 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
 }
 
 fn void Generator.emitIdentifier(Generator* gen, ir.Ref* result, const Expr* e) {
-    IdentifierExpr* i = cast<IdentifierExpr*>(e);
+    IdentifierExpr* i = (IdentifierExpr*)e;
 
     switch (i.getKind()) {
     case Unresolved:
@@ -163,7 +163,7 @@ fn void Generator.emitSymbol(Generator* gen, ir.Ref* result, Decl* d) {
 }
 
 fn void Generator.emitVarDecl(Generator* gen, ir.Ref* result, Decl* d) {
-    const VarDecl* vd = cast<VarDecl*>(d);
+    const VarDecl* vd = (VarDecl*)d;
     if (vd.isGlobal()) {
         gen.emitSymbol(result, d);
     } else if (vd.hasLocalQualifier()) {
@@ -186,7 +186,7 @@ fn void Generator.emitVarDecl(Generator* gen, ir.Ref* result, Decl* d) {
 
 fn void Generator.emitCondOperator(Generator* gen, ir.Ref* result, const Expr* e) {
     ir_context.Context* c = gen.ctx;
-    const ConditionalOperator* co = cast<ConditionalOperator*>(e);
+    const ConditionalOperator* co = (ConditionalOperator*)e;
 
     //a = cond ? b : c;
     // ->
@@ -221,7 +221,7 @@ fn void Generator.emitCondOperator(Generator* gen, ir.Ref* result, const Expr* e
 }
 
 fn void Generator.emitUnaryOperator(Generator* gen, ir.Ref* result, const Expr* e) {
-    const UnaryOperator* uo = cast<UnaryOperator*>(e);
+    const UnaryOperator* uo = (UnaryOperator*)e;
 
     switch (uo.getOpcode()) {
     case PostInc:
@@ -358,7 +358,7 @@ fn void Generator.emitCond(Generator* gen, const Expr* e, BlockId true_blk, Bloc
     case Member:
         break;
     case Paren:
-        ParenExpr* p = cast<ParenExpr*>(e);
+        ParenExpr* p = (ParenExpr*)e;
         gen.emitCond(p.getInner(), true_blk, false_blk, start_blk);
         return;
     case BitOffset:
@@ -395,7 +395,7 @@ fn void Generator.emitAssignCond(Generator* gen, ir.Type t, ir.Ref lhs, ir.Ref r
 
 // return true if it was handled
 fn bool Generator.emitBinaryCond(Generator* gen, const Expr* e, BlockId left, BlockId right, BlockId start) {
-    const BinaryOperator* b = cast<BinaryOperator*>(e);
+    const BinaryOperator* b = (BinaryOperator*)e;
 
     InstrKind k;
     switch (b.getOpcode()) {
@@ -463,7 +463,7 @@ fn void Generator.emitOrCond(Generator* gen, const BinaryOperator* b, BlockId tr
 }
 
 fn void Generator.emitBuiltin(Generator* gen, ir.Ref* result, const Expr* e) {
-    const BuiltinExpr* bi = cast<BuiltinExpr*>(e);
+    const BuiltinExpr* bi = (BuiltinExpr*)e;
     switch (bi.getKind()) {
     case Sizeof:
     case Elemsof:
@@ -490,7 +490,7 @@ fn void Generator.emitBuiltin(Generator* gen, ir.Ref* result, const Expr* e) {
 }
 
 fn void Generator.emitArraySubscript(Generator* gen, ir.Ref* result, const Expr* e) {
-    const ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+    const ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
     Expr* base = a.getBase();
     Expr* index = a.getIndex();
     QualType qt = base.getType();
@@ -564,7 +564,7 @@ fn void Generator.emitStructInitExpr(Generator* gen, const StackVar* var, const 
         FieldStructLayouter layouter;
         layouter.init(gen, std.getSize(), std.getDesigMemberCount());
         for (u32 i=0; i<num_values; i++) {
-            FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(values[i]);
+            FieldDesignatedInitExpr* fdi = (FieldDesignatedInitExpr*)values[i];
             const FieldInitField* fif = fdi.getMemberInfo();
             if (!fif.isZeroSizeBitfield()) {
                 layouter.add(fif, fdi.getInit());

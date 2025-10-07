@@ -21,7 +21,7 @@ import string local;
 public fn char* toLower(const char* input, char* output) @(unused) {
     usize i;
     for (i = 0; input[i]; i++) {
-        output[i] = cast<char>(toupper(input[i]));
+        output[i] = (char)toupper(input[i]);
     }
     output[i] = '\0';
     return output;
@@ -30,7 +30,7 @@ public fn char* toLower(const char* input, char* output) @(unused) {
 public fn char* toUpper(const char* input, char* output) @(unused) {
     usize i;
     for (i = 0; input[i]; i++) {
-        output[i] = cast<char>(toupper(input[i]));
+        output[i] = (char)toupper(input[i]);
     }
     output[i] = '\0';
     return output;

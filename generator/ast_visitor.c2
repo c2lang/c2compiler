@@ -46,13 +46,13 @@ public fn void Visitor.handleAssert(Visitor* v, StaticAssert* a) @(unused) {
 public fn void Visitor.handle(Visitor* v, Decl* d) {
     switch (d.getKind()) {
     case Function:
-        v.handleFunction(cast<FunctionDecl*>(d));
+        v.handleFunction((FunctionDecl*)d);
         break;
     case Import:
         // TODO
         break;
     case StructType:
-        StructTypeDecl* s = cast<StructTypeDecl*>(d);
+        StructTypeDecl* s = (StructTypeDecl*)d;
         u32 num_members = s.getNumMembers();
         Decl** members = s.getMembers();
         for (u32 i=0; i<num_members; i++) {
@@ -62,20 +62,20 @@ public fn void Visitor.handle(Visitor* v, Decl* d) {
     case EnumType:
         break;
     case EnumConstant:
-        const EnumConstantDecl* ecd = cast<EnumConstantDecl*>(d);
+        const EnumConstantDecl* ecd = (EnumConstantDecl*)d;
         Expr* init_expr = ecd.getInit();
         if (init_expr) v.handleExpr(init_expr);
         break;
     case FunctionType:
-        FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
+        FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;
         v.handleFunction(ftd.getDecl());
         break;
     case AliasType:
-        AliasTypeDecl* atd = cast<AliasTypeDecl*>(d);
+        AliasTypeDecl* atd = (AliasTypeDecl*)d;
         v.handleTypeRef(atd.getTypeRef());
         break;
     case Variable:
-        v.handleVarDecl(cast<VarDecl*>(d));
+        v.handleVarDecl((VarDecl*)d);
         break;
     }
 }
@@ -138,27 +138,27 @@ fn void Visitor.handleType(Visitor* v, QualType qt) {
 fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
     switch (s.getKind()) {
     case Return:
-        ReturnStmt* r = cast<ReturnStmt*>(s);
+        ReturnStmt* r = (ReturnStmt*)s;
         Expr* e = r.getValue();
         if (e) v.handleExpr(e);
         break;
     case Expr:
-        v.handleExpr(cast<Expr*>(s));
+        v.handleExpr((Expr*)s);
         break;
     case If:
-        IfStmt* i = cast<IfStmt*>(s);
+        IfStmt* i = (IfStmt*)s;
         v.handleStmt(i.getCond());
         v.handleStmt(i.getThen());
         Stmt* e = i.getElse();
         if (e) v.handleStmt(e);
         break;
     case While:
-        WhileStmt* w = cast<WhileStmt*>(s);
+        WhileStmt* w = (WhileStmt*)s;
         v.handleStmt(w.getCond());
         v.handleStmt(w.getBody());
         break;
     case For:
-        ForStmt* f = cast<ForStmt*>(s);
+        ForStmt* f = (ForStmt*)s;
         Stmt* in = f.getInit();
         if (in) v.handleStmt(in);
         Expr* cond = f.getCond();
@@ -169,7 +169,7 @@ fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
         if (body) v.handleStmt(body);
         break;
     case Switch:
-        SwitchStmt* sw = cast<SwitchStmt*>(s);
+        SwitchStmt* sw = (SwitchStmt*)s;
         v.handleExpr(sw.getCond());
         const u32 numcases = sw.getNumCases();
         SwitchCase** cases = sw.getCases();
@@ -188,7 +188,7 @@ fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
     case Fallthrough:
         break;
     case Label:
-        LabelStmt* ls = cast<LabelStmt*>(s);
+        LabelStmt* ls = (LabelStmt*)s;
         ast.Stmt* stmt = ls.getStmt();
         if (stmt) v.handleStmt(stmt);
         break;
@@ -196,17 +196,17 @@ fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
         // TODO need dest in GotoStmt
         break;
     case Compound:
-        v.handleCompoundStmt(cast<CompoundStmt*>(s));
+        v.handleCompoundStmt((CompoundStmt*)s);
         break;
     case Decl:
-        DeclStmt* d = cast<DeclStmt*>(s);
+        DeclStmt* d = (DeclStmt*)s;
         u32 count = d.getDeclCount();
         for (u32 i = 0; i < count; i++) {
             v.handleVarDecl(d.getDecl(i));
         }
         break;
     case Asm:
-        AsmStmt* a = cast<AsmStmt*>(s);
+        AsmStmt* a = (AsmStmt*)s;
         u32 num_exprs = a.getNumExprs();
         Expr** exprs = a.getExprs();
         for (u32 i=0; i<num_exprs; i++) {
@@ -214,7 +214,7 @@ fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
         }
         break;
     case Assert:
-        AssertStmt* a = cast<AssertStmt*>(s);
+        AssertStmt* a = (AssertStmt*)s;
         v.handleExpr(a.getInner());
         break;
     }

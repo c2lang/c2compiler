@@ -21,26 +21,26 @@ import string_buffer;
 fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
-        IntegerLiteral.printLiteral(cast<IntegerLiteral*>(e), out, false);
+        IntegerLiteral.printLiteral((IntegerLiteral*)e, out, false);
         break;
     case FloatLiteral:
-        FloatLiteral.printLiteral(cast<FloatLiteral*>(e), out);
+        FloatLiteral.printLiteral((FloatLiteral*)e, out);
         break;
     case BooleanLiteral:
-        BooleanLiteral.printLiteral(cast<BooleanLiteral*>(e), out);
+        BooleanLiteral.printLiteral((BooleanLiteral*)e, out);
         break;
     case CharLiteral:
-        CharLiteral.printLiteral(cast<CharLiteral*>(e), out);
+        CharLiteral.printLiteral((CharLiteral*)e, out);
         break;
     case StringLiteral:
-        StringLiteral.printLiteral(cast<StringLiteral*>(e), out);
+        StringLiteral.printLiteral((StringLiteral*)e, out);
         break;
     case Nil:
         out.add("nil");
         break;
     case Identifier:
         // add prefix if external
-        const IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        const IdentifierExpr* i = (IdentifierExpr*)e;
         Decl* d = i.getDecl();
         if (d.getModule() != gen.mod) {
             out.add(d.getFullName());
@@ -54,10 +54,10 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         gen.emitTypePost(out, e.getType());
         break;
     case Call:
-        gen.emitCall(out, cast<CallExpr*>(e));
+        gen.emitCall(out, (CallExpr*)e);
         break;
     case InitList:
-        InitListExpr* ile = cast<InitListExpr*>(e);
+        InitListExpr* ile = (InitListExpr*)e;
         out.add1('{');
         u32 num_values = ile.getNumValues();
         Expr** values = ile.getValues();
@@ -78,19 +78,19 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         out.add1('}');
         break;
     case FieldDesignatedInit:
-        gen.emitFieldDesigExpr(out, cast<FieldDesignatedInitExpr*>(e));
+        gen.emitFieldDesigExpr(out, (FieldDesignatedInitExpr*)e);
         break;
     case ArrayDesignatedInit:
-        gen.emitArrayDesigExpr(out, cast<ArrayDesignatedInitExpr*>(e));
+        gen.emitArrayDesigExpr(out, (ArrayDesignatedInitExpr*)e);
         break;
     case BinaryOperator:
-        gen.emitBinaryOperator(out, cast<BinaryOperator*>(e));
+        gen.emitBinaryOperator(out, (BinaryOperator*)e);
         break;
     case UnaryOperator:
-        gen.emitUnaryOperator(out, cast<UnaryOperator*>(e));
+        gen.emitUnaryOperator(out, (UnaryOperator*)e);
         break;
     case ConditionalOperator:
-        ConditionalOperator* c = cast<ConditionalOperator*>(e);
+        ConditionalOperator* c = (ConditionalOperator*)e;
         gen.emitExpr(out, c.getCond());
         out.add(" ? ");
         gen.emitExpr(out, c.getLHS());
@@ -98,51 +98,51 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         gen.emitExpr(out, c.getRHS());
         break;
     case Builtin:
-        gen.emitBuiltinExpr(out, cast<BuiltinExpr*>(e));
+        gen.emitBuiltinExpr(out, (BuiltinExpr*)e);
         break;
     case ArraySubscript:
-        const ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+        const ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
         gen.emitExpr(out, a.getBase());
         out.add1('[');
         gen.emitExpr(out, a.getIndex());
         out.add1(']');
         break;
     case Member:
-        gen.emitMemberExpr(out, cast<MemberExpr*>(e));
+        gen.emitMemberExpr(out, (MemberExpr*)e);
         break;
     case Paren:
-        const ParenExpr* p = cast<ParenExpr*>(e);
+        const ParenExpr* p = (ParenExpr*)e;
         out.lparen();
         gen.emitExpr(out, p.getInner());
         out.rparen();
         break;
     case BitOffset:
-        const BitOffsetExpr* bo = cast<BitOffsetExpr*>(e);
+        const BitOffsetExpr* bo = (BitOffsetExpr*)e;
         gen.emitExpr(out, bo.getLHS());
         out.add(" : ");
         gen.emitExpr(out, bo.getRHS());
         break;
     case ExplicitCast:
-        ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
+        ExplicitCastExpr* c = (ExplicitCastExpr*)e;
         if (c.getCStyle()) {
             out.add1('(');
             gen.emitTypePre(out, c.getDestType());
             out.add1(')');
             gen.emitExpr(out, c.getInner());
         } else {
-            out.add("cast<");
+            out.add1('(');
             gen.emitTypePre(out, c.getDestType());
-            out.add(">(");
+            out.add(")(");
             gen.emitExpr(out, c.getInner());
             out.add1(')');
         }
         break;
     case ImplicitCast:
-        const ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
+        const ImplicitCastExpr* i = (ImplicitCastExpr*)e;
         gen.emitExpr(out, i.getInner());
         break;
     case Range:
-        const RangeExpr* b = cast<RangeExpr*>(e);
+        const RangeExpr* b = (RangeExpr*)e;
         gen.emitExpr(out, b.getLHS());
         out.add(" ... ");
         gen.emitExpr(out, b.getRHS());
@@ -234,7 +234,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, const CallExp
 
     Expr* func = call.getFunc();
     assert(func.getKind() == ExprKind.ImplicitCast);
-    ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(func);
+    ImplicitCastExpr* ic = (ImplicitCastExpr*)func;
     func = ic.getInner();
 
     gen.emitExpr(out, func);

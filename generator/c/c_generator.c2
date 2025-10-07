@@ -170,7 +170,7 @@ fn void Generator.emitCNameMod(Generator* /*gen*/, string_buffer.Buf* out, const
     out.add(mod.getName());
     out.add1('_');
     if (d.isFunction()) {
-        FunctionDecl* fd = cast<FunctionDecl*>(d);
+        FunctionDecl* fd = (FunctionDecl*)d;
         Ref* prefix = fd.getPrefix();
         if (prefix) {
             out.add(ast.idx2name(prefix.name_idx));
@@ -179,7 +179,7 @@ fn void Generator.emitCNameMod(Generator* /*gen*/, string_buffer.Buf* out, const
     }
     if (d.isEnumConstant()) {
         QualType qt = d.getType();
-        EnumType* et = cast<EnumType*>(qt.getType());
+        EnumType* et = (EnumType*)qt.getType();
         out.add(et.getName());
         out.add1('_');
     }
@@ -188,7 +188,7 @@ fn void Generator.emitCNameMod(Generator* /*gen*/, string_buffer.Buf* out, const
 
 fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
     if (d.isVariable()) {
-        VarDecl* vd = cast<VarDecl*>(d);
+        VarDecl* vd = (VarDecl*)d;
         if (!vd.isGlobal()) {
             out.add(d.getName());
             return;
@@ -198,7 +198,7 @@ fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, const Dec
 }
 
 fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, Decl* d) {
-    EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
+    EnumTypeDecl* etd = (EnumTypeDecl*)d;
 
     // typedef enum types to their implementation type
     out.add("typedef ");
@@ -260,39 +260,39 @@ fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType q
 
     switch (qt.getKind()) {
     case Builtin:
-        BuiltinType* bt = cast<BuiltinType*>(qt.getType());
+        BuiltinType* bt = (BuiltinType*)qt.getType();
         out.add(builtinType_cnames[bt.getKind()]);
         return;
     case Pointer:
-        PointerType* pt = cast<PointerType*>(qt.getType());
+        PointerType* pt = (PointerType*)qt.getType();
         gen.emitTypePre(out, pt.getInner());
         out.add1('*');
         return;
     case Array:
-        ArrayType* at = cast<ArrayType*>(qt.getType());
+        ArrayType* at = (ArrayType*)qt.getType();
         gen.emitTypePre(out, at.getElemType());
         return;
     case Struct:
-        StructType* st = cast<StructType*>(qt.getType());
+        StructType* st = (StructType*)qt.getType();
         StructTypeDecl* std = st.getDecl();
         if (std.hasAttrNoTypeDef()) {
             out.add(std.isStruct() ? "struct " : "union ");
         }
 
-        decl = cast<Decl*>(st.getDecl());
+        decl = (Decl*)st.getDecl();
         break;
     case Enum:
-        EnumType* et = cast<EnumType*>(qt.getType());
-        decl = cast<Decl*>(et.getDecl());
+        EnumType* et = (EnumType*)qt.getType();
+        decl = (Decl*)et.getDecl();
         break;
     case Function:
-        FunctionType* ft = cast<FunctionType*>(qt.getType());
+        FunctionType* ft = (FunctionType*)qt.getType();
         FunctionDecl* fd = ft.getDecl();
-        decl = cast<Decl*>(fd);
+        decl = (Decl*)fd;
         break;
     case Alias:
-        AliasType* at = cast<AliasType*>(qt.getType());
-        decl = cast<Decl*>(at.getDecl());
+        AliasType* at = (AliasType*)qt.getType();
+        decl = (Decl*)at.getDecl();
         break;
     case Module:
         assert(0);
@@ -304,7 +304,7 @@ fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType q
 
 fn void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
     if (!qt.isArray()) return;
-    ArrayType* at = cast<ArrayType*>(qt.getType());
+    ArrayType* at = (ArrayType*)qt.getType();
 
     out.add1('[');
     if (at.hasSize()) out.print("%d", at.getSize());
@@ -316,7 +316,7 @@ fn void Generator.genDeclIfNeeded(Generator* gen, Decl* d) {
     if (d.isGenerated()) return;
 
     if (d.isVariable()) {
-        VarDecl* vd = cast<VarDecl*>(d);
+        VarDecl* vd = (VarDecl*)d;
         if (!vd.isGlobal()) return;
     }
 
@@ -330,30 +330,30 @@ fn void Generator.genTypeIfNeeded(Generator* gen, QualType qt, bool full) {
     case Builtin:
         return;
     case Pointer:
-        PointerType* pt = cast<PointerType*>(qt.getType());
+        PointerType* pt = (PointerType*)qt.getType();
         gen.genTypeIfNeeded(pt.getInner(), false);
         return;
     case Array:
-        ArrayType* at = cast<ArrayType*>(qt.getType());
+        ArrayType* at = (ArrayType*)qt.getType();
         gen.genTypeIfNeeded(at.getElemType(), true);
         return;
     case Struct:
-        StructType* st = cast<StructType*>(qt.getType());
+        StructType* st = (StructType*)qt.getType();
         if (!full) return;
-        d = cast<Decl*>(st.getDecl());
+        d = (Decl*)st.getDecl();
         break;
     case Enum:
-        EnumType* et = cast<EnumType*>(qt.getType());
-        d = cast<Decl*>(et.getDecl());
+        EnumType* et = (EnumType*)qt.getType();
+        d = (Decl*)et.getDecl();
         break;
     case Function:
-        FunctionType* ft = cast<FunctionType*>(qt.getType());
+        FunctionType* ft = (FunctionType*)qt.getType();
         FunctionDecl* fd = ft.getDecl();
-        d = cast<Decl*>(fd);
+        d = (Decl*)fd;
         break;
     case Alias:
-        AliasType* at = cast<AliasType*>(qt.getType());
-        d = cast<Decl*>(at.getDecl());
+        AliasType* at = (AliasType*)qt.getType();
+        d = (Decl*)at.getDecl();
         break;
     case Module:
         assert(0);
@@ -383,7 +383,7 @@ fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl*
         if (d.getNameIdx()) out.add(d.getName());
         gen.emitTypePost(out, qt);
 
-        VarDecl* vd = cast<VarDecl*>(d);
+        VarDecl* vd = (VarDecl*)d;
         Expr* bitfield = vd.getBitfield();
         if (bitfield) {
             out.add(" : ");
@@ -398,7 +398,7 @@ fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl*
 }
 
 fn void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
-    StructTypeDecl* std = cast<StructTypeDecl*>(d);
+    StructTypeDecl* std = (StructTypeDecl*)d;
     if (std.isGlobal()) {
         if (std.isStruct()) out.add("struct ");
         else out.add("union ");
@@ -433,7 +433,7 @@ fn void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, u3
 }
 
 fn void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Decl* d) {
-    FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
+    FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;
     FunctionDecl* fd = ftd.getDecl();
     fd.asDecl().setGenerated();
 
@@ -445,7 +445,7 @@ fn void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Decl*
     u32 num_params = fd.getNumParams();
     VarDecl** params = fd.getParams();
     for (u32 i=0; i<num_params; i++) {
-        Decl* arg = cast<Decl*>(params[i]);
+        Decl* arg = (Decl*)params[i];
         if (i != 0) out.add(", ");
         gen.emitTypePre(out, arg.getType());
         const char* name = arg.getName();
@@ -508,7 +508,7 @@ fn void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* d)
 }
 
 fn bool emitAsDefine(const VarDecl* vd) {
-    const Decl* d = cast<Decl*>(vd);
+    const Decl* d = (Decl*)vd;
     QualType qt = d.getType();
     QualType canon = qt.getCanonicalType();
     if (vd.isAddrUsed()) return false;
@@ -548,7 +548,7 @@ fn void Generator.emitGlobalVarDeclCommon(Generator* gen, string_buffer.Buf* out
         gen.emitCName(out, d);
         gen.emitTypePost(out, qt);
     }
-    VarDecl* vd = cast<VarDecl*>(d);
+    VarDecl* vd = (VarDecl*)d;
     if (vd.hasAttrWeak()) out.add(" __attribute__((weak))");
 
     const char* section = d.getSection();
@@ -559,7 +559,7 @@ fn void Generator.emitGlobalVarDeclCommon(Generator* gen, string_buffer.Buf* out
 }
 
 fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl* d) {
-    VarDecl* vd = cast<VarDecl*>(d);
+    VarDecl* vd = (VarDecl*)d;
 
     // emit 'simple'-constants as a defines
     if (emitAsDefine(vd)) {
@@ -645,7 +645,7 @@ fn void Generator.emitAutoInit(Generator* gen, string_buffer.Buf* out, QualType 
 
 fn void Generator.on_public_import_decl(void* arg, ImportDecl* i) {
     Generator* gen = arg;
-    Decl* d = cast<Decl*>(i);
+    Decl* d = (Decl*)i;
 
     if (!d.isUsedPublic()) return;
 
@@ -658,7 +658,7 @@ fn void Generator.on_public_import_decl(void* arg, ImportDecl* i) {
 
 fn void Generator.on_private_import_decl(void* arg, ImportDecl* i) {
     Generator* gen = arg;
-    Decl* d = cast<Decl*>(i);
+    Decl* d = (Decl*)i;
 
     if (d.isUsedPublic()) return;
 
@@ -680,7 +680,7 @@ fn void Generator.on_forward_structs(void* arg, Decl* d) {
 }
 
 fn void Generator.emitForwardStructDecl(Generator* gen, Decl* d, string_buffer.Buf* out) {
-    StructTypeDecl* std = cast<StructTypeDecl*>(d);
+    StructTypeDecl* std = (StructTypeDecl*)d;
     if (std.hasAttrNoTypeDef()) return;
 
     out.add("typedef ");
@@ -704,7 +704,7 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
 
     switch (d.getKind()) {
     case Function:
-        FunctionDecl* fd = cast<FunctionDecl*>(d);
+        FunctionDecl* fd = (FunctionDecl*)d;
         if (fd.isTemplate()) break;
 
         string_buffer.Buf* out = gen.getBuf(d.isPublic());
@@ -714,7 +714,7 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
             out.newline();
             string_buffer.Buf* saved = gen.out;
             gen.out = out;
-            gen.emitStmt(cast<ast.Stmt*>(fd.getBody()), 0, true);
+            gen.emitStmt((ast.Stmt*)fd.getBody(), 0, true);
             gen.out = saved;
             out.newline();
         } else {
@@ -724,7 +724,7 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     case Import:
         break;
     case StructType:
-        StructTypeDecl* std = cast<StructTypeDecl*>(d);
+        StructTypeDecl* std = (StructTypeDecl*)d;
         Fragment* f = gen.getFragment();
         gen.emitStruct(f.buf, d, 0);
         gen.addFragment(f, d.isPublic() && !std.isOpaque());
@@ -795,7 +795,7 @@ fn void Generator.on_decl(void* arg, Decl* d) {
         // no need to generate includes in normal build since everything is in a single file
         if (!gen.fast_build) return;
         // dont generate include "x.h" in x.h
-        ImportDecl* id = cast<ImportDecl*>(d);
+        ImportDecl* id = (ImportDecl*)d;
         if (gen.cur_external && gen.mod == id.getDest()) return;
     }
 
@@ -810,7 +810,7 @@ fn void Generator.on_ast_decl(void* arg, AST* a) {
 
 fn void Generator.gen_member_type_func(Generator* gen, FunctionDecl* fd, string_buffer.Buf* out, const char* name) {
     // generate something like: void (*name)(void* arg);\n
-    Decl* d = cast<Decl*>(fd);
+    Decl* d = (Decl*)fd;
 
     gen.emitTypePre(out, fd.getRType());
     out.print(" (*%s)", name);
@@ -819,7 +819,7 @@ fn void Generator.gen_member_type_func(Generator* gen, FunctionDecl* fd, string_
 }
 
 fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer.Buf* out) {
-    Decl* d = cast<Decl*>(fd);
+    Decl* d = (Decl*)fd;
 
     // TODO: add function definition location to gen.funcdata
 
@@ -878,7 +878,7 @@ fn void Generator.emitFuncParams(Generator* gen, FunctionDecl* fd, string_buffer
 
     VarDecl** params = fd.getParams();
     for (u32 i=0; i<num_params; i++) {
-        Decl* argx = cast<Decl*>(params[i]);
+        Decl* argx = (Decl*)params[i];
         if (i != 0) out.add(", ");
         gen.emitTypePre(out, argx.getType());
         out.space();
@@ -906,7 +906,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     string_buffer.Buf* saved = gen.out;
     gen.out = out;
 
-    gen.emitStmt(cast<ast.Stmt*>(fd.getBody()), 0, true);
+    gen.emitStmt((ast.Stmt*)fd.getBody(), 0, true);
     out.newline();
 
     gen.out = saved;    // restore saved gen.out
@@ -939,7 +939,7 @@ fn void Generator.gen_full_funcs(void* arg, AST* a) {
 
 fn void Generator.on_interface_import(void* arg, ImportDecl* i) {
     Generator* gen = arg;
-    Decl* d = cast<Decl*>(i);
+    Decl* d = (Decl*)i;
 
     if (!d.isUsedPublic()) return;
 
@@ -965,7 +965,7 @@ fn void Generator.on_interface_decl(void* arg, Decl* d) {
     if (d.isStructType()) {
         gen.emitForwardStructDecl(d, gen.header);
         gen.header.newline();
-        StructTypeDecl* std = cast<StructTypeDecl*>(d);
+        StructTypeDecl* std = (StructTypeDecl*)d;
         if (std.isOpaque()) return; // dont add
     }
     // For C header we need to sort the decls, just collect all decls first
@@ -1022,12 +1022,12 @@ fn void Generator.emitHeaderDecl(Generator* gen, Decl* d) {
     // TODO refactor to common code with normal C generation (currently uses fragments)
     switch (d.getKind()) {
     case Function:
-        FunctionDecl* fd = cast<FunctionDecl*>(d);
+        FunctionDecl* fd = (FunctionDecl*)d;
         if (fd.isTemplate()) break;
         gen.gen_func_proto(fd, out);
         if (fd.isInline()) {
             out.newline();
-            gen.emitStmt(cast<ast.Stmt*>(fd.getBody()), 0, true);
+            gen.emitStmt((ast.Stmt*)fd.getBody(), 0, true);
             out.newline();
         } else {
             out.add(";\n");

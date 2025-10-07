@@ -22,7 +22,7 @@ import ir_context;
 
 // NOTE: should not be used for LHS bitfields!
 fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) {
-    const MemberExpr* m = cast<MemberExpr*>(e);
+    const MemberExpr* m = (MemberExpr*)e;
     ir_context.Context* c = gen.ctx;
 
     u32 tail = 0;

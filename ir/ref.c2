@@ -75,7 +75,7 @@ fn bool Ref.equals(const Ref* r1, Ref r2) {
 }
 
 public fn RefKind Ref.getKind(const Ref* r) {
-    return cast<RefKind>(r.kind);
+    return (RefKind)r.kind;
 }
 
 public fn bool Ref.isValid(const Ref* r) {

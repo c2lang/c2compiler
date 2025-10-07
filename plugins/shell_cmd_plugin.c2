@@ -134,7 +134,7 @@ fn bool parse_config(yaml.Parser* parser, const char* config_file, string_buffer
         // TODO check variable (capital case?)
 
         const char* timeout = iter.getChildScalarValue("timeout");
-        if (timeout) c.timeout_sec = cast<u32>(atoi(timeout));
+        if (timeout) c.timeout_sec = (u32)atoi(timeout);
         else c.timeout_sec = 1;
 
         if (!run_cmd(&c, out)) return false;
@@ -153,7 +153,7 @@ fn bool run_cmd(Cmd* cmd, string_buffer.Buf* out) {
     usize args_off = cmd_len + strspn(cmd.cmd + cmd_len, " \t");
     if (cmd_len >= sizeof(cmd_str)) {
         console.error("shell_cmd: command too long '%.*s'",
-                      cast<i32>(cmd_len), cmd.cmd);
+                      (i32)cmd_len, cmd.cmd);
         return false;
     }
     memcpy(cmd_str, cmd.cmd, cmd_len);
@@ -171,7 +171,7 @@ fn bool run_cmd(Cmd* cmd, string_buffer.Buf* out) {
     }
 
     out.print("public const char[] %s = \"", cmd.variable);
-    out.encodeBytes(output, cast<u32>(strlen(output)), '"');
+    out.encodeBytes(output, (u32)strlen(output), '"');
     out.add("\";\n\n");
     return true;
 }

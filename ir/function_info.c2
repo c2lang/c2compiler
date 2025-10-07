@@ -66,7 +66,7 @@ public fn void FunctionInfo.addArg(FunctionInfo* fi, ir.Type t) {
 
 public fn Type FunctionInfo.getReturnType(const FunctionInfo* fi) {
     if (fi.num_args == 0) return Type.None;
-    return cast<Type>(fi.args[0] & 0x0F);
+    return (Type)(fi.args[0] & 0x0F);
 }
 
 public fn Type FunctionInfo.getArg(const FunctionInfo* fi, u32 idx) {
@@ -76,6 +76,6 @@ public fn Type FunctionInfo.getArg(const FunctionInfo* fi, u32 idx) {
     } else {    // return low bits
         value &= 0x0F;
     }
-    return cast<Type>(value);
+    return (Type)value;
 }
 

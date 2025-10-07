@@ -64,13 +64,13 @@ public fn void RevList.build(RevList* r, FunctionInfo* info) {
             Block* b = info.blocks.get(j);
             if (block_has_dest(b, &info.cases, dest)) {
                 assert(r.count <  r.capacity); // TODO resize
-                r.nodes[r.count++] = cast<u8>(j);
+                r.nodes[r.count++] = (u8)j;
             }
         }
         u32 count = r.count - start;
-        r.indexes[i].count = cast<u16>(count);
+        r.indexes[i].count = (u16)count;
         if (count) {
-            r.indexes[i].start = cast<u16>(start);
+            r.indexes[i].start = (u16)start;
         } else {
             r.indexes[i].start = 0;
         }

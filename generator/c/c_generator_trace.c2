@@ -108,7 +108,7 @@ fn u32 StringList.add(StringList* sl, const char* s, bool check_last) {
     if (sl.hash_array) {
         for (u32 i = bucket;; i--) {
             u32 ii = sl.hash_array[i];
-            u32 n = cast<u16>(ii);
+            u32 n = (u16)ii;
             if (!string.strcmp(sl.strings[n], s)) return sl.last_index = n;
             i = ii >> 16;
             if (i == 0) break;
@@ -155,11 +155,11 @@ fn u32 StringList.add(StringList* sl, const char* s, bool check_last) {
 fn u32 Generator.addCall(Generator* gen, const char* funcname, SrcLoc loc) {
     source_mgr.Location location = gen.sm.locate(loc);
     TraceCall call = {
-        .filename_idx = cast<u8>(gen.filenames.add(location.filename, true)),
-        .column = cast<u8>(location.column),
-        .line = cast<u16>(location.line),
-        .callee_idx = cast<u16>(gen.funcnames.add(funcname, false)),
-        .caller_idx = cast<u16>(gen.cur_function ?
+        .filename_idx = (u8)gen.filenames.add(location.filename, true),
+        .column = (u8)location.column,
+        .line = (u16)location.line,
+        .callee_idx = (u16)gen.funcnames.add(funcname, false),
+        .caller_idx = (u16)(gen.cur_function ?
                                 gen.funcnames.add(gen.cur_function.asDecl().getFullName(), false) : 0),
     }
     return gen.calls.add(call);

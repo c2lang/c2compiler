@@ -23,7 +23,7 @@ import string_buffer;
 import string;
 
 fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
-    CallExpr* call = cast<CallExpr*>(e);
+    CallExpr* call = (CallExpr*)e;
     bool is_tf = call.isTypeFunc();
 
     Decl* dest;
@@ -46,13 +46,13 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     } else {
         Expr* func = call.getFunc();
         if (func.getKind() == ExprKind.ImplicitCast) {
-            ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(func);
+            ImplicitCastExpr* ic = (ImplicitCastExpr*)func;
             func = ic.getInner();
         }
 
         if (is_tf || call.isStaticTypeFunc()) {
             assert(func.getKind() == ExprKind.Member);
-            MemberExpr* m = cast<MemberExpr*>(func);
+            MemberExpr* m = (MemberExpr*)func;
             dest = m.getFullDecl();
             if (gen.trace_calls && !gen.no_trace) {
                 out.print("(c2_trace_counts[%d]++, ",
@@ -81,14 +81,14 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
             bool no_trace = gen.no_trace;
             // can be Member or Identifier
             if (func.getKind() == ExprKind.Identifier) {
-                IdentifierExpr* i = cast<IdentifierExpr*>(func);
+                IdentifierExpr* i = (IdentifierExpr*)func;
                 // do not trace calls to va_start, va_arg, va_end...
                 const char *name = i.getName();
                 if (name && name[0] == 'v' && name[1] == 'a' && name[2] == '_')
                     no_trace = true;
                 dest = i.getDecl();
             } else if (func.getKind() == ExprKind.Member) {
-                MemberExpr* m = cast<MemberExpr*>(func);
+                MemberExpr* m = (MemberExpr*)func;
                 dest = m.getFullDecl();
             } else {
                 func.dump();
@@ -149,7 +149,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
                 SrcLoc format_loc;
                 Expr* format = args[call_index++];
                 assert(format.isImplicitCast());
-                ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(format);
+                ImplicitCastExpr* ic = (ImplicitCastExpr*)format;
                 if (!ic.isArrayToPointerDecay()) return;
                 format = ic.getInner();
                 const char* format_text = printf_utils.get_format(format, &format_loc);
@@ -159,13 +159,13 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
                 out.add1('"');
                 printf_utils.parseFormat(format_text, on_format_specifier, &fc);
                 out.encodeBytes(format_text + fc.last_offset,
-                                cast<u32>(string.strlen(format_text + fc.last_offset)), '"');
+                                (u32)(string.strlen(format_text + fc.last_offset)), '"');
                 out.add1('"');
             } else {
                 Expr* arg = (call_index < call_num_args) ?
                     args[call_index++] : func_args[func_index].getInit();
                 if (arg.isInitList()) {
-                    Decl* d = cast<Decl*>(func_args[func_index]);
+                    Decl* d = (Decl*)func_args[func_index];
                     gen.emitCast(out, d.getType(), true);
                 }
                 gen.emitExpr(out, arg);
@@ -190,9 +190,9 @@ fn FunctionDecl* get_function(Decl* dest) {
         assert(qt.isFunction());
         FunctionType* ft = qt.getFunctionType();
         FunctionDecl* fd = ft.getDecl();
-        dest = cast<Decl*>(fd);
+        dest = (Decl*)fd;
     }
     assert(dest.getKind() == DeclKind.Function);
-    return cast<FunctionDecl*>(dest);
+    return (FunctionDecl*)dest;
 }
 

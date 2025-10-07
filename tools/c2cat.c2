@@ -141,7 +141,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
     if (tok.kind >= Kind.LParen && tok.kind < Kind.KW_bool) {
         const char* str = tok.kind.str();
         out.add(str);
-        ctx.offset = tok.loc + cast<u32>(strlen(str));
+        ctx.offset = tok.loc + (u32)strlen(str);
         return;
     }
     if (tok.kind.isBuiltinType()) {
@@ -149,7 +149,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         out.color(col_type);
         out.add(str);
         out.color(col_normal);
-        ctx.offset = tok.loc + cast<u32>(strlen(str));
+        ctx.offset = tok.loc + (u32)strlen(str);
         return;
     }
     if (tok.kind.isQualifier()) {
@@ -157,7 +157,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         out.color(col_type);
         out.add(str);
         out.color(col_normal);
-        ctx.offset = tok.loc + cast<u32>(strlen(str));
+        ctx.offset = tok.loc + (u32)strlen(str);
         return;
     }
     if (tok.kind.isKeyword()) {
@@ -165,7 +165,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         out.color(col_keyword);
         out.add(str);
         out.color(col_normal);
-        ctx.offset = tok.loc + cast<u32>(strlen(str));
+        ctx.offset = tok.loc + (u32)strlen(str);
         return;
     }
     if (tok.kind >= Kind.Feat_if && tok.kind <= Kind.Feat_endif) {
@@ -173,7 +173,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         out.color(col_feature);
         out.add(str);
         out.color(col_normal);
-        ctx.offset = tok.loc + cast<u32>(strlen(str));
+        ctx.offset = tok.loc + (u32)strlen(str);
         return;
     }
     switch (tok.kind) {
@@ -189,7 +189,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
             out.add(str);
             out.color(col_normal);
         }
-        ctx.offset = tok.loc + cast<u32>(strlen(str));
+        ctx.offset = tok.loc + (u32)strlen(str);
         return;
     case IntegerLiteral:
         out.color(col_integer);
@@ -255,18 +255,18 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         out.color(col_comment);
         const char* str = ctx.pool.idx2str(tok.text_idx);
         out.print("//%s", str);
-        ctx.offset = tok.loc + cast<u32>(strlen(str)) + 2;
+        ctx.offset = tok.loc + (u32)strlen(str) + 2;
         break;
     case BlockComment:
         out.color(col_comment);
         const char* str = ctx.pool.idx2str(tok.text_idx);
         out.print("/*%s*/", str);
-        ctx.offset = tok.loc + cast<u32>(strlen(str)) + 4;
+        ctx.offset = tok.loc + (u32)strlen(str) + 4;
         break;
     case Invalid:
         out.color(col_invalid);
         out.print("%s", tok.invalid);
-        ctx.offset = tok.loc + cast<u32>(strlen(tok.invalid));
+        ctx.offset = tok.loc + (u32)strlen(tok.invalid);
         break;
     case Error:
         out.add1('\n');

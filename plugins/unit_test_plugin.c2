@@ -110,7 +110,7 @@ fn void Plugin.handleTypeFunc(void* arg, FunctionDecl* fd) {
 
     Ref* prefix = fd.getPrefix();
     assert(prefix);
-    Decl* d = cast<Decl*>(fd);
+    Decl* d = (Decl*)fd;
 
     if (prefix.name_idx != p.cur_prefix) return;
 
@@ -155,9 +155,9 @@ fn void generate_tests(void* arg) {
         out.add("public const ct.C2Test[] Test_functions = {\n");
         FunctionDecl** tests = p.tests.getDecls();
         for (u32 j=0; j<p.tests.size(); j++) {
-            Decl* func = cast<Decl*>(tests[j]);
+            Decl* func = (Decl*)tests[j];
             // TODO dont use fullName since we dont need the module prefix
-            out.print("   { \"%s\", cast<ct.TestFn>(%s) },\n", func.getName(), func.getFullName());
+            out.print("   { \"%s\", (ct.TestFn)(%s) },\n", func.getName(), func.getFullName());
         }
         out.add("}\n\n");
 
@@ -166,14 +166,14 @@ fn void generate_tests(void* arg) {
         out.print("  .fixture_size = sizeof(%s),\n", d.getName());
         out.add("  .setup = ");
         if (p.setup) {
-            out.print("cast<ct.TestFn>(%s.setup),\n", d.getName());
+            out.print("(ct.TestFn)(%s.setup),\n", d.getName());
         } else {
             out.add("nil,\n");
         }
 
         out.add("  .teardown = ");
         if (p.teardown) {
-            out.print("cast<ct.TestFn>(%s.teardown),\n", d.getName());
+            out.print("(ct.TestFn)(%s.teardown),\n", d.getName());
         } else {
             out.add("nil,\n");
         }

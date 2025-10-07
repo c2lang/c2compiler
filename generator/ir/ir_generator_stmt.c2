@@ -23,7 +23,7 @@ import ir_context;
 fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
     switch (s.getKind()) {
     case Return:
-        const ReturnStmt* r = cast<ReturnStmt*>(s);
+        const ReturnStmt* r = (ReturnStmt*)s;
         const Expr* retval = r.getValue();
         if (retval) {
             ir.Ref ref;
@@ -35,7 +35,7 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         return false;
     case Expr:
         ir.Ref dontcare;
-        gen.emitExpr(&dontcare, cast<Expr*>(s));
+        gen.emitExpr(&dontcare, (Expr*)s);
         return true;
     case If:
         gen.emitIfStmt(s);
@@ -61,7 +61,7 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         // nothing to be done
         return false;
     case Label:
-        const LabelStmt* l = cast<LabelStmt*>(s);
+        const LabelStmt* l = (LabelStmt*)s;
         ir_context.Context* c = gen.ctx;
 
         if (l.isUsed()) {
@@ -80,18 +80,18 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         if (ls) return gen.emitStmt(ls);
         return true;
     case Goto:
-        const GotoStmt* g = cast<GotoStmt*>(s);
+        const GotoStmt* g = (GotoStmt*)s;
 
         BlockId label_blk = gen.getLabelBlock(g.getNameIdx());
         gen.ctx.addJmpInstr(label_blk);
         return false;
     case Compound:
-        CompoundStmt* c = cast<CompoundStmt*>(s);
+        CompoundStmt* c = (CompoundStmt*)s;
         const u32 num_stmts = c.getCount();
         gen.emitStmts(c.getStmts(), c.getCount());
         return true;
     case Decl:
-        const DeclStmt* ds = cast<DeclStmt*>(s);
+        const DeclStmt* ds = (DeclStmt*)s;
         u32 count = ds.getDeclCount();
         for (u32 i = 0; i < count; i++) {
             VarDecl* vd = ds.getDecl(i);
@@ -118,14 +118,14 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
 fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
     ir_context.Context* c = gen.ctx;
 
-    const IfStmt* if_stmt = cast<IfStmt*>(s);
+    const IfStmt* if_stmt = (IfStmt*)s;
     const Stmt* cond = if_stmt.getCond();
     const Stmt* then_stmt = if_stmt.getThen();
     const Stmt* else_stmt = if_stmt.getElse();
 
 #if 0
     assert(cond.isExpr()); // TODO handle if (Decl* d = ..) ..
-    Expr* e = cast<Expr*>(cond);
+    Expr* e = (Expr*)cond;
     if (e.isCtv()) {
         Value v = ctv_analyser.get_value(e);
         if (v.isZero()) {
@@ -147,9 +147,9 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
 
     // cond
     if (cond.isDecl()) {
-        DeclStmt* ds = cast<DeclStmt*>(cond);
+        DeclStmt* ds = (DeclStmt*)cond;
         VarDecl* vd = ds.getDecl(0);
-        Decl* d = cast<Decl*>(vd);
+        Decl* d = (Decl*)vd;
 
         // TODO should check for CTV values
         ir.Ref rhs;
@@ -160,7 +160,7 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
         gen.emitAssignCond(t, lhs, rhs, then_blk, join_blk, then_blk);
     } else {
         assert(cond.isExpr());
-        Expr* e = cast<Expr*>(cond);
+        Expr* e = (Expr*)cond;
         gen.emitCond(e, then_blk, false_blk, then_blk);
     }
 
@@ -182,7 +182,7 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
 
 fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s) {
     ir_context.Context* c = gen.ctx;
-    const WhileStmt* w = cast<WhileStmt*>(s);
+    const WhileStmt* w = (WhileStmt*)s;
 
     // TODO check if CtvCondition, then skip condition/body
     BlockId cond_blk = c.createBlock(BlockKind.WhileCond);
@@ -198,9 +198,9 @@ fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s) {
 
     Stmt* cond = w.getCond();
     if (cond.isDecl()) {
-        DeclStmt* ds = cast<DeclStmt*>(cond);
+        DeclStmt* ds = (DeclStmt*)cond;
         VarDecl* vd = ds.getDecl(0);
-        Decl* d = cast<Decl*>(vd);
+        Decl* d = (Decl*)vd;
 
         // TODO should check for CTV values
         ir.Ref rhs;
@@ -211,7 +211,7 @@ fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s) {
         gen.emitAssignCond(t, lhs, rhs, body_blk, join_blk, body_blk);
     } else {
         assert(cond.isExpr());
-        Expr* e = cast<Expr*>(cond);
+        Expr* e = (Expr*)cond;
         gen.emitCond(e, body_blk, join_blk, body_blk);
     }
 
@@ -228,7 +228,7 @@ fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s) {
 
 fn void Generator.emitForStmt(Generator* gen, const Stmt* s) {
     ir_context.Context* c = gen.ctx;
-    const ForStmt* f = cast<ForStmt*>(s);
+    const ForStmt* f = (ForStmt*)s;
 
     const Stmt* ie = f.getInit();
     if (ie) gen.emitStmt(ie);
@@ -277,7 +277,7 @@ fn void Generator.emitForStmt(Generator* gen, const Stmt* s) {
 #if 0
 fn void Generator.emitAssertStmt(Generator* gen, const Stmt* s) {
     string_buffer.Buf* out = gen.out;
-    const AssertStmt* a = cast<AssertStmt*>(s);
+    const AssertStmt* a = (AssertStmt*)s;
 
     //public fn Expr* AssertStmt.getInner(const AssertStmt* s) { return s.inner; }
 
@@ -288,7 +288,7 @@ fn void Generator.emitAssertStmt(Generator* gen, const Stmt* s) {
 
     // TODO check if CtvCondition, then skip rest
     ExprRef check;
-    gen.emitCondition(&check, cast<Stmt*>(a.getInner()));
+    gen.emitCondition(&check, (Stmt*)a.getInner());
     assert(!gen.block_terminated);
     out.print("\tjnz %s, %s, %s\n", check.ref, join_blk, body_blk);
 

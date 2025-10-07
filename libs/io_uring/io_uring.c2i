@@ -215,7 +215,7 @@ fn void *Cqe.get_data(const Cqe* cqe) @(cname="io_uring_sqe_get_data")
 
 fn void Sqe.set_flags(Sqe* sqe, u32 flags) @(cname="io_uring_sqe_set_flags")
 {
-	sqe.flags = cast<u8>(flags);
+	sqe.flags = (u8)flags;
 }
 #if 0
 
@@ -229,12 +229,12 @@ static inline void __io_uring_set_target_fixed_file(struct io_uring_sqe *sqe,
 
 fn void prep_rw(c_int op, Sqe* sqe, c_int fd, const void* addr, u32 len, u64 offset) @(cname="io_uring_prep_rw")
 {
-	sqe.opcode = cast<u8>(op);
+	sqe.opcode = (u8)op;
 	sqe.flags = 0;
 	sqe.ioprio = 0;
 	sqe.fd = fd;
 	sqe.off = offset;
-	sqe.addr = cast<u64>(addr);
+	sqe.addr = (u64)addr;
 	sqe.len = len;
 	sqe.rw_flags = 0;
 	sqe.user_data = 0;
@@ -297,7 +297,7 @@ fn void Sqe.prep_readv(Sqe* sqe, c_int fd, const uio.Iovec* iovecs, u32 nr_vecs,
 fn void Sqe.prep_read_fixed(Sqe* sqe, c_int fd, void* buf, u32 nbytes, u64 offset, c_int buf_index) @(cname="io_uring_prep_read_fixed")
 {
 	prep_rw(Op.READ_FIXED, sqe, fd, buf, nbytes, offset);
-	sqe.buf_index = cast<u16>(buf_index);
+	sqe.buf_index = (u16)buf_index;
 }
 
 fn void Sqe.prep_writev(Sqe* sqe, c_int fd, const uio.Iovec* iovecs, u32 nr_vecs, u64 offset) @(cname="io_uring_prep_writev")
@@ -308,7 +308,7 @@ fn void Sqe.prep_writev(Sqe* sqe, c_int fd, const uio.Iovec* iovecs, u32 nr_vecs
 fn void Sqe.prep_write_fixed(Sqe* sqe, c_int fd, const void* buf, u32 nbytes, u64 offset, c_int buf_index) @(cname="io_uring_prep_write_fixed")
 {
 	prep_rw(Op.WRITE_FIXED, sqe, fd, buf, nbytes, offset);
-	sqe.buf_index = cast<u16>(buf_index);
+	sqe.buf_index = (u16)buf_index;
 }
 
 #if 0
@@ -393,7 +393,7 @@ fn void Sqe.prep_timeout_remove(Sqe* sqe, u64 user_data, u32 flags) @(cname="io_
 
 fn void Sqe.prep_timeout_update(Sqe* sqe, linux_types.Timespec* ts, u64 user_data, u32 flags) @(cname="io_uring_prep_timeout_update")
 {
-	prep_rw(Op.TIMEOUT_REMOVE, sqe, -1, cast<void*>(user_data), 0, cast<usize>(ts));
+	prep_rw(Op.TIMEOUT_REMOVE, sqe, -1, (void*)user_data, 0, (usize)ts);
 	sqe.timeout_flags = flags | TIMEOUT_UPDATE;
 }
 
@@ -402,8 +402,8 @@ fn void Sqe.prep_accept(Sqe* sqe, c_int fd,
                         u32* addrlen,
                         c_int flags) @(cname="io_uring_prep_accept")
 {
-	prep_rw(Op.ACCEPT, sqe, fd, addr, 0, cast<u64>(addrlen));
-	sqe.accept_flags = cast<u32>(flags);
+	prep_rw(Op.ACCEPT, sqe, fd, addr, 0, (u64)addrlen);
+	sqe.accept_flags = (u32)flags;
 }
 
 #if 0
@@ -421,7 +421,7 @@ static inline void io_uring_prep_accept_direct(struct io_uring_sqe *sqe, int fd,
 fn void Sqe.prep_cancel(Sqe* sqe, void* user_data, c_int flags) @(cname="io_uring_prep_cancel")
 {
 	prep_rw(Op.ASYNC_CANCEL, sqe, -1, user_data, 0, 0);
-	sqe.cancel_flags = cast<u32>(flags);
+	sqe.cancel_flags = (u32)flags;
 }
 
 fn void Sqe.prep_link_timeout(Sqe* sqe, linux_types.Timespec* ts,

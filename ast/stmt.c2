@@ -130,7 +130,7 @@ fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
     case Goto:
         return s;
     case Compound:
-        return (Stmt*)CompoundStmt.instantiate(cast<CompoundStmt*>(s), inst);
+        return (Stmt*)CompoundStmt.instantiate((CompoundStmt*)s, inst);
     case Decl:
         return DeclStmt.instantiate((DeclStmt*)s, inst);
     case Asm:

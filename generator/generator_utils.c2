@@ -33,7 +33,7 @@ fn bool isEntryPoint(Decl* d) {
     if (d.isExported() && d.isPublic()) return true;
 
     if (d.isFunction()) {
-        FunctionDecl* fd = cast<FunctionDecl*>(d);
+        FunctionDecl* fd = (FunctionDecl*)d;
         if (fd.hasAttrConstructor() || fd.hasAttrDestructor()) return true;
     }
     return false;

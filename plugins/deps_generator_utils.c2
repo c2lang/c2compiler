@@ -21,7 +21,7 @@ import stdio;
 public fn const char* getPrefixedName(const Decl* d) {
     switch (d.getKind()) {
     case Function:
-        const FunctionDecl* fd = cast<FunctionDecl*>(d);
+        const FunctionDecl* fd = (FunctionDecl*)d;
         if (fd.hasPrefix()) {
             local char[64] fullname;
             stdio.sprintf(fullname, "%s.%s", fd.getPrefixName(), d.getName());
@@ -54,7 +54,7 @@ public fn bool isGlobal(const Decl* d) @(unused) {
     case Import:
         return false;
     case StructType:
-        const StructTypeDecl* std = cast<StructTypeDecl*>(d);
+        const StructTypeDecl* std = (StructTypeDecl*)d;
         return std.isGlobal();
     case EnumType:
         break;
@@ -65,7 +65,7 @@ public fn bool isGlobal(const Decl* d) @(unused) {
     case AliasType:
         break;
     case Variable:
-        const VarDecl* vd = cast<VarDecl*>(d);
+        const VarDecl* vd = (VarDecl*)d;
         return vd.isGlobal();
     }
     return true;

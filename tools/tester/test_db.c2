@@ -38,7 +38,7 @@ fn bool doWIFEXITED(i32 state) {
 }
 
 fn char getWEXITSTATUS(i32 state) {
-    return cast<char>((state >> 8) & 0xff);
+    return (char)((state >> 8) & 0xff);
 }
 
 
@@ -149,7 +149,7 @@ fn void Db.addExpected(Db* db, ExpectFile* f) {
             memcpy(exp2, db.expectedFiles, db.expectedCount * sizeof(ExpectFile*));
             free(db.expectedFiles);
         }
-        db.expectedFiles = cast<ExpectFile**>(exp2);
+        db.expectedFiles = (ExpectFile**)exp2;
     }
 
     db.expectedFiles[db.expectedCount] = f;
@@ -237,7 +237,7 @@ fn const char* Db.readWord(Db* db) {
         if ((*cp < 'a' || *cp > 'z') && *cp != '-' && *cp != '_') break;
         cp++;
     }
-    u32 len = cast<u32>(cp - db.cur);
+    u32 len = (u32)(cp - db.cur);
     memcpy(db.word_buffer, db.cur, len);
     db.word_buffer[len] = 0;
     return db.word_buffer;
@@ -249,7 +249,7 @@ fn const char* Db.readLine(Db* db) {
         if (*cp == 0 || *cp == '\n') break;
         cp++;
     }
-    u32 len = cast<u32>(cp - db.cur);
+    u32 len = (u32)(cp - db.cur);
     memcpy(db.line_buffer, db.cur, len);
     db.line_buffer[len] = 0;
     return db.line_buffer;
@@ -331,7 +331,7 @@ fn bool Db.parseFile(Db* db) {
     const char* start = db.cur;
     while (1) {
         if (*db.cur == 0 || strstart(db.cur, "// @", nil)) {
-            db.writeFile(db.current_file, start, cast<u32>(db.cur - start));
+            db.writeFile(db.current_file, start, (u32)(db.cur - start));
             break;
         }
         db.parseTags(db.cur, db.findEndOfLine());
@@ -587,7 +587,7 @@ public fn void Db.parseLineFile(Db* db, const char* start, const char* end) {
     if (strstart(start, "// @", nil)) {
         assert(db.file_start);
         const char* file_end = start;
-        db.writeFile(db.current_file, db.file_start, cast<u32>(file_end - db.file_start));
+        db.writeFile(db.current_file, db.file_start, (u32)(file_end - db.file_start));
         db.file_start = nil;
         db.mode = Mode.Outside;
         db.parseLine(start, end);
@@ -731,7 +731,7 @@ public fn void Db.testFile(Db* db) {
                 exit(1);
             }
             if (count == 0) break;
-            buf.add2(buffer, cast<u32>(count));
+            buf.add2(buffer, (u32)count);
         }
         db.checkErrors(buf.data(), buf.size());
         buf.free();
@@ -830,7 +830,7 @@ fn void Db.checkErrors(Db* db, const char* buffer, u32 size) {
         if (*cp == ':') haveColon = true;
         if (*cp == '\n') {
             char[512] data;
-            u32 len = cast<u32>(cp - line);
+            u32 len = (u32)(cp - line);
             assert(len < sizeof(data));
             memcpy(data, line, len);
             data[len] = 0;

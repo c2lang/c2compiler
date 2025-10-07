@@ -74,7 +74,7 @@ public fn const u8* Sorter.sort(Sorter* s) {
             ringbuf[(head + size -1) % count] = idx;
             iterations++;
         } else {
-            sorted[count-size] = cast<u8>(idx);
+            sorted[count-size] = (u8)idx;
             iterations = 0;
             size--;
             // clear this module's dependencies

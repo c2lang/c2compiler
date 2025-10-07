@@ -74,7 +74,7 @@ public fn u32 List.length(const List* l) { return l.num_mods; }
 public fn ast.Module** List.get(const List* l) { return l.mods; }
 
 public fn const ast.Module** List.getConst(const List* l) {
-    return cast<const ast.Module**>(l.mods);
+    return (const ast.Module**)l.mods;
 }
 
 public fn ast.Module* List.at(const List* l, u32 idx) {

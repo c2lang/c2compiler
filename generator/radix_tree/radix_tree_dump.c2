@@ -75,7 +75,7 @@ fn void Tree.dump2(const Tree* t, bool print_nodes, bool print_words, bool print
             printf("  [%5d] %s\n", idx, cp);
             while (*cp) cp++;
             cp++;
-            idx = cast<u32>(cp - t.words.data);
+            idx = (u32)(cp - t.words.data);
         }
     }
     //t.dump_zones();

@@ -96,7 +96,7 @@ fn void Replacer.addFragment(Replacer* r, u32 start, u32 end) {
 }
 
 fn void Replacer.flushFragments(Replacer* r, const char* filename) {
-    u32 new_len = cast<u32>(string.strlen(r.new_name));
+    u32 new_len = (u32)string.strlen(r.new_name);
     u32 new_size = r.file.data_size();
     new_size += (r.f_count - 1) * (new_len - r.old_len);
     if (new_size + 1 > r.dest_capacity) {
@@ -156,7 +156,7 @@ fn u32 findLine(const char* start, u32 line) {
         }
         cp++;
     }
-    return cast<u32>(cp - start);
+    return (u32)(cp - start);
 }
 
 fn u32 Replacer.findOffset(Replacer* r, u32 line, u32 column) {

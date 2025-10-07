@@ -177,7 +177,7 @@ fn u32 StructTypeDecl.getNumStructFunctions(const StructTypeDecl* d) {
 }
 
 public fn StructLayout* StructTypeDecl.getLayout(const StructTypeDecl* d) {
-    return cast<StructLayout*>(&d.members[d.num_members]);
+    return (StructLayout*)&d.members[d.num_members];
 }
 
 public fn u32 StructTypeDecl.getSize(const StructTypeDecl* d) {

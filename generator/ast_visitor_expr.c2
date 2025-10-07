@@ -34,25 +34,25 @@ fn void Visitor.handleExpr(Visitor* v, Expr* e) {
     case Nil:
         return;
     case Identifier:
-        IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        IdentifierExpr* i = (IdentifierExpr*)e;
         Ref ref = i.getRef();
         v.on_ref(v.arg, &ref);
         break;
     case Type:
-        TypeExpr* t = cast<TypeExpr*>(e);
+        TypeExpr* t = (TypeExpr*)e;
         v.handleTypeRef(t.getTypeRef());
         break;
     case Call:
-        v.handleCallExpr(cast<CallExpr*>(e));
+        v.handleCallExpr((CallExpr*)e);
         break;
     case InitList:
-        InitListExpr* ili = cast<InitListExpr*>(e);
+        InitListExpr* ili = (InitListExpr*)e;
         u32 count = ili.getNumValues();
         Expr** exprs = ili.getValues();
         for (u32 i=0; i<count; i++) v.handleExpr(exprs[i]);
         break;
     case FieldDesignatedInit:
-        FieldDesignatedInitExpr* f = cast<FieldDesignatedInitExpr*>(e);
+        FieldDesignatedInitExpr* f = (FieldDesignatedInitExpr*)e;
         Ref ref = {
             .loc = e.getLoc(),
             .name_idx = f.getField(),
@@ -62,56 +62,56 @@ fn void Visitor.handleExpr(Visitor* v, Expr* e) {
         v.handleExpr(f.getInit());
         break;
     case ArrayDesignatedInit:
-        ArrayDesignatedInitExpr* a = cast<ArrayDesignatedInitExpr*>(e);
+        ArrayDesignatedInitExpr* a = (ArrayDesignatedInitExpr*)e;
         v.handleExpr(a.getDesignator());
         v.handleExpr(a.getInit());
         break;
     case BinaryOperator:
-        BinaryOperator* b = cast<BinaryOperator*>(e);
+        BinaryOperator* b = (BinaryOperator*)e;
         v.handleExpr(b.getLHS());
         v.handleExpr(b.getRHS());
         break;
     case UnaryOperator:
-        UnaryOperator* u = cast<UnaryOperator*>(e);
+        UnaryOperator* u = (UnaryOperator*)e;
         v.handleExpr(u.getInner());
         break;
     case ConditionalOperator:
-        ConditionalOperator* c = cast<ConditionalOperator*>(e);
+        ConditionalOperator* c = (ConditionalOperator*)e;
         v.handleExpr(c.getCond());
         v.handleExpr(c.getLHS());
         v.handleExpr(c.getRHS());
         break;
     case Builtin:
-        v.handleBuiltinExpr(cast<BuiltinExpr*>(e));
+        v.handleBuiltinExpr((BuiltinExpr*)e);
         break;
     case ArraySubscript:
-        ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+        ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
         v.handleExpr(a.getBase());
         v.handleExpr(a.getIndex());
         break;
     case Member:
-        v.handleMemberExpr(cast<MemberExpr*>(e));
+        v.handleMemberExpr((MemberExpr*)e);
         break;
     case Paren:
-        ParenExpr* p = cast<ParenExpr*>(e);
+        ParenExpr* p = (ParenExpr*)e;
         v.handleExpr(p.getInner());
         break;
     case BitOffset:
-        BitOffsetExpr* bi = cast<BitOffsetExpr*>(e);
+        BitOffsetExpr* bi = (BitOffsetExpr*)e;
         v.handleExpr(bi.getLHS());
         v.handleExpr(bi.getRHS());
         break;
     case ExplicitCast:
-        ExplicitCastExpr* ec = cast<ExplicitCastExpr*>(e);
+        ExplicitCastExpr* ec = (ExplicitCastExpr*)e;
         v.handleTypeRef(ec.getTypeRef());
         v.handleExpr(ec.getInner());
         break;
     case ImplicitCast:
-        ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
+        ImplicitCastExpr* ic = (ImplicitCastExpr*)e;
         v.handleExpr(ic.getInner());
         break;
     case Range:
-        RangeExpr* b = cast<RangeExpr*>(e);
+        RangeExpr* b = (RangeExpr*)e;
         v.handleExpr(b.getLHS());
         v.handleExpr(b.getRHS());
         break;

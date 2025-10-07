@@ -523,7 +523,7 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     Expr* rhs = b.getRHS();
 
     if (lhs.isBinaryOperator()) {
-        BinaryOpcode op1 = cast<BinaryOperator*>(lhs).getOpcode();
+        BinaryOpcode op1 = ((BinaryOperator*)lhs).getOpcode();
         if (incompatible_opcodes(opcode, op1)) {
             ma.error(lhs.getLoc(), "operators '%s' and '%s' do not combine without parentheses",
                      opcode.str(), op1.str());
@@ -531,7 +531,7 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         }
     }
     if (rhs.isBinaryOperator()) {
-        BinaryOpcode op2 = cast<BinaryOperator*>(rhs).getOpcode();
+        BinaryOpcode op2 = ((BinaryOperator*)rhs).getOpcode();
         if (incompatible_opcodes(opcode, op2)) {
             ma.error(rhs.getLoc(), "operators '%s' and '%s' do not combine without parentheses",
                      opcode.str(), op2.str());

@@ -200,7 +200,7 @@ fn void Files.add(Files** f_ptr, u32 start, u32 size, const char* filename, u32 
     file.link_count = 0;
     f.files_count++;
 
-    u32 len = cast<u32>(strlen(filename)) + 1; // add 0-terminator
+    u32 len = (u32)strlen(filename) + 1; // add 0-terminator
     if (f.names_len + len > f.names_cap) {
         f = f.resizeNames(f.names_cap * 2);
         assert(f.names_len + len < f.names_cap);
@@ -597,7 +597,7 @@ public fn void Refs.add_link(Refs* r, u32 src, u32 dest, u32 len) {
 }
 
 public fn void Refs.add_symbol(Refs* r, const char* symbol_name, u32 src_loc) {
-    r.symbols.add(symbol_name, cast<u32>(strlen(symbol_name)), src_loc);
+    r.symbols.add(symbol_name, (u32)strlen(symbol_name), src_loc);
 }
 
 #else

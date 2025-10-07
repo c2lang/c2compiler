@@ -124,7 +124,7 @@ fn void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
 
     if (id.getDest()) return;
 
-    ast.Decl* d = cast<ast.Decl*>(id);
+    ast.Decl* d = (ast.Decl*)id;
     u32 name_idx = d.getNameIdx();
     ast.Module* m = c.allmodules.find(name_idx);
     if (!m) {
@@ -152,7 +152,7 @@ fn void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
     id.setDest(m);
     m.setUsed();
     d.setChecked();
-    d.setType(ast.QualType.create(cast<ast.Type*>(m.getType())));
+    d.setType(ast.QualType.create((ast.Type*)m.getType()));
 }
 
 type Compiler struct {
@@ -642,7 +642,7 @@ fn void Compiler.checkMain(Compiler* c) {
             return;
         }
 
-        ast.FunctionDecl* main = cast<ast.FunctionDecl*>(c.mainFunc);
+        ast.FunctionDecl* main = (ast.FunctionDecl*)c.mainFunc;
 
         if (!main.hasReturn()) {
             c.diags.error(c.mainFunc.getLoc(), "function 'main' should return 'i32'");
@@ -672,8 +672,8 @@ fn void Compiler.addGlobalDefine(Compiler* c, const char* prefix, const char* ta
     char[32] tmp;
     stdio.snprintf(tmp, 32, "%s_%s", prefix, tail);
     for (usize i = 0; tmp[i]; i++) {
-        u8 ch = cast<u8>(tmp[i]);
-        tmp[i] = (ch == '-') ? '_' : cast<char>(ctype.toupper(ch));
+        u8 ch = (u8)tmp[i];
+        tmp[i] = (ch == '-') ? '_' : (char)ctype.toupper(ch);
     }
 
     c.addFeature(tmp, "1");

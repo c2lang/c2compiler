@@ -21,7 +21,7 @@ u32 error_size;
 public fn u64 now() {
   sys_time.Timeval tv;
   sys_time.gettimeofday(&tv, nil);
-  u64 now64 = cast<u64>(tv.tv_sec);
+  u64 now64 = (u64)tv.tv_sec;
   now64 *= 1000000;
   now64 += tv.tv_usec;
   return now64;
@@ -64,7 +64,7 @@ fn void vprint_errormsg(const char* fmt, va_list ap) {
   if (ret < 0) {
     error_msg[0] = 0;
   } else {
-    const usize size = cast<usize>(ret);
+    const usize size = (usize)ret;
     const usize s = (error_size <= size) ? size - error_size : size;
     // error_size may overflow at this point
     error_size -= s;

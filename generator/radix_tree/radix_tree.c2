@@ -84,7 +84,7 @@ fn void Nodes.free(Nodes* n) {
 }
 
 fn Node* Nodes.idx2node(const Nodes* n, u32 node_idx) {
-    return cast<Node*>(&n.nodes[node_idx]);
+    return (Node*)&n.nodes[node_idx];
 }
 
 type Words struct {
@@ -528,7 +528,7 @@ fn void Tree.iterate(const Tree* t, u32 node_idx, Iter* iter) {
 #endif
     } else {
         u32 old_len = iter.len;
-        iter.len += cast<u32>(strlen(word));
+        iter.len += (u32)strlen(word);
         for (u32 i=0; i<n.num_children; i++) {
             t.iterate(n.children[i], iter);
         }
@@ -540,7 +540,7 @@ public fn void Tree.find(Tree* t, const char* text, MatchFn func, void* arg) @(u
     if (t.nodes.root_idx == 0) return;
 
     u32 cur_match = 0;
-    u32 node_idx = t.match_node(t.nodes.root_idx, text, cast<u32>(strlen(text)), &cur_match);
+    u32 node_idx = t.match_node(t.nodes.root_idx, text, (u32)strlen(text), &cur_match);
     if (node_idx == 0) return;
 
     const Node* n = t.idx2node(node_idx);
@@ -553,7 +553,7 @@ public fn void Tree.find(Tree* t, const char* text, MatchFn func, void* arg) @(u
     } else {
         Iter iter = { func, arg, 0 }
         strcpy(iter.buf, t.idx2word(n.word_idx) + cur_match);
-        iter.len = cast<u32>(strlen(iter.buf));
+        iter.len = (u32)strlen(iter.buf);
         for (u32 i=0; i<n.num_children; i++) {
             u32 old_len = iter.len;
             t.iterate(n.children[i], &iter);
@@ -605,7 +605,7 @@ public fn const char* Tree.complete(Tree* t, const char* text) @(unused) {
     if (t.nodes.root_idx == 0) return nil;
 
     u32 cur_match = 0;
-    u32 node_idx = t.match_node(t.nodes.root_idx, text, cast<u32>(strlen(text)), &cur_match);
+    u32 node_idx = t.match_node(t.nodes.root_idx, text, (u32)strlen(text), &cur_match);
     if (node_idx == 0) return nil;
 
     const Node* n = t.idx2node(node_idx);
@@ -617,7 +617,7 @@ public fn bool Tree.get_value(const Tree* t, const char* text, u32* value) {
     if (t.nodes.root_idx == 0) return false;
 
     u32 cur_match = 0;
-    u32 node_idx = t.match_node(t.nodes.root_idx, text, cast<u32>(strlen(text)), &cur_match);
+    u32 node_idx = t.match_node(t.nodes.root_idx, text, (u32)strlen(text), &cur_match);
     if (node_idx == 0) return false;
 
     const Node* n = t.idx2node(node_idx);

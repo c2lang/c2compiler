@@ -26,7 +26,7 @@ fn bool Node.isScalar(const Node* n) @(unused) { return n.kind == NodeKind.Scala
 
 // TODO only pass iterators? (that way we dont need Parser* anymore)
 public fn const Node* Parser.getRoot(const Parser* p) {
-    u32 node_count = cast<u32>(p.data.nodes_cur - p.data.nodes) - 1;
+    u32 node_count = (u32)(p.data.nodes_cur - p.data.nodes) - 1;
     if (node_count == 0) return nil;
     return &p.data.nodes[1];
 }
@@ -42,7 +42,7 @@ public fn const Node* Parser.findNode(const Parser* p, const char* path) {
 }
 
 fn const Node* Data.findNode(const Data* d, const char* path) {
-    u32 node_count = cast<u32>(d.nodes_cur - d.nodes) - 1;
+    u32 node_count = (u32)(d.nodes_cur - d.nodes) - 1;
     if (node_count == 0) return nil;
     const Node* root = &d.nodes[1];
     if (root.kind == NodeKind.Sequence) return nil;
@@ -84,7 +84,7 @@ public fn Iter Parser.getNodeChildIter(const Parser* p, const Node* n) {
 }
 
 public fn void Iter.next(Iter* iter) {
-    const Data* d = cast<Data*>(iter.data);
+    const Data* d = (Data*)iter.data;
     if (iter.node) {
         if (iter.node.next_idx) iter.node = d.idx2node(iter.node.next_idx);
         else iter.node = nil;
@@ -96,13 +96,13 @@ public fn bool Iter.done(const Iter* iter) {
 }
 
 public fn const char* Iter.getName(const Iter* iter) {
-    const Data* d = cast<Data*>(iter.data);
+    const Data* d = (Data*)iter.data;
     if (iter.node) return &d.text[iter.node.name_idx];
     return nil;
 }
 
 public fn const char* Iter.getValue(const Iter* iter) {
-    const Data* d = cast<Data*>(iter.data);
+    const Data* d = (Data*)iter.data;
     if (iter.node && iter.node.kind == NodeKind.Scalar) return &d.text[iter.node.text_idx];
     return nil;
 }
@@ -113,7 +113,7 @@ public fn Iter Iter.getChildIter(Iter* parent) @(unused) {
 
     const Node* n = parent.node;
     if (n.kind != NodeKind.Scalar && n.child_idx) {
-        const Data* d = cast<Data*>(iter.data);
+        const Data* d = (Data*)iter.data;
         iter.node = d.idx2node(n.child_idx);
     }
     return iter;
@@ -123,14 +123,14 @@ public fn const char* Iter.getChildScalarValue(Iter* iter, const char* path) {
     if (!iter.node) return nil;
 
     if (iter.node.kind == NodeKind.Sequence) return nil;
-    const Data* d = cast<Data*>(iter.data);
+    const Data* d = (Data*)iter.data;
     const Node* n = d.findChildNode(path, iter.node.child_idx);
     if (n && n.isScalar()) return &d.text[n.text_idx];
     return nil;
 }
 
 fn const char* starts_with(const char* full, const char* start) {
-    u32 len = cast<u32>(string.strlen(start));
+    u32 len = (u32)string.strlen(start);
     if (string.strncmp(full, start, len) == 0) {
         full += len;
         if (full[0] == '.') return full+1;

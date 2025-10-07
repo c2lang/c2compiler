@@ -21,7 +21,7 @@ import ir_context;
 import ref_list local;
 
 fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
-    CallExpr* call = cast<CallExpr*>(e);
+    CallExpr* call = (CallExpr*)e;
     ir_context.Context* c = gen.ctx;
 
     u32 num_args = call.getNumArgs();
@@ -42,7 +42,7 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         gen.emitMemberExpr(&ref, func);
         arg_refs.add(ref);
 
-        const MemberExpr* m = cast<MemberExpr*>(func);
+        const MemberExpr* m = (MemberExpr*)func;
         gen.emitSymbol(&name_ref, m.getFullDecl());
     } else {
         gen.emitExpr(&name_ref, call.getFunc());

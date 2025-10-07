@@ -48,7 +48,7 @@ fn Value Value.createSigned(i64 svalue) {
         Value result = { .kind = ValueKind.Integer, .negative = true, .uvalue = ~svalue + 1 }
         return result;
     } else {
-        Value result = { .kind = ValueKind.Integer, .uvalue = cast<u64>(svalue) }
+        Value result = { .kind = ValueKind.Integer, .uvalue = (u64)svalue }
         return result;
     }
 }

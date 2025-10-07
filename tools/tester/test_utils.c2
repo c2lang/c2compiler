@@ -94,10 +94,10 @@ public fn const char* find(const char* start, const char* end, const char* text)
     if (tlen == 0)
         return start;
     for (;;) {
-        const char* cp = memchr(start, *text, cast<usize>(end - start));
+        const char* cp = memchr(start, *text, (usize)(end - start));
         if (!cp)
             break;
-        usize len = cast<usize>(end - cp);
+        usize len = (usize)(end - cp);
         if (len < tlen)
             break;
         if (!memcmp(cp, text, tlen))

@@ -42,8 +42,8 @@ const FlowBits FlowError     = 1 << Flow.Error;
 
 fn Expr* getCondExpr(const Stmt* cond) {
     if (cond) {
-        if (cond.isExpr()) return cast<Expr*>(cond);
-        if (cond.isDecl()) return cast<DeclStmt*>(cond).getDecl(0).getInit();
+        if (cond.isExpr()) return (Expr*)cond;
+        if (cond.isDecl()) return ((DeclStmt*)(cond)).getDecl(0).getInit();
     }
     return nil;
 }
@@ -215,9 +215,9 @@ fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_ass
 
     assert(s.isExpr());
     QualType qt = ma.analyseExpr((Expr**)s_ptr, true, RHS);
-    Expr* e = cast<Expr*>(*s_ptr);
+    Expr* e = (Expr*)*s_ptr;
     if (qt.isValid()) ma.checker.check(builtins[BuiltinKind.Bool], qt, (Expr**)s_ptr, e.getLoc());
-    e = cast<Expr*>(*s_ptr);    // re-read in case of ImplicitCast insertions
+    e = (Expr*)*s_ptr;    // re-read in case of ImplicitCast insertions
 
     if (check_assign && e.isAssignment()) {
         ma.warn(e.getLoc(), "using the result of an assignment as a condition without parentheses");

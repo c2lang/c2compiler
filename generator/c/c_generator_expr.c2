@@ -28,30 +28,30 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
 fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_Prec prec) {
     switch (e.getKind()) {
     case IntegerLiteral:
-        IntegerLiteral* i = cast<IntegerLiteral*>(e);
+        IntegerLiteral* i = (IntegerLiteral*)e;
         i.printLiteral(out, true);
         break;
     case FloatLiteral:
-        FloatLiteral* f = cast<FloatLiteral*>(e);
+        FloatLiteral* f = (FloatLiteral*)e;
         f.printLiteral(out);
         break;
     case BooleanLiteral:
-        BooleanLiteral* b = cast<BooleanLiteral*>(e);
+        BooleanLiteral* b = (BooleanLiteral*)e;
         b.printLiteral(out);
         break;
     case CharLiteral:
-        CharLiteral* c = cast<CharLiteral*>(e);
+        CharLiteral* c = (CharLiteral*)e;
         c.printLiteral(out);
         break;
     case StringLiteral:
-        StringLiteral* s = cast<StringLiteral*>(e);
+        StringLiteral* s = (StringLiteral*)e;
         s.printLiteral(out);
         break;
     case Nil:
         out.add("NULL");
         break;
     case Identifier:
-        IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        IdentifierExpr* i = (IdentifierExpr*)e;
         Decl* d = i.getDecl();
         gen.genDeclIfNeeded(d);
         gen.emitDeclName(out, d);
@@ -67,7 +67,7 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
             gen.emitCall(out, e);
         break;
     case InitList:
-        InitListExpr* ile = cast<InitListExpr*>(e);
+        InitListExpr* ile = (InitListExpr*)e;
         out.add1('{');
         u32 num_values = ile.getNumValues();
         Expr** values = ile.getValues();
@@ -101,7 +101,7 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
         break;
     case ConditionalOperator:
         if (prec > Conditional) out.lparen();
-        ConditionalOperator* c = cast<ConditionalOperator*>(e);
+        ConditionalOperator* c = (ConditionalOperator*)e;
         gen.emitExpr2(out, c.getCond(), LogicalOr);
         out.add(" ? ");
         gen.emitExpr2(out, c.getLHS(), Comma);
@@ -113,7 +113,7 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
         gen.emitBuiltinExpr(out, e);
         break;
     case ArraySubscript:
-        ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+        ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
         Expr* index = a.getIndex();
         if (index.isBitOffset()) {
             gen.emitBitOffset(out, a.getBase(), index, prec);
@@ -128,7 +128,7 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
         gen.emitMemberExpr(out, e);
         break;
     case Paren:
-        ParenExpr* p = cast<ParenExpr*>(e);
+        ParenExpr* p = (ParenExpr*)e;
         out.lparen();
         gen.emitExpr2(out, p.getInner(), Comma);
         out.rparen();
@@ -138,7 +138,7 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
         assert(0);
         break;
     case ExplicitCast:
-        ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
+        ExplicitCastExpr* c = (ExplicitCastExpr*)e;
         if (prec > Prefix) out.lparen();
         gen.emitCast(out, c.getDestType(), false);
         if (c.getCStyle()) {
@@ -153,12 +153,12 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
         break;
     case ImplicitCast:
         // TODO some casts might need to be explicit to prevent warnings
-        ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
+        ImplicitCastExpr* i = (ImplicitCastExpr*)e;
         gen.emitExpr2(out, i.getInner(), prec);
         break;
     case Range:
         if (prec > Assignment) out.lparen();
-        const RangeExpr* b = cast<RangeExpr*>(e);
+        const RangeExpr* b = (RangeExpr*)e;
         gen.emitExpr(out, b.getLHS());
         out.add(" ... ");
         gen.emitExpr(out, b.getRHS());
@@ -169,7 +169,7 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
 
 fn void Generator.emitBitOffset(Generator* gen, string_buffer.Buf* out, Expr* base, Expr* index, C_Prec prec) {
     // example: a[15:8] -> ((a>>8) & 0xFF)
-    BitOffsetExpr* bo = cast<BitOffsetExpr*>(index);
+    BitOffsetExpr* bo = (BitOffsetExpr*)index;
     // TODO use prec to remove these parentheses
     out.lparen();
     out.lparen();  // useless
@@ -193,7 +193,7 @@ fn void Generator.emitCast(Generator* gen, string_buffer.Buf* out, QualType qt, 
 }
 
 fn void Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e, C_Prec prec) {
-    BinaryOperator* b = cast<BinaryOperator*>(e);
+    BinaryOperator* b = (BinaryOperator*)e;
     BinaryOpcode opcode = b.getOpcode();
     C_Prec prec2 = C_Prec_table[opcode];
     bool need_paren = prec > prec2;
@@ -214,7 +214,7 @@ fn void Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, Exp
 }
 
 fn void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e, C_Prec prec) {
-    UnaryOperator* u = cast<UnaryOperator*>(e);
+    UnaryOperator* u = (UnaryOperator*)e;
     if (u.isBefore()) {
         if (prec > Prefix) out.lparen();
         out.add(u.getOpcodeStr());
@@ -232,7 +232,7 @@ fn void emitDotOrArrow(string_buffer.Buf* out, QualType qt) {
 }
 
 fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
-    MemberExpr* m = cast<MemberExpr*>(e);
+    MemberExpr* m = (MemberExpr*)e;
     bool need_dot = false;
     QualType baseType = { }
     if (m.hasExpr()) {
@@ -259,7 +259,7 @@ fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr* e
         case StructType:
             // Note: can be substruct here or Type
             if (need_dot) emitDotOrArrow(out, baseType);
-            StructTypeDecl* std = cast<StructTypeDecl*>(d);
+            StructTypeDecl* std = (StructTypeDecl*)d;
             // Dont generate anything for Type, will be in prefix
             if (!std.isGlobal()) {
                 baseType = d.getType();
@@ -297,7 +297,7 @@ fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr* e
 
 fn void Generator.emitMemberExprBase(Generator* gen, string_buffer.Buf* out, Expr* e) {
     // Note: used by SF/SSF calls
-    MemberExpr* m = cast<MemberExpr*>(e);
+    MemberExpr* m = (MemberExpr*)e;
 
     bool need_dot = false;
     QualType baseType = { }
@@ -360,7 +360,7 @@ fn void Generator.emitMemberExprBase(Generator* gen, string_buffer.Buf* out, Exp
 
 fn void Generator.emitFieldDesigExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     // Cannot use printLiteral because expressions need C conversion
-    FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(e);
+    FieldDesignatedInitExpr* fdi = (FieldDesignatedInitExpr*)e;
     out.add1('.');
     out.add(fdi.getFieldName());
     out.add(" = ");
@@ -369,7 +369,7 @@ fn void Generator.emitFieldDesigExpr(Generator* gen, string_buffer.Buf* out, Exp
 
 fn void Generator.emitArrayDesigExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     // Cannot use printLiteral because expressions need C conversion
-    ArrayDesignatedInitExpr* ad = cast<ArrayDesignatedInitExpr*>(e);
+    ArrayDesignatedInitExpr* ad = (ArrayDesignatedInitExpr*)e;
     out.add1('[');
     gen.emitExpr(out, ad.getDesignator());
     out.add("] = ");
@@ -456,7 +456,7 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
 }
 
 fn void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
-    BuiltinExpr* b = cast<BuiltinExpr*>(e);
+    BuiltinExpr* b = (BuiltinExpr*)e;
     switch (b.getKind()) {
     case Sizeof:
         Value v = b.getValue();

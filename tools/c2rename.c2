@@ -73,8 +73,8 @@ fn void parse_options(i32 argc, const char** argv) {
         opts.newname = args[1];
     } else if (pos_count == 4) {
         opts.filename= args[0];
-        opts.line = cast<u32>(atoi(args[1]));
-        opts.column = cast<u16>(atoi(args[2]));
+        opts.line = (u32)atoi(args[1]);
+        opts.column = (u16)atoi(args[2]);
         opts.newname = args[3];
     } else {
         usage(argv[0]);

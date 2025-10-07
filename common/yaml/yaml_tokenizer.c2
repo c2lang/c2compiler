@@ -230,7 +230,7 @@ fn bool Tokenizer.lex_indent(Tokenizer* t, Token* result) {
     const char* start = t.cur;
     while (*t.cur == ' ') t.cur++;
 
-    i32 indent = cast<i32>(t.cur - start);
+    i32 indent = (i32)(t.cur - start);
     result.loc = t.loc;
     t.loc.column += indent;
     if (t.cur_indent == indent) return false;
@@ -277,7 +277,7 @@ fn void Tokenizer.lex_directive(Tokenizer* t, Token* result) {
         }
     }
 out:
-    count = cast<u32>(t.cur - start);
+    count = (u32)(t.cur - start);
     t.error_msg[count] = 0; // HUH?
     result.loc = t.loc;
     result.kind = TokenKind.Directive;
@@ -305,7 +305,7 @@ fn void Tokenizer.lex_quoted_string(Tokenizer* t, Token* result, char delim) {
         }
     }
 out:
-    count = cast<u32>(t.cur - start);
+    count = (u32)(t.cur - start);
     t.cur++;    // skip terminating delimiter
     result.loc = t.loc;
     result.kind = (delim == '"') ? TokenKind.Double_Quoted_Scalar : TokenKind.Single_Quoted_Scalar;
@@ -340,7 +340,7 @@ fn void Tokenizer.lex_string(Tokenizer* t, Token* result) {
         break;
     }
 
-    u32 count = cast<u32>(t.cur - start);
+    u32 count = (u32)(t.cur - start);
     result.loc = t.loc;
     result.kind = TokenKind.Plain_Scalar;
     result.text_idx = t.data.add_text(start, count);

@@ -35,7 +35,7 @@ fn void Generator.emitAssign(Generator* gen, ir.Ref* result, const Expr* lhs, co
 }
 
 fn void Generator.emitBinaryOperator(Generator* gen, ir.Ref* result, const Expr* e) {
-    const BinaryOperator* b = cast<BinaryOperator*>(e);
+    const BinaryOperator* b = (BinaryOperator*)e;
 
     switch (b.getOpcode()) {
     case Multiply:
@@ -146,7 +146,7 @@ fn void Generator.emitBinaryOperator(Generator* gen, ir.Ref* result, const Expr*
 // 2 cases: as if/while/for condition or outside
 // this is the outside case, should return a result
 fn void Generator.emitLogicalAnd(Generator* gen, ir.Ref* result, const Expr* e) {
-    const BinaryOperator* b = cast<BinaryOperator*>(e);
+    const BinaryOperator* b = (BinaryOperator*)e;
     ir_context.Context* c = gen.ctx;
 
 /*
@@ -196,7 +196,7 @@ fn void Generator.emitLogicalAnd(Generator* gen, ir.Ref* result, const Expr* e) 
 }
 
 fn void Generator.emitLogicalOr(Generator* gen, ir.Ref* result, const Expr* e) {
-    const BinaryOperator* b = cast<BinaryOperator*>(e);
+    const BinaryOperator* b = (BinaryOperator*)e;
     ir_context.Context* c = gen.ctx;
 
 /*
@@ -251,7 +251,7 @@ fn void Generator.emitLogicalOr(Generator* gen, ir.Ref* result, const Expr* e) {
 }
 
 fn void Generator.emitShift(Generator* gen, ir.Ref* result, const Expr* e) {
-    const BinaryOperator* b = cast<BinaryOperator*>(e);
+    const BinaryOperator* b = (BinaryOperator*)e;
     InstrKind k;
     if (b.getOpcode() == BinaryOpcode.ShiftLeft) {
         k = InstrKind.Shl;
@@ -271,7 +271,7 @@ fn void Generator.emitShift(Generator* gen, ir.Ref* result, const Expr* e) {
 }
 
 fn void Generator.emitOpAssign(Generator* gen, ir.Ref* result, const Expr* e) {
-    const BinaryOperator* b = cast<BinaryOperator*>(e);
+    const BinaryOperator* b = (BinaryOperator*)e;
 
     // TODO put in global array (also use in Generic)
     // Compare: size <=4 -> w variant, else l variant

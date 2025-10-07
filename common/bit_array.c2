@@ -33,14 +33,14 @@ public fn void BitArray.set(BitArray* a, u32 idx) {
     //assert(idx < a.cap);
     u32 word = idx / 64;
     idx -= word * 64;
-    a.data[word] |= (cast<u64>(1) << idx);
+    a.data[word] |= ((u64)1 << idx);
 }
 
 public fn void BitArray.clear(BitArray* a, u32 idx) {
     //assert(idx < MaxBits);
     u32 word = idx / 64;
     idx -= word * 64;
-    a.data[word] &= ~(cast<u64>(1) << idx);
+    a.data[word] &= ~((u64)1 << idx);
 }
 
 public fn bool BitArray.get(const BitArray* a, u32 idx) {

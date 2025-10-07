@@ -259,7 +259,7 @@ fn void Parser.lex(Parser* p, Token* result) {
         switch (*p.cur) {
         case 0:
             p.cur--;
-            result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
+            result.loc = p.loc_start + (SrcLoc)(p.cur - p.input_start);
             result.kind = Kind.Eof;
             return;
         case ' ':
@@ -294,12 +294,12 @@ fn void Parser.lex(Parser* p, Token* result) {
             result.kind = p.new_line ? Kind.File : Kind.Text;
             if (*p.cur == 0) result.kind = Kind.Eof;
             p.new_line = false;
-            u32 len = cast<u32>(p.cur - start);
+            u32 len = (u32)(p.cur - start);
             result.value = p.pool.add(start, len, true);
             return;
         default:
             if (ctype.isalnum(*p.cur)) {
-                result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
+                result.loc = p.loc_start + (SrcLoc)(p.cur - p.input_start);
                 if (equals(p.cur, "plugin ", 7)) {
                     result.kind = Kind.Plugin;
                     p.cur += 7;
@@ -349,11 +349,11 @@ fn void Parser.lex(Parser* p, Token* result) {
                 // TODO check EOF
                 result.kind = p.new_line ? Kind.File : Kind.Text;
                 p.new_line = false;
-                u32 len = cast<u32>(p.cur - start);
+                u32 len = (u32)(p.cur - start);
                 result.value = p.pool.add(start, len, true);
                 return;
             }
-            result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
+            result.loc = p.loc_start + (SrcLoc)(p.cur - p.input_start);
             p.error("unexpected input '%c'", *p.cur);
             return;
         }
@@ -370,8 +370,8 @@ fn void Parser.lex_plugin_options(Parser* p, Token* result) {
             return;
         }
         if (*p.cur == ']') {
-            u32 len = cast<u32>(p.cur - start);
-            result.loc = p.loc_start + cast<SrcLoc>(start - p.input_start);
+            u32 len = (u32)(p.cur - start);
+            result.loc = p.loc_start + (SrcLoc)(start - p.input_start);
             result.kind = Kind.PluginOptions;
             result.value = p.pool.add(start, len, true);
             p.cur++;
@@ -392,19 +392,19 @@ fn bool is_name(char c) {
 fn void Parser.lex_set_use(Parser* p, Token* result) {
     p.cur++;    // skip (
 
-    result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
+    result.loc = p.loc_start + (SrcLoc)(p.cur - p.input_start);
 
     const char* start = p.cur;
     while (is_name(*p.cur)) p.cur++;
 
     result.kind = Kind.SetUse;
-    u32 len = cast<u32>(p.cur - start);
+    u32 len = (u32)(p.cur - start);
     if (len == 0) p.error("expected set name");
 
     result.value = p.pool.add(start, len, true);
 
     if (*p.cur != ')') {
-        result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
+        result.loc = p.loc_start + (SrcLoc)(p.cur - p.input_start);
         p.error("expected ')'");
     }
     p.cur++;
@@ -414,12 +414,12 @@ fn void Parser.lex_set_use(Parser* p, Token* result) {
 fn void Parser.lex_option(Parser* p, Token* result) {
     p.cur++;    // skip $
 
-    result.loc = p.loc_start + cast<SrcLoc>(p.cur - p.input_start);
+    result.loc = p.loc_start + (SrcLoc)(p.cur - p.input_start);
 
     const char* end = p.cur;
     while (*end && !ctype.isspace(*end)) end++;
 
-    u32 len = cast<u32>(end - p.cur);
+    u32 len = (u32)(end - p.cur);
     if (len >= 20) p.error("unknown option");
 
     char[24] option;

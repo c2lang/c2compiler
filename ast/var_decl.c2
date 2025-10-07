@@ -190,7 +190,7 @@ fn u32 VarDecl.getOffset(const VarDecl* d) {
 }
 
 public fn void VarDecl.setOffset(VarDecl* d, u32 offset) {
-    d.base.offset = cast<u16>(offset);
+    d.base.offset = (u16)offset;
 }
 
 public fn VarDeclKind VarDecl.getKind(const VarDecl* d) {

@@ -37,30 +37,30 @@ public fn void Finder.check(Finder* s, Decl* d) {
     s.current = d;
     switch (d.getKind()) {
     case Function:
-        s.handleFunction(cast<FunctionDecl*>(d));
+        s.handleFunction((FunctionDecl*)d);
         break;
     case Import:
         break;
     case StructType:
-        s.handleStruct(cast<StructTypeDecl*>(d));
+        s.handleStruct((StructTypeDecl*)d);
         break;
     case EnumType:
-        s.handleEnumType(cast<EnumTypeDecl*>(d));
+        s.handleEnumType((EnumTypeDecl*)d);
         break;
     case EnumConstant:
         d.dump();
         assert(0); // TODO
         break;
     case FunctionType:
-        FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
+        FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;
         s.handleFunction(ftd.getDecl());
         break;
     case AliasType:
-        AliasTypeDecl* at = cast<AliasTypeDecl*>(d);
+        AliasTypeDecl* at = (AliasTypeDecl*)d;
         s.handleTypeRef(at.getTypeRef());
         break;
     case Variable:
-        s.handleVarDecl(cast<VarDecl*>(d));
+        s.handleVarDecl((VarDecl*)d);
         break;
     }
 }
@@ -98,11 +98,11 @@ fn void Finder.handleStruct(Finder* s, StructTypeDecl* d) {
     for (u32 i=0; i<num_members; i++) {
         Decl* m = members[i];
         if (m.isStructType()) {
-            s.handleStruct(cast<StructTypeDecl*>(m));
+            s.handleStruct((StructTypeDecl*)m);
         } else {
             assert(m.isVariable());
             // TODO for pointer members, dont count, since forward decl is already done!
-            s.handleVarDecl(cast<VarDecl*>(m));
+            s.handleVarDecl((VarDecl*)m);
         }
     }
 }
@@ -157,72 +157,72 @@ fn void Finder.handleExpr(Finder* s, Expr* e) {
     case Nil:
         break;
     case Identifier:
-        IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        IdentifierExpr* i = (IdentifierExpr*)e;
         Decl* d = i.getDecl();
         s.onDep(d, true);
         break;
     case Type:
-        TypeExpr* t = cast<TypeExpr*>(e);
+        TypeExpr* t = (TypeExpr*)e;
         s.handleTypeRef(t.getTypeRef());
         break;
     case Call:
         break;
     case InitList:
-        s.handleInitList(cast<InitListExpr*>(e));
+        s.handleInitList((InitListExpr*)e);
         break;
     case FieldDesignatedInit:
-        FieldDesignatedInitExpr* i = cast<FieldDesignatedInitExpr*>(e);
+        FieldDesignatedInitExpr* i = (FieldDesignatedInitExpr*)e;
         s.handleExpr(i.getInit());
         break;
     case ArrayDesignatedInit:
-        ArrayDesignatedInitExpr* a = cast<ArrayDesignatedInitExpr*>(e);
+        ArrayDesignatedInitExpr* a = (ArrayDesignatedInitExpr*)e;
         s.handleExpr(a.getDesignator());
         s.handleExpr(a.getInit());
         break;
     case BinaryOperator:
-        BinaryOperator* b = cast<BinaryOperator*>(e);
+        BinaryOperator* b = (BinaryOperator*)e;
         s.handleExpr(b.getLHS());
         s.handleExpr(b.getRHS());
         break;
     case UnaryOperator:
-        UnaryOperator* u = cast<UnaryOperator*>(e);
+        UnaryOperator* u = (UnaryOperator*)e;
         s.handleExpr(u.getInner());
         break;
     case ConditionalOperator:
-        ConditionalOperator* c = cast<ConditionalOperator*>(e);
+        ConditionalOperator* c = (ConditionalOperator*)e;
         s.handleExpr(c.getCond());
         s.handleExpr(c.getLHS());
         s.handleExpr(c.getRHS());
         break;
     case Builtin:
-        BuiltinExpr* b = cast<BuiltinExpr*>(e);
+        BuiltinExpr* b = (BuiltinExpr*)e;
         s.handleExpr(b.getInner());
         break;
     case ArraySubscript:
-        ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+        ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
         s.handleExpr(a.getBase());
         s.handleExpr(a.getIndex());
         break;
     case Member:
-        s.handleMemberExpr(cast<MemberExpr*>(e));
+        s.handleMemberExpr((MemberExpr*)e);
         break;
     case Paren:
-        ParenExpr* p = cast<ParenExpr*>(e);
+        ParenExpr* p = (ParenExpr*)e;
         s.handleExpr(p.getInner());
         break;
     case BitOffset:
         break;
     case ExplicitCast:
-        ExplicitCastExpr* c = cast<ExplicitCastExpr*>(e);
+        ExplicitCastExpr* c = (ExplicitCastExpr*)e;
         s.handleExpr(c.getInner());
         s.handleTypeRef(c.getTypeRef());
         break;
     case ImplicitCast:
-        ImplicitCastExpr* c = cast<ImplicitCastExpr*>(e);
+        ImplicitCastExpr* c = (ImplicitCastExpr*)e;
         s.handleExpr(c.getInner());
         break;
     case Range:
-        RangeExpr* b = cast<RangeExpr*>(e);
+        RangeExpr* b = (RangeExpr*)e;
         s.handleExpr(b.getLHS());
         s.handleExpr(b.getRHS());
         break;
@@ -254,6 +254,6 @@ fn void Finder.onDep(Finder* s, const Decl* d, bool full) {
     if (d.isGenerated()) return;
     if (d == s.current) return; // self
 
-    s.on_decl(s.arg, cast<Decl*>(d));
+    s.on_decl(s.arg, (Decl*)d);
 }
 

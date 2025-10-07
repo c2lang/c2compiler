@@ -101,7 +101,7 @@ fn void Issues.resizePool(Issues* i, u32 capacity) {
 }
 
 fn u32 Issues.addPool(Issues* i, const char* text) {
-    u32 len = cast<u32>(strlen(text)) + 1;      // includes 0-terminator
+    u32 len = (u32)strlen(text) + 1;      // includes 0-terminator
     while (i.pool_count + len >= i.pool_capacity) i.resizePool(i.pool_capacity * 2);
 
     u32 idx = i.pool_count;
@@ -125,7 +125,7 @@ public fn void Issues.add(Issues* i, const char* filename, u32 line_nr, const ch
 
     Issue* cur = &i.issues[i.count];
     cur.filename = i.addPool(filename);
-    cur.line_nr = cast<i32>(line_nr);
+    cur.line_nr = (i32)line_nr;
     cur.msg = i.addPool(msg);
     i.count++;
 }

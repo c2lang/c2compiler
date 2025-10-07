@@ -93,7 +93,7 @@ fn bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, cons
     skipTrailingWhitespace(start, &end);
 
     char[EXPECT_MAX_LINE] line;
-    u32 len = cast<u32>(end - start);
+    u32 len = (u32)(end - start);
     if (len == 0) return true;  // ignore empty lines
     if (start[0] == '/' && start[1] == '/') return true;    // ignore comment lines
 

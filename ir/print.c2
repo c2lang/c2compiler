@@ -326,7 +326,7 @@ fn void PrintHelper.printInitValue(PrintHelper* ph, const InitValue* v, string_b
         out.color(col_Data);
         const char* text = ph.c.pool.idx2str(v.value);
         out.add1('"');
-        out.encodeBytes(text, cast<u32>(string.strlen(text))+1, '"');
+        out.encodeBytes(text, (u32)string.strlen(text) + 1, '"');
         out.add1('"');
         break;
     case Zero:

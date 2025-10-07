@@ -139,7 +139,7 @@ fn const char* Generator.createSymbolName(Generator* gen, const Decl* d) {
             out.add(d.getModuleName());
             out.add1('_');
             if (d.isFunction()) {
-                FunctionDecl* fd = cast<FunctionDecl*>(d);
+                FunctionDecl* fd = (FunctionDecl*)d;
                 ast.Ref* prefix = fd.getPrefix();
                 if (prefix) {
                     out.add(ast.idx2name(prefix.name_idx));
@@ -147,7 +147,7 @@ fn const char* Generator.createSymbolName(Generator* gen, const Decl* d) {
                 }
             } else if (d.isEnumConstant()) {
                 QualType qt = d.getType();
-                EnumType* et = cast<EnumType*>(qt.getType());
+                EnumType* et = (EnumType*)qt.getType();
                 out.add(et.getName());
                 out.add1('_');
             }
@@ -274,14 +274,14 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         assert(0);  // should be CTV
         break;
     case StringLiteral:
-        const StringLiteral* s = cast<StringLiteral*>(e);
+        const StringLiteral* s = (StringLiteral*)e;
         gen.ctx.addInitString(s.getText(), s.strlen());
         break;
     case Nil:
         assert(0);  // should be CTV
         break;
     case Identifier:
-        const IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        const IdentifierExpr* i = (IdentifierExpr*)e;
         Decl* d = i.getDecl();
         SymbolId sid = gen.createSymbol(d);
         gen.ctx.addInitSymbol(sid);
@@ -292,7 +292,7 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         assert(0);  // should be CTV
         break;
     case InitList:
-        const InitListExpr* ile = cast<InitListExpr*>(e);
+        const InitListExpr* ile = (InitListExpr*)e;
         u32 num_values = ile.getNumValues();
         if (num_values == 0) {   // { }
             gen.ctx.addInitZero(size);
@@ -309,7 +309,7 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         assert(0);  // should be CTV
         break;
     case UnaryOperator:
-        UnaryOperator* uo = cast<UnaryOperator*>(e);
+        UnaryOperator* uo = (UnaryOperator*)e;
         assert(uo.isAddrOf());
         gen.emitInit(uo.getInner(), size);
         break;
@@ -321,7 +321,7 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         break;
     case Member:
         // should be Symbol ref
-        const MemberExpr* m = cast<MemberExpr*>(e);
+        const MemberExpr* m = (MemberExpr*)e;
         Decl* d = m.getFullDecl();
         SymbolId sid = gen.createSymbol(d);
         gen.ctx.addInitSymbol(sid);
@@ -332,13 +332,13 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         assert(0);  // should be CTV
         break;
     case ExplicitCast:
-        // ExplicitCast can be non-CTV:  .. = cast<void*>(&a);
+        // ExplicitCast can be non-CTV:  .. = (void*)&a;
         // just emit inner then
-        const ExplicitCastExpr* ec = cast<ExplicitCastExpr*>(e);
+        const ExplicitCastExpr* ec = (ExplicitCastExpr*)e;
         gen.emitInit(ec.getInner(), size);
         break;
     case ImplicitCast:
-        const ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
+        const ImplicitCastExpr* ic = (ImplicitCastExpr*)e;
         gen.emitInit(ic.getInner(), size);
         break;
     case Range:
@@ -348,7 +348,7 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
 }
 
 fn void Generator.emitGlobalStructInit(Generator* gen, const Expr* e) {
-    const InitListExpr* ile = cast<InitListExpr*>(e);
+    const InitListExpr* ile = (InitListExpr*)e;
     u32 num_values = ile.getNumValues();
     const Expr** values = ile.getValues2();
 
@@ -360,7 +360,7 @@ fn void Generator.emitGlobalStructInit(Generator* gen, const Expr* e) {
         FieldStructLayouter layouter;
         layouter.init(gen, std.getSize(), std.getDesigMemberCount());
         for (u32 i=0; i<num_values; i++) {
-            FieldDesignatedInitExpr* fdi = cast<FieldDesignatedInitExpr*>(values[i]);
+            FieldDesignatedInitExpr* fdi = (FieldDesignatedInitExpr*)values[i];
             const FieldInitField* fif = fdi.getMemberInfo();
             if (!fif.isZeroSizeBitfield()) {
                 layouter.add(fif, fdi.getInit());
@@ -386,7 +386,7 @@ fn void on_expr(void* arg, const Expr* e, u32 elem_size) {
 }
 
 fn void Generator.emitArrayInit(Generator* gen, const Expr* e) {
-    const InitListExpr* ile = cast<InitListExpr*>(e);
+    const InitListExpr* ile = (InitListExpr*)e;
     u32 num_values = ile.getNumValues();
     // TODO store element_size / num-elements real, not just in inits) in ILE?
     QualType qt = e.getType();
@@ -402,7 +402,7 @@ fn void Generator.emitArrayInit(Generator* gen, const Expr* e) {
         for (u32 i=0; i<num_values; i++) {
             const Expr* ie = values[i];
             if (ie.isArrayDesignatedInit()) {
-                const ArrayDesignatedInitExpr* ad = cast<ArrayDesignatedInitExpr*>(ie);
+                const ArrayDesignatedInitExpr* ad = (ArrayDesignatedInitExpr*)ie;
                 const Expr* desig = ad.getDesignator();
                 Value v = ctv_analyser.get_value(desig);
                 sorter.addAt(v.as_u32(), ad.getInit());
@@ -441,7 +441,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
 
     gen.labels.clear();
     gen.locals.clear();
-    Decl* d = cast<Decl*>(fd);
+    Decl* d = (Decl*)fd;
     gen.cur_function = fd;
 
     bool has_prefix = !d.isPublic() || (string.strcmp(d.getName(), "main") != 0);
@@ -495,7 +495,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     //if (d.isPublic()) out.add("export "); // TEMP not if single file, unless main
 
     // generate a map for all locals, allocate stack slots. Also define 'local' locals
-    gen.collectLocalVars(cast<Stmt*>(fd.getBody()));
+    gen.collectLocalVars((Stmt*)fd.getBody());
 
     // create stores for params
     for (u32 i=0; i<num_params; i++) {
@@ -504,7 +504,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
         c.addStoreInstr(var.ir_type, param_refs[i], var.ref);
     }
 
-    gen.emitStmt(cast<Stmt*>(fd.getBody()));
+    gen.emitStmt((Stmt*)fd.getBody());
 
     if (!c.isBlockTerminated()) {
         c.addRet0Instr();
@@ -517,7 +517,7 @@ fn void on_var_decl(void* arg, VarDecl* vd) {
     Generator* gen = arg;
     ir_context.Context* c = gen.ctx;
 
-    Decl* d = cast<Decl*>(vd);
+    Decl* d = (Decl*)vd;
     if (!d.isUsed()) return;
 
     QualType qt = d.getType();
@@ -630,7 +630,7 @@ fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
 fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
     switch (s.getKind()) {
     case If:
-        const IfStmt* if_stmt = cast<IfStmt*>(s);
+        const IfStmt* if_stmt = (IfStmt*)s;
         gen.collectLocalVars(if_stmt.getCond());
         Stmt* then_stmt = if_stmt.getThen();
         if (then_stmt) gen.collectLocalVars(then_stmt);
@@ -638,19 +638,19 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
         if (else_stmt) gen.collectLocalVars(else_stmt);
         break;
     case While:
-        const WhileStmt* while_stmt = cast<WhileStmt*>(s);
+        const WhileStmt* while_stmt = (WhileStmt*)s;
         gen.collectLocalVars(while_stmt.getCond());
         gen.collectLocalVars(while_stmt.getBody());
         break;
     case For:
-        const ForStmt* for_stmt = cast<ForStmt*>(s);
+        const ForStmt* for_stmt = (ForStmt*)s;
         Stmt* init_stmt = for_stmt.getInit();
         if (init_stmt) gen.collectLocalVars(init_stmt);
         Stmt* body_stmt = for_stmt.getBody();
         if (body_stmt) gen.collectLocalVars(body_stmt);
         break;
     case Switch:
-        SwitchStmt* sw = cast<SwitchStmt*>(s);
+        SwitchStmt* sw = (SwitchStmt*)s;
         u32 num_cases = sw.getNumCases();
         SwitchCase** cases = sw.getCases();
         for (u32 i=0; i<num_cases; i++) {
@@ -663,12 +663,12 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
         }
         break;
     case Label:
-        LabelStmt* ls = cast<LabelStmt*>(s);
+        LabelStmt* ls = (LabelStmt*)s;
         Stmt* inner = ls.getStmt();
         if (inner) gen.collectLocalVars(inner);
         break;
     case Compound:
-        CompoundStmt* c = cast<CompoundStmt*>(s);
+        CompoundStmt* c = (CompoundStmt*)s;
         const u32 num_stmts = c.getCount();
         Stmt** stmts = c.getStmts();
         for (u32 i=0; i<num_stmts; i++) {
@@ -677,13 +677,13 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
         }
         break;
     case Decl:
-        const DeclStmt* ds = cast<DeclStmt*>(s);
+        const DeclStmt* ds = (DeclStmt*)s;
         u32 count = ds.getDeclCount();
         for (u32 i = 0; i < count; i++) {
             VarDecl* vd = ds.getDecl(i);
             if (vd.hasLocalQualifier()) {
                 // TODO move to collectLocals?
-                Decl* d = cast<Decl*>(vd);
+                Decl* d = (Decl*)vd;
                 ir.Ref ref;
                 gen.emitVarDecl(&ref, d);
                 QualType qt = d.getType();

@@ -35,16 +35,16 @@ type Evaluator struct {
 fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
-        const IntegerLiteral* i = cast<IntegerLiteral*>(e);
+        const IntegerLiteral* i = (IntegerLiteral*)e;
         return i.getValue();
     case FloatLiteral:
-        const FloatLiteral* f = cast<FloatLiteral*>(e);
+        const FloatLiteral* f = (FloatLiteral*)e;
         return f.getValue();
     case BooleanLiteral:
-        const BooleanLiteral* b = cast<BooleanLiteral*>(e);
+        const BooleanLiteral* b = (BooleanLiteral*)e;
         return b.getValue();
     case CharLiteral:
-        const CharLiteral* c = cast<CharLiteral*>(e);
+        const CharLiteral* c = (CharLiteral*)e;
         return c.getValue();
     case StringLiteral:
         assert(0);
@@ -52,13 +52,13 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
     case Nil:
         break;
     case Identifier:
-        const IdentifierExpr* i = cast<IdentifierExpr*>(e);
+        const IdentifierExpr* i = (IdentifierExpr*)e;
         return eval.get_decl_value(i.getDecl());
     case Type:
         // should not happen
         break;
     case Call:
-        const CallExpr* c = cast<CallExpr*>(e);
+        const CallExpr* c = (CallExpr*)e;
         return eval.eval_call(c);
     case InitList:
     case FieldDesignatedInit:
@@ -66,20 +66,20 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
         // should not happen
         break;
     case BinaryOperator:
-        return eval.get_binaryop_value(cast<BinaryOperator*>(e));
+        return eval.get_binaryop_value((BinaryOperator*)e);
     case UnaryOperator:
-        return eval.get_unaryop_value(cast<UnaryOperator*>(e));
+        return eval.get_unaryop_value((UnaryOperator*)e);
     case ConditionalOperator:
-        ConditionalOperator* c = cast<ConditionalOperator*>(e);
+        ConditionalOperator* c = (ConditionalOperator*)e;
         Value v = eval.get_value(c.getCond());
         if (v.isError()) return v;
         return eval.get_value(!v.isZero() ? c.getLHS() : c.getRHS());
     case Builtin:
-        const BuiltinExpr* bi = cast<BuiltinExpr*>(e);
+        const BuiltinExpr* bi = (BuiltinExpr*)e;
         return bi.getValue();
     case ArraySubscript:  // a[high:low], both included
         // note: can be CTV if BitOffsetExpr
-        ArraySubscriptExpr* a = cast<ArraySubscriptExpr*>(e);
+        ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
 
         Expr* index = a.getIndex();
         if (!index.isBitOffset()) break;
@@ -87,7 +87,7 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
         Value result = eval.get_value(a.getBase());
         // Dont allow negative/float
         assert(result.isDecimal() && !result.isNegative());
-        BitOffsetExpr* bo = cast<BitOffsetExpr*>(index);
+        BitOffsetExpr* bo = (BitOffsetExpr*)index;
         Value high = eval.get_value(bo.getLHS());
         Value low = eval.get_value(bo.getRHS());
         Value width = high.minus(&low);
@@ -97,20 +97,20 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
         result.mask(width.as_u32());
         return result;
     case Member:
-        const MemberExpr* m = cast<MemberExpr*>(e);
+        const MemberExpr* m = (MemberExpr*)e;
         return eval.get_decl_value(m.getFullDecl());
     case Paren:
-        const ParenExpr* p = cast<ParenExpr*>(e);
+        const ParenExpr* p = (ParenExpr*)e;
         return eval.get_value(p.getInner());
     case BitOffset:
         assert(0); // TODO
         break;
     case ExplicitCast:
-        const ExplicitCastExpr* i = cast<ExplicitCastExpr*>(e);
+        const ExplicitCastExpr* i = (ExplicitCastExpr*)e;
         Value result = eval.get_value(i.getInner());
         return result.castAs(e.getType());
     case ImplicitCast:
-        const ImplicitCastExpr* i = cast<ImplicitCastExpr*>(e);
+        const ImplicitCastExpr* i = (ImplicitCastExpr*)e;
         return eval.get_value(i.getInner());
     case Range:
         assert(0);
@@ -224,10 +224,10 @@ fn Value Evaluator.get_decl_value(Evaluator* eval, const Decl* d) {
     assert(d);
     switch (d.getKind()) {
     case EnumConstant:
-        const EnumConstantDecl* ecd = cast<EnumConstantDecl*>(d);
+        const EnumConstantDecl* ecd = (EnumConstantDecl*)d;
         return ecd.getValue();
     case Variable:
-        const VarDecl* vd = cast<VarDecl*>(d);
+        const VarDecl* vd = (VarDecl*)d;
         switch (vd.getKind()) {
         case GlobalVar:
         case LocalVar:
@@ -270,7 +270,7 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
     // evaluate the function call as a number
     u32 num_args = c.getNumArgs();
     // Should be Expr* const* args = c.getArgs();
-    Expr** args = (cast<CallExpr*>(c)).getArgs();
+    Expr** args = ((CallExpr*)c).getArgs();
 
     //Expr* func = c.getFunc();
     FunctionDecl* fd = expr2function(c.getFunc());
@@ -293,7 +293,6 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
 
     for (u32 i = 0; i < num_args; i++) {
         // TODO: pass actual parameter type
-        //Decl* d = cast<Decl*>(params[i]);
         Value v = caller.get_value(args[i]);
         if (v.isError())
             return v;
@@ -337,7 +336,7 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
         if (fun.address) {
             VarDecl** params = fd.getParams();
             if (num_args == 1) {
-                Decl* d = cast<Decl*>(params[0]);
+                Decl* d = (Decl*)params[0];
                 QualType qt1 = d.getType();
                 QualType rt = fd.getRType();
                 qt1 = qt1.getCanonicalType();
@@ -363,13 +362,13 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
 fn FunctionDecl* expr2function(Expr* e) {
     switch (e.getKind()) {
     case Identifier:
-        IdentifierExpr* i = cast<IdentifierExpr*>(e);
-        return cast<FunctionDecl*>(i.getDecl());
+        IdentifierExpr* i = (IdentifierExpr*)e;
+        return (FunctionDecl*)i.getDecl();
     case Member:
-        MemberExpr* m = cast<MemberExpr*>(e);
-        return cast<FunctionDecl*>(m.getFullDecl());
+        MemberExpr* m = (MemberExpr*)e;
+        return (FunctionDecl*)m.getFullDecl();
     case ImplicitCast:
-        ImplicitCastExpr* ic = cast<ImplicitCastExpr*>(e);
+        ImplicitCastExpr* ic = (ImplicitCastExpr*)e;
         return expr2function(ic.getInner());
     default:
         assert(0);
@@ -403,21 +402,21 @@ fn Cont Evaluator.error(Evaluator* sf, const char* msg) {
 fn Cont Stmt.eval(Stmt* s, Evaluator* sf) {
     sf.complexity++;
     switch (s.getKind()) {
-    case Return:      return (cast<ReturnStmt*>(s)).eval(sf);
-    case Expr:        return (cast<Expr*>(s)).eval(sf);
-    case If:          return (cast<IfStmt*>(s)).eval(sf);
-    case While:       return (cast<WhileStmt*>(s)).eval(sf);
-    case For:         return (cast<ForStmt*>(s)).eval(sf);
-    case Switch:      return (cast<SwitchStmt*>(s)).eval(sf);
-    case Break:       return (cast<BreakStmt*>(s)).eval(sf);
-    case Continue:    return (cast<ContinueStmt*>(s)).eval(sf);
-    case Fallthrough: return (cast<FallthroughStmt*>(s)).eval(sf);
-    case Label:       return (cast<LabelStmt*>(s)).eval(sf);
-    case Goto:        return (cast<GotoStmt*>(s)).eval(sf);
-    case Compound:    return (cast<CompoundStmt*>(s)).eval(sf);
-    case Decl:        return (cast<DeclStmt*>(s)).eval(sf);
-    case Asm:         return (cast<AsmStmt*>(s)).eval(sf);
-    case Assert:      return (cast<AssertStmt*>(s)).eval(sf);
+    case Return:      return ((ReturnStmt*)s).eval(sf);
+    case Expr:        return ((Expr*)s).eval(sf);
+    case If:          return ((IfStmt*)s).eval(sf);
+    case While:       return ((WhileStmt*)s).eval(sf);
+    case For:         return ((ForStmt*)s).eval(sf);
+    case Switch:      return ((SwitchStmt*)s).eval(sf);
+    case Break:       return ((BreakStmt*)s).eval(sf);
+    case Continue:    return ((ContinueStmt*)s).eval(sf);
+    case Fallthrough: return ((FallthroughStmt*)s).eval(sf);
+    case Label:       return ((LabelStmt*)s).eval(sf);
+    case Goto:        return ((GotoStmt*)s).eval(sf);
+    case Compound:    return ((CompoundStmt*)s).eval(sf);
+    case Decl:        return ((DeclStmt*)s).eval(sf);
+    case Asm:         return ((AsmStmt*)s).eval(sf);
+    case Assert:      return ((AssertStmt*)s).eval(sf);
     }
     return Cont.Abort;
 }
@@ -447,10 +446,10 @@ fn Cont IfStmt.eval(IfStmt* s, Evaluator* sf) {
     Stmt* cond = s.getCond();
     Expr* e = nil;
     if (cond.isExpr()) {
-        e = cast<Expr*>(cond);
+        e = (Expr*)cond;
     } else
     if (cond.isDecl()) {
-        e = (cast<DeclStmt*>(cond)).getDecl(0).getInit();
+        e = ((DeclStmt*)cond).getDecl(0).getInit();
         // TODO initialisation must assign value
     }
     if (!e)
@@ -472,10 +471,10 @@ fn Cont WhileStmt.eval(WhileStmt* s, Evaluator* sf) {
         Stmt* cond = s.getCond();
         Expr* e = nil;
         if (cond.isExpr()) {
-            e = cast<Expr*>(cond);
+            e = (Expr*)cond;
         } else
         if (cond.isDecl()) {
-            e = (cast<DeclStmt*>(cond)).getDecl(0).getInit();
+            e = ((DeclStmt*)cond).getDecl(0).getInit();
             // TODO initialisation must assign value
         }
         if (!e)

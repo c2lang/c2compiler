@@ -103,7 +103,7 @@ fn void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_public,
 
     d.loc = loc;
     d.name_idx = name_idx;
-    d.ast_idx = cast<u16>(ast_idx);
+    d.ast_idx = (u16)ast_idx;
     d.offset = 0;
     d.qt = qt;
 }

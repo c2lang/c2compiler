@@ -81,7 +81,7 @@ public type TypeRefHolder struct {
 }
 
 public fn void TypeRefHolder.init(TypeRefHolder* h) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     r.flagBits = 0;
     r.dest = 0;
     // can leave other members uninitialized because flags and counts are zero
@@ -89,79 +89,79 @@ public fn void TypeRefHolder.init(TypeRefHolder* h) {
 
 // note: returns dynamic size only!
 fn u32 TypeRefHolder.getExtraSize(const TypeRefHolder* h) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     return r.getExtraSize();
 }
 
 public fn void TypeRefHolder.setQualifiers(TypeRefHolder* h, u32 qualifiers) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     if (qualifiers & QualType_Volatile) r.flags.is_volatile = 1;
     if (qualifiers & QualType_Const) r.flags.is_const = 1;
 }
 
 public fn void TypeRefHolder.setConst(TypeRefHolder* h) @(unused) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     r.flags.is_const = 1;
 }
 
 public fn void TypeRefHolder.setVolatile(TypeRefHolder* h) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     r.flags.is_volatile = 1;
 }
 
 public fn bool TypeRefHolder.isPointer(const TypeRefHolder* h) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     return r.flags.num_ptrs != 0;
 }
 
 public fn void TypeRefHolder.addPointer(TypeRefHolder* h) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     assert(r.flags.num_ptrs != 3);
     r.flags.num_ptrs++;
 }
 
 public fn bool TypeRefHolder.isIncrArray(const TypeRefHolder* h) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     return r.flags.incr_array;
 }
 
 public fn void TypeRefHolder.setIncrArray(TypeRefHolder* h) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     r.flags.incr_array = 1;
 }
 
 public fn u32 TypeRefHolder.getNumArrays(const TypeRefHolder* h) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     return r.getNumArrays();
 }
 
 #if 0
 public fn u32 TypeRefHolder.getNumPointers(const TypeRefHolder* h) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     return r.getNumPointers();
 }
 #endif
 
 public fn bool TypeRefHolder.isArray(const TypeRefHolder* h) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     return r.flags.num_arrays != 0;
 }
 
 public fn void TypeRefHolder.addArray(TypeRefHolder* h, Expr* array) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     assert(r.flags.num_arrays != 3);
     h.arrays[r.flags.num_arrays] = array;
     r.flags.num_arrays++;
 }
 
 public fn void TypeRefHolder.setBuiltin(TypeRefHolder* h, BuiltinKind kind, SrcLoc loc) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     r.flags.builtin_kind = kind;
     r.loc = loc;
 }
 
 public fn void TypeRefHolder.setUser(TypeRefHolder* h, SrcLoc loc, u32 name_idx) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     r.flags.kind = TypeRefKind.User;
     h.user.loc = loc;
     h.user.name_idx = name_idx;
@@ -169,7 +169,7 @@ public fn void TypeRefHolder.setUser(TypeRefHolder* h, SrcLoc loc, u32 name_idx)
 }
 
 public fn void TypeRefHolder.setStructMemberType(TypeRefHolder* h, Decl* fd) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     r.flags.kind = TypeRefKind.StructMemberType;
     h.user.loc = 0;
     h.user.name_idx = 0;
@@ -177,7 +177,7 @@ public fn void TypeRefHolder.setStructMemberType(TypeRefHolder* h, Decl* fd) {
 }
 
 public fn void TypeRefHolder.setPrefix(TypeRefHolder* h, SrcLoc loc, u32 name_idx) {
-    TypeRef* r = cast<TypeRef*>(&h.ref);
+    TypeRef* r = (TypeRef*)&h.ref;
     // Note: moves previous user to prefix and makes this the user
     h.prefix = h.user;
     r.flags.has_prefix = 1;
@@ -187,7 +187,7 @@ public fn void TypeRefHolder.setPrefix(TypeRefHolder* h, SrcLoc loc, u32 name_id
 }
 
 public fn void TypeRefHolder.dump(const TypeRefHolder* h) @(unused) {
-    const TypeRef* r = cast<TypeRef*>(&h.ref);
+    const TypeRef* r = (TypeRef*)&h.ref;
     string_buffer.Buf* out = string_buffer.create(128, useColor(), 2);
     r.print(out, false);
     for (u32 i=0; i<r.getNumArrays(); i++) {
@@ -204,7 +204,7 @@ public fn void TypeRefHolder.dump(const TypeRefHolder* h) @(unused) {
 
 
 fn void TypeRef.init(TypeRef* dest, const TypeRefHolder* h) {
-    const TypeRef* r = cast<const TypeRef*>(&h.ref);
+    const TypeRef* r = (TypeRef*)&h.ref;
     *dest = *r; // copy base members
 
     // copy for tail-allocated info
@@ -326,11 +326,11 @@ public fn bool TypeRef.isPointerTo(const TypeRef* r, u32 ptr_idx) {
 }
 
 public fn BuiltinKind TypeRef.getBuiltinKind(const TypeRef* r) {
-    return cast<BuiltinKind>(r.flags.builtin_kind);
+    return (BuiltinKind)r.flags.builtin_kind;
 }
 
 public fn TypeRefKind TypeRef.getKind(const TypeRef* r) {
-    return cast<TypeRefKind>(r.flags.kind);
+    return (TypeRefKind)r.flags.kind;
 }
 
 public fn SrcLoc TypeRef.getLoc(const TypeRef* r) {
@@ -395,15 +395,15 @@ public fn u32 TypeRef.getNumArrays(const TypeRef* r) {
 
 public fn Expr* TypeRef.getArray(const TypeRef* r, u32 idx) {
     const u32 numrefs = r.isUser() + r.flags.has_prefix;
-    const u8* ptr = cast<u8*>(r.refs) + numrefs * sizeof(Ref);
-    Expr** arrays = cast<Expr**>(ptr);
+    const u8* ptr = (u8*)r.refs + numrefs * sizeof(Ref);
+    Expr** arrays = (Expr**)ptr;
     return arrays[idx];
 }
 
 public fn Expr** TypeRef.getArray2(TypeRef* r, u32 idx) {
     const u32 numrefs = r.isUser() + r.flags.has_prefix;
-    const u8* ptr = cast<u8*>(r.refs) + numrefs * sizeof(Ref);
-    Expr** arrays = cast<Expr**>(ptr);
+    const u8* ptr = (u8*)r.refs + numrefs * sizeof(Ref);
+    Expr** arrays = (Expr**)ptr;
     return &arrays[idx];
 }
 

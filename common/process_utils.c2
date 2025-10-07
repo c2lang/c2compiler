@@ -40,7 +40,7 @@ fn bool doWIFEXITED(i32 state) {
 }
 
 fn char getWEXITSTATUS(i32 state) {
-    return cast<char>((state >> 8) & 0xff);
+    return (char)((state >> 8) & 0xff);
 }
 
 fn void child_error(i32 fd, const char* format @(printf_format), ...) @(noreturn) {
@@ -50,7 +50,7 @@ fn void child_error(i32 fd, const char* format @(printf_format), ...) @(noreturn
     i32 res = vsnprintf(msg, sizeof(msg), format, args);
     va_end(args);
     if (res >= 0) {
-        usize len = cast<usize>(res);
+        usize len = (usize)res;
         msg[len++] = '\n';
         msg[len] = '\0';
         write(fd, msg, len);
@@ -132,7 +132,7 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
         char*[MAX_ARGS + 2] argv;
         char[MAX_ARG_LEN] argbuf;
         u32 argc = 0;
-        argv[argc++] = self;   // should be cast<char*>(cmd)
+        argv[argc++] = self;   // should be (char*)cmd
         if (args && *args) {
             argc += parseArgs(args, &argv[1], MAX_ARGS, argbuf, elemsof(argbuf));
         }
@@ -219,7 +219,7 @@ fn const char* find_bin(char *dest, usize size, const char* name) {
             len++;
         i32 len2 = (len > 0 && s[len - 1] != '/');
         i32 len3 = snprintf(dest, size, "%.*s%.*s%s", len, s, len2, "/", name);
-        if (cast<usize>(len3) < size && stat(dest, &statbuf) == 0)
+        if ((usize)len3 < size && stat(dest, &statbuf) == 0)
             return dest;
         s += len;
         if (!*s++)
@@ -305,7 +305,7 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
         char*[MAX_ARGS + 2] argv;
         char[MAX_ARG_LEN] argbuf;
         u32 argc = 0;
-        argv[argc++] = self;   // should be cast<char*>(cmd)
+        argv[argc++] = self;   // should be (char*)cmd
         if (args && *args) {
             argc += parseArgs(args, &argv[1], MAX_ARGS, argbuf, elemsof(argbuf));
         }
@@ -374,7 +374,7 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
                 skip++;
             if (skip) {
                 numread -= skip;
-                memmove(output, output + skip, cast<u32>(numread) + 1);
+                memmove(output, output + skip, (u32)numread + 1);
             }
         } else {
             fprintf(stderr, "child exited ABNORMALLY\n");

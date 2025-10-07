@@ -61,6 +61,6 @@ fn const char* InitValue.getKindName(const InitValue* r) {
 }
 
 fn InitValueKind InitValue.getKind(const InitValue* r) {
-    return cast<InitValueKind>(r.kind);
+    return (InitValueKind)r.kind;
 }
 

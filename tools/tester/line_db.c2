@@ -58,9 +58,9 @@ public fn void Db.resize(Db* db, u32 capacity) {
 }
 
 public fn void Db.add(Db* db, const char* start, const char* end, bool consecutive) {
-    u32 len = cast<u32>(end - start);
+    u32 len = (u32)(end - start);
     if (db.count == db.capacity) {
-        db.resize(cast<u32>(db.capacity ? db.capacity * 2 : 4));
+        db.resize((u32)(db.capacity ? db.capacity * 2 : 4));
     }
     Entry* entry = &db.entries[db.count];
     db.count++;

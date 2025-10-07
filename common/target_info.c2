@@ -42,28 +42,28 @@ static_assert(elemsof(Abi), elemsof(abi_names));
 
 fn System str2sys(const char* name) {
     for (u32 i=0; i<elemsof(system_names); i++) {
-        if (strcasecmp(system_names[i], name) == 0) return cast<System>(i);
+        if (strcasecmp(system_names[i], name) == 0) return (System)i;
     }
     return System.Unknown;
 }
 
 fn Arch str2arch(const char* name) {
     for (u32 i=0; i<elemsof(arch_names); i++) {
-        if (strcasecmp(arch_names[i], name) == 0) return cast<Arch>(i);
+        if (strcasecmp(arch_names[i], name) == 0) return (Arch)i;
     }
     return Arch.Unknown;
 }
 
 fn Vendor str2vendor(const char* name) {
     for (u32 i=0; i<elemsof(vendor_names); i++) {
-        if (strcasecmp(vendor_names[i], name) == 0) return cast<Vendor>(i);
+        if (strcasecmp(vendor_names[i], name) == 0) return (Vendor)i;
     }
     return Vendor.Unknown;
 }
 
 fn Abi str2abi(const char* name) {
     for (u32 i=0; i<elemsof(abi_names); i++) {
-        if (strcasecmp(abi_names[i], name) == 0) return cast<Abi>(i);
+        if (strcasecmp(abi_names[i], name) == 0) return (Abi)i;
     }
     return Abi.Unknown;
 }

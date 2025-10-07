@@ -46,7 +46,7 @@ fn u32 ConstantList.add(ConstantList* l, const Constant* c) {
     if (l.count >= l.capacity) {
         l.capacity *= 2;
         void* constants2 = stdlib.malloc(l.capacity * sizeof(Constant));
-        void* old = cast<void*>(l.constants);
+        void* old = (void*)l.constants;
         if (old) {
             memcpy(constants2, old, l.count * sizeof(Constant));
             stdlib.free(old);

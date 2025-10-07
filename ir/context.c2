@@ -295,7 +295,7 @@ public fn void Context.addInitValueU32(Context* c, u32 value) {
 public fn void Context.addInitValueU64(Context* c, u64 value) {
     InitValue* v = c.init_values.add();
     if (value < 0x0FFFFFFF) {
-        v.init(InitValueKind.Long, cast<u32>(value));
+        v.init(InitValueKind.Long, (u32)value);
     } else {
         Constant constant = { .uvalue = value }
         u32 idx = c.constants.add(&constant);
@@ -603,7 +603,7 @@ public fn Ref Context.addIntegerConstant(Context* c, i64 size) {
     const i32 max_27_bits = 0x3FFFFFF;
     Ref ref;
     if (size >= min_27bits && size <= max_27_bits) {
-        ref.init(RefKind.Value, cast<u32>(size));
+        ref.init(RefKind.Value, (u32)size);
     } else {
         Constant constant = { .ivalue = size }
         u32 idx = c.constants.add(&constant);
@@ -655,7 +655,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     t.fi = fi;
 
     u32 num_blocks = fi.blocks.getCount();
-    fi.num_slots = cast<u16>(c.b.slot_idx);
+    fi.num_slots = (u16)c.b.slot_idx;
 
     //const char* name = c.pool.idx2str(symbol.name);
 

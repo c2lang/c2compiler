@@ -23,13 +23,13 @@ public fn void Parser.dump(const Parser* p, bool verbose) @(unused) {
 }
 
 fn void Data.dump(const Data* d, bool verbose) {
-    u32 node_count = cast<u32>(d.nodes_cur - d.nodes);
+    u32 node_count = (u32)(d.nodes_cur - d.nodes);
     if (verbose) {
-        printf("Text %d/%d\n", cast<u32>(d.text_cur - d.text), d.text_size);
+        printf("Text %d/%d\n", (u32)(d.text_cur - d.text), d.text_size);
         const char* cp = d.text + 1;
         while (cp < d.text_cur) {
-            u32 len = cast<u32>(strlen(cp));
-            u32 offset = cast<u32>(cp - d.text);
+            u32 len = (u32)strlen(cp);
+            u32 offset = (u32)(cp - d.text);
             printf("  [%3d] %s\n", offset, cp);
             cp += len + 1;
         }

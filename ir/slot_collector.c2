@@ -175,7 +175,7 @@ public fn const Ref* SlotCollector.findWrite(const SlotCollector* c, BlockId blk
 fn void SlotCollector.checkRef(SlotCollector* c, Ref* r) {
     if (!r.isSlot()) return;
 
-    u16 slot = cast<u16>(r.value);
+    u16 slot = (u16)r.value;
     const StaticSlot* s = c.getStaticSlot(slot);
     if (s) {
         r.kind = RefKind.Temp;
@@ -212,7 +212,7 @@ fn void SlotCollector.promoteBlockSlots(SlotCollector* c, BlockId blk_id) {
     BlockIndex* bi = &c.indexes[blk_id];
     c.cur_blk = blk_id;
 
-    bi.rd_start = cast<u16>(c.read_idx);
+    bi.rd_start = (u16)c.read_idx;
 
     u16 alloc_slot = 0;
     // for each block, trace reads-after-write, replace Sx with Temp
@@ -232,7 +232,7 @@ fn void SlotCollector.promoteBlockSlots(SlotCollector* c, BlockId blk_id) {
             // convert to Copy
             cur.instrBits.kind = InstrKind.Copy;
 
-            u16 slot = cast<u16>(ref.value);
+            u16 slot = (u16)ref.value;
             const StaticSlot* s = c.getStaticSlot(slot);
             if (s) {
                 ref.kind = RefKind.Temp;
@@ -285,7 +285,7 @@ fn void SlotCollector.promoteBlockSlots(SlotCollector* c, BlockId blk_id) {
 
             // if non-removed alloc slot, replace with Temp
 
-            u16 slot = cast<u16>(ref.value);
+            u16 slot = (u16)ref.value;
             //printf("B%d STORE Slot %d\n", blk_id, slot);
             const StaticSlot* s = c.getStaticSlot(slot);
             if (s) {
@@ -300,7 +300,7 @@ fn void SlotCollector.promoteBlockSlots(SlotCollector* c, BlockId blk_id) {
             ref.kind = RefKind.None;
             ref.value = 0;
 
-            u16 idx = cast<u16>(b.instr.start + i);
+            u16 idx = (u16)(b.instr.start + i);
 
             Iter iter = c.writes.getList((u16)blk_id);
             Ref tmp_ref = { RefKind.Temp, idx }
@@ -363,7 +363,7 @@ next:
         }
     }
 
-    bi.rd_count = cast<u16>(c.read_idx) - bi.rd_start;
+    bi.rd_count = (u16)c.read_idx - bi.rd_start;
 }
 
 public fn void SlotCollector.insertWriteIfNone(SlotCollector* c, BlockId blk_id, u16 slot, Ref ref) {

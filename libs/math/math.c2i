@@ -5,7 +5,7 @@ import c2 local;
 // NOTE: long double (16 bytes on 64-bit system) not supported yet
 
 const c_double HUGE_VAL   = 1e500;
-const c_float HUGE_VALF   = 1e500; //FIXME: should use cast<f32>(1e50);
+const c_float HUGE_VALF   = 1e500; //FIXME: should use (f32)1e50;
 //const c_double HUGE_VALL  = 1e5000;
 const c_double NAN        = 0.0 / 0.0;
 const c_double INFINITY   = 1.0 / 0.0;

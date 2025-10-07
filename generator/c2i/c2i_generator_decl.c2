@@ -19,7 +19,7 @@ import ast local;
 import string_buffer;
 
 fn void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, const Decl* d) {
-    VarDecl* v = cast<VarDecl*>(d);
+    VarDecl* v = (VarDecl*)d;
 
     gen.emitType(out, d.getType());
     out.space();
@@ -39,7 +39,7 @@ fn void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, cons
 }
 
 fn void Generator.emitVarDecl(Generator* gen, string_buffer.Buf* out, const VarDecl* vd, bool first) {
-    Decl* d = cast<Decl*>(vd);
+    Decl* d = (Decl*)vd;
 
     if (first) {
         if (vd.hasLocalQualifier()) out.add("local ");
@@ -112,7 +112,7 @@ fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, Decl* d) 
             out.add1('.');
         }
         if (d.isFunction()) {
-            FunctionDecl* fd = cast<FunctionDecl*>(d);
+            FunctionDecl* fd = (FunctionDecl*)d;
             Ref* prefix = fd.getPrefix();
             if (prefix) {
                 out.add(gen.astPool.idx2str(prefix.name_idx));
@@ -121,7 +121,7 @@ fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, Decl* d) 
         }
         if (d.isEnumConstant()) {
             QualType qt = d.getType();
-            EnumType* et = cast<EnumType*>(qt.getType());
+            EnumType* et = (EnumType*)qt.getType();
             out.add(et.getName());
             out.add1('.');
         }
@@ -137,37 +137,37 @@ fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType q
 
     switch (qt.getKind()) {
     case Builtin:
-        BuiltinType* bt = cast<BuiltinType*>(qt.getType());
+        BuiltinType* bt = (BuiltinType*)qt.getType();
         out.add(bt.kind2str());
         return;
     case Pointer:
-        PointerType* pt = cast<PointerType*>(qt.getType());
+        PointerType* pt = (PointerType*)qt.getType();
         gen.emitTypePre(out, pt.getInner());
         out.add1('*');
         return;
     case Array:
-        ArrayType* at = cast<ArrayType*>(qt.getType());
+        ArrayType* at = (ArrayType*)qt.getType();
         gen.emitTypePre(out, at.getElemType());
         return;
     case Struct:
-        StructType* st = cast<StructType*>(qt.getType());
+        StructType* st = (StructType*)qt.getType();
         StructTypeDecl* std = st.getDecl();
         if (std.hasAttrNoTypeDef()) {
             out.add(std.isStruct() ? "struct " : "union ");
         }
-        decl = cast<Decl*>(st.getDecl());
+        decl = (Decl*)st.getDecl();
         break;
     case Enum:
-        EnumType* et = cast<EnumType*>(qt.getType());
-        decl = cast<Decl*>(et.getDecl());
+        EnumType* et = (EnumType*)qt.getType();
+        decl = (Decl*)et.getDecl();
         break;
     case Function:
-        FunctionType* ft = cast<FunctionType*>(qt.getType());
-        decl = cast<Decl*>(ft.getDecl());
+        FunctionType* ft = (FunctionType*)qt.getType();
+        decl = (Decl*)ft.getDecl();
         break;
     case Alias:
-        AliasType* at = cast<AliasType*>(qt.getType());
-        decl = cast<Decl*>(at.getDecl());
+        AliasType* at = (AliasType*)qt.getType();
+        decl = (Decl*)at.getDecl();
         break;
     case Module:
         assert(0);
@@ -178,7 +178,7 @@ fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType q
 
 fn void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
     if (!qt.isArray()) return;
-    ArrayType* at = cast<ArrayType*>(qt.getType());
+    ArrayType* at = (ArrayType*)qt.getType();
 
     out.add1('[');
     if (at.hasSize()) out.print("%d", at.getSize());
@@ -192,7 +192,7 @@ fn void Generator.emitType(Generator* gen, string_buffer.Buf* out, QualType qt) 
 }
 
 fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, const Decl* d) {
-    EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
+    EnumTypeDecl* etd = (EnumTypeDecl*)d;
 
     out.print("type %s enum ", d.getName());
     QualType implType = etd.getImplType();
@@ -216,7 +216,7 @@ fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, const Dec
 }
 
 fn void Generator.emitFunctionDecl(Generator* gen, string_buffer.Buf* out, const Decl* d, bool as_type) {
-    FunctionDecl* fd = cast<FunctionDecl*>(d);
+    FunctionDecl* fd = (FunctionDecl*)d;
 
     if (!as_type) out.add("fn ");
     gen.emitType(out, fd.getRType());
@@ -246,7 +246,7 @@ fn void Generator.emitFunctionDecl(Generator* gen, string_buffer.Buf* out, const
     if (fd.isInline()) {
         out.space();
         gen.in_body = true;
-        gen.emitStmt(cast<ast.Stmt*>(fd.getBody()), 0, true);
+        gen.emitStmt((ast.Stmt*)fd.getBody(), 0, true);
         gen.in_body = false;
         out.newline();
     } else {
@@ -255,13 +255,13 @@ fn void Generator.emitFunctionDecl(Generator* gen, string_buffer.Buf* out, const
 }
 
 fn void Generator.emitFunctionTypeDecl(Generator* gen, string_buffer.Buf* out, const Decl* d) {
-    const FunctionTypeDecl* ftd = cast<FunctionTypeDecl*>(d);
+    const FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;
     out.print("type %s fn ", d.getName());
-    gen.emitFunctionDecl(out, cast<Decl*>(ftd.getDecl()), true);
+    gen.emitFunctionDecl(out, (Decl*)ftd.getDecl(), true);
 }
 
 fn void Generator.emitAliasTypeDecl(Generator* gen, string_buffer.Buf* out, const Decl* d) {
-    AliasTypeDecl* a = cast<AliasTypeDecl*>(d);
+    AliasTypeDecl* a = (AliasTypeDecl*)d;
     out.print("type %s ", d.getName());
     QualType qt = a.asDecl().getType();
     gen.emitType(out, qt.getCanonicalType());
@@ -271,7 +271,7 @@ fn void Generator.emitAliasTypeDecl(Generator* gen, string_buffer.Buf* out, cons
 fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
     if (d.isVariable()) {
         out.indent(indent);
-        gen.emitVarDecl(out, cast<VarDecl*>(d), true);
+        gen.emitVarDecl(out, (VarDecl*)d, true);
         if (!out.endsWith('}')) out.add1(';');
         out.newline();
     } else {
@@ -281,7 +281,7 @@ fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl*
 }
 
 fn void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, const Decl* d, u32 indent) {
-    StructTypeDecl* std = cast<StructTypeDecl*>(d);
+    StructTypeDecl* std = (StructTypeDecl*)d;
     if (indent == 0) {
         out.add("type ");
         out.add(d.getName());

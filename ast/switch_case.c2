@@ -94,12 +94,12 @@ public fn Expr* SwitchCase.getCond(SwitchCase* s, u32 index) {
 public fn u32 SwitchCase.getNumStmts(const SwitchCase* s) { return s.bits.num_stmts; }
 
 public fn Stmt** SwitchCase.getStmts(SwitchCase* s) {
-    return cast<Stmt**>(&s.conds[s.bits.num_conds]);
+    return (Stmt**)&s.conds[s.bits.num_conds];
 }
 
 public fn Stmt* SwitchCase.getStmt(const SwitchCase* s, u32 n) {
     if (n < s.bits.num_stmts) {
-        Stmt** stmts = cast<Stmt**>(&s.conds[s.bits.num_conds]);
+        Stmt** stmts = (Stmt**)&s.conds[s.bits.num_conds];
         return stmts[n];
     }
     return nil;

@@ -121,13 +121,13 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
 
     switch (d.getKind()) {
     case Function:
-        FunctionDecl* fd = cast<FunctionDecl*>(d);
+        FunctionDecl* fd = (FunctionDecl*)d;
         gen.handleTypeRef(fd.getReturnTypeRef());
         break;
     case Import:
         return;
     case StructType:
-        StructTypeDecl* s = cast<StructTypeDecl*>(d);
+        StructTypeDecl* s = (StructTypeDecl*)d;
         u32 num_members = s.getNumMembers();
         Decl** members = s.getMembers();
         for (u32 i=0; i<num_members; i++) {
@@ -135,10 +135,10 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
         }
         break;
     case EnumType:
-        EnumTypeDecl* etd = cast<EnumTypeDecl*>(d);
+        EnumTypeDecl* etd = (EnumTypeDecl*)d;
         EnumConstantDecl** constants = etd.getConstants();
         for (u32 i=0; i<etd.getNumConstants(); i++) {
-            Decl* ecd = cast<Decl*>(constants[i]);
+            Decl* ecd = (Decl*)constants[i];
             // NOTE: we add the symbol here, since we have the EnumDecl here
             char[64] fullname;
             sprintf(fullname, "%s.%s", d.getName(), ecd.getName());
@@ -154,7 +154,7 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
     case AliasType:
         break;
     case Variable:
-        VarDecl* v = cast<VarDecl*>(d);
+        VarDecl* v = (VarDecl*)d;
         gen.handleTypeRef(v.getTypeRef());
         break;
     }
@@ -260,7 +260,7 @@ fn void Generator.on_module(void* arg, Module* m) {
         const char* start = cp;
         while (*cp) {
             if (*cp == '/') {
-                u32 len = cast<u32>(cp - start);
+                u32 len = (u32)(cp - start);
                 u32 name_idx = gen.pool.add(start, len, true);
                 start = cp+1;
                 d =  d.get(name_idx);

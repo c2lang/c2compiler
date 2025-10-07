@@ -84,7 +84,7 @@ public fn MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, cons
     for (u32 i=0; i<refcount; i++) {
         e.refs[i+offset].name_idx = refs[i].name_idx;
     }
-    SrcLoc* locs = cast<SrcLoc*>(&e.refs[refcount + offset]);
+    SrcLoc* locs = (SrcLoc*)&e.refs[refcount + offset];
     for (u32 i=0; i<refcount-1; i++) { // first loc already in base.loc
         locs[i] = refs[i+1].loc;    // shift them all
     }
@@ -156,7 +156,7 @@ public fn u32 MemberExpr.getNameIdx(const MemberExpr* e, u32 ref_idx) {
 public fn SrcLoc MemberExpr.getLoc(const MemberExpr* e, u32 ref_idx) {
     if (ref_idx == 0) return e.base.getLoc();
 
-    SrcLoc* locs = cast<SrcLoc*>(&e.refs[e.getNumRefs() + e.hasExpr()]);
+    SrcLoc* locs = (SrcLoc*)&e.refs[e.getNumRefs() + e.hasExpr()];
     return locs[ref_idx-1];
 }
 
