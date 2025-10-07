@@ -18,6 +18,8 @@ endif
 C2C_DIRS:= {analyser,analyser_utils,ast,ast_utils,common,compiler,generator,ir,libs,parser}
 C2C_DEPS:= $(wildcard $(C2C_DIRS)/*.c2* $(C2C_DIRS)/*/*.c2*) recipe.txt Makefile
 
+PLUGINS= deps_generator refs_generator git_version unit_test shell_cmd
+
 all: $(C2C)
 
 c2c: $(C2C)
@@ -28,7 +30,7 @@ $(C2C): output/bootstrap/bootstrap $(C2C_DEPS)
 	@output/bootstrap/bootstrap c2c $(C2FLAGS) --fast --noplugins
 	@mv output/c2c/c2c output/bootstrap/c2c
 	@echo "---- running c2c (no plugins$(C2FLAGS)) ----"
-	@output/bootstrap/c2c $(C2FLAGS) --noplugins --fast
+	@output/bootstrap/c2c $(C2FLAGS) --noplugins --fast c2c $(PLUGINS)
 	@./install_plugins.sh
 	@echo "---- running c2c (optimized with plugins$(C2FLAGS)) ----"
 	@output/c2c/c2c $(C2FLAGS)
@@ -60,9 +62,11 @@ rebuild-bootstrap: $(C2C)
 	( diff bootstrap/bootstrap.c output/openbsd-amd64/c2c/cgen/build.c > bootstrap/bootstrap-openbsd-amd64.patch ; true )
 
 test: output/tester/tester
+	@echo "---- running tests ----"
 	@output/tester/tester -t test
 
 testv: output/tester/tester
+	@echo "---- running verbose tests ----"
 	@output/tester/tester -v test
 
 output/c2c_trace/c2c_trace: $(C2C_DEPS)
