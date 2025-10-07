@@ -323,5 +323,5 @@ public fn void Token.init(Token* tok) {
 }
 
 public fn Radix Token.getRadix(const Token* tok) {
-    return cast<Radix>(tok.radix);
+    return (Radix)tok.radix;
 }
