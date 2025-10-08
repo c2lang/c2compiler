@@ -1,0 +1,131 @@
+/* Copyright 2025 Charlie Gordon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module color;
+
+import ctype local;
+import stdio local;
+import stdlib local;
+import string local;
+
+const char*[] standardColors = {
+    "black",        Black,
+    "red",          Red,
+    "green",        Green,
+    "yellow",       Yellow,
+    "blue",         Blue,
+    "magenta",      Magenta,
+    "cyan",         Cyan,
+    "grey",         Grey,
+    "darkgrey",     Darkgrey,
+    "bred",         Bred,
+    "bgreen",       Bgreen,
+    "byellow",      Byellow,
+    "bblue",        Bblue,
+    "bmagenta",     Bmagenta,
+    "bcyan",        Bcyan,
+    "white",        White,
+    "normal",       Normal,
+}
+
+fn bool getStyleDef(char* buf1, u32 size1, char* buf2, u32 size2, const char** pp) {
+    const char *p = *pp;
+    while (isspace(*p))
+        p++;
+    if (!*p)
+        return false;
+    u32 i = 0;
+    while (isalpha(*p) || *p == '.' || *p == '_') {
+        char c = (char)tolower(*p++);
+        if (i + 1 < size1)
+            buf1[i++] = c;
+    }
+    buf1[i] = '\0';
+    if (*p != '=' && *p != ':')
+        return false;
+    p++;
+    i = 0;
+    while (*p && *p != ' ' && *p != ',' && *p != ';') {
+        char c = (char)tolower(*p++);
+        if (i + 1 < size2 && c != '-' && c != '_')
+            buf2[i++] = c;
+    }
+    buf2[i] = '\0';
+    if (*p == ',' || *p == ';')
+        p++;
+    *pp = p;
+    return true;
+}
+
+fn bool matchColorName(const char *p, const char *name) {
+    while (*p) {
+        char c = *p++;
+        if (c == 'b' && !strncmp(p, "right", 5))
+            p += 5;
+        if (c != *name++)
+            return false;
+    }
+    return *name == '\0';
+}
+
+fn const char* convertColor(const char *val, const char *def) {
+    if (*val == '\0')
+        return "";
+
+    for (u32 i = 0; i < elemsof(standardColors); i += 2) {
+        if (matchColorName(val, standardColors[i]))
+            return standardColors[i + 1];
+    }
+    if (!strcasecmp(val, "default"))
+        return def;
+
+    char[32] buf;
+    i32 pal, r, g, b;
+    if (sscanf(val, "%*1[pP]%d", &pal) == 1) {
+        snprintf(buf, elemsof(buf), "\033[38;5;%dm", pal);
+    } else
+    if (sscanf(val, "#%2x%2x%2x", &r, &g, &b) == 3) {
+        snprintf(buf, elemsof(buf), "\033[38;2;%d;%d;%dm", r, g, b);
+    } else {
+        // TODO: complain about unknown color
+        return def;
+    }
+    return strdup(buf);
+}
+
+public fn void freeConfigColor(const char* p) {
+    if (p && *p) {
+        for (u32 i = 0; i < elemsof(standardColors); i++) {
+            if (standardColors[i] == p) return;
+        }
+        free((void*)p);
+    }
+}
+
+public fn const char* getConfigColor(const char* cat, const char* def) {
+    const char *c2_colors = getenv("C2_COLORS");
+    if (c2_colors) {
+        const char *p = c2_colors;
+        char[16] style;
+        char[16] val;
+        if (!strcmp(p, "none"))
+            return "";
+        while (getStyleDef(style, elemsof(style), val, elemsof(val), &p)) {
+            if (!strcmp(style, cat))
+                return convertColor(val, def);
+        }
+    }
+    return def;
+}
