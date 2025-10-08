@@ -35,7 +35,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     if (qt.isInvalid()) return QualType_Invalid;
 
     if (origFn.isNValue()) {
-        ma.errorRange(origFn.getLoc(), origFn.getRange(), "called object is not a function of function pointer");
+        ma.errorRange(origFn.getLoc(), origFn.getRange(), "called object is not a function or function pointer");
         return QualType_Invalid;
     }
 
@@ -435,7 +435,7 @@ fn QualType Analyser.analysePureCallExpr(Analyser* ma, Expr* e) {
     if (qt.isInvalid()) return QualType_Invalid;
 
     if (origFn.isNValue()) {
-        ma.errorRange(origFn.getLoc(), origFn.getRange(), "called object is not a function of function pointer");
+        ma.errorRange(origFn.getLoc(), origFn.getRange(), "called object is not a function or function pointer");
         return QualType_Invalid;
     }
 
