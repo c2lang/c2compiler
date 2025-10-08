@@ -22,7 +22,6 @@ import stdlib local;
 import string local;
 import unistd local;
 
-import color;
 import expect_file local;
 import file_utils;
 import issues local;
@@ -464,7 +463,7 @@ fn void Db.error(Db* db, const char* format @(printf_format), ...) {
     vsnprintf(msg, sizeof(msg), format, args);
     va_end(args);
     // TODO use colError?
-    color_print2(db.output, color.Bred, "%s:%d: %s", db.filename, db.line_nr, msg);
+    color_print2(db.output, colError, "%s:%d: %s", db.filename, db.line_nr, msg);
     db.hasErrors = true;
 }
 
@@ -743,7 +742,7 @@ public fn void Db.testFile(Db* db) {
             // TODO print pipe_stderr
             db.output.color(colError);
             db.output.add("c2c crashed!");
-            db.output.color(color.Normal);
+            db.output.color(colNormal);
             db.output.newline();
             db.hasErrors = true;
             return;
@@ -758,7 +757,7 @@ public fn void Db.testFile(Db* db) {
         if (retcode == 254) { // from TODO/FATAL_ERROR macros
             db.output.color(colError);
             db.output.add("c2c returned error");
-            db.output.color(color.Normal);
+            db.output.color(colNormal);
             db.output.newline();
             db.hasErrors = true;
             return;
@@ -860,7 +859,7 @@ public fn bool Db.printIssues(const Db* db) {
         db.output.color(colError);
         db.output.print("%s:%d: expected error '%s'",
                 iter.getFilename(), iter.getLineNr(), iter.getMsg());
-        db.output.color(color.Normal);
+        db.output.color(colNormal);
         db.output.newline();
         res = true;
         iter.next();
@@ -871,7 +870,7 @@ public fn bool Db.printIssues(const Db* db) {
         db.output.color(colError);
         db.output.print("%s:%d: expected warning '%s'",
                 iter.getFilename(), iter.getLineNr(), iter.getMsg());
-        db.output.color(color.Normal);
+        db.output.color(colNormal);
         db.output.newline();
         res = true;
         iter.next();
@@ -882,7 +881,7 @@ public fn bool Db.printIssues(const Db* db) {
         db.output.color(colError);
         db.output.print("%s:%d: expected note '%s'",
                 iter.getFilename(), iter.getLineNr(), iter.getMsg());
-        db.output.color(color.Normal);
+        db.output.color(colNormal);
         db.output.newline();
         res = true;
         iter.next();
