@@ -162,10 +162,25 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
                                 (u32)(string.strlen(format_text + fc.last_offset)), '"');
                 out.add1('"');
             } else {
-                Expr* arg = (call_index < call_num_args) ?
-                    args[call_index++] : func_args[func_index].getInit();
+                Expr* arg;
+                Decl* d = vd.asDecl();
+
+                if (call_index < call_num_args) {
+                    arg = args[call_index++];
+                    if (arg.isNamedArgument()) {
+                        NamedArgument* n = (NamedArgument*)arg;
+                        u32 arg_name_idx = n.getNameIdx();
+                        if (d.getNameIdx() == arg_name_idx) {
+                            arg = n.getInner();
+                        } else {
+                            call_index--;
+                            arg = vd.getInit();
+                        }
+                    }
+                } else {
+                    arg = vd.getInit();
+                }
                 if (arg.isInitList()) {
-                    Decl* d = (Decl*)func_args[func_index];
                     gen.emitCast(out, d.getType(), true);
                 }
                 gen.emitExpr(out, arg);
