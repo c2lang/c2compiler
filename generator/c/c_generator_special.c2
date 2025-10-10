@@ -60,7 +60,7 @@ fn void Generator.createMakefile(Generator* gen,
     out.print("CC=%s\n", cc);
 
     out.add("CFLAGS=-Wall -Wextra -Wno-unused -Wno-switch\n");
-    out.add("CFLAGS+=-Wno-unused-parameter -Wno-missing-field-initializers -Wno-format-zero-length\n");
+    out.add("CFLAGS+=-Wno-unused-parameter -Wno-missing-field-initializers -Wno-missing-braces -Wno-format-zero-length\n");
     out.add("CFLAGS+=-pipe -std=c99 -funsigned-char\n");
     if (gen.fast_build)
         out.add("CFLAGS+=-O0 -g\n");
