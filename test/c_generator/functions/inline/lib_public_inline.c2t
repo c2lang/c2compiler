@@ -41,7 +41,7 @@ typedef void (*test1_Handler)(int* _arg0);
 static inline
 int test1_test_fn(test1_Handler a, int** b)
 {
-  int c[4];
+  int c[4] = { 0 };
   a(*b);
   return 123;
 }
