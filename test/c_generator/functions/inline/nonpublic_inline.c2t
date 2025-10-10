@@ -42,6 +42,6 @@ void test1_test_fn(void)
 {
    test1_non_public();
    test1_num++;
-   test1_Priv p;
+   test1_Priv p = { 0 };
    test1_Handler h = test1_non_public;
 }

@@ -33,7 +33,7 @@ static void test_Type_init(test_Type* _arg0, int _arg1)
 
 int main(void)
 {
-  test_Type t;
+  test_Type t = { 0 };
   test_Type_init(&t, 4);
   return 0;
 }

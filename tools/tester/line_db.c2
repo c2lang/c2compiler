@@ -20,6 +20,7 @@ import string { memcpy, strndup }
 
 type Entry struct {
     char* line;
+    u32 line_nr;
     bool consecutive;
 }
 
@@ -57,7 +58,7 @@ fn void LineDb.resize(LineDb* db, u32 capacity) {
     db.entries = entries2;
 }
 
-public fn void LineDb.add(LineDb* db, const char* start, const char* end, bool consecutive) {
+public fn void LineDb.add(LineDb* db, const char* start, const char* end, u32 line_nr, bool consecutive) {
     if (db.count == db.capacity) {
         db.resize(db.capacity ? db.capacity * 2 : 4);
     }
@@ -65,11 +66,16 @@ public fn void LineDb.add(LineDb* db, const char* start, const char* end, bool c
     db.count++;
 
     entry.line = strndup(start, (usize)(end - start));
+    entry.line_nr = line_nr;
     entry.consecutive = consecutive;
 }
 
 public fn const char* LineDb.getLine(const LineDb* db, u32 idx) {
     return db.entries[idx].line;
+}
+
+public fn u32 LineDb.getLineNr(const LineDb* db, u32 idx) {
+    return db.entries[idx].line_nr;
 }
 
 public fn bool LineDb.getConsecutive(const LineDb* db, u32 idx) {
