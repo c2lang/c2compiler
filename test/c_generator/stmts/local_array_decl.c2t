@@ -26,6 +26,6 @@ static void test_func1(void);
 
 static void test_func1(void)
 {
-  int32_t board2[20][20];
+  int32_t board2[20][20] = { 0 };
 }
 
