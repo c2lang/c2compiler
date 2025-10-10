@@ -505,6 +505,9 @@ fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
     case Embed:
         b.storeAttr(d, a);
         break;
+    case NoInit:
+        vd.setAttrNoInit();
+        break;
     default:
         b.diags.error(a.loc, "attribute '%s' is not applicable to variables",
                       a.kind2name());
