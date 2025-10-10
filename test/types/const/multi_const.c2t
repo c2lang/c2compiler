@@ -60,7 +60,7 @@ int main(void)
     const void* q = (const char* const*)p;
     test_A* const cc = NULL;
     q = (test_A* const*)&cc;
-    test_A aa[1];
+    test_A aa[1] = { 0 };
     {
         test_A* const b = aa;
         if (b) return 0;

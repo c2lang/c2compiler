@@ -405,7 +405,7 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
 
     // Create a new stack frame and link it to the caller's
     // TODO: handle Stack frames as separate allocated objects or fragments of a stack area
-    Evaluator eval;
+    Evaluator eval /*@(noinit)*/;
 
     if (num_args > elemsof(eval.args)) {
         return Value.error("too many arguments in pure function evaluation");

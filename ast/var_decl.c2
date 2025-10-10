@@ -57,6 +57,7 @@ type VarDeclBits struct {
     u32 addr_used : 1;
     AutoAttr auto_attr : 2;  // for parameters only
     FormatAttr format_attr : 2; // for parameters only
+    u32 attr_noinit : 1;
 }
 
 public type BitFieldLayout struct {
@@ -305,6 +306,14 @@ public fn void VarDecl.setInitCall(VarDecl* d, bool has_init_call) {
 
 public fn bool VarDecl.hasInitCall(const VarDecl* d) {
     return d.base.varDeclBits.has_init_call;
+}
+
+public fn void VarDecl.setAttrNoInit(VarDecl* d) {
+    d.base.varDeclBits.attr_noinit = 1;
+}
+
+public fn bool VarDecl.hasAttrNoInit(const VarDecl* d) {
+    return d.base.varDeclBits.attr_noinit;
 }
 
 public fn void VarDecl.setAttrWeak(VarDecl* d) {
