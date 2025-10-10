@@ -886,7 +886,7 @@ check_overflow:
 }
 
 fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* start) {
-    char[4096] buf;
+    char[128] buf /*@(noinit)*/;
     const char* p = start;
     usize pos = 0;
     u8 seen_dot = 0;
@@ -941,7 +941,7 @@ too_large:
 }
 
 fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char* start) {
-    char[4096] buf;
+    char[128] buf /*@(noinit)*/;
     const char* p = start;
     usize pos = 0;
     u8 seen_dot = 0;
