@@ -23,6 +23,7 @@ import string_list;
 import token { Token, Kind }
 
 import ctype { islower }
+import string { strcmp }
 
 fn Stmt* Parser.parseStmt(Parser* p) {
     // TODO use Jump Table (combined one for multiple purposes?)
@@ -528,7 +529,7 @@ fn Stmt* Parser.parseWhileStmt(Parser* p) {
 }
 
 fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool isCondition) {
-    VarDecl*[MaxMultiDecl] decls;
+    VarDecl*[MaxMultiDecl] decls /*@(noinit)*/;
     u32 num_decls = 0;
     bool is_static = p.tok.kind == KW_static;
     bool has_tlocal = (p.tok.kind == KW_tlocal);
@@ -553,6 +554,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
         p.consumeToken();
 
         // TODO same as parseVarDecl()
+        bool has_noinit = false;
         bool has_init_call = false;
         Expr* initValue = nil;
         SrcLoc assignLoc = 0;
@@ -564,7 +566,14 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
             initValue = p.parseInitExpr();
             break;
         case At:
-            p.error("local variables cannot have attributes");
+            // check for noinit attribute
+            p.consumeToken();
+            p.expectAndConsume(Kind.LParen);
+            p.expectIdentifier();
+            if (strcmp(p.pool.idx2str(p.tok.name_idx), "noinit"))
+                p.error("local variables cannot have attributes");
+            has_noinit = true;
+            p.expectAndConsume(Kind.RParen);
             break;
         case Dot:
             if (p.peekToken(1) == Identifier && p.peekToken(2) == LParen) {
@@ -591,6 +600,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
         }
         VarDecl* vd = p.builder.actOnVarDecl(name, loc, &ref, assignLoc, initValue, is_static, has_init_call);
         if (has_tlocal) vd.setTLocal();
+        if (has_noinit) vd.setAttrNoInit();
         decls[num_decls++] = vd;
         if (p.tok.kind != Comma)
             break;
