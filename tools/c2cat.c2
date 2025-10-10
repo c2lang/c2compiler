@@ -71,6 +71,7 @@ const char*[] attr_names = {
     "weak",
     "opaque",
     "cname",
+    "cdef",
     "no_typedef",
     "constructor",
     "destructor",
@@ -78,6 +79,8 @@ const char*[] attr_names = {
     "auto_file",
     "auto_line",
     "auto_func",
+    "embed",
+    "noinit",
 }
 
 

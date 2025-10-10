@@ -362,7 +362,10 @@ fn void Parser.parseTopLevel(Parser* p) {
 
 // returns if embed attribute was seen
 fn void Parser.parseOptionalAttributes(Parser* p) {
-    if (p.tok.kind != Kind.At) return;
+    if (p.tok.kind == Kind.At) p.parseAttributes();
+}
+
+fn void Parser.parseAttributes(Parser* p) {
     p.consumeToken();
 
     p.expectAndConsume(Kind.LParen);
