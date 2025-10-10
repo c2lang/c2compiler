@@ -44,7 +44,7 @@ static test_Point test_new_point(int32_t x, int32_t y)
 int32_t main(void)
 {
     printf("p0={ %d, %d }\n", test_p0.x, test_p0.y);
-    test_Point p1;
+    test_Point p1 = { 0 };
     p1 = (test_Point){ 3, 4 };
     printf("p1={ %d, %d }\n", p1.x, p1.y);
     test_print_point("p2", (test_Point){ 5, 6 });

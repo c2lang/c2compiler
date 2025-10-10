@@ -116,7 +116,7 @@ public fn const char* make_path3(char *buf, usize size, const char* dir, const c
 // returns 0 on success, errno on failure
 // create a directory path, OK if exists already
 public fn i32 create_path(const char* path) {
-    char[file_utils.Max_path] tmp;
+    char[file_utils.Max_path] tmp /*@(noinit)*/;
     char *p = tmp;
     if (!*path) return 0;
     *p++ = *path++;

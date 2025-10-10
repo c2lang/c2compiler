@@ -30,7 +30,7 @@ int32_t main(int32_t argc, const char** argv)
     }
 
     {
-        int32_t b;
+        int32_t b = { 0 };
         while ((b = 0)) {
         }
     }

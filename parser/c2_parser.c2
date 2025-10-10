@@ -386,6 +386,10 @@ fn bool findName(const u32* names, u32 count, u32 name) {
 // returns the number of attributes parsed and stored in Builder
 fn u32 Parser.parseOptionalAttributes(Parser* p) {
     if (p.tok.kind != At) return 0;
+    return p.parseAttributes();
+}
+
+fn u32 Parser.parseAttributes(Parser* p) {
     p.consumeToken();
 
     p.expectAndConsume(LParen);

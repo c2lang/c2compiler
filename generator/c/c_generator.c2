@@ -1295,8 +1295,7 @@ public fn void generate(string_pool.Pool* astPool,
         return;
     }
 
-    Generator gen;
-    gen.init(astPool, target, kind, output_dir, dir, diags, sm, build_info, mainFunc);
+    Generator gen.init(astPool, target, kind, output_dir, dir, diags, sm, build_info, mainFunc);
     gen.auxPool = auxPool;
     gen.enable_asserts = enable_asserts;
     gen.fast_build = fast_build;
