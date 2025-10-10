@@ -342,8 +342,8 @@ fn void Lengths.fillDest(const Lengths* l, Dest* result, u32 offset, u32 start, 
     u32 last = start + count;
     u32 line = 1;
     for (u32 i = start; i < last; i++) {
-        u8 len = l.lengths[i];
-        if (offset < len) break;    // <=?
+        u32 len = l.lengths[i];
+        if (offset < len) break;
         offset -= len;
         line++;
     }
