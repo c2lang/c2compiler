@@ -434,7 +434,7 @@ public fn Ref Context.addLoadInstr(Context* c, Type t, Ref src) {
 
     Ref out.init(RefKind.Temp, c.b.tmp_info.instructions.getCount());
 
-    InstrKind k;
+    InstrKind k = None;     // prevent C warning
     switch (t) {
     case None:
         assert(0);
