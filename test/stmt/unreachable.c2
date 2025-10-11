@@ -1,0 +1,65 @@
+// @warnings{no-unused}
+// @warnings{unreachable-code}
+
+module test;
+
+fn i32 test1(i32 n) {
+    switch (n) {
+    case 1:
+        return 1;
+    default:
+        return 0;
+    }
+    return 2; // @warning{unreachable code}
+}
+
+fn i32 test3(i32 n) {
+    while (true) {
+        return 1;
+    }
+    return 2; // @warning{unreachable code}
+}
+
+fn i32 test4(i32 n) {
+    for (;;) {
+        return 1;
+    }
+    return 2; // @warning{unreachable code}
+}
+
+fn i32 test5(i32 n) {
+    while (true) {
+    }
+    return 2; // @warning{unreachable code}
+}
+
+fn i32 test6(i32 n) {
+    for (;;) {
+    }
+    return 2; // @warning{unreachable code}
+}
+
+fn i32 test7(i32 n) {
+    for (;;) {
+        switch (n) {
+        case 1:
+            continue;
+        default:
+            return 0;
+        }
+        return 2; // @warning{unreachable code}
+    }
+    return 3; // @warning{unreachable code}
+}
+
+fn i32 test8(i32 n) {
+    for (;;) {
+        switch (n) {
+        case 1:
+            return 1;
+        default:
+            return 0;
+        }
+    }
+    return 2; // @warning{unreachable code}
+}
