@@ -777,7 +777,7 @@ type Ctx_export_keys_ext_f fn c_int(void *, const c_uchar *,
 //#if defined(MBEDTLS_SSL_PROTO_SSL3)
 //const c_int SSL_VERIFY_DATA_MAX_LEN = 36;
 //#else
-const c_int SSL_VERIFY_DATA_MAX_LEN = 12;
+const i32 SSL_VERIFY_DATA_MAX_LEN = 12;
 //#endif
 
 type Ssl_context struct @(cname="mbedtls_ssl_context") {
@@ -1081,7 +1081,7 @@ type Entropy_source_state struct @(cname="mbedtls_entropy_source_state") {
 }
 
 
-const c_int ENTROPY_MAX_SOURCES = 20;
+const i32 ENTROPY_MAX_SOURCES = 20;
 
 type Entropy_context struct @(cname="mbedtls_entropy_context") {
     c_int accumulator_started;
