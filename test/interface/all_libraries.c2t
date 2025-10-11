@@ -1,0 +1,98 @@
+// @recipe bin
+   $warnings no-unused
+   $backend c no-build
+   $use curses dynamic
+   $use sdl2_ttf dynamic
+   $use sdl2_mixer dynamic
+   $use mbedtls dynamic
+   $use math dynamic
+   $use lua dynamic
+   $use pthread dynamic
+   $use dl dynamic
+   $use io_uring dynamic
+   $use sdl2_image dynamic
+   $use sdl2 dynamic
+
+// @file{file1}
+module test;
+
+// import builtin modules
+import c2;
+
+// import all libc modules
+import c_errno;
+import csetjmp;
+import csignal;
+import ctermios;
+import ctype;
+import ifaddrs;
+import libc_dirent;
+import libc_fcntl;
+import libc_poll;
+import libc_time;
+import libgen;
+import linux_ifether;
+import linux_sockios;
+import linux_types;
+import net_if;
+import netinet_tcp;
+import regex;
+import stdio;
+import stdlib;
+import string;
+import strings;
+import sys_ioctl;
+import sys_mman;
+import sys_sendfile;
+import sys_signalfd;
+import sys_socket;
+import sys_stat;
+import sys_time;
+import sys_utsname;
+import uio;
+import unistd;
+
+// import curses modules
+import curses;
+
+// import dl modules
+import dlfcn;
+
+// import io_uring module
+import io_uring;
+
+// import lua modules
+import lua;
+import lua_lib;
+import lua_auxlib;
+
+// import math modules
+import math;
+
+// import mbedtls module
+import mbedtls;
+
+// import pthread module
+import pthread;
+
+// import sdl2 modules
+import sdl;
+import sdl_image;
+import sdl_mixer;
+import sdl_ttf;
+
+const char Char_max = char.max;
+const i8 I8_max = i8.max;
+const i16 I16_max = i16.max;
+const i32 I32_max = i32.max;
+const i64 I64_max = i64.max;
+const u8 U8_max = u8.max;
+const u16 U16_max = u16.max;
+const u32 U32_max = u32.max;
+const u64 U64_max = u64.max;
+const isize Isize_max = isize.max;
+const usize Usize_max = usize.max;
+const f32 F32_nan = f32.nan;
+const f64 F64_nan = f64.nan;
+
+public fn i32 main() { return 0; }
