@@ -1,0 +1,518 @@
+module gmath;
+import math local;
+
+// Constants
+const f32 PI = M_PI;
+const f32 EPSILON = 0.000001;
+const f32 DEG_TO_RAD = PI / 180.0;
+const f32 RAD_TO_DEG = 180.0 / PI;
+
+// 2D Vector
+type Vec2 struct {
+    f32 x, y;
+}
+
+// 3D Vector
+type Vec3 struct {
+    f32 x, y, z;
+}
+
+// 4D Vector
+type Vec4 struct {
+    f32 x, y, z, w;
+}
+
+// 4x4 Matrix
+type Mat4 struct {
+    f32[16] m;
+}
+
+// Vec2 constructors
+fn Vec2 Vec2.create(f32 x, f32 y) {
+    return {x, y}
+}
+
+fn Vec2 Vec2.zero() {
+    return Vec2.create(0.0, 0.0);
+}
+
+fn Vec2 Vec2.one() {
+    return Vec2.create(1.0, 1.0);
+}
+
+// Vec2 addition
+fn Vec2 Vec2.add(const Vec2* a, const Vec2* b) {
+    return Vec2.create(a.x + b.x, a.y + b.y);
+}
+
+// Vec2 subtraction
+fn Vec2 Vec2.sub(const Vec2* a, const Vec2* b) {
+    return Vec2.create(a.x - b.x, a.y - b.y);
+}
+
+// Vec2 scalar multiplication
+fn Vec2 Vec2.mul(const Vec2* v, f32 scalar) {
+    return Vec2.create(v.x * scalar, v.y * scalar);
+}
+
+// Vec2 scalar division
+fn Vec2 Vec2.div(const Vec2* v, f32 scalar) {
+    return Vec2.create(v.x / scalar, v.y / scalar);
+}
+
+// Vec2 dot product
+fn f32 Vec2.dot(const Vec2* a, const Vec2* b) {
+    return a.x * b.x + a.y * b.y;
+}
+
+// Vec2 length
+fn f32 Vec2.length(const Vec2* v) {
+    return sqrtf(v.x * v.x + v.y * v.y);
+}
+
+// Vec2 length squared
+fn f32 Vec2.lengthSquared(const Vec2* v) {
+    return v.x * v.x + v.y * v.y;
+}
+
+// Vec2 normalize
+fn Vec2 Vec2.normalize(const Vec2* v) {
+    f32 len = Vec2.length(v);
+    if (len > EPSILON) {
+        return Vec2.div(v, len);
+    }
+    return Vec2.zero();
+}
+
+// Vec2 rotate
+fn Vec2 Vec2.rotate(const Vec2* v, f32 angle) {
+    f32 cos_a = cosf(angle);
+    f32 sin_a = sinf(angle);
+    return Vec2.create(
+        v.x * cos_a - v.y * sin_a,
+        v.x * sin_a + v.y * cos_a
+    );
+}
+
+// Vec2 angle
+fn f32 Vec2.angle(const Vec2* v) {
+    return atan2f(v.y, v.x);
+}
+
+// Vec3 constructors
+fn Vec3 Vec3.create(f32 x, f32 y, f32 z) {
+    return {x, y, z}
+}
+
+fn Vec3 Vec3.zero() {
+    return Vec3.create(0.0, 0.0, 0.0);
+}
+
+fn Vec3 Vec3.one() {
+    return Vec3.create(1.0, 1.0, 1.0);
+}
+
+fn Vec3 Vec3.up() {
+    return Vec3.create(0.0, 1.0, 0.0);
+}
+
+fn Vec3 Vec3.down() {
+    return Vec3.create(0.0, -1.0, 0.0);
+}
+
+fn Vec3 Vec3.left() {
+    return Vec3.create(-1.0, 0.0, 0.0);
+}
+
+fn Vec3 Vec3.right() {
+    return Vec3.create(1.0, 0.0, 0.0);
+}
+
+fn Vec3 Vec3.forward() {
+    return Vec3.create(0.0, 0.0, 1.0);
+}
+
+fn Vec3 Vec3.back() {
+    return Vec3.create(0.0, 0.0, -1.0);
+}
+
+// Vec3 addition
+fn Vec3 Vec3.add(const Vec3* a, const Vec3* b) {
+    return Vec3.create(a.x + b.x, a.y + b.y, a.z + b.z);
+}
+
+// Vec3 subtraction
+fn Vec3 Vec3.sub(const Vec3* a, const Vec3* b) {
+    return Vec3.create(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+// Vec3 scalar multiplication
+fn Vec3 Vec3.mul(const Vec3* v, f32 scalar) {
+    return Vec3.create(v.x * scalar, v.y * scalar, v.z * scalar);
+}
+
+// Vec3 scalar division
+fn Vec3 Vec3.div(const Vec3* v, f32 scalar) {
+    return Vec3.create(v.x / scalar, v.y / scalar, v.z / scalar);
+}
+
+// Vec3 dot product
+fn f32 Vec3.dot(const Vec3* a, const Vec3* b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+// Vec3 cross product
+fn Vec3 Vec3.cross(const Vec3* a, const Vec3* b) {
+    return Vec3.create(
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x
+    );
+}
+
+// Vec3 length
+fn f32 Vec3.length(const Vec3* v) {
+    return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+}
+
+// Vec3 length squared
+fn f32 Vec3.lengthSquared(const Vec3* v) {
+    return v.x * v.x + v.y * v.y + v.z * v.z;
+}
+
+// Vec3 normalize
+fn Vec3 Vec3.normalize(const Vec3* v) {
+    f32 len = Vec3.length(v);
+    if (len > EPSILON) {
+        return Vec3.div(v, len);
+    }
+    return Vec3.zero();
+}
+
+// Vec3 distance
+fn f32 Vec3.distance(const Vec3* a, const Vec3* b) {
+    Vec3 diff = Vec3.sub(a, b);
+    return Vec3.length(&diff);
+}
+
+// Vec3 reflect
+fn Vec3 Vec3.reflect(const Vec3* v, const Vec3* normal) {
+    Vec3 n = Vec3.normalize(normal);
+    f32 dot = Vec3.dot(v, &n);
+    Vec3 scaled_n = n.mul(2.0 * dot);
+    return Vec3.sub(v, &scaled_n);
+}
+
+// Vec3 project
+fn Vec3 Vec3.project(const Vec3* v, const Vec3* onto) {
+    Vec3 normalized_onto = Vec3.normalize(onto);
+    f32 dot = Vec3.dot(v, &normalized_onto);
+    return normalized_onto.mul(dot);
+}
+
+// Vec4 constructors
+fn Vec4 Vec4.create(f32 x, f32 y, f32 z, f32 w) {
+    return {x, y, z, w}
+}
+
+fn Vec4 Vec4.zero() {
+    return Vec4.create(0.0, 0.0, 0.0, 0.0);
+}
+
+fn Vec4 Vec4.one() {
+    return Vec4.create(1.0, 1.0, 1.0, 1.0);
+}
+
+fn Vec4 Vec4.fromVec3(const Vec3* v, f32 w) {
+    return Vec4.create(v.x, v.y, v.z, w);
+}
+
+// Vec4 addition
+fn Vec4 Vec4.add(const Vec4* a, const Vec4* b) {
+    return Vec4.create(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+}
+
+// Vec4 subtraction
+fn Vec4 Vec4.sub(const Vec4* a, const Vec4* b) {
+    return Vec4.create(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
+}
+
+// Vec4 scalar multiplication
+fn Vec4 Vec4.mul(const Vec4* v, f32 scalar) {
+    return Vec4.create(v.x * scalar, v.y * scalar, v.z * scalar, v.w * scalar);
+}
+
+// Vec4 dot product
+fn f32 Vec4.dot(const Vec4* a, const Vec4* b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+}
+
+// Mat4 constructors
+fn Mat4 Mat4.identity() {
+    return {
+        .m = {[0] = 1.0, [5] = 1.0, [10] = 1.0, [15] = 1.0}
+    }
+}
+
+fn Mat4 Mat4.zero() {
+    return {}
+}
+
+// Mat4 matrix multiplication
+fn Mat4 Mat4.mul(const Mat4* a, const Mat4* b) {
+    Mat4 result;
+    for (i32 i = 0; i < 4; i++) {
+        for (i32 j = 0; j < 4; j++) {
+            result.m[i * 4 + j] = 0.0;
+            for (i32 k = 0; k < 4; k++) {
+                result.m[i * 4 + j] += a.m[i * 4 + k] * b.m[k * 4 + j];
+            }
+        }
+    }
+    return result;
+}
+
+// Mat4 transform Vec4
+fn Vec4 Mat4.transformVec4(const Mat4* m, const Vec4* v) {
+    f32 x = m.m[0] * v.x + m.m[1] * v.y + m.m[2] * v.z + m.m[3] * v.w;
+    f32 y = m.m[4] * v.x + m.m[5] * v.y + m.m[6] * v.z + m.m[7] * v.w;
+    f32 z = m.m[8] * v.x + m.m[9] * v.y + m.m[10] * v.z + m.m[11] * v.w;
+    f32 w = m.m[12] * v.x + m.m[13] * v.y + m.m[14] * v.z + m.m[15] * v.w;
+    return Vec4.create(x, y, z, w);
+}
+
+// Mat4 transform Vec3
+fn Vec3 Mat4.transformVec3(const Mat4* m, const Vec3* v) {
+    Vec4 temp = Vec4.fromVec3(v, 1.0);
+    Vec4 result = Mat4.transformVec4(m, &temp);
+    return Vec3.create(result.x, result.y, result.z);
+}
+
+// Mat4 translation matrix
+fn Mat4 Mat4.translate(f32 x, f32 y, f32 z) {
+    Mat4 m = Mat4.identity();
+    m.m[3] = x;
+    m.m[7] = y;
+    m.m[11] = z;
+    return m;
+}
+
+fn Mat4 Mat4.translateVec3(const Vec3* v) {
+    return Mat4.translate(v.x, v.y, v.z);
+}
+
+// Mat4 scale matrix
+fn Mat4 Mat4.scale(f32 x, f32 y, f32 z) {
+    Mat4 m = Mat4.identity();
+    m.m[0] = x;
+    m.m[5] = y;
+    m.m[10] = z;
+    return m;
+}
+
+fn Mat4 Mat4.scaleVec3(const Vec3* v) {
+    return Mat4.scale(v.x, v.y, v.z);
+}
+
+fn Mat4 Mat4.scaleUniform(f32 s) {
+    return Mat4.scale(s, s, s);
+}
+
+// Mat4 rotation matrices
+fn Mat4 Mat4.rotateX(f32 angle) {
+    f32 c = cosf(angle);
+    f32 s = sinf(angle);
+    Mat4 m = Mat4.identity();
+    m.m[5] = c;
+    m.m[6] = s;
+    m.m[9] = -s;
+    m.m[10] = c;
+    return m;
+}
+
+fn Mat4 Mat4.rotateY(f32 angle) {
+    f32 c = cosf(angle);
+    f32 s = sinf(angle);
+    Mat4 m = Mat4.identity();
+    m.m[0] = c;
+    m.m[2] = -s;
+    m.m[8] = s;
+    m.m[10] = c;
+    return m;
+}
+
+fn Mat4 Mat4.rotateZ(f32 angle) {
+    f32 c = cosf(angle);
+    f32 s = sinf(angle);
+    Mat4 m = Mat4.identity();
+    m.m[0] = c;
+    m.m[1] = s;
+    m.m[4] = -s;
+    m.m[5] = c;
+    return m;
+}
+
+fn Mat4 Mat4.rotateAxis(const Vec3* axis, f32 angle) {
+    Vec3 n = Vec3.normalize(axis);
+    f32 c = cosf(angle);
+    f32 s = sinf(angle);
+    f32 t = 1.0 - c;
+
+    Mat4 m = Mat4.identity();
+    m.m[0] = t * n.x * n.x + c;
+    m.m[1] = t * n.x * n.y + s * n.z;
+    m.m[2] = t * n.x * n.z - s * n.y;
+    m.m[4] = t * n.x * n.y - s * n.z;
+    m.m[5] = t * n.y * n.y + c;
+    m.m[6] = t * n.y * n.z + s * n.x;
+    m.m[8] = t * n.x * n.z + s * n.y;
+    m.m[9] = t * n.y * n.z - s * n.x;
+    m.m[10] = t * n.z * n.z + c;
+
+    return m;
+}
+
+// Mat4 view matrix
+fn Mat4 Mat4.lookAt(const Vec3* eye, const Vec3* center, const Vec3* up) {
+    Vec3 temp_sub = Vec3.sub(center, eye);
+    Vec3 f = Vec3.normalize(&temp_sub);
+    Vec3 temp_cross = f.cross(up);
+    Vec3 s = Vec3.normalize(&temp_cross);
+    Vec3 u = s.cross(&f);
+
+    Mat4 m = Mat4.identity();
+    m.m[0] = s.x; m.m[4] = s.y; m.m[8] = s.z;
+    m.m[1] = u.x; m.m[5] = u.y; m.m[9] = u.z;
+    m.m[2] = -f.x; m.m[6] = -f.y; m.m[10] = -f.z;
+
+    f32 dot_s = s.dot(eye);
+    f32 dot_u = u.dot(eye);
+    f32 dot_f = f.dot(eye);
+
+    m.m[3] = -dot_s; m.m[7] = -dot_u; m.m[11] = dot_f;
+
+    return m;
+}
+
+// Mat4 perspective projection matrix
+fn Mat4 Mat4.perspective(f32 fov, f32 aspect, f32 near, f32 far) {
+    f32 f = 1.0 / tanf(fov * 0.5);
+    Mat4 m = Mat4.zero();
+    m.m[0] = f / aspect;
+    m.m[5] = f;
+    m.m[10] = (far + near) / (near - far);
+    m.m[11] = -1.0;
+    m.m[14] = (2.0 * far * near) / (near - far);
+    return m;
+}
+
+// Mat4 orthographic projection matrix
+fn Mat4 Mat4.ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far) {
+    Mat4 m = Mat4.identity();
+    m.m[0] = 2.0 / (right - left);
+    m.m[5] = 2.0 / (top - bottom);
+    m.m[10] = -2.0 / (far - near);
+    m.m[3] = -(right + left) / (right - left);
+    m.m[7] = -(top + bottom) / (top - bottom);
+    m.m[11] = -(far + near) / (far - near);
+    return m;
+}
+
+// Mat4 transpose
+fn Mat4 Mat4.transpose(const Mat4* m) {
+    Mat4 result;
+    for (i32 i = 0; i < 4; i++) {
+        for (i32 j = 0; j < 4; j++) {
+            result.m[i * 4 + j] = m.m[j * 4 + i];
+        }
+    }
+    return result;
+}
+
+// Mat4 determinant
+fn f32 Mat4.determinant(const Mat4* m) {
+    f32 term1 = m.m[5] * m.m[10] * m.m[15] - m.m[5] * m.m[11] * m.m[14] -
+                m.m[9] * m.m[6] * m.m[15] + m.m[9] * m.m[7] * m.m[14] +
+                m.m[13] * m.m[6] * m.m[11] - m.m[13] * m.m[7] * m.m[10];
+    f32 term2 = m.m[4] * m.m[10] * m.m[15] - m.m[4] * m.m[11] * m.m[14] -
+                m.m[8] * m.m[6] * m.m[15] + m.m[8] * m.m[7] * m.m[14] +
+                m.m[12] * m.m[6] * m.m[11] - m.m[12] * m.m[7] * m.m[10];
+    f32 term3 = m.m[4] * m.m[9] * m.m[15] - m.m[4] * m.m[11] * m.m[13] -
+                m.m[8] * m.m[5] * m.m[15] + m.m[8] * m.m[7] * m.m[13] +
+                m.m[12] * m.m[5] * m.m[11] - m.m[12] * m.m[7] * m.m[9];
+    f32 term4 = m.m[4] * m.m[9] * m.m[14] - m.m[4] * m.m[10] * m.m[13] -
+                m.m[8] * m.m[5] * m.m[14] + m.m[8] * m.m[6] * m.m[13] +
+                m.m[12] * m.m[5] * m.m[10] - m.m[12] * m.m[6] * m.m[9];
+
+    return m.m[0] * term1 - m.m[1] * term2 + m.m[2] * term3 - m.m[3] * term4;
+}
+
+// Utility functions
+fn f32 radians(f32 _degrees) {
+    return _degrees * DEG_TO_RAD;
+}
+
+fn f32 degrees(f32 _radians) {
+    return _radians * RAD_TO_DEG;
+}
+
+fn f32 lerp(f32 a, f32 b, f32 t) {
+    return a + t * (b - a);
+}
+
+fn Vec3 Vec3.lerp(const Vec3* a, const Vec3* b, f32 t) {
+    Vec3 temp_sub = Vec3.sub(b, a);
+    Vec3 temp_mul = temp_sub.mul(t);
+    return Vec3.add(a, &temp_mul);
+}
+
+fn f32 clamp(f32 value, f32 min, f32 max) {
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
+}
+
+fn f32 smoothstep(f32 edge0, f32 edge1, f32 x) {
+    f32 t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+    return t * t * (3.0 - 2.0 * t);
+}
+
+// Example usage
+fn void exampleUsage() {
+    // Vec2 example
+    Vec2 pos = Vec2.create(10.0, 20.0);
+    Vec2 vel = Vec2.create(1.0, 2.0);
+    Vec2 newPos = pos.add(&vel);
+    f32 distance = Vec2.length(&newPos);
+
+    // Vec3 example
+    Vec3 camPos = Vec3.create(0.0, 5.0, 10.0);
+    Vec3 lookAt = Vec3.create(0.0, 0.0, 0.0);
+    Vec3 up = Vec3.up();
+
+    // Mat4 example
+    Mat4 view = Mat4.lookAt(&camPos, &lookAt, &up);
+    f32 fov_rad = radians(45.0);
+    f32 aspect = 16.0 / 9.0;
+    Mat4 proj = Mat4.perspective(fov_rad, aspect, 0.1, 100.0);
+    Mat4 mvp = proj.mul(&view);
+
+    // 3D transformation example
+    Mat4 model = Mat4.identity();
+    f32 rot_angle = radians(45.0);
+    Mat4 rotation = Mat4.rotateY(rot_angle);
+    Mat4 translation = Mat4.translate(5.0, 0.0, 0.0);
+    Mat4 temp_mul = model.mul(&rotation);
+    model = temp_mul.mul(&translation);
+
+    // Vector transformation
+    Vec3 vertex = Vec3.create(1.0, 1.0, 1.0);
+    Vec3 transformed = model.transformVec3(&vertex);
+
+    // Complex calculation example
+    Vec3 start = Vec3.create(1.0, 2.0, 3.0);
+    Vec3 end = Vec3.create(4.0, 5.0, 6.0);
+    Vec3 direction = end.sub(&start);
+    Vec3 normalized_dir = Vec3.normalize(&direction);
+    Vec3 reflected = normalized_dir.reflect(&up);
+}

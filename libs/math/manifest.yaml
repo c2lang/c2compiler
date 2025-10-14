@@ -13,4 +13,5 @@ dependencies:
 
 modules:
     - math
+    - gmath
 
