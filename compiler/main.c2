@@ -510,9 +510,8 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
         }
     }
 
-    const char* libdir = getenv("C2_LIBDIR");
-    if (libdir) c.comp_opts.libdir = c.auxPool.addStr(libdir, true);
-    if (!libdir && !c.opts.build_file) {
+    c.comp_opts.libdir = getenv("C2_LIBDIR");
+    if (!c.comp_opts.libdir && !c.opts.build_file) {
         console.warn("environment variable C2_LIBDIR not set!");
     }
 }

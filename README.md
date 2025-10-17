@@ -23,6 +23,7 @@ see the [installation document](INSTALL.md) for installation on Linux or OSX.
 The *C2_LIBDIR* should point to <path_to_c2compiler>/libs
 The *C2_PLUGINDIR* may be anywhere and is used by the install_plugins.sh script
 
+All these variables may contain multiple paths, separated by colons (:)
 
 ## Bootstrap
 

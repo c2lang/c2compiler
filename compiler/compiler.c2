@@ -41,6 +41,7 @@ import source_mgr;
 import string_buffer;
 import string_list;
 import string_pool;
+import string_utils;
 import target_info;
 import unused_checker;
 import utils;
@@ -83,7 +84,7 @@ public type Options struct {
     bool asan;
     bool msan;
     bool ubsan;
-    u32 libdir; // from environment varible C2_LIBDIR, into auxPool
+    const char* libdir; // no ownership, from environment varible C2_LIBDIR
     char *target_triple;
 }
 
@@ -277,7 +278,10 @@ fn void Compiler.build(Compiler* c,
             console.error("images require a build-file");
             stdlib.exit(-1);
         }
-        if (c.opts.libdir) c.libdirs.add(c.opts.libdir);
+        if (c.opts.libdir) {
+            // parse into multiple, add each to string-pool
+            string_utils.split_paths(c.opts.libdir, c, handle_path);
+        }
         c.targetInfo.getNative();
     }
     if (target_str) {
@@ -678,3 +682,12 @@ fn void Compiler.addGlobalDefine(Compiler* c, const char* prefix, const char* ta
 
     c.addFeature(tmp, "1");
 }
+
+// NOTE: paths are not 0-terminated
+fn void handle_path(void* arg, const char* path, u32 len) {
+    Compiler* c = arg;
+    u32 path_idx = c.auxPool.add(path, len, true);
+    //stdio.printf("PATH [%s]\n", c.auxPool.idx2str(path_idx));
+    c.libdirs.add(path_idx);
+}
+
