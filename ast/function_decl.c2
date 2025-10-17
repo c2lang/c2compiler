@@ -217,6 +217,10 @@ public fn void FunctionDecl.setBody(FunctionDecl* d, CompoundStmt* body) {
     d.body = body;
 }
 
+public fn bool FunctionDecl.hasBody(const FunctionDecl* d) {
+    return d.base.functionDeclBits.has_body;
+}
+
 public fn CompoundStmt* FunctionDecl.getBody(const FunctionDecl* d) {
     if (d.base.functionDeclBits.has_body) return d.body;
     return nil;
@@ -329,6 +333,11 @@ public fn u32 FunctionDecl.getPrefixNameIdx(const FunctionDecl* d) {
 
 public fn void FunctionDecl.setCallKind(FunctionDecl* d, CallKind kind) {
     d.base.functionDeclBits.call_kind = kind;
+}
+
+public fn bool FunctionDecl.isTypeFunc(const FunctionDecl* d) {
+    CallKind ck = d.getCallKind();
+    return ck >= TypeFunc;
 }
 
 public fn CallKind FunctionDecl.getCallKind(const FunctionDecl* d) {

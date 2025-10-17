@@ -214,6 +214,25 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
             return;
         }
     }
+
+    Decl* d = (Decl*)fd;
+    //printf("FUNC %s  cname %d  foreign %d  type_func %d\n", d.getName(), d.hasCName(), ma.mod.isForeign(), fd.isTypeFunc());
+    if (d.hasCName()) {
+        if (!ma.mod.isForeign()) {
+            ma.error(d.getLoc(), "the cname attribute is only allowed for foreign functions");
+            return;
+        }
+        if (fd.hasBody()) { // inline function
+            ma.error(d.getLoc(), "inline functions cannot have a cname attribute");
+            return;
+        }
+    } else {
+        // (static) type function, require cname for foreign functions
+        if (ma.mod.isForeign() && !fd.hasBody() && fd.isTypeFunc()) {
+            ma.error(d.getLoc(), "type functions for foreign functions require a cname attribute");
+            return;
+        }
+    }
 }
 
 fn void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope* s) {

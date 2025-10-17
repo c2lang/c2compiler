@@ -175,7 +175,7 @@ fn c_int Ring.get_cqe_internal(Ring *ring, Cqe** cqe_ptr, u32 submit, u32 wait_n
 /*
  * Must be called after io_uring_for_each_cqe()
  */
-fn void Ring.cq_advance(Ring *ring, u32 nr) @(cname="io_uring_cq_advance")
+fn void Ring.cq_advance(Ring *ring, u32 nr) //@(cname="io_uring_cq_advance")
 {
 	if (nr) {
 		Cq* cq = &ring.cq;
@@ -194,7 +194,7 @@ fn void Ring.cq_advance(Ring *ring, u32 nr) @(cname="io_uring_cq_advance")
  * Must be called after io_uring_{peek,wait}_cqe() after the cqe has
  * been processed by the application.
  */
-fn void Ring.cqe_seen(Ring* ring, Cqe* cqe) @(cname="io_uring_cqe_seen")
+fn void Ring.cqe_seen(Ring* ring, Cqe* cqe) //@(cname="io_uring_cqe_seen")
 {
 	if (cqe) ring.cq_advance(1);
 }
@@ -202,18 +202,18 @@ fn void Ring.cqe_seen(Ring* ring, Cqe* cqe) @(cname="io_uring_cqe_seen")
 /*
  * Command prep helpers
  */
-fn void Sqe.set_data(Sqe* sqe, void* data) @(cname="io_uring_sqe_set_data")
+fn void Sqe.set_data(Sqe* sqe, void* data) //@(cname="io_uring_sqe_set_data")
 {
 	sqe.user_data = data;
 }
 
-fn void *Cqe.get_data(const Cqe* cqe) @(cname="io_uring_sqe_get_data")
+fn void *Cqe.get_data(const Cqe* cqe) //@(cname="io_uring_sqe_get_data")
 {
 	//return (void *) (uintptr_t) cqe->user_data
 	return cqe.user_data;
 }
 
-fn void Sqe.set_flags(Sqe* sqe, u32 flags) @(cname="io_uring_sqe_set_flags")
+fn void Sqe.set_flags(Sqe* sqe, u32 flags) //@(cname="io_uring_sqe_set_flags")
 {
 	sqe.flags = (u8)flags;
 }
@@ -227,7 +227,7 @@ static inline void __io_uring_set_target_fixed_file(struct io_uring_sqe *sqe,
 }
 #endif
 
-fn void prep_rw(c_int op, Sqe* sqe, c_int fd, const void* addr, u32 len, u64 offset) @(cname="io_uring_prep_rw")
+fn void prep_rw(c_int op, Sqe* sqe, c_int fd, const void* addr, u32 len, u64 offset) //@(cname="io_uring_prep_rw")
 {
 	sqe.opcode = (u8)op;
 	sqe.flags = 0;
@@ -289,23 +289,23 @@ static inline void io_uring_prep_tee(struct io_uring_sqe *sqe,
 }
 #endif
 
-fn void Sqe.prep_readv(Sqe* sqe, c_int fd, const uio.Iovec* iovecs, u32 nr_vecs, u64 offset) @(cname="io_uring_prep_readv")
+fn void Sqe.prep_readv(Sqe* sqe, c_int fd, const uio.Iovec* iovecs, u32 nr_vecs, u64 offset) //@(cname="io_uring_prep_readv")
 {
 	prep_rw(Op.READV, sqe, fd, iovecs, nr_vecs, offset);
 }
 
-fn void Sqe.prep_read_fixed(Sqe* sqe, c_int fd, void* buf, u32 nbytes, u64 offset, c_int buf_index) @(cname="io_uring_prep_read_fixed")
+fn void Sqe.prep_read_fixed(Sqe* sqe, c_int fd, void* buf, u32 nbytes, u64 offset, c_int buf_index) //@(cname="io_uring_prep_read_fixed")
 {
 	prep_rw(Op.READ_FIXED, sqe, fd, buf, nbytes, offset);
 	sqe.buf_index = (u16)buf_index;
 }
 
-fn void Sqe.prep_writev(Sqe* sqe, c_int fd, const uio.Iovec* iovecs, u32 nr_vecs, u64 offset) @(cname="io_uring_prep_writev")
+fn void Sqe.prep_writev(Sqe* sqe, c_int fd, const uio.Iovec* iovecs, u32 nr_vecs, u64 offset) //@(cname="io_uring_prep_writev")
 {
 	prep_rw(Op.WRITEV, sqe, fd, iovecs, nr_vecs, offset);
 }
 
-fn void Sqe.prep_write_fixed(Sqe* sqe, c_int fd, const void* buf, u32 nbytes, u64 offset, c_int buf_index) @(cname="io_uring_prep_write_fixed")
+fn void Sqe.prep_write_fixed(Sqe* sqe, c_int fd, const void* buf, u32 nbytes, u64 offset, c_int buf_index) //@(cname="io_uring_prep_write_fixed")
 {
 	prep_rw(Op.WRITE_FIXED, sqe, fd, buf, nbytes, offset);
 	sqe.buf_index = (u16)buf_index;
@@ -372,26 +372,26 @@ static inline void io_uring_prep_fsync(struct io_uring_sqe *sqe, int fd,
 }
 #endif
 
-fn void Sqe.prep_nop(Sqe* sqe) @(cname="io_uring_prep_nop")
+fn void Sqe.prep_nop(Sqe* sqe) //@(cname="io_uring_prep_nop")
 {
 	prep_rw(Op.NOP, sqe, -1, nil, 0, 0);
 }
 
 fn void Sqe.prep_timeout(Sqe* sqe, linux_types.Timespec* ts,
-					 u32 count, u32 flags) @(cname="io_uring_prep_timeout")
+					 u32 count, u32 flags) //@(cname="io_uring_prep_timeout")
 {
 	prep_rw(Op.TIMEOUT, sqe, -1, ts, 1, count);
 	sqe.timeout_flags = flags;
 }
 
-fn void Sqe.prep_timeout_remove(Sqe* sqe, u64 user_data, u32 flags) @(cname="io_uring_prep_timeout_remove")
+fn void Sqe.prep_timeout_remove(Sqe* sqe, u64 user_data, u32 flags) //@(cname="io_uring_prep_timeout_remove")
 {
 	//prep_rw(Op.TIMEOUT_REMOVE, sqe, -1, (void *)(unsigned long)user_data, 0, 0);
 	prep_rw(Op.TIMEOUT_REMOVE, sqe, -1, user_data, 0, 0);
 	sqe.timeout_flags = flags;
 }
 
-fn void Sqe.prep_timeout_update(Sqe* sqe, linux_types.Timespec* ts, u64 user_data, u32 flags) @(cname="io_uring_prep_timeout_update")
+fn void Sqe.prep_timeout_update(Sqe* sqe, linux_types.Timespec* ts, u64 user_data, u32 flags) //@(cname="io_uring_prep_timeout_update")
 {
 	prep_rw(Op.TIMEOUT_REMOVE, sqe, -1, (void*)user_data, 0, (usize)ts);
 	sqe.timeout_flags = flags | TIMEOUT_UPDATE;
@@ -400,7 +400,7 @@ fn void Sqe.prep_timeout_update(Sqe* sqe, linux_types.Timespec* ts, u64 user_dat
 fn void Sqe.prep_accept(Sqe* sqe, c_int fd,
                         sys_socket.Sockaddr* addr,
                         u32* addrlen,
-                        c_int flags) @(cname="io_uring_prep_accept")
+                        c_int flags) //@(cname="io_uring_prep_accept")
 {
 	prep_rw(Op.ACCEPT, sqe, fd, addr, 0, (u64)addrlen);
 	sqe.accept_flags = (u32)flags;
@@ -418,14 +418,14 @@ static inline void io_uring_prep_accept_direct(struct io_uring_sqe *sqe, int fd,
 }
 #endif
 
-fn void Sqe.prep_cancel(Sqe* sqe, void* user_data, c_int flags) @(cname="io_uring_prep_cancel")
+fn void Sqe.prep_cancel(Sqe* sqe, void* user_data, c_int flags) //@(cname="io_uring_prep_cancel")
 {
 	prep_rw(Op.ASYNC_CANCEL, sqe, -1, user_data, 0, 0);
 	sqe.cancel_flags = (u32)flags;
 }
 
 fn void Sqe.prep_link_timeout(Sqe* sqe, linux_types.Timespec* ts,
-					      u32 flags) @(cname="io_uring_prep_link_timeout")
+					      u32 flags) //@(cname="io_uring_prep_link_timeout")
 {
 	prep_rw(Op.LINK_TIMEOUT, sqe, -1, ts, 1, 0);
 	sqe.timeout_flags = flags;
@@ -475,17 +475,17 @@ static inline void io_uring_prep_openat_direct(struct io_uring_sqe *sqe,
 
 #endif
 
-fn void Sqe.prep_close(Sqe* sqe, c_int fd) @(cname="io_uring_prep_close")
+fn void Sqe.prep_close(Sqe* sqe, c_int fd) //@(cname="io_uring_prep_close")
 {
 	prep_rw(Op.CLOSE, sqe, fd, nil, 0, 0);
 }
 
-fn void Sqe.prep_read(Sqe* sqe, c_int fd, void* buf, u32 nbytes, u64 offset) @(cname="io_uring_prep_read")
+fn void Sqe.prep_read(Sqe* sqe, c_int fd, void* buf, u32 nbytes, u64 offset) //@(cname="io_uring_prep_read")
 {
 	prep_rw(Op.READ, sqe, fd, buf, nbytes, offset);
 }
 
-fn void Sqe.prep_write(Sqe* sqe, c_int fd, const void* buf, u32 nbytes, u64 offset) @(cname="io_uring_prep_write")
+fn void Sqe.prep_write(Sqe* sqe, c_int fd, const void* buf, u32 nbytes, u64 offset) //@(cname="io_uring_prep_write")
 {
 	prep_rw(Op.WRITE, sqe, fd, buf, nbytes, offset);
 }
@@ -720,7 +720,7 @@ static inline int io_uring_cq_eventfd_toggle(struct io_uring *ring,
  * readily available. Returns 0 with cqe_ptr filled in on success, -errno on
  * failure.
  */
-fn c_int Ring.wait_cqe_nr(Ring *ring, Cqe** cqe_ptr, u32 wait_nr) @(cname="io_uring_wait_cqe_nr")
+fn c_int Ring.wait_cqe_nr(Ring *ring, Cqe** cqe_ptr, u32 wait_nr) //@(cname="io_uring_wait_cqe_nr")
 {
 	return Ring.get_cqe_internal(ring, cqe_ptr, 0, wait_nr, nil);
 }
@@ -729,7 +729,7 @@ fn c_int Ring.wait_cqe_nr(Ring *ring, Cqe** cqe_ptr, u32 wait_nr) @(cname="io_ur
  * Return an IO completion, if one is readily available. Returns 0 with
  * cqe_ptr filled in on success, -errno on failure.
  */
-fn c_int Ring.peek_cqe(Ring* ring, Cqe** cqe_ptr) @(cname="io_uring_peek_cqe")
+fn c_int Ring.peek_cqe(Ring* ring, Cqe** cqe_ptr) //@(cname="io_uring_peek_cqe")
 {
 	return ring.wait_cqe_nr(cqe_ptr, 0);
 }
@@ -738,7 +738,7 @@ fn c_int Ring.peek_cqe(Ring* ring, Cqe** cqe_ptr) @(cname="io_uring_peek_cqe")
  * Return an IO completion, waiting for it if necessary. Returns 0 with
  * cqe_ptr filled in on success, -errno on failure.
  */
-fn c_int Ring.wait_cqe(Ring* ring, Cqe **cqe_ptr) @(cname="io_uring_wait_cqe")
+fn c_int Ring.wait_cqe(Ring* ring, Cqe **cqe_ptr) //@(cname="io_uring_wait_cqe")
 {
 	return ring.wait_cqe_nr(cqe_ptr, 1);
 }

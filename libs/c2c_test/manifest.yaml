@@ -1,0 +1,11 @@
+# fake library to test c2c .c2i function parsing
+
+info:
+    language: c
+    type: library
+    kinds:
+        - dynamic
+
+modules:
+    - c2c_test1
+

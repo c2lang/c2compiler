@@ -1,0 +1,16 @@
+// @skip
+// @recipe bin
+    $warnings no-unused
+    $backend c no-build
+    $use c2c_test dynamic
+
+// @file{file1}
+module test;
+
+import c2c_test1;
+
+public fn i32 main(i32 argc, const char** argv) {
+    c2c_test1.cname_test();
+    return 0;
+}
+

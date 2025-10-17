@@ -1,0 +1,22 @@
+module c2c_test1;
+
+fn char cname_test1() @(cname="foobar") {        // @error{inline functions cannot have a cname attribute}
+    return c;
+}
+
+type Foo struct {
+    i32 x;
+}
+
+fn i32 Foo.test1() {
+    return 0;
+}
+
+fn i32 Foo.test2(Foo* f) {
+    return 0;
+}
+
+fn i32 Foo.test3();  // @error{type functions for foreign functions require a cname attribute}
+
+fn i32 Foo.test4(Foo* f);  // @error{type functions for foreign functions require a cname attribute}
+

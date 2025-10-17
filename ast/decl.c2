@@ -298,6 +298,14 @@ public fn const char* Decl.getCName(const Decl* d) {
     return nil;
 }
 
+public fn bool Decl.hasCName(const Decl* d) {
+    if (!d.hasAttr()) return false;
+
+    const AST* a = d.getAST();
+    const attr.Value* cname = a.getAttr(d, attr.AttrKind.CName);
+    return cname;
+}
+
 public fn const char* Decl.getCDef(const Decl* d) {
     if (!d.hasAttr()) return nil;
 
