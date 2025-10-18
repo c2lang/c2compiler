@@ -395,11 +395,20 @@ fn Expr* Parser.parseCallExpr(Parser* p, Expr* func) {
 
     while (p.tok.kind != Kind.RParen) {
 
-        if (p.tok.kind == Kind.LBrace)
+        if (p.tok.kind == Kind.Identifier && p.peekToken(1) == Kind.Colon) {
+            SrcLoc nameLoc = p.tok.loc;
+            u32 name_idx = p.tok.name_idx;
+            p.consumeToken();  // name
+            p.consumeToken();  // ':'
+            Expr* inner = (p.tok.kind == Kind.LBrace) ? p.parseInitList() : p.parseExpr();
+            Expr* arg = p.builder.actOnNamedArgument(nameLoc, name_idx, inner);
+            args.add(arg);
+        } else
+        if (p.tok.kind == Kind.LBrace) {
             args.add(p.parseInitList());
-        else
+        } else {
             args.add(p.parseExpr());
-
+        }
         if (p.tok.kind != Kind.Comma) break;
         p.consumeToken();
     }
