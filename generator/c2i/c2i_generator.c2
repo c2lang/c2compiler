@@ -31,6 +31,7 @@ type Generator struct {
     Module* mod;
     const char* mod_name;
     bool in_body;
+    u32 indent;
 }
 
 public fn void generate(string_pool.Pool* astPool, const char* output_dir, component.List* comps)

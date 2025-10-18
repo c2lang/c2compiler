@@ -74,6 +74,8 @@ fn void Generator.emitVarDecl(Generator* gen, string_buffer.Buf* out, const VarD
 
 fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     string_buffer.Buf* out = gen.out;
+
+    gen.indent = 0;
     switch (d.getKind()) {
     case Function:
         gen.emitFunctionDecl(out, d, false);
@@ -221,6 +223,7 @@ fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, const Dec
 fn void Generator.emitFunctionDecl(Generator* gen, string_buffer.Buf* out, const Decl* d, bool as_type) {
     FunctionDecl* fd = (FunctionDecl*)d;
 
+    gen.indent = 0;
     if (!as_type) out.add("fn ");
     gen.emitType(out, fd.getRType());
     if (!as_type) {

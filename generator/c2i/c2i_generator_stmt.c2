@@ -23,6 +23,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
 
     if (newline) out.indent(indent);
 
+    gen.indent = indent;
     switch (s.getKind()) {
     case Return:
         out.add("return");

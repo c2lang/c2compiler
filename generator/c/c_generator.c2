@@ -81,6 +81,7 @@ type Generator struct {
     bool ubsan;
     bool trace_calls;
     bool no_trace;  //to disable tracing on c2_trace module
+    u32 indent;
 
     // set during generation
     bool cur_external;  // whether current component is external
@@ -713,6 +714,7 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
         return;
     }
 
+    gen.indent = 0;
     switch (d.getKind()) {
     case Function:
         FunctionDecl* fd = (FunctionDecl*)d;
@@ -924,6 +926,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     Fragment* f = gen.getFragment();
     string_buffer.Buf* out = f.buf;
 
+    gen.indent = 0;
     gen.gen_func_proto(fd, out);
     out.newline();
 

@@ -54,37 +54,49 @@ fn SrcLoc IntegerLiteral.getEndLoc(const IntegerLiteral* e) {
     return e.base.base.loc + e.base.base.integerLiteralBits.src_len;
 }
 
+fn u32 IntegerLiteral.getSrcLen(const IntegerLiteral* e) {
+    return e.base.base.integerLiteralBits.src_len;
+}
+
 /*
 public fn bool IntegerLiteral.isDecimal(const IntegerLiteral* e) {
     return e.base.base.integerLiteralBits.radix == Default;
 }
 */
 
-fn void printBinary(string_buffer.Buf* out, u64 value) {
-    char[1+(64+2-1)/2+1] tmp;
+fn void printBinary(string_buffer.Buf* out, u64 value, u32 len) {
+    char[2+64+1] tmp;
     char* cp = &tmp[elemsof(tmp) - 1];
+    if (len < 3) len = 3;
+    if (len > 66) len = 66;
     *cp = '\0';
-    for (;;) {
+    for (u32 i = 2; value || i < len; i++) {
         *--cp = '0' + (value & 0x1);
         value /= 2;
-        if (value == 0)
-            break;
     }
     *--cp = 'b';
     *--cp = '0';
     out.add(cp);
 }
 
-fn void printOctal(string_buffer.Buf* out, u64 value) {
-    char[1+(64+3-1)/3+1] tmp;
+fn void printOctal(string_buffer.Buf* out, u64 value, u32 len) {
+    char[1+22+1] tmp;
     char* cp = &tmp[elemsof(tmp) - 1];
+    if (len < 1) len = 1;
+    if (len > 23) len = 23;
     *cp = '\0';
-    while (value) {
+    for (u32 i = 1; value || i < len; i++) {
         *--cp = '0' + (value & 0x7);
         value /= 8;
     }
     *--cp = '0';
     out.add(cp);
+}
+
+fn void printHex(string_buffer.Buf* out, u64 value, u32 len) {
+    if (len < 3) len = 3;
+    if (len > 18) len = 18;
+    out.print("0x%.*X", (i32)len - 2, value);
 }
 
 fn void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, u32 indent) {
@@ -97,18 +109,19 @@ fn void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, u3
 }
 
 public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffer.Buf* out, bool c_style) {
+    // Attempt to generate the same number of digits. Output may be smaller if source has digit separators
     switch (e.base.base.integerLiteralBits.radix) {
     case Default:
         out.print("%d", e.val);
         break;
     case Hex:
-        out.print("0x%x", e.val);
+        printHex(out, e.val, e.getSrcLen());
         break;
     case Octal:
-        printOctal(out, e.val);
+        printOctal(out, e.val, e.getSrcLen());
         break;
     case Binary:
-        printBinary(out, e.val);
+        printBinary(out, e.val, e.getSrcLen());
         break;
     }
     if (c_style) {
