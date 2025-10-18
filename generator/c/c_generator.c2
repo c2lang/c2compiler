@@ -161,12 +161,17 @@ fn void Generator.emitCNameMod(Generator* /*gen*/, string_buffer.Buf* out, const
             out.add(cname);
             return;
         }
+        if (d.isFunction()) {
+            FunctionDecl* fd = (FunctionDecl*)d;
+            if (fd.isTypeFunc()) goto c2_style;
+        }
         QualType qt = d.getType();
         if (!qt.isConst()) {
             out.add(d.getName());
             return;
         }
     }
+c2_style:
     out.add(mod.getName());
     out.add1('_');
     if (d.isFunction()) {
