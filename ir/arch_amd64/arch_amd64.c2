@@ -1,0 +1,28 @@
+module arch_amd64;
+
+import ir_tools local;
+
+/*
+type Regs enum u8 {
+    Rax,    // return
+    Rdi, Rsi, Rdx, Rcx, R8, R9, // args
+    R10, R11,       // temp
+    R12, R13, R14, R15, Rbx,   // callee saved
+    Rsp, Rbp,   // other
+}
+*/
+
+const Target ArchInfo = {
+    .num_args_in_regs = 6,
+    .num_regs = 17,
+    .num_temps = 9,
+    .num_saved = 5,
+    .arg0_reg = 1,  // skip rax
+    .saved0_reg = 255, // TODO
+    .regs = nil,    // num_regs_long, TODO how what to point to?
+}
+
+public fn const Target* getTarget() {
+    return &ArchInfo;
+}
+

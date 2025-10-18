@@ -71,7 +71,12 @@ fn void Generator.init(Generator* gen,
                        bool print,
                        bool print_all) {
     string.memset(gen, 0, sizeof(Generator));
-    gen.ctx = ir_context.create(print_all);
+    // What is needed to know:
+    // binary format (elf, etc)
+    // pointer size (arch)
+    // registers (arch)
+    // instructions (arch)
+    gen.ctx = ir_context.create(print_all, targetInfo);
     gen.labels.init();
     gen.target = target;
     gen.output_dir = output_dir;

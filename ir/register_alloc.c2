@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-module ir_context;
+module ir_tools;
 
 import ir_rpo;
 import ir local;
@@ -44,7 +44,6 @@ fn void LiveVector.init(LiveVector* v, u32 num_blocks, u32 num_instr) {
     u16 num_regs = 8;  // always 8 for now (just for call return+args)
 
     // TODO this should be re-used between functions (also LiveVector)
-    // TODO let number of variables depend on nr of instructions
     v.interferences = ir_interference_graph.create(32*1024, (u16)num_instr, num_regs);
     // TODO dynamically resize maps
     v.live_in = ir_live_map.create(4096, (u16)num_blocks);
@@ -93,6 +92,7 @@ fn void LiveVector.addInterfere(LiveVector* v, u16 idx) {
 }
 
 fn void LiveVector.addInterfereFilter(LiveVector* v, u32 idx) {
+    //printf("interfere filtered %d\n", idx);
     for (u32 i=0; i<v.count; i++) {
         if (v.temps[i] == idx) return;
     }
@@ -177,6 +177,7 @@ fn void Tools.createBlockInterferences(Tools* t, u32 blk_id, FunctionInfo* fi, L
             if (pc.src != blk_id) continue;
             //printf("  PHI CLAUSE %d  %s %d\n", pc.dest_idx, pc.ref.getKindName(), pc.ref.value);
             v.remove(pc.dest_idx);
+            // TODO addFiltered?
             if (pc.ref.isTemp()) v.addInterfere((u16)pc.ref.value);
         }
     }
@@ -188,6 +189,7 @@ fn void Tools.createBlockInterferences(Tools* t, u32 blk_id, FunctionInfo* fi, L
     u32 i = last;
     while (1) {
         const Instr* ii = &instrs[i];
+        //printf("----- INSTR %d -----\n", i);
 
         if (ii.hasResult()) {
             if (ii.hasRegister()) {
@@ -201,13 +203,14 @@ fn void Tools.createBlockInterferences(Tools* t, u32 blk_id, FunctionInfo* fi, L
         // create 'vars' for each Caller-saved register and for arg/param registers
         if (ii.isCall()) {
             // interfere all live vars with  non-callee-saved registers
-            // TODO
-            // Start var with r0/r1 for all real args (will be removed on arg)
-            // TODO get number from somewhere, TEMP hardcoded to 2
-            // TODO nested calls?
-            // TODO also add 1000 to R0, 1001 to R1
-            v.addRegister(0);
-            v.addRegister(1);
+            u32 num_args = ii.getNumArgs();
+            for (u32 a = 0; a < num_args; a++) {
+                v.addRegister(a);
+            }
+            for (u32 a=num_args; a<8; a++) {   // just take 8 as highest caller-saved register
+                v.addRegister(a);
+                v.removeRegister(a);
+            }
         } else if (ii.isPhi()) {
             // TODO need to do something?
         } else if (ii.isReturn()) {
@@ -222,6 +225,7 @@ fn void Tools.createBlockInterferences(Tools* t, u32 blk_id, FunctionInfo* fi, L
         if (i == first) break;
         i--;
     }
+    // Note: param registers are live at function start
     //printf("[%d] ", i);
     //v.dump();
     //v.store((u16)blk_id);
@@ -500,7 +504,7 @@ fn void Tools.insertSplitEdges(Tools* t) {
     t.inserter.insertBlocks(&fi.blocks);
 }
 
-fn void Tools.removeSplitEdges(Tools* t) {
+fn void Tools.removeSplitEdges(Tools* t) @(unused) {    // TEMP unused
     FunctionInfo* fi = t.fi;
     u32 num_blocks = fi.blocks.getCount();
     Block* blocks = fi.blocks.get(0);
@@ -554,10 +558,6 @@ fn void Tools.removeSameCopies(Tools* t) {
 fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
     // TODO can manually allocate registers to params here already (R0..Rx)
     // that would still be ISA independent
-
-    t.inserter.clear(fi.blocks.getCount(), fi.instructions.getCount());
-
-    t.implementAbi();
 
     t.insertSplitEdges();
 
@@ -651,7 +651,8 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
 
     v.free();
     t.replacePhis();
-    t.removeSplitEdges();
+    // NOTE: cannot remove Split Edges until after insertions! (otherwise all new blocks get removed)
+    //t.removeSplitEdges();
     t.removeSameCopies();
     // TODO sort Blocks (not instructions)
 

@@ -1,0 +1,28 @@
+module ir_tools;
+
+// NOTE: in ir_tools to allowm passing Tools*
+//type ConvertAbiFn fn void(Target* target, Tools* tools);
+
+// TODO have separate pointer with arch dependent calls?
+
+public type Target struct {
+    // convert params, return values, call args to registers etc
+    // TEMP use separate type until merged in bootstrap
+    //fn void(Target* target, Tools* tools) convert_abi;
+    //ConvertAbiFn convert_abi;
+
+    // layout of registers in one lineair array:
+    // return reg (s)
+    // arg regs
+    // temp regs
+    // saved regs
+    // other regs
+    // TODO floating-point, vector regs
+    u8 num_args_in_regs;
+    u8 num_regs;
+    u8 num_temps;
+    u8 num_saved;
+    u8 arg0_reg;
+    u8 saved0_reg;
+    const u8* regs; // num_regs long
+}

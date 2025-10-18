@@ -58,12 +58,12 @@ public type InstrKind enum u8 {
     Ret,
     Halt,
     Call,
+    Copy,
     // Pseudo instructions (must be converted before converting to ASM)
     Param,
     Arg,
     Switch,
     Phi,
-    Copy,
     Comment, // KEEP THIS THE LAST OPERATION!
 }
 
@@ -104,11 +104,11 @@ public fn const char* InstrKind.str(InstrKind k) @(unused) {
     case Ret:       return "ret";
     case Halt:      return "halt";
     case Call:      return "call";
+    case Copy:      return "copy";
     case Param:     return "param";
     case Arg:       return "arg";
     case Switch:    return "switch";
     case Phi:       return "phi";
-    case Copy:      return "copy";
     case Comment:   return "comment";
     }
     return "";

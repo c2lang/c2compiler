@@ -1,0 +1,27 @@
+module arch_rv64;
+
+import ir_tools local;
+
+/*
+type Regs enum u8 {
+    A0, A1, A2, A3, A4, A5, A6, A7, // return + args
+    T0, T1, T2, T3, T4, T5, T6, // temp
+    S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11,   // callee saved
+    FP, SP, GP, TP, RA, // other
+}
+*/
+
+const Target ArchInfo = {
+    .num_args_in_regs = 8,
+    .num_regs = 32,
+    .num_temps = 7,
+    .num_saved = 11,
+    .arg0_reg = 0,
+    .saved0_reg = 15,
+    .regs = nil,    // num_regs_long, TODO how what to point to?
+}
+
+public fn const Target* getTarget() {
+    return &ArchInfo;
+}
+

@@ -389,7 +389,8 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
 
     switch (i.getKind()) {
     case Call:
-        out.space();
+        u32 num_args = i.getNumArgs();
+        out.print(" %d ", num_args);
         ph.printRef(i.args[0], false);
         break;
     case JmpIf:

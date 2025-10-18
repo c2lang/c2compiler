@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-module ir_context;
+module ir_tools;
 
 import ir local;
 import ir_rev_list local;
@@ -201,6 +201,11 @@ fn Ref Tools.checkPredBlock(Tools* t, BlockId blk_id, u16 slot, FunctionInfo* fi
     clauses.free();
     t.active_blocks.clear(blk_id);
     return ref;
+}
+
+fn u32 getSlotName(u32 slot) {
+    // see Context.create()
+    return 4 + slot*4;
 }
 
 fn Ref Tools.addPhiInstr(Tools* t, FunctionInfo* fi, const PhiClauses* cache, u32 loc, u16 slot) {

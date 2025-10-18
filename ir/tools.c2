@@ -1,0 +1,246 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir_tools;
+
+import bit_array;
+import index_list;
+//import arch_arm64;
+import ir_copy_list local;
+import ir_inserter;
+import ir local;
+import ir_lookup_table;
+import ir_rev_list local;
+import ir_slot_collector local;
+import ir_slot_values local;
+import usage_counter;
+
+import stdlib;
+
+public type Tools struct {
+    ir_lookup_table.Table conversion;
+    SlotValues slot_values;
+    SlotCollector collector;
+    RevList revlist;
+    ir_inserter.Inserter inserter;
+    bit_array.BitArray active_blocks;
+    CopyList copies;
+    usage_counter.Counter usage;
+
+    const Target* target;
+
+    // for printing
+    bool print_all;
+    const void* arg1;   // Context*
+
+    // change per function
+    const void* arg2;   // Symbol*
+    FunctionInfo* fi;   // no ownership
+}
+static_assert(816, sizeof(Tools));
+
+public fn void Tools.init(Tools* t, const Target* target, const void* arg1, bool print) {
+    t.conversion.init(64);
+    t.slot_values.create();
+    t.collector.create();
+    t.revlist.create(256);
+    t.inserter.create();
+    t.copies.init(1024);
+    t.usage.init(1024);
+    t.target = target;
+    t.print_all = print;
+    t.arg1 = arg1;
+    t.arg2 = nil;
+}
+
+public fn void Tools.free(Tools* t) {
+    t.usage.free();
+    t.copies.free();
+    t.inserter.free();
+    t.revlist.free();
+    t.collector.free();
+    t.slot_values.free();
+    t.conversion.free();
+}
+
+public fn void Tools.print_func(const Tools* t, const char* label) {
+    // Just use callback
+    // TODO fix
+    //const Context* c = t.arg1;
+    //c.print_function(t.arg2, t.fi, label);
+}
+
+public fn void Tools.convert_fn(Tools* t) {
+    FunctionInfo* fi = t.fi;
+    if (t.print_all && fi.blocks.getCount() > 1) t.print_func("after reorder");
+    //t.generate_graphviz(fi);
+
+    // MULTI-THREAD: need to pre-alloc names for Slots (S0, S1, etc), since pool access needs to be read-only
+
+    // NOTE: cannot have outstanding inserts which converting switches!
+    bool changed = t.convert_switches();
+    if (changed && t.print_all) t.print_func("after convert switch");
+    //t.print_function(symbol, fi, "BEFORE collector fill");
+
+    t.createSSA();
+    //t.inserter.dump();
+
+    //if (fi.blocks.getCount() > 1 && t.print_all) t.print_func("after create SSA");
+
+    if (t.inserter.needsFixup()) {
+        t.fixup_function();
+        //if (t.print_all) t.print_func("after fixup");
+    }
+    if (fi.blocks.getCount() > 1 && t.print_all) t.print_func("after create SSA");
+    //t.print_function(symbol, fi, "AFTER fixup");
+
+    t.eliminateCopies();
+    if (t.print_all) t.print_func("after eliminate copies");
+
+    //t.propagateConstants();
+    //if (t.print_all) t.print_function(symbol, fi, "after propagate constants");
+    t.removeUnused();
+    //if (print) t.print_func("after remove unused");
+
+    //t.propagateConstants();
+
+    t.removeNone();
+    if (t.print_all) t.print_func("after remove none");
+
+    t.inserter.clear(fi.blocks.getCount(), fi.instructions.getCount());
+
+    t.implementAbi();
+
+    t.allocateRegisters(fi);
+
+    if (t.inserter.needsFixup()) t.fixup_function();
+    if (t.print_all) t.print_func("after register allocation + phi-removal");
+
+    // generate Instruction
+    // ..
+}
+
+// Can only be used after switch-instructions have been converted
+fn void Tools.markUsedBlocks(Tools* t, FunctionInfo* fi) {
+    u32 num_blocks = fi.blocks.getCount();
+    Block* blocks = fi.blocks.get(0);
+
+    for (u32 i=0; i<num_blocks; i++) {
+        blocks[i].checked = false;
+        blocks[i].used = blocks[i].phi_source;
+    }
+
+    BlockId* blocks2 = stdlib.malloc(num_blocks * sizeof(BlockId));
+    //rpo.num_blocks = num_blocks;
+
+    blocks2[0] = 0; // add start block to todo-list
+    blocks[0].checked = true;
+    blocks[0].used = true;
+    u32 head = 1;   // insert point
+    u32 tail = 0; // check point
+
+    //printf("find unused: (%d blocks)\n", num_blocks);
+    while (head != tail) {
+        BlockId blk_id = blocks2[tail];
+        //printf("  %d/%d  B%d\n", tail, head, blk_id);
+
+        Block* b = &blocks[blk_id];
+
+        for (u32 d = 0; d < 2; d++) {
+            BlockId dest_id = b.dests[d];
+            assert(dest_id < num_blocks);
+            if (!dest_id) break;
+
+            Block* dest = &blocks[dest_id];
+            if (!dest.checked) {
+                //printf("   add %d\n", dest_id);
+                blocks2[head++] = dest_id;
+                dest.checked = true;
+                dest.used = true;
+            }
+        }
+        tail++;
+    }
+#if 0
+    printf("USED: \n");
+    for (u32 i = 0; i < num_blocks; i++) printf("  B%d  used %d\n", i, blocks[i].used);
+#endif
+    stdlib.free(blocks2);
+
+}
+
+// NOTE: also removes unused blocks, clears instructions in removed blocks
+public fn void Tools.reorder_blocks(Tools* t, FunctionInfo* fi, const index_list.List* block_order) {
+    const u32* order = block_order.getFrom(0);
+
+    u32 num_blocks = block_order.getCount();
+    assert(num_blocks == fi.blocks.getCount());
+    BlockList list2.init(num_blocks);
+    Block* blocks1 = fi.blocks.get(0);
+
+    t.conversion.clear(num_blocks);
+
+    u32 blk_count = 0;
+    for (u32 i=0; i<num_blocks; i++) {
+        BlockId blk_id = order[i];
+        const Block* old = &blocks1[blk_id];
+        if (!old.used) { // clear instructions of unused blocks
+            Instr* instrs = fi.instructions.get(old.instr.start);
+            for (u32 j=0; j<old.instr.count; j++) instrs[j].clear();
+            continue;
+        }
+        list2.copy(old);
+        t.conversion.set(blk_id, blk_count);
+        blk_count++;
+    }
+
+    // convert block dests (old -> new)
+    Block* blocks2 = list2.get(0);
+    assert(t.conversion.get(0) == 0);   // block 0 should never move
+    for (u32 i = 0; i < blk_count; i++) {
+        Block* b = &blocks2[i];
+        if (b.end_with_switch) {
+            CaseId case_id = b.dests[0];
+            u32 num_cases = b.dests[1];
+            for (u32 j=0; j<num_cases; j++) {
+                Case* cs = fi.cases.get(case_id+j);
+                cs.block = t.conversion.get(cs.block);
+            }
+            //u32 join_blk = i.args[1].value;
+            // update block id in switch instr.args[1], is last instruction (if not comment)
+            u32 instr_idx = b.instr.start + b.instr.count - 1;
+            Instr* switch_instr = fi.instructions.get(instr_idx);
+            assert(switch_instr.isSwitch());
+            Ref* join_ref = &switch_instr.args[1];
+            join_ref.value = t.conversion.get(join_ref.value);
+        } else {
+            b.dests[0] = t.conversion.get(b.dests[0]);
+            b.dests[1] = t.conversion.get(b.dests[1]);
+        }
+    }
+    // also update block ids in phi clauses
+    for (u32 i = 0; i < fi.phis.getCount(); i++) {
+        PhiClause* pc = fi.phis.get(i);
+        pc.src = t.conversion.get(pc.src);
+    }
+
+    // strip of empty instructions at end
+    fi.instructions.prune();
+
+    fi.blocks.swap(&list2);
+    list2.free();
+}
+
+

@@ -47,7 +47,6 @@ import string;
 import stdlib;
 import stdio;
 
-
 public type BeginTargetFn fn void (void* arg, plugin_info.Info* info);
 public type PluginFn fn void (void* arg);
 
@@ -241,15 +240,15 @@ fn void Compiler.build(Compiler* c,
             // parse into multiple, add each to string-pool
             string_utils.split_paths(c.opts.libdir, c, Compiler.addLibPath);
         }
-        c.targetInfo.getNative();
+        getNativeTarget(&c.targetInfo);
     }
     if (target_str) {
-        if (!c.targetInfo.fromString(target_str)) {
+        if (!fromString(&c.targetInfo, target_str)) {
             console.error("invalid target triple: %s", target_str);
             stdlib.exit(-1);
         }
     } else {
-        c.targetInfo.getNative();
+        getNativeTarget(&c.targetInfo);
     }
     console.debug("triple: %s", c.targetInfo.str());
 

@@ -212,6 +212,7 @@ public fn void InterferenceGraph.enable(InterferenceGraph* g, u16 var_idx) {
 }
 
 public fn void InterferenceGraph.add(InterferenceGraph* g, u16 var1, u16 var2) {
+    if (var1 == var2) return;
     //printf("IG add %d - %d\n", var1, var2);
     // check for duplicates
     const Variable* r = &g.variables[var1];
@@ -400,6 +401,11 @@ public fn void InterferenceGraph.allocate(InterferenceGraph* g, u32 num_args) {
     //assert(num_args < g.num_variables); // otherwise out-of-bounds write
     if (num_args >= g.num_variables) return;    // TEMP
 
+    // enqueue arguments first (skip any unused)
+    for (u16 i = 0; i < num_args; i++) {
+        if (g.register_map[i] == VAR_TODO) g.enqueue(i);
+    }
+
     // will go breadth-first from each variable, skipping already done
     for (u16 v=0; v<g.num_variables; v++) {
         if (g.register_map[v] != VAR_TODO) continue;
@@ -426,10 +432,14 @@ fn void InterferenceGraph.allocateVariable(InterferenceGraph* g, u16 var_idx) {
     for (u32 i=0; i<iter.count; i++) {
         u16 neighbor = iter.ids[i];
         u8 r = g.register_map[neighbor];
-        if (r < 64) used_regs |= (1 << r);
+        if (r < 64) {
+            used_regs |= (1 << r);
+            //printf("  block %d  r%d\n", neighbor, r);
+        }
         if (r == VAR_TODO) g.enqueue(neighbor);
     }
 
+    // first first free register
     for (u32 i=0; i<64; i++) {
         if ((used_regs & (1 << i)) == 0) {
             g.register_map[var_idx] = (u8)i;

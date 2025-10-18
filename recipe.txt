@@ -243,6 +243,7 @@ executable c2c
 #    compiler/c2recipe_yaml.c2
     compiler/compiler.c2
     compiler/compiler_generate.c2
+    compiler/compiler_target.c2
     compiler/compiler_libs.c2
     compiler/compiler_analyse.c2
 	compiler/main.c2
@@ -287,6 +288,7 @@ executable c2c
     ir/constant.c2
     ir/constant_list.c2
     ir/context.c2
+    ir/context_target.c2
     ir/copy_list.c2
     ir/function_info.c2
     ir/graphviz.c2
@@ -311,9 +313,14 @@ executable c2c
     ir/ssa.c2
     ir/switch.c2
     ir/symbol_list.c2
+    ir/target.c2
+    ir/tools.c2
     ir/types.c2
     ir/usage_counter.c2
     ir/work_queue.c2
+    ir/arch_amd64/arch_amd64.c2
+    ir/arch_arm64/arch_arm64.c2
+    ir/arch_rv64/arch_rv64.c2
 end
 
 executable c2tags
