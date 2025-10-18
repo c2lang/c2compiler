@@ -709,7 +709,9 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
 
         string_buffer.Buf* out = gen.getBuf(d.isPublic());
         gen.gen_func_proto(fd, out);
+        // TODO do in 'normal' body generation step? (also for interfaces)
         if (fd.isInline()) {
+            gen.cur_function = fd;
             d.setGenerated();  // for recursive inline functions
             out.newline();
             string_buffer.Buf* saved = gen.out;
@@ -717,6 +719,7 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
             gen.emitStmt((ast.Stmt*)fd.getBody(), 0, true);
             gen.out = saved;
             out.newline();
+            gen.cur_function = nil;
         } else {
             out.add(";\n");
         }
