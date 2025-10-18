@@ -84,7 +84,7 @@ public type Options struct {
     bool asan;
     bool msan;
     bool ubsan;
-    const char* libdir; // no ownership, from environment varible C2_LIBDIR
+    const char* libdir; // no ownership, from environment variable C2_LIBDIR
     char *target_triple;
 }
 
@@ -280,7 +280,7 @@ fn void Compiler.build(Compiler* c,
         }
         if (c.opts.libdir) {
             // parse into multiple, add each to string-pool
-            string_utils.split_paths(c.opts.libdir, c, handle_path);
+            string_utils.split_paths(c.opts.libdir, c, Compiler.addLibPath);
         }
         c.targetInfo.getNative();
     }
@@ -684,7 +684,7 @@ fn void Compiler.addGlobalDefine(Compiler* c, const char* prefix, const char* ta
 }
 
 // NOTE: paths are not 0-terminated
-fn void handle_path(void* arg, const char* path, u32 len) {
+fn void Compiler.addLibPath(void* arg, const char* path, u32 len) {
     Compiler* c = arg;
     u32 path_idx = c.auxPool.add(path, len, true);
     //stdio.printf("PATH [%s]\n", c.auxPool.idx2str(path_idx));
