@@ -208,6 +208,12 @@ public fn bool Buf.endsWith(const Buf* buf, char c) {
     return (buf.size_ && buf.data_[buf.size_-1] == c);
 }
 
+public fn u32 Buf.getColumn(const Buf* buf) {
+    u32 pos = buf.size_;
+    while (pos && buf.data_[pos - 1] != '\n') pos--;
+    return buf.size_ - pos;
+}
+
 public fn u32 Buf.encodeBytes(Buf* buf, const char* p, u32 len, char sep) {
     u32 size = buf.size_;
     u32 copy = 0;
