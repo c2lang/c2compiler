@@ -361,7 +361,7 @@ fn u32 Lengths.get_offset(const Lengths* l, u32 start, u32 line, u32 column) {
 }
 
 fn void Lengths.dump(const Lengths* f, bool verbose) {
-    printf("  Lengths: %7d bytes  %d/%d entries\n", f.total_size, f.count, f.cap);
+    printf("  line lengths: %7d bytes  %d/%d entries\n", f.total_size, f.count, f.cap);
     if (verbose) {
         for (u32 i=0; i<f.count; i++) {
             printf("  [%4d] %4d\n", i, f.lengths[i]);

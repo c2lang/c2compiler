@@ -119,6 +119,9 @@ fn void Visitor.handleTypeRef(Visitor* v, const TypeRef* r) {
 
         const Ref* user = r.getUser();
         v.on_ref(v.arg, user);
+    } else if (r.isStructMemberFn()) {
+        const Ref* member = r.getStructMemberType();
+        v.handleFunction((FunctionDecl*)member.decl);
     }
 
     u32 num_arrays = r.getNumArrays();
@@ -126,7 +129,6 @@ fn void Visitor.handleTypeRef(Visitor* v, const TypeRef* r) {
         Expr* e = r.getArray(i);
         if (e) v.handleExpr(e); // could be foo[]
     }
-
 }
 
 /*

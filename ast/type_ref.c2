@@ -299,6 +299,10 @@ fn bool TypeRef.isBuiltin(const TypeRef* r) {
     return r.flags.kind == TypeRefKind.Builtin;
 }
 
+public fn bool TypeRef.isStructMemberFn(const TypeRef* r) {
+    return r.flags.kind == TypeRefKind.StructMemberType;
+}
+
 public fn bool TypeRef.isVoid(const TypeRef* r) {
     return r.isBuiltin() && r.flags.num_ptrs == 0 && r.getBuiltinKind() == BuiltinKind.Void;
 }
