@@ -15,6 +15,7 @@
 
 module test_db;
 
+import ctype local;
 import c_errno local;
 import stdio local;
 import stdarg local;
@@ -491,24 +492,34 @@ fn void Db.parseTags(Db* db, const char* start, const char* end) {
     char[128] msg;
     if (!db.readUntil(msg, elemsof(msg), cp, '}', "message"))
         return;
+
+    // adjust line number for some special cases
+    u32 line = db.line_nr - db.line_offset;
+    for (const char* suff = cp + strlen(msg) + 1; suff < end; suff++) {
+        if (!isspace(*suff)) {
+            line += atoi(suff);
+            break;
+        }
+    }
+
     switch (kind) {
     case ERROR:
 #if TesterDebug
-        color_print(color.Blue, "  expecting error '%s' at %d", msg, db.line_nr - db.line_offset);
+        color_print(color.Blue, "  expecting error '%s' at %d", msg, line);
 #endif
-        db.errors.add(db.current_file, db.line_nr - db.line_offset, msg);
+        db.errors.add(db.current_file, line, msg);
         break;
     case WARNING:
 #if TesterDebug
-        color_print(color.Blue, "  expecting warning '%s' at %d", msg, db.line_nr - db.line_offset);
+        color_print(color.Blue, "  expecting warning '%s' at %d", msg, line);
 #endif
-        db.warnings.add(db.current_file, db.line_nr - db.line_offset, msg);
+        db.warnings.add(db.current_file, line, msg);
         break;
     case NOTE:
 #if TesterDebug
-        color_print(color.Blue, "  expecting note '%s' at %d", msg, db.line_nr - db.line_offset);
+        color_print(color.Blue, "  expecting note '%s' at %d", msg, line);
 #endif
-        db.notes.add(db.current_file, db.line_nr - db.line_offset, msg);
+        db.notes.add(db.current_file, line, msg);
         break;
     }
 }
