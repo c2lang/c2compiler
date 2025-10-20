@@ -74,6 +74,7 @@ static_assert(40, sizeof(ExplicitCastExpr));
 static_assert(40, sizeof(BuiltinExpr));
 static_assert(40, sizeof(FieldDesignatedInitExpr));
 static_assert(48, sizeof(ConditionalOperator));
+static_assert(32, sizeof(NamedArgument));
 
 static_assert(8, sizeof(QualType));
 static_assert(16, sizeof(Type));

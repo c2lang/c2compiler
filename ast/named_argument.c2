@@ -57,9 +57,8 @@ fn SrcLoc NamedArgument.getEndLoc(const NamedArgument* e) {
 fn void NamedArgument.print(const NamedArgument* e, string_buffer.Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
-    out.color(col_Value);
     out.space();
-    out.add("name: ");
+    out.color(col_Value);
     out.add(idx2name(e.name));
     out.newline();
     e.inner.print(out, indent + 1);
