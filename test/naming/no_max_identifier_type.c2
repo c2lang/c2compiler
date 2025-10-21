@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+// @warnings{no-max-identifier-length}
+module test;
+
+type T123456789012345678901234567890 struct {
+    i32 x;
+}
+
+type Very_long_type_names_are_ok_if_requested_for_specific_targets struct {
+    i32 x;
+}
+

@@ -414,6 +414,7 @@ executable c2cat
     common/string_list.c2
     common/string_map.c2
     common/utf8.c2
+    common/warning_flags.c2
 
     parser/c2_tokenizer.c2
     parser/keywords.c2
