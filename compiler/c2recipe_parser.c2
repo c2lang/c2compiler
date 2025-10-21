@@ -584,6 +584,9 @@ fn void Parser.parseWarnings(Parser* p) {
         case "deprecated":
             warnings.no_deprecated = disable;
             break;
+        case "max-identifier-length":
+            warnings.no_max_identifier_length = disable;
+            break;
         case "promote-to-error":
             warnings.are_errors = !disable;
             break;

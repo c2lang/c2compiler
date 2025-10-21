@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+// @warnings{no-max-identifier-length}
+module test;
+
+fn void test1() {
+    i32 thirty_one_is_fine_for_a_name__;
+    i32 very_long_var_names_are_ok_if_requested_for_specific_targets;
+}
+

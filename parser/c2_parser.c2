@@ -34,6 +34,7 @@ import token local;
 #if DumpTokens
 import utils;
 #endif
+import warning_flags;
 
 import stdarg local;
 import stdlib local;
@@ -58,8 +59,9 @@ public type Parser struct @(opaque) {
     diagnostics.Diags* diags;
     string_pool.Pool* pool;
     Builder* builder;
-    const string_list.List* features;
     const keywords.Info* kwinfo;
+    const string_list.List* features;
+    const warning_flags.Flags* warnings;
     bool is_interface;
     u32 va_list_idx;
     u32 varargs_idx;
@@ -79,15 +81,17 @@ public fn Parser* create(SourceMgr* sm,
                            string_pool.Pool* pool,
                            ast_builder.Builder* builder,
                            const keywords.Info* kwinfo,
-                           const string_list.List* features)
+                           const string_list.List* features,
+                           const warning_flags.Flags* warnings)
 {
     Parser* p = calloc(1, sizeof(Parser));
     p.sm = sm;
     p.diags = diags;
     p.pool = pool;
     p.builder = builder;
-    p.features = features;
     p.kwinfo = kwinfo;
+    p.features = features;
+    p.warnings = warnings;
     p.va_list_idx = pool.addStr("va_list", true);
     p.varargs_idx = pool.addStr("varargs", true);
     p.stdarg_idx = pool.addStr("stdarg", true);
@@ -123,6 +127,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                      p.sm.get_offset(p.file_id),
                      p.kwinfo,
                      p.features,
+                     p.warnings,
                      nil,
                      nil,
                      nil,
@@ -145,6 +150,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
                          p.sm.get_offset(p.file_id),
                          p.kwinfo,
                          p.features,
+                         p.warnings,
                          Parser.on_tokenizer_error,
                          p,
                          false);
