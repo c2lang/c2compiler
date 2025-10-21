@@ -198,6 +198,7 @@ public fn void Target.disableWarnings(Target* t) {
     t.warnings.no_unreachable_code = true;
     t.warnings.no_unknown_attribute = true;
     t.warnings.no_deprecated = true;
+    t.warnings.no_max_identifier_length = true;
 }
 
 public fn void Target.enableWarnings(Target* t) {
@@ -214,6 +215,7 @@ public fn void Target.enableWarnings(Target* t) {
     t.warnings.no_unreachable_code = false;
     t.warnings.no_unknown_attribute = false;
     t.warnings.no_deprecated = false;
+    t.warnings.no_max_identifier_length = false;
 }
 
 public fn const warning_flags.Flags* Target.getWarnings(const Target* t) {
