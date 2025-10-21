@@ -40,6 +40,7 @@ import string_pool;
 import string_utils;
 import target_info;
 import utils;
+import warning_flags;
 
 import c_errno local;
 import ctype;
@@ -115,6 +116,7 @@ type Compiler struct {
     build_file.Info* build_info; // no ownership, can be nil
     build_target.Target* target; // no ownership
     const Options* opts;         // no ownership
+    const warning_flags.Flags* warnings;  // no ownership
     target_info.Info targetInfo;
     PluginHandler* pluginHandler; // no ownership
 
@@ -180,8 +182,9 @@ fn void Compiler.build(Compiler* c,
     c.target = target;
     c.opts = opts;
     c.pluginHandler = pluginHandler;
+    c.warnings = target.getWarnings();
 
-    diags.setWarningAsError(target.getWarnings().are_errors);
+    diags.setWarningAsError(c.warnings.are_errors);
     c.diags.clear();
 
     c.context = ast_context.create(16*1024);
@@ -272,7 +275,8 @@ fn void Compiler.build(Compiler* c,
                                 c.astPool,
                                 c.builder,
                                 &c.kwinfo,
-                                target.getFeatures());
+                                target.getFeatures(),
+                                c.warnings);
 
     ast.initialize(c.context, c.astPool, c.targetInfo.intWidth / 8, color.useColor());
 
@@ -281,7 +285,7 @@ fn void Compiler.build(Compiler* c,
                                         c.astPool,
                                         c.builder,
                                         &c.allmodules,
-                                        c.target.getWarnings());
+                                        c.warnings);
 
     if (opts.show_libs) {
         c.showAllLibs();
