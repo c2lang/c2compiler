@@ -74,7 +74,7 @@ fn void IfStmt.print(const IfStmt* s, string_buffer.Buf* out, u32 indent) {
     out.newline();
 
     s.cond.print(out, indent + 1);
-    if (s.then) s.then.print(out, indent + 1);
+    s.then.print(out, indent + 1);
     if (s.base.ifStmtBits.has_else) s.else_stmt[0].print(out, indent + 1);
 }
 

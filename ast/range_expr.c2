@@ -57,19 +57,9 @@ fn SrcLoc RangeExpr.getEndLoc(const RangeExpr* e) {
 fn void RangeExpr.print(const RangeExpr* e, string_buffer.Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
-    out.color(col_Value);
-    out.space();
-    out.add("Range");
     out.newline();
 
-    out.indent(indent + 1);
-    out.color(col_Attr);
-    out.add("LHS=\n");
     e.lhs.print(out, indent + 1);
-
-    out.indent(indent + 1);
-    out.color(col_Attr);
-    out.add("RHS=\n");
     e.rhs.print(out, indent + 1);
 }
 
