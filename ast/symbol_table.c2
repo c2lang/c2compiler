@@ -15,10 +15,9 @@
 
 module ast;
 
-import string_buffer;
 import color;
+import string_buffer;
 
-import stdio local;
 import stdlib;
 import string;
 
@@ -144,7 +143,7 @@ public fn void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
 }
 
 public fn void SymbolTable.dump(const SymbolTable* t) @(unused) {
-    string_buffer.Buf* out = string_buffer.create(4096, useColor(), 2);
+    string_buffer.Buf* out = ast.getDumpBuf();
     u32 count = t.num_public + t.num_private;
 
     out.add("Symbols:\n");
@@ -153,7 +152,6 @@ public fn void SymbolTable.dump(const SymbolTable* t) @(unused) {
         const char* name = ast.idx2name(name_idx);
         out.print("  [%2d]  %6d  %s\n", i, name_idx, name);
     }
-    fputs(out.data(), stdout);
-    out.free();
+    ast.flushDumpBuf(out);
 }
 

@@ -187,8 +187,8 @@ public fn void TypeRefHolder.setPrefix(TypeRefHolder* h, SrcLoc loc, u32 name_id
 }
 
 public fn void TypeRefHolder.dump(const TypeRefHolder* h) @(unused) {
+    string_buffer.Buf* out = ast.getDumpBuf();
     const TypeRef* r = (TypeRef*)&h.ref;
-    string_buffer.Buf* out = string_buffer.create(128, useColor(), 2);
     r.print(out, false);
     for (u32 i=0; i<r.getNumArrays(); i++) {
         out.add1('[');
@@ -196,9 +196,7 @@ public fn void TypeRefHolder.dump(const TypeRefHolder* h) @(unused) {
         if (size) h.arrays[i].printLiteral(out);
         out.add1(']');
     }
-    out.color(col_Normal);
-    stdio.puts(out.data());
-    out.free();
+    ast.flushDumpBuf(out);
 }
 
 
@@ -532,16 +530,14 @@ fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
 
 // Note: only use on filled TypeRef
 public fn void TypeRef.dump(const TypeRef* r) @(unused) {
-    string_buffer.Buf* out = string_buffer.create(128, useColor(), 2);
+    string_buffer.Buf* out = ast.getDumpBuf();
     r.print(out, true);
-    out.color(col_Normal);
-    stdio.puts(out.data());
-    out.free();
+    ast.flushDumpBuf(out);
 }
 
 // Note: only use on filled TypeRef
 public fn void TypeRef.dump_full(const TypeRef* r) @(unused) {
-    string_buffer.Buf* out = string_buffer.create(1024, useColor(), 2);
+    string_buffer.Buf* out = ast.getDumpBuf();
     out.add("TypeRef:\n");
     out.indent(1);
     out.add("flags:");
@@ -560,10 +556,7 @@ public fn void TypeRef.dump_full(const TypeRef* r) @(unused) {
         const Ref* ref = &r.refs[i];
         out.print("ref[%d] loc %d  name_idx %d  decl %p\n", i, ref.loc, ref.name_idx, ref.decl);
     }
-
-    out.color(col_Normal);
-    stdio.puts(out.data());
-    out.free();
+    ast.flushDumpBuf(out);
 }
 
 public fn const char* TypeRef.diagName(const TypeRef* r) {

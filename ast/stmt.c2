@@ -15,10 +15,8 @@
 
 module ast;
 
-import string_buffer;
 import src_loc local;
-
-import stdio;
+import string_buffer;
 
 public type StmtKind enum u8 {
     Return,
@@ -169,11 +167,9 @@ public fn SrcLoc Stmt.getLoc(const Stmt* s) {
 }
 
 public fn void Stmt.dump(const Stmt* s) {
-    string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
+    string_buffer.Buf* out = ast.getDumpBuf();
     s.print(out, 0);
-    out.color(col_Normal);
-    stdio.puts(out.data());
-    out.free();
+    ast.flushDumpBuf(out);
 }
 
 fn void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {

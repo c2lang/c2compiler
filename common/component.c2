@@ -192,7 +192,6 @@ public fn void Component.print(const Component* c, bool show_funcs) {
     for (u32 i=0; i<c.mods.length(); i++) {
         mods[i].print(out, show_funcs);
     }
-
     out.color(color.Normal);
     stdio.puts(out.data());
     out.free();

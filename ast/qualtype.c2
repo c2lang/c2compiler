@@ -15,7 +15,6 @@
 
 module ast;
 
-import color;
 import string_buffer;
 import stdio local;
 
@@ -422,18 +421,15 @@ public fn const char* QualType.diagNameBare(const QualType* qt) {
 }
 
 public fn void QualType.dump(const QualType* qt) @(unused) {
-    string_buffer.Buf* out = string_buffer.create(512, useColor(), 2);
+    string_buffer.Buf* out = ast.getDumpBuf();
     qt.printInner(out, false, true, false);
-    out.color(color.Normal);
-    stdio.puts(out.data());
-    out.free();
+    ast.flushDumpBuf(out);
 }
 
 public fn void QualType.dump_full(const QualType* qt) {
-    string_buffer.Buf* out = string_buffer.create(512, useColor(), 1);
+    string_buffer.Buf* out = ast.getDumpBuf();
     qt.fullPrint(out, 0);
-    stdio.puts(out.data());
-    out.free();
+    ast.flushDumpBuf(out);
 }
 
 fn void QualType.printQuoted(const QualType* qt, string_buffer.Buf* out) {
