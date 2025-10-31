@@ -15,9 +15,7 @@
 
 module ast;
 
-import color;
 import string_buffer;
-import stdio;
 
 public type TypeKind enum u8 {
     Builtin,
@@ -109,11 +107,10 @@ public fn bool Type.isVoidType(const Type* t) {
 }
 
 public fn void Type.dump(const Type* t) @(unused) {
-    string_buffer.Buf* out = string_buffer.create(256, useColor(), 2);
+    string_buffer.Buf* out = ast.getDumpBuf();
     t.print(out);
-    out.color(color.Normal);
-    stdio.printf("%s\n", out.data());
-    out.free();
+    out.newline();
+    ast.flushDumpBuf(out);
 }
 
 fn u32 Type.getAlignment(const Type* t) {

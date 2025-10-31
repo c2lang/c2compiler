@@ -17,7 +17,6 @@ module ast;
 
 import src_loc local;
 import string_buffer;
-import stdio;
 
 public type ExprKind enum u8 {
     IntegerLiteral,
@@ -500,11 +499,9 @@ public fn bool Expr.needsSemi(const Expr* e) {
 }
 
 public fn void Expr.dump(const Expr* e) {
-    string_buffer.Buf* out = string_buffer.create(10*4096, useColor(), 2);
+    string_buffer.Buf* out = ast.getDumpBuf();
     e.print(out, 0);
-    out.color(col_Normal);
-    stdio.puts(out.data());
-    out.free();
+    ast.flushDumpBuf(out);
 }
 
 fn void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {

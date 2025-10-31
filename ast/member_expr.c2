@@ -16,9 +16,9 @@
 module ast;
 
 import ast_context;
-import string_buffer;
 import src_loc local;
-import stdio;
+import string_buffer;
+
 import string;
 
 public const u32 MemberExprMaxDepth = 7;
@@ -321,7 +321,7 @@ fn void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
 }
 
 public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
-    string_buffer.Buf* out = string_buffer.create(4096, useColor(), 2);
+    string_buffer.Buf* out = ast.getDumpBuf();
     out.color(col_Expr);
     out.print("MemberExpr expr %d ref %d/%d\n", m.hasExpr(), m.base.base.memberExprBits.num_decls, m.getNumRefs());
     const MemberExprBits* bits = &m.base.base.memberExprBits;
@@ -350,8 +350,6 @@ public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
         }
 
     }
-    out.color(col_Normal);
-    stdio.puts(out.data());
-    out.free();
+    ast.flushDumpBuf(out);
 }
 
