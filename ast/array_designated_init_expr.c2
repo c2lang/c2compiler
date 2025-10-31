@@ -42,11 +42,10 @@ public fn ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.Co
 }
 
 fn Expr* ArrayDesignatedInitExpr.instantiate(ArrayDesignatedInitExpr* e, Instantiator* inst) {
-    ArrayDesignatedInitExpr* f = ArrayDesignatedInitExpr.create(inst.c,
-                                                                e.base.base.loc,
-                                                                e.designator.instantiate(inst),
-                                                                e.initValue.instantiate(inst));
-    return (Expr*)f;
+    return (Expr*)ArrayDesignatedInitExpr.create(inst.c,
+                                                 e.base.base.loc,
+                                                 e.designator.instantiate(inst),
+                                                 e.initValue.instantiate(inst));
 }
 
 public fn Expr* ArrayDesignatedInitExpr.getDesignator(const ArrayDesignatedInitExpr* e) {

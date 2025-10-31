@@ -106,6 +106,9 @@ fn Expr* MemberExpr.instantiate(MemberExpr* e, Instantiator* inst) {
     string.memcpy(e2, e, size);
     if (base) e2.refs[0].expr = base.instantiate(inst);
 
+#if AstStatistics
+    Stats.addExpr(ExprKind.Member, size);
+#endif
     return (Expr*)e2;
 }
 

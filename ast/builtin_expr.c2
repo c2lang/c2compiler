@@ -111,25 +111,24 @@ public fn BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, Src
 }
 
 fn Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
-    BuiltinExpr* bi = nil;
     switch (e.getKind()) {
     case Sizeof:
     case Elemsof:
     case EnumMin:
     case EnumMax:
-        bi = BuiltinExpr.create(inst.c, e.base.base.loc, e.base.base.builtinExprBits.src_len, e.inner.instantiate(inst), e.getKind());
-        break;
+        return (Expr*)BuiltinExpr.create(inst.c, e.base.base.loc, e.base.base.builtinExprBits.src_len,
+                                         e.inner.instantiate(inst), e.getKind());
     case OffsetOf:
-        bi = BuiltinExpr.createOffsetOf(inst.c, e.base.base.loc, e.base.base.builtinExprBits.src_len, e.inner.instantiate(inst), e.offset[0].member.instantiate(inst));
-        break;
+        return (Expr*)BuiltinExpr.createOffsetOf(inst.c, e.base.base.loc, e.base.base.builtinExprBits.src_len,
+                                                 e.inner.instantiate(inst),
+                                                 e.offset[0].member.instantiate(inst));
     case ToContainer:
-        bi = BuiltinExpr.createToContainer(inst.c, e.base.base.loc, e.base.base.builtinExprBits.src_len,
-                                             e.inner.instantiate(inst),
-                                             e.container[0].member.instantiate(inst),
-                                             e.container[0].pointer.instantiate(inst));
-        break;
+        return (Expr*)BuiltinExpr.createToContainer(inst.c, e.base.base.loc, e.base.base.builtinExprBits.src_len,
+                                                    e.inner.instantiate(inst),
+                                                    e.container[0].member.instantiate(inst),
+                                                    e.container[0].pointer.instantiate(inst));
     }
-    return (Expr*)bi;
+    return nil;
 }
 
 public fn BuiltinExprKind BuiltinExpr.getKind(const BuiltinExpr* e) {

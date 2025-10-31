@@ -97,7 +97,7 @@ public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
     return s;
 }
 
-fn Stmt* AsmStmt.instantiate(AsmStmt* s, Instantiator* inst) @(unused) {
+fn Stmt* AsmStmt.instantiate(AsmStmt* s, Instantiator* inst) {
     // TODO
     return (Stmt*)s;
 }

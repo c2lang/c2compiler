@@ -58,7 +58,9 @@ fn CompoundStmt* CompoundStmt.instantiate(CompoundStmt* s, Instantiator* inst) {
     for (u32 i=0; i<count; i++) {
         s2.stmts[i] = s.stmts[i].instantiate(inst);
     }
-
+#if AstStatistics
+    Stats.addStmt(StmtKind.Compound, size);
+#endif
     return s2;
 }
 

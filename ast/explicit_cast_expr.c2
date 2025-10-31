@@ -61,6 +61,9 @@ fn Expr* ExplicitCastExpr.instantiate(ExplicitCastExpr* e, Instantiator* inst) {
     e2.inner = e.inner.instantiate(inst);
     e2.dest_type = QualType_Invalid;
     e2.dest.instantiate(&e.dest, inst);
+#if AstStatistics
+    Stats.addExpr(ExprKind.ExplicitCast, size);
+#endif
     return (Expr*)e2;
 }
 

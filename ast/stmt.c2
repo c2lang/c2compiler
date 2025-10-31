@@ -120,9 +120,7 @@ fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
     case Switch:
         return SwitchStmt.instantiate((SwitchStmt*)s, inst);
     case Break:
-        return s;
     case Continue:
-        return s;
     case Fallthrough:
         return s;
     case Label:
@@ -134,7 +132,7 @@ fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
     case Decl:
         return DeclStmt.instantiate((DeclStmt*)s, inst);
     case Asm:
-        break;
+        return AsmStmt.instantiate((AsmStmt*)s, inst);
     case Assert:
         return AssertStmt.instantiate((AssertStmt*)s, inst);
     }
