@@ -48,12 +48,11 @@ public fn ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c,
 }
 
 fn Expr* ArraySubscriptExpr.instantiate(ArraySubscriptExpr* e, Instantiator* inst) {
-    ArraySubscriptExpr* a = ArraySubscriptExpr.create(inst.c,
-                                                      e.base.base.loc,
-                                                      e.base.base.arraySubscriptExprBits.src_len,
-                                                      e.lhs.instantiate(inst),
-                                                      e.idx.instantiate(inst));
-    return (Expr*)a;
+    return (Expr*)ArraySubscriptExpr.create(inst.c,
+                                            e.base.base.loc,
+                                            e.base.base.arraySubscriptExprBits.src_len,
+                                            e.lhs.instantiate(inst),
+                                            e.idx.instantiate(inst));
 }
 
 public fn Expr* ArraySubscriptExpr.getBase(const ArraySubscriptExpr* e) { return e.lhs; }

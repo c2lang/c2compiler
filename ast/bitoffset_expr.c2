@@ -42,11 +42,10 @@ public fn BitOffsetExpr* BitOffsetExpr.create(ast_context.Context* c, SrcLoc loc
 }
 
 fn Expr* BitOffsetExpr.instantiate(BitOffsetExpr* e, Instantiator* inst) {
-    BitOffsetExpr* b = BitOffsetExpr.create(inst.c,
-                                            e.base.base.loc,
-                                            e.lhs.instantiate(inst),
-                                            e.rhs.instantiate(inst));
-    return (Expr*)b;
+    return (Expr*)BitOffsetExpr.create(inst.c,
+                                       e.base.base.loc,
+                                       e.lhs.instantiate(inst),
+                                       e.rhs.instantiate(inst));
 }
 
 public fn Expr* BitOffsetExpr.getLHS(const BitOffsetExpr* e) { return e.lhs; }

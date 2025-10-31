@@ -38,8 +38,7 @@ public fn AssertStmt* AssertStmt.create(ast_context.Context* c,
 }
 
 fn Stmt* AssertStmt.instantiate(AssertStmt* s, Instantiator* inst) {
-    AssertStmt* s2 = AssertStmt.create(inst.c, s.base.loc, s.inner.instantiate(inst));
-    return (Stmt*)s2;
+    return (Stmt*)AssertStmt.create(inst.c, s.base.loc, s.inner.instantiate(inst));
 }
 
 public fn Expr* AssertStmt.getInner(const AssertStmt* s) { return s.inner; }
