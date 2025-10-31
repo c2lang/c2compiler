@@ -47,13 +47,12 @@ public fn ConditionalOperator* ConditionalOperator.create(ast_context.Context* c
 }
 
 fn Expr* ConditionalOperator.instantiate(ConditionalOperator* e, Instantiator* inst) {
-    ConditionalOperator* o = ConditionalOperator.create(inst.c,
-                                                        e.base.base.loc,
-                                                        e.colonLoc,
-                                                        e.cond.instantiate(inst),
-                                                        e.lhs.instantiate(inst),
-                                                        e.rhs.instantiate(inst));
-    return (Expr*)o;
+    return (Expr*)ConditionalOperator.create(inst.c,
+                                             e.base.base.loc,
+                                             e.colonLoc,
+                                             e.cond.instantiate(inst),
+                                             e.lhs.instantiate(inst),
+                                             e.rhs.instantiate(inst));
 }
 
 public fn Expr* ConditionalOperator.getCond(const ConditionalOperator* e) {
