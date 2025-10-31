@@ -163,6 +163,7 @@ type Compiler struct {
     build_file.Info* build_info;    // no ownership, can be nil
     build_target.Target* target;     // no ownership
     const Options* opts;        // no ownership
+    const warning_flags.Flags* warnings;  // no ownership
     target_info.Info targetInfo;
 
     ast_context.Context* context;
@@ -223,8 +224,9 @@ fn void Compiler.build(Compiler* c,
     c.build_info = build_info;
     c.target = target;
     c.opts = opts;
+    c.warnings = target.getWarnings();
 
-    diags.setWarningAsError(target.getWarnings().are_errors);
+    diags.setWarningAsError(c.warnings.are_errors);
     c.diags.clear();
 
     c.context = ast_context.create(16*1024);
@@ -314,7 +316,8 @@ fn void Compiler.build(Compiler* c,
                                 c.astPool,
                                 c.builder,
                                 &c.kwinfo,
-                                target.getFeatures());
+                                target.getFeatures(),
+                                c.warnings);
 
     ast.initialize(c.context, c.astPool, c.targetInfo.intWidth / 8, color.useColor());
 
@@ -323,7 +326,7 @@ fn void Compiler.build(Compiler* c,
                                         c.astPool,
                                         c.builder,
                                         &c.allmodules,
-                                        c.target.getWarnings());
+                                        c.warnings);
 
     if (opts.show_libs) {
         c.showAllLibs();
@@ -446,8 +449,7 @@ fn void Compiler.build(Compiler* c,
     c.checkMain();
 
     // check unused
-    const warning_flags.Flags* warnings = c.target.getWarnings();
-    if (!warnings.no_unused) {
+    if (!c.warnings.no_unused) {
         c.mainComp.visitModules(Compiler.checkUnused, c);
     }
 
@@ -629,7 +631,7 @@ fn void Compiler.findTopModule(void* arg, ast.Module* m) {
 
 fn void Compiler.checkUnused(void* arg, ast.Module* m) {
     Compiler* c = arg;
-    unused_checker.check(c.diags, c.target.getWarnings(), m);
+    unused_checker.check(c.diags, c.warnings, m);
 }
 
 fn void Compiler.checkMain(Compiler* c) {
