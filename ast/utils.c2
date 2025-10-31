@@ -132,6 +132,25 @@ public fn void setGlobals(Globals* g) @(unused) { globals = g; }
 
 // wordsize in bytes, must NOT be called from Plugin!
 public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, bool use_color) {
+
+    if (use_color) {
+        // adjust colors for readability on dark mode terminals
+        const char* colorfgbg = stdlib.getenv("COLORFGBG");
+        const char* c2_colors = stdlib.getenv("C2_COLORS");
+        if (c2_colors && !string.strncmp(c2_colors, "none", 4)) {
+            use_color = false;
+        } else
+        if ((c2_colors && !string.strncmp(c2_colors, "dark", 4))
+        ||  (colorfgbg && *colorfgbg && !string.strcmp(colorfgbg + 1, ";0"))) {
+            // use brighter colors in dark mode
+            col_Attr = color.Bblue;
+            col_Template = color.Bgreen;
+            col_Type = color.Bgreen;
+            col_Error = color.Bred;
+            col_Calc = color.Byellow;
+        }
+    }
+
     globals = stdlib.malloc(sizeof(Globals));
     globals.pointers.init(c);
     globals.string_types.init(c);
