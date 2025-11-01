@@ -24,12 +24,13 @@ import unistd; // getcwd()
 
 type Issue struct {
     u32 filename; // into Issues' string pool
-    i32 line_nr;
+    u32 line_nr;
     u32 msg;    // index into Issues' string pool
+    bool found;
 }
 
 public type Iter struct {
-    const Issues* issues;
+    Issues* issues;
     u32 idx;
 }
 
@@ -44,12 +45,22 @@ public fn const char* relativeFilename(const char *name) {
     return name;
 }
 
+public fn bool Iter.find(Iter* iter, const char* filename, u32 line_nr) {
+    const Issues* i = iter.issues;
+    for (; iter.more(); iter.next()) {
+        const Issue* cur = &i.issues[iter.idx];
+        if (cur.line_nr == line_nr && !strcmp(&i.pool[cur.filename], filename))
+            return true;
+    }
+    return false;
+}
+
 public fn const char* Iter.getFilename(const Iter* iter) {
     const Issue* cur = &iter.issues.issues[iter.idx];
     return relativeFilename(&iter.issues.pool[cur.filename]);
 }
 
-public fn i32 Iter.getLineNr(const Iter* iter) {
+public fn u32 Iter.getLineNr(const Iter* iter) {
     const Issue* cur = &iter.issues.issues[iter.idx];
     return cur.line_nr;
 }
@@ -57,6 +68,19 @@ public fn i32 Iter.getLineNr(const Iter* iter) {
 public fn const char* Iter.getMsg(const Iter* iter) {
     const Issue* cur = &iter.issues.issues[iter.idx];
     return &iter.issues.pool[cur.msg];
+}
+
+public fn bool Iter.getFound(const Iter* iter) {
+    const Issue* cur = &iter.issues.issues[iter.idx];
+    return cur.found;
+}
+
+public fn void Iter.setFound(const Iter* iter) {
+    Issue* cur = &iter.issues.issues[iter.idx];
+    if (!cur.found) {
+        cur.found = true;
+        iter.issues.found_count++;
+    }
 }
 
 public fn bool Iter.more(const Iter* iter) {
@@ -75,6 +99,8 @@ public type Issues struct @(opaque) {
     char* pool;
     u32 pool_count;
     u32 pool_capacity;
+
+    u32 found_count;
 }
 
 public fn Issues* create() {
@@ -101,12 +127,12 @@ fn void Issues.resizePool(Issues* i, u32 capacity) {
 }
 
 fn u32 Issues.addPool(Issues* i, const char* text) {
-    u32 len = (u32)strlen(text) + 1;      // includes 0-terminator
-    while (i.pool_count + len >= i.pool_capacity) i.resizePool(i.pool_capacity * 2);
+    u32 size = (u32)strlen(text) + 1;      // includes 0-terminator
+    while (i.pool_count + size > i.pool_capacity) i.resizePool(i.pool_capacity * 2);
 
     u32 idx = i.pool_count;
-    memcpy(i.pool + i.pool_count, text, len);
-    i.pool_count += len;
+    memcpy(i.pool + i.pool_count, text, size);
+    i.pool_count += size;
     return idx;
 }
 
@@ -125,42 +151,17 @@ public fn void Issues.add(Issues* i, const char* filename, u32 line_nr, const ch
 
     Issue* cur = &i.issues[i.count];
     cur.filename = i.addPool(filename);
-    cur.line_nr = (i32)line_nr;
+    cur.line_nr = line_nr;
     cur.msg = i.addPool(msg);
+    cur.found = false;
     i.count++;
 }
 
-fn void Issues.erase_idx(Issues* i, u32 idx) {
-    // Note: does not erase text from pool
-    for (u32 j = idx; j < i.count-1; j++) i.issues[j] = i.issues[j+1];
-    i.count--;
+public fn bool Issues.allFound(const Issues* i) {
+    return i.count == i.found_count;
 }
 
-public fn void Issues.erase(Issues* i, const char* filename, i32 line_nr) {
-    for (u32 j=0; j<i.count; j++) {
-        const Issue* cur = &i.issues[j];
-        if (cur.line_nr != line_nr) continue;
-        if (strcmp(&i.pool[cur.filename], filename) == 0) {
-            i.erase_idx(j);
-            return;
-        }
-    }
-}
-
-public fn const char* Issues.find(Issues* i, const char* filename, i32 line_nr) {
-    for (u32 j=0; j<i.count; j++) {
-        const Issue* cur = &i.issues[j];
-        if (cur.line_nr != line_nr) continue;
-        if (strcmp(&i.pool[cur.filename], filename) == 0) return &i.pool[cur.msg];
-    }
-    return nil;
-}
-
-public fn bool Issues.empty(const Issues* i) {
-    return i.count == 0;
-}
-
-public fn Iter Issues.getIter(const Issues* i) {
+public fn Iter Issues.getIter(Issues* i) {
     Iter iter = { i, 0 }
     return iter;
 }

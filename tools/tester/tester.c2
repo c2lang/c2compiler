@@ -25,6 +25,7 @@ import c_errno local;
 import unistd;
 import pthread;
 
+import color;
 import test_utils local;
 import test_db local;
 import string_buffer;
@@ -251,8 +252,8 @@ fn void Tester.run_test(Tester* t, Test* test) {
 
     t.numtests++;
 
-    string_buffer.Buf* buf = string_buffer.create(4096, true, 2);
-    buf.print("%s ", test.filename);
+    string_buffer.Buf* buf = string_buffer.create(4096, color_output, 2);
+    buf.print("%s\n", test.filename);
 
     file_utils.File file.init("", test.filename);
     if (!file.load()) {
@@ -260,18 +261,13 @@ fn void Tester.run_test(Tester* t, Test* test) {
         exit(EXIT_FAILURE);
     }
 
-    test_db.Db db;
-    db.init(buf, file.data(), test.filename, test.kind, t.tmp_dir, c2c_cmd, t.cwd, runSkipped);
-    bool print = verboseLevel > 1;
+    test_db.Db db.init(buf, file.data(), test.filename, test.kind, t.tmp_dir, c2c_cmd, t.cwd, runSkipped);
     bool skip = db.parse();
     if (skip) {
         t.numskipped++;
-        buf.clear();
         color_print2(buf, colSkip, "%s SKIPPED", test.filename);
-        if (verboseLevel >= 1) print = true;
     } else {
-        buf.newline();
-
+        bool print = verboseLevel > 1;
         if (!db.haveErrors()) {
             db.testFile();
             if (db.printIssues()) print = true;
@@ -281,9 +277,8 @@ fn void Tester.run_test(Tester* t, Test* test) {
             test.failed = true;
             t.numerrors++;
         }
+        if (print) fputs(buf.data(), stdout);
     }
-    if (print) printf("%s", buf.data());
-
     db.destroy();
     file.close();
     buf.free();
@@ -316,7 +311,7 @@ public fn i32 main(i32 argc, char** argv) {
 
     u64 t1 = now();
 
-    set_color_output(argv[0], unistd.isatty(1));
+    set_color_output(argv[0], color.useColor());
 
     for (i32 i = 1; i < argc; i++) {
         char *arg = argv[i];

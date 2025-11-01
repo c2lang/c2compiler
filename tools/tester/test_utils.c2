@@ -23,13 +23,13 @@ import string local;
 import color;
 import string_buffer;
 
-bool color_output;
+public bool color_output;
 const char* proc_name = "";
 
 public const char* colError = color.Bred;
 public const char* colSkip = color.Bcyan;
 public const char* colOk = color.Green;
-public const char* colDebug = color.Bmagenta;
+//public const char* colDebug = color.Bmagenta;
 
 // NOTE: end must point AFTER last valid char (could be 0-terminator)
 

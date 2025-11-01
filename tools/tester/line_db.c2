@@ -47,7 +47,7 @@ public fn u32 Db.size(const Db* db) {
     return db.count;
 }
 
-public fn void Db.resize(Db* db, u32 capacity) {
+fn void Db.resize(Db* db, u32 capacity) {
     Entry* entries2 = malloc(capacity * sizeof(Entry));
     if (db.count) {
         memcpy(entries2, db.entries, db.count * sizeof(Entry));
