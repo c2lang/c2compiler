@@ -22,7 +22,6 @@ import stdlib local;
 import string local;
 import unistd local;
 
-import color;
 import expect_file local;
 import file_utils;
 import issues local;
@@ -156,15 +155,20 @@ fn void Db.addExpected(Db* db, ExpectFile* f) {
     db.expectedCount++;
 }
 
-fn void Db.matchNote(Db* db, const char* filename, i32 linenr, const char* msg) {
-    const char* match = db.notes.find(filename, linenr);
-    if (match) {
+fn void Db.matchNote(Db* db, const char* filename, u32 linenr, const char* msg) {
+    Iter iter = db.notes.getIter();
+    if (iter.find(filename, linenr)) {
+        const char* match = iter.getMsg();
+        if (iter.getFound()) {
+            color_print2(db.output, colError, "%s:%d: duplicate note: %s", relativeFilename(filename), linenr, msg);
+            db.hasErrors = true;
+        } else
         if (!same_string(match, msg)) {
             color_print2(db.output, colError, "%s:%d: wrong note: %s", relativeFilename(filename), linenr, msg);
             color_print2(db.output, colError, "     expected: %s", match);
             db.hasErrors = true;
         }
-        db.notes.erase(filename, linenr);
+        iter.setFound();
         return;
     }
     // not expected
@@ -172,15 +176,20 @@ fn void Db.matchNote(Db* db, const char* filename, i32 linenr, const char* msg) 
     db.hasErrors = true;
 }
 
-fn void Db.matchWarning(Db* db, const char* filename, i32 linenr, const char* msg) {
-    const char* match = db.warnings.find(filename, linenr);
-    if (match) {
+fn void Db.matchWarning(Db* db, const char* filename, u32 linenr, const char* msg) {
+    Iter iter = db.warnings.getIter();
+    if (iter.find(filename, linenr)) {
+        const char* match = iter.getMsg();
+        if (iter.getFound()) {
+            color_print2(db.output, colError, "%s:%d: duplicate warning: %s", relativeFilename(filename), linenr, msg);
+            db.hasErrors = true;
+        } else
         if (!same_string(match, msg)) {
             color_print2(db.output, colError, "%s:%d: wrong warning: %s", relativeFilename(filename), linenr, msg);
             color_print2(db.output, colError, "     expected: %s", match);
             db.hasErrors = true;
         }
-        db.warnings.erase(filename, linenr);
+        iter.setFound();
         return;
     }
     // not expected
@@ -188,15 +197,20 @@ fn void Db.matchWarning(Db* db, const char* filename, i32 linenr, const char* ms
     db.hasErrors = true;
 }
 
-fn void Db.matchError(Db* db, const char* filename, i32 linenr, const char* msg) {
-    const char* match = db.errors.find(filename, linenr);
-    if (match) {
+fn void Db.matchError(Db* db, const char* filename, u32 linenr, const char* msg) {
+    Iter iter = db.errors.getIter();
+    if (iter.find(filename, linenr)) {
+        const char* match = iter.getMsg();
+        if (iter.getFound()) {
+            color_print2(db.output, colError, "%s:%d: duplicate error: %s", relativeFilename(filename), linenr, msg);
+            db.hasErrors = true;
+        } else
         if (!same_string(match, msg)) {
             color_print2(db.output, colError, "%s:%d: wrong error: %s", relativeFilename(filename), linenr, msg);
             color_print2(db.output, colError, "     expected: %s", match);
             db.hasErrors = true;
         }
-        db.errors.erase(filename, linenr);
+        iter.setFound();
         return;
     }
     // not expected
@@ -381,9 +395,7 @@ fn bool Db.parseExpect(Db* db) {
     db.addExpected(db.currentExpect);
     while (*db.cur != 0 && !strstart(db.cur, "// @", nil)) {
         if (*db.cur != '\n') {
-            const char* end = db.cur;
-            while (*end != 0 && *end != '\n') end++;
-            db.currentExpect.addLine(db.line_nr, db.cur, end);
+            db.currentExpect.addLine(db.line_nr, db.cur, db.findEndOfLine());
         }
         db.skipLine();
     }
@@ -463,8 +475,7 @@ fn void Db.error(Db* db, const char* format @(printf_format), ...) {
     va_start(args, format);
     vsnprintf(msg, sizeof(msg), format, args);
     va_end(args);
-    // TODO use colError?
-    color_print2(db.output, color.Bred, "%s:%d: %s", db.filename, db.line_nr, msg);
+    color_print2(db.output, colError, "%s:%d: %s", db.filename, db.line_nr, msg);
     db.hasErrors = true;
 }
 
@@ -491,29 +502,30 @@ fn void Db.parseTags(Db* db, const char* start, const char* end) {
     char[128] msg;
     if (!db.readUntil(msg, elemsof(msg), cp, '}', "message"))
         return;
+    u32 line_nr = db.line_nr - db.line_offset;
     switch (kind) {
     case ERROR:
 #if TesterDebug
-        color_print(color.Blue, "  expecting error '%s' at %d", msg, db.line_nr - db.line_offset);
+        color_print(color.Blue, "  expecting error '%s' at %d", msg, line_nr);
 #endif
-        db.errors.add(db.current_file, db.line_nr - db.line_offset, msg);
+        db.errors.add(db.current_file, line_nr, msg);
         break;
     case WARNING:
 #if TesterDebug
-        color_print(color.Blue, "  expecting warning '%s' at %d", msg, db.line_nr - db.line_offset);
+        color_print(color.Blue, "  expecting warning '%s' at %d", msg, line_nr);
 #endif
-        db.warnings.add(db.current_file, db.line_nr - db.line_offset, msg);
+        db.warnings.add(db.current_file, line_nr, msg);
         break;
     case NOTE:
 #if TesterDebug
-        color_print(color.Blue, "  expecting note '%s' at %d", msg, db.line_nr - db.line_offset);
+        color_print(color.Blue, "  expecting note '%s' at %d", msg, line_nr);
 #endif
-        db.notes.add(db.current_file, db.line_nr - db.line_offset, msg);
+        db.notes.add(db.current_file, line_nr, msg);
         break;
     }
 }
 
-public fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
+fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
     const char* cp = start;
     skipInitialWhitespace(&cp, end);
     if (cp == end) return;
@@ -582,7 +594,7 @@ public fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
     db.parseTags(start, end);
 }
 
-public fn void Db.parseLineFile(Db* db, const char* start, const char* end) {
+fn void Db.parseLineFile(Db* db, const char* start, const char* end) {
     // if line starts with '// @' stop Infile mode
     if (strstart(start, "// @", nil)) {
         assert(db.file_start);
@@ -597,7 +609,7 @@ public fn void Db.parseLineFile(Db* db, const char* start, const char* end) {
     db.parseTags(start, end);
 }
 
-public fn void Db.parseLineExpect(Db* db, const char* start, const char* end) {
+fn void Db.parseLineExpect(Db* db, const char* start, const char* end) {
     // if line starts with '// @' stop InExpectFile mode
     if (strstart(start, "// @", nil)) {
         db.currentExpect = nil;
@@ -610,7 +622,7 @@ public fn void Db.parseLineExpect(Db* db, const char* start, const char* end) {
     // TODO add non-empty lines (stripped of heading+trailing whitespace) to list
 }
 
-public fn void Db.parseLine(Db* db, const char* start, const char* end) {
+fn void Db.parseLine(Db* db, const char* start, const char* end) {
     switch (db.mode) {
     case Outside:
         db.parseLineOutside(start, end);
@@ -721,7 +733,7 @@ public fn void Db.testFile(Db* db) {
         close(pipe_stderr[1]);
 
         // collect output and check errors
-        string_buffer.Buf* buf = string_buffer.create(4096, true, 2);
+        string_buffer.Buf* buf = string_buffer.create(4096, false, 2);
         for (;;) {
             char[64*1024] buffer;
             isize count = read(pipe_stderr[0], buffer, sizeof(buffer));
@@ -741,10 +753,7 @@ public fn void Db.testFile(Db* db) {
 
         if (!doWIFEXITED(status)) {  // child exited abnormally
             // TODO print pipe_stderr
-            db.output.color(colError);
-            db.output.add("c2c crashed!");
-            db.output.color(color.Normal);
-            db.output.newline();
+            color_print2(db.output, colError, "c2c crashed!");
             db.hasErrors = true;
             return;
         }
@@ -756,10 +765,7 @@ public fn void Db.testFile(Db* db) {
             exit(EXIT_FAILURE);
         }
         if (retcode == 254) { // from TODO/FATAL_ERROR macros
-            db.output.color(colError);
-            db.output.add("c2c returned error");
-            db.output.color(color.Normal);
-            db.output.newline();
+            color_print2(db.output, colError, "c2c returned error");
             db.hasErrors = true;
             return;
         }
@@ -768,7 +774,7 @@ public fn void Db.testFile(Db* db) {
         close(pipe_stderr[0]);
         wait(nil);
         db.checkExpectedFiles();
-        if (!db.errors.empty() || !db.warnings.empty()) db.hasErrors = true;
+        if (!db.errors.allFound() || !db.warnings.allFound()) db.hasErrors = true;
     }
 }
 
@@ -777,43 +783,34 @@ fn void Db.checkDiagnosticLine(Db* db, const char* line) {
     color_print(color.White, "line: '%s'", line);
 #endif
     // line syntax: '<filename>.c2:<linenr>:<offset>: error/warning/note: <msg>\n'
-    char[128] filename = "";
-    char[128] msg = "";
-    i32 error_line = 0;
-    i32 col = 0;
+    char[128] filename;
+    char[128] msg;
+    char[8] tag;
+    u32 error_line;
+    u32 col;
 
-    i32 res = sscanf(line, "%[^: ]:%d:%d: error: %[^\n]\n", filename, &error_line, &col, msg);
-    if (res == 4) {
-        // found error
+    if (sscanf(line, "%127[^: \n]:%u:%u: %7[a-z]: %127[^\n]", filename, &error_line, &col, tag, msg) != 5)
+        return;
+
+    switch (tag) {
+    case "error":
 #if TesterDebug
-        color_print(color.Cyan, "%s %d:%d '%s'", filename, error_line, col, msg);
+        color_print(color.Cyan, "%s %d:%d %s '%s'", filename, error_line, col, tag, msg);
 #endif
         db.matchError(filename, error_line, msg);
-    } else {
-        res = sscanf(line, "%[^: ]:%d:%d: warning: %[^\n]\n", filename, &error_line, &col, msg);
-        if (res == 4) {
-            // found warning
+        break;
+    case "warning":
 #if TesterDebug
-            color_print(color.Cyan, "%s %d:%d '%s'", filename, error_line, col, msg);
+        color_print(color.Cyan, "%s %d:%d %s '%s'", filename, error_line, col, tag, msg);
 #endif
-            db.matchWarning(filename, error_line, msg);
-        } else {
-            res = sscanf(line, "%[^: ]:%d:%d: note: %[^\n]\n", filename, &error_line, &col, msg);
-            if (res == 4) {
-                // found note
+        db.matchWarning(filename, error_line, msg);
+        break;
+    case "note":
 #if TesterDebug
-                color_print(color.Cyan, "%s %d:%d '%s'", filename, error_line, col, msg);
+        color_print(color.Cyan, "%s %d:%d %s '%s'", filename, error_line, col, tag, msg);
 #endif
-                db.matchNote(filename, error_line, msg);
-            }
-        }
-    }
-
-    if (res == 4) {
-        // match msg string and set cp to that to avoid duplicates on empty lines
-        const char* found = strstr(line, msg);
-        assert(found);
-        line = found;
+        db.matchNote(filename, error_line, msg);
+        break;
     }
 }
 
@@ -829,15 +826,17 @@ fn void Db.checkErrors(Db* db, const char* buffer, u32 size) {
         // cut up into lines
         if (*cp == ':') haveColon = true;
         if (*cp == '\n') {
-            char[512] data;
-            u32 len = (u32)(cp - line);
-            assert(len < sizeof(data));
-            memcpy(data, line, len);
-            data[len] = 0;
-            if (haveColon) db.checkDiagnosticLine(data);
+            if (haveColon) {
+                char[512] data;
+                u32 len = (u32)(cp - line);
+                assert(len < sizeof(data));
+                memcpy(data, line, len);
+                data[len] = 0;
+                db.checkDiagnosticLine(data);
+                haveColon = false;
+            }
             cp++;
             line = cp;
-            haveColon = false;
         } else {
             cp++;
         }
@@ -855,37 +854,23 @@ fn void Db.checkExpectedFiles(Db* db) {
 
 public fn bool Db.printIssues(const Db* db) {
     bool res = false;
-    issues.Iter iter = db.errors.getIter();
-    while (iter.more()) {
-        db.output.color(colError);
-        db.output.print("%s:%d: expected error '%s'",
-                iter.getFilename(), iter.getLineNr(), iter.getMsg());
-        db.output.color(color.Normal);
-        db.output.newline();
+    for (issues.Iter iter = db.errors.getIter(); iter.more(); iter.next()) {
+        if (iter.getFound()) continue;
+        color_print2(db.output, colError, "%s:%d: expected error '%s'",
+                     iter.getFilename(), iter.getLineNr(), iter.getMsg());
         res = true;
-        iter.next();
     }
-
-    iter = db.warnings.getIter();
-    while (iter.more()) {
-        db.output.color(colError);
-        db.output.print("%s:%d: expected warning '%s'",
-                iter.getFilename(), iter.getLineNr(), iter.getMsg());
-        db.output.color(color.Normal);
-        db.output.newline();
+    for (issues.Iter iter = db.warnings.getIter(); iter.more(); iter.next()) {
+        if (iter.getFound()) continue;
+        color_print2(db.output, colError, "%s:%d: expected warning '%s'",
+                     iter.getFilename(), iter.getLineNr(), iter.getMsg());
         res = true;
-        iter.next();
     }
-
-    iter = db.notes.getIter();
-    while (iter.more()) {
-        db.output.color(colError);
-        db.output.print("%s:%d: expected note '%s'",
-                iter.getFilename(), iter.getLineNr(), iter.getMsg());
-        db.output.color(color.Normal);
-        db.output.newline();
+    for (issues.Iter iter = db.notes.getIter(); iter.more(); iter.next()) {
+        if (iter.getFound()) continue;
+        color_print2(db.output, colError, "%s:%d: expected note '%s'",
+                     iter.getFilename(), iter.getLineNr(), iter.getMsg());
         res = true;
-        iter.next();
     }
     return res;
 }
