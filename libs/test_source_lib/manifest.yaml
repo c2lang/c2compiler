@@ -1,0 +1,20 @@
+# Example source library
+
+info:
+    language: c2
+    kinds:
+        - source
+
+dependencies:
+   libc: dynamic
+
+modules:
+    - foo
+    - bar
+
+sources:
+    - foo1.c2
+    - subdir/foo2.c2
+    - bar.c2
+    - faa.c2
+

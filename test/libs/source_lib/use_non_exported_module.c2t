@@ -1,0 +1,14 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c no-build
+    $use test_source_lib source
+
+// @file{file1}
+module test;
+
+import faa; // @error{module 'faa' is private to component test_source_lib}
+
+public fn i32 main(i32 argc, const char** argv) {
+    return 0;
+}
+

@@ -1,0 +1,29 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c no-build
+    $use test_source_lib source
+
+// @file{file1}
+module test;
+
+import foo;
+
+public fn i32 main(i32 argc, const char** argv) {
+    return foo.test4(argc);
+}
+
+// @expect{atleast, cgen/build.c}
+
+static int32_t foo_test4(int32_t a);
+static int32_t foo_internal(int32_t a);
+
+static int32_t foo_test4(int32_t a)
+{
+   return 4 * foo_internal(a);
+}
+
+static int32_t foo_internal(int32_t a)
+{
+   return a + 1;
+}
+

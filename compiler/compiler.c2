@@ -22,20 +22,16 @@ import attr_handler;
 import build_file;
 import build_target;
 import c2_parser;
-import c_generator;
-import c2i_generator;
 import color;
 import component;
 import console;
 import constants;
 import diagnostics;
+import file_list;
 import file_utils;
-import generator_utils;
-import ir_generator;
 import keywords;
 import module_analyser;
 import module_list;
-import module_sorter;
 import plugin_info;
 import source_mgr;
 import string_buffer;
@@ -43,9 +39,7 @@ import string_list;
 import string_pool;
 import string_utils;
 import target_info;
-import unused_checker;
 import utils;
-import warning_flags;
 
 import c_errno local;
 import ctype;
@@ -115,55 +109,15 @@ public fn void build(string_pool.Pool* auxPool,
     c.free();
 }
 
-fn void Compiler.handleModuleImports(void* arg, ast.Module* m) {
-    Compiler* c = arg;
-    m.visitImports(Compiler.handleImport, c);
-}
-
-fn void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
-    Compiler* c = arg;
-
-    if (id.getDest()) return;
-
-    ast.Decl* d = (ast.Decl*)id;
-    u32 name_idx = d.getNameIdx();
-    ast.Module* m = c.allmodules.find(name_idx);
-    if (!m) {
-        c.diags.error(d.getLoc(), "unknown module: '%s'", ast.idx2name(name_idx));
-        return;
-    }
-
-    if (!m.isDirect()) {
-        component.Component* co = c.find_component(m);
-        c.diags.error(d.getLoc(), "module '%s' is in component '%s' that is not used directly",
-            ast.idx2name(name_idx), co.getName());
-        // TODO longjmp?
-        stdlib.exit(-1);
-    }
-
-    if (c.current.isExternal() && !m.isLoaded()) {
-        //component.Component* co = c.find_component(m);
-        if (c.current.hasModule(m)) {
-            if (!m.isUsed()) c.parse_queue.add(m);
-        } else {
-            // otherwise just set used below
-        }
-    }
-
-    id.setDest(m);
-    m.setUsed();
-    d.setChecked();
-    d.setType(ast.QualType.create((ast.Type*)m.getType()));
-}
-
 type Compiler struct {
     string_pool.Pool* auxPool;   // no ownership
     source_mgr.SourceMgr* sm;    // no ownership
     diagnostics.Diags* diags;    // no ownership
-    build_file.Info* build_info;    // no ownership, can be nil
-    build_target.Target* target;     // no ownership
-    const Options* opts;        // no ownership
+    build_file.Info* build_info; // no ownership, can be nil
+    build_target.Target* target; // no ownership
+    const Options* opts;         // no ownership
     target_info.Info targetInfo;
+    PluginHandler* pluginHandler; // no ownership
 
     ast_context.Context* context;
     string_pool.Pool* astPool;
@@ -179,13 +133,14 @@ type Compiler struct {
     component.Component* mainComp;  // no ownership
     u32 main_idx;  // in astPool
     u32 libc_name; // in auxPool
+    u32 c2_name; // in auxPool
     ast.Decl* mainFunc;
 
     // used to parse external components
     module_list.List parse_queue;
 
     string_list.List libdirs;
-    component.Component* current; // only set during load() TODO
+    component.Component* current;
 }
 
 fn component.Kind target2compKind(build_target.Kind k) {
@@ -198,6 +153,8 @@ fn component.Kind target2compKind(build_target.Kind k) {
         return component.Kind.StaticLibrary;
     case DynamicLibrary:
         return component.Kind.DynamicLibrary;
+    case SourceLibrary:
+        return component.Kind.SourceLibrary;
     }
 
     return component.Kind.Executable;
@@ -223,6 +180,7 @@ fn void Compiler.build(Compiler* c,
     c.build_info = build_info;
     c.target = target;
     c.opts = opts;
+    c.pluginHandler = pluginHandler;
 
     diags.setWarningAsError(target.getWarnings().are_errors);
     c.diags.clear();
@@ -236,6 +194,7 @@ fn void Compiler.build(Compiler* c,
     c.main_idx = c.astPool.addStr("main", true);
     u32 c2_idx = c.astPool.addStr("c2", true);
     c.libc_name = c.auxPool.addStr("libc", true);
+    c.c2_name = c.auxPool.addStr("c2", true);
 
     c.parse_queue.init(false, 64);
 
@@ -247,7 +206,7 @@ fn void Compiler.build(Compiler* c,
                                    c.main_idx,
                                    c.attr_handler);
 
-    c.allmodules.init(false, 64);
+    c.allmodules.init(false, 128);
     c.components.init();
     c.is_image = target.getKind() == build_target.Kind.Image;
     c.libdirs.init(c.auxPool);
@@ -307,8 +266,6 @@ fn void Compiler.build(Compiler* c,
 
     c.addFeature("USE_NATIVE_CTYPES", "1");
 
-    target.addLib(c.auxPool.add("c2", 2, true), false);
-
     c.parser = c2_parser.create(sm,
                                 diags,
                                 c.astPool,
@@ -330,17 +287,27 @@ fn void Compiler.build(Compiler* c,
         // since not all members have been initialized, just exit here, to avoid free() not working
         stdlib.exit(0);
     }
-    c.load_libs();
 
     c.mainComp = component.create(c.context,
                                   c.auxPool,
-                                  &c.allmodules,
                                   target.getNameIdx(),
-                                  target2compKind(target.getKind()),    // TODO make internal
-                                  true);
-    if (!target.getNoLibC()) c.mainComp.addDep("libc");
+                                  target2compKind(target.getKind()));    // TODO make internal
+    if (!target.getNoLibC() && !c.target.hasLib(c.libc_name)) c.mainComp.addDep(c.libc_name);
     c.components.add(c.mainComp);
+    c.mainComp.addDep(c.c2_name);
     c.builder.setComponent(c.mainComp);
+
+    // add files to Component for manifest_writer
+    if (c.mainComp.isSourceLib()) {
+        for (u32 i = 0; i < c.target.numFiles(); i++) {
+            const file_list.File* f = c.target.getFile(i);
+            c.mainComp.addFile(f.name, f.loc);
+        }
+    }
+
+    // ------ preparation phase ------
+    c.load_libs();
+    // all components exist and are sorted now
 
     // prepare info for plugins
     info.sm = sm;
@@ -367,33 +334,8 @@ fn void Compiler.build(Compiler* c,
 
     pluginHandler.start_target(pluginHandler.arg, info);
 
-    // parse non-library files
-    console.debug("parsing %s", c.auxPool.idx2str(target.getNameIdx()));
-    u64 t1_start = utils.now();
-    for (u32 j=0; j<target.numFiles(); j++) {
-        const build_target.File* f = target.getFile(j);
-        i32 file_id = sm.loadFile(auxPool.idx2str(f.name), f.loc);
-        if (file_id == -1) return;   // note: error already printed
-        console.debug("parsing %s", sm.getFileName(file_id));
-
-        // parse error indicator updated in c.parser state
-        c.parser.parse(file_id, false, false);
-    }
-    if (c.opts.trace_calls) {
-        i32 file_id = sm.addResource("generator/c2_trace.c2", C2_trace, elemsof(C2_trace) - 1);
-        if (file_id == -1) return;   // note: error already printed
-        console.debug("parsing %s", sm.getFileName(file_id));
-        c.parser.parse(file_id, false, false);
-    }
-
-    u64 t1_end = utils.now();
-    console.log_time("parsing", t1_end - t1_start);
-    if (!c.diags.isOk()) return;
-#if DumpTokens
-    u32 dump_tokens = 1;
-    if (dump_tokens)
-        return;
-#endif
+    // ------ parsing phase ------
+    if (!c.parseMainComponent()) return;
 
     if (opts.print_ast_early) {
         c.mainComp.print(true);
@@ -403,62 +345,14 @@ fn void Compiler.build(Compiler* c,
     c.builder.setComponent(c.mainComp);
     pluginHandler.after_parsing(pluginHandler.arg);
 
-    u64 t2_start = utils.now();
-    // step 1: resolve imports
-    c.current = c.mainComp;
-    console.debug("analysing imports");
-    c.mainComp.visitModules(Compiler.handleModuleImports, c);
-    if (!c.diags.isOk()) return;
+    // parse any source libraries, can add private modules
+    c.parseSourceLibs();
+    // all modules are known now
 
-    // step 2: sort modules inside main component
-    console.debug("sorting modules");
-    module_sorter.sort(c.mainComp, c.diags);
+    // ------ analysis phase ------
+    if (!c.analyse()) return;
 
-    // Mark exported modules (cannot be external/C2-module)
-    if (!c.check_exports()) return;
-
-    // parse external components top-down (to also mark used modules in lower libs)
-    for (u32 i=c.components.size(); i!=0; i--) {
-        component.Component* comp = c.components.get(i-1);
-        if (!comp.isExternal()) continue;   // only external components
-
-        c.parse_lib(comp);
-    }
-
-    // analyse external components bottom up
-    for (u32 i=0; i<c.components.size(); i++) {
-        component.Component* comp = c.components.get(i);
-        console.debug("analysing component %s", comp.getName());
-        if (!comp.isExternal()) continue;   // only external components
-
-        c.analyse_lib(comp);
-    }
-
-    // analyse all main modules
-    c.mainComp.visitModules(Compiler.analyseModule, c);
-
-    if (c.diags.hasErrors()) {
-        if (opts.print_ast) c.mainComp.print(true);
-        return;
-    }
-
-    // mark main module as used (for libs top level module (at least) should be exported)
-    c.checkMain();
-
-    // check unused
-    const warning_flags.Flags* warnings = c.target.getWarnings();
-    if (!warnings.no_unused) {
-        c.mainComp.visitModules(Compiler.checkUnused, c);
-    }
-
-    u64 t2_end = utils.now();
-    console.log_time("analysis", t2_end - t2_start);
-
-    if (!c.diags.isOk()) return;
-
-    c.builder.setComponent(c.mainComp);
-    pluginHandler.after_analysis(pluginHandler.arg);
-
+    // print info
     if (c.opts.print_modules) {
         for (u32 i=0; i<c.components.size(); i++) {
             c.components.get(i).printModules();
@@ -477,79 +371,8 @@ fn void Compiler.build(Compiler* c,
 
     if (c.opts.check_only) return;
 
-    // mark toplevel components
-    component.Component* mainComp = c.components.getLast();
-    generator_utils.mark_used(mainComp, &c.allmodules, c.opts.test_mode);
-
-    if (c.target.getExports().length()) {
-        console.debug("generating C2 interfaces");
-        u64 gen3 = utils.now();
-        c2i_generator.generate(c.astPool, info.output_dir, &c.components);
-        u64 gen4 = utils.now();
-        console.log_time("C2i generation", gen4 - gen3);
-    }
-
-    // NOTE: only 1 backend can consume the AST, since it might change the AST in backend-specific ways
-
-    switch (target.getBackEnd()) {
-    case None:
-        break;
-    case C:
-        console.debug("generating C");
-        u64 gen3 = utils.now();
-
-        string_list.List asm_files;
-        asm_files.init(auxPool);
-        for (u32 i=0; i<target.numAsmFiles(); i++) {
-            const build_target.File* file = target.getAsmFile(i);
-            asm_files.add(file.name);
-        }
-
-        c_generator.generate(c.astPool,
-                             c.auxPool,
-                             info.target_name,
-                             target.getKind(),
-                             info.output_dir,
-                             c.diags,
-                             c.sm,
-                             c.build_info,
-                             &c.targetInfo,
-                             &c.components,
-                             &c.allmodules,
-                             c.mainFunc,
-                             &asm_files,
-                             c.target.hasAsserts(),
-                             c.target.getFastBuild() | c.opts.fast_build,
-                             c.opts.asan, c.opts.msan, c.opts.ubsan,
-                             c.opts.test_mode, c.opts.trace_calls);
-        asm_files.free();
-        u64 gen4 = utils.now();
-        console.log_time("C generation", gen4 - gen3);
-
-        if (!target.getNoBuild() && !opts.test_mode) {
-            console.debug("building C");
-            gen3 = utils.now();
-            c_generator.build(info.output_dir);
-            gen4 = utils.now();
-            console.log_time("C compilation", gen4 - gen3);
-        }
-        break;
-    case IR:
-        console.debug("generating IR");
-        u64 gen3 = utils.now();
-
-        ir_generator.generate(info.target_name,
-                              info.output_dir,
-                              &c.components,
-                              c.sm,
-                              &c.targetInfo,
-                              c.target.hasAsserts(),
-                              c.opts.print_ir,
-                              c.opts.print_all_ir);
-        u64 gen4 = utils.now();
-        console.log_time("IR generation", gen4 - gen3);
-        break;
-    }
+    // ------ generation phase ------
+    c.generate(info.target_name, info.output_dir);
 }
 
 fn void Compiler.free(Compiler* c) {
@@ -565,6 +388,47 @@ fn void Compiler.free(Compiler* c) {
     c.libdirs.free();
 }
 
+fn bool Compiler.parseMainComponent(Compiler* c) {
+    // parse main component source files
+    console.debug("parsing %s", c.auxPool.idx2str(c.target.getNameIdx()));
+    u64 t1_start = utils.now();
+    for (u32 j=0; j<c.target.numFiles(); j++) {
+        const file_list.File* f = c.target.getFile(j);
+        i32 file_id = c.sm.loadFile(c.auxPool.idx2str(f.name), f.loc);
+        if (file_id == -1) return false;   // note: error already printed
+        console.debug("parsing %s", c.sm.getFileName(file_id));
+
+        // parse error indicator updated in c.parser state
+        c.parser.parse(file_id, false, false);
+    }
+    if (c.opts.trace_calls) {
+        i32 file_id = c.sm.addResource("generator/c2_trace.c2", C2_trace, elemsof(C2_trace) - 1);
+        if (file_id == -1) return false;   // note: error already printed
+        console.debug("parsing %s", c.sm.getFileName(file_id));
+        c.parser.parse(file_id, false, false);
+    }
+
+    u64 t1_end = utils.now();
+    console.log_time("parsing", t1_end - t1_start);
+#if DumpTokens
+    return false;   // to cause stopping in outer function
+#else
+    return c.diags.isOk();
+#endif
+}
+
+fn component.Component* Compiler.findModuleComponent(const Compiler* c, u32 name_idx) {
+    for (u32 i=0; i<c.components.size(); i++) {
+        component.Component* comp = c.components.get(i);
+        module_list.List* mod_list = comp.getModules();
+        ast.Module** mods = mod_list.get();
+        for (u32 j = 0; j < mod_list.length(); j++) {
+            if (mods[j].getNameIdx() == name_idx) return comp;
+        }
+    }
+    return nil;
+}
+
 fn void Compiler.add_source(void* arg, const char* name, string_buffer.Buf* content) {
     Compiler* c = arg;
     u32 size;
@@ -576,33 +440,6 @@ fn void Compiler.add_source(void* arg, const char* name, string_buffer.Buf* cont
 fn bool Compiler.register_attr(void* arg, u32 name, ast.AttrHandlerFn handler, void* arg2) {
     Compiler* c = arg;
     return c.attr_handler.register(name, handler, arg2);
-}
-
-fn bool Compiler.check_exports(Compiler* c) {
-    const string_list.List* exports = c.target.getExports();
-    for (u32 i = 0; i< exports.length(); i++) {
-        const char* name = exports.get(i);  // NOTE: from auxPool!
-        u32 name_idx = c.astPool.addStr(name, true);  // put in astPool so we can compare indexes
-        ast.Module* m = c.allmodules.find(name_idx);
-        if (m) {
-            if (m.isExternal()) {
-                console.error("cannot export external module %s", name);
-                return false;
-            }
-            m.setExported();
-        } else {
-            console.error("cannot export %s, no such module", name);
-            return false;
-        }
-    }
-    if (c.is_image) {
-        // TODO need export location (in recipe)
-        if (exports.length()) {
-            console.error("images cannot export modules");
-            return false;
-        }
-    }
-    return true;
 }
 
 fn void Compiler.analyseModule(void* arg, ast.Module* m) {
@@ -625,46 +462,6 @@ fn void Compiler.findTopModule(void* arg, ast.Module* m) {
     if (c.mainFunc) return;
 
     c.mainFunc = c.analyser.findMain(m, c.main_idx);
-}
-
-fn void Compiler.checkUnused(void* arg, ast.Module* m) {
-    Compiler* c = arg;
-    unused_checker.check(c.diags, c.target.getWarnings(), m);
-}
-
-fn void Compiler.checkMain(Compiler* c) {
-    c.mainComp.visitModules(Compiler.findTopModule, c);
-    if (c.target.needsMain()) {
-        if (!c.mainFunc) {
-            if (!c.opts.test_mode) c.diags.error(0, "no 'main' function found");
-
-            return;
-        }
-
-        if (!c.mainFunc.isPublic()) {
-            c.diags.error(c.mainFunc.getLoc(), "function 'main' should be declared public");
-            return;
-        }
-
-        ast.FunctionDecl* main = (ast.FunctionDecl*)c.mainFunc;
-
-        if (!main.hasReturn()) {
-            c.diags.error(c.mainFunc.getLoc(), "function 'main' should return 'i32'");
-            return;
-        }
-
-        ast.QualType rtype = main.getRType();
-        ast.BuiltinType* bi = rtype.getBuiltin();
-        if (!rtype.isBuiltin() || !bi.isInt32()) {
-            c.diags.error(c.mainFunc.getLoc(), "function 'main' should return 'i32'");
-            return;
-        }
-
-    } else {
-        if (c.mainFunc) {
-            c.diags.error(c.mainFunc.getLoc(), "libraries cannot have a 'main' function");
-        }
-    }
 }
 
 fn void Compiler.addFeature(Compiler* c, const char* str, const char* value) {

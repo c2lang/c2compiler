@@ -13,49 +13,48 @@
  * limitations under the License.
  */
 
-module library_list;
+module build_target;
 
 import stdlib;
 import string;
 
-public type Lib struct {
+type Lib struct {
     u32 name; // into auxPool
-    bool is_static;
+    Kind kind;
+    // TODO src_loc (of recipe/manifest?)
 }
 
-public type List struct {
+type List struct {
     Lib* libs;
     u32 count;
     u32 capacity;
 }
 
-public fn void List.init(List* l) {
+fn void List.init(List* l) {
     string.memset(l, 0, sizeof(List));
     l.resize(2);
 }
 
-public fn void List.free(List* l) {
+fn void List.free(List* l) {
     stdlib.free(l.libs);
 }
 
-public type Visitor fn void (void* arg, u32 name, bool is_static);
-
-public fn void List.visit(const List* l, Visitor visitor, void* arg) {
+fn void List.visit(const List* l, Visitor visitor, void* arg) {
     for (u32 i=0; i<l.count; i++) {
         const Lib* lib = &l.libs[i];
-        visitor(arg, lib.name, lib.is_static);
+        visitor(arg, lib.name, lib.kind);
     }
 }
 
-public fn void List.add(List* l, u32 name, bool is_static) {
+fn void List.add(List* l, u32 name, Kind kind) {
     // Note: we dont check for duplicates here
     if (l.count == l.capacity) l.resize(l.capacity * 2);
     l.libs[l.count].name = name;
-    l.libs[l.count].is_static = is_static;
+    l.libs[l.count].kind = kind;
     l.count++;
 }
 
-public fn bool List.contains(const List* l, u32 name) {
+fn bool List.contains(const List* l, u32 name) {
     for (u32 i=0; i<l.count; i++) {
         if (l.libs[i].name == name) return true;
     }

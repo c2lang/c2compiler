@@ -64,6 +64,22 @@ public fn void List.add(List* list, ast.Module* m) {
     list.num_mods++;
 }
 
+public fn void List.addList(List* list, List* other, bool checkPrivate) {
+    // Note: does not check for duplicates
+    u32 total = list.num_mods + other.num_mods;
+    if (total > list.max_mods) list.resize(total);
+    if (checkPrivate) {
+        for (u32 i = 0; i < other.num_mods; i++) {
+            if (other.mods[i].isPrivate()) continue;
+            list.mods[list.num_mods++] = other.mods[i];
+        }
+    } else {
+        string.memcpy(&list.mods[list.num_mods], other.mods, other.num_mods * sizeof(ast.Module*));
+        list.num_mods = total;
+    }
+
+}
+
 public fn void List.clear(List* l) {
     assert(!l.owns_modules);
     l.num_mods = 0;
@@ -84,6 +100,13 @@ public fn ast.Module* List.at(const List* l, u32 idx) {
 public fn bool List.contains(const List* l, const ast.Module* mod) {
     for (u32 i=0; i<l.num_mods; i++) {
         if (l.mods[i] == mod) return true;
+    }
+    return false;
+}
+
+public fn bool List.containsName(const List* l, u32 name_idx) {
+    for (u32 i=0; i<l.num_mods; i++) {
+        if (l.mods[i].getNameIdx() == name_idx) return true;
     }
     return false;
 }

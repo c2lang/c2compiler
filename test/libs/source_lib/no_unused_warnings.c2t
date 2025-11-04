@@ -1,0 +1,13 @@
+// @recipe bin
+    $backend c no-build
+    $use test_source_lib source
+
+// @file{file1}
+module test;
+
+import foo;
+
+public fn i32 main() {
+    return foo.test4(1);
+}
+

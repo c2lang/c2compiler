@@ -27,7 +27,6 @@ import dep_finder;
 import file_utils;
 import linked_list;
 import manifest_writer;
-import module_list;
 import process_utils;
 import source_mgr;
 import string_buffer;
@@ -1268,7 +1267,6 @@ public fn void generate(string_pool.Pool* astPool,
                         const build_file.Info* build_info,
                         const target_info.Info* targetInfo,
                         component.List* comps,
-                        const module_list.List* allmodules,
                         Decl* mainFunc,
                         string_list.List* asm_files,
                         bool enable_asserts,
@@ -1319,7 +1317,7 @@ public fn void generate(string_pool.Pool* astPool,
     // generate external components
     for (u32 i=0; i<comps.size()-1; i++) {
         component.Component* c = comps.get(i);
-        gen.cur_external = c.isExternal();
+        gen.cur_external = c.isExternalLibrary();
         c.visitModules(Generator.on_module, &gen);
     }
 
@@ -1344,7 +1342,7 @@ public fn void generate(string_pool.Pool* astPool,
 
     u32 libc_name = auxPool.addStr("libc", true);
 
-    gen.createMakefile(dir, comps, allmodules, asm_files, enable_asserts, libc_name);
+    gen.createMakefile(dir, comps, asm_files, enable_asserts, libc_name);
     gen.createExportsFile(dir, comps.get(comps.size()-1));
 
     if (mainComp.isLibrary()) manifest_writer.write(output_dir, mainComp, constants.manifest_name);

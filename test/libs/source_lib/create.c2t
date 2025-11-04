@@ -1,0 +1,60 @@
+// @recipe lib source
+    $warnings no-unused
+    $export foo
+
+// @file{file1}
+module foo;
+
+public fn i32 add(i32 a, i32 b) {
+    return a + internal(b);
+}
+
+fn i32 internal(i32 a) {
+    return a + 1;
+}
+
+// @file{file2}
+// some comments
+module foo;
+
+public fn i32 mult(i32 a, i32 b) {
+    return a * b;
+}
+
+// @expect{complete, file1.c2}
+module foo;
+
+public fn i32 add(i32 a, i32 b) {
+    return a + internal(b);
+}
+
+fn i32 internal(i32 a) {
+    return a + 1;
+}
+
+// @expect{complete, file2.c2}
+// some comments
+module foo;
+
+public fn i32 mult(i32 a, i32 b) {
+    return a * b;
+}
+
+// @expect{atleast, manifest.yaml}
+info:
+    language: C2
+    type: library
+    linkname: test
+    kinds:
+        - source
+
+dependencies:
+    libc: dynamic
+
+modules:
+    - foo
+
+files:
+   - file1.c2
+   - file2.c2
+

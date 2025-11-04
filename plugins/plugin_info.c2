@@ -65,6 +65,13 @@ public type InitFn fn void(void* arg, plugin_info.Info* info);
 public type PostParseFn fn void(void* arg);
 public type PostAnalysisFn fn void(void* arg);
 
+/*
+    Allowed actions:
+    init            add generated sources (shell_cmd plugin)
+    post_parse      add modules + decls (git_version plugin)
+                    add generated sources (unit_test plugin)
+    post analysis   generate files outside project (refs, deps)
+*/
 public type Plugin struct @(unused) {
     LoadFn load;
     UnloadFn unload;

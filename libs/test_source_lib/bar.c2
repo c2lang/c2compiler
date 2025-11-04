@@ -1,0 +1,19 @@
+module bar;
+
+import faa;
+import stdlib;
+
+public fn i32 test1(i32 a) {
+    stdlib.malloc(10);
+    return 10 * a;
+}
+
+public fn i32 test2(i32 a) {
+    return 20 * faa.add(a, 1);
+}
+
+//public fn i32 empty();
+
+fn i32 non_public() {
+    return 3;
+}

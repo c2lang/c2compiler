@@ -523,16 +523,17 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
     p.parseOptionalAttributes();
     p.builder.applyAttributes((Decl*)f);
 
-    if (p.is_interface && p.tok.kind == Kind.Semicolon) {
-        // function without body (eg. i32 printf(..); ) is allowed
-        p.consumeToken();
-        return;
-    }
-
     if (p.is_interface) {
+        if (p.tok.kind == Kind.Semicolon) {
+            // function without body (eg. i32 printf(..); ) is allowed
+            p.consumeToken();
+            return;
+        }
+
         // mark functions with bodies in interface files as 'inline'
         f.setAttrInline();
     }
+
     p.stmt_list_count = 0;
     CompoundStmt* body = p.parseCompoundStmt();
     p.builder.actOnFunctionBody(f, body);

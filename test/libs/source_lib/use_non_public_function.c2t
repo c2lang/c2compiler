@@ -1,0 +1,14 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c no-build
+    $use test_source_lib source
+
+// @file{file1}
+module test;
+
+import bar;
+
+public fn i32 main(i32 argc, const char** argv) {
+    return bar.non_public(); // @error{symbol 'bar.non_public' is not public}
+}
+

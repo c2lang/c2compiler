@@ -216,3 +216,4 @@ public fn const char* File.getError(File* file) @(unused) {
     }
     return strerror(file.error);
 }
+

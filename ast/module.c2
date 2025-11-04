@@ -25,13 +25,12 @@ import string;
 
 public type Module struct @(opaque) {
     u32 name_idx;
-    bool is_used;
-    bool is_external;
-    bool is_internal; // currently only for c2 module
-    bool is_direct; // otherwise indirectly loaded via library.
-    bool is_foreign; // module identifiers are not mangled
-    bool is_exported;
-    bool is_loaded; // the file(s) parsed. For external libs
+    u32 is_used : 1;
+    u32 is_external : 1;   // if not in the main component
+    u32 is_foreign : 1;    // module identifiers are not mangled
+    u32 is_exported : 1;   // if exported in library interface
+    u32 is_loaded : 1;     // the file(s) parsed. For external dynamic/static libs
+    u32 is_private : 1;    // for source-libs
     ModuleType* mt;
 
     ast.AST** files;
@@ -41,17 +40,15 @@ public type Module struct @(opaque) {
     SymbolTable symbols;
     InstanceTable instances;
 }
-static_assert(88, sizeof(Module));
+static_assert(80, sizeof(Module));
 
 // Note: name must be allocated in target StringPool
-public fn Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_external, bool is_direct) {
+public fn Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_external) {
     Module* m = stdlib.calloc(1, sizeof(Module));
     m.mt = ModuleType.create(c, m);
     m.name_idx = name_idx;
     m.is_external = is_external;
     m.is_foreign = is_external;    // default for external modules
-    m.is_internal = false;
-    m.is_direct = is_direct;
     m.is_loaded = false;
     m.resizeFiles(1);
     m.symbols.init(16);
@@ -72,10 +69,6 @@ public fn void Module.free(Module* m) {
 public fn void Module.setUsed(Module* m) { m.is_used = true; }
 public fn bool Module.isUsed(const Module* m) { return m.is_used; }
 
-// TODO use use a keyword or an attribute for this
-public fn void Module.setInternal(Module* m) @(unused) { m.is_internal = true; }
-public fn bool Module.isInternal(const Module* m) { return m.is_internal; }
-
 public fn bool Module.isExternal(const Module* m) { return m.is_external; }
 
 public fn void Module.setForeign(Module* m, bool is_foreign) { m.is_foreign = is_foreign; }
@@ -90,10 +83,10 @@ public fn void Module.setExported(Module* m) {
         m.files[i].setExported();
     }
 }
-
 public fn bool Module.isExported(const Module* m) { return m.is_exported; }
 
-public fn bool Module.isDirect(const Module* m) { return m.is_direct; }
+public fn void Module.setPrivate(Module* m, bool is_private) { m.is_private = is_private; }
+public fn bool Module.isPrivate(const Module* m) { return m.is_private; }
 
 public fn const SymbolTable* Module.getSymbols(const Module* m) { return &m.symbols; }
 
@@ -229,32 +222,9 @@ public fn ast.FunctionDecl* Module.getInstance(const Module* m, ast.FunctionDecl
     return m.instances.get(fd, idx);
 }
 
-/*
-public type TemplateVisitor fn void (void* arg, FunctionDecl* fd, u32 idx);
-
-public fn void Module.visitInstances(const Module* m, ast.FunctionDecl* fd, TemplateVisitor visitor, void* arg) {
-    m.instances.visit(fd, visitor, arg);
-}
-*/
-
-/*
-public fn void Module.info(const Module* m, string_buffer.Buf* out) {
-    out.print("  module %s\n", idx2name(m.name_idx));
-    for (u32 i=0; i<m.num_files; i++) {
-        m.files[i].info(out);
-    }
-#if 0
-    out.print("    Symbol: (%u)\n", m.num_symbols);
-    for (u32 i=0; i<m.num_symbols; i++) {
-        out.print("      %s\n", idx2name(m.symbols[i]));
-    }
-#endif
-}
-*/
-
 public fn void Module.print(const Module* m, string_buffer.Buf* out, bool show_funcs) {
     out.color(color.Normal);
-    out.print("------ module %s (used %d, exported %d) ------\n", idx2name(m.name_idx), m.is_used, m.is_exported);
+    out.print("------ module %s (used %d, exported %d, private %d) ------\n", idx2name(m.name_idx), m.is_used, m.is_exported, m.is_private);
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].print(out, show_funcs);
     }

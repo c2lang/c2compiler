@@ -15,7 +15,7 @@
 
 module build_target;
 
-import library_list;
+import file_list local;
 import src_loc local;
 import string_list;
 import string_pool;
@@ -35,6 +35,7 @@ public type Kind enum u8 {
     Executable,
     StaticLibrary,
     DynamicLibrary,
+    SourceLibrary,
 }
 
 public fn bool has_dynamic(Kind k) {
@@ -47,6 +48,8 @@ public fn bool has_dynamic(Kind k) {
         return false;
     case DynamicLibrary:
         return true;
+    case SourceLibrary:
+        return false;
     }
     return false;
 }
@@ -94,11 +97,6 @@ public fn void PluginList.add(PluginList* l, u32 name, u32 options, SrcLoc loc) 
     l.count++;
 }
 
-public type File struct {
-    u32 name;       // index into auxPool
-    SrcLoc loc;
-}
-
 public type Target struct @(opaque) {
     u32 name_idx;       // index into auxPool
     SrcLoc loc;
@@ -112,17 +110,12 @@ public type Target struct @(opaque) {
     bool backend_fast;
 
     string_list.List features;
-    library_list.List libs;
+    List libs;
     string_list.List exports;
     PluginList plugins;
 
-    File* files;
-    u32 num_files;
-    u32 max_files;
-
-    File* asm_files;
-    u32 asm_file_count;
-    u32 asm_file_max;
+    FileList files;
+    FileList asm_files;
 }
 
 public fn Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool* pool) {
@@ -132,13 +125,11 @@ public fn Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool* 
     // remove this once the bootstrap handles improved flow analysis
     t.warnings.no_unreachable_code = true;
     t.kind = kind;
-    t.max_files = 8;
     t.features.init(pool);
     t.libs.init();
     t.exports.init(pool);
-    t.files = stdlib.malloc(t.max_files * sizeof(File));
-    t.asm_file_max = 4;
-    t.asm_files = stdlib.malloc(t.asm_file_max * sizeof(File));
+    t.files.init(8);
+    t.asm_files.init(0);
     return t;
 }
 
@@ -147,8 +138,8 @@ public fn void Target.free(Target* t) {
     t.plugins.free();
     t.libs.free();
     t.features.free();
-    stdlib.free(t.files);
-    stdlib.free(t.asm_files);
+    t.asm_files.free();
+    t.files.free();
     stdlib.free(t);
 }
 
@@ -158,9 +149,9 @@ public fn void Target.setNameIdx(Target* t, u32 name_idx) {
     t.name_idx = name_idx;
 }
 
-public fn u32 Target.numFiles(const Target* t) { return t.num_files; }
+public fn u32 Target.numFiles(const Target* t) { return t.files.getCount(); }
 
-public fn u32 Target.numAsmFiles(const Target* t) { return t.asm_file_count; }
+public fn u32 Target.numAsmFiles(const Target* t) { return t.asm_files.getCount(); }
 
 public fn const string_list.List* Target.getFeatures(const Target* t) { return &t.features; }
 
@@ -179,7 +170,9 @@ public fn void Target.disableAsserts(Target* t) { t.disable_asserts = true; }
 
 public fn bool Target.hasAsserts(const Target* t) { return !t.disable_asserts; }
 
-public fn void Target.visitLibs(const Target* t, library_list.Visitor visitor, void* arg) {
+public type Visitor fn void (void* arg, u32 name, Kind kind);
+
+public fn void Target.visitLibs(const Target* t, Visitor visitor, void* arg) {
     t.libs.visit(visitor, arg);
 }
 
@@ -187,8 +180,8 @@ public fn bool Target.hasLib(const Target* t, u32 lib) {
     return t.libs.contains(lib);
 }
 
-public fn void Target.addLib(Target* t, u32 lib, bool is_static) {
-    t.libs.add(lib, is_static);
+public fn void Target.addLib(Target* t, u32 lib, Kind kind) {
+    t.libs.add(lib, kind);
 }
 
 public fn void Target.disableWarnings(Target* t) {
@@ -242,57 +235,26 @@ public fn bool Target.needsMain(const Target* t) {
         return true;
     case StaticLibrary:
     case DynamicLibrary:
+    case SourceLibrary:
         break;
     }
     return false;
 }
 
 public fn bool Target.addFile(Target* t, u32 filename, SrcLoc loc) {
-    // check for duplicates
-    for (u32 i=0; i<t.num_files; i++) {
-        if (t.files[i].name == filename) return false;
-    }
-
-    if (t.num_files == t.max_files) {
-        t.max_files *= 2;
-        File* files2 = stdlib.malloc(t.max_files * sizeof(File));
-        string.memcpy(files2, t.files, t.num_files * sizeof(File));
-        stdlib.free(t.files);
-        t.files = files2;
-    }
-
-    t.files[t.num_files].name = filename;
-    t.files[t.num_files].loc = loc;
-    t.num_files++;
-    return true;
+    return t.files.add(filename, loc);
 }
 
 public fn const File* Target.getFile(const Target* t, u32 idx) {
-    return &t.files[idx];
+    return t.files.get(idx);
 }
 
 public fn bool Target.addAsmFile(Target* t, u32 filename, SrcLoc loc) {
-    // check for duplicates
-    for (u32 i=0; i<t.asm_file_count; i++) {
-        if (t.asm_files[i].name == filename) return false;
-    }
-
-    if (t.asm_file_count == t.asm_file_max) {
-        t.asm_file_max *= 2;
-        File* files2 = stdlib.malloc(t.asm_file_max * sizeof(File));
-        string.memcpy(files2, t.files, t.asm_file_count * sizeof(File));
-        stdlib.free(t.asm_files);
-        t.asm_files = files2;
-    }
-
-    t.asm_files[t.asm_file_count].name = filename;
-    t.asm_files[t.asm_file_count].loc = loc;
-    t.asm_file_count++;
-    return true;
+    return t.asm_files.add(filename, loc);
 }
 
 public fn const File* Target.getAsmFile(const Target* t, u32 idx) {
-    return &t.asm_files[idx];
+    return t.asm_files.get(idx);
 }
 
 public fn void Target.setNoLibC(Target* t) {

@@ -74,11 +74,7 @@ fn void generate_module(void* arg) {
     // create module git_version
     u32 mod_name = p.info.astPool.addStr("git_version", true);
     component.Component* mainComp = p.info.components.get(p.info.components.size()-1);
-    ast.Module* mod = mainComp.createModule(mod_name);
-    if (!mod) {
-        console.error("git_version: module 'git_version' already exists");
-        exit(EXIT_FAILURE);
-    }
+    ast.Module* mod = mainComp.getOrAddModule(mod_name, false);
 
     // add AST to module
     ast.AST* a = mod.add(p.info.auxPool, p.info.auxPool.addStr("<generated>", false), false, true);

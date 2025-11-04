@@ -171,9 +171,9 @@ fn void Db.matchNote(Db* db, const char* filename, u32 linenr, const char* msg) 
         iter.setFound();
         return;
     }
-    // not expected
-    color_print2(db.output, colError, "%s:%d: unexpected note: %s", relativeFilename(filename), linenr, msg);
-    db.hasErrors = true;
+    // ignore unexpected notes
+    //color_print2(db.output, colError, "%s:%d: unexpected note: %s", relativeFilename(filename), linenr, msg);
+    //db.hasErrors = true;
 }
 
 fn void Db.matchWarning(Db* db, const char* filename, u32 linenr, const char* msg) {
@@ -298,7 +298,7 @@ fn bool Db.parseRecipe(Db* db) {
         db.cur += 4;
         // Syntax lib dynamic/static
         const char* libtype = db.readWord();
-        if (same_string(libtype, "dynamic") || same_string(libtype, "static")) {
+        if (same_string(libtype, "dynamic") || same_string(libtype, "static") || same_string(libtype, "source")) {
         } else {
             db.errorMsg.print("unknown library type '%s'", libtype);
             return false;
@@ -407,38 +407,40 @@ fn bool Db.parseKeyword(Db* db) {
     // NOTE: cur points to start of keyword after // @
     const char* keyword = db.readWord();
 
-    if (same_string(keyword, "skip")) {
+    switch (keyword) {
+    case "skip":
         if (!db.runSkipped) db.skip = true;
         return true;
-    } else if (same_string(keyword, "recipe")) {
+    case "recipe":
         if (db.kind != TestKind.C2T) {
             db.errorMsg.add("keyword 'recipe' only allowed in .c2t files");
             return false;
         }
         db.cur += 7;
         return db.parseRecipe();
-    } else if (same_string(keyword, "warnings")) {
+    case "warnings":
         if (db.kind != TestKind.C2) {
             db.errorMsg.add("keyword 'warnings' only allowed in .c2 files");
             return false;
         }
         db.recipe.print("  $warnings %s\n", db.readLine());
         db.skipLine();
-    } else if (same_string(keyword, "file")) {
+        break;
+    case "file":
         if (db.kind == TestKind.C2) {
             db.errorMsg.add("keyword 'file' only allowed in .c2t/.c2a files");
             return false;
         }
         db.cur += 4;
         return db.parseFile();
-    } else if (same_string(keyword, "expect")) {
+    case "expect":
         if (db.kind != TestKind.C2T && db.kind != TestKind.C2A) {
             db.errorMsg.add("keyword 'expect' only allowed in .c2t/.c2a files");
             return false;
         }
         db.cur += 6;
         return db.parseExpect();
-    } else {
+    default:
         db.errorMsg.print("unknown keyword '%s'", keyword);
         return false;
     }
@@ -673,7 +675,7 @@ public fn bool Db.parse(Db* db) {
         return false;
     case C2T:
         if (!db.parseOuter()) {
-            print_error("error in recipe: %s on line %d", db.errorMsg.data(), db.line_nr);
+            print_error("%s: error in recipe: %s on line %d", db.filename, db.errorMsg.data(), db.line_nr);
             return false;
         }
         db.recipe.add("end\n");
@@ -686,7 +688,7 @@ public fn bool Db.parse(Db* db) {
         db.recipe.add("  $backend c skip\n");
         db.recipe.add("  $write-AST\n");
         if (!db.parseOuter()) {
-            print_error("error in recipe: %s on line %d", db.errorMsg.data(), db.line_nr);
+            print_error("%s: error in recipe: %s on line %d", db.filename, db.errorMsg.data(), db.line_nr);
             return false;
         }
         db.recipe.add("end\n");

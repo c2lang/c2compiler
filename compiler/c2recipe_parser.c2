@@ -18,6 +18,7 @@ module c2recipe;
 import build_target;
 import color;
 import ctype;
+import file_list local;
 import source_mgr;
 import src_loc local;
 import string_list;
@@ -92,10 +93,7 @@ type Set struct {
     u32 name_idx;       // into aux pool
     SrcLoc loc;
 
-    build_target.File* files;
-    u32 num_files;
-    u32 max_files;
-
+    FileList files;
     Set* next;
 }
 
@@ -105,33 +103,17 @@ fn Set* Set.create(u32 name, SrcLoc loc, Set* next) {
     s.loc = loc;
     s.next = next;
 
-    s.max_files = 8;
-    s.files = stdlib.malloc(8*sizeof(build_target.File));
+    s.files.init(8);
     return s;
 }
 
 fn void Set.free(Set* s) {
-    stdlib.free(s.files);
+    s.files.free();
     stdlib.free(s);
 }
 
 fn bool Set.addFile(Set* s, u32 filename, SrcLoc loc) {
-    for (u32 i=0; i<s.num_files; i++) {
-        if (s.files[i].name == filename) return false;
-    }
-
-    if (s.num_files == s.max_files) {
-        s.max_files *= 2;
-        build_target.File* files2 = stdlib.malloc(s.max_files * sizeof(build_target.File));
-        string.memcpy(files2, s.files, s.num_files * sizeof(build_target.File));
-        stdlib.free(s.files);
-        s.files = files2;
-    }
-
-    s.files[s.num_files].name = filename;
-    s.files[s.num_files].loc = loc;
-    s.num_files++;
-    return true;
+    return s.files.add(filename, loc);
 }
 
 type Parser struct {
@@ -681,8 +663,11 @@ fn void Parser.parseLibrary(Parser* p) {
     case "dynamic":
         kind = build_target.Kind.DynamicLibrary;
         break;
+    case "source":
+        kind = build_target.Kind.SourceLibrary;
+        break;
     default:
-        p.error("invalid library type (allowed: dynamic|static)");
+        p.error("invalid library kind (allowed: dynamic|static|source)");
         break;
     }
 
@@ -772,19 +757,24 @@ fn void Parser.parseTarget(Parser* p) {
             p.consumeToken();
 
             p.expect(Kind.Text, "expect library type");
-            bool is_static = false;
             const char* libtype = p.pool.idx2str(p.token.value);
+            // TODO extract to common function
+            build_target.Kind kind = build_target.Kind.StaticLibrary;
             switch (libtype) {
             case "static":
-                is_static = true;
+                kind = build_target.Kind.StaticLibrary;
                 break;
             case "dynamic":
+                kind = build_target.Kind.DynamicLibrary;
+                break;
+            case "source":
+                kind = build_target.Kind.SourceLibrary;
                 break;
             default:
                 p.error("unknown library kind '%s'", libtype);
                 break;
             }
-            p.target.addLib(libname, is_static);
+            p.target.addLib(libname, kind);
             p.consumeToken();
 
             while (p.token.kind == Kind.Text) p.consumeToken();
@@ -807,8 +797,8 @@ fn void Parser.parseTarget(Parser* p) {
             if (!s) p.error("unknown set '%s'", p.pool.idx2str(p.token.value));
             p.consumeToken();
             files_started = true;
-            for (u32 i=0; i<s.num_files; i++) {
-                const build_target.File* f = &s.files[i];
+            for (u32 i=0; i<s.files.getCount(); i++) {
+                const File* f = s.files.get(i);
                 if (!p.target.addFile(f.name, f.loc)) {
                     p.error("duplicate file '%s' from set '%s'", p.pool.idx2str(f.name), p.pool.idx2str(s.name_idx));
                 }

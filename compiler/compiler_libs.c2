@@ -16,6 +16,7 @@
 module compiler;
 
 import ast;
+import build_target;
 import color;
 import component local;
 import component_sorter;
@@ -24,11 +25,9 @@ import constants;
 import file_utils;
 import manifest;
 import module_list;
-import module_sorter;
-//import source_mgr;
+import source_mgr;
 import string_buffer;
 import string_list;
-//import string_pool;
 
 import c_errno local;
 import libc_dirent local;
@@ -36,16 +35,32 @@ import stdio;
 import stdlib;
 import string;
 
-fn void Compiler.createComponent(Compiler* c, u32 name, bool is_direct, bool is_static) {
-    Kind kind = is_static ? Kind.ExternalStatic : Kind.ExternalDynamic;
-    Component* comp = component.create(c.context, c.auxPool, &c.allmodules, name, kind, is_direct);
-    c.components.add(comp);
+fn Kind convertKind(build_target.Kind kind) {
+    switch (kind) {
+    case Image:
+    case Executable:
+        assert(0);
+        break;
+    case StaticLibrary:
+        return ExternalStaticLib;
+    case DynamicLibrary:
+        return ExternalDynamicLib;
+    case SourceLibrary:
+        return ExternalSourceLib;
+    }
+    return StaticLibrary;
 }
 
-fn void Compiler.onLib(void* arg, u32 name, bool is_static) {
+fn void Compiler.createComponent(Compiler* c, u32 name, Kind kind) {
+    Component* comp = component.create(c.context, c.auxPool, name, kind);
+    c.components.add(comp);
+    // add implicit dep on c2
+    if (name != c.c2_name) comp.addDep(c.c2_name);
+}
+
+fn void Compiler.onLib(void* arg, u32 name, build_target.Kind kind) {
     Compiler* c = arg;
-    if (!is_static && c.is_image) {
-        // TODO srcloc
+    if (kind == DynamicLibrary && c.is_image) {
         console.error("images cannot use dynamic libraries");
         stdlib.exit(-1);
     }
@@ -53,16 +68,20 @@ fn void Compiler.onLib(void* arg, u32 name, bool is_static) {
         console.error("cannot use libc and have nolibc");
         stdlib.exit(-1);
     }
-    c.createComponent(name, true, is_static);
+    c.mainComp.addDep(name);
+    c.createComponent(name, convertKind(kind));
 }
 
 fn void Compiler.load_libs(Compiler* c) {
-    // create components
+    // TODO correct kind
+    c.createComponent(c.c2_name, ExternalDynamicLib);
+
+    // for main component, get deps from Target instead of manifest
     c.target.visitLibs(Compiler.onLib, c);
 
     if (!c.target.getNoLibC()) {
         if (!c.target.hasLib(c.libc_name)) {
-            c.createComponent(c.libc_name, true, false);
+            c.createComponent(c.libc_name, ExternalDynamicLib);
         }
     }
 
@@ -74,14 +93,18 @@ fn void Compiler.load_libs(Compiler* c) {
 
     // sort components
     component_sorter.sort(c.components.get_all(), c.components.size(), c.diags);
-}
-
-fn Component* Compiler.find_component(Compiler* c, ast.Module* m) {
+#if 0
+    stdio.printf("AFTER SORT\n");
     for (u32 i=0; i<c.components.size(); i++) {
-        Component* co = c.components.get(i);
-        if (co.hasModule(m)) return co;
+        Component* comp = c.components.get(i);
+        stdio.printf("  [%d] %s  %s\n", i, comp.getName(), comp.getKindName());
+        const string_list.List* deps = comp.getDeps();
+        for (u32 j=0; j<deps.length(); j++) {
+            u32 depname = deps.get_idx(j);
+            stdio.printf("    dep %s\n", c.auxPool.idx2str(depname));
+        }
     }
-    return nil;
+#endif
 }
 
 // reads the manifest, creates the Component and (empty) Modules
@@ -104,23 +127,16 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
 
     comp.setPath(dirname);
     string_list.List mods.init(c.astPool);
-    bool ok = manifest.parse(c.sm, file_id, c.astPool, comp, &mods);
+    bool ok = manifest.parse(c.sm, file_id, c.astPool, c.auxPool, comp, &mods);
     if (!ok) {
         stdlib.exit(-1);
     }
 
     for (u32 i=0; i<mods.length(); i++) {
         u32 mod_name = mods.get_idx(i);
-        ast.Module* m = comp.getOrAddModule(mod_name);
-        if (m) {
-            m.setForeign(comp.getForeign());
-        } else {
-            m = c.allmodules.find(mod_name);
-            Component* other = c.find_component(m);
-            assert(other);
-            console.error("module '%s' exists in components %s and %s", mods.get(i), other.getName(), comp.getName());
-            stdlib.exit(-1);
-        }
+        ast.Module* m = comp.getOrAddModule(mod_name, false);
+        assert(m);
+        m.setForeign(comp.isForeign());
     }
 
     mods.free();
@@ -135,7 +151,7 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
             stdlib.exit(-1);
         }
         // Note: for now only support dynamic lib dependencies here
-        c.createComponent(depname, false, false);
+        c.createComponent(depname, DynamicLibrary);
     }
 }
 
@@ -179,11 +195,12 @@ fn void Compiler.parseExternalModule(void* arg, ast.Module* m) {
 
 // parse all used <modules>.c2i
 fn void Compiler.parse_lib(Compiler* c, Component* comp) {
+    if (comp.isExternalSourceLib()) return;    // already parsed
+
     console.debug("parsing component %s", comp.getName());
 
     c.current = comp;
     c.builder.setComponent(comp);
-
     c.parse_queue.clear();
 
     module_list.List* mods = comp.getModules();
@@ -192,6 +209,7 @@ fn void Compiler.parse_lib(Compiler* c, Component* comp) {
         if (m.isUsed()) c.parse_queue.add(m);
     }
 
+    // parse + check imports (possibly adding more modules to parse queue)
     for (u32 i=0; i<c.parse_queue.length(); i++) {
         ast.Module* m = c.parse_queue.at(i);
         Compiler.parseExternalModule(c, m);
@@ -199,15 +217,35 @@ fn void Compiler.parse_lib(Compiler* c, Component* comp) {
     }
 }
 
-// analyze all used <modules>.c2i
-fn void Compiler.analyse_lib(Compiler* c, Component* comp) {
-    // sort modules
-    module_sorter.sort(comp, c.diags);
+fn void parseSourceLibFile(void* arg, const char* filename, u32 src_loc) {
+    Compiler* c = arg;
+    source_mgr.SourceMgr* sm = c.sm;
 
-    // analyse modules
-    comp.visitModules(Compiler.analyseUsedModule, c);
+    // prefix with component root
+    char[file_utils.Max_path] fullname;
+    if (!file_utils.make_path(fullname, elemsof(fullname), c.current.getPath(), filename)) return;
 
-    if (c.opts.print_lib_ast) comp.print(true);
+    i32 file_id = sm.loadFile(fullname, src_loc);
+    if (file_id == -1) return;   // note: error already printed
+    console.debug("parsing %s", fullname);
+
+    // TODO need new flag, is_external=true, is_interface=false, is_generated=false
+    c.parser.parse(file_id, false, false);
+
+    // TODO trace_calls? (like in compiler/compiler.c2 parser.parse)
+}
+
+fn void Compiler.parseSourceLibs(Compiler* c) {
+    for (u32 i=0; i<c.components.size(); i++) {
+        Component* comp = c.components.get(i);
+        if (!comp.isExternalSourceLib()) continue;
+
+        console.debug("parsing source lib %s", comp.getName());
+        // TODO dont use visitor, too much duplicate work in calback
+        c.current = comp;
+        c.builder.setComponent(comp);
+        comp.visitFiles(c, parseSourceLibFile);
+    }
 }
 
 fn void Compiler.showAllLibs(Compiler* c) {
@@ -245,7 +283,7 @@ fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirna
                 continue;
 
             out.indent(2);
-            out.print("%-12s", name);
+            out.print("%-20s", name);
             {
                 i32 file_id = c.sm.loadFile(fullname, 0);
                 if (file_id == -1) return;
@@ -253,12 +291,10 @@ fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirna
                 u32 name_idx = c.auxPool.addStr(name, true);
                 Component* comp = component.create(c.context,
                                                    c.auxPool,
-                                                   &c.allmodules,
                                                    name_idx,
-                                                   Kind.ExternalStatic, // doesn't matter
-                                                   true);
+                                                   Kind.ExternalStaticLib); // doesn't matter
                 string_list.List mods.init(c.auxPool);   // need to be astPool, but here it doesn't matter
-                manifest.parse(c.sm, file_id, c.astPool, comp, &mods);
+                manifest.parse(c.sm, file_id, c.astPool, c.auxPool, comp, &mods);
                 c.components.add(comp);
                 mods.free();
 
@@ -270,9 +306,14 @@ fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirna
                     out.add("       ");
                 }
                 if (comp.isAvailableDynamic()) {
-                    out.add("dynamic");
+                    out.add("dynamic ");
                 } else {
-                    out.add("       ");
+                    out.add("        ");
+                }
+                if (comp.isAvailableSource()) {
+                    out.add("source");
+                } else {
+                    out.add("      ");
                 }
 
                 const string_list.List* deps = comp.getDeps();

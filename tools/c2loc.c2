@@ -18,6 +18,7 @@ module c2loc_main;
 import build_target;
 import c2recipe;
 import constants;
+import file_list;
 import source_mgr;
 import string_pool;
 
@@ -84,7 +85,7 @@ fn void handle_target(build_target.Target* t, const char* name) {
     if (verbose) printf("%s: %d files\n", name, t.numFiles());
     u32 total_loc = 0;
     for (u32 i=0; i<t.numFiles(); i++) {
-        const build_target.File* file = t.getFile(i);
+        const file_list.File* file = t.getFile(i);
         const char* filename = pool.idx2str(file.name);
         i32 file_id = sm.loadFile(filename, 0);
         if (file_id == -1) return;

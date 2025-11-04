@@ -23,6 +23,7 @@ import string_buffer;
 import string_list;
 
 import stdlib local;
+import string local;
 
 fn const char* getKindStr(const component.Component* c) {
     switch (c.getKind()) {
@@ -35,8 +36,10 @@ fn const char* getKindStr(const component.Component* c) {
         break;
     case StaticLibrary:     return "static";
     case DynamicLibrary:    return "dynamic";
-    case ExternalStatic:
-    case ExternalDynamic:
+    case SourceLibrary:     return "source";
+    case ExternalStaticLib:
+    case ExternalDynamicLib:
+    case ExternalSourceLib:
         assert(0);
         break;
     }
@@ -49,6 +52,11 @@ fn void on_module(void* arg, ast.Module* m) {
     string_buffer.Buf* out = arg;
 
     out.print("    - %s\n", m.getName());
+}
+
+fn void on_file(void* arg, const char* filename, u32 src_loc) {
+    string_buffer.Buf* out = arg;
+    out.print("   - %s\n", filename);
 }
 
 public fn void write(const char* dir, component.Component* c, const char* filename) {
@@ -66,16 +74,25 @@ public fn void write(const char* dir, component.Component* c, const char* filena
               c.getName(), getKindStr(c));
 
     const string_list.List* deps = c.getDeps();
-    for (u32 i = 0; i < deps.length(); i++) {
-        // TODO can only be dynamic (unless sourcelib?)
-        out.print("dependencies:\n"
-                  "    %s: dynamic\n",
-                  deps.get(i));
+    if (deps.length()) {
+        out.print("dependencies:\n");
+        for (u32 i = 0; i < deps.length(); i++) {
+            const char* depname = deps.get(i);
+            if (strcmp(depname, "c2") == 0) continue;   // dont emit dependency on c2
+            out.print("    %s: dynamic\n", deps.get(i));
+        }
+        out.newline();
     }
-    out.newline();
 
     out.add("modules:\n");
     c.visitModules(on_module, out);
+    out.newline();
+
+    if (c.isSourceLib()) {
+        out.add("files:\n");
+        c.visitFiles(out, on_file);
+        out.newline();
+    }
 
     file_utils.File file.init(dir, filename);
     if (!file.write(out.data(), out.size())) {

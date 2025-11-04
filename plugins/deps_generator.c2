@@ -216,7 +216,6 @@ fn void Generator.on_import(void* arg, ImportDecl* d) {
     u32 name = dest.getNameIdx();
     if (gen.imports.contains_idx(name)) return;
 
-    if (dest.isInternal()) return;
     if (!gen.show_externals && dest.isExternal()) return;
 
     gen.imports.add(name);

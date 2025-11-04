@@ -1,0 +1,10 @@
+module foo;
+
+public fn i32 test2(i32 a) {
+    return 2*a;
+}
+
+public fn i32 test3(i32 a) {
+    return 3*a;
+}
+

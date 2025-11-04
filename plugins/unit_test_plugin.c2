@@ -144,11 +144,10 @@ fn void generate_tests(void* arg) {
         p.tests.clear();
         p.setup = false;
         p.teardown = false;
-        string_buffer.Buf* out = string_buffer.create(512, false, 2);
-
         // TODO multiple test-groups in single module
         m.visitTypeFunctions(Plugin.handleTypeFunc, p);
 
+        string_buffer.Buf* out = string_buffer.create(512, false, 2);
         out.print("module %s;\n\n", m.getName());
         out.add("import c2test as ct;\n\n");
 

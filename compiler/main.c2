@@ -587,7 +587,7 @@ fn bool Context.build_target(Context* c,
     if (!c.opts.no_plugins) target.addFeature(c.plugins_feature);
     if (c.opts.use_ir_backend) target.setBackEnd(build_target.BackEndKind.IR);
 
-    if (!target.hasBackEnd()) {
+    if (!target.hasBackEnd() && target.getKind() != SourceLibrary) {
         if (!c.comp_opts.test_mode && !c.comp_opts.check_only) {
             console.error("c2c: no backend for target %s defined in %s", target_name, constants.recipe_name);
             if (c.recipe_id != -1) c.sm.clear(c.recipe_id);

@@ -10,6 +10,7 @@ set common
     common/component.c2
     common/console.c2
     common/diagnostics.c2
+    common/file_list.c2
     common/file/file_utils.c2
     common/file/reader.c2
     common/file/writer.c2
@@ -191,6 +192,7 @@ executable c2c
     common/manifest_writer.c2
     common/target_info.c2
     common/value_maplist.c2
+    common/file/copy.c2
 
     parser/ast_builder.c2
     parser/c2_parser.c2
@@ -240,7 +242,9 @@ executable c2c
     compiler/c2recipe_parser.c2
 #    compiler/c2recipe_yaml.c2
     compiler/compiler.c2
+    compiler/compiler_generate.c2
     compiler/compiler_libs.c2
+    compiler/compiler_analyse.c2
 	compiler/main.c2
     compiler/manifest.c2
     compiler/plugin_mgr.c2
@@ -258,6 +262,8 @@ executable c2c
     generator/c/c_generator_stmt.c2
     generator/c/c_generator_trace.c2
     generator/c/dep_finder.c2
+
+    generator/source_lib/source_lib_generator.c2
 
     generator/generator_utils.c2
 
@@ -415,6 +421,7 @@ executable c2loc
     ast_utils/string_pool.c2
 
     common/build_target.c2
+    common/file_list.c2
     common/file/file_utils.c2
     common/file/reader.c2
     common/library_list.c2

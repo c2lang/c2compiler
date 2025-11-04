@@ -1,0 +1,75 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module file_list;
+
+import src_loc local;
+
+import stdlib;
+import string;
+
+public type File struct {
+    u32 name;       // index into auxPool
+    SrcLoc loc;     // of recipe/manifest file
+}
+
+public type FileList struct {
+    File* files;
+    u32 count;
+    u32 capacity;
+}
+
+public fn void FileList.init(FileList* l, u32 cap) {
+    l.count = 0;
+    l.capacity = cap;
+    l.files = nil;
+    if (l.capacity) l.files = stdlib.malloc(l.capacity * sizeof(File));
+}
+
+public fn void FileList.free(FileList* l) {
+    stdlib.free(l.files);
+}
+
+public fn bool FileList.add(FileList* l, u32 filename, SrcLoc loc) {
+    // check for duplicates
+    for (u32 i=0; i<l.count; i++) {
+        if (l.files[i].name == filename) return false;
+    }
+
+    if (l.count == l.capacity) {
+        if (l.capacity) l.capacity *= 2;
+        else l.capacity += 4;
+        File* files2 = stdlib.malloc(l.capacity * sizeof(File));
+        if (l.count) {
+            string.memcpy(files2, l.files, l.count * sizeof(File));
+            stdlib.free(l.files);
+        }
+        l.files = files2;
+    }
+
+    l.files[l.count].name = filename;
+    l.files[l.count].loc = loc;
+    l.count++;
+    return true;
+}
+
+public fn u32 FileList.getCount(const FileList* l) {
+    return l.count;
+}
+
+public fn const File* FileList.get(const FileList* l, u32 idx) {
+    return &l.files[idx];
+}
+

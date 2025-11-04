@@ -1,0 +1,109 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module compiler;
+
+import c_generator;
+import c2i_generator;
+import component;
+import console;
+import file_list;
+import generator_utils;
+import ir_generator;
+import source_lib_generator;
+import string_list;
+import utils;
+
+fn void Compiler.generate(Compiler* c, const char* target_name, const char* output_dir) {
+    // mark toplevel components
+    component.Component* mainComp = c.components.getLast();
+    generator_utils.mark_used(mainComp, &c.allmodules, c.opts.test_mode);
+
+    if (c.mainComp.isSourceLib()) {
+        console.debug("generating source library");
+        source_lib_generator.generate(c.target, target_name, output_dir, c.mainComp);
+        return;
+    }
+
+    if (c.target.getExports().length()) {
+        console.debug("generating C2 interfaces");
+        u64 gen3 = utils.now();
+        c2i_generator.generate(c.astPool, output_dir, &c.components);
+        u64 gen4 = utils.now();
+        console.log_time("C2i generation", gen4 - gen3);
+    }
+
+    // NOTE: only 1 backend can consume the AST, since it might change the AST in backend-specific ways
+
+    switch (c.target.getBackEnd()) {
+    case None:
+        break;
+    case C:
+        console.debug("generating C");
+        u64 gen3 = utils.now();
+
+        string_list.List asm_files;
+        asm_files.init(c.auxPool);
+        for (u32 i=0; i<c.target.numAsmFiles(); i++) {
+            const file_list.File* file = c.target.getAsmFile(i);
+            asm_files.add(file.name);
+        }
+
+        c_generator.generate(c.astPool,
+                             c.auxPool,
+                             target_name,
+                             c.target.getKind(),
+                             output_dir,
+                             c.diags,
+                             c.sm,
+                             c.build_info,
+                             &c.targetInfo,
+                             &c.components,
+                             c.mainFunc,
+                             &asm_files,
+                             c.target.hasAsserts(),
+                             c.target.getFastBuild() | c.opts.fast_build,
+                             c.opts.asan, c.opts.msan, c.opts.ubsan,
+                             c.opts.test_mode, c.opts.trace_calls);
+        asm_files.free();
+        u64 gen4 = utils.now();
+        console.log_time("C generation", gen4 - gen3);
+
+        if (!c.target.getNoBuild() && !c.opts.test_mode) {
+            console.debug("building C");
+            gen3 = utils.now();
+            c_generator.build(output_dir);
+            gen4 = utils.now();
+            console.log_time("C compilation", gen4 - gen3);
+        }
+        break;
+    case IR:
+        console.debug("generating IR");
+        u64 gen3 = utils.now();
+
+        ir_generator.generate(target_name,
+                              output_dir,
+                              &c.components,
+                              c.sm,
+                              &c.targetInfo,
+                              c.target.hasAsserts(),
+                              c.opts.print_ir,
+                              c.opts.print_all_ir);
+        u64 gen4 = utils.now();
+        console.log_time("IR generation", gen4 - gen3);
+        break;
+    }
+}
+

@@ -32,7 +32,6 @@ import stdio;
 fn void Generator.createMakefile(Generator* gen,
                                  const char* output_dir,
                                  component.List* comps,
-                                 const module_list.List* allmodules,
                                  string_list.List* asm_files,
                                  bool enable_asserts,
                                  u32 libc_name)
@@ -99,9 +98,15 @@ fn void Generator.createMakefile(Generator* gen,
         // dont add *.c, but add (handy for switching between fast/normal build
         //out.add("objects := $(patsubst %.c,%.o,$(wildcard *.c))\n");
         out.add("objects := ");
-        for (u32 i=0; i<allmodules.length(); i++) {
-            const ast.Module* m = allmodules.at(i);
-            if (!m.isExternal() && m.isUsed()) out.print(" %s.o", m.getName());
+        for (u32 i = 0; i != comps.size(); i++) {
+            component.Component* c = comps.get(i);
+            if (c.isExternalLibrary()) continue;    // does NOT include source libraries
+
+            module_list.List* mods = c.getModules();
+            for (u32 j = 0; j < mods.length(); j++) {
+                ast.Module* m = mods.at(j);
+                if (m.isUsed()) out.print(" %s.o", m.getName());
+            }
         }
         if (gen.trace_calls) {
             out.add(" c2_trace_tables.o");
@@ -146,24 +151,40 @@ fn void Generator.createMakefile(Generator* gen,
             component.Component* c = comps.get(i-1);
             if (!c.isExternal()) continue;
             const char* linkname = c.getLinkName();
+
             if (gen.targetInfo.sys == target_info.System.FreeBSD
             ||  gen.targetInfo.sys == target_info.System.OpenBSD) {
                 // ignore "dl" library on BSD systems: libc handles dlopen etc.
-                if (linkname && !string.strcmp(linkname, "dl"))
-                    continue;
+                if (linkname && !string.strcmp(linkname, "dl")) continue;
             }
-            if (c.isStaticLib()) {
-                if (gen.targetInfo.sys == target_info.System.Darwin) {
-                    out.add(" -L/opt/homebrew/lib");
+            if (c.getKind() == ExternalStaticLib) {
+                if (c.getNameIdx() == libc_name) { // special case for static libc
+                    out.add(" --static");
                 } else {
-                    out.print(" -L%s/%s", c.getPath(), triplet);
+                    // Can be in recipe (=local path) or system library (=somewhere else)
+                    // Note: for static system libraries, the location differs
+                    // Linux: /lib/x86_64-linux-gnu/libfoo.a
+                    if (c.isForeign()) {
+                        // Assumed to be in system path
+                        out.print(" /lib/%s/", triplet);
+                        if (linkname) {
+                            out.print("lib%s.a", linkname);
+                        } else {
+                            out.print("lib%s.a", c.getName());
+                        }
+                    } else {
+                        out.print(" %s/lib%s.a", c.getPath(), c.getName());
+                    }
                 }
-                // special case for static libc
-                if (c.getNameIdx() == libc_name) out.add(" --static");
-            }
-            if (linkname) {
-                out.print(" -L../../%s", linkname);
-                out.print(" -l%s", linkname);
+            } else if (c.getKind() == ExternalDynamicLib) {
+                if (c.getNameIdx() == libc_name) continue;  // libc is loaded by default
+
+                if (!c.isForeign()) {
+                    out.print(" -L%s", c.getPath());
+                }
+                // always use system path even when dynamic is also defined in same recipe, since
+                // loader should also be able to find it
+                if (linkname) out.print(" -l%s", linkname); // libc has no linkname
             }
         }
         out.add(" $(LDFLAGS2)\n");
@@ -193,6 +214,8 @@ fn void Generator.createMakefile(Generator* gen,
             out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n",
                 target_name, target_name);
         }
+        break;
+    case SourceLibrary:
         break;
     }
 
