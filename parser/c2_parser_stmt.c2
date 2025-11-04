@@ -79,6 +79,8 @@ fn Stmt* Parser.parseStmt(Parser* p) {
         return p.parseDeclStmt(true, true, false);
     case KW_while:
         return p.parseWhileStmt();
+    case KW_fn:
+        return p.parseLocalFuncStmt();
     default:
         return p.parseExprStmt();
     }
