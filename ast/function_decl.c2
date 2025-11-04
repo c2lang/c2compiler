@@ -38,6 +38,7 @@ static_assert(elemsof(CallKind), elemsof(callKind_names));
 type FunctionDeclBits struct {
     u32 : NumDeclBits;
     u32 is_variadic : 1;
+    u32 is_local : 1;
     u32 has_prefix : 1;     // is a (static) type-function
     u32 call_kind : 2;  // CallKind
     u32 has_return : 1;     // if it returns something, set during analysis
@@ -90,6 +91,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
                                               VarDecl** params,
                                               u32 num_params,
                                               bool is_variadic,
+                                              bool is_local,
                                               bool is_type)
 {
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + rtype.getExtraSize();
@@ -100,6 +102,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     d.base.functionDeclBits.is_variadic = is_variadic;
     d.base.functionDeclBits.call_kind = prefix ? CallKind.StaticTypeFunc : CallKind.Normal;
     d.base.functionDeclBits.is_type = is_type;
+    d.base.functionDeclBits.is_local = is_local;
     d.body = nil;
     d.rt = QualType_Invalid;
     d.num_params = (u8)num_params;
