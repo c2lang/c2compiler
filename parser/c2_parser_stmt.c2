@@ -31,7 +31,7 @@ fn Stmt* Parser.parseStmt(Parser* p) {
     case LBrace:
         return (Stmt*)p.parseCompoundStmt();
     case RBrace:
-        p.error("expected stmt");
+        p.error("expected statement");
         break;
     case KW_asm:
         return p.parseAsmStmt();
@@ -167,8 +167,7 @@ fn u32 Parser.skipArray(Parser* p, u32 ahead, Kind endKind) {
             break;
         case RParen:
             if (closeKind[--depth] != RParen) {
-                p.tok.loc = next.loc;
-                p.error("expected ']'");
+                p.errorAt(next.loc, "expected ']'");
             }
             break;
         case LSquare:
@@ -176,13 +175,11 @@ fn u32 Parser.skipArray(Parser* p, u32 ahead, Kind endKind) {
             break;
         case RSquare:
             if (closeKind[--depth] != RSquare) {
-                p.tok.loc = next.loc;
-                p.error("expected ')'");
+                p.errorAt(next.loc, "expected ')'");
             }
             break;
         case Eof:
-            p.tok.loc = next.loc;
-            p.error("unexpected end-of-file");
+            p.errorAt(next.loc, "unexpected end-of-file");
             break;
         default:
             break;

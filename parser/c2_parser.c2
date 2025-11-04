@@ -162,9 +162,8 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
 fn void on_tokenizer_error(void* arg, SrcLoc loc) {
     Parser* p = arg;
     // NOTE: cannot use p.tok.error_msg, because of possible lookahead (changes token)
-    p.tok.loc = loc;
     // will longjmp
-    p.error("%s", p.tokenizer.error_msg);
+    p.errorAt(loc, "%s", p.tokenizer.error_msg);
 }
 
 fn void on_tokenizer_warning(void* arg, SrcLoc loc) {
@@ -229,18 +228,19 @@ fn void Parser.expect(Parser* p, Kind kind) {
 }
 
 fn void Parser.expectError(Parser* p, Kind kind) {
-    if (p.prev_loc) {
+    // error position after previous token
+    SrcLoc loc = p.prev_loc;
+    if (loc) {
         if (kind == Kind.Semicolon) {
             // non fatal error to show all such error locations
-            p.diags.error(p.prev_loc, "expected ';'");
+            p.diags.error(loc, "expected ';'");
             return;
         }
-        // position after previous token
-        p.tok.loc = p.prev_loc;
     } else {
         // otherwise position is either first token or end of empty file
+        loc = p.tok.loc;
     }
-    p.error("expected '%s'", kind.str());
+    p.errorAt(loc, "expected '%s'", kind.str());
 }
 
 fn void Parser.expectIdentifier(Parser* p) {
@@ -253,6 +253,14 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
     va_list args;
     va_start(args, format);
     p.diags.error2(p.tok.loc, format, args);
+    va_end(args);
+    longjmp(&p.jmpbuf, 1);
+}
+
+fn void Parser.errorAt(Parser* p, SrcLoc loc, const char* format @(printf_format), ...) @(noreturn) {
+    va_list args;
+    va_start(args, format);
+    p.diags.error2(loc, format, args);
     va_end(args);
     longjmp(&p.jmpbuf, 1);
 }
@@ -473,8 +481,7 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
     }
 
     if (!p.checkName(func_name, p.is_interface)) {
-        p.tok.loc = func_loc;   // reset to correct value for error
-        p.error("a function name must start with a lower case character");
+        p.errorAt(func_loc, "a function name must start with a lower case character");
     }
 
     DeclList params.init();
