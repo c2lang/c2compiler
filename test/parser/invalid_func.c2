@@ -1,7 +1,7 @@
 module test;
 
 public fn i32 main() {
-    fn void() v = foo;    // @error{expected expression}
+    fn void() v = foo;    // @error{expected '{'}
     return 0;
 }
 
