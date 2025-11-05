@@ -666,6 +666,10 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
 
         u32 name = p.tok.name_idx;
         SrcLoc loc = p.tok.loc;
+        if (p.tok.reserved) {
+            p.diags.error(loc, "reserved word '%s' cannot be used as variable name",
+                          p.pool.idx2str(name));
+        }
         p.consumeToken();
 
         need_semi = true;
@@ -674,14 +678,21 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
 
         p.parseOptionalAttributes();
 
-        if (p.tok.kind == Kind.Dot)
-            p.error("global variables cannot have an init call");
-
-        if (p.tok.kind == Kind.Equal) {
+        switch (p.tok.kind) {
+        case Equal:
             assignLoc = p.tok.loc;
             p.consumeToken();
             need_semi = (p.tok.kind != Kind.LBrace);
             initValue = p.parseInitValue(false);
+            break;
+        case Dot:
+            p.error("global variables cannot have an init call");
+            break;
+        case LSquare:
+            p.error("array indices should go after type");
+            break;
+        default:
+            break;
         }
 
         bool has_embed = p.builder.hasEmbedAttr();
