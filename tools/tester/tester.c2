@@ -25,7 +25,6 @@ import c_errno local;
 import unistd;
 import pthread;
 
-import color;
 import test_utils local;
 import test_db local;
 import string_buffer;
@@ -311,7 +310,7 @@ public fn i32 main(i32 argc, char** argv) {
 
     u64 t1 = now();
 
-    set_color_output(argv[0], color.useColor());
+    set_color_output(argv[0]);
 
     for (i32 i = 1; i < argc; i++) {
         char *arg = argv[i];
