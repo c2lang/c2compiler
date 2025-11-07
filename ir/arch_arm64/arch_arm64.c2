@@ -1,7 +1,9 @@
 module arch_arm64;
 
 import ir_tools local;
+import ir local;
 
+import stdio local;
 /*
 type Regs enum u8 {
     R0, R1, R2, R3, R4, R5, R6, R7, // return + args
@@ -11,7 +13,117 @@ type Regs enum u8 {
 }
 */
 
+type Regs struct {
+    u32 ngrn;   // Next General-purpose Register Number
+    u32 nsrn;   // Next SIMD and FP Register Nmuber
+    u32 nprn;   // Next Scalable Predicate Register Number
+    i32 nsaa;   // Next stacked argument address
+
+    // TODO arg info [MaxArgs] // number, stack, pointer, etc
+}
+
+fn void applyCallingConv(Tools* t, FunctionInfo* f) {
+
+    //printf("ARM64 calling conv.\n");
+    FunctionInfo* fi = t.fi;
+    u32 num_blocks = fi.blocks.getCount();
+    Block* blocks = fi.blocks.get(0);
+    Instr* instrs = fi.instructions.get(0);
+
+    // Stage A - initialization
+    Regs regs = { }
+    //regs.nsaa = stack;
+
+    // Stage B - Pre-padding + extension of arguments
+    // TODO for now only support integers
+    for (u32 i = 0; i < f.num_args; i++) {
+        Type tt = f.getArg(i);
+        //printf("  [%d] %s\n", i, tt.str());
+    }
+
+    // Stage C - Assignment of arguments to registers and stack
+    for (u32 i = 0; i < f.num_args; i++) {
+        Type argtype = f.getArg(i);
+        //printf("ARG[%d]: ", i);
+        u8 size = 0;
+        u8 align = 0;
+        //printf("  [%d] %s\n", i, tt.str());
+        switch (argtype) {
+        case None:
+        case I8:
+        case I16:
+        case I32:
+        case I64:
+        case U8:
+        case U16:
+        case U32:
+        case U64:
+            if (regs.ngrn < 8) {
+                // C.9 - assign x[ngrn]
+                //printf(" x%d\n", regs.ngrn);
+                regs.ngrn++;
+                continue;
+            }
+            break;
+        case F32:
+        case F64:
+            if (regs.nsrn < 8) {
+                // C.1 - assign v[nsrn]
+                //printf(" v%d\n", regs.nsrn);
+                regs.nsrn++;
+                continue;
+            }
+            // TODO HFA/HVA C.1-C.5
+            size = 8;   // C.5
+            printf(" S-%d\n", regs.nsaa);
+            regs.nsaa += size;
+            continue;
+        }
+
+        // C.10
+        if (align == 16) regs.ngrn = (regs.ngrn + 1) & ~0x1;
+        // TODO more
+
+    }
+
+
+
+    // Params, replace %1 = param with  %1 = copy R0
+    {
+        Block* b0 = &blocks[0];
+        u32 num_arg = 0;
+        while (1) {
+            Instr* ii = &instrs[b0.instr.start + num_arg];
+            if (!ii.isParam()) break;
+            // For now always put stack-based arguments in a register immediately
+            ii.instrBits.kind = InstrKind.Copy;
+            ii.args[0].setRegister(num_arg);    // start with R0
+            num_arg++;
+        }
+    }
+
+    // replace args with copy (if arg is Temp)
+    // arg %1 =>  R0 = copy %1
+    for (u32 blk_id = 0; blk_id < num_blocks; blk_id++) {
+        Block* b = &blocks[blk_id];
+        u32 last = b.instr.start + b.instr.count;
+        u32 num_arg = 0;
+        for (u32 j = b.instr.start; j < last; j++) {
+            Instr* ii = &instrs[j];
+            if (ii.isArg()) {
+                ii.setReg((u8)num_arg);
+                ii.instrBits.kind = InstrKind.Copy;
+                num_arg++;
+            } else if (ii.isCall()) {
+                num_arg = 0;
+            }
+            // TODO is Ret, just add copy r0 = copy %1
+        }
+    }
+}
+
 const Target ArchInfo = {
+    .applyCallingConv = applyCallingConv,
     .num_args_in_regs = 8,
     .num_regs = 32,
     .num_temps = 8,

@@ -29,6 +29,9 @@ import usage_counter;
 
 import stdlib;
 
+
+public type PrintFn fn void (const void* arg1, const void* arg2, const FunctionInfo* fi, const char* label);
+
 public type Tools struct {
     ir_lookup_table.Table conversion;
     SlotValues slot_values;
@@ -42,8 +45,8 @@ public type Tools struct {
     const Target* target;
 
     // for printing
-    bool print_all;
     const void* arg1;   // Context*
+    PrintFn print;
 
     // change per function
     const void* arg2;   // Symbol*
@@ -51,7 +54,7 @@ public type Tools struct {
 }
 static_assert(816, sizeof(Tools));
 
-public fn void Tools.init(Tools* t, const Target* target, const void* arg1, bool print) {
+public fn void Tools.init(Tools* t, const Target* target, const void* arg1, PrintFn print) {
     t.conversion.init(64);
     t.slot_values.create();
     t.collector.create();
@@ -60,9 +63,9 @@ public fn void Tools.init(Tools* t, const Target* target, const void* arg1, bool
     t.copies.init(1024);
     t.usage.init(1024);
     t.target = target;
-    t.print_all = print;
     t.arg1 = arg1;
     t.arg2 = nil;
+    t.print = print;
 }
 
 public fn void Tools.free(Tools* t) {
@@ -76,57 +79,55 @@ public fn void Tools.free(Tools* t) {
 }
 
 public fn void Tools.print_func(const Tools* t, const char* label) {
-    // Just use callback
-    // TODO fix
-    //const Context* c = t.arg1;
-    //c.print_function(t.arg2, t.fi, label);
+    if (t.print) t.print(t.arg1, t.arg2, t.fi, label);
 }
 
 public fn void Tools.convert_fn(Tools* t) {
     FunctionInfo* fi = t.fi;
-    if (t.print_all && fi.blocks.getCount() > 1) t.print_func("after reorder");
+    if (fi.blocks.getCount() > 1) t.print_func("after reorder");
     //t.generate_graphviz(fi);
 
     // MULTI-THREAD: need to pre-alloc names for Slots (S0, S1, etc), since pool access needs to be read-only
 
     // NOTE: cannot have outstanding inserts which converting switches!
     bool changed = t.convert_switches();
-    if (changed && t.print_all) t.print_func("after convert switch");
+    if (changed) t.print_func("after convert switch");
     //t.print_function(symbol, fi, "BEFORE collector fill");
 
     t.createSSA();
     //t.inserter.dump();
 
-    //if (fi.blocks.getCount() > 1 && t.print_all) t.print_func("after create SSA");
+    //if (fi.blocks.getCount() > 1) t.print_func("after create SSA");
 
     if (t.inserter.needsFixup()) {
         t.fixup_function();
-        //if (t.print_all) t.print_func("after fixup");
+        //t.print_func("after fixup");
     }
-    if (fi.blocks.getCount() > 1 && t.print_all) t.print_func("after create SSA");
+    if (fi.blocks.getCount() > 1) t.print_func("after create SSA");
     //t.print_function(symbol, fi, "AFTER fixup");
 
     t.eliminateCopies();
-    if (t.print_all) t.print_func("after eliminate copies");
+    t.print_func("after eliminate copies");
 
     //t.propagateConstants();
-    //if (t.print_all) t.print_function(symbol, fi, "after propagate constants");
+    //t.print_function(symbol, fi, "after propagate constants");
     t.removeUnused();
     //if (print) t.print_func("after remove unused");
 
     //t.propagateConstants();
 
     t.removeNone();
-    if (t.print_all) t.print_func("after remove none");
+    t.print_func("after remove none");
 
     t.inserter.clear(fi.blocks.getCount(), fi.instructions.getCount());
 
-    t.implementAbi();
+    t.target.applyCallingConv(t, fi);
+    //t.implementAbi();
 
     t.allocateRegisters(fi);
 
     if (t.inserter.needsFixup()) t.fixup_function();
-    if (t.print_all) t.print_func("after register allocation + phi-removal");
+    t.print_func("after register allocation + phi-removal");
 
     // generate Instruction
     // ..

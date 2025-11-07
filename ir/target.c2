@@ -1,15 +1,13 @@
-module ir_tools;
+module ir_tools; // Note: in ir_tools to allow passing Tools*
 
-// NOTE: in ir_tools to allowm passing Tools*
-//type ConvertAbiFn fn void(Target* target, Tools* tools);
+import ir;
 
-// TODO have separate pointer with arch dependent calls?
+public type ApplyCallConvFn fn void (Tools* t, ir.FunctionInfo* f);
 
 public type Target struct {
-    // convert params, return values, call args to registers etc
-    // TEMP use separate type until merged in bootstrap
-    //fn void(Target* target, Tools* tools) convert_abi;
-    //ConvertAbiFn convert_abi;
+    // Need bootstrap update
+    //fn void (Tools* t, ir.FunctionInfo* f) applyCallingConv;
+    ApplyCallConvFn applyCallingConv;
 
     // layout of registers in one lineair array:
     // return reg (s)

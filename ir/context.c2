@@ -63,6 +63,7 @@ public type Context struct @(opaque) {
     Tools tools;
 
     bool single_thread;
+    bool print_all;
 
     // TODO make full member if include bug is solved in bootstrap
     WorkQueue* queue;
@@ -77,6 +78,7 @@ public fn Context* create(bool print, const target_info.Info* info) {
     //c.queue.init();
     c.queue = WorkQueue.create();
     c.single_thread = true;
+    c.print_all = print;
     //c.single_thread = false;
 
     // pre-load pool with slot names
@@ -91,7 +93,7 @@ public fn Context* create(bool print, const target_info.Info* info) {
     c.b.init();
 
     c.target = getArchTarget(info);
-    c.tools.init(c.target, c, print);
+    c.tools.init(c.target, c, print_function);
     return c;
 }
 
@@ -118,6 +120,13 @@ public fn void Context.convert_functions(Context* c) {
     if (c.single_thread) return;    // already done
 
     c.queue.run(c, 0);
+}
+
+fn void print_function(const void* arg1, const void* arg2, const FunctionInfo* fi, const char* label) {
+    const Context* c = arg1;
+    if (!c.print_all) return;
+
+    c.print_function(arg2, fi, label);
 }
 
 public fn SymbolId Context.addStringLiteral(Context* c, const char* name, const char* text, u32 size) {
@@ -603,11 +612,11 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     //const char* name = c.pool.idx2str(symbol.name);
 
     //dump_function(fi, name);
-    if (t.print_all) t.print_func("after generation");
+    t.print_func("after generation");
     // prune unused and empty blocks, possible convert jmp_if to jmp
     checkDest(fi, 0);
 
-    if (t.print_all) t.print_func("after check dest");
+    t.print_func("after check dest");
 
     // TODO use Builder 2nd BlockList here (pass as well)
     t.reorder_blocks(fi, &c.b.block_order);

@@ -1,6 +1,7 @@
 module arch_amd64;
 
 import ir_tools local;
+import ir;
 
 /*
 type Regs enum u8 {
@@ -12,7 +13,11 @@ type Regs enum u8 {
 }
 */
 
+fn void applyCallingConv(Tools* t, ir.FunctionInfo* f) {
+}
+
 const Target ArchInfo = {
+    .applyCallingConv = applyCallingConv,
     .num_args_in_regs = 6,
     .num_regs = 17,
     .num_temps = 9,

@@ -128,7 +128,7 @@ fn QueueWorker* QueueWorker.create(u32 idx, WorkQueue* q, Context* c) {
     QueueWorker* w = calloc(1, sizeof(QueueWorker));
     w.index = idx;
     w.queue = q;
-    w.tools.init(c.target, c, false); // never print during multi-threading
+    w.tools.init(c.target, c, nil); // never print during multi-threading
     pthread.create(&w.thread, nil, worker_main, w);
     return w;
 }
