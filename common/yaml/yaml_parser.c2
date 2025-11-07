@@ -170,7 +170,7 @@ fn void Parser.parse_value(Parser* p) {
             p.add_scalar_value(p.token.text_idx);
             p.consumeToken();
         } else {
-            assert(0); // valid??
+            // can be empty group:  libs:
         }
         return;
     case Dash:
