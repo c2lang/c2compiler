@@ -8,12 +8,11 @@ module test;
 public fn i32 main(i32 argc, const char** argv) {
     i32 a = 10;
 
-    i32 b = cast<i8>(20);
     i32 b1 = (i8)(20);
     i32 b2 = (i8)20;
     i32 b3 = (i8)+20;
     i32 b4 = (i8)-20;
-    i32 c = cast<i8>(a);
+    i32 c = (i8)a;
     i32 c1 = (i8)(a);
     i32 c2 = (i8)a;
     i32 c3 = (i8)+a;
@@ -26,12 +25,11 @@ public fn i32 main(i32 argc, const char** argv) {
 int32_t main(int32_t argc, const char** argv)
 {
     int32_t a = 10;
-    int32_t b = (int8_t)(20);
     int32_t b1 = (int8_t)(20);
     int32_t b2 = (int8_t)20;
     int32_t b3 = (int8_t)+20;
     int32_t b4 = (int8_t)-20;
-    int32_t c = (int8_t)(a);
+    int32_t c = (int8_t)a;
     int32_t c1 = (int8_t)(a);
     int32_t c2 = (int8_t)a;
     int32_t c3 = (int8_t)+a;

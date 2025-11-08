@@ -5,18 +5,13 @@ type Number8 i8;
 type Number32 i32;
 
 fn void test1() {
-    i32 a = cast<i8>(10);
     i32 a1 = (i8)(10);
-    i32 b = cast<i8>(200);
     i32 b1 = (i8)(200);
-    i32 c = cast<i32>(200);
     i32 c1 = (i32)(200);
-    i8  d = cast<i32>(200);     // @error{constant value 200 out-of-bounds for type 'i8', range [-128, 127]}
     i8  d1 = (i32)(200);     // @error{constant value 200 out-of-bounds for type 'i8', range [-128, 127]}
 }
 
 fn void test2() {
-    i8  e = cast<Number32>(200);   // @error{constant value 200 out-of-bounds for type 'i8', range [-128, 127]}
     i8  e1 = (Number32)(200);   // @error{constant value 200 out-of-bounds for type 'i8', range [-128, 127]}
 }
 

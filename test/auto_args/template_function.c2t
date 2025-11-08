@@ -6,10 +6,7 @@
 module test;
 
 fn X test1(const u32 line @(auto_line), X x) template X {
-    if (line)
-        return cast<X>(x + line);
-    else
-        return (X)(x + line);
+    return (X)(x + line);
 }
 
 public fn i32 main() {
@@ -22,13 +19,12 @@ int32_t main(void);
 
 static int32_t test_test1_0_(const uint32_t line, int32_t x)
 {
-    if (line) return (int32_t)(x + line);
-    else return (int32_t)(x + line);
+    return (int32_t)(x + line);
 }
 
 int32_t main(void)
 {
-   int32_t a = test_test1_0_(11, 20);
+   int32_t a = test_test1_0_(8, 20);
    return 0;
 }
 

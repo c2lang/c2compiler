@@ -4,7 +4,6 @@ module test;
 fn void test1(const char* p1) {
     const char* p2 = p1;
     p2 += 10;
-    u32 len = cast<u32>(p2 - p1);
     u32 len1 = (u32)(p2 - p1);
 }
 

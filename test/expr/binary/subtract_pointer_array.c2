@@ -4,7 +4,6 @@ module test;
 fn void test1() {
     char[256] buffer;
     char* cp = buffer;
-    u32 diff = cast<u32>(cp - buffer);
     u32 diff1 = (u32)(cp - buffer);
 }
 

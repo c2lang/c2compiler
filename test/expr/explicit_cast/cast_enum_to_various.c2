@@ -16,27 +16,19 @@ type EnumB enum u8 {
 type Func fn void(Enum);
 
 fn void test1(Enum e) {
-    bool a = cast<bool>(e);
     bool a1 = (bool)(e);
-    u8 b = cast<u8>(e);
     u8 b1 = (u8)(e);
-    u32 c = cast<u32>(e);
     u32 c1 = (u32)(e);
-    f32 d = cast<f32>(e);
     f32 d1 = (f32)(e);
-    u32* f = cast<u32*>(e);   // @error{invalid cast from 'test.Enum' to 'u32*'}
     u32* f1 = (u32*)(e);   // @error{invalid cast from 'test.Enum' to 'u32*'}
 }
 
 fn void test2(Enum e) {
-    Struct* g = cast<Struct*>(e);   // @error{invalid cast from 'test.Enum' to 'test.Struct*'}
     Struct* g1 = (Struct*)(e);   // @error{invalid cast from 'test.Enum' to 'test.Struct*'}
 }
 
 fn void test3(Enum e) {
-    EnumB h = cast<EnumB>(e);
     EnumB h1 = (EnumB)(e);
-    Func i = cast<Func>(e);         // @error{invalid cast from 'test.Enum' to 'Func'}
     Func i1 = (Func)(e);         // @error{invalid cast from 'test.Enum' to 'Func'}
 }
 

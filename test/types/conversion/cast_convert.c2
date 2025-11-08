@@ -2,7 +2,6 @@
 module test;
 
 fn void test1(u32 a) {
-    u16 line = cast<u32>(a); // @error{implicit conversion loses integer precision: 'u32' to 'u16'}
     u16 line1 = (u32)(a); // @error{implicit conversion loses integer precision: 'u32' to 'u16'}
 }
 

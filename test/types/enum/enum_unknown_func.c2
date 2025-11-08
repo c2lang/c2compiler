@@ -15,10 +15,7 @@ public fn const char* Kind.str(Kind k) {
 }
 
 public fn Kind Ref.getKind(const Ref* r) {
-    if (r)
-        return cast<Kind>(r.kind);
-    else
-        return (Kind)r.kind;
+    return (Kind)r.kind;
 }
 
 fn void test1(Ref left) {
