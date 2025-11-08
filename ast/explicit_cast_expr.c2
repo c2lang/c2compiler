@@ -94,8 +94,9 @@ fn void ExplicitCastExpr.printLiteral(const ExplicitCastExpr* e, string_buffer.B
     } else {
         out.add("cast<");
         e.dest.print(out, true);
-        out.add1('>');
+        out.add(">(");
         e.inner.printLiteral(out);
+        out.add1(')');
     }
 }
 

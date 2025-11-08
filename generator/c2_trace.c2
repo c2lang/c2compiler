@@ -40,7 +40,6 @@ fn bool match_name(const char *name, const char *pattern) {
         }
         return (!c1 && (c2 == ',' || c2 == ';'));
     }
-    return false;
 }
 
 fn bool match_pattern(const char *name, const char *pattern) {
