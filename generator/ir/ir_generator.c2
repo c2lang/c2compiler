@@ -234,7 +234,6 @@ fn ir.Type Generator.type2irtype(Generator* gen, QualType qt) {
         default:
             return ir.Type.I64;
         }
-        break;
     case Enum:
         EnumType* et = canon.getEnum();
         return gen.type2irtype(et.getImplType());

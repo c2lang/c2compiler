@@ -342,7 +342,6 @@ public fn SrcLoc TypeRef.getLoc(const TypeRef* r) {
     case User:
         if (r.hasPrefix()) return r.refs[1].loc;
         else return r.refs[0].loc;
-        break;
     case StructMemberType:
         //TODO
         //return r.user.decl.getLoc();

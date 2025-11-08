@@ -150,7 +150,6 @@ fn bool Parser.isTypeSpec(Parser* p) {
             return false;
         }
     }
-    return false;
 }
 
 fn u32 Parser.skipArray(Parser* p, u32 ahead, Kind endKind) {

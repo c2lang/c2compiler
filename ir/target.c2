@@ -17,12 +17,8 @@ module ir_tools; // Note: in ir_tools to allow passing Tools*
 
 import ir;
 
-public type ApplyCallConvFn fn void (Tools* t, ir.FunctionInfo* f);
-
 public type Target struct {
-    // Need bootstrap update
-    //fn void (Tools* t, ir.FunctionInfo* f) applyCallingConv;
-    ApplyCallConvFn applyCallingConv;
+    fn void (Tools* t, ir.FunctionInfo* f) applyCallingConv;
 
     // layout of registers in one lineair array:
     // return reg (s)

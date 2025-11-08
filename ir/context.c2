@@ -65,8 +65,7 @@ public type Context struct @(opaque) {
     bool single_thread;
     bool print_all;
 
-    // TODO make full member if include bug is solved in bootstrap
-    WorkQueue* queue;
+    WorkQueue queue;
 }
 
 public fn Context* create(bool print, const target_info.Info* info) {
@@ -75,8 +74,7 @@ public fn Context* create(bool print, const target_info.Info* info) {
     c.constants.init(128);
     c.symbols.init(128);
     c.init_values.init(128);
-    //c.queue.init();
-    c.queue = WorkQueue.create();
+    c.queue.init();
     c.single_thread = true;
     c.print_all = print;
     //c.single_thread = false;

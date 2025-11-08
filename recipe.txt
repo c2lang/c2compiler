@@ -157,9 +157,8 @@ executable c2c
     $warnings no-unused-variable
     $warnings no-unused-parameter
     $warnings no-unused-enum-constant
-# This is not supported by the bootstrap yet
-#    $warnings unreachable-code
-#    $warnings promote-to-error
+    $warnings unreachable-code
+    $warnings promote-to-error
     $use pthread dynamic
 
     $backend c

@@ -212,7 +212,6 @@ public fn bool Value.checkRange(const Value* v, i64 min, u64 max) {
             return (v.uvalue <= (u64)~min + 1);
         else
             return (v.uvalue <= max);
-        break;
     case Float:
         return (v.fvalue >= (f64)min && v.fvalue < (f64)max + 1);
     default:
@@ -567,7 +566,6 @@ public fn bool Value.is_less(const Value* v1, const Value* v2) {
                 return !v2.negative || v1.uvalue > v2.uvalue;
             else
                 return !v2.negative && v1.uvalue < v2.uvalue;
-            break;  // TODO: fix bogus error in Analyser.analyseCase
         case Float:
             return v1.toFloat() < v2.fvalue;
         default:
@@ -591,7 +589,6 @@ fn bool Value.is_less_equal(const Value* v1, const Value* v2) {
                 return !v2.negative || v1.uvalue >= v2.uvalue;
             else
                 return !v2.negative && v1.uvalue <= v2.uvalue;
-            break;  // TODO: fix bogus error in Analyser.analyseCase
         case Float:
             return v1.toFloat() <= v2.fvalue;
         default:
@@ -615,7 +612,6 @@ fn bool Value.is_greater(const Value* v1, const Value* v2) {
                 return v2.negative && v1.uvalue < v2.uvalue;
             else
                 return v2.negative || v1.uvalue > v2.uvalue;
-            break;  // TODO: fix bogus error in Analyser.analyseCase
         case Float:
             return v1.toFloat() > v2.fvalue;
         default:
@@ -639,7 +635,6 @@ fn bool Value.is_greater_equal(const Value* v1, const Value* v2) {
                 return v2.negative && v1.uvalue <= v2.uvalue;
             else
                 return v2.negative || v1.uvalue >= v2.uvalue;
-            break;  // TODO: fix bogus error in Analyser.analyseCase
         case Float:
             return v1.toFloat() >= v2.fvalue;
         default:

@@ -1327,7 +1327,6 @@ fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
                 t.error(result, "invalid character 0x%02X in %s", *p, "string");
                 return;
             }
-            break;
         }
     }
 }
@@ -1389,7 +1388,6 @@ fn bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
         }
         t.cur++;
     }
-    return false;
 }
 
 /*---- preprocessing ----*/
@@ -1743,7 +1741,6 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
                 t.error(result, "invalid token in preprocessor expression '%s'", sp.op.str());
                 return 0;
             }
-            break;
         }
         if (op == Kind.Eof)
             break;
@@ -1884,7 +1881,6 @@ fn bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
             break;
         }
     }
-    return false;
 }
 
 fn const char *skip_blanks(const char *p) {
@@ -1913,7 +1909,6 @@ fn const char *skip_string_literal(const char *p) {
             break;
         }
     }
-    return p;   // TODO detect this code as unreachable
 }
 
 fn const char *skip_raw_string_literal(const char *p) {

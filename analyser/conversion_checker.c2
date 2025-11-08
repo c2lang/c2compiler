@@ -214,8 +214,6 @@ fn bool Checker.checkTypes(Checker* c, const Type* lcanon, const Type* rcanon) {
         c.diags.note(c.loc, "TODO CONVERSION  %d)", res);
         return false;
     }
-
-    return true;
 }
 
 fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon) {
@@ -441,8 +439,6 @@ fn bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcanon
 
         return c.check(c.lhs, impl, c.expr_ptr, c.loc);
     }
-
-    return true;
 }
 
 fn bool Checker.checkFunc2Func(Checker* c, const Type* lcanon, const Type* rcanon) {
@@ -579,8 +575,6 @@ public fn bool Checker.checkCast(Checker* c, QualType lhs, QualType rhs, SrcLoc 
         c.diags.note(c.loc, "TODO CONVERSION  %d)", res);
         return false;
     }
-
-    return true;
 }
 
 fn bool Checker.checkBuiltin2PointerCast(Checker* c, const Type* lcanon, const Type* rcanon) {

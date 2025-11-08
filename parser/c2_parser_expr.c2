@@ -170,7 +170,6 @@ fn Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
             lhs = p.builder.actOnBinaryOperator(opToken.loc, opcode, lhs, rhs);
         }
     }
-    return nil;
 }
 
 const u8[128] CastExprTokenLookup = {
@@ -383,8 +382,6 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
             return lhs;
         }
     }
-    assert(0); // should not come here
-    return nil;
 }
 
 fn Expr* Parser.parseCallExpr(Parser* p, Expr* func) {
@@ -859,8 +856,6 @@ fn bool Parser.parseAsType(Parser* p) {
             return false;
         }
     }
-    // never reached
-    return false;
 }
 
 /*
@@ -974,6 +969,4 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
             return 0;
         }
     }
-    // never reached
-    return 0;
 }

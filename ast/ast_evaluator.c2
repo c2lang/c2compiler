@@ -501,7 +501,6 @@ fn Cont WhileStmt.eval(WhileStmt* s, Evaluator* sf) {
             return cont;
         }
     }
-    return Cont.Abort;
 }
 
 fn Cont ForStmt.eval(ForStmt* s, Evaluator* sf) {
@@ -542,7 +541,6 @@ fn Cont ForStmt.eval(ForStmt* s, Evaluator* sf) {
                 return Cont.Error;
         }
     }
-    return Cont.Abort;
 }
 
 fn Cont SwitchStmt.eval(SwitchStmt* s, Evaluator* sf) {
