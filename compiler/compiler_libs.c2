@@ -32,7 +32,7 @@ import string_list;
 import c_errno local;
 import libc_dirent local;
 import stdio;
-import stdlib;
+import stdlib local;
 import string;
 
 fn Kind convertKind(build_target.Kind kind) {
@@ -62,11 +62,11 @@ fn void Compiler.onLib(void* arg, u32 name, build_target.Kind kind) {
     Compiler* c = arg;
     if (kind == DynamicLibrary && c.is_image) {
         console.error("images cannot use dynamic libraries");
-        stdlib.exit(-1);
+        exit(EXIT_FAILURE);
     }
     if (c.target.getNoLibC() && name == c.libc_name)  {
         console.error("cannot use libc and have nolibc");
-        stdlib.exit(-1);
+        exit(EXIT_FAILURE);
     }
     c.mainComp.addDep(name);
     c.createComponent(name, convertKind(kind));
@@ -115,7 +115,7 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
     char[file_utils.Max_path] libdir;
     if (!c.find_lib(libstr, libdir, elemsof(libdir))) {
         console.error("cannot find library '%s'", libstr);
-        stdlib.exit(-1);
+        exit(EXIT_FAILURE);
     }
 
     char[file_utils.Max_path] fullname;
@@ -129,7 +129,7 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
     string_list.List mods.init(c.astPool);
     bool ok = manifest.parse(c.sm, file_id, c.astPool, c.auxPool, comp, &mods);
     if (!ok) {
-        stdlib.exit(-1);
+        exit(EXIT_FAILURE);
     }
 
     for (u32 i=0; i<mods.length(); i++) {
@@ -148,10 +148,11 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
 
         if (c.target.getNoLibC() && depname == c.libc_name)  {
             console.error("cannot use %s since it depends on unused libc", comp.getName());
-            stdlib.exit(-1);
+            exit(EXIT_FAILURE);
         }
-        // Note: for now only support dynamic lib dependencies here
-        c.createComponent(depname, DynamicLibrary);
+        // TODO The dep should not be specified here, but chosen by end-user.
+        // if not chosen explicitly by end-user, prefer Dynamic > Static > Source
+        c.createComponent(depname, ExternalDynamicLib);
     }
 }
 
