@@ -35,6 +35,9 @@ public type Color enum u8 {
     Bcyan,
     White,
     Normal,
+
+    CustomStart,
+    CustomEnd = Color.CustomStart + 15,
 }
 
 public const Color Black    = Black;

@@ -694,8 +694,7 @@ fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const ch
     vsnprintf(t.error_msg, sizeof(t.error_msg), format, args);
     va_end(args);
 
-    // XXX: error position should be passed separately from token start
-    result.loc = t.loc_start + (SrcLoc)(p - t.input_start);
+    SrcLoc err_loc = t.loc_start + (SrcLoc)(p - t.input_start);
     // read the rest of the pp-number token
     for (;;) {
         if ((*p == 'e' || *p == 'E' || *p == 'p' || *p == 'P') && (p[1] == '+' || p[1] == '-')) {
@@ -712,7 +711,7 @@ fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const ch
     }
     t.cur = p;
     result.len = (u16)((p - t.input_start) - (result.loc - t.loc_start));
-    if (t.on_warning) t.on_warning(t.fn_arg, result.loc);
+    if (t.on_warning) t.on_warning(t.fn_arg, err_loc);
 }
 
 fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {

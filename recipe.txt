@@ -391,6 +391,7 @@ executable c2cat
 	$backend c
 
     ast_utils/color.c2
+    ast_utils/color_config.c2
     ast_utils/constants.c2
     ast_utils/number_radix.c2
     ast_utils/src_loc.c2
