@@ -37581,7 +37581,7 @@ static _Bool c_generator_emitAsDefine(const ast_VarDecl* vd)
    } else {
       if (!ast_QualType_isConst(&qt)) return false;
       if (ast_QualType_isVolatile(&qt)) return false;
-      if (ast_QualType_isBuiltin(&canon)) return true;
+      if (ast_QualType_isBuiltin(&canon) || ast_QualType_isEnum(&canon)) return true;
    }
    return false;
 }

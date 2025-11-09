@@ -530,7 +530,7 @@ fn bool emitAsDefine(const VarDecl* vd) {
     } else {
         if (!qt.isConst()) return false;
         if (qt.isVolatile()) return false;
-        if (canon.isBuiltin()) return true;
+        if (canon.isBuiltin() || canon.isEnum()) return true;
     }
     return false;
 }

@@ -1,0 +1,32 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+type Enum enum u8 { Zero }
+
+const Enum My_Zero = Zero;
+
+// this constant is initialized from a constant enum variable
+const Enum My_Zero2 = My_Zero;
+
+public fn i32 main() { return My_Zero2; }
+
+// @expect{atleast, cgen/build.c}
+
+typedef uint8_t test_Enum;
+enum test_Enum {
+   test_Enum_Zero,
+};
+
+#define test_My_Zero test_Enum_Zero
+#define test_My_Zero2 test_My_Zero
+int32_t main(void);
+
+int32_t main(void)
+{
+   return test_My_Zero2;
+}
+
