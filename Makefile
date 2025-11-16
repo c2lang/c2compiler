@@ -83,12 +83,12 @@ alloc_trace: $(C2C) output/c2c_trace/c2c_trace
 	cat output/c2c/calls
 
 errors:
-	@( grep -n 'error:' `find output -name build.log` | sed -E 's/build.log:[0-9]+://' ; true )
+	@( grep -H 'error:' `find output -name build.log` | sed -E 's/build.log://' ; true )
 
 warnings:
-	@( grep -n '[[]-W' `find output -name build.log` | sed -E 's/build.log:[0-9]+://' ; true )
+	@( grep -H '[[]-W' `find output -name build.log` | sed -E 's/build.log://' ; true )
 
-rebuild: clean all test trace_calls warnings
+rebuild: clean all test trace_calls
 
 clean:
 	rm -rf output
