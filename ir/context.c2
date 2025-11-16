@@ -115,9 +115,8 @@ public fn void Context.free(Context* c) {
 }
 
 public fn void Context.convert_functions(Context* c) {
-    if (c.single_thread) return;    // already done
-
-    c.queue.run(c, 0);
+    // already done if single threaded
+    if (!c.single_thread) c.queue.run(c, 0);
 }
 
 fn void print_function(const void* arg1, const void* arg2, const FunctionInfo* fi, const char* label) {
@@ -473,14 +472,14 @@ public fn Ref Context.addCallInstr(Context* c, Ref name, const Ref* args, u32 nu
     }
 
     Ref out.init(RefKind.Temp, c.b.tmp_info.instructions.getCount());
+    Ref argsref.init(RefKind.CallNumArgs, num_args);
 
     Instr* i = c.b.tmp_info.instructions.add();
     if (has_result) {
-        i.init1b(InstrKind.Call, name);
+        i.init2b(InstrKind.Call, name, argsref);
     } else {
-        i.init1(InstrKind.Call, name);
+        i.init2(InstrKind.Call, name, argsref);
     }
-    i.instrBits.call_num_args = num_args;
     if (noreturn) {
         Block* b = c.b.tmp_info.blocks.get(c.b.cur_block);
         b.end_block = 1;
@@ -504,8 +503,8 @@ public fn Ref Context.addPhi2Instr(Context* c, BlockId b1, Ref r1, BlockId b2, R
     blk = c.b.tmp_info.blocks.get(b2);
     blk.phi_source = 1;
 
-    c.b.tmp_info.phis.add(out.value, b1, r1);
-    c.b.tmp_info.phis.add(out.value, b2, r2);
+    c.b.tmp_info.phis.add((u32)out.value, b1, r1);
+    c.b.tmp_info.phis.add((u32)out.value, b2, r2);
     return out;
 }
 
@@ -613,7 +612,6 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     t.print_func("after generation");
     // prune unused and empty blocks, possible convert jmp_if to jmp
     checkDest(fi, 0);
-
     t.print_func("after check dest");
 
     // TODO use Builder 2nd BlockList here (pass as well)
@@ -670,7 +668,7 @@ fn BlockId checkDest(FunctionInfo* fi, BlockId id) {
         Instr* switch_instr = fi.instructions.get(instr_idx);
         assert(switch_instr.isSwitch());
         Ref* join_ref = &switch_instr.args[1];
-        join_ref.value = checkDest(fi, join_ref.value);
+        join_ref.value = (i32)checkDest(fi, (u32)join_ref.value);
         return id;
     }
 

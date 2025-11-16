@@ -23,7 +23,7 @@ public type InstrBits struct {
     u32 has_result : 1;
     u32 has_register : 1;
     u32 register_nr : 6;    // might need more for spilling
-    u32 call_num_args : 5;       // only for Call, could also be in Ref
+    u32 arch_instr : 8;     // opaque number
 }
 
 public type Instr struct {
@@ -105,6 +105,11 @@ public fn void Instr.initRegCopy(Instr* i, u8 dst_reg, Ref ref) {
     i.args[1].value = 0;
 }
 
+public fn void Instr.setArch(Instr* i, u8 instr_kind) {
+    i.instrBits.kind = Arch;
+    i.instrBits.arch_instr = instr_kind;
+}
+
 public fn void Instr.copy(Instr* i, const Instr* i2) {
     memcpy(i, i2, sizeof(Instr));
 }
@@ -134,8 +139,12 @@ public fn const char* Instr.getKindName(const Instr* i) {
     return k.str();
 }
 
+public fn bool Instr.isArch(const Instr* i) {
+    return i.getKind() == InstrKind.Arch;
+}
+
 public fn bool Instr.isPseudo(const Instr* i) {
-    return i.getKind() >= InstrKind.Switch;
+    return i.getKind() >= InstrKind.Param;
 }
 
 public fn bool Instr.isNone(const Instr* i) {
@@ -150,12 +159,10 @@ public fn bool Instr.isReturn(const Instr* i) {
     return i.getKind() == InstrKind.Ret;
 }
 
-/*
-fn bool Instr.isArithmetic(const Instr* i) {
+public fn bool Instr.isArithmetic(const Instr* i) {
     InstrKind k = i.getKind();
     return k >= InstrKind.Add && k <= InstrKind.Shl;
 }
-*/
 
 public fn bool Instr.isSwitch(const Instr* i) {
     return i.getKind() == InstrKind.Switch;
@@ -173,15 +180,7 @@ public fn bool Instr.isParam(const Instr* i) {
     return i.getKind() == InstrKind.Param;
 }
 
-public fn bool Instr.isArg(const Instr* i) {
-    return i.getKind() == InstrKind.Arg;
-}
-
 public fn bool Instr.isComment(const Instr* i) {
     return i.getKind() == InstrKind.Comment;
-}
-
-public fn u32 Instr.getNumArgs(const Instr* i) {
-    return i.instrBits.call_num_args;
 }
 

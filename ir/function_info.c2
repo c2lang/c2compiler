@@ -22,7 +22,7 @@ public type FunctionInfo struct {
     BlockList blocks;
     InstrList instructions;
     CaseList cases;
-    PhiList phis;   // for phi instructions
+    PhiList phis;
     u16 num_slots;
     u8 num_args;
     // args[0][low bits] is return type (None if no return value)

@@ -39,6 +39,7 @@ Color col_Temp        = Bgreen;
 Color col_Type        = Green;
 Color col_Comment     = Grey;
 Color col_Fixup       = Bred;
+Color col_Arch        = Bcyan;
 
 const u32 MaxTemps = 4096;
 
@@ -348,7 +349,7 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
         out.add("   ");
         out.color(col_Comment);
         out.add("# ");
-        out.add(ph.c.pool.idx2str(i.args[0].value));
+        out.add(ph.c.pool.idx2str((u32)i.args[0].value));
         out.color(color.Normal);
         out.newline();
         return;
@@ -380,18 +381,26 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
         out.color(color.Normal);
         out.add(" = ");
     }
-    if (i.isPseudo()) {
-        out.color(col_PseudoInstr);
+    if (i.isArch()) {
+        out.color(col_Arch);
+        //out.add("(arch) ");
+        //TODO assert ph.c.target.num_instr
+        out.add(ph.c.target.instr_names[i.instrBits.arch_instr]);
     } else {
-        out.color(col_Instr);
+        if (i.isPseudo()) {
+            out.color(col_PseudoInstr);
+        } else {
+            out.color(col_Instr);
+        }
+        out.add(i.getKindName());
     }
-    out.add(i.getKindName());
 
     switch (i.getKind()) {
     case Call:
-        u32 num_args = i.getNumArgs();
-        out.print(" %d ", num_args);
+        out.space();
         ph.printRef(i.args[0], false);
+        i32 num_args = i.args[1].value;
+        out.print(" %d", num_args);
         break;
     case JmpIf:
         for (u32 r=0; r<elemsof(i.args); r++) {
@@ -414,7 +423,7 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
         out.add(", ");
         // Note: cannot use printRef, since the dest is not in block.dests[]
         out.color(col_Block);
-        u32 join_blk = i.args[1].value;
+        u32 join_blk = (u32)i.args[1].value;
         Block* dest = ph.blocks.get(join_blk);
         out.print("@%s.%d", dest.getKindName(), join_blk);
         out.newline();
@@ -436,7 +445,7 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
     case Phi:
         out.color(color.Normal);
         out.add(" [ ");
-        const PhiClause* clauses = ph.cur_info.phis.get(i.args[0].value);
+        const PhiClause* clauses = ph.cur_info.phis.get((u32)i.args[0].value);
         for (u32 j=0; j<i.args[1].value; j++) {
             if (j != 0) out.add(", ");
             const PhiClause*pc = &clauses[j];
@@ -476,7 +485,7 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
         break;
     case Temp:
         out.color(col_Temp);
-        u32 v = ph.findTemp(r.value);
+        u32 v = ph.findTemp((u32)r.value);
         if (v == 0) out.color(col_Fixup);
         out.print("%%%d", v);
 #if DebugIr
@@ -498,7 +507,7 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
         }
         break;
     case Symbol:
-        const Symbol* g = ph.c.symbols.get(r.value);
+        const Symbol* g = ph.c.symbols.get((u32)r.value);
         out.color(col_Symbol);
         out.print("@%s", ph.c.pool.idx2str(g.name));
         break;
@@ -508,7 +517,7 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
         break;
     case Integer:
         out.color(col_Value);
-        const Constant* con = ph.c.constants.get(r.value);
+        const Constant* con = ph.c.constants.get((u32)r.value);
         out.print("%d", con.ivalue);
         break;
     case Float:
@@ -519,7 +528,7 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
         break;
     case Text:
         out.color(col_Block);
-        out.add(ph.c.pool.idx2str(r.value));
+        out.add(ph.c.pool.idx2str((u32)r.value));
         break;
     case Register:
         out.color(col_Register);
@@ -527,10 +536,14 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
         break;
     case Block:
         out.color(col_Block);
-        Block* b = ph.blocks.get(r.value);
+        Block* b = ph.blocks.get((u32)r.value);
         out.print("@%s.%d", b.getKindName(), r.value);
         break;
     case PhiClause:
+        out.color(col_Value);
+        out.print("%d", r.value);
+        break;
+    case CallNumArgs:
         out.color(col_Value);
         out.print("%d", r.value);
         break;

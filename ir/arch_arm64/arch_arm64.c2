@@ -37,6 +37,9 @@ type Regs struct {
     // TODO arg info [MaxArgs] // number, stack, pointer, etc
 }
 
+fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
+}
+
 fn void applyCallingConv(Tools* t, FunctionInfo* f) {
 
     //printf("ARM64 calling conv.\n");
@@ -125,20 +128,28 @@ fn void applyCallingConv(Tools* t, FunctionInfo* f) {
         u32 num_arg = 0;
         for (u32 j = b.instr.start; j < last; j++) {
             Instr* ii = &instrs[j];
-            if (ii.isArg()) {
+            switch (ii.getKind()) {
+            case Call:
+                num_arg = 0;
+                break;
+            case Ret:
+                // TODO is Ret, just add copy a0 = copy %1
+                break;
+            case Arg:
                 ii.setReg((u8)num_arg);
                 ii.instrBits.kind = InstrKind.Copy;
                 num_arg++;
-            } else if (ii.isCall()) {
-                num_arg = 0;
+                break;
+            default:
+                break;
             }
-            // TODO is Ret, just add copy r0 = copy %1
         }
     }
 }
 
 const Target ArchInfo = {
     .applyCallingConv = applyCallingConv,
+    .instructionSelection = instructionSelection,
     .num_args_in_regs = 8,
     .num_regs = 32,
     .num_temps = 8,

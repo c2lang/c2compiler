@@ -60,6 +60,7 @@ public type InstrKind enum u8 {
     Call,
     Copy,
     // Pseudo instructions (must be converted before converting to ASM)
+    Arch,   // arch dependent
     Param,
     Arg,
     Switch,
@@ -105,6 +106,7 @@ public fn const char* InstrKind.str(InstrKind k) @(unused) {
     case Halt:      return "halt";
     case Call:      return "call";
     case Copy:      return "copy";
+    case Arch:      return "(arch)";
     case Param:     return "param";
     case Arg:       return "arg";
     case Switch:    return "switch";

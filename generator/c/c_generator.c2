@@ -1250,7 +1250,7 @@ fn void Generator.free(Generator* gen) {
     gen.funcnames.free();
 }
 
-fn void Generator.write(Generator* gen, const char* output_dir, const char* filename, string_buffer.Buf* buf) {
+fn void Generator.write(Generator* gen, const char* output_dir, const char* filename, const string_buffer.Buf* buf) {
     file_utils.File file.init(output_dir, filename);
     if (!file.write(buf.udata(), buf.size())) {
         console.error("cannot write to %s: %s", file.path, file.getError());

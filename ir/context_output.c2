@@ -1,0 +1,68 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir_context;
+
+import ir;
+import file_utils;
+// TODO dont use console!
+import console;
+import string_buffer;
+
+public fn void Context.writeOutput(Context* c, const char* output_dir, const char* target_name) {
+    // generate create Makefile
+    string_buffer.Buf* out = string_buffer.create(4096, false, 0);
+    out.add("# This makefile is auto-generated, any modifications will be lost\n\n");
+
+    out.add("../output:\n");
+    out.print("\triscv64-unknown-elf-gcc output.s -o ../%s\n", target_name);
+    out.newline();
+
+    c.write(output_dir, "Makefile", out);
+    out.clear();
+
+    // generate output.s (single file for now)
+    out.print("\t.file   \"%s.c2\"\n", target_name);
+    out.add("\t.text\n");
+
+    // generate ASM
+    assert(c.target.generateAsm);
+    u32 num_symbols = c.symbols.getCount();
+    const Symbol* symbols = c.symbols.get(0);
+    for (u32 i = 0; i < num_symbols; i++) {
+        const Symbol* s = &symbols[i];
+        if (s.is_function) {
+            const ir.FunctionInfo* fi = s.f.info;
+            c.target.generateAsm(out, c.pool.idx2str(s.name), fi, s.is_external);
+        }
+        // TODO emit other symbols as well
+
+    }
+
+    out.newline();
+    out.add("\t.ident \"C2C\"\n");
+    //.section   TODO
+
+    c.write(output_dir, "output.s", out);
+    out.free();
+}
+
+fn void Context.write(Context* c, const char* output_dir, const char* filename, const string_buffer.Buf* buf) {
+    file_utils.File file.init(output_dir, filename);
+    if (!file.write(buf.udata(), buf.size())) {
+        console.error("cannot write to %s: %s", file.path, file.getError());
+    }
+}
+

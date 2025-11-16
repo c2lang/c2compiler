@@ -179,7 +179,7 @@ fn void SlotCollector.checkRef(SlotCollector* c, Ref* r) {
     const StaticSlot* s = c.getStaticSlot(slot);
     if (s) {
         r.kind = RefKind.Temp;
-        r.value = s.temp_idx;
+        r.value = (i32)s.temp_idx;
         return;
     }
 
@@ -236,7 +236,7 @@ fn void SlotCollector.promoteBlockSlots(SlotCollector* c, BlockId blk_id) {
             const StaticSlot* s = c.getStaticSlot(slot);
             if (s) {
                 ref.kind = RefKind.Temp;
-                ref.value = s.temp_idx;
+                ref.value = (i32)s.temp_idx;
                 break;
             }
 
@@ -290,7 +290,7 @@ fn void SlotCollector.promoteBlockSlots(SlotCollector* c, BlockId blk_id) {
             const StaticSlot* s = c.getStaticSlot(slot);
             if (s) {
                 ref.kind = RefKind.Temp;
-                ref.value = s.temp_idx;
+                ref.value = (i32)s.temp_idx;
                 break;
             }
 

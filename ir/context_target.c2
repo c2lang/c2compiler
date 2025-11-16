@@ -23,8 +23,8 @@ import target_info;
 
 fn const ir_tools.Target* getArchTarget(const target_info.Info* info) {
 #if 1
-    target_info.Arch arch = Arm64;
-    // TEMP hardcoded to ARM64 to create first arch impl
+    // TEMP hardcoded to RV64
+    target_info.Arch arch = Riscv_64;
     switch (arch) {
 #else
     switch (info.arch) {

@@ -109,28 +109,33 @@ public fn void Tools.convert_fn(Tools* t) {
     t.eliminateCopies();
     t.print_func("after eliminate copies");
 
-    //t.propagateConstants();
-    //t.print_function(symbol, fi, "after propagate constants");
     t.removeUnused();
     //if (print) t.print_func("after remove unused");
-
-    //t.propagateConstants();
 
     t.removeNone();
     t.print_func("after remove none");
 
+    if (t.propagateConstants()) t.print_func("after propagate constants");
+
     t.inserter.clear(fi.blocks.getCount(), fi.instructions.getCount());
 
+    // lower ABI (calling convention)
+    t.inserter.clear(fi.blocks.getCount(), fi.instructions.getCount());
+    // TODO let fixup_function check if needed
     t.target.applyCallingConv(t, fi);
-    //t.implementAbi();
+    if (t.inserter.needsFixup()) t.fixup_function();
+
+    // generate Instruction
+    assert(t.target.instructionSelection);
+    t.inserter.clear(fi.blocks.getCount(), fi.instructions.getCount());
+    t.target.instructionSelection(t, fi);
+    if (t.inserter.needsFixup()) t.fixup_function();
+    t.print_func("after instruction selection");
 
     t.allocateRegisters(fi);
 
     if (t.inserter.needsFixup()) t.fixup_function();
     t.print_func("after register allocation + phi-removal");
-
-    // generate Instruction
-    // ..
 }
 
 // Can only be used after switch-instructions have been converted
@@ -225,7 +230,7 @@ public fn void Tools.reorder_blocks(Tools* t, FunctionInfo* fi, const index_list
             Instr* switch_instr = fi.instructions.get(instr_idx);
             assert(switch_instr.isSwitch());
             Ref* join_ref = &switch_instr.args[1];
-            join_ref.value = t.conversion.get(join_ref.value);
+            join_ref.value = (i32) t.conversion.get((u32)join_ref.value);
         } else {
             b.dests[0] = t.conversion.get(b.dests[0]);
             b.dests[1] = t.conversion.get(b.dests[1]);

@@ -23,7 +23,7 @@ public type RefKind enum u8 {
     Temp,      // temp_idx (already resolved)
     JmpDest,   // for jmp/jmp_if, value is cur BlockId
     Symbol,    // index into symbols
-    Value,     // int value that fits 28 bits
+    Value,     // unsigned int value that fits 28 bits
     Integer,   // constant_idx
     Float,     // constant_idx
     Double,    // constant_idx
@@ -31,36 +31,38 @@ public type RefKind enum u8 {
     Register,  // nr (0,1,..)
     Block,     // only used by Switch to store join_blk in args[1]
     PhiClause, // only for Phi instructions. args[0]=start, args[1]=count
+    CallNumArgs, // only for Call instructions
 }
 
 fn const char* RefKind.str(RefKind k) {
     switch (k) {
-    case None:      return "none";
-    case Slot:      return "slot";
-    case Temp:      return "temp";
-    case JmpDest:   return "jmp-dest";
-    case Symbol:    return "symbol";
-    case Value:     return "value";
-    case Integer:   return "integer";
-    case Float:     return "float";
-    case Double:    return "double";
-    case Text:      return "text";
-    case Register:  return "register";
-    case Block:     return "block";
-    case PhiClause: return "clause";
+    case None:        return "none";
+    case Slot:        return "slot";
+    case Temp:        return "temp";
+    case JmpDest:     return "jmp-dest";
+    case Symbol:      return "symbol";
+    case Value:       return "value";
+    case Integer:     return "integer";
+    case Float:       return "float";
+    case Double:      return "double";
+    case Text:        return "text";
+    case Register:    return "register";
+    case Block:       return "block";
+    case PhiClause:   return "clause";
+    case CallNumArgs: return "callargs";
     }
     return nil;
 }
 
 public type Ref struct {
     u32 kind : 4;   // RefKind
-    u32 value : 28;
+    i32 value : 28;
 }
 static_assert(4, sizeof(Ref));
 
 public fn void Ref.init(Ref* r, RefKind kind, u32 value) {
     r.kind = kind;
-    r.value = value;
+    r.value = (i32)value;
 }
 
 public fn void Ref.clear(Ref* r) {
@@ -84,7 +86,7 @@ public fn bool Ref.isValid(const Ref* r) {
 
 public fn void Ref.setRegister(Ref* r, u32 value) {
     r.kind = RefKind.Register;
-    r.value = value;
+    r.value = (i32)value;
 }
 
 public fn bool Ref.isNone(const Ref* r) {

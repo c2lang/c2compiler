@@ -16,9 +16,18 @@
 module ir_tools; // Note: in ir_tools to allow passing Tools*
 
 import ir;
+import string_buffer;
 
 public type Target struct {
+
+    fn void (Tools* t, ir.FunctionInfo* f) instructionSelection;
     fn void (Tools* t, ir.FunctionInfo* f) applyCallingConv;
+    fn void (string_buffer.Buf* out, const char* name, const ir.FunctionInfo* f, bool is_external) generateAsm;
+
+    // architecture specific instruction names (for printing)
+    const char** instr_names;
+    u32 num_instr;
+    const char** register_names;
 
     // layout of registers in one lineair array:
     // return reg (s)

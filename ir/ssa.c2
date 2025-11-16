@@ -257,11 +257,11 @@ fn void Tools.eliminateCopies(Tools* t) {
     for (u32 i=0; i<fi.instructions.getCount(); i++) {
         Instr* instr = &all[i];
         if (instr.isPhi()) {
-            PhiClause* clauses = fi.phis.get(instr.args[0].value);
+            PhiClause* clauses = fi.phis.get((u32)instr.args[0].value);
             for (u32 j=0; j<instr.args[1].value; j++) {
                 Ref* r = &clauses[j].ref;
                 if (r.isTemp()) {
-                    Ref* copy = t.copies.find(r.value);
+                    Ref* copy = t.copies.find((u32)r.value);
                     if (copy) {
                         //printf("replace %s with %s\n", r.str(), copy.str());
                         *r = *copy;
@@ -271,7 +271,7 @@ fn void Tools.eliminateCopies(Tools* t) {
         } else {
             Ref* r = &instr.args[0];
             if (r.isTemp()) {
-                Ref* copy = t.copies.find(r.value);
+                Ref* copy = t.copies.find((u32)r.value);
                 if (copy) {
                     //printf("replace %s with %s\n", r.str(), copy.str());
                     instr.args[0] = *copy;
@@ -279,7 +279,7 @@ fn void Tools.eliminateCopies(Tools* t) {
             }
             r = &instr.args[1];
             if (r.isTemp()) {
-                Ref* copy = t.copies.find(r.value);
+                Ref* copy = t.copies.find((u32)r.value);
                 if (copy) {
                     //printf("replace %s with %s\n", r.str(), copy.str());
                     instr.args[1] = *copy;
@@ -291,7 +291,7 @@ fn void Tools.eliminateCopies(Tools* t) {
 
 
 fn void Tools.checkRef(Tools* t, Ref r) {
-    if (r.isTemp()) t.usage.incr(r.value);
+    if (r.isTemp()) t.usage.incr((u32)r.value);
 }
 
 fn void Tools.removeUnused(Tools* t) {
@@ -321,7 +321,7 @@ fn void Tools.removeUnused(Tools* t) {
             t.checkRef(is.args[0]);
             break;
         case Phi:
-            PhiClause* clauses = fi.phis.get(is.args[0].value);
+            PhiClause* clauses = fi.phis.get((u32)is.args[0].value);
             for (u32 p=0; p<is.args[1].value; p++) {
                 t.checkRef(clauses[p].ref);
             }
@@ -340,17 +340,16 @@ fn void Tools.removeUnused(Tools* t) {
         u32 i = t.usage.popHead();
         Instr* is = &all[i];
         Ref* r = &is.args[0];
-        if (r.isTemp()) t.usage.decr(r.value);
+        if (r.isTemp()) t.usage.decr((u32)r.value);
         r = &is.args[1];
-        if (r.isTemp()) t.usage.decr(r.value);
+        if (r.isTemp()) t.usage.decr((u32)r.value);
         is.clear();
     }
 }
 
-#if 0
 fn bool Tools.propagateConstants(Tools* t) {
     FunctionInfo* fi = t.fi;
-// return true if changed
+    // return true if changed
     // look for add x, y where x, y are both constants, replace with copy
     bool changed = false;
     u32 matches = 0;
@@ -360,18 +359,33 @@ fn bool Tools.propagateConstants(Tools* t) {
         Instr* instr = &all[i];
         if (!instr.isArithmetic()) continue;
 
+        // also move constant to RHS in case of add / mul
         if (!instr.args[0].isConstant()) continue;
-        if (!instr.args[1].isConstant()) continue;
 
-        matches++;
-        printf("MATCH %d  %d\n", i, matches);
-        // only 29 matches in c2c!
-        changed = true;
+        if (instr.args[1].isConstant()) {
+            matches++;
+            printf("MATCH %d  %d\n", i, matches);
+            changed = true;
+            // NOTE: only 29 matches in c2c!
+        } else {
+            // swap constant to RHS in case of add/mul (easier to check in instr selection)
+            switch (instr.getKind()) {
+            case Add:
+            case Mul:
+                break;
+            default:
+                continue;
+            }
+            changed = true;
+            Ref tmp = instr.args[0];
+            instr.args[0] = instr.args[1];
+            instr.args[1] = tmp;
+        }
+
     }
 
     return changed;
 }
-#endif
 
 fn void Tools.removeNone(Tools* t) {
     FunctionInfo* fi = t.fi;
@@ -451,18 +465,18 @@ fn void Tools.fixup_function(Tools* t) {
             Instr* is = &instrs[j];
 
             if (is.isPhi()) {
-                PhiClause* clauses = fi.phis.get(is.args[0].value);
+                PhiClause* clauses = fi.phis.get((u32)is.args[0].value);
                 for (u32 p=0; p<is.args[1].value; p++) {
                     PhiClause* pc = &clauses[p];
                     pc.dest_idx = t.conversion.get(pc.dest_idx);
                     Ref* r = &pc.ref;
-                    if (r.isTemp()) r.value = t.conversion.get(r.value);
+                    if (r.isTemp()) r.value = (i32)t.conversion.get((u32)r.value);
                 }
             } else {
                 Ref* r = &is.args[0];
-                if (r.isTemp()) r.value = t.conversion.get(r.value);
+                if (r.isTemp()) r.value = (i32)t.conversion.get((u32)r.value);
                 r = &is.args[1];
-                if (r.isTemp()) r.value = t.conversion.get(r.value);
+                if (r.isTemp()) r.value = (i32)t.conversion.get((u32)r.value);
             }
         }
     }

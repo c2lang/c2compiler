@@ -28,11 +28,15 @@ type Regs enum u8 {
 }
 */
 
+fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
+}
+
 fn void applyCallingConv(Tools* t, ir.FunctionInfo* f) {
 }
 
 const Target ArchInfo = {
     .applyCallingConv = applyCallingConv,
+    .instructionSelection = instructionSelection,
     .num_args_in_regs = 6,
     .num_regs = 17,
     .num_temps = 9,
