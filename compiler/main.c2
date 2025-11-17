@@ -206,18 +206,48 @@ const char[] Usage_help =
     "  --trace-calls     generate code that traces function calls\n"
     "  --version         print version\n";
 
-fn void usage() {
-    console.log(Usage_help);
+type ArgumentParser struct {
+    i32 cur;
+    i32 argc;
+    char **argv;
+    const char *prog;
+    const char *help;
+}
+
+fn void ArgumentParser.init(ArgumentParser *ap, i32 argc, char **argv,
+                            const char *prog = nil, const char* help = nil)
+{
+    ap.cur = 1;
+    ap.argc = argc;
+    ap.argv = argv;
+    ap.prog = prog ? prog : argv[0];
+    ap.help = help;
+}
+
+fn void ArgumentParser.showHelp(ArgumentParser *ap) {
+    if (ap.help) console.log("%s", ap.help);
+}
+
+fn const char* ArgumentParser.getArgument(ArgumentParser *ap) {
+    return ap.cur < ap.argc ? ap.argv[ap.cur++] : nil;
+}
+
+fn const char* ArgumentParser.getOptionArgument(ArgumentParser *ap, const char* option) {
+    if (ap.cur < ap.argc) return ap.argv[ap.cur++];
+    ap.missingArgument(option);
+}
+
+fn void ArgumentParser.missingArgument(ArgumentParser *ap, const char* option) @(noreturn) {
+    console.error("%s: missing argument for option '%s'", ap.prog, option);
     exit(EXIT_FAILURE);
 }
 
-fn void missing_arg(const char* option) {
-    console.error("c2c: missing argument for option '%s'", option);
+fn void ArgumentParser.unknownOption(ArgumentParser *ap, const char* option) @(noreturn) {
+    console.error("%s: unknown option: '%s'", ap.prog, option);
     exit(EXIT_FAILURE);
 }
 
-fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts, Options* opts) {
-    const char* arg = argv[i];
+fn void parse_long_opt(ArgumentParser *ap, const char* arg, compiler.Options* comp_opts, Options* opts) {
     switch (arg+2) {
     case "I2":
         opts.use_ir_backend = true;
@@ -227,16 +257,14 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts,
         comp_opts.check_only = true;
         break;
     case "create":
-        if (i==argc-1) missing_arg(arg);
-        i++;
-        create_project(argv[i]);
+        create_project(ap.getOptionArgument(arg));
         break;
     case "fast":
         comp_opts.fast_build = true;
         break;
     case "help":
-        usage();
-        break;
+        ap.showHelp();
+        exit(EXIT_SUCCESS);
     case "help-recipe":
         print_recipe_help();
         exit(EXIT_SUCCESS);
@@ -250,9 +278,7 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts,
         opts.show_plugins = true;
         break;
     case "target":
-        if (i==argc-1) missing_arg(arg);
-        i++;
-        comp_opts.target_triple = argv[i];
+        comp_opts.target_triple = ap.getOptionArgument(arg);
         break;
     case "targets":
         opts.show_targets = true;
@@ -276,23 +302,17 @@ fn i32 parse_long_opt(i32 i, i32 argc, char** argv, compiler.Options* comp_opts,
         print_version();
         exit(EXIT_SUCCESS);
     default:
-        console.error("c2c: unknown option: %s", arg);
-        exit(EXIT_FAILURE);
+        ap.unknownOption(arg);
     }
-    return i;
 }
 
-fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* opts) {
-    for (i32 i=1; i<argc; i++) {
-        const char* arg = argv[i];
+fn void parse_arguments(ArgumentParser *ap, compiler.Options* comp_opts, Options* opts) {
+    while (const char* arg = ap.getArgument()) {
         if (arg[0] == '-') {
             if (arg[1] == '-') {
-                i = parse_long_opt(i, argc, argv, comp_opts, opts);
+                parse_long_opt(ap, arg, comp_opts, opts);
             } else {
-                if (strlen(arg) != 2) {
-                    console.error("c2c: unknown option '%s'", arg);
-                    exit(EXIT_FAILURE);
-                }
+                if (strlen(arg) != 2) ap.unknownOption(arg);
                 switch (arg[1]) {
                 case '0':    // 'hidden' feature, print AST early after parsing, then quit
                     comp_opts.print_ast_early = true;
@@ -314,19 +334,15 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
                     comp_opts.print_ast = true;
                     break;
                 case 'b':
-                    if (i==argc-1) missing_arg(arg);
-                    i++;
-                    opts.build_file = argv[i];
+                    opts.build_file = ap.getOptionArgument(arg);
                     break;
                 case 'd':
-                    if (i==argc-1) missing_arg(arg);
-                    i++;
-                    opts.other_dir = argv[i];
+                    opts.other_dir = ap.getOptionArgument(arg);
                     break;
                 case '?':
                 case 'h':
-                    usage();
-                    break;
+                    ap.showHelp();
+                    exit(EXIT_SUCCESS);
                 case 'i':
                     opts.use_ir_backend = true;
                     break;
@@ -334,9 +350,7 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
                     comp_opts.print_modules = true;
                     break;
                 case 'o':
-                    if (i==argc-1) missing_arg(arg);
-                    i++;
-                    opts.output_name = argv[i];
+                    opts.output_name = ap.getOptionArgument(arg);
                     break;
                 case 'r':
                     comp_opts.print_reports += 1;
@@ -354,9 +368,7 @@ fn void parse_opts(i32 argc, char** argv, compiler.Options* comp_opts, Options* 
                     opts.force_warnings = true;
                     break;
                 default:
-                    console.error("c2c: unknown option '-%c'", arg[1]);
-                    exit(EXIT_FAILURE);
-                    break;
+                    ap.unknownOption(arg);
                 }
             }
         } else {
@@ -433,7 +445,8 @@ fn void Context.init(Context* c) {
 }
 
 fn void Context.handle_args(Context* c, i32 argc, char** argv) {
-    parse_opts(argc, argv, &c.comp_opts, &c.opts);
+    ArgumentParser ap.init(argc, argv, "c2c", Usage_help);
+    parse_arguments(&ap, &c.comp_opts, &c.opts);
 
     console.setTiming(c.opts.print_timing);
     console.setDebug(c.opts.log_verbose);

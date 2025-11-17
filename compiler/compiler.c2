@@ -78,7 +78,7 @@ public type Options struct {
     bool msan;
     bool ubsan;
     const char* libdir; // no ownership, from environment variable C2_LIBDIR
-    char *target_triple;
+    const char *target_triple;
 }
 
 public fn void build(string_pool.Pool* auxPool,
