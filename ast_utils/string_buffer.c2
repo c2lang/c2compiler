@@ -161,6 +161,11 @@ public fn void Buf.space(Buf* buf) { buf.add1(' '); }
 public fn void Buf.lparen(Buf* buf) { buf.add1('('); }
 public fn void Buf.rparen(Buf* buf) { buf.add1(')'); }
 
+public fn void Buf.stripTrailingSpaces(Buf* buf) {
+    while (buf.size_ && buf.data_[buf.size_-1] == ' ') buf.size_--;
+    buf.data_[buf.size_] = '\0';
+}
+
 public fn void Buf.print(Buf* buf, const char* format @(printf_format), ...) {
     char[4096] tmp;
     // NOTE: no growing

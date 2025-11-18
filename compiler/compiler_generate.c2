@@ -98,6 +98,7 @@ fn void Compiler.generate(Compiler* c, const char* target_name, const char* outp
                               &c.components,
                               c.sm,
                               &c.targetInfo,
+                              c.build_info,
                              c.mainFunc,
                               c.target.hasAsserts(),
                               c.opts.print_ir,

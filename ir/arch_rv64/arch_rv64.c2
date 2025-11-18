@@ -21,20 +21,34 @@ import string_buffer;
 
 type RV64_InstrKind enum u8 {
     Add,
-    AddIw,      // 12-bit signed number
+    AddIw,
+    And,
+    Divw,
     Mul,
+    Or,
+    Remw,
     Ret,
-    Slli,       // shift-left intermediate
+    Slli,
+    Sllw,
+    Sraw,
     Sub,
+    Xor,
 }
 
 const char*[] instr_names = {
     [RV64_InstrKind.Add]   = "add",
     [RV64_InstrKind.AddIw] = "addiw",
+    [RV64_InstrKind.And]   = "and",
+    [RV64_InstrKind.Divw]   = "divw",
     [RV64_InstrKind.Mul]   = "mul",
+    [RV64_InstrKind.Or]    = "or",
+    [RV64_InstrKind.Remw]  = "remw",
     [RV64_InstrKind.Ret]   = "ret",
     [RV64_InstrKind.Slli]  = "slli",
+    [RV64_InstrKind.Sllw]  = "sllw",
+    [RV64_InstrKind.Sraw]  = "sraw",
     [RV64_InstrKind.Sub]   = "sub",
+    [RV64_InstrKind.Xor]   = "xor",
 }
 
 /*
@@ -98,6 +112,8 @@ fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
             case Div:
                 break;
             case Rem:
+                // TODO do smart things when rhs is a constant
+                ii.setArch(RV64_InstrKind.Remw);
                 break;
             case Mul:
                 if (ii.args[1].isConstant()) {
@@ -107,23 +123,30 @@ fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
                         if (value == (1 << power)) { // convert to shift
                             ii.setArch(RV64_InstrKind.Slli);
                             ii.args[1].init(RefKind.Value, power);
-                            continue;
+                            goto next;
                         }
                     }
                     // check if it fits, otherwise insert load
                 }
                 break;
             case IDiv:
+                // TODO do smart things when rhs is a constant
+                ii.setArch(RV64_InstrKind.Divw);
                 break;
             case And:
+                ii.setArch(RV64_InstrKind.And);
                 break;
             case Or:
+                ii.setArch(RV64_InstrKind.Or);
                 break;
             case Xor:
+                ii.setArch(RV64_InstrKind.Xor);
                 break;
             case Shr:
+                ii.setArch(RV64_InstrKind.Sraw);
                 break;
             case Shl:
+                ii.setArch(RV64_InstrKind.Sllw);
                 break;
             // Comparisons
             case CmpNe:
@@ -157,12 +180,10 @@ fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
                 break;
             // Stack Allocation
             case Alloc1:
-                break;
             case Alloc2:
-                break;
             case Alloc4:
-                break;
             case Alloc8:
+                assert(0);  // should not happen
                 break;
             // Jump instructions
             case Jmp:
@@ -185,8 +206,10 @@ fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
             case Switch:
             case Phi:
             case Comment:
+                // ignore here
                 break;
             }
+next:
         }
     }
 }

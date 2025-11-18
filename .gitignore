@@ -1,2 +1,4 @@
 output/
+output_arm/
+output_riscv/
 /*.c2

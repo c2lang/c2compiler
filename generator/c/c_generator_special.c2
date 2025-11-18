@@ -54,7 +54,7 @@ fn void Generator.createMakefile(Generator* gen,
         const build_file.Info* info = gen.build_info;
         if (info.getCC()) cc = info.getCC();
         if (info.getCFlags()) cflags = info.getCFlags();
-        if (info.getLdFlags()) ldflags = info.getLdFlags();
+        if (info.getLinkerFlags()) ldflags = info.getLinkerFlags();
         if (info.getLdFlags2()) ldflags2 = info.getLdFlags2();
         if (info.getAsmFlags()) asmflags = info.getAsmFlags();
     }

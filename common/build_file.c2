@@ -16,14 +16,11 @@
 module build_file;
 
 import string_pool;
-import source_mgr;
 import src_loc local;
 import string_list;
-import yaml;
 
 import stdlib;
 import string;
-import stdio local;
 
 public type Plugin struct {
     u32 name;    //  index into pool
@@ -31,7 +28,7 @@ public type Plugin struct {
     SrcLoc loc; // TODO FILL (is in yaml parser)
 }
 
-public type Info struct @(opaque) {
+public type Info struct {
     string_pool.Pool* pool; // no ownership
     const char* filename;   // no ownership
 
@@ -53,7 +50,7 @@ public type Info struct @(opaque) {
     u32 plugin_max;
 }
 
-fn void Info.addPlugin(Info* info, const char* name, const char* options, SrcLoc loc) {
+public fn void Info.addPlugin(Info* info, const char* name, const char* options, SrcLoc loc) {
     if (info.plugin_count == info.plugin_max) {
         info.plugin_max += 2;
         Plugin* plugins2 = stdlib.malloc(info.plugin_max * sizeof(Plugin));
@@ -91,7 +88,7 @@ public fn const char* Info.getCFlags(const Info* info) {
     return nil;
 }
 
-public fn const char* Info.getLdFlags(const Info* info) {
+public fn const char* Info.getLinkerFlags(const Info* info) {
     if (info.ldflags) return info.pool.idx2str(info.ldflags);
     return nil;
 }
@@ -127,129 +124,6 @@ public fn const Plugin* Info.getPlugin(const Info* info, u32 idx) {
 
 public fn u32 Info.getNumPlugins(const Info* info) {
     return info.plugin_count;
-}
-
-/*
-fn const yaml.Node* get_checked(yaml.Parser* parser, const char* path) {
-    const yaml.Node* node = parser.findNode(path);
-    if (!node) {
-        // TODO print manifest filename
-        fprintf(stderr, "missing node %s\n", path);
-        stdlib.exit(-1);
-    }
-    return node;
-}
-*/
-
-fn u32 Info.expand(Info* info, const char* raw) {
-    if (!raw) return 0;
-
-    if (raw[0] == '$') {
-        // TODO expand with environment variable
-        const char* expand = stdlib.getenv(raw + 1);
-        if (!expand) {
-            fprintf(stderr, "[build-file] warning: environment variable '%s' not set!\n", raw + 1);
-            return 0;
-        }
-        raw = expand;
-    }
-
-    return info.pool.addStr(raw, false);
-}
-
-fn bool getYamlInfo(yaml.Parser* parser, Info* info) {
-    const char* target = parser.getScalarValue("target");
-    info.target = info.expand(target);
-
-    const char* outputDir = parser.getScalarValue("output_dir");
-    info.output_dir = info.expand(outputDir);
-
-    const char* cc = parser.getScalarValue("toolchain.cc");
-    info.cc = info.expand(cc);
-
-    const char* cflags = parser.getScalarValue("toolchain.cflags");
-    info.cflags = info.expand(cflags);
-
-    const char* ldflags = parser.getScalarValue("toolchain.ldflags");
-    info.ldflags = info.expand(ldflags);
-
-    const char* ldflags2 = parser.getScalarValue("toolchain.ldflags2");
-    info.ldflags2 = info.expand(ldflags2);
-
-    const char* asmflags = parser.getScalarValue("toolchain.asmflags");
-    info.asmflags = info.expand(asmflags);
-
-    const char* linkerscript = parser.getScalarValue("toolchain.linkerscript");
-    info.linkerscript = info.expand(linkerscript);
-
-    const yaml.Node* dirs = parser.findNode("libdir");
-    yaml.Iter iter = parser.getNodeChildIter(dirs);
-    while (!iter.done()) {
-        const char* dir = iter.getValue();
-        info.lib_dirs.add(info.expand(dir));
-        iter.next();
-    }
-
-    dirs = parser.findNode("plugindir");
-    iter = parser.getNodeChildIter(dirs);
-    while (!iter.done()) {
-        const char* dir = iter.getValue();
-        info.plugin_dirs.add(info.expand(dir));
-        iter.next();
-    }
-
-    // TODO iterate all nodes, extract all that start with 'plugin.'
-    const yaml.Node* root = parser.getRoot();
-    iter = parser.getNodeChildIter(root);
-    while (!iter.done()) {
-        const char* name = iter.getName();
-        if (string.strncmp(name, "plugin.,", 7) == 0) {
-            const char* options = iter.getChildScalarValue("options");
-            if (!options) {
-                fprintf(stderr, "[build-file] missing options for %s\n", name);
-                stdlib.exit(-1);
-            }
-            SrcLoc loc = 0; // TODO
-            info.addPlugin(name+7, options, loc);
-        }
-        iter.next();
-    }
-
-    return true;
-}
-
-fn bool Info.parse(Info* info, const char* data) {
-    yaml.Parser* parser = yaml.Parser.create();
-    bool ok = parser.parse(data);
-    if (ok) {
-        //parser.dump(true);
-        ok = getYamlInfo(parser, info);
-    } else {
-        fprintf(stderr, "Error: %s\n", parser.getMessage());
-    }
-
-    parser.destroy();
-    return ok;
-}
-
-public fn Info* parse(source_mgr.SourceMgr* sm, string_pool.Pool* pool, const char* filename) {
-    // create on stack first. After successful parse, alloc on heap and return
-    Info info = {}
-    info.pool = pool;
-    info.filename = filename;
-    info.lib_dirs.init(pool);
-    info.plugin_dirs.init(pool);
-
-    i32 file_id = sm.loadFile(filename, 0);
-    if (file_id == -1) return nil;
-
-    bool ok = info.parse(sm.get_content(file_id));
-
-    if (!ok) return nil;
-
-    Info* result = stdlib.malloc(sizeof(Info));
-    string.memcpy(result, &info, sizeof(Info));
-    return result;
 }
 
 public fn void Info.free(Info* info) {

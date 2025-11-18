@@ -17,6 +17,7 @@ module ir_generator;
 
 import ast local;
 import array_init_sorter;
+import build_file;
 import component;
 import console;
 import constants;
@@ -66,18 +67,21 @@ type Generator struct {
 fn void Generator.init(Generator* gen,
                        source_mgr.SourceMgr* sm,
                        const target_info.Info* targetInfo,
+                       const build_file.Info* buildInfo,
                        const char* target,
                        const char* output_dir,
                        bool enable_asserts,
                        bool print,
                        bool print_all) {
     string.memset(gen, 0, sizeof(Generator));
-    // What is needed to know:
-    // binary format (elf, etc)
-    // pointer size (arch)
-    // registers (arch)
-    // instructions (arch)
-    gen.ctx = ir_context.create(print_all, targetInfo);
+
+    ir_context.BuildInfo build_info = {}
+    if (buildInfo) {
+        build_info.compiler = buildInfo.getCC();
+        build_info.linkerflags = buildInfo.getLinkerFlags();
+    }
+
+    gen.ctx = ir_context.create(print_all, targetInfo, &build_info);
     gen.labels.init();
     gen.target = target;
     gen.output_dir = output_dir;
@@ -574,6 +578,7 @@ public fn void generate(const char* target,
                         component.List* comps,
                         source_mgr.SourceMgr* sm,
                         const target_info.Info* targetInfo,
+                        const build_file.Info* buildInfo,   // can be nil
                         const Decl* mainFunc,
                         bool enable_asserts,
                         bool print,
@@ -586,7 +591,7 @@ public fn void generate(const char* target,
     }
 
     Generator gen;
-    gen.init(sm, targetInfo, target, ir_dir, enable_asserts, print, print_all);
+    gen.init(sm, targetInfo, buildInfo, target, ir_dir, enable_asserts, print, print_all);
     gen.mainFunc = mainFunc;
 
     // TODO also generate source libs, inline functions for interface files

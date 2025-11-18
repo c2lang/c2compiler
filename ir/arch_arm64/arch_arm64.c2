@@ -17,8 +17,24 @@ module arch_arm64;
 
 import ir_tools local;
 import ir local;
+import string_buffer;
 
-import stdio local;
+type Arm64_InstrKind enum u8 {
+    Add,
+    Mul,
+    Lsl,
+    Ret,
+    Sub,
+}
+
+const char*[] instr_names = {
+    [Arm64_InstrKind.Add]   = "add",
+    [Arm64_InstrKind.Lsl]   = "lsl",
+    [Arm64_InstrKind.Mul]   = "mul",
+    [Arm64_InstrKind.Ret]   = "ret",
+    [Arm64_InstrKind.Sub]   = "sub",
+}
+
 /*
 type Regs enum u8 {
     R0, R1, R2, R3, R4, R5, R6, R7, // return + args
@@ -28,7 +44,14 @@ type Regs enum u8 {
 }
 */
 
-type Regs struct {
+const char*[] reg_names = {
+    "w0", "w1", "w2", "w3", "w4", "w5", "w6", "w7", // return + awgs
+    "w8", "w9", "w10", "w11", "w12", "w13", "w14", "w15",   // temp
+    "w19", "w20", "w21", "w22", "w23", "w24", "w25", "w26", "w27", "w28",   // callee saved
+    "w16", "w17", "w18", "w29", "w30", "w31",   // other
+}
+
+type RegAlloc struct {
     u32 ngrn;   // Next General-purpose Register Number
     u32 nsrn;   // Next SIMD and FP Register Nmuber
     u32 nprn;   // Next Scalable Predicate Register Number
@@ -37,7 +60,134 @@ type Regs struct {
     // TODO arg info [MaxArgs] // number, stack, pointer, etc
 }
 
+
+
 fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
+    // Assume 32 bit for now
+    FunctionInfo* fi = t.fi;
+    u32 num_blocks = fi.blocks.getCount();
+    Block* blocks = fi.blocks.get(0);
+    Instr* instrs = fi.instructions.get(0);
+
+    Arm64_InstrKind k;   // TEMP
+    for (u32 blk_id = 0; blk_id < num_blocks; blk_id++) {
+        Block* b = &blocks[blk_id];
+        u32 last = b.instr.start + b.instr.count;
+        u32 num_arg = 0;
+        for (u32 j = b.instr.start; j < last; j++) {
+            Instr* ii = &instrs[j];
+            switch (ii.getKind()) {
+            case None:
+                break;
+            // Arithmetic and Bits
+            case Add:
+                //if (ii.args[1].isConstant()) {
+                    // check if it fits, otherwise insert load
+                //}
+                ii.setArch(Arm64_InstrKind.Add);
+                break;
+            case Sub:
+                // change to add -3? if it fits the intermediate number
+                //if (ii.args[1].isConstant()) {
+                    // check if it fits, otherwise insert load
+                //}
+                ii.setArch(Arm64_InstrKind.Sub);
+                break;
+            case Div:
+                break;
+            case Rem:
+                break;
+            case Mul:
+                if (ii.args[1].isConstant()) {
+                    u32 power;
+                    u32 value = (u32) ii.args[1].value;
+                    for (power = 1; power < 32; power++) {
+                        if (value == (1 << power)) { // convert to shift
+                            ii.setArch(Arm64_InstrKind.Lsl);
+                            ii.args[1].init(RefKind.Value, power);
+                            goto next;
+                        }
+                    }
+                    // check if it fits, otherwise insert load
+                }
+                ii.setArch(Arm64_InstrKind.Mul);
+                break;
+            case IDiv:
+                break;
+            case And:
+                break;
+            case Or:
+                break;
+            case Xor:
+                break;
+            case Shr:
+                break;
+            case Shl:
+                break;
+            // Comparisons
+            case CmpNe:
+                break;
+            case CmpEq:
+                break;
+            case CmpLt:
+                break;
+            case CmpGt:
+                break;
+            case CmpLe:
+                break;
+            case CmpGe:
+                break;
+            // Memory
+            case Load1:
+                break;
+            case Load2:
+                break;
+            case Load4:
+                break;
+            case Load8:
+                break;
+            case Store1:
+                break;
+            case Store2:
+                break;
+            case Store4:
+                break;
+            case Store8:
+                break;
+            // Stack Allocation
+            case Alloc1:
+            case Alloc2:
+            case Alloc4:
+            case Alloc8:
+                assert(0);  // should not happen
+                break;
+            // Jump instructions
+            case Jmp:
+                break;
+            case JmpIf:
+                break;
+            case Ret:
+                ii.setArch(Arm64_InstrKind.Ret);
+                break;
+            case Halt:
+                break;
+            case Call:
+                break;
+            case Copy:
+                break;
+            // Pseudo instructions (must be converted before converting to ASM)
+            case Arch:
+            case Param:
+            case Arg:
+            case Switch:
+            case Phi:
+            case Comment:
+                // ignore here
+                break;
+            }
+next:
+        }
+    }
 }
 
 fn void applyCallingConv(Tools* t, FunctionInfo* f) {
@@ -49,7 +199,7 @@ fn void applyCallingConv(Tools* t, FunctionInfo* f) {
     Instr* instrs = fi.instructions.get(0);
 
     // Stage A - initialization
-    Regs regs = { }
+    RegAlloc regs = { }
     //regs.nsaa = stack;
 
     // Stage B - Pre-padding + extension of arguments
@@ -93,7 +243,7 @@ fn void applyCallingConv(Tools* t, FunctionInfo* f) {
             }
             // TODO HFA/HVA C.1-C.5
             size = 8;   // C.5
-            printf(" S-%d\n", regs.nsaa);
+            //printf(" S-%d\n", regs.nsaa);
             regs.nsaa += size;
             continue;
         }
@@ -133,7 +283,14 @@ fn void applyCallingConv(Tools* t, FunctionInfo* f) {
                 num_arg = 0;
                 break;
             case Ret:
-                // TODO is Ret, just add copy a0 = copy %1
+                if (!ii.args[0].isNone()) {
+                    // just add copy a0 = copy %1
+                    u32 instr_idx = t.inserter.addInstr(j);
+                    Instr* ii2 = t.inserter.getLastInstr();
+                    ii2.init1b(Copy, ii.args[0]);
+                    ii2.setReg(0);
+                    ii.args[0].clear();
+                }
                 break;
             case Arg:
                 ii.setReg((u8)num_arg);
@@ -147,9 +304,108 @@ fn void applyCallingConv(Tools* t, FunctionInfo* f) {
     }
 }
 
+fn void generateAsm(string_buffer.Buf* out, const char* name, const FunctionInfo* fi, bool is_external) {
+    // NOTE: currently exactly the same as RV64 version!
+#if 0
+    PER FUNCTION:
+    QBE:    .balign 16
+    GCC:    .attribuet stack_align 16
+    Clang:  .p2align 1
+#endif
+    out.print("\t.global %s\n", name);
+    out.print("\t.type   %s, @function\n", name);
+
+    out.add(name);
+    out.add(":\n");
+    u32 num_blocks = fi.blocks.getCount();
+    const Block* blocks = fi.blocks.get(0);
+    const Instr* instrs = fi.instructions.get(0);
+
+    for (u32 blk_id = 0; blk_id < num_blocks; blk_id++) {
+        const Block* b = &blocks[blk_id];
+        out.print("# %s.%d:\n", b.getKindName(), blk_id);
+        u32 last = b.instr.start + b.instr.count;
+        u32 num_arg = 0;
+        for (u32 j = b.instr.start; j < last; j++) {
+            const Instr* ii = &instrs[j];
+            bool first = true;
+            if (ii.isNone()) continue;
+            assert(ii.isArch());
+            out.print("\t%-8s", instr_names[ii.instrBits.arch_instr]);
+            if (ii.hasResult()) {
+                assert(ii.hasRegister());
+                out.print("%s", reg_names[ii.getRegister()]);
+                first = false;
+            }
+            for (u32 i = 0; i < 2; i++) {
+                if (ii.args[0].isNone()) break;
+                if (!first) {
+                    out.add(", ");
+                    first = false;
+                }
+                const Ref* r = &ii.args[i];
+                switch (r.getKind()) {
+                case None:
+                case Slot:
+                case Temp:
+                    assert(0);  // should not happen
+                    break;
+                case JmpDest:
+                    assert(b.dests[0]);
+                    const Block* dest = &blocks[b.dests[0]];
+                    out.print("@%s.%d", dest.getKindName(), b.dests[0]);
+                    break;
+                case Symbol:
+                    assert(0);  // TODO
+                    //const Symbol* g = ph.c.symbols.get((u32)r.value);
+                    //out.print("@%s", ph.c.pool.idx2str(g.name));
+                    break;
+                case Value:
+                    out.print("#%d", r.value);
+                    break;
+                case Integer:
+                    assert(0);  // TODO
+                    //const Constant* con = ph.c.constants.get((u32)r.value);
+                    //out.print("%d", con.ivalue);
+                    break;
+                case Float:
+                    // TODO
+                    break;
+                case Double:
+                    // TODO
+                    break;
+                case Text:
+                    assert(0);  // TODO
+                    //out.add(ph.c.pool.idx2str((u32)r.value));
+                    break;
+                case Register:
+                    out.print("%s", reg_names[r.value]);
+                    break;
+                case Block:
+                    assert(0);  // TODO
+                    //Block* b = ph.blocks.get((u32)r.value);
+                    //out.print("@%s.%d", b.getKindName(), r.value);
+                    break;
+                case PhiClause:
+                case CallNumArgs:
+                    assert(0);  // should not happen
+                    break;
+                }
+            }
+            out.stripTrailingSpaces();
+            out.newline();
+        }
+    }
+    out.print("\t.size   %s, .-%s\n", name, name);
+}
+
 const Target ArchInfo = {
     .applyCallingConv = applyCallingConv,
     .instructionSelection = instructionSelection,
+    .generateAsm = generateAsm,
+    .instr_names = instr_names,
+    .num_instr = elemsof(instr_names),
+    .register_names = reg_names,
     .num_args_in_regs = 8,
     .num_regs = 32,
     .num_temps = 8,

@@ -1,0 +1,138 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module build_file_parser;
+
+import build_file local;
+import string_pool;
+import source_mgr;
+import src_loc local;
+import yaml;
+
+import stdlib;
+import string;
+import stdio local;
+
+fn u32 expandField(Info* info, const char* raw) {
+    if (!raw) return 0;
+
+    if (raw[0] == '$') {
+        // TODO expand with environment variable
+        const char* expand = stdlib.getenv(raw + 1);
+        if (!expand) {
+            fprintf(stderr, "[build-file] warning: environment variable '%s' not set!\n", raw + 1);
+            return 0;
+        }
+        raw = expand;
+    }
+
+    return info.pool.addStr(raw, false);
+}
+
+fn bool getYamlInfo(yaml.Parser* parser, Info* info) {
+    const char* target = parser.getScalarValue("target");
+    info.target = expandField(info, target);
+
+    const char* outputDir = parser.getScalarValue("output_dir");
+    info.output_dir = expandField(info, outputDir);
+
+    const char* cc = parser.getScalarValue("toolchain.cc");
+    info.cc = expandField(info, cc);
+
+    const char* cflags = parser.getScalarValue("toolchain.cflags");
+    info.cflags = expandField(info, cflags);
+
+    const char* ldflags = parser.getScalarValue("toolchain.ldflags");
+    info.ldflags = expandField(info, ldflags);
+
+    const char* ldflags2 = parser.getScalarValue("toolchain.ldflags2");
+    info.ldflags2 = expandField(info, ldflags2);
+
+    const char* asmflags = parser.getScalarValue("toolchain.asmflags");
+    info.asmflags = expandField(info, asmflags);
+
+    const char* linkerscript = parser.getScalarValue("toolchain.linkerscript");
+    info.linkerscript = expandField(info, linkerscript);
+
+    const yaml.Node* dirs = parser.findNode("libdir");
+    yaml.Iter iter = parser.getNodeChildIter(dirs);
+    while (!iter.done()) {
+        const char* dir = iter.getValue();
+        info.lib_dirs.add(expandField(info, dir));
+        iter.next();
+    }
+
+    dirs = parser.findNode("plugindir");
+    iter = parser.getNodeChildIter(dirs);
+    while (!iter.done()) {
+        const char* dir = iter.getValue();
+        info.plugin_dirs.add(expandField(info, dir));
+        iter.next();
+    }
+
+    // TODO iterate all nodes, extract all that start with 'plugin.'
+    const yaml.Node* root = parser.getRoot();
+    iter = parser.getNodeChildIter(root);
+    while (!iter.done()) {
+        const char* name = iter.getName();
+        if (string.strncmp(name, "plugin.,", 7) == 0) {
+            const char* options = iter.getChildScalarValue("options");
+            if (!options) {
+                fprintf(stderr, "[build-file] missing options for %s\n", name);
+                stdlib.exit(-1);
+            }
+            SrcLoc loc = 0; // TODO
+            info.addPlugin(name+7, options, loc);
+        }
+        iter.next();
+    }
+
+    return true;
+}
+
+fn bool parseInfo(Info* info, const char* data) {
+    yaml.Parser* parser = yaml.Parser.create();
+    bool ok = parser.parse(data);
+    if (ok) {
+        //parser.dump(true);
+        ok = getYamlInfo(parser, info);
+    } else {
+        fprintf(stderr, "Error: %s\n", parser.getMessage());
+    }
+
+    parser.destroy();
+    return ok;
+}
+
+public fn Info* parse(source_mgr.SourceMgr* sm, string_pool.Pool* pool, const char* filename) {
+    // create on stack first. After successful parse, alloc on heap and return
+    Info info = {}
+    info.pool = pool;
+    info.filename = filename;
+    info.lib_dirs.init(pool);
+    info.plugin_dirs.init(pool);
+
+    i32 file_id = sm.loadFile(filename, 0);
+    if (file_id == -1) return nil;
+
+    bool ok = parseInfo(&info, sm.get_content(file_id));
+
+    if (!ok) return nil;
+
+    Info* result = stdlib.malloc(sizeof(Info));
+    string.memcpy(result, &info, sizeof(Info));
+    return result;
+}
+

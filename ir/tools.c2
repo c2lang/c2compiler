@@ -117,13 +117,12 @@ public fn void Tools.convert_fn(Tools* t) {
 
     if (t.propagateConstants()) t.print_func("after propagate constants");
 
-    t.inserter.clear(fi.blocks.getCount(), fi.instructions.getCount());
-
     // lower ABI (calling convention)
     t.inserter.clear(fi.blocks.getCount(), fi.instructions.getCount());
     // TODO let fixup_function check if needed
     t.target.applyCallingConv(t, fi);
     if (t.inserter.needsFixup()) t.fixup_function();
+    t.print_func("after ABI lowering");
 
     // generate Instruction
     assert(t.target.instructionSelection);

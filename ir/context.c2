@@ -59,6 +59,8 @@ public type Context struct @(opaque) {
     Builder b;
 
     // used during conversion of IR -> ASM
+    const target_info.Info* target_info;
+    BuildInfo build_info;
     const Target* target; // no ownership
     Tools tools;
 
@@ -68,7 +70,12 @@ public type Context struct @(opaque) {
     WorkQueue queue;
 }
 
-public fn Context* create(bool print, const target_info.Info* info) {
+public type BuildInfo struct {
+    const char* compiler;   // no ownership
+    const char* linkerflags;    // no ownership
+}
+
+public fn Context* create(bool print, const target_info.Info* info, const BuildInfo* buildInfo) {
     Context* c = stdlib.calloc(1, sizeof(Context));
     c.pool = string_pool.create(2*1024, 256);
     c.constants.init(128);
@@ -90,6 +97,8 @@ public fn Context* create(bool print, const target_info.Info* info) {
 
     c.b.init();
 
+    c.target_info = info;
+    c.build_info = *buildInfo;
     c.target = getArchTarget(info);
     c.tools.init(c.target, c, print_function);
     return c;

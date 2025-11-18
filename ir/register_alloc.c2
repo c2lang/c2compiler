@@ -564,7 +564,6 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
     t.insertSplitEdges();
 
     if (t.inserter.needsFixup()) t.fixup_function();
-    t.print_func("after ABI lowering");
 
     u32 num_blocks = fi.blocks.getCount();
     Block* blocks = fi.blocks.get(0);

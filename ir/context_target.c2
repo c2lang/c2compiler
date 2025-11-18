@@ -22,13 +22,7 @@ import ir_tools;
 import target_info;
 
 fn const ir_tools.Target* getArchTarget(const target_info.Info* info) {
-#if 1
-    // TEMP hardcoded to RV64
-    target_info.Arch arch = Riscv_64;
-    switch (arch) {
-#else
     switch (info.arch) {
-#endif
     case Unknown:
     case I686:
         break;

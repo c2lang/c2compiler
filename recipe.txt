@@ -181,6 +181,7 @@ executable c2c
     (common)
 
     common/build_file.c2
+    common/build_file_parser.c2
     common/bit_array.c2
     common/bit_utils.c2
     common/c_prec.c2

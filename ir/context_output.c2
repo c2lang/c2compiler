@@ -26,8 +26,12 @@ public fn void Context.writeOutput(Context* c, const char* output_dir, const cha
     string_buffer.Buf* out = string_buffer.create(4096, false, 0);
     out.add("# This makefile is auto-generated, any modifications will be lost\n\n");
 
+    const char* compiler = "clang";
+    if (c.build_info.compiler) compiler = c.build_info.compiler;
+    const char* linker_flags = "";
+    if (c.build_info.linkerflags) linker_flags = c.build_info.linkerflags;
     out.add("../output:\n");
-    out.print("\triscv64-unknown-elf-gcc output.s -o ../%s\n", target_name);
+    out.print("\t%s output.s %s -o ../%s\n", compiler, linker_flags, target_name);
     out.newline();
 
     c.write(output_dir, "Makefile", out);
