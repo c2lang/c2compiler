@@ -180,6 +180,7 @@ executable c2c
 
     (common)
 
+    common/ast_builder.c2
     common/build_file.c2
     common/build_file_parser.c2
     common/bit_array.c2
@@ -194,7 +195,6 @@ executable c2c
     common/value_maplist.c2
     common/file/copy.c2
 
-    parser/ast_builder.c2
     parser/c2_parser.c2
     parser/c2_parser_expr.c2
     parser/c2_parser_stmt.c2
@@ -456,7 +456,7 @@ lib deps_generator dynamic
     (ast)
     (common)
 
-    parser/ast_builder.c2
+    common/ast_builder.c2
     parser/expr_list.c2
 
     generator/ast_visitor.c2
@@ -482,9 +482,9 @@ lib refs_generator dynamic
 
     (ast)
     (common)
+    common/ast_builder.c2
     common/quicksort.c2
 
-    parser/ast_builder.c2
     parser/expr_list.c2
 
     generator/c2refs.c2
@@ -507,7 +507,7 @@ lib git_version dynamic
     (ast)
     (common)
 
-    parser/ast_builder.c2
+    common/ast_builder.c2
     parser/expr_list.c2
 
     plugins/plugin_info.c2
@@ -522,7 +522,7 @@ lib unit_test dynamic
     (ast)
     (common)
 
-    parser/ast_builder.c2
+    common/ast_builder.c2
     parser/expr_list.c2
 
     plugins/plugin_info.c2
@@ -538,7 +538,7 @@ lib shell_cmd dynamic
     (common)
     (yaml)
 
-    parser/ast_builder.c2
+    common/ast_builder.c2
     parser/expr_list.c2
 
     plugins/plugin_info.c2
