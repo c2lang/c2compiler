@@ -51,7 +51,6 @@ fn void Evaluator.check(Evaluator* eval, FunctionDecl* fd, u32 num, Expr** args)
     eval.result = eval.get_value(r.getValue());
 }
 
-// TODO duplicate code with ctv_analyser!
 fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
     Value result = { };
 
