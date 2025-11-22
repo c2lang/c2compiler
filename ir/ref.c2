@@ -29,7 +29,7 @@ public type RefKind enum u8 {
     Double,    // constant_idx
     Text,      // idx into string pool, for comment
     Register,  // nr (0,1,..)
-    Block,     // only used by Switch to store join_blk in args[1]
+    Block,     // only used by Switch to store join_blk in args[1], and for Arch jump/branch instructions
     PhiClause, // only for Phi instructions. args[0]=start, args[1]=count
     CallNumArgs, // only for Call instructions
 }
@@ -111,6 +111,10 @@ public fn bool Ref.isRegister(const Ref* r) {
 
 public fn bool Ref.isConstant(const Ref* r) @(unused) {
     return r.kind >= RefKind.Value && r.kind <= RefKind.Double;
+}
+
+public fn bool Ref.isZero(const Ref* r) {
+    return r.kind == RefKind.Value && r.value == 0;
 }
 
 public fn const char* Ref.getKindName(const Ref* r) {

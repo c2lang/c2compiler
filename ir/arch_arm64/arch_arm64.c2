@@ -21,6 +21,11 @@ import string_buffer;
 
 type Arm64_InstrKind enum u8 {
     Add,
+    Branch,
+    Beq,
+    Bne,
+    Cmp,
+    Mov,
     Mul,
     Lsl,
     Ret,
@@ -28,11 +33,16 @@ type Arm64_InstrKind enum u8 {
 }
 
 const char*[] instr_names = {
-    [Arm64_InstrKind.Add]   = "add",
-    [Arm64_InstrKind.Lsl]   = "lsl",
-    [Arm64_InstrKind.Mul]   = "mul",
-    [Arm64_InstrKind.Ret]   = "ret",
-    [Arm64_InstrKind.Sub]   = "sub",
+    [Arm64_InstrKind.Add]    = "add",
+    [Arm64_InstrKind.Branch] = "b",
+    [Arm64_InstrKind.Beq]    = "beq",
+    [Arm64_InstrKind.Bne]    = "bne",
+    [Arm64_InstrKind.Cmp]    = "cmp",
+    [Arm64_InstrKind.Lsl]    = "lsl",
+    [Arm64_InstrKind.Mul]    = "mul",
+    [Arm64_InstrKind.Mov]    = "mov",
+    [Arm64_InstrKind.Ret]    = "ret",
+    [Arm64_InstrKind.Sub]    = "sub",
 }
 
 /*
@@ -126,6 +136,15 @@ fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
                 break;
             // Comparisons
             case CmpNe:
+                assert(j+1 != last);
+                Instr* next = &instrs[j+1];
+                ii.setArch(Arm64_InstrKind.Cmp);
+                ii.instrBits.has_result = 0;
+                assert(next.getKind() == JmpIf);
+                // invert, assert true block is next
+                next.setArch(Arm64_InstrKind.Beq);
+                next.args[0].init(Block, b.dests[1]);
+                next.args[1].clear();
                 break;
             case CmpEq:
                 break;
@@ -163,6 +182,8 @@ fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
                 break;
             // Jump instructions
             case Jmp:
+                ii.setArch(Arm64_InstrKind.Branch);
+                ii.args[0].init(Block, b.dests[0]);
                 break;
             case JmpIf:
                 break;
@@ -319,18 +340,22 @@ fn void generateAsm(string_buffer.Buf* out, const char* name, const FunctionInfo
     out.add(":\n");
     u32 num_blocks = fi.blocks.getCount();
     const Block* blocks = fi.blocks.get(0);
-    const Instr* instrs = fi.instructions.get(0);
+    Instr* instrs = fi.instructions.get(0);
 
     for (u32 blk_id = 0; blk_id < num_blocks; blk_id++) {
         const Block* b = &blocks[blk_id];
-        out.print("# %s.%d:\n", b.getKindName(), blk_id);
+        if (blk_id == 0) out.add("# ");
+        out.print(".BB%d_%d:\n", fi.id, blk_id);
         u32 last = b.instr.start + b.instr.count;
         u32 num_arg = 0;
         for (u32 j = b.instr.start; j < last; j++) {
-            const Instr* ii = &instrs[j];
+            Instr* ii = &instrs[j];
             bool first = true;
             if (ii.isNone()) continue;
-            assert(ii.isArch());
+            if (!ii.isArch()) {
+                assert(ii.isCopy());
+                ii.setArch(Arm64_InstrKind.Mov);
+            }
             out.print("\t%-8s", instr_names[ii.instrBits.arch_instr]);
             if (ii.hasResult()) {
                 assert(ii.hasRegister());
@@ -338,11 +363,11 @@ fn void generateAsm(string_buffer.Buf* out, const char* name, const FunctionInfo
                 first = false;
             }
             for (u32 i = 0; i < 2; i++) {
-                if (ii.args[0].isNone()) break;
+                if (ii.args[i].isNone()) break;
                 if (!first) {
                     out.add(", ");
-                    first = false;
                 }
+                first = false;
                 const Ref* r = &ii.args[i];
                 switch (r.getKind()) {
                 case None:
@@ -382,9 +407,7 @@ fn void generateAsm(string_buffer.Buf* out, const char* name, const FunctionInfo
                     out.print("%s", reg_names[r.value]);
                     break;
                 case Block:
-                    assert(0);  // TODO
-                    //Block* b = ph.blocks.get((u32)r.value);
-                    //out.print("@%s.%d", b.getKindName(), r.value);
+                    out.print(".BB%d_%d", fi.id, r.value);
                     break;
                 case PhiClause:
                 case CallNumArgs:

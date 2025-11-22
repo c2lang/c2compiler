@@ -23,7 +23,11 @@ type RV64_InstrKind enum u8 {
     Add,
     AddIw,
     And,
+    Beqz,
+    Bnez,
     Divw,
+    Jump,
+    Li,
     Mul,
     Or,
     Remw,
@@ -39,8 +43,12 @@ const char*[] instr_names = {
     [RV64_InstrKind.Add]   = "add",
     [RV64_InstrKind.AddIw] = "addiw",
     [RV64_InstrKind.And]   = "and",
-    [RV64_InstrKind.Divw]   = "divw",
+    [RV64_InstrKind.Beqz]  = "beqz",
+    [RV64_InstrKind.Bnez]  = "bnez",
+    [RV64_InstrKind.Divw]  = "divw",
+    [RV64_InstrKind.Jump]  = "j",
     [RV64_InstrKind.Mul]   = "mul",
+    [RV64_InstrKind.Li]    = "li",
     [RV64_InstrKind.Or]    = "or",
     [RV64_InstrKind.Remw]  = "remw",
     [RV64_InstrKind.Ret]   = "ret",
@@ -150,6 +158,21 @@ fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
                 break;
             // Comparisons
             case CmpNe:
+                // combine Cmp + JmpIf into one beq(z) + jump
+                assert(j+1 != last);
+                Instr* next = &instrs[j+1];
+                assert(next.getKind() == JmpIf);
+                if (ii.args[1].isZero()) {
+                    // change cmp ne + jmp_if -> beqz (then) + j (else)
+                    ii.setArch(RV64_InstrKind.Bnez);
+                    ii.instrBits.has_result = 0;
+                    ii.args[1].init(Block, b.dests[0]);
+                } else {
+                    assert(0);  // TODO
+                }
+                next.setArch(RV64_InstrKind.Jump);
+                next.args[0].init(Block, b.dests[1]);
+                next.args[1].clear();
                 break;
             case CmpEq:
                 break;
@@ -167,6 +190,12 @@ fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
             case Load2:
                 break;
             case Load4:
+                if (ii.args[0].isConstant()) {
+                    ii.setArch(RV64_InstrKind.Li);
+                    // TODO if zero, use 'zero', skip copy
+                } else {
+                    // TODO mov?
+                }
                 break;
             case Load8:
                 break;
@@ -187,8 +216,11 @@ fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
                 break;
             // Jump instructions
             case Jmp:
+                ii.setArch(RV64_InstrKind.Jump);
+                ii.args[0].init(Block, b.dests[0]);
                 break;
             case JmpIf:
+                assert(0);  // should be removed already
                 break;
             case Ret:
                 ii.setArch(RV64_InstrKind.Ret);
@@ -198,6 +230,7 @@ fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
             case Call:
                 break;
             case Copy:
+                // NOTE: leave copies in for now, can be removed during register allocation
                 break;
             // Pseudo instructions (must be converted before converting to ASM)
             case Arch:
@@ -229,18 +262,26 @@ fn void generateAsm(string_buffer.Buf* out, const char* name, const FunctionInfo
     out.add(":\n");
     u32 num_blocks = fi.blocks.getCount();
     const Block* blocks = fi.blocks.get(0);
-    const Instr* instrs = fi.instructions.get(0);
+    Instr* instrs = fi.instructions.get(0);
 
     for (u32 blk_id = 0; blk_id < num_blocks; blk_id++) {
         const Block* b = &blocks[blk_id];
-        out.print("# %s.%d:\n", b.getKindName(), blk_id);
+        if (blk_id == 0) out.add("# ");
+        out.print(".BB%d_%d:\n", fi.id, blk_id);
         u32 last = b.instr.start + b.instr.count;
         u32 num_arg = 0;
         for (u32 j = b.instr.start; j < last; j++) {
-            const Instr* ii = &instrs[j];
+            Instr* ii = &instrs[j];
             bool first = true;
             if (ii.isNone()) continue;
-            assert(ii.isArch());
+            if (!ii.isArch()) {
+                assert(ii.isCopy());
+                if (ii.args[0].isValue()) {
+                    ii.setArch(RV64_InstrKind.Li);
+                } else {
+                    assert(0);  // TODO
+                }
+            }
             out.print("\t%-8s", instr_names[ii.instrBits.arch_instr]);
             if (ii.hasResult()) {
                 assert(ii.hasRegister());
@@ -248,11 +289,11 @@ fn void generateAsm(string_buffer.Buf* out, const char* name, const FunctionInfo
                 first = false;
             }
             for (u32 i = 0; i < 2; i++) {
-                if (ii.args[0].isNone()) break;
+                if (ii.args[i].isNone()) break;
                 if (!first) {
                     out.add(", ");
-                    first = false;
                 }
+                first = false;
                 const Ref* r = &ii.args[i];
                 switch (r.getKind()) {
                 case None:
@@ -292,9 +333,7 @@ fn void generateAsm(string_buffer.Buf* out, const char* name, const FunctionInfo
                     out.print("%s", reg_names[r.value]);
                     break;
                 case Block:
-                    assert(0);  // TODO
-                    //Block* b = ph.blocks.get((u32)r.value);
-                    //out.print("@%s.%d", b.getKindName(), r.value);
+                    out.print(".BB%d_%d", fi.id, r.value);
                     break;
                 case PhiClause:
                 case CallNumArgs:

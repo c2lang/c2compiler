@@ -176,7 +176,7 @@ public fn void Context.startFunc(Context* c, SymbolId id) {
     stdio.printf("startFunc(%d)  cur %d\n", id, b.cur_func);
 #endif
     assert(b.tmp_info == nil);
-    b.tmp_info = FunctionInfo.create(8, 16, 16);
+    b.tmp_info = FunctionInfo.create(id, 8, 16, 16);
     assert(b.cur_func == 0);
     b.cur_func = id;
     b.num_scopes = 0;
@@ -633,6 +633,7 @@ fn void Context.finalizeFunction(Context* c, SymbolId id) {
     // TODO can be multi-threaded after this point (ready for inlining)
     if (c.single_thread) {
         t.convert_fn();
+        //dump_function(fi, "TODO");
     } else {
         c.queue.add(fi);
     }

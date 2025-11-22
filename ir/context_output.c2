@@ -21,6 +21,8 @@ import file_utils;
 import console;
 import string_buffer;
 
+import stdio;
+
 public fn void Context.writeOutput(Context* c, const char* output_dir, const char* target_name) {
     // generate create Makefile
     string_buffer.Buf* out = string_buffer.create(4096, false, 0);
@@ -43,6 +45,7 @@ public fn void Context.writeOutput(Context* c, const char* output_dir, const cha
 
     // generate ASM
     assert(c.target.generateAsm);
+    u32 block_start = 0;
     u32 num_symbols = c.symbols.getCount();
     const Symbol* symbols = c.symbols.get(0);
     for (u32 i = 0; i < num_symbols; i++) {
@@ -50,6 +53,7 @@ public fn void Context.writeOutput(Context* c, const char* output_dir, const cha
         if (s.is_function) {
             const ir.FunctionInfo* fi = s.f.info;
             c.target.generateAsm(out, c.pool.idx2str(s.name), fi, s.is_external);
+            block_start += fi.blocks.getCount();
         }
         // TODO emit other symbols as well
 
@@ -58,6 +62,10 @@ public fn void Context.writeOutput(Context* c, const char* output_dir, const cha
     out.newline();
     out.add("\t.ident \"C2C\"\n");
     //.section   TODO
+
+    if (1) {
+        stdio.puts(out.data());
+    }
 
     c.write(output_dir, "output.s", out);
     out.free();
