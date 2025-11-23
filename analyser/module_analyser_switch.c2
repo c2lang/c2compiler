@@ -21,6 +21,7 @@ import src_loc local;
 import scope;
 import string_buffer;
 import string;
+import value_type local;
 
 fn QualType Analyser.analyseSwitchExpr(Analyser* ma, Stmt** s_ptr) {
     Stmt* s = *s_ptr;

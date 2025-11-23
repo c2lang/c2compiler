@@ -18,6 +18,7 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
+import value_type local;
 
 type EnumConstantDeclBits struct {
     u32 : NumDeclBits;

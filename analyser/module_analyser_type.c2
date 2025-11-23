@@ -18,6 +18,7 @@ module module_analyser;
 import ast local;
 import ctv_analyser;
 import src_loc local;
+import value_type local;
 
 fn void Analyser.analyseFunctionType(Analyser* ma, Decl* d) {
     FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;

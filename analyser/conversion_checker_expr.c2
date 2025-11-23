@@ -16,6 +16,7 @@
 module conversion_checker;
 
 import ast local;
+import value_type local;
 
 type ExprWidth struct {
     u8 width;   // in bits

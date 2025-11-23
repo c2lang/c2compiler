@@ -18,6 +18,7 @@ module module_analyser;
 import ast local;
 import label_vector local;
 import scope;
+import value_type local;
 
 type Flow enum u8 {
     Next,

@@ -23,6 +23,7 @@ import string_list;
 import string_pool;
 import token local;
 import utf8;
+import value_type local;
 
 import ctype local;
 import stdarg local;
@@ -1512,7 +1513,7 @@ fn Kind Tokenizer.lex_preproc(Tokenizer* t, Token* result) {
 const u32 MAX_LEVEL = 16;
 
 type Operand struct {
-    i64 val;
+    Value val;
     Kind op;
     u8 prec;
 }
@@ -1522,7 +1523,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
     Operand *sp;
     Kind op;
     u8 prec;
-    i64 val = 0;
+    Value val.setUnsigned(0);
     bool prefix = true;
 
     for (sp = stack;;) {
@@ -1530,7 +1531,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
         if (prefix) {
             switch (op) {
             case Identifier:
-                val = 0;
+                val.setUnsigned(0);
                 const char *id = t.pool.idx2str(result.name_idx);
                 if (!string.strcmp(id, "defined")) {
                     bool has_paren = false;
@@ -1548,20 +1549,20 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
                         if (t.lex_preproc(result) != RParen)
                             goto syntax_error;
                     }
-                    val = t.features.contains(id);
+                    val.setUnsigned(t.features.contains(id));
                 } else {
                     // TODO: use feature value
-                    val = t.features.contains(id);
+                    val.setUnsigned(t.features.contains(id));
                 }
                 prefix = false;
                 continue;
             case IntegerLiteral:
                 // TODO: handle signed/unsigned issues
-                val = (i64)(result.int_value);
+                val.setUnsigned(result.int_value);
                 prefix = false;
                 continue;
             case CharLiteral:
-                val = result.char_value;
+                val.setUnsigned(result.char_value);
                 prefix = false;
                 continue;
             case LParen:
@@ -1602,15 +1603,15 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
             --sp;
             switch (sp.op) {
             case Exclaim:
-                val = !val;
+                val = val.lnot();
                 break;
             case Plus:
                 break;
             case Minus:
-                val = -val;
+                val = val.negate();
                 break;
             case Tilde:
-                val = ~val;
+                val = val.bitnot();
                 break;
             default:
                 break;
@@ -1685,69 +1686,78 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
                 op = None;
                 goto unary;
             case Star:
-                val = sp.val * val; /* XXX: potential overflow */
-                continue;
+                val = sp.val.multiply(&val); /* XXX: potential overflow */
+                break;
             case Slash:
-                if (val) val = sp.val / val; /* XXX: potential overflow */
-                continue;
+                val = sp.val.divide(&val); /* XXX: potential overflow */
+                break;
             case Percent:
-                if (val && !(sp.val == i64.min && val == -1))
-                    val = sp.val % val; /* XXX: potential overflow */
-                continue;
+                val = sp.val.remainder(&val); /* XXX: potential overflow */
+                break;
             case Plus:
-                val = sp.val + val; /* XXX: potential overflow */
-                continue;
+                val = sp.val.add(&val); /* XXX: potential overflow */
+                break;
             case Minus:
-                val = sp.val - val; /* XXX: potential overflow */
-                continue;
+                val = sp.val.minus(&val); /* XXX: potential overflow */
+                break;
             case LessLess:
-                val = sp.val << val; /* XXX: potential overflow */
-                continue;
+                val = sp.val.left_shift(&val); /* XXX: potential overflow */
+                break;
             case GreaterGreater:
-                val = sp.val >> val; /* XXX: potential overflow */
-                continue;
+                val = sp.val.right_shift(&val); /* XXX: potential overflow */
+                break;
             case Less:
-                val = sp.val < val;
-                continue;
+                val.setBool(sp.val.is_less(&val));
+                break;
             case LessEqual:
-                val = sp.val <= val;
-                continue;
+                val.setBool(sp.val.is_less_equal(&val));
+                break;
             case Greater:
-                val = sp.val > val;
-                continue;
+                val.setBool(sp.val.is_greater(&val));
+                break;
             case GreaterEqual:
-                val = sp.val >= val;
-                continue;
+                val.setBool(sp.val.is_greater_equal(&val));
+                break;
             case EqualEqual:
-                val = sp.val == val;
-                continue;
+                val.setBool(sp.val.is_equal(&val));
+                break;
             case ExclaimEqual:
-                val = sp.val != val;
-                continue;
+                val.setBool(!sp.val.is_equal(&val));
+                break;
             case Amp:
-                val = sp.val & val;
-                continue;
+                val = sp.val.and(&val);
+                break;
             case Caret:
-                val = sp.val ^ val;
-                continue;
+                val = sp.val.xor(&val);
+                break;
             case Pipe:
-                val = sp.val | val;
-                continue;
+                val = sp.val.or(&val);
+                break;
             case AmpAmp:
-                val = sp.val && val;
-                continue;
+                if (sp.val.as_bool()) val = val.toBool();
+                else val.setBool(false);
+                break;
             case PipePipe:
-                val = sp.val || val;
-                continue;
+                if (sp.val.as_bool()) val.setBool(true);
+                else val = val.toBool();
+                break;
             case Colon:
                 if (sp > stack && sp[-1].op == Question) {
                     sp--;
-                    val = sp.val ? sp[1].val : val;
-                    continue;
+                    val = sp.val.as_bool() ? sp[1].val : val;
+                    break;
                 }
                 fallthrough;
             default:
                 t.error(result, "invalid token in preprocessor expression '%s'", sp.op.str());
+                return 0;
+            }
+            if (val.isError()) {
+                t.error(result, "%s", val.getError());
+                return 0;
+            }
+            if (val.hasOverflow()) {
+                t.error(result, "arithmetic overflow");
                 return 0;
             }
         }
@@ -1768,7 +1778,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
         t.error(result, "syntax error in preprocessor expression");
         return 0;
     }
-    return val;
+    return val.as_i64();
 }
 
 fn bool Tokenizer.handle_if(Tokenizer* t, Token* result, Kind kind) {

@@ -17,6 +17,7 @@ module c2i_generator;
 
 import ast local;
 import string_buffer;
+import value_type local;
 
 fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e) {
     switch (e.getKind()) {

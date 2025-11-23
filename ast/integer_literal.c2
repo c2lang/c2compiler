@@ -19,6 +19,7 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 import number_radix local;
+import value_type local;
 
 type IntegerLiteralBits struct {
     u32 : NumExprBits;

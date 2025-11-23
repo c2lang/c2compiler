@@ -30,6 +30,7 @@ import string_buffer;
 import string_pool;
 import target_info;
 import value_maplist;
+import value_type local;
 
 import c_errno local;
 import string;
