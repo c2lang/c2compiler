@@ -18,6 +18,7 @@ module ctv_analyser;
 import ast local;
 import diagnostics;
 import src_loc local;
+import value_type local;
 
 type Limit struct {
     i64 min_val;

@@ -19,6 +19,7 @@ import ast local;
 import bit_utils;
 import ir local;
 import ir_context;
+import value_type local;
 
 fn void Generator.emitAssign(Generator* gen, ir.Ref* result, const Expr* lhs, const Expr* rhs) {
     // special case is needed because setting Bitfield is not a simple store
