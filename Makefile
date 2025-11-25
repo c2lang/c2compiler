@@ -26,11 +26,10 @@ c2c: $(C2C)
 	@$(C2C) --version
 
 $(C2C): output/bootstrap/bootstrap $(C2C_DEPS)
-	@echo "---- running (bootstrapped$(C2FLAGS)) c2c ----"
-	@output/bootstrap/bootstrap c2c $(C2FLAGS) --fast --noplugins
-	@mv output/c2c/c2c output/bootstrap/c2c
-	@echo "---- running c2c (no plugins$(C2FLAGS)) ----"
-	@output/bootstrap/c2c $(C2FLAGS) --noplugins --fast c2c $(PLUGINS)
+	@echo "---- running bootstrap$(C2FLAGS) c2c ----"
+	@output/bootstrap/bootstrap $(C2FLAGS) c2c -o c2c-bootstrap --fast --noplugins
+	@echo "---- running c2c-bootstrap (no plugins$(C2FLAGS)) ----"
+	@output/c2c-bootstrap/c2c-bootstrap $(C2FLAGS) --fast --noplugins c2c $(PLUGINS)
 	@./install_plugins.sh
 	@echo "---- running c2c (optimized with plugins$(C2FLAGS)) ----"
 	@output/c2c/c2c $(C2FLAGS)
