@@ -2,6 +2,6 @@
 module test;
 
 fn void test2() {
-    i32 a = test2() + 1; // @error{invalid operand to binary expression 'void'}
+    i32 a = test2() + 1; // @error{invalid operand type 'void' for binary expression '+'}
 }
 

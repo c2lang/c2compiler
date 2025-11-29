@@ -96,7 +96,7 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
             if (expectedType.isBool()) return true;
             if (!ctv_analyser.checkRange(ma.diags, expectedType, e)) return false;
             if (res.getType() != expectedType.getType()) {
-                ma.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, e_ptr, expectedType);
+                ma.builder.insertImplicitCast(IntegralCast, e_ptr, expectedType);
             }
             return true;
         }

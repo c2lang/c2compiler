@@ -154,7 +154,7 @@ fn Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
         bool isRightAssoc = (thisPrec == Prec.Conditional || thisPrec == Prec.Assignment);
 
         if (thisPrec < nextTokPrec || (thisPrec == nextTokPrec && isRightAssoc)) {
-            rhs = p.parseRHSOfBinaryExpression(rhs, thisPrec + !isRightAssoc);
+            rhs = p.parseRHSOfBinaryExpression(rhs, (Prec)(thisPrec + !isRightAssoc));
 
             nextTokPrec = BinOpPrecLookup[p.tok.kind];
         }

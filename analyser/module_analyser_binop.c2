@@ -19,30 +19,61 @@ import ast local;
 import c_prec local;
 import c2_prec local;
 import conversion_checker;
+import src_loc local;
 
-fn bool validBinOpKind(QualType t) {
+fn bool validArithType(QualType t) {
     t = t.getCanonicalType();
-
     switch (t.getKind()) {
     case Builtin:
-        return true;
-    case Pointer:
-        return true;
-    case Array:
-        break;
-    case Struct:
-        return true;
+        return !t.isVoid();
     case Enum:
         return true;
-    case Function:
-        return true;    // eg. when assigning function pointers
-    case Alias:
-        assert(0);
-        break;
-    case Module:
-        break;
+    default:
+        return false;
     }
-    return false;
+}
+
+fn bool validIntegerType(QualType t) {
+    t = t.getCanonicalType();
+    switch (t.getKind()) {
+    case Builtin:
+        return !t.isVoid() && !t.isFloat();
+    case Enum:
+        return true;
+    default:
+        return false;
+    }
+}
+
+fn bool validTestType(QualType t) {
+    t = t.getCanonicalType();
+    if (!t.isValid()) return false;
+    switch (t.getKind()) {
+    case Builtin:
+        return !t.isVoid();
+    case Pointer:
+    case Enum:
+    case Function:
+        return true;
+    default:
+        return false;
+    }
+}
+
+fn QualType Analyser.invalidBinOp1(Analyser* ma, BinaryOperator* b, Expr* sub, QualType qt) {
+    ma.error(sub.getLoc(), "invalid operand type '%s' for binary expression '%s'",
+             qt.diagName(), b.getOpcode().str());
+    return QualType_Invalid;
+}
+
+fn QualType Analyser.invalidBinOp2(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
+    ma.error(((Expr*)b).getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
+    return QualType_Invalid;
+}
+
+fn QualType Analyser.invalidFuncCompare(Analyser* ma, BinaryOperator* b) {
+    ma.error(((Expr*)b).getLoc(), "comparing functions may only be done with '!=' or '=='");
+    return QualType_Invalid;
 }
 
 const u32[] Binop_lhs = {
@@ -123,75 +154,147 @@ static_assert(elemsof(BinaryOpcode), elemsof(Binop_lhs));
         Not Allowed
         enumA + enumB
     */
-// Both sides must be integers (Enum is allowed)
-fn QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
-    QualType lcanon = lhs.getCanonicalType();
-    QualType rcanon = rhs.getCanonicalType();
-    assert(lcanon.isValid());
-    assert(rcanon.isValid());
-
+fn QualType Analyser.checkBinopArithArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs, bool assign) {
     // Note: enums are their own canonical type, so use implType here
-    if (lcanon.isEnum()) {
-        EnumType* et = lcanon.getEnum();
-        EnumTypeDecl* etd = et.getDecl();
-        lcanon = etd.getImplType();
+    QualType lcanon = lhs.getImplType();
+    QualType rcanon = rhs.getImplType();
+    if (!validArithType(lcanon)) {
+        if (!validArithType(rcanon)) return ma.invalidBinOp2(b, lhs, rhs);
+        return ma.invalidBinOp1(b, b.getLHS(), lhs);
     }
-    if (rcanon.isEnum()) {
-        EnumType* et = rcanon.getEnum();
-        EnumTypeDecl* etd = et.getDecl();
-        rcanon = etd.getImplType();
-    }
+    if (!validArithType(rcanon)) return ma.invalidBinOp1(b, b.getRHS(), rhs);
 
     BuiltinType* bl = lcanon.getBuiltinTypeOrNil();
     BuiltinType* br = rcanon.getBuiltinTypeOrNil();
-    if (!bl || !br || lcanon.isVoid() || rcanon.isVoid()) {
-        Expr* e = (Expr*)b;
-        ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
-        return QualType_Invalid;
-    }
-
     QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
     BuiltinType* bi = optype.getBuiltin();
-    if (bl != bi) {
-        ma.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, b.getLHS2(), optype);
-    }
     if (br != bi) {
-        ma.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, b.getRHS2(), optype);
+        ma.builder.insertImplicitCast(IntegralCast, b.getRHS2(), optype);
+    }
+    if (assign) {
+        if (rcanon.isFloat() && !lcanon.isFloat()) {
+            //return ma.invalidBinOp2(b, lhs, rhs);
+            ma.error(((Expr*)b).getLoc(), "implicit conversion turns floating-point number into integer:");
+            return QualType_Invalid;
+        }
+        return lhs;
+    }
+    if (bl != bi) {
+        ma.builder.insertImplicitCast(IntegralCast, b.getLHS2(), optype);
     }
     return optype;
 }
 
-fn QualType Analyser.checkBinopLogical(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
-    bool ok = ma.checker.check(builtins[BuiltinKind.Bool], lhs, b.getLHS2(), b.getLHS().getLoc());
-    ok &= ma.checker.check(builtins[BuiltinKind.Bool], rhs, b.getRHS2(), b.getRHS().getLoc());
-    if (ok) return builtins[BuiltinKind.Bool];
+// Both sides must be integers (Enum is allowed)
+fn QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs, bool assign) {
+    // Note: enums are their own canonical type, so use implType here
+    QualType lcanon = lhs.getImplType();
+    QualType rcanon = rhs.getImplType();
+    if (!validIntegerType(lcanon)) {
+        if (!validIntegerType(rcanon)) return ma.invalidBinOp2(b, lhs, rhs);
+        return ma.invalidBinOp1(b, b.getLHS(), lhs);
+    }
+    if (!validIntegerType(rcanon)) return ma.invalidBinOp1(b, b.getRHS(), rhs);
 
-    Expr* e = (Expr*)b;
-    ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
-    return QualType_Invalid;
+    BuiltinType* bl = lcanon.getBuiltinTypeOrNil();
+    BuiltinType* br = rcanon.getBuiltinTypeOrNil();
+    QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
+    BuiltinType* bi = optype.getBuiltin();
+    if (br != bi) {
+        ma.builder.insertImplicitCast(IntegralCast, b.getRHS2(), optype);
+    }
+    if (assign) return lhs;
+    if (bl != bi) {
+        ma.builder.insertImplicitCast(IntegralCast, b.getLHS2(), optype);
+    }
+    return optype;
+}
+
+// Both sides must be integers (Enum is allowed)
+fn QualType Analyser.checkBinopShiftArgs(Analyser* ma, BinaryOperator* b, QualType ltype, QualType rtype, bool assign) {
+    // Note: enums are their own canonical type, so use implType here
+    QualType lcanon = ltype.getImplType();
+    QualType rcanon = rtype.getImplType();
+    if (!validIntegerType(lcanon)) {
+        if (!validIntegerType(rcanon)) return ma.invalidBinOp2(b, ltype, rtype);
+        return ma.invalidBinOp1(b, b.getLHS(), ltype);
+    }
+    if (!validIntegerType(rcanon)) return ma.invalidBinOp1(b, b.getRHS(), rtype);
+
+    BuiltinType* bl = lcanon.getBuiltinTypeOrNil();
+    BuiltinType* br = rcanon.getBuiltinTypeOrNil();
+    u32 width = bl.getWidth();
+
+    // perform integer promotion on both arguments
+    if (bl.isPromotableIntegerType()) {
+        lcanon = ast.builtins[BuiltinKind.Int32];
+        width = 32;
+        if (!assign) ma.builder.insertImplicitCast(IntegralCast, b.getLHS2(), lcanon);
+    }
+    if (br.isPromotableIntegerType()) {
+        rcanon = ast.builtins[BuiltinKind.Int32];
+        ma.builder.insertImplicitCast(IntegralCast, b.getRHS2(), rcanon);
+    }
+    Expr* lhs = b.getLHS();
+    if (lhs.isCtv()) {
+        Value val = ast.evalExpr(lhs);
+        if (val.isNegative()) {
+            ma.error(lhs.getLoc(), "shifting a negative signed value is undefined");
+            return QualType_Invalid;
+        }
+    }
+    Expr* rhs = b.getRHS();
+    if (rhs.isCtv()) {
+        Value val = ast.evalExpr(rhs);
+        if (val.isNegative()) {
+            ma.error(rhs.getLoc(), "shift count is negative");
+            return QualType_Invalid;
+        }
+
+        // check if shifting more than width
+        // (do not reduce width of signed types to allow `i32 a = 1 << 31;`)
+        if (val.as_u64() >= width) {
+            ma.error(rhs.getLoc(), "shift count >= width of type");
+            return QualType_Invalid;
+        }
+    }
+    if (assign) return ltype;
+    return lcanon;
+}
+
+fn QualType Analyser.checkBinopLogical(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
+    if (!validTestType(lhs)) {
+        if (!validTestType(rhs)) return ma.invalidBinOp2(b, lhs, rhs);
+        return ma.invalidBinOp1(b, b.getLHS(), lhs);
+    }
+    if (!validTestType(rhs)) return ma.invalidBinOp1(b, b.getRHS(), rhs);
+
+    return builtins[BuiltinKind.Bool];
 }
 
 // 0  cannot happen
-// 1  invalid
-// 2  builtin - builtin
-// 3  builtin - enum -> int
-// 4  pointer - builtin/enum
-// 5  enum - builtin
-// 6  enum - enum -> int (CTV)
+// 1  invalid lhs
+// 2  invalid rhs
+// 3  invalid operands
+// 4  builtin -= builtin
+// 5  builtin -= enum -> int
+// 6  pointer -= builtin/enum
+// 7  enum -= builtin
+// 8  enum -= enum -> int (CTV)
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvAddSubAss = {
     //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
     //  Builtin += / -=
-    {   2,      1,      0,      1,      3,      0,     0,     0  },
+    {   4,      2,      0,      2,      5,      2,     0,     0  },
     //  Pointer += / -=
-    {   4,      1,      0,      1,      4,      1,     0,     0  },
+    {   6,      3,      0,      2,      6,      2,     0,     0  },
     //  Array += / -=
     {   0,      0,      0,      0,      0,      0,     0,     0  },
     //  Struct += / -=
-    {   1,      1,      0,      1,      1,      1,     0,     0  },
+    {   1,      1,      0,      3,      1,      3,     0,     0  },
     //  Enum += / -=
-    {   5,      1,      0,      1,      6,      1,     0,     0  },
+    {   7,      1,      0,      2,      8,      2,     0,     0  },
     //  Function += / -=
-    {   0,      0,      0,      1,      0,      0,     0,     0  },
+    {   1,      3,      0,      3,      1,      3,     0,     0  },
     // Alias + Module are zero
 }
 fn QualType Analyser.checkBinopAddSubAssign(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
@@ -204,56 +307,61 @@ fn QualType Analyser.checkBinopAddSubAssign(Analyser* ma, BinaryOperator* b, Qua
     switch (res) {
     case 0: // cannot happen
         break;
-    case 1: // invalid
-        Expr* e = (Expr*)b;
-        ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
-        return QualType_Invalid;
-    case 2: // builtin - builtin
-        // TODO do integer promotion, int -> float conversion
+    case 1: // invalid lhs
+    invalid_lhs:
+        if (rcanon.isVoid()) goto invalid;
+        return ma.invalidBinOp1(b, b.getLHS(), lhs);
+    case 2: // invalid rhs
+    invalid_rhs:
+        if (lcanon.isVoid()) goto invalid;
+        return ma.invalidBinOp1(b, b.getRHS(), rhs);
+    case 3: // invalid operands
+    invalid:
+        return ma.invalidBinOp2(b, lhs, rhs);
+    case 4: // builtin - builtin
+    case 5: // builtin - enum -> int
+        return ma.checkBinopArithArgs(b, lhs, rhs, true);
+    case 6: // pointer - builtin/enum
+        if (lcanon.isVoidPtr())  goto invalid_lhs;
+        if (!validIntegerType(rcanon)) goto invalid_rhs;
         return lhs;
-    case 3: // builtin - enum -> int
-        // TODO do integer promotion, int -> float conversion
-        return lhs;
-    case 4: // pointer - builtin/enum
-        return lhs;
-    case 5: // enum - builtin
-        // TODO do integer promotion, int -> float conversion
-        return lhs;
-    case 6: // enum - enum -> int (CTV)
-        // TODO check same enum type
-        return lhs;
+    case 7: // enum - builtin
+        return ma.checkBinopIntArgs(b, lhs, rhs, true);
+    case 8: // enum - enum -> int (CTV)
+        // TODO check same enum type?
+        return ma.checkBinopIntArgs(b, lhs, rhs, true);
     }
     assert(0);
     return QualType_Invalid;
 }
 
 // 0  cannot happen
-// 1  invalid
-// 2  builtin + builtin
-// 3  builtin/enum + ptr
-// 4  ptr + builtin/enum
-// 5  builtin +  enum
-// 6  enum + builtin
-// 7  enum + enum -> int
+// 1  invalid op1
+// 2  invalid op2
+// 3  invalid operands
+// 4  builtin + builtin
+// 5  builtin + enum -> int
+// 6  enum + builtin -> int
+// 7  builtin/enum + ptr
+// 8  ptr + builtin/enum
 // TODO remove Alias/Module (+Array, need to move) since already checked
 // TODO need to fix C2C.c++ (asserts of elemsof(..) -2), then table can be 5x5
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvAdd = {
     //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
     //  Builtin +
-    {   2,      3,      0,      1,      5,      0,     0,     0  },
+    {   4,      7,      0,      2,      5,      2,     0,     0  },
     //  Pointer +
-    {   4,      1,      0,      1,      4,      1,     0,     0  },
+    {   8,      3,      0,      2,      8,      3,     0,     0  },
     //  Array +
     {   0,      0,      0,      0,      0,      0,     0,     0  },
     //  Struct +
-    {   1,      1,      0,      1,      1,      1,     0,     0  },
+    {   1,      1,      0,      3,      1,      3,     0,     0  },
     //  Enum +
-    {   6,      3,      0,      1,      7,      1,     0,     0  },
+    {   6,      7,      0,      2,      3,      2,     0,     0  },
     //  Function +
-    {   0,      0,      0,      1,      0,      0,     0,     0  },
+    {   1,      3,      0,      3,      1,      3,     0,     0  },
     // Alias + Module are zero
 }
-
 fn QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
     QualType lcanon = lhs.getCanonicalType();
     QualType rcanon = rhs.getCanonicalType();
@@ -264,65 +372,81 @@ fn QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualType
     switch (res) {
     case 0: // cannot happen
         break;
-    case 1: // invalid
-        Expr* e = (Expr*)b;
-        ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
-        return QualType_Invalid;
-    case 2: // builtin + builtin
+    case 1: // invalid lhs
+    invalid_lhs:
+        if (rcanon.isVoid()) goto invalid;
+        if (rcanon.isVoidPtr())  goto invalid;
+        return ma.invalidBinOp1(b, b.getLHS(), lhs);
+    case 2: // invalid rhs
+    invalid_rhs:
+        if (lcanon.isVoid()) goto invalid;
+        if (lcanon.isVoidPtr())  goto invalid;
+        return ma.invalidBinOp1(b, b.getRHS(), rhs);
+    case 3: // invalid operands
+    invalid:
+        return ma.invalidBinOp2(b, lhs, rhs);
+    case 4: // builtin + builtin
+    builtin:
         BuiltinType* bl = lcanon.getBuiltin();
         BuiltinType* br = rcanon.getBuiltin();
-        // TODO return BuiltinType?
         // TODO move somewhere else (used at many places)
         QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
+        if (!optype.isValid()) {
+            if (!lcanon.isVoid()) goto invalid_rhs;
+            if (!rcanon.isVoid()) goto invalid_lhs;
+            goto invalid;
+        }
         BuiltinType* bi = optype.getBuiltin();
         if (bl != bi) {
-            //stdio.printf("promote left\n");
-            ma.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, b.getLHS2(), optype);
+            ma.builder.insertImplicitCast(IntegralCast, b.getLHS2(), optype);
         }
         if (br != bi) {
-            //stdio.printf("promote right\n");
-            ma.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, b.getRHS2(), optype);
+            ma.builder.insertImplicitCast(IntegralCast, b.getRHS2(), optype);
         }
         return optype;
-    case 3: // builtin/enum + ptr
-        // TODO check float
+    case 5: // builtin + enum -> int
+        rcanon = rcanon.getImplType();
+        goto builtin;
+    case 6: // enum + builtin -> int
+        lcanon = lcanon.getImplType();
+        goto builtin;
+    case 7: // builtin/enum + ptr
+        if (!validIntegerType(lcanon)) goto invalid_lhs;
+        if (rcanon.isVoidPtr()) goto invalid_rhs;
         return rhs;
-    case 4: // ptr + builtin/enum
-        // TODO check float
+    case 8: // ptr + builtin/enum
+        if (lcanon.isVoidPtr())  goto invalid_lhs;
+        if (!validIntegerType(rcanon))  goto invalid_rhs;
         return lhs;
-    case 5: // builtin + enum
-        return rhs;
-    case 6: // enum +  builtin
-        return lhs;
-    case 7: // enum + enum -> int
-        return builtins[BuiltinKind.UInt32];
     }
     assert(0);
     return QualType_Invalid;
 }
 
 // 0  cannot happen
-// 1  invalid
-// 2  builtin - builtin
-// 3  builtin - enum -> int
-// 4  pointer - builtin/enum
-// 5  pointer - pointer -> isize
-// 6  enum - builtin
-// 7  enum - enum -> int (CTV)
+// 1  invalid op1
+// 2  invalid op2
+// 3  invalid operands
+// 4  builtin - builtin
+// 5  builtin - enum -> int
+// 6  enum - builtin -> lhs
+// 7  enum - enum -> int if same enum
+// 8  pointer - builtin/enum
+// 9  pointer - pointer -> isize
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvSub = {
     //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
     //  Builtin -
-    {   2,      1,      0,      1,      2,      0,     0,     0  },
+    {   4,      3,      0,      2,      5,      2,     0,     0  },
     //  Pointer -
-    {   4,      5,      0,      1,      4,      6,     0,     0  },
+    {   8,      9,      0,      1,      8,      2,     0,     0  },
     //  Array -
     {   0,      0,      0,      0,      0,      0,     0,     0  },
     //  Struct -
-    {   1,      1,      0,      1,      1,      1,     0,     0  },
+    {   1,      1,      0,      3,      1,      3,     0,     0  },
     //  Enum -
-    {   6,      1,      0,      1,      7,      1,     0,     0  },
+    {   6,      3,      0,      2,      7,      2,     0,     0  },
     //  Function -
-    {   0,      0,      0,      1,      0,      0,     0,     0  },
+    {   1,      1,      0,      3,      1,      3,     0,     0  },
     // Alias + Module are zero
 }
 fn QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
@@ -335,73 +459,96 @@ fn QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType
     switch (res) {
     case 0: // cannot happen
         break;
-    case 1: // invalid
-        Expr* e = (Expr*)b;
-        ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
-        return QualType_Invalid;
-    case 2: // builtin - builtin
+    case 1: // invalid lhs
+    invalid_lhs:
+        if (rcanon.isVoid()) goto invalid;
+        return ma.invalidBinOp1(b, b.getLHS(), lhs);
+    case 2: // invalid rhs
+    invalid_rhs:
+        if (lcanon.isVoid()) goto invalid;
+        return ma.invalidBinOp1(b, b.getRHS(), rhs);
+    case 3: // invalid operands
+    invalid:
+        return ma.invalidBinOp2(b, lhs, rhs);
+    case 4: // builtin - builtin
+    builtin:
         BuiltinType* bl = lcanon.getBuiltin();
         BuiltinType* br = rcanon.getBuiltin();
-        return conversion_checker.usual_arithmetic_conversion(bl, br);
-    case 3: // builtin - enum -> int
-        BuiltinType* bl = lcanon.getBuiltin();
-        BuiltinType* br = rcanon.getBuiltin();
-        // TODO do integer promotion first (get common type)
-        return conversion_checker.usual_arithmetic_conversion(bl, br);
-    case 4: // pointer - builtin/enum
+        // TODO move somewhere else (used at many places)
+        QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
+        if (!optype.isValid()) {
+            if (!lcanon.isVoid()) goto invalid_rhs;
+            if (!rcanon.isVoid()) goto invalid_lhs;
+            goto invalid;
+        }
+        BuiltinType* bi = optype.getBuiltin();
+        if (bl != bi) {
+            ma.builder.insertImplicitCast(IntegralCast, b.getLHS2(), optype);
+        }
+        if (br != bi) {
+            ma.builder.insertImplicitCast(IntegralCast, b.getRHS2(), optype);
+        }
+        return optype;
+    case 5: // builtin - enum -> int
+        rcanon = rcanon.getImplType();
+        goto builtin;
+    case 6: // enum - builtin -> int
+        lcanon = lcanon.getImplType();
+        goto builtin;
+    case 7: // enum - enum -> check same enum
+        EnumType* et1 = (EnumType*)lcanon.getTypeOrNil();
+        EnumType* et2 = (EnumType*)rcanon.getTypeOrNil();
+        //if (et1 != et2) goto invalid;
+        lcanon = et1.getImplType();
+        rcanon = et2.getImplType();
+        // TODO: if u32 - u32 -> i32?
+        goto builtin;
+    case 8: // pointer - builtin/enum
+        if (lcanon.isVoidPtr()) goto invalid_lhs;
+        if (!validIntegerType(rcanon)) goto invalid_rhs;
         return lhs;
-    case 5: // pointer - pointer
+    case 9: // pointer - pointer
         // TODO extract to function? (same_pointer)
         PointerType* pt1 = lcanon.getPointerType();
         PointerType* pt2 = rcanon.getPointerType();
         QualType t1 = pt1.getInner();
         QualType t2 = pt2.getInner();
-        if (t1.getTypeOrNil() != t2.getTypeOrNil() || t1.isVoid() || t2.isVoid()) {
-            Expr* e = (Expr*)b;
-            ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
-            return QualType_Invalid;
-        }
+        if (t1.getTypeOrNil() != t2.getTypeOrNil() || t1.isVoid() || t2.isVoid()) goto invalid;
         return builtins[BuiltinKind.ISize];
-    case 6: // enum - builtin
-        // TODO check if float
-        return lhs;
-    case 7: // enum - enum -> int
-        // Result will be CTV
-        return ast.builtins[BuiltinKind.Int32];
     }
-    Expr* e = (Expr*)b;
-    ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
-    return QualType_Invalid;
+    return ma.invalidBinOp2(b, lhs, rhs);
 }
 
 // 0  cannot happen
-// 1  invalid
-// 2  builtin vs builtin
-// 3  pointer vs pointer - check same type
-// 4  builtin vs enum
-// 5  enum vs builtin
-// 6  enum vs enum -> both CTV
-// 7  pointer vs function
-// 8  function vs pointer
-// 9  function vs function
+// 1  invalid operands
+// 2  builtin : builtin
+// 3  builtin : enum
+// 4  pointer : pointer - check same type
+// 5  enum : builtin
+// 6  enum : enum -> same type
+// 7  pointer : function
+// 8  function : pointer
+// 9  function : function
+// 10  invalid lhs
+// 11  invalid rhs
+// TODO: accept pointer/function : 0 and 0 : pointer/function
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvComparison = {
     //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
-    //  Builtin vs
-    {   2,      1,      0,      1,      4,      0,     0,     0  },
-    //  Pointer vs
-    {   1,      3,      0,      1,      1,      7,     0,     0  },
-    //  Array +
+    //  Builtin :
+    {   2,      1,      0,     11,      3,      0,     0,     0  },
+    //  Pointer :
+    {   1,      4,      0,     11,      1,      7,     0,     0  },
+    //  Array :
     {   0,      0,      0,      0,      0,      0,     0,     0  },
-    //  Struct vs
-    {   1,      1,      0,      1,      1,      1,     0,     0  },
-    //  Enum vs
-    {   5,      1,      0,      1,      6,      1,     0,     0  },
-    //  Function vs
-    {   1,      8,      1,      1,      1,      9,     0,     0  },
+    //  Struct :
+    {  10,     10,      0,      1,     10,     10,     0,     0  },
+    //  Enum :
+    {   5,      1,      0,     11,      6,      1,     0,     0  },
+    //  Function :
+    {   1,      8,      0,     11,      1,      9,     0,     0  },
     // Alias + Module are zero
 }
-
-fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
+fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs, bool is_relative) {
     QualType lcanon = lhs.getCanonicalType();
     QualType rcanon = rhs.getCanonicalType();
     Expr* e = (Expr*)b;
@@ -411,68 +558,88 @@ fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualT
     u8 res = BinOpConvComparison[lcanon.getKind()][rcanon.getKind()];
     switch (res) {
     case 0: // cannot happen
-        ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
-        return QualType_Invalid;
-    case 1: // invalid
-        ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
-        return QualType_Invalid;
-    case 2: // builtin vs builtin
+    case 1: // invalid operands
+    invalid:
+        return ma.invalidBinOp2(b, lhs, rhs);
+    case 2: // builtin : builtin
+    builtin:
+        BuiltinType* bl = lcanon.getBuiltin();
+        BuiltinType* br = rcanon.getBuiltin();
+        // TODO move somewhere else (used at many places)
+        QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
+        if (!optype.isValid()) {
+            if (!lcanon.isVoid()) goto invalid_rhs;
+            if (!rcanon.isVoid()) goto invalid_lhs;
+            goto invalid;
+        }
+        BuiltinType* bi = optype.getBuiltin();
+        if (bl != bi) {
+            ma.builder.insertImplicitCast(IntegralCast, b.getLHS2(), optype);
+        }
+        if (br != bi) {
+            ma.builder.insertImplicitCast(IntegralCast, b.getRHS2(), optype);
+        }
+        // TODO should detect comparison between i32/u32 and i32/u32
         // TODO i32 < u32 is not the same as i32 = u32! dont use checker
         //if (ma.checker.check(lhs, rhs, &e, e.getLoc())) return QualType_Invalid;
-        // TODO check floats
         return builtins[BuiltinKind.Bool];
-    case 3: // pointer vs pointer - check same type
-        // TODO check if same pointer type (ignoring const)
+    case 3: // builtin : enum
+        rcanon = rcanon.getImplType();
+        goto builtin;
+    case 4: // pointer : pointer - check same type
+        PointerType* pt1 = lcanon.getPointerType();
+        PointerType* pt2 = rcanon.getPointerType();
+        QualType t1 = pt1.getInner();
+        QualType t2 = pt2.getInner();
+        if (t1.isVoid() || t2.isVoid()) {
+            if (is_relative) goto invalid;
+        } else
+        if (t1.getTypeOrNil() != t2.getTypeOrNil()) {
+            ma.error(e.getLoc(), "comparing pointers to different types ('%s' and '%s')", lhs.diagName(), rhs.diagName());
+            return QualType_Invalid;
+        }
         return builtins[BuiltinKind.Bool];
-    case 4: // builtin vs enum
-        // TODO check floats
-        return builtins[BuiltinKind.Bool];
-    case 5: // enum vs builtin
-        // TODO check floats
-        return builtins[BuiltinKind.Bool];
-    case 6: // enum vs enum -> both CTV
+    case 5: // enum : builtin
+        lcanon = lcanon.getImplType();
+        goto builtin;
+    case 6: // enum : enum -> same type
         if (lcanon.getTypeOrNil() != rcanon.getTypeOrNil()) {
             ma.error(e.getLoc(), "comparing enums of different types ('%s' and '%s')", lhs.diagName(), rhs.diagName());
             return QualType_Invalid;
         }
         return builtins[BuiltinKind.Bool];
-    case 7: // function vs pointer
-        return ma.checkPointerFuncComparison(b, lhs, rhs, lcanon, rcanon);
-    case 8: // pointer vs function
-        return ma.checkPointerFuncComparison(b, lhs, rhs, rcanon, lcanon);
-    case 9: // function vs function
-        // TODO only allow ==
-        if (b.getOpcode() != BinaryOpcode.Equal && b.getOpcode() != BinaryOpcode.NotEqual) {
-            ma.error(e.getLoc(), "comparing functions may only be done with '!=' or '=='");
-            return QualType_Invalid;
-        }
+    case 7: // pointer : function
+        if (is_relative) return ma.invalidFuncCompare(b);
+        // TODO accept 0 == f, (void*)0 == f and (void*)nil == f
+        if (b.getLHS().getKind() != Nil) goto invalid;
+        return ma.checkFuncTest(rcanon.getFunctionType(), e.getLoc());
+    case 8: // function : pointer
+        if (is_relative) return ma.invalidFuncCompare(b);
+        // TODO accept f == 0, f == (void*)0 and f == (void*)nil
+        if (b.getRHS().getKind() != Nil) goto invalid;
+        return ma.checkFuncTest(lcanon.getFunctionType(), e.getLoc());
+    case 9: // function : function
+        if (is_relative) return ma.invalidFuncCompare(b);
         return builtins[BuiltinKind.Bool];
+    case 10: // invalid lhs
+    invalid_lhs:
+        if (rcanon.isVoid()) goto invalid;
+        return ma.invalidBinOp1(b, b.getLHS(), lhs);
+    case 11: // invalid rhs
+    invalid_rhs:
+        if (lcanon.isVoid()) goto invalid;
+        return ma.invalidBinOp1(b, b.getRHS(), rhs);
     }
     ma.error(e.getLoc(), "TODO BINOP %d", res);
     assert(0);
     return QualType_Invalid;
 }
 
-fn QualType Analyser.checkPointerFuncComparison(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs, QualType lcanon, QualType rcanon) {
-    // only allow nil vs weak-function
-
-    // pointer
-    assert(lcanon.isPointer());
-    PointerType* pt = lcanon.getPointerType();
-    QualType inner = pt.getInner();
-    Expr* e = (Expr*)b;
-    if (!inner.isVoid()) {
-        ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
-        return QualType_Invalid;
-    }
-
-    // function
-    assert(rcanon.isFunction());
-    FunctionType* ft = rcanon.getFunctionType();
+fn QualType Analyser.checkFuncTest(Analyser* ma, FunctionType* ft, SrcLoc loc) {
+    // only allow nil vs weak-function or function pointer
     FunctionDecl* fd = ft.getDecl();
     if (fd.isType() || fd.hasAttrWeak()) return builtins[BuiltinKind.Bool]; // Variable with Function type (eg callback)
-
-    ma.error(e.getLoc(), "comparison of function '%s' will always be true", fd.asDecl().getFullName());
+    ma.error(loc, "comparison of function '%s' will always be true", fd.asDecl().getFullName());
     return QualType_Invalid;
 }
 
@@ -484,6 +651,19 @@ fn bool incompatible_opcodes(BinaryOpcode op1, BinaryOpcode op2) {
     if (c2_p1 == c2_p2) return c2_p1 == Relational || c_p1 != c_p2;
     if (c2_p1 < c2_p2) return c_p1 >= c_p2;
     return c_p1 <= c_p2;
+}
+
+fn bool Analyser.checkAmbiguousOperators(Analyser* ma, BinaryOpcode opcode, Expr* sub) {
+    if (sub.isBinaryOperator()) {
+        BinaryOperator* b = (BinaryOperator*)sub;
+        BinaryOpcode op1 = b.getOpcode();
+        if (incompatible_opcodes(opcode, op1)) {
+            ma.error(sub.getLoc(), "operators '%s' and '%s' do not combine without parentheses",
+                     opcode.str(), op1.str());
+            return false;
+        }
+    }
+    return true;
 }
 
 fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
@@ -503,12 +683,12 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         }
     }
 
-    QualType rtype;
     if (opcode.isComparison()) {
         // special case for enum comparison without prefix (eg kind >= KW_void)
         if (ma.checkEnumArg(b.getRHS2(), ltype))
             return builtins[BuiltinKind.Bool];
     }
+    QualType rtype;
     if (opcode == BinaryOpcode.Assign) {
         if (!ma.analyseInitExpr(b.getRHS2(), ltype, e.getLoc(), false, false))
             return QualType_Invalid;
@@ -521,32 +701,8 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     Expr* lhs = b.getLHS();
     Expr* rhs = b.getRHS();
 
-    if (lhs.isBinaryOperator()) {
-        BinaryOpcode op1 = ((BinaryOperator*)lhs).getOpcode();
-        if (incompatible_opcodes(opcode, op1)) {
-            ma.error(lhs.getLoc(), "operators '%s' and '%s' do not combine without parentheses",
-                     opcode.str(), op1.str());
-            return QualType_Invalid;
-        }
-    }
-    if (rhs.isBinaryOperator()) {
-        BinaryOpcode op2 = ((BinaryOperator*)rhs).getOpcode();
-        if (incompatible_opcodes(opcode, op2)) {
-            ma.error(rhs.getLoc(), "operators '%s' and '%s' do not combine without parentheses",
-                     opcode.str(), op2.str());
-            return QualType_Invalid;
-        }
-    }
-
-    if (!validBinOpKind(ltype) || ltype.isVoid()) {
-        QualType tl = lhs.getType();
-        ma.error(lhs.getLoc(), "invalid operand to binary expression '%s'", tl.diagName());
-        return QualType_Invalid;
-    }
-
-    if (!validBinOpKind(rtype) || rtype.isVoid()) {
-        QualType tr = rhs.getType();
-        ma.error(rhs.getLoc(), "invalid operand to binary expression '%s'", tr.diagName());
+    // enforce parentheses on ambiguous operator combinations
+    if (!ma.checkAmbiguousOperators(opcode, lhs) || !ma.checkAmbiguousOperators(opcode, rhs)) {
         return QualType_Invalid;
     }
 
@@ -555,16 +711,15 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     QualType result = QualType_Invalid;
     switch (opcode) {
     case Multiply:
-        result = ma.checkBinopIntArgs(b, ltype, rtype);
+        result = ma.checkBinopArithArgs(b, ltype, rtype, false);
         break;
     case Divide:
-        if (!ma.checkZero(rhs, "division")) return QualType_Invalid;
-        result = ma.checkBinopIntArgs(b, ltype, rtype);
+        result = ma.checkBinopArithArgs(b, ltype, rtype, false);
+        if (!ma.checkZero(b.getRHS(), "division")) return QualType_Invalid;
         break;
     case Remainder:
-        if (!ma.checkZero(rhs, "remainder")) return QualType_Invalid;
-        if (!ma.checkFloat(lhs, rhs, "remainder")) return QualType_Invalid;
-        result = ma.checkBinopIntArgs(b, ltype, rtype);
+        result = ma.checkBinopIntArgs(b, ltype, rtype, false);
+        if (!ma.checkZero(b.getRHS(), "remainder")) return QualType_Invalid;
         break;
     case Add:
         result = ma.checkBinopAddArgs(b, ltype, rtype);
@@ -574,27 +729,22 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         break;
     case ShiftLeft:
     case ShiftRight:
-        // TODO First promote, then check ShiftArgs
-        result = ma.checkBinopIntArgs(b, ltype, rtype);
-        // TODO re-read
-        if (!ma.checkShiftArgs(b.getLHS(), b.getRHS())) return QualType_Invalid;
+        result = ma.checkBinopShiftArgs(b, ltype, rtype, false);
         break;
     case LessThan:
     case GreaterThan:
     case LessEqual:
     case GreaterEqual:
-        // TODO dont allow some (ptr vs func etc)
-        result = ma.checkBinopComparison(b, ltype, rtype);
+        result = ma.checkBinopComparison(b, ltype, rtype, true);
         break;
     case Equal:
     case NotEqual:
-        result = ma.checkBinopComparison(b, ltype, rtype);
+        result = ma.checkBinopComparison(b, ltype, rtype, false);
         break;
     case And:
     case Xor:
     case Or:
-        if (!ma.checkFloat(lhs, rhs, "bitwise")) return QualType_Invalid;
-        result = ma.checkBinopIntArgs(b, ltype, rtype);
+        result = ma.checkBinopIntArgs(b, ltype, rtype, false);
         break;
     case LAnd:
     case LOr:
@@ -604,16 +754,15 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         result = ltype;
         break;
     case MulAssign:
-        result = ma.checkBinopIntArgs(b, ltype, rtype);
+        result = ma.checkBinopArithArgs(b, ltype, rtype, true);
         break;
     case DivAssign:
-        if (!ma.checkZero(rhs, "division")) return QualType_Invalid;
-        result = ma.checkBinopIntArgs(b, ltype, rtype);
+        result = ma.checkBinopArithArgs(b, ltype, rtype, true);
+        if (!ma.checkZero(b.getRHS(), "division")) return QualType_Invalid;
         break;
     case RemAssign:
-        if (!ma.checkZero(rhs, "remainder")) return QualType_Invalid;
-        if (!ma.checkFloat(lhs, rhs, "remainder")) return QualType_Invalid;
-        result = ma.checkBinopIntArgs(b, ltype, rtype);
+        result = ma.checkBinopIntArgs(b, ltype, rtype, true);
+        if (!ma.checkZero(b.getRHS(), "remainder")) return QualType_Invalid;
         break;
     case AddAssign:
     case SubAssign:
@@ -621,13 +770,12 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         break;
     case ShlAssign:
     case ShrAssign:
-        if (!ma.checkShiftArgs(lhs, rhs)) return QualType_Invalid;
-        fallthrough;
+        result = ma.checkBinopShiftArgs(b, ltype, rtype, true);
+        break;
     case AndAssign:
     case XorAssign:
     case OrAssign:
-        if (!ma.checkFloat(lhs, rhs, "bitwise")) return QualType_Invalid;
-        result = ma.checkBinopIntArgs(b, ltype, rtype);
+        result = ma.checkBinopIntArgs(b, ltype, rtype, true);
         break;
     }
 
@@ -635,70 +783,15 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     return result;
 }
 
-fn bool Analyser.checkShiftArgs(Analyser* ma, Expr* lhs, Expr* rhs) {
-    // check lhs
-    QualType qt = lhs.getType();
-    QualType canon = qt.getCanonicalType();
-    if (!canon.isBuiltin()) {
-        QualType qt2 = rhs.getType();
-        ma.error(lhs.getLoc(), "invalid operands to binary expression ('%s' and '%s')", qt.diagName(), qt2.diagName());
-        return false;
-    }
-    BuiltinType* bi = canon.getBuiltinTypeOrNil();
-    u32 width = bi.getWidth();
-    // Do not reduce width of signed types to allow `i32 a = 1 << 31;`
-
-    if (lhs.isCtv()) {
-        Value val = ast.evalExpr(lhs);
-        if (val.isNegative()) {
-            ma.error(lhs.getLoc(), "shifting a negative signed value is undefined");
-            return false;
-        }
-    }
-
-    // check rhs
-    if (rhs.isCtv()) {
-        Value val = ast.evalExpr(rhs);
-        if (val.isNegative()) {
-            ma.error(rhs.getLoc(), "shift count is negative");
-            return false;
-        }
-
-        // check if shifting more than width
-        if (val.as_u64() >= width) {
-            ma.error(rhs.getLoc(), "shift count >= width of type");
-            return false;
-        }
-    }
-
-    return true;
-}
-
 fn bool Analyser.checkZero(Analyser* ma, Expr* e, const char* operation) {
     if (!e.isCtv()) return true;
 
     Value val = ast.evalExpr(e);
-    if (val.isDecimal()) {
-        if (val.isZero()) {
-            ma.error(e.getLoc(), "%s by zero is undefined", operation);
-            return false;
-        }
-        // TODO check for division overflow: max_i64 / -1
-    }
-    return true;
-}
-
-fn bool Analyser.checkFloat(Analyser* ma, Expr* lhs, Expr* rhs, const char* operation) {
-    QualType t1 = lhs.getType();
-    if (t1.isFloat()) {
-        ma.error(lhs.getLoc(), "invalid operand for binary operation %s", operation);
+    if (val.isDecimal() && val.isZero()) {
+        ma.error(e.getLoc(), "%s by zero is undefined", operation);
         return false;
     }
-    QualType t2 = rhs.getType();
-    if (t2.isFloat()) {
-        ma.error(rhs.getLoc(), "invalid operand for binary operation %s", operation);
-        return false;
-    }
+    // TODO check for division overflow: max_i64 / -1
     return true;
 }
 

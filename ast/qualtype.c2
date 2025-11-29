@@ -159,6 +159,19 @@ public fn void QualType.setCanonicalType(QualType* qt, QualType canon) {
     t.setCanonicalType(canon);
 }
 
+public fn QualType QualType.getImplType(const QualType* qt) {
+    const Type* t = qt.getType();
+    QualType canon = t.canonicalType;
+    t = canon.getType();
+    if (t.isEnumType()) {
+        EnumType* et = (EnumType*)t;
+        EnumTypeDecl* etd = et.getDecl();
+        canon = etd.getImplType();
+    }
+    canon.copyQuals(*qt);
+    return canon;
+}
+
 // Note: should be valid and PointerType
 public fn bool QualType.isConstPtr(const QualType qt) {
     PointerType* pt = qt.getPointerType();
@@ -270,6 +283,14 @@ public fn bool QualType.isEnum(const QualType qt) {
 
 public fn bool QualType.isVoid(const QualType qt) {
     return qt.getTypeOrNil().isVoidType();
+}
+
+public fn bool QualType.isVoidPtr(const QualType qt) {
+    const Type* t = qt.getTypeOrNil();
+    if (!t.isPointerType()) return false;
+    const PointerType* pt = (PointerType*)t;
+    QualType inner = pt.getInner();
+    return inner.isVoid();
 }
 
 // NOTE: doesn't check if kind is ok

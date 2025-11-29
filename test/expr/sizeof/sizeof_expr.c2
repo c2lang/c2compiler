@@ -282,7 +282,7 @@ static_assert(sizeof(v_i16 << v_i16), sizeof(i32));
 static_assert(sizeof(v_i16 << v_i32), sizeof(i32));
 static_assert(sizeof(v_i32 << v_i16), sizeof(i32));
 static_assert(sizeof(v_i32 << v_i32), sizeof(i32));
-//static_assert(sizeof(v_i32 << v_i64), sizeof(i32));
+static_assert(sizeof(v_i32 << v_i64), sizeof(i32));
 static_assert(sizeof(v_i64 << v_i32), sizeof(i64));
 static_assert(sizeof(v_i64 << v_i64), sizeof(i64));
 
@@ -293,7 +293,7 @@ static_assert(sizeof(v_u16 << v_i16), sizeof(i32));
 static_assert(sizeof(v_u16 << v_i32), sizeof(i32));
 static_assert(sizeof(v_i32 << v_u16), sizeof(i32));
 static_assert(sizeof(v_u32 << v_i32), sizeof(u32));
-//static_assert(sizeof(v_u32 << v_i64), sizeof(u32));
+static_assert(sizeof(v_u32 << v_i64), sizeof(u32));
 static_assert(sizeof(v_i64 << v_u32), sizeof(i64));
 static_assert(sizeof(v_u64 << v_i64), sizeof(u64));
 
@@ -304,7 +304,7 @@ static_assert(sizeof(v_u16 << v_u16), sizeof(i32));
 static_assert(sizeof(v_u16 << v_u32), sizeof(i32));
 static_assert(sizeof(v_u32 << v_u16), sizeof(u32));
 static_assert(sizeof(v_u32 << v_u32), sizeof(u32));
-//static_assert(sizeof(v_u32 << v_u64), sizeof(u32));
+static_assert(sizeof(v_u32 << v_u64), sizeof(u32));
 static_assert(sizeof(v_u64 << v_u32), sizeof(u64));
 static_assert(sizeof(v_u64 << v_u64), sizeof(u64));
 
@@ -315,7 +315,7 @@ static_assert(sizeof(v_i16 >> v_i16), sizeof(i32));
 static_assert(sizeof(v_i16 >> v_i32), sizeof(i32));
 static_assert(sizeof(v_i32 >> v_i16), sizeof(i32));
 static_assert(sizeof(v_i32 >> v_i32), sizeof(i32));
-//static_assert(sizeof(v_i32 >> v_i64), sizeof(i32));
+static_assert(sizeof(v_i32 >> v_i64), sizeof(i32));
 static_assert(sizeof(v_i64 >> v_i32), sizeof(i64));
 static_assert(sizeof(v_i64 >> v_i64), sizeof(i64));
 
@@ -326,7 +326,7 @@ static_assert(sizeof(v_u16 >> v_i16), sizeof(i32));
 static_assert(sizeof(v_u16 >> v_i32), sizeof(i32));
 static_assert(sizeof(v_i32 >> v_u16), sizeof(i32));
 static_assert(sizeof(v_u32 >> v_i32), sizeof(u32));
-//static_assert(sizeof(v_u32 >> v_i64), sizeof(u32));
+static_assert(sizeof(v_u32 >> v_i64), sizeof(u32));
 static_assert(sizeof(v_i64 >> v_u32), sizeof(i64));
 static_assert(sizeof(v_u64 >> v_i64), sizeof(u64));
 
@@ -337,7 +337,7 @@ static_assert(sizeof(v_u16 >> v_u16), sizeof(i32));
 static_assert(sizeof(v_u16 >> v_u32), sizeof(i32));
 static_assert(sizeof(v_u32 >> v_u16), sizeof(u32));
 static_assert(sizeof(v_u32 >> v_u32), sizeof(u32));
-//static_assert(sizeof(v_u32 >> v_u64), sizeof(u32));
+static_assert(sizeof(v_u32 >> v_u64), sizeof(u32));
 static_assert(sizeof(v_u64 >> v_u32), sizeof(u64));
 static_assert(sizeof(v_u64 >> v_u64), sizeof(u64));
 

@@ -17,6 +17,6 @@ fn void test3(i32 i, f32 f) {
 }
 
 fn void test4(f32 f) {
-    i32 a = (f ? 1 : 0);  // @error{invalid type conversion from 'f32' to 'bool'}
+    i32 a = (f ? 1 : 0);
 }
 

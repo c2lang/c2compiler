@@ -2,9 +2,9 @@
 module test;
 
 fn void test1() {
-    f32 a = 10 % 2.0;    // @error{invalid operand for binary operation remainder}
+    f32 a = 10 % 2.0;    // @error{invalid operand type 'f64' for binary expression '%'}
 }
 
 fn void test2() {
-    f32 a = 10.0 % 5;    // @error{invalid operand for binary operation remainder}
+    f32 a = 10.0 % 5;    // @error{invalid operand type 'f64' for binary expression '%'}
 }

@@ -234,13 +234,13 @@ fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon
         return false;
     case 1:     // ok, needs conversion
         //c.diags.note(c.loc, "WIDEN %s -> %s", c.rhs.diagName(), c.lhs.diagName());
-        c.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, c.expr_ptr, c.lhs);
+        c.builder.insertImplicitCast(IntegralCast, c.expr_ptr, c.lhs);
         break;
     case 2:     // incompatible
         return c.conversionError("invalid type conversion from");
     case 3:     // sign-conversion
         if (c.checkIntConversion(lbuiltin)) {
-            c.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, c.expr_ptr, c.lhs);
+            c.builder.insertImplicitCast(IntegralCast, c.expr_ptr, c.lhs);
         } else {
             // TODO: is this just a warning?
             c.conversionError("implicit conversion changes signedness:");
@@ -248,7 +248,7 @@ fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon
         break;
     case 4:     // loss of integer-precision
         if (c.checkIntConversion(lbuiltin)) {
-            c.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, c.expr_ptr, c.lhs);
+            c.builder.insertImplicitCast(IntegralCast, c.expr_ptr, c.lhs);
         } else {
             // TODO: is this just a warning?
             c.conversionError("implicit conversion loses integer precision:");
@@ -260,7 +260,7 @@ fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon
         break;
     case 6:     // loss of FP-precision
         if ((*c.expr_ptr).isCtv()) {
-            c.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, c.expr_ptr, c.lhs);
+            c.builder.insertImplicitCast(IntegralCast, c.expr_ptr, c.lhs);
         } else {
             // TODO: is this just a warning?
             c.conversionError("implicit conversion loses floating-point precision:");
@@ -299,7 +299,7 @@ fn bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Type*
 
     BuiltinKind kind = bi.getKind();
     if (kind == BuiltinKind.Bool) {
-        c.builder.insertImplicitCast(ImplicitCastKind.PointerToBoolean, c.expr_ptr, builtins[BuiltinKind.Bool]);
+        c.builder.insertImplicitCast(PointerToBoolean, c.expr_ptr, builtins[BuiltinKind.Bool]);
         return true;
     }
 
@@ -318,7 +318,7 @@ fn bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Type*
         }
     }
 
-    c.builder.insertImplicitCast(ImplicitCastKind.PointerToInteger, c.expr_ptr, builtins[BuiltinKind.USize]);
+    c.builder.insertImplicitCast(PointerToInteger, c.expr_ptr, builtins[BuiltinKind.USize]);
     return true;
 }
 
@@ -329,7 +329,7 @@ fn bool Checker.checkPointer2Func(Checker* c, const Type* lcanon, const Type* rc
     if (!inner.isVoid()) {
         return c.conversionError("incompatible pointer to function conversion:");
     }
-    c.builder.insertImplicitCast(ImplicitCastKind.BitCast, c.expr_ptr, c.lhs);
+    c.builder.insertImplicitCast(BitCast, c.expr_ptr, c.lhs);
     return true;
 }
 
@@ -645,12 +645,7 @@ const u8[elemsof(BuiltinKind)][elemsof(BuiltinKind)] ConditionalOperatorResult =
     // Void ->
     {  14,    14,    14,    14,    14,    14,    14,    14,    14,    14,    14,    14,    14,    14,    14  },
 }
-public fn QualType get_common_arithmetic_type(QualType t1, QualType t2) {
-    assert(t1.isBuiltin());
-    assert(t2.isBuiltin());
-
-    BuiltinType* bi1 = t1.getBuiltin();
-    BuiltinType* bi2 = t2.getBuiltin();
+public fn QualType get_common_arithmetic_type(BuiltinType* bi1, BuiltinType* bi2) {
     BuiltinKind kind = (BuiltinKind)ConditionalOperatorResult[bi2.getBaseKind()][bi1.getBaseKind()];
     return ast.builtins[kind];
 }

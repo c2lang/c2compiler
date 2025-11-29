@@ -35,11 +35,11 @@ fn QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue, u
 
             if (canon.isArray()) {
                 result = getPointerFromArray(ma.builder, canon);
-                ma.builder.insertImplicitCast(ImplicitCastKind.ArrayToPointerDecay, e_ptr, result);
+                ma.builder.insertImplicitCast(ArrayToPointerDecay, e_ptr, result);
             } else {
                 // LValueToRValue conversion strips const of type
                 result.unsetConst();
-                ma.builder.insertImplicitCast(ImplicitCastKind.LValueToRValue, e_ptr, result);
+                ma.builder.insertImplicitCast(LValueToRValue, e_ptr, result);
             }
         } else if (e.isNValue()) {
             ma.error(e.getLoc(), "lvalue/rvalue required");
@@ -221,29 +221,43 @@ fn IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
     return kind;
 }
 
+// Conditional operator operand Constraints:
+// The first operand shall have scalar type.
+// One of the following shall hold for the second and third operands:
+// — both operands have arithmetic type;
+// — both operands have compatible structure or union type;
+// — both operands have void type;
+// — both operands are pointers to qualified or unqualified versions of compatible types;
+// — both operands have nullptr_t type;
+// — one operand is a pointer and the other is a null pointer constant or has type nullptr_t; or
+// — one operand is a pointer to an object type and the other is a pointer to a qualified or unqualified version of void.
+
 // 0  cannot happen
-// 1  invalid
-// 2  builtin - builtin
-// 3  builtin - enum -> int
-// 4  pointer - pointer
-// 5  struct - struct
-// 6  enum - builtin -> int
-// 7  enum - enum
-// 8  func - func
+// 1  invalid operands
+// 2  builtin : builtin
+// 3  builtin : enum
+// 4  pointer : pointer - check same type
+// 5  enum : builtin
+// 6  enum : enum -> same type
+// 7  pointer : function
+// 8  function : pointer
+// 9  function : function
+// 10  struct : struct
+// TODO: accept pointer/function : 0 and 0 : pointer/function
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] CondOpTable = {
     //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
-    //  Builtin += / -=
+    //  Builtin :
     {   2,      1,      0,      1,      3,      0,     0,     0  },
-    //  Pointer += / -=
-    {   1,      4,      0,      1,      1,      1,     0,     0  },
-    //  Array += / -=
+    //  Pointer :
+    {   1,      4,      0,      1,      1,      7,     0,     0  },
+    //  Array :
     {   0,      0,      0,      0,      0,      0,     0,     0  },
-    //  Struct += / -=
-    {   1,      1,      0,      5,      1,      1,     0,     0  },
-    //  Enum += / -=
-    {   6,      1,      0,      1,      7,      1,     0,     0  },
-    //  Function += / -=
-    {   0,      0,      0,      1,      0,      8,     0,     0  },
+    //  Struct :
+    {   1,      1,      0,     10,      1,      1,     0,     0  },
+    //  Enum :
+    {   5,      1,      0,      1,      6,      1,     0,     0  },
+    //  Function :
+    {   1,      8,      0,      1,      1,      9,     0,     0  },
     // Alias + Module are zero
 }
 fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
@@ -251,8 +265,10 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
     ConditionalOperator* cond = (ConditionalOperator*)e;
     QualType qt = ma.analyseExpr(cond.getCond2(), true, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
-
-    ma.checker.check(builtins[BuiltinKind.Bool], qt, cond.getCond2(), cond.getCond().getLoc());
+    if (!validTestType(qt)) {
+        ma.error(cond.getCond().getLoc(), "invalid condition expression (%s)", qt.diagName());
+        return QualType_Invalid;
+    }
 
     QualType lhs = ma.analyseExpr(cond.getLHS2(), true, RHS);
     QualType rhs = ma.analyseExpr(cond.getRHS2(), true, RHS);
@@ -270,31 +286,63 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
     switch (res) {
     case 0: // cannot happen
         break;
-    case 1: // invalid
+    case 1: // invalid operands
+    invalid:
         ma.error(e.getLoc(), "invalid operands to ternary operator (%s and %s)", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
-    case 2: // builtin - builtin
-        // TODO do integer promotions, check for void, float etc
-        return conversion_checker.get_common_arithmetic_type(lcanon, rcanon);
-    case 3: // builtin - enum -> int
-        // TODO do integer promotions, check for void, float etc
+    case 2: // builtin : builtin
+    builtin:
+        BuiltinType* bl = lcanon.getBuiltin();
+        BuiltinType* br = rcanon.getBuiltin();
+        // Use modified version of usual_arithmetic_conversion
+        QualType optype = conversion_checker.get_common_arithmetic_type(bl, br);
+        if (!optype.isValid() || optype.isVoid()) goto invalid;
+        BuiltinType* bi = optype.getBuiltin();
+        if (bl != bi) {
+            ma.builder.insertImplicitCast(IntegralCast, cond.getLHS2(), optype);
+        }
+        if (br != bi) {
+            ma.builder.insertImplicitCast(IntegralCast, cond.getRHS2(), optype);
+        }
+        return optype;
+    case 3: // builtin : enum
+        rcanon = rcanon.getImplType();
+        goto builtin;
+    case 4: // pointer : pointer - check same type
+        PointerType* pt1 = lcanon.getPointerType();
+        PointerType* pt2 = rcanon.getPointerType();
+        QualType t1 = pt1.getInner();
+        QualType t2 = pt2.getInner();
+        if (t1.getTypeOrNil() != t2.getTypeOrNil() && !t1.isVoid() && !t2.isVoid()) {
+            ma.error(e.getLoc(), "ternary operands are pointers of different types ('%s' and '%s')", lhs.diagName(), rhs.diagName());
+            return QualType_Invalid;
+        }
+        // TODO: combine other qualifiers
+        // if one of the pointers is a const pointer, return that.
+        return t1.isConst() ? lhs : rhs;
+    case 5: // enum : builtin
+        lcanon = lcanon.getImplType();
+        goto builtin;
+    case 6: // enum : enum
+        if (lcanon.getTypeOrNil() != rcanon.getTypeOrNil()) {
+            ma.error(e.getLoc(), "ternary operands are enums of different types ('%s' and '%s')", lhs.diagName(), rhs.diagName());
+            return QualType_Invalid;
+        }
         return lhs;
-    case 4: // pointer - pointer
-        // TODO check if same type
-        return lhs;
-    case 5: // struct - struct
-        bool ok = ma.checker.check(lhs, rhs, e_ptr, e.getLoc());
-        if (!ok) return QualType_Invalid;
-        return lhs;
-    case 6: // enum - builtin -> int
-        // TODO do integer promotions, check for void, float etc
+    case 7: // pointer : function
+        if (cond.getLHS().getKind() != Nil) goto invalid;
         return rhs;
-    case 7: // enum - enum
-        bool ok = ma.checker.check(lhs, rhs, e_ptr, e.getLoc());
-        if (!ok) return QualType_Invalid;
+    case 8: // function : pointer
+        if (cond.getRHS().getKind() != Nil) goto invalid;
         return lhs;
-    case 8: // func - func
+    case 9: // function : function
         return lhs; // will be checked later
+    case 10: // struct : struct
+        if (lcanon.getTypeOrNil() != rcanon.getTypeOrNil()) {
+            ma.error(e.getLoc(), "ternary operands are structs or unions of different types ('%s' and '%s')", lhs.diagName(), rhs.diagName());
+            return QualType_Invalid;
+        }
+        return lhs;
     }
     e.dump();
     assert(0);

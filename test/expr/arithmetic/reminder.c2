@@ -1,12 +1,11 @@
 // @warnings{no-unused}
 module test;
 
-
 fn void test1() {
-    const f32 a = 10 % 2.0; // @error{invalid operand for binary operation remainder}
+    const f32 a = 10 % 2.0; // @error{invalid operand type 'f64' for binary expression '%'}
 }
 
 fn void test2() {
-    const f32 a = 10.0 % 5; // @error{invalid operand for binary operation remainder}
+    const f32 a = 10.0 % 5; // @error{invalid operand type 'f64' for binary expression '%'}
 }
 

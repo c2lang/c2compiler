@@ -1,0 +1,1161 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct { i32 x; }
+Foo foo;
+bool b;
+char c;
+i8 sb;
+i16 w;
+i32 i;
+i64 l;
+u8 ub;
+u16 uw;
+u32 ui;
+u64 ul;
+f32 f;
+f64 d;
+char *p;
+void *vp;
+
+fn void f1() {}
+
+fn void fun2() {
+    u32[] s = {
+        foo + f1(),   // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo - f1(),   // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo * f1(),   // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo / f1(),   // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo % f1(),   // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo | f1(),   // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo & f1(),   // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo ^ f1(),   // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo << f1(),  // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo >> f1(),  // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo <= f1(),  // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo < f1(),   // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo == f1(),  // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo != f1(),  // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo >= f1(),  // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo > f1(),   // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo += f1(),  // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo -= f1(),  // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo *= f1(),  // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo /= f1(),  // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo %= f1(),  // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo |= f1(),  // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo &= f1(),  // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo ^= f1(),  // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo <<= f1(), // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+        foo >>= f1(), // @error{invalid operands to binary expression ('test.Foo' and 'void')}
+
+        foo + b,      // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - b,      // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * b,      // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / b,      // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % b,      // @error{invalid operand type 'test.Foo' for binary expression '%'}
+        foo | b,      // @error{invalid operand type 'test.Foo' for binary expression '|'}
+        foo & b,      // @error{invalid operand type 'test.Foo' for binary expression '&'}
+        foo ^ b,      // @error{invalid operand type 'test.Foo' for binary expression '^'}
+        foo << b,     // @error{invalid operand type 'test.Foo' for binary expression '<<'}
+        foo >> b,     // @error{invalid operand type 'test.Foo' for binary expression '>>'}
+        foo <= b,     // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < b,      // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == b,     // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != b,     // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= b,     // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > b,      // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += b,     // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= b,     // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= b,     // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= b,     // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= b,     // @error{invalid operand type 'test.Foo' for binary expression '%='}
+        foo |= b,     // @error{invalid operand type 'test.Foo' for binary expression '|='}
+        foo &= b,     // @error{invalid operand type 'test.Foo' for binary expression '&='}
+        foo ^= b,     // @error{invalid operand type 'test.Foo' for binary expression '^='}
+        foo <<= b,    // @error{invalid operand type 'test.Foo' for binary expression '<<='}
+        foo >>= b,    // @error{invalid operand type 'test.Foo' for binary expression '>>='}
+
+        foo + c,      // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - c,      // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * c,      // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / c,      // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % c,      // @error{invalid operand type 'test.Foo' for binary expression '%'}
+        foo | c,      // @error{invalid operand type 'test.Foo' for binary expression '|'}
+        foo & c,      // @error{invalid operand type 'test.Foo' for binary expression '&'}
+        foo ^ c,      // @error{invalid operand type 'test.Foo' for binary expression '^'}
+        foo << c,     // @error{invalid operand type 'test.Foo' for binary expression '<<'}
+        foo >> c,     // @error{invalid operand type 'test.Foo' for binary expression '>>'}
+        foo <= c,     // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < c,      // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == c,     // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != c,     // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= c,     // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > c,      // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += c,     // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= c,     // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= c,     // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= c,     // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= c,     // @error{invalid operand type 'test.Foo' for binary expression '%='}
+        foo |= c,     // @error{invalid operand type 'test.Foo' for binary expression '|='}
+        foo &= c,     // @error{invalid operand type 'test.Foo' for binary expression '&='}
+        foo ^= c,     // @error{invalid operand type 'test.Foo' for binary expression '^='}
+        foo <<= c,    // @error{invalid operand type 'test.Foo' for binary expression '<<='}
+        foo >>= c,    // @error{invalid operand type 'test.Foo' for binary expression '>>='}
+
+        foo + sb,     // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - sb,     // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * sb,     // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / sb,     // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % sb,     // @error{invalid operand type 'test.Foo' for binary expression '%'}
+        foo | sb,     // @error{invalid operand type 'test.Foo' for binary expression '|'}
+        foo & sb,     // @error{invalid operand type 'test.Foo' for binary expression '&'}
+        foo ^ sb,     // @error{invalid operand type 'test.Foo' for binary expression '^'}
+        foo << sb,    // @error{invalid operand type 'test.Foo' for binary expression '<<'}
+        foo >> sb,    // @error{invalid operand type 'test.Foo' for binary expression '>>'}
+        foo <= sb,    // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < sb,     // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == sb,    // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != sb,    // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= sb,    // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > sb,     // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += sb,    // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= sb,    // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= sb,    // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= sb,    // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= sb,    // @error{invalid operand type 'test.Foo' for binary expression '%='}
+        foo |= sb,    // @error{invalid operand type 'test.Foo' for binary expression '|='}
+        foo &= sb,    // @error{invalid operand type 'test.Foo' for binary expression '&='}
+        foo ^= sb,    // @error{invalid operand type 'test.Foo' for binary expression '^='}
+        foo <<= sb,   // @error{invalid operand type 'test.Foo' for binary expression '<<='}
+        foo >>= sb,   // @error{invalid operand type 'test.Foo' for binary expression '>>='}
+
+        foo + ub,     // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - ub,     // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * ub,     // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / ub,     // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % ub,     // @error{invalid operand type 'test.Foo' for binary expression '%'}
+        foo | ub,     // @error{invalid operand type 'test.Foo' for binary expression '|'}
+        foo & ub,     // @error{invalid operand type 'test.Foo' for binary expression '&'}
+        foo ^ ub,     // @error{invalid operand type 'test.Foo' for binary expression '^'}
+        foo << ub,    // @error{invalid operand type 'test.Foo' for binary expression '<<'}
+        foo >> ub,    // @error{invalid operand type 'test.Foo' for binary expression '>>'}
+        foo <= ub,    // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < ub,     // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == ub,    // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != ub,    // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= ub,    // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > ub,     // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += ub,    // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= ub,    // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= ub,    // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= ub,    // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= ub,    // @error{invalid operand type 'test.Foo' for binary expression '%='}
+        foo |= ub,    // @error{invalid operand type 'test.Foo' for binary expression '|='}
+        foo &= ub,    // @error{invalid operand type 'test.Foo' for binary expression '&='}
+        foo ^= ub,    // @error{invalid operand type 'test.Foo' for binary expression '^='}
+        foo <<= ub,   // @error{invalid operand type 'test.Foo' for binary expression '<<='}
+        foo >>= ub,   // @error{invalid operand type 'test.Foo' for binary expression '>>='}
+
+        foo + w,      // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - w,      // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * w,      // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / w,      // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % w,      // @error{invalid operand type 'test.Foo' for binary expression '%'}
+        foo | w,      // @error{invalid operand type 'test.Foo' for binary expression '|'}
+        foo & w,      // @error{invalid operand type 'test.Foo' for binary expression '&'}
+        foo ^ w,      // @error{invalid operand type 'test.Foo' for binary expression '^'}
+        foo << w,     // @error{invalid operand type 'test.Foo' for binary expression '<<'}
+        foo >> w,     // @error{invalid operand type 'test.Foo' for binary expression '>>'}
+        foo <= w,     // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < w,      // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == w,     // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != w,     // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= w,     // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > w,      // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += w,     // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= w,     // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= w,     // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= w,     // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= w,     // @error{invalid operand type 'test.Foo' for binary expression '%='}
+        foo |= w,     // @error{invalid operand type 'test.Foo' for binary expression '|='}
+        foo &= w,     // @error{invalid operand type 'test.Foo' for binary expression '&='}
+        foo ^= w,     // @error{invalid operand type 'test.Foo' for binary expression '^='}
+        foo <<= w,    // @error{invalid operand type 'test.Foo' for binary expression '<<='}
+        foo >>= w,    // @error{invalid operand type 'test.Foo' for binary expression '>>='}
+
+        foo + uw,     // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - uw,     // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * uw,     // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / uw,     // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % uw,     // @error{invalid operand type 'test.Foo' for binary expression '%'}
+        foo | uw,     // @error{invalid operand type 'test.Foo' for binary expression '|'}
+        foo & uw,     // @error{invalid operand type 'test.Foo' for binary expression '&'}
+        foo ^ uw,     // @error{invalid operand type 'test.Foo' for binary expression '^'}
+        foo << uw,    // @error{invalid operand type 'test.Foo' for binary expression '<<'}
+        foo >> uw,    // @error{invalid operand type 'test.Foo' for binary expression '>>'}
+        foo <= uw,    // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < uw,     // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == uw,    // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != uw,    // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= uw,    // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > uw,     // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += uw,    // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= uw,    // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= uw,    // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= uw,    // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= uw,    // @error{invalid operand type 'test.Foo' for binary expression '%='}
+        foo |= uw,    // @error{invalid operand type 'test.Foo' for binary expression '|='}
+        foo &= uw,    // @error{invalid operand type 'test.Foo' for binary expression '&='}
+        foo ^= uw,    // @error{invalid operand type 'test.Foo' for binary expression '^='}
+        foo <<= uw,   // @error{invalid operand type 'test.Foo' for binary expression '<<='}
+        foo >>= uw,   // @error{invalid operand type 'test.Foo' for binary expression '>>='}
+
+        foo + i,      // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - i,      // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * i,      // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / i,      // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % i,      // @error{invalid operand type 'test.Foo' for binary expression '%'}
+        foo | i,      // @error{invalid operand type 'test.Foo' for binary expression '|'}
+        foo & i,      // @error{invalid operand type 'test.Foo' for binary expression '&'}
+        foo ^ i,      // @error{invalid operand type 'test.Foo' for binary expression '^'}
+        foo << i,     // @error{invalid operand type 'test.Foo' for binary expression '<<'}
+        foo >> i,     // @error{invalid operand type 'test.Foo' for binary expression '>>'}
+        foo <= i,     // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < i,      // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == i,     // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != i,     // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= i,     // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > i,      // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += i,     // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= i,     // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= i,     // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= i,     // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= i,     // @error{invalid operand type 'test.Foo' for binary expression '%='}
+        foo |= i,     // @error{invalid operand type 'test.Foo' for binary expression '|='}
+        foo &= i,     // @error{invalid operand type 'test.Foo' for binary expression '&='}
+        foo ^= i,     // @error{invalid operand type 'test.Foo' for binary expression '^='}
+        foo <<= i,    // @error{invalid operand type 'test.Foo' for binary expression '<<='}
+        foo >>= i,    // @error{invalid operand type 'test.Foo' for binary expression '>>='}
+
+        foo + ui,     // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - ui,     // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * ui,     // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / ui,     // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % ui,     // @error{invalid operand type 'test.Foo' for binary expression '%'}
+        foo | ui,     // @error{invalid operand type 'test.Foo' for binary expression '|'}
+        foo & ui,     // @error{invalid operand type 'test.Foo' for binary expression '&'}
+        foo ^ ui,     // @error{invalid operand type 'test.Foo' for binary expression '^'}
+        foo << ui,    // @error{invalid operand type 'test.Foo' for binary expression '<<'}
+        foo >> ui,    // @error{invalid operand type 'test.Foo' for binary expression '>>'}
+        foo <= ui,    // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < ui,     // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == ui,    // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != ui,    // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= ui,    // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > ui,     // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += ui,    // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= ui,    // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= ui,    // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= ui,    // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= ui,    // @error{invalid operand type 'test.Foo' for binary expression '%='}
+        foo |= ui,    // @error{invalid operand type 'test.Foo' for binary expression '|='}
+        foo &= ui,    // @error{invalid operand type 'test.Foo' for binary expression '&='}
+        foo ^= ui,    // @error{invalid operand type 'test.Foo' for binary expression '^='}
+        foo <<= ui,   // @error{invalid operand type 'test.Foo' for binary expression '<<='}
+        foo >>= ui,   // @error{invalid operand type 'test.Foo' for binary expression '>>='}
+
+        foo + l,      // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - l,      // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * l,      // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / l,      // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % l,      // @error{invalid operand type 'test.Foo' for binary expression '%'}
+        foo | l,      // @error{invalid operand type 'test.Foo' for binary expression '|'}
+        foo & l,      // @error{invalid operand type 'test.Foo' for binary expression '&'}
+        foo ^ l,      // @error{invalid operand type 'test.Foo' for binary expression '^'}
+        foo << l,     // @error{invalid operand type 'test.Foo' for binary expression '<<'}
+        foo >> l,     // @error{invalid operand type 'test.Foo' for binary expression '>>'}
+        foo <= l,     // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < l,      // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == l,     // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != l,     // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= l,     // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > l,      // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += l,     // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= l,     // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= l,     // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= l,     // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= l,     // @error{invalid operand type 'test.Foo' for binary expression '%='}
+        foo |= l,     // @error{invalid operand type 'test.Foo' for binary expression '|='}
+        foo &= l,     // @error{invalid operand type 'test.Foo' for binary expression '&='}
+        foo ^= l,     // @error{invalid operand type 'test.Foo' for binary expression '^='}
+        foo <<= l,    // @error{invalid operand type 'test.Foo' for binary expression '<<='}
+        foo >>= l,    // @error{invalid operand type 'test.Foo' for binary expression '>>='}
+
+        foo + ul,     // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - ul,     // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * ul,     // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / ul,     // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % ul,     // @error{invalid operand type 'test.Foo' for binary expression '%'}
+        foo | ul,     // @error{invalid operand type 'test.Foo' for binary expression '|'}
+        foo & ul,     // @error{invalid operand type 'test.Foo' for binary expression '&'}
+        foo ^ ul,     // @error{invalid operand type 'test.Foo' for binary expression '^'}
+        foo << ul,    // @error{invalid operand type 'test.Foo' for binary expression '<<'}
+        foo >> ul,    // @error{invalid operand type 'test.Foo' for binary expression '>>'}
+        foo <= ul,    // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < ul,     // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == ul,    // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != ul,    // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= ul,    // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > ul,     // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += ul,    // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= ul,    // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= ul,    // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= ul,    // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= ul,    // @error{invalid operand type 'test.Foo' for binary expression '%='}
+        foo |= ul,    // @error{invalid operand type 'test.Foo' for binary expression '|='}
+        foo &= ul,    // @error{invalid operand type 'test.Foo' for binary expression '&='}
+        foo ^= ul,    // @error{invalid operand type 'test.Foo' for binary expression '^='}
+        foo <<= ul,   // @error{invalid operand type 'test.Foo' for binary expression '<<='}
+        foo >>= ul,   // @error{invalid operand type 'test.Foo' for binary expression '>>='}
+
+        foo + f,      // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - f,      // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * f,      // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / f,      // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % f,      // @error{invalid operands to binary expression ('test.Foo' and 'f32')}
+        foo | f,      // @error{invalid operands to binary expression ('test.Foo' and 'f32')}
+        foo & f,      // @error{invalid operands to binary expression ('test.Foo' and 'f32')}
+        foo ^ f,      // @error{invalid operands to binary expression ('test.Foo' and 'f32')}
+        foo << f,     // @error{invalid operands to binary expression ('test.Foo' and 'f32')}
+        foo >> f,     // @error{invalid operands to binary expression ('test.Foo' and 'f32')}
+        foo <= f,     // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < f,      // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == f,     // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != f,     // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= f,     // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > f,      // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += f,     // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= f,     // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= f,     // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= f,     // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= f,     // @error{invalid operands to binary expression ('test.Foo' and 'f32')}
+        foo |= f,     // @error{invalid operands to binary expression ('test.Foo' and 'f32')}
+        foo &= f,     // @error{invalid operands to binary expression ('test.Foo' and 'f32')}
+        foo ^= f,     // @error{invalid operands to binary expression ('test.Foo' and 'f32')}
+        foo <<= f,    // @error{invalid operands to binary expression ('test.Foo' and 'f32')}
+        foo >>= f,    // @error{invalid operands to binary expression ('test.Foo' and 'f32')}
+
+        foo + d,      // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - d,      // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * d,      // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / d,      // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % d,      // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo | d,      // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo & d,      // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo ^ d,      // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo << d,     // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo >> d,     // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo <= d,     // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < d,      // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == d,     // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != d,     // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= d,     // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > d,      // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += d,     // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= d,     // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= d,     // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= d,     // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= d,     // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo |= d,     // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo &= d,     // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo ^= d,     // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo <<= d,    // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo >>= d,    // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+
+        foo + p,      // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - p,      // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * p,      // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+        foo / p,      // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+        foo % p,      // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+        foo | p,      // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+        foo & p,      // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+        foo ^ p,      // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+        foo << p,     // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+        foo >> p,     // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+        foo <= p,     // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < p,      // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == p,     // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != p,     // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= p,     // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > p,      // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += p,     // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= p,     // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= p,     // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+        foo /= p,     // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+        foo %= p,     // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+        foo |= p,     // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+        foo &= p,     // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+        foo ^= p,     // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+        foo <<= p,    // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+        foo >>= p,    // @error{invalid operands to binary expression ('test.Foo' and 'char*')}
+
+        foo + vp,     // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo - vp,     // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * vp,     // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo / vp,     // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo % vp,     // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo | vp,     // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo & vp,     // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo ^ vp,     // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo << vp,    // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo >> vp,    // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo <= vp,    // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < vp,     // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == vp,    // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != vp,    // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= vp,    // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > vp,     // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += vp,    // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= vp,    // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= vp,    // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo /= vp,    // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo %= vp,    // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo |= vp,    // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo &= vp,    // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo ^= vp,    // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo <<= vp,   // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo >>= vp,   // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+
+        foo + foo,    // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo - foo,    // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo * foo,    // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo / foo,    // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo % foo,    // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo | foo,    // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo & foo,    // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo ^ foo,    // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo << foo,   // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo >> foo,   // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo <= foo,   // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo < foo,    // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo == foo,   // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo != foo,   // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo >= foo,   // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo > foo,    // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo += foo,   // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo -= foo,   // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo *= foo,   // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo /= foo,   // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo %= foo,   // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo |= foo,   // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo &= foo,   // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo ^= foo,   // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo <<= foo,  // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+        foo >>= foo,  // @error{invalid operands to binary expression ('test.Foo' and 'test.Foo')}
+
+        foo + 'c',    // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - 'c',    // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * 'c',    // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / 'c',    // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % 'c',    // @error{invalid operand type 'test.Foo' for binary expression '%'}
+        foo | 'c',    // @error{invalid operand type 'test.Foo' for binary expression '|'}
+        foo & 'c',    // @error{invalid operand type 'test.Foo' for binary expression '&'}
+        foo ^ 'c',    // @error{invalid operand type 'test.Foo' for binary expression '^'}
+        foo << 'c',   // @error{invalid operand type 'test.Foo' for binary expression '<<'}
+        foo >> 'c',   // @error{invalid operand type 'test.Foo' for binary expression '>>'}
+        foo <= 'c',   // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < 'c',    // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == 'c',   // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != 'c',   // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= 'c',   // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > 'c',    // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += 'c',   // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= 'c',   // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= 'c',   // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= 'c',   // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= 'c',   // @error{invalid operand type 'test.Foo' for binary expression '%='}
+        foo |= 'c',   // @error{invalid operand type 'test.Foo' for binary expression '|='}
+        foo &= 'c',   // @error{invalid operand type 'test.Foo' for binary expression '&='}
+        foo ^= 'c',   // @error{invalid operand type 'test.Foo' for binary expression '^='}
+        foo <<= 'c',  // @error{invalid operand type 'test.Foo' for binary expression '<<='}
+        foo >>= 'c',  // @error{invalid operand type 'test.Foo' for binary expression '>>='}
+
+        foo + true,   // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - true,   // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * true,   // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / true,   // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % true,   // @error{invalid operand type 'test.Foo' for binary expression '%'}
+        foo | true,   // @error{invalid operand type 'test.Foo' for binary expression '|'}
+        foo & true,   // @error{invalid operand type 'test.Foo' for binary expression '&'}
+        foo ^ true,   // @error{invalid operand type 'test.Foo' for binary expression '^'}
+        foo << true,  // @error{invalid operand type 'test.Foo' for binary expression '<<'}
+        foo >> true,  // @error{invalid operand type 'test.Foo' for binary expression '>>'}
+        foo <= true,  // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < true,   // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == true,  // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != true,  // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= true,  // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > true,   // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += true,  // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= true,  // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= true,  // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= true,  // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= true,  // @error{invalid operand type 'test.Foo' for binary expression '%='}
+        foo |= true,  // @error{invalid operand type 'test.Foo' for binary expression '|='}
+        foo &= true,  // @error{invalid operand type 'test.Foo' for binary expression '&='}
+        foo ^= true,  // @error{invalid operand type 'test.Foo' for binary expression '^='}
+        foo <<= true, // @error{invalid operand type 'test.Foo' for binary expression '<<='}
+        foo >>= true, // @error{invalid operand type 'test.Foo' for binary expression '>>='}
+
+        foo + 1,      // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - 1,      // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * 1,      // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / 1,      // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % 1,      // @error{invalid operand type 'test.Foo' for binary expression '%'}
+        foo | 1,      // @error{invalid operand type 'test.Foo' for binary expression '|'}
+        foo & 1,      // @error{invalid operand type 'test.Foo' for binary expression '&'}
+        foo ^ 1,      // @error{invalid operand type 'test.Foo' for binary expression '^'}
+        foo << 1,     // @error{invalid operand type 'test.Foo' for binary expression '<<'}
+        foo >> 1,     // @error{invalid operand type 'test.Foo' for binary expression '>>'}
+        foo <= 1,     // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < 1,      // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == 1,     // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != 1,     // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= 1,     // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > 1,      // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += 1,     // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= 1,     // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= 1,     // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= 1,     // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= 1,     // @error{invalid operand type 'test.Foo' for binary expression '%='}
+        foo |= 1,     // @error{invalid operand type 'test.Foo' for binary expression '|='}
+        foo &= 1,     // @error{invalid operand type 'test.Foo' for binary expression '&='}
+        foo ^= 1,     // @error{invalid operand type 'test.Foo' for binary expression '^='}
+        foo <<= 1,    // @error{invalid operand type 'test.Foo' for binary expression '<<='}
+        foo >>= 1,    // @error{invalid operand type 'test.Foo' for binary expression '>>='}
+
+        foo + 1.0,    // @error{invalid operand type 'test.Foo' for binary expression '+'}
+        foo - 1.0,    // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * 1.0,    // @error{invalid operand type 'test.Foo' for binary expression '*'}
+        foo / 1.0,    // @error{invalid operand type 'test.Foo' for binary expression '/'}
+        foo % 1.0,    // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo | 1.0,    // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo & 1.0,    // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo ^ 1.0,    // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo << 1.0,   // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo >> 1.0,   // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo <= 1.0,   // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < 1.0,    // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == 1.0,   // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != 1.0,   // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= 1.0,   // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > 1.0,    // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += 1.0,   // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= 1.0,   // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= 1.0,   // @error{invalid operand type 'test.Foo' for binary expression '*='}
+        foo /= 1.0,   // @error{invalid operand type 'test.Foo' for binary expression '/='}
+        foo %= 1.0,   // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo |= 1.0,   // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo &= 1.0,   // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo ^= 1.0,   // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo <<= 1.0,  // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+        foo >>= 1.0,  // @error{invalid operands to binary expression ('test.Foo' and 'f64')}
+
+        foo + nil,    // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo - nil,    // @error{invalid operand type 'test.Foo' for binary expression '-'}
+        foo * nil,    // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo / nil,    // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo % nil,    // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo | nil,    // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo & nil,    // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo ^ nil,    // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo << nil,   // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo >> nil,   // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo <= nil,   // @error{invalid operand type 'test.Foo' for binary expression '<='}
+        foo < nil,    // @error{invalid operand type 'test.Foo' for binary expression '<'}
+        foo == nil,   // @error{invalid operand type 'test.Foo' for binary expression '=='}
+        foo != nil,   // @error{invalid operand type 'test.Foo' for binary expression '!='}
+        foo >= nil,   // @error{invalid operand type 'test.Foo' for binary expression '>='}
+        foo > nil,    // @error{invalid operand type 'test.Foo' for binary expression '>'}
+        foo += nil,   // @error{invalid operand type 'test.Foo' for binary expression '+='}
+        foo -= nil,   // @error{invalid operand type 'test.Foo' for binary expression '-='}
+        foo *= nil,   // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo /= nil,   // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo %= nil,   // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo |= nil,   // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo &= nil,   // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo ^= nil,   // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo <<= nil,  // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+        foo >>= nil,  // @error{invalid operands to binary expression ('test.Foo' and 'void*')}
+
+        // void lhs
+
+        f1() + f1(),   // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() - f1(),   // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() * f1(),   // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() / f1(),   // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() % f1(),   // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() | f1(),   // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() & f1(),   // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() ^ f1(),   // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() << f1(),  // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() >> f1(),  // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() <= f1(),  // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() < f1(),   // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() == f1(),  // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() != f1(),  // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() >= f1(),  // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() > f1(),   // @error{invalid operands to binary expression ('void' and 'void')}
+        f1() += f1(),  // @error{lvalue required as left operand of assignment}
+        f1() -= f1(),  // @error{lvalue required as left operand of assignment}
+        f1() *= f1(),  // @error{lvalue required as left operand of assignment}
+        f1() /= f1(),  // @error{lvalue required as left operand of assignment}
+        f1() %= f1(),  // @error{lvalue required as left operand of assignment}
+        f1() |= f1(),  // @error{lvalue required as left operand of assignment}
+        f1() &= f1(),  // @error{lvalue required as left operand of assignment}
+        f1() ^= f1(),  // @error{lvalue required as left operand of assignment}
+        f1() <<= f1(), // @error{lvalue required as left operand of assignment}
+        f1() >>= f1(), // @error{lvalue required as left operand of assignment}
+
+        f1() + b,      // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - b,      // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * b,      // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / b,      // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % b,      // @error{invalid operand type 'void' for binary expression '%'}
+        f1() | b,      // @error{invalid operand type 'void' for binary expression '|'}
+        f1() & b,      // @error{invalid operand type 'void' for binary expression '&'}
+        f1() ^ b,      // @error{invalid operand type 'void' for binary expression '^'}
+        f1() << b,     // @error{invalid operand type 'void' for binary expression '<<'}
+        f1() >> b,     // @error{invalid operand type 'void' for binary expression '>>'}
+        f1() <= b,     // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < b,      // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == b,     // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != b,     // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= b,     // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > b,      // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += b,     // @error{lvalue required as left operand of assignment}
+        f1() -= b,     // @error{lvalue required as left operand of assignment}
+        f1() *= b,     // @error{lvalue required as left operand of assignment}
+        f1() /= b,     // @error{lvalue required as left operand of assignment}
+        f1() %= b,     // @error{lvalue required as left operand of assignment}
+        f1() |= b,     // @error{lvalue required as left operand of assignment}
+        f1() &= b,     // @error{lvalue required as left operand of assignment}
+        f1() ^= b,     // @error{lvalue required as left operand of assignment}
+        f1() <<= b,    // @error{lvalue required as left operand of assignment}
+        f1() >>= b,    // @error{lvalue required as left operand of assignment}
+
+        f1() + c,      // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - c,      // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * c,      // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / c,      // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % c,      // @error{invalid operand type 'void' for binary expression '%'}
+        f1() | c,      // @error{invalid operand type 'void' for binary expression '|'}
+        f1() & c,      // @error{invalid operand type 'void' for binary expression '&'}
+        f1() ^ c,      // @error{invalid operand type 'void' for binary expression '^'}
+        f1() << c,     // @error{invalid operand type 'void' for binary expression '<<'}
+        f1() >> c,     // @error{invalid operand type 'void' for binary expression '>>'}
+        f1() <= c,     // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < c,      // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == c,     // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != c,     // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= c,     // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > c,      // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += c,     // @error{lvalue required as left operand of assignment}
+        f1() -= c,     // @error{lvalue required as left operand of assignment}
+        f1() *= c,     // @error{lvalue required as left operand of assignment}
+        f1() /= c,     // @error{lvalue required as left operand of assignment}
+        f1() %= c,     // @error{lvalue required as left operand of assignment}
+        f1() |= c,     // @error{lvalue required as left operand of assignment}
+        f1() &= c,     // @error{lvalue required as left operand of assignment}
+        f1() ^= c,     // @error{lvalue required as left operand of assignment}
+        f1() <<= c,    // @error{lvalue required as left operand of assignment}
+        f1() >>= c,    // @error{lvalue required as left operand of assignment}
+
+        f1() + sb,     // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - sb,     // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * sb,     // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / sb,     // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % sb,     // @error{invalid operand type 'void' for binary expression '%'}
+        f1() | sb,     // @error{invalid operand type 'void' for binary expression '|'}
+        f1() & sb,     // @error{invalid operand type 'void' for binary expression '&'}
+        f1() ^ sb,     // @error{invalid operand type 'void' for binary expression '^'}
+        f1() << sb,    // @error{invalid operand type 'void' for binary expression '<<'}
+        f1() >> sb,    // @error{invalid operand type 'void' for binary expression '>>'}
+        f1() <= sb,    // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < sb,     // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == sb,    // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != sb,    // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= sb,    // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > sb,     // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += sb,    // @error{lvalue required as left operand of assignment}
+        f1() -= sb,    // @error{lvalue required as left operand of assignment}
+        f1() *= sb,    // @error{lvalue required as left operand of assignment}
+        f1() /= sb,    // @error{lvalue required as left operand of assignment}
+        f1() %= sb,    // @error{lvalue required as left operand of assignment}
+        f1() |= sb,    // @error{lvalue required as left operand of assignment}
+        f1() &= sb,    // @error{lvalue required as left operand of assignment}
+        f1() ^= sb,    // @error{lvalue required as left operand of assignment}
+        f1() <<= sb,   // @error{lvalue required as left operand of assignment}
+        f1() >>= sb,   // @error{lvalue required as left operand of assignment}
+
+        f1() + ub,     // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - ub,     // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * ub,     // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / ub,     // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % ub,     // @error{invalid operand type 'void' for binary expression '%'}
+        f1() | ub,     // @error{invalid operand type 'void' for binary expression '|'}
+        f1() & ub,     // @error{invalid operand type 'void' for binary expression '&'}
+        f1() ^ ub,     // @error{invalid operand type 'void' for binary expression '^'}
+        f1() << ub,    // @error{invalid operand type 'void' for binary expression '<<'}
+        f1() >> ub,    // @error{invalid operand type 'void' for binary expression '>>'}
+        f1() <= ub,    // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < ub,     // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == ub,    // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != ub,    // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= ub,    // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > ub,     // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += ub,    // @error{lvalue required as left operand of assignment}
+        f1() -= ub,    // @error{lvalue required as left operand of assignment}
+        f1() *= ub,    // @error{lvalue required as left operand of assignment}
+        f1() /= ub,    // @error{lvalue required as left operand of assignment}
+        f1() %= ub,    // @error{lvalue required as left operand of assignment}
+        f1() |= ub,    // @error{lvalue required as left operand of assignment}
+        f1() &= ub,    // @error{lvalue required as left operand of assignment}
+        f1() ^= ub,    // @error{lvalue required as left operand of assignment}
+        f1() <<= ub,   // @error{lvalue required as left operand of assignment}
+        f1() >>= ub,   // @error{lvalue required as left operand of assignment}
+
+        f1() + w,      // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - w,      // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * w,      // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / w,      // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % w,      // @error{invalid operand type 'void' for binary expression '%'}
+        f1() | w,      // @error{invalid operand type 'void' for binary expression '|'}
+        f1() & w,      // @error{invalid operand type 'void' for binary expression '&'}
+        f1() ^ w,      // @error{invalid operand type 'void' for binary expression '^'}
+        f1() << w,     // @error{invalid operand type 'void' for binary expression '<<'}
+        f1() >> w,     // @error{invalid operand type 'void' for binary expression '>>'}
+        f1() <= w,     // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < w,      // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == w,     // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != w,     // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= w,     // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > w,      // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += w,     // @error{lvalue required as left operand of assignment}
+        f1() -= w,     // @error{lvalue required as left operand of assignment}
+        f1() *= w,     // @error{lvalue required as left operand of assignment}
+        f1() /= w,     // @error{lvalue required as left operand of assignment}
+        f1() %= w,     // @error{lvalue required as left operand of assignment}
+        f1() |= w,     // @error{lvalue required as left operand of assignment}
+        f1() &= w,     // @error{lvalue required as left operand of assignment}
+        f1() ^= w,     // @error{lvalue required as left operand of assignment}
+        f1() <<= w,    // @error{lvalue required as left operand of assignment}
+        f1() >>= w,    // @error{lvalue required as left operand of assignment}
+
+        f1() + uw,     // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - uw,     // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * uw,     // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / uw,     // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % uw,     // @error{invalid operand type 'void' for binary expression '%'}
+        f1() | uw,     // @error{invalid operand type 'void' for binary expression '|'}
+        f1() & uw,     // @error{invalid operand type 'void' for binary expression '&'}
+        f1() ^ uw,     // @error{invalid operand type 'void' for binary expression '^'}
+        f1() << uw,    // @error{invalid operand type 'void' for binary expression '<<'}
+        f1() >> uw,    // @error{invalid operand type 'void' for binary expression '>>'}
+        f1() <= uw,    // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < uw,     // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == uw,    // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != uw,    // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= uw,    // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > uw,     // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += uw,    // @error{lvalue required as left operand of assignment}
+        f1() -= uw,    // @error{lvalue required as left operand of assignment}
+        f1() *= uw,    // @error{lvalue required as left operand of assignment}
+        f1() /= uw,    // @error{lvalue required as left operand of assignment}
+        f1() %= uw,    // @error{lvalue required as left operand of assignment}
+        f1() |= uw,    // @error{lvalue required as left operand of assignment}
+        f1() &= uw,    // @error{lvalue required as left operand of assignment}
+        f1() ^= uw,    // @error{lvalue required as left operand of assignment}
+        f1() <<= uw,   // @error{lvalue required as left operand of assignment}
+        f1() >>= uw,   // @error{lvalue required as left operand of assignment}
+
+        f1() + i,      // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - i,      // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * i,      // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / i,      // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % i,      // @error{invalid operand type 'void' for binary expression '%'}
+        f1() | i,      // @error{invalid operand type 'void' for binary expression '|'}
+        f1() & i,      // @error{invalid operand type 'void' for binary expression '&'}
+        f1() ^ i,      // @error{invalid operand type 'void' for binary expression '^'}
+        f1() << i,     // @error{invalid operand type 'void' for binary expression '<<'}
+        f1() >> i,     // @error{invalid operand type 'void' for binary expression '>>'}
+        f1() <= i,     // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < i,      // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == i,     // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != i,     // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= i,     // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > i,      // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += i,     // @error{lvalue required as left operand of assignment}
+        f1() -= i,     // @error{lvalue required as left operand of assignment}
+        f1() *= i,     // @error{lvalue required as left operand of assignment}
+        f1() /= i,     // @error{lvalue required as left operand of assignment}
+        f1() %= i,     // @error{lvalue required as left operand of assignment}
+        f1() |= i,     // @error{lvalue required as left operand of assignment}
+        f1() &= i,     // @error{lvalue required as left operand of assignment}
+        f1() ^= i,     // @error{lvalue required as left operand of assignment}
+        f1() <<= i,    // @error{lvalue required as left operand of assignment}
+        f1() >>= i,    // @error{lvalue required as left operand of assignment}
+
+        f1() + ui,     // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - ui,     // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * ui,     // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / ui,     // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % ui,     // @error{invalid operand type 'void' for binary expression '%'}
+        f1() | ui,     // @error{invalid operand type 'void' for binary expression '|'}
+        f1() & ui,     // @error{invalid operand type 'void' for binary expression '&'}
+        f1() ^ ui,     // @error{invalid operand type 'void' for binary expression '^'}
+        f1() << ui,    // @error{invalid operand type 'void' for binary expression '<<'}
+        f1() >> ui,    // @error{invalid operand type 'void' for binary expression '>>'}
+        f1() <= ui,    // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < ui,     // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == ui,    // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != ui,    // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= ui,    // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > ui,     // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += ui,    // @error{lvalue required as left operand of assignment}
+        f1() -= ui,    // @error{lvalue required as left operand of assignment}
+        f1() *= ui,    // @error{lvalue required as left operand of assignment}
+        f1() /= ui,    // @error{lvalue required as left operand of assignment}
+        f1() %= ui,    // @error{lvalue required as left operand of assignment}
+        f1() |= ui,    // @error{lvalue required as left operand of assignment}
+        f1() &= ui,    // @error{lvalue required as left operand of assignment}
+        f1() ^= ui,    // @error{lvalue required as left operand of assignment}
+        f1() <<= ui,   // @error{lvalue required as left operand of assignment}
+        f1() >>= ui,   // @error{lvalue required as left operand of assignment}
+
+        f1() + l,      // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - l,      // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * l,      // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / l,      // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % l,      // @error{invalid operand type 'void' for binary expression '%'}
+        f1() | l,      // @error{invalid operand type 'void' for binary expression '|'}
+        f1() & l,      // @error{invalid operand type 'void' for binary expression '&'}
+        f1() ^ l,      // @error{invalid operand type 'void' for binary expression '^'}
+        f1() << l,     // @error{invalid operand type 'void' for binary expression '<<'}
+        f1() >> l,     // @error{invalid operand type 'void' for binary expression '>>'}
+        f1() <= l,     // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < l,      // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == l,     // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != l,     // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= l,     // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > l,      // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += l,     // @error{lvalue required as left operand of assignment}
+        f1() -= l,     // @error{lvalue required as left operand of assignment}
+        f1() *= l,     // @error{lvalue required as left operand of assignment}
+        f1() /= l,     // @error{lvalue required as left operand of assignment}
+        f1() %= l,     // @error{lvalue required as left operand of assignment}
+        f1() |= l,     // @error{lvalue required as left operand of assignment}
+        f1() &= l,     // @error{lvalue required as left operand of assignment}
+        f1() ^= l,     // @error{lvalue required as left operand of assignment}
+        f1() <<= l,    // @error{lvalue required as left operand of assignment}
+        f1() >>= l,    // @error{lvalue required as left operand of assignment}
+
+        f1() + ul,     // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - ul,     // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * ul,     // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / ul,     // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % ul,     // @error{invalid operand type 'void' for binary expression '%'}
+        f1() | ul,     // @error{invalid operand type 'void' for binary expression '|'}
+        f1() & ul,     // @error{invalid operand type 'void' for binary expression '&'}
+        f1() ^ ul,     // @error{invalid operand type 'void' for binary expression '^'}
+        f1() << ul,    // @error{invalid operand type 'void' for binary expression '<<'}
+        f1() >> ul,    // @error{invalid operand type 'void' for binary expression '>>'}
+        f1() <= ul,    // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < ul,     // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == ul,    // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != ul,    // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= ul,    // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > ul,     // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += ul,    // @error{lvalue required as left operand of assignment}
+        f1() -= ul,    // @error{lvalue required as left operand of assignment}
+        f1() *= ul,    // @error{lvalue required as left operand of assignment}
+        f1() /= ul,    // @error{lvalue required as left operand of assignment}
+        f1() %= ul,    // @error{lvalue required as left operand of assignment}
+        f1() |= ul,    // @error{lvalue required as left operand of assignment}
+        f1() &= ul,    // @error{lvalue required as left operand of assignment}
+        f1() ^= ul,    // @error{lvalue required as left operand of assignment}
+        f1() <<= ul,   // @error{lvalue required as left operand of assignment}
+        f1() >>= ul,   // @error{lvalue required as left operand of assignment}
+
+        f1() + f,      // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - f,      // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * f,      // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / f,      // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % f,      // @error{invalid operands to binary expression ('void' and 'f32')}
+        f1() | f,      // @error{invalid operands to binary expression ('void' and 'f32')}
+        f1() & f,      // @error{invalid operands to binary expression ('void' and 'f32')}
+        f1() ^ f,      // @error{invalid operands to binary expression ('void' and 'f32')}
+        f1() << f,     // @error{invalid operands to binary expression ('void' and 'f32')}
+        f1() >> f,     // @error{invalid operands to binary expression ('void' and 'f32')}
+        f1() <= f,     // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < f,      // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == f,     // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != f,     // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= f,     // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > f,      // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += f,     // @error{lvalue required as left operand of assignment}
+        f1() -= f,     // @error{lvalue required as left operand of assignment}
+        f1() *= f,     // @error{lvalue required as left operand of assignment}
+        f1() /= f,     // @error{lvalue required as left operand of assignment}
+        f1() %= f,     // @error{lvalue required as left operand of assignment}
+        f1() |= f,     // @error{lvalue required as left operand of assignment}
+        f1() &= f,     // @error{lvalue required as left operand of assignment}
+        f1() ^= f,     // @error{lvalue required as left operand of assignment}
+        f1() <<= f,    // @error{lvalue required as left operand of assignment}
+        f1() >>= f,    // @error{lvalue required as left operand of assignment}
+
+        f1() + d,      // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - d,      // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * d,      // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / d,      // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % d,      // @error{invalid operands to binary expression ('void' and 'f64')}
+        f1() | d,      // @error{invalid operands to binary expression ('void' and 'f64')}
+        f1() & d,      // @error{invalid operands to binary expression ('void' and 'f64')}
+        f1() ^ d,      // @error{invalid operands to binary expression ('void' and 'f64')}
+        f1() << d,     // @error{invalid operands to binary expression ('void' and 'f64')}
+        f1() >> d,     // @error{invalid operands to binary expression ('void' and 'f64')}
+        f1() <= d,     // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < d,      // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == d,     // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != d,     // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= d,     // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > d,      // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += d,     // @error{lvalue required as left operand of assignment}
+        f1() -= d,     // @error{lvalue required as left operand of assignment}
+        f1() *= d,     // @error{lvalue required as left operand of assignment}
+        f1() /= d,     // @error{lvalue required as left operand of assignment}
+        f1() %= d,     // @error{lvalue required as left operand of assignment}
+        f1() |= d,     // @error{lvalue required as left operand of assignment}
+        f1() &= d,     // @error{lvalue required as left operand of assignment}
+        f1() ^= d,     // @error{lvalue required as left operand of assignment}
+        f1() <<= d,    // @error{lvalue required as left operand of assignment}
+        f1() >>= d,    // @error{lvalue required as left operand of assignment}
+
+        f1() + p,      // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - p,      // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() * p,      // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() / p,      // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() % p,      // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() | p,      // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() & p,      // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() ^ p,      // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() << p,     // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() >> p,     // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() <= p,     // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() < p,      // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() == p,     // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() != p,     // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() >= p,     // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() > p,      // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() += p,     // @error{lvalue required as left operand of assignment}
+        f1() -= p,     // @error{lvalue required as left operand of assignment}
+        f1() *= p,     // @error{lvalue required as left operand of assignment}
+        f1() /= p,     // @error{lvalue required as left operand of assignment}
+        f1() %= p,     // @error{lvalue required as left operand of assignment}
+        f1() |= p,     // @error{lvalue required as left operand of assignment}
+        f1() &= p,     // @error{lvalue required as left operand of assignment}
+        f1() ^= p,     // @error{lvalue required as left operand of assignment}
+        f1() <<= p,    // @error{lvalue required as left operand of assignment}
+        f1() >>= p,    // @error{lvalue required as left operand of assignment}
+
+        f1() + vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() - vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() * vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() / vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() % vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() | vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() & vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() ^ vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() << vp,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() >> vp,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() <= vp,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() < vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() == vp,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() != vp,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() >= vp,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() > vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() += vp,    // @error{lvalue required as left operand of assignment}
+        f1() -= vp,    // @error{lvalue required as left operand of assignment}
+        f1() *= vp,    // @error{lvalue required as left operand of assignment}
+        f1() /= vp,    // @error{lvalue required as left operand of assignment}
+        f1() %= vp,    // @error{lvalue required as left operand of assignment}
+        f1() |= vp,    // @error{lvalue required as left operand of assignment}
+        f1() &= vp,    // @error{lvalue required as left operand of assignment}
+        f1() ^= vp,    // @error{lvalue required as left operand of assignment}
+        f1() <<= vp,   // @error{lvalue required as left operand of assignment}
+        f1() >>= vp,   // @error{lvalue required as left operand of assignment}
+
+        f1() + foo,    // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() - foo,    // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() * foo,    // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() / foo,    // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() % foo,    // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() | foo,    // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() & foo,    // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() ^ foo,    // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() << foo,   // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() >> foo,   // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() <= foo,   // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() < foo,    // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() == foo,   // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() != foo,   // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() >= foo,   // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() > foo,    // @error{invalid operands to binary expression ('void' and 'test.Foo')}
+        f1() += foo,   // @error{lvalue required as left operand of assignment}
+        f1() -= foo,   // @error{lvalue required as left operand of assignment}
+        f1() *= foo,   // @error{lvalue required as left operand of assignment}
+        f1() /= foo,   // @error{lvalue required as left operand of assignment}
+        f1() %= foo,   // @error{lvalue required as left operand of assignment}
+        f1() |= foo,   // @error{lvalue required as left operand of assignment}
+        f1() &= foo,   // @error{lvalue required as left operand of assignment}
+        f1() ^= foo,   // @error{lvalue required as left operand of assignment}
+        f1() <<= foo,  // @error{lvalue required as left operand of assignment}
+        f1() >>= foo,  // @error{lvalue required as left operand of assignment}
+
+        f1() + 'c',    // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - 'c',    // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * 'c',    // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / 'c',    // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % 'c',    // @error{invalid operand type 'void' for binary expression '%'}
+        f1() | 'c',    // @error{invalid operand type 'void' for binary expression '|'}
+        f1() & 'c',    // @error{invalid operand type 'void' for binary expression '&'}
+        f1() ^ 'c',    // @error{invalid operand type 'void' for binary expression '^'}
+        f1() << 'c',   // @error{invalid operand type 'void' for binary expression '<<'}
+        f1() >> 'c',   // @error{invalid operand type 'void' for binary expression '>>'}
+        f1() <= 'c',   // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < 'c',    // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == 'c',   // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != 'c',   // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= 'c',   // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > 'c',    // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += 'c',   // @error{lvalue required as left operand of assignment}
+        f1() -= 'c',   // @error{lvalue required as left operand of assignment}
+        f1() *= 'c',   // @error{lvalue required as left operand of assignment}
+        f1() /= 'c',   // @error{lvalue required as left operand of assignment}
+        f1() %= 'c',   // @error{lvalue required as left operand of assignment}
+        f1() |= 'c',   // @error{lvalue required as left operand of assignment}
+        f1() &= 'c',   // @error{lvalue required as left operand of assignment}
+        f1() ^= 'c',   // @error{lvalue required as left operand of assignment}
+        f1() <<= 'c',  // @error{lvalue required as left operand of assignment}
+        f1() >>= 'c',  // @error{lvalue required as left operand of assignment}
+
+        f1() + true,   // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - true,   // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * true,   // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / true,   // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % true,   // @error{invalid operand type 'void' for binary expression '%'}
+        f1() | true,   // @error{invalid operand type 'void' for binary expression '|'}
+        f1() & true,   // @error{invalid operand type 'void' for binary expression '&'}
+        f1() ^ true,   // @error{invalid operand type 'void' for binary expression '^'}
+        f1() << true,  // @error{invalid operand type 'void' for binary expression '<<'}
+        f1() >> true,  // @error{invalid operand type 'void' for binary expression '>>'}
+        f1() <= true,  // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < true,   // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == true,  // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != true,  // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= true,  // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > true,   // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += true,  // @error{lvalue required as left operand of assignment}
+        f1() -= true,  // @error{lvalue required as left operand of assignment}
+        f1() *= true,  // @error{lvalue required as left operand of assignment}
+        f1() /= true,  // @error{lvalue required as left operand of assignment}
+        f1() %= true,  // @error{lvalue required as left operand of assignment}
+        f1() |= true,  // @error{lvalue required as left operand of assignment}
+        f1() &= true,  // @error{lvalue required as left operand of assignment}
+        f1() ^= true,  // @error{lvalue required as left operand of assignment}
+        f1() <<= true, // @error{lvalue required as left operand of assignment}
+        f1() >>= true, // @error{lvalue required as left operand of assignment}
+
+        f1() + 1,      // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - 1,      // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * 1,      // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / 1,      // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % 1,      // @error{invalid operand type 'void' for binary expression '%'}
+        f1() | 1,      // @error{invalid operand type 'void' for binary expression '|'}
+        f1() & 1,      // @error{invalid operand type 'void' for binary expression '&'}
+        f1() ^ 1,      // @error{invalid operand type 'void' for binary expression '^'}
+        f1() << 1,     // @error{invalid operand type 'void' for binary expression '<<'}
+        f1() >> 1,     // @error{invalid operand type 'void' for binary expression '>>'}
+        f1() <= 1,     // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < 1,      // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == 1,     // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != 1,     // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= 1,     // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > 1,      // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += 1,     // @error{lvalue required as left operand of assignment}
+        f1() -= 1,     // @error{lvalue required as left operand of assignment}
+        f1() *= 1,     // @error{lvalue required as left operand of assignment}
+        f1() /= 1,     // @error{lvalue required as left operand of assignment}
+        f1() %= 1,     // @error{lvalue required as left operand of assignment}
+        f1() |= 1,     // @error{lvalue required as left operand of assignment}
+        f1() &= 1,     // @error{lvalue required as left operand of assignment}
+        f1() ^= 1,     // @error{lvalue required as left operand of assignment}
+        f1() <<= 1,    // @error{lvalue required as left operand of assignment}
+        f1() >>= 1,    // @error{lvalue required as left operand of assignment}
+
+        f1() + 1.0,    // @error{invalid operand type 'void' for binary expression '+'}
+        f1() - 1.0,    // @error{invalid operand type 'void' for binary expression '-'}
+        f1() * 1.0,    // @error{invalid operand type 'void' for binary expression '*'}
+        f1() / 1.0,    // @error{invalid operand type 'void' for binary expression '/'}
+        f1() % 1.0,    // @error{invalid operands to binary expression ('void' and 'f64')}
+        f1() | 1.0,    // @error{invalid operands to binary expression ('void' and 'f64')}
+        f1() & 1.0,    // @error{invalid operands to binary expression ('void' and 'f64')}
+        f1() ^ 1.0,    // @error{invalid operands to binary expression ('void' and 'f64')}
+        f1() << 1.0,   // @error{invalid operands to binary expression ('void' and 'f64')}
+        f1() >> 1.0,   // @error{invalid operands to binary expression ('void' and 'f64')}
+        f1() <= 1.0,   // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < 1.0,    // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == 1.0,   // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != 1.0,   // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= 1.0,   // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > 1.0,    // @error{invalid operand type 'void' for binary expression '>'}
+        f1() += 1.0,   // @error{lvalue required as left operand of assignment}
+        f1() -= 1.0,   // @error{lvalue required as left operand of assignment}
+        f1() *= 1.0,   // @error{lvalue required as left operand of assignment}
+        f1() /= 1.0,   // @error{lvalue required as left operand of assignment}
+        f1() %= 1.0,   // @error{lvalue required as left operand of assignment}
+        f1() |= 1.0,   // @error{lvalue required as left operand of assignment}
+        f1() &= 1.0,   // @error{lvalue required as left operand of assignment}
+        f1() ^= 1.0,   // @error{lvalue required as left operand of assignment}
+        f1() <<= 1.0,  // @error{lvalue required as left operand of assignment}
+        f1() >>= 1.0,  // @error{lvalue required as left operand of assignment}
+
+        f1() + nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() - nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() * nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() / nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() % nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() | nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() & nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() ^ nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() << nil,   // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() >> nil,   // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() <= nil,   // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() < nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() == nil,   // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() != nil,   // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() >= nil,   // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() > nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() += nil,   // @error{lvalue required as left operand of assignment}
+        f1() -= nil,   // @error{lvalue required as left operand of assignment}
+        f1() *= nil,   // @error{lvalue required as left operand of assignment}
+        f1() /= nil,   // @error{lvalue required as left operand of assignment}
+        f1() %= nil,   // @error{lvalue required as left operand of assignment}
+        f1() |= nil,   // @error{lvalue required as left operand of assignment}
+        f1() &= nil,   // @error{lvalue required as left operand of assignment}
+        f1() ^= nil,   // @error{lvalue required as left operand of assignment}
+        f1() <<= nil,  // @error{lvalue required as left operand of assignment}
+        f1() >>= nil,  // @error{lvalue required as left operand of assignment}
+    }
+}
