@@ -33,7 +33,7 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
         break;
     case FloatLiteral:
         FloatLiteral* f = (FloatLiteral*)e;
-        f.printLiteral(out);
+        f.printLiteral(out, true);
         break;
     case BooleanLiteral:
         BooleanLiteral* b = (BooleanLiteral*)e;
