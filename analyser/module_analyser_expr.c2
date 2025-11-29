@@ -56,17 +56,12 @@ fn QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
 
     switch (e.getKind()) {
     case IntegerLiteral:
-        return e.getType();
     case FloatLiteral:
-        return e.getType();
     case BooleanLiteral:
-        return builtins[BuiltinKind.Bool];
     case CharLiteral:
-        return builtins[BuiltinKind.UInt8];
     case StringLiteral:
-        return e.getType(); // already set in creator
     case Nil:
-        return getVoidPtr();
+        return e.getType(); // already set in creator
     case Identifier:
         Decl* d = ma.analyseIdentifier(e_ptr, side);
         if (!d) break;
@@ -76,13 +71,7 @@ fn QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
     case Call:
         return ma.analyseCallExpr(e_ptr);
     case InitList:
-        (*e_ptr).dump();
-        assert(0);
-        break;
     case FieldDesignatedInit:
-        (*e_ptr).dump();
-        assert(0);
-        break;
     case ArrayDesignatedInit:
         (*e_ptr).dump();
         assert(0);

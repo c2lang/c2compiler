@@ -78,7 +78,10 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
                 return;
             }
             Value ctv = ctv_analyser.get_value(initval);
-
+            if (value.kind == ValueKind.Error) {
+                ma.errorRange(initval.getLoc(), initval.getRange(), "%s", ctv.error_msg);
+                return;
+            }
             if (!ctv_analyser.checkTypeRange(ma.diags, implType, &ctv, 0, initval)) return;
 
             if (i > 0 && ctv.is_less(&value)) {

@@ -145,7 +145,7 @@ fn QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualType
 
     BuiltinType* bl = lcanon.getBuiltinTypeOrNil();
     BuiltinType* br = rcanon.getBuiltinTypeOrNil();
-    if (!bl || !br || lcanon.isVoid() || lcanon.isVoid()) {
+    if (!bl || !br || lcanon.isVoid() || rcanon.isVoid()) {
         Expr* e = (Expr*)b;
         ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
         return QualType_Invalid;
@@ -594,6 +594,7 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     case And:
     case Xor:
     case Or:
+        if (!ma.checkFloat(lhs, rhs, "bitwise")) return QualType_Invalid;
         result = ma.checkBinopIntArgs(b, ltype, rtype);
         break;
     case LAnd:
@@ -612,6 +613,7 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         break;
     case RemAssign:
         if (!ma.checkZero(rhs, "remainder")) return QualType_Invalid;
+        if (!ma.checkFloat(lhs, rhs, "remainder")) return QualType_Invalid;
         result = ma.checkBinopIntArgs(b, ltype, rtype);
         break;
     case AddAssign:
@@ -625,6 +627,7 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     case AndAssign:
     case XorAssign:
     case OrAssign:
+        if (!ma.checkFloat(lhs, rhs, "bitwise")) return QualType_Invalid;
         result = ma.checkBinopIntArgs(b, ltype, rtype);
         break;
     }
@@ -638,8 +641,8 @@ fn bool Analyser.checkShiftArgs(Analyser* ma, Expr* lhs, Expr* rhs) {
     QualType qt = lhs.getType();
     QualType canon = qt.getCanonicalType();
     if (!canon.isBuiltin()) {
-        // TODO
-        ma.error(lhs.getLoc(), "cannot shift .. TODO");
+        QualType qt2 = rhs.getType();
+        ma.error(lhs.getLoc(), "invalid operands to binary expression ('%s' and '%s')", qt.diagName(), qt2.diagName());
         return false;
     }
     BuiltinType* bi = canon.getBuiltinTypeOrNil();

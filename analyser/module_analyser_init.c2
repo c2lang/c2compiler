@@ -92,10 +92,12 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
 
         // TODO Canonical?
         if (expectedType.isBuiltin() && !res.isPointer()) {
-            // TODO not correct since conversion might be to something else?
+            // TODO should insert `BooleanCast` implicit cast
             if (expectedType.isBool()) return true;
             if (!ctv_analyser.check(ma.diags, expectedType, e)) return false;
-            e.setType(expectedType);
+            if (res.getType() != expectedType.getType()) {
+                ma.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, e_ptr, expectedType);
+            }
             return true;
         }
     }

@@ -154,6 +154,16 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
     case ImplicitCast:
         // TODO some casts might need to be explicit to prevent warnings
         ImplicitCastExpr* i = (ImplicitCastExpr*)e;
+        if (i.getKind() == IntegralCast) {
+            QualType qt = e.getType();
+            if (qt.getBuiltinKind() == Float32) {
+                if (prec > Prefix) out.lparen();
+                gen.emitCast(out, qt, false);
+                gen.emitExpr2(out, i.getInner(), Prefix);
+                if (prec > Prefix) out.rparen();
+                break;
+            }
+        }
         gen.emitExpr2(out, i.getInner(), prec);
         break;
     case Range:

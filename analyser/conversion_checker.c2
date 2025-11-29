@@ -259,8 +259,12 @@ fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon
         c.conversionError("implicit conversion turns floating-point number into integer:");
         break;
     case 6:     // loss of FP-precision
-        // TODO: is this just a warning?
-        c.conversionError("implicit conversion loses floating-point precision:");
+        if ((*c.expr_ptr).isCtv()) {
+            c.builder.insertImplicitCast(ImplicitCastKind.IntegralCast, c.expr_ptr, c.lhs);
+        } else {
+            // TODO: is this just a warning?
+            c.conversionError("implicit conversion loses floating-point precision:");
+        }
         break;
     case 7:     // ok, no conversion needed
         break;

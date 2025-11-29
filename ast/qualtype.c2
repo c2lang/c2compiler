@@ -215,6 +215,13 @@ public fn bool QualType.isFloat(const QualType* qt) {
     return bi.isFloatingPoint();
 }
 
+public fn BuiltinKind QualType.getBuiltinKind(const QualType* qt) {
+    const Type* t = qt.getTypeOrNil();
+    if (!t || !t.isBuiltinType()) return Void;
+    const BuiltinType* bi = (BuiltinType*)t;
+    return bi.getKind();
+}
+
 // Note: ignores const/volatile flags
 public fn bool QualType.isCharPointer(const QualType* qt) {
     // Note: we cannot compare with g_char_ptr since const char* is different!

@@ -19,7 +19,7 @@ module c2_parser;
 import ast local;
 import c2_prec local;
 import constants;
-//import number_radix local;    // BUG: should have to be imported
+import number_radix local;
 import token local;
 import src_loc local;
 
@@ -269,11 +269,24 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
 */
         break;
     case 2: // IntegerLiteral
-        res = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.len, p.tok.int_value, p.tok.getRadix());
+        u64 val = p.tok.int_value;
+        BuiltinKind kind;
+        if (val <= i32.max)
+            kind = Int32;
+        else
+        if (val <= u32.max && p.tok.getRadix() != Radix.Default)
+            kind = UInt32;
+        else
+        if (val <= i64.max)
+            kind = Int64;
+        else
+            kind = UInt64;
+        res = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.len, p.tok.int_value, p.tok.getRadix(), kind);
         p.consumeToken();
         break;
     case 3: // FloatLiteral
-        res = p.builder.actOnFloatLiteral(p.tok.loc, p.tok.len, p.tok.float_value, p.tok.getRadix());
+        BuiltinKind kind = p.tok.suffix_F ? BuiltinKind.Float32 : BuiltinKind.Float64;
+        res = p.builder.actOnFloatLiteral(p.tok.loc, p.tok.len, p.tok.float_value, p.tok.getRadix(), kind);
         p.consumeToken();
         break;
     case 4: // CharLiteral

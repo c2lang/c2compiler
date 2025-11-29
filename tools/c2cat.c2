@@ -200,6 +200,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
             break;
         }
         out.add(tmp);
+        if (tok.suffix_F) out.add1('F');
         ctx.offset = tok.loc + len;
         break;
     case CharLiteral:

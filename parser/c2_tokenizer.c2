@@ -924,6 +924,10 @@ fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* st
                 p++;
         }
     }
+    if (*p == 'f' || *p == 'F') {
+        result.suffix_F = true;
+        p++;
+    }
     if (*p == '_' || isalpha(*p)) {
         t.lex_number_error(result, p, "floating point");
         return;
@@ -981,6 +985,10 @@ fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char
     } else {
         t.num_error(result, p, "hexadecimal floating constant requires an exponent");
         return;
+    }
+    if (*p == 'f' || *p == 'F') {
+        result.suffix_F = true;
+        p++;
     }
     if (*p == '_' || isalpha(*p)) {
         t.lex_number_error(result, p, "floating point");

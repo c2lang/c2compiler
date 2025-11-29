@@ -1,0 +1,210 @@
+module test;
+
+import stdio local;
+
+static_assert(sizeof(""), 1);
+static_assert(sizeof("a"), 2);
+static_assert(sizeof("\0"), 2);
+static_assert(sizeof('a'), 1);
+static_assert(sizeof('\0'), 1);
+static_assert(sizeof(0), 4);
+static_assert(sizeof(1), 4);
+static_assert(sizeof(-1), 4);
+static_assert(sizeof(2147483647), 4);
+static_assert(sizeof(0x7fffffff), 4);
+static_assert(sizeof(0x80000000), 4);
+static_assert(sizeof(-2147483647), 4);
+static_assert(sizeof(-0x7fffffff), 4);
+static_assert(sizeof(-0x80000000), 4); // should flag the integer sign issue
+static_assert(sizeof(2147483647+1), 4); // should flag the integer overflow
+static_assert(sizeof(0x7fffffff+1), 4); // should flag the integer overflow
+static_assert(sizeof(0x80000000+1), 4);
+static_assert(sizeof(2147483648), 8);
+static_assert(sizeof(-2147483648), 8);
+static_assert(sizeof(2147483649), 8);
+static_assert(sizeof(-2147483649), 8);
+static_assert(sizeof(0x7fffffffffffffff), 8);
+static_assert(sizeof(0x8000000000000000), 8);
+static_assert(sizeof(9223372036854775807), 8);
+static_assert(sizeof(9223372036854775808), 8); // should flag the integer sign issue
+static_assert(sizeof(9223372036854775809), 8); // should flag the integer sign issue
+static_assert(sizeof(-9223372036854775807), 8);
+static_assert(sizeof(-9223372036854775808), 8); // should flag the integer sign issue
+static_assert(sizeof(-9223372036854775809), 8); // should flag the integer sign issue
+static_assert(sizeof(0.0), 8);
+static_assert(sizeof(0.0 / 0.0), 8);
+static_assert(sizeof(1.0 / 0.0), 8);
+static_assert(sizeof(0.0F), 4);
+static_assert(sizeof(0.0F / 0.0F), 4);
+static_assert(sizeof(1.0F / 0.0F), 4);
+static_assert(sizeof((f32)0.0), 4);
+static_assert(sizeof((f32)(0.0 / 0.0)), 4);
+static_assert(sizeof((f32)(1.0 / 0.0)), 4);
+static_assert(sizeof((f64)0.0), 8);
+static_assert(sizeof((f64)(0.0 / 0.0)), 8);
+static_assert(sizeof((f64)(1.0 / 0.0)), 8);
+
+static_assert(sizeof(i8.min), sizeof(i8));
+static_assert(sizeof(i8.max), sizeof(i8));
+static_assert(sizeof(i16.min), sizeof(i16));
+static_assert(sizeof(i16.max), sizeof(i16));
+static_assert(sizeof(i32.min), sizeof(i32));
+static_assert(sizeof(i32.max), sizeof(i32));
+static_assert(sizeof(i64.min), sizeof(i64));
+static_assert(sizeof(i64.max), sizeof(i64));
+static_assert(sizeof(u8.min), sizeof(u8));
+static_assert(sizeof(u8.max), sizeof(u8));
+static_assert(sizeof(u16.min), sizeof(u16));
+static_assert(sizeof(u16.max), sizeof(u16));
+static_assert(sizeof(u32.min), sizeof(u32));
+static_assert(sizeof(u32.max), sizeof(u32));
+static_assert(sizeof(u64.min), sizeof(u64));
+static_assert(sizeof(u64.max), sizeof(u64));
+static_assert(sizeof(isize.min), sizeof(isize));
+static_assert(sizeof(isize.max), sizeof(isize));
+static_assert(sizeof(usize.min), sizeof(usize));
+static_assert(sizeof(usize.max), sizeof(usize));
+static_assert(sizeof(f32.min), sizeof(f32));
+static_assert(sizeof(f32.max), sizeof(f32));
+static_assert(sizeof(f64.min), sizeof(f64));
+static_assert(sizeof(f64.max), sizeof(f64));
+
+fn void print_values() {
+    printf("'a' = %d\n", 'a');
+    printf("'\\0' = %d\n", '\0');
+    printf("0 = %d\n", 0);
+    printf("1 = %d\n", 1);
+    printf("-1 = %d\n", -1);
+    printf("2147483647 = %d\n", 2147483647);
+    printf("0x7fffffff = %d\n", 0x7fffffff);
+    printf("0x80000000 = %d\n", 0x80000000);
+    printf("-2147483647 = %d\n", -2147483647);
+    printf("-0x7fffffff = %d\n", -0x7fffffff);
+    printf("-0x80000000 = %d\n", -0x80000000);
+    printf("2147483647+1 = %d\n", 2147483647+1);
+    printf("0x7fffffff+1 = %d\n", 0x7fffffff+1);
+    printf("0x80000000+1 = %d\n", 0x80000000+1);
+    printf("2147483648 = %d\n", 2147483648);
+    printf("-2147483648 = %d\n", -2147483648);
+    printf("2147483649 = %d\n", 2147483649);
+    printf("-2147483649 = %d\n", -2147483649);
+    printf("0x7fffffffffffffff = %d\n", 0x7fffffffffffffff);
+    printf("0x8000000000000000 = %d\n", 0x8000000000000000);
+    printf("9223372036854775807 = %d\n", 9223372036854775807);
+    printf("9223372036854775808 = %d\n", 9223372036854775808);
+    printf("9223372036854775809 = %d\n", 9223372036854775809);
+    printf("-9223372036854775807 = %d\n", -9223372036854775807);
+    printf("-9223372036854775808 = %d\n", -9223372036854775808);
+    printf("-9223372036854775809 = %d\n", -9223372036854775809);
+
+    printf("0.0 = %g\n", 0.0);
+    printf("0.0 / 0.0 = %g\n", 0.0 / 0.0);
+    printf("1.0 / 0.0 = %g\n", 1.0 / 0.0);
+    printf("(f32)0.0 = %g\n", (f32)0.0);
+    printf("(f32)(0.0 / 0.0) = %g\n", (f32)(0.0 / 0.0));
+    printf("(f32)(1.0 / 0.0) = %g\n", (f32)(1.0 / 0.0));
+    printf("(f64)0.0 = %g\n", (f64)0.0);
+    printf("(f64)(0.0 / 0.0) = %g\n", (f64)(0.0 / 0.0));
+    printf("(f64)(1.0 / 0.0) = %g\n", (f64)(1.0 / 0.0));
+
+    printf("i8.min = %d\n", i8.min);
+    printf("i8.max = %d\n", i8.max);
+    printf("i16.min = %d\n", i16.min);
+    printf("i16.max = %d\n", i16.max);
+    printf("i32.min = %d\n", i32.min);
+    printf("i32.max = %d\n", i32.max);
+    printf("i64.min = %d\n", i64.min);
+    printf("i64.max = %d\n", i64.max);
+    printf("u8.min = %d\n", u8.min);
+    printf("u8.max = %d\n", u8.max);
+    printf("u16.min = %d\n", u16.min);
+    printf("u16.max = %d\n", u16.max);
+    printf("u32.min = %d\n", u32.min);
+    printf("u32.max = %d\n", u32.max);
+    printf("u64.min = %d\n", u64.min);
+    printf("u64.max = %d\n", u64.max);
+    printf("isize.min = %d\n", isize.min);
+    printf("isize.max = %d\n", isize.max);
+    printf("usize.min = %d\n", usize.min);
+    printf("usize.max = %d\n", usize.max);
+    printf("f32.min = %g\n", f32.min);
+    printf("f32.max = %g\n", f32.max);
+    printf("f64.min = %g\n", f64.min);
+    printf("f64.max = %g\n", f64.max);
+}
+
+fn void print_sizes() {
+    printf("sizeof(\"\") = %d\n", sizeof(""));
+    printf("sizeof(\"a\") = %d\n", sizeof("a"));
+    printf("sizeof(\"\\0\") = %d\n", sizeof("\0"));
+    printf("sizeof('a') = %d\n", sizeof('a'));
+    printf("sizeof('\\0') = %d\n", sizeof('\0'));
+    printf("sizeof(0) = %d\n", sizeof(0));
+    printf("sizeof(1) = %d\n", sizeof(1));
+    printf("sizeof(-1) = %d\n", sizeof(-1));
+    printf("sizeof(2147483647) = %d\n", sizeof(2147483647));
+    printf("sizeof(0x7fffffff) = %d\n", sizeof(0x7fffffff));
+    printf("sizeof(0x80000000) = %d\n", sizeof(0x80000000));
+    printf("sizeof(-2147483647) = %d\n", sizeof(-2147483647));
+    printf("sizeof(-0x7fffffff) = %d\n", sizeof(-0x7fffffff));
+    printf("sizeof(-0x80000000) = %d\n", sizeof(-0x80000000));
+    printf("sizeof(2147483647+1) = %d\n", sizeof(2147483647+1));
+    printf("sizeof(0x7fffffff+1) = %d\n", sizeof(0x7fffffff+1));
+    printf("sizeof(0x80000000+1) = %d\n", sizeof(0x80000000+1));
+    printf("sizeof(2147483648) = %d\n", sizeof(2147483648));
+    printf("sizeof(-2147483648) = %d\n", sizeof(-2147483648));
+    printf("sizeof(2147483649) = %d\n", sizeof(2147483649));
+    printf("sizeof(-2147483649) = %d\n", sizeof(-2147483649));
+    printf("sizeof(0x7fffffffffffffff) = %d\n", sizeof(0x7fffffffffffffff));
+    printf("sizeof(0x8000000000000000) = %d\n", sizeof(0x8000000000000000));
+    printf("sizeof(9223372036854775807) = %d\n", sizeof(9223372036854775807));
+    printf("sizeof(9223372036854775808) = %d\n", sizeof(9223372036854775808));
+    printf("sizeof(9223372036854775809) = %d\n", sizeof(9223372036854775809));
+    printf("sizeof(-9223372036854775807) = %d\n", sizeof(-9223372036854775807));
+    printf("sizeof(-9223372036854775808) = %d\n", sizeof(-9223372036854775808));
+    printf("sizeof(-9223372036854775809) = %d\n", sizeof(-9223372036854775809));
+
+    printf("sizeof(0.0) = %d\n", sizeof(0.0));
+    printf("sizeof(0.0 / 0.0) = %d\n", sizeof(0.0 / 0.0));
+    printf("sizeof(1.0 / 0.0) = %d\n", sizeof(1.0 / 0.0));
+    printf("sizeof(0.0F) = %d\n", sizeof(0.0F));
+    printf("sizeof(0.0F / 0.0F) = %d\n", sizeof(0.0F / 0.0F));
+    printf("sizeof(1.0F / 0.0F) = %d\n", sizeof(1.0F / 0.0F));
+    printf("sizeof((f32)0.0) = %d\n", sizeof((f32)0.0));
+    printf("sizeof((f32)(0.0 / 0.0)) = %d\n", sizeof((f32)(0.0 / 0.0)));
+    printf("sizeof((f32)(1.0 / 0.0)) = %d\n", sizeof((f32)(1.0 / 0.0)));
+    printf("sizeof((f64)0.0) = %d\n", sizeof((f64)0.0));
+    printf("sizeof((f64)(0.0 / 0.0)) = %d\n", sizeof((f64)(0.0 / 0.0)));
+    printf("sizeof((f64)(1.0 / 0.0)) = %d\n", sizeof((f64)(1.0 / 0.0)));
+
+    printf("sizeof(i8.min) = %d\n", sizeof(i8.min));
+    printf("sizeof(i8.max) = %d\n", sizeof(i8.max));
+    printf("sizeof(i16.min) = %d\n", sizeof(i16.min));
+    printf("sizeof(i16.max) = %d\n", sizeof(i16.max));
+    printf("sizeof(i32.min) = %d\n", sizeof(i32.min));
+    printf("sizeof(i32.max) = %d\n", sizeof(i32.max));
+    printf("sizeof(i64.min) = %d\n", sizeof(i64.min));
+    printf("sizeof(i64.max) = %d\n", sizeof(i64.max));
+    printf("sizeof(u8.min) = %d\n", sizeof(u8.min));
+    printf("sizeof(u8.max) = %d\n", sizeof(u8.max));
+    printf("sizeof(u16.min) = %d\n", sizeof(u16.min));
+    printf("sizeof(u16.max) = %d\n", sizeof(u16.max));
+    printf("sizeof(u32.min) = %d\n", sizeof(u32.min));
+    printf("sizeof(u32.max) = %d\n", sizeof(u32.max));
+    printf("sizeof(u64.min) = %d\n", sizeof(u64.min));
+    printf("sizeof(u64.max) = %d\n", sizeof(u64.max));
+    printf("sizeof(isize.min) = %d\n", sizeof(isize.min));
+    printf("sizeof(isize.max) = %d\n", sizeof(isize.max));
+    printf("sizeof(usize.min) = %d\n", sizeof(usize.min));
+    printf("sizeof(usize.max) = %d\n", sizeof(usize.max));
+    printf("sizeof(f32.min) = %d\n", sizeof(f32.min));
+    printf("sizeof(f32.max) = %d\n", sizeof(f32.max));
+    printf("sizeof(f64.min) = %d\n", sizeof(f64.min));
+    printf("sizeof(f64.max) = %d\n", sizeof(f64.max));
+}
+
+public fn i32 main() {
+    print_values();
+    print_sizes();
+    return 0;
+}

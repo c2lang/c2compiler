@@ -16,8 +16,8 @@ type Foo struct {
     i32 x;
 }
 
-fn u32 Foo.bit(u32 x) @(pure) {
+fn i32 Foo.bit(u32 x) @(pure) {
     return 1 << x;
 }
 
-u32 b3 = Foo.bit(3);
+i32 b3 = Foo.bit(3);

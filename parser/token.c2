@@ -303,11 +303,12 @@ public type Token struct {
     u8 radix : 2;   // number_radix.Radix: for IntegerLiteral (2,8,10,16), FloatLiteral(10,16) and CharLiteral (8,16)
     u8 raw : 1;     // for StringLiteral
     bool reserved : 1;
+    bool suffix_F : 1;
     union {
         const char* error_msg;  // ERROR
         struct {           // StringLiteral, LineComment, BlockComment
-            u32 text_idx;    // pool index of encoded string or comment
-            u32 text_len;    // length of converted string (without null terminator)
+            u32 text_idx;  // pool index of encoded string or comment
+            u32 text_len;  // length of converted string (without null terminator)
         }
         u32 name_idx;      // Identifier and all keywords
         u64 int_value;     // IntegerLiteral

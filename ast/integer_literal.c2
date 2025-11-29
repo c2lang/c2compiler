@@ -31,7 +31,7 @@ public type IntegerLiteral struct @(opaque) {
     u64 val;
 }
 
-public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, u64 val, Radix radix) {
+public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, u64 val, Radix radix, BuiltinKind kind) {
     IntegerLiteral* i = c.alloc(sizeof(IntegerLiteral));
     i.base.init(ExprKind.IntegerLiteral, loc, 1, 1, 0, ValType.RValue);
     i.base.base.integerLiteralBits.radix = radix;
@@ -40,10 +40,7 @@ public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc l
 #if AstStatistics
     Stats.addExpr(ExprKind.IntegerLiteral, sizeof(IntegerLiteral));
 #endif
-    //i.base.setType(integerVal2Type(val));
-    // just set to i32
-    // TODO: fix this for values larger than max_int32?
-    i.base.setType(builtins[BuiltinKind.Int32]);
+    i.base.setType(builtins[kind]);
 
     return i;
 }
@@ -102,10 +99,6 @@ public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffe
     switch (e.base.base.integerLiteralBits.radix) {
     case Radix.Default:
         out.print("%d", e.val);
-        if (c_style) {
-            if (e.val > 9223372036854775807) out.add1('u');
-            if (e.val > 4294967295) out.add1('l');
-        }
         break;
     case Radix.Hex:
         out.print("0x%x", e.val);
@@ -116,6 +109,12 @@ public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffe
     case Radix.Binary:
         printBinary(out, e.val);
         break;
+    }
+    if (c_style) {
+        QualType qt = e.base.getType();
+        BuiltinKind kind = qt.getBuiltinKind();
+        if (kind == UInt32 || kind == UInt64) out.add1('U');
+        if (kind == Int64 || kind == UInt64) out.add1('L');
     }
 }
 

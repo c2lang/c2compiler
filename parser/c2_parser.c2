@@ -858,6 +858,7 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
             out.add(ftoa(buf, elemsof(buf), tok.float_value));
             break;
         }
+        if (tok.suffix_F) out.add1('F');
         break;
     case CharLiteral:
         switch (tok.getRadix()) {

@@ -216,7 +216,7 @@ public fn const char* idx2name(u32 idx) {
     return nil;
 }
 
-public fn QualType getVoidPtr() {
+fn QualType getVoidPtr() {
     return builtins[elemsof(BuiltinKind)];
 }
 
