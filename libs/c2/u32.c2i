@@ -1,5 +1,5 @@
 module u32;
 
 const u32 min = 0;
-const u32 max = 4294967295;
+const u32 max = 0xFFFFFFFF;
 const u8 width = 32;

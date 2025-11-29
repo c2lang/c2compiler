@@ -24,7 +24,7 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         IntegerLiteral.printLiteral((IntegerLiteral*)e, out, false);
         break;
     case FloatLiteral:
-        FloatLiteral.printLiteral((FloatLiteral*)e, out);
+        FloatLiteral.printLiteral((FloatLiteral*)e, out, false);
         break;
     case BooleanLiteral:
         BooleanLiteral.printLiteral((BooleanLiteral*)e, out);

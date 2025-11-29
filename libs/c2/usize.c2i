@@ -2,10 +2,10 @@ module usize;
 
 #if ARCH_32BIT
 const usize min = 0;
-const usize max = 4294967295;
+const usize max = 0xFFFFFFFF;
 const u8 width = 32;
 #else
 const usize min = 0;
-const usize max = 18446744073709551615;
+const usize max = 0xFFFFFFFFFFFFFFFF;
 const u8 width = 64;
 #endif

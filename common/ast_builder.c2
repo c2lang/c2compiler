@@ -911,13 +911,12 @@ public fn IdentifierExpr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, u32 na
     return IdentifierExpr.create(b.context, loc, name);
 }
 
-public fn Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, u32 src_len, u64 value, Radix radix) {
-    // TODO: pass qt?
-    return (Expr*)IntegerLiteral.create(b.context, loc, src_len, value, radix);
+public fn Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, u32 src_len, u64 value, Radix radix, BuiltinKind kind) {
+    return (Expr*)IntegerLiteral.create(b.context, loc, src_len, value, radix, kind);
 }
 
-public fn Expr* Builder.actOnFloatLiteral(Builder* b, SrcLoc loc, u32 src_len, f64 value, Radix radix) {
-    return (Expr*)FloatLiteral.create(b.context, loc, src_len, value, radix);
+public fn Expr* Builder.actOnFloatLiteral(Builder* b, SrcLoc loc, u32 src_len, f64 value, Radix radix, BuiltinKind kind) {
+    return (Expr*)FloatLiteral.create(b.context, loc, src_len, value, radix, kind);
 }
 
 public fn Expr* Builder.actOnCharLiteral(Builder* b, SrcLoc loc, u32 src_len, u8 value, Radix radix) {
