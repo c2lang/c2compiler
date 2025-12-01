@@ -127,7 +127,7 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
     assert(cond.isExpr()); // TODO handle if (Decl* d = ..) ..
     Expr* e = (Expr*)cond;
     if (e.isCtv()) {
-        Value v = ctv_analyser.get_value(e);
+        Value v = ast.evalExpr(e);
         if (v.isZero()) {
             if (else_stmt) gen.emitStmt(else_stmt);
         } else {

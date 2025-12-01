@@ -19,11 +19,10 @@ import ast local;
 import ir local;
 import ir_context local;
 import ir_gen_locals local;
-import ctv_analyser;
 
 fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     if (e.isCtv()) {
-        Value v = ctv_analyser.get_value(e);
+        Value v = ast.evalExpr(e);
         // TEMP as u32 TODO
         *result = gen.ctx.addIntegerConstant(v.as_u32());
         return;
@@ -312,7 +311,7 @@ fn void Generator.emitCond(Generator* gen, const Expr* e, BlockId true_blk, Bloc
     ir_context.Context* c = gen.ctx;
 
     if (e.isCtv()) {
-        Value v = ctv_analyser.get_value(e);
+        Value v = ast.evalExpr(e);
         if (v.isZero()) {
             c.addJmpInstr(false_blk);
         } else {
@@ -509,7 +508,7 @@ fn void Generator.emitArraySubscript(Generator* gen, ir.Ref* result, const Expr*
         gen.emitExpr(&base_ref, base);
 
         // offset = value * base_size;
-        Value v = ctv_analyser.get_value(index);
+        Value v = ast.evalExpr(index);
         u32 offset = v.as_u32() * base_size;
         if (offset == 0) {
             *result = base_ref;

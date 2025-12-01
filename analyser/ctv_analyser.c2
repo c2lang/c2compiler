@@ -35,17 +35,13 @@ fn void Limit.init(Limit* l, u32 width, bool is_signed) {
     }
 }
 
-public fn Value get_value(const Expr* e) {
-    return ast.evalExpr(e);
-}
-
-public fn bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
+public fn bool checkRange(diagnostics.Diags* diags, QualType qt, const Expr* e) {
     QualType canon = qt.getCanonicalType();
     if (!canon.isBuiltin()) return true;  // TODO find out cases
 
     assert(e.isCtv());
 
-    Value value = ctv_analyser.get_value((e));
+    Value value = ast.evalExpr((e));
 
     if (value.kind == ValueKind.Error) {
         diags.errorRange(e.getLoc(), e.getRange(), "%s", value.error_msg);
@@ -55,7 +51,7 @@ public fn bool check(diagnostics.Diags* diags, QualType qt, const Expr* e) {
 }
 
 public fn bool checkBitfield(diagnostics.Diags* diags, u8 bitfield_width, bool bitfield_signed, const Expr* e) {
-    Value value = ctv_analyser.get_value((e));
+    Value value = ast.evalExpr((e));
     if (value.kind == ValueKind.Error) {
         diags.errorRange(e.getLoc(), e.getRange(), "%s", value.error_msg);
         return false;

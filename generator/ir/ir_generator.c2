@@ -21,7 +21,6 @@ import build_file;
 import component;
 import console;
 import constants;
-import ctv_analyser;
 import file_utils;
 import ir local;
 import ir_context local;
@@ -257,7 +256,7 @@ fn ir.Type Generator.type2irtype(Generator* gen, QualType qt) {
 
 fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
     if (e.isCtv()) {
-        Value v = ctv_analyser.get_value(e);
+        Value v = ast.evalExpr(e);
         switch (size) {
         case 1:
             gen.ctx.addInitValueU8(v.as_u8());
@@ -417,7 +416,7 @@ fn void Generator.emitArrayInit(Generator* gen, const Expr* e) {
             if (ie.isArrayDesignatedInit()) {
                 const ArrayDesignatedInitExpr* ad = (ArrayDesignatedInitExpr*)ie;
                 const Expr* desig = ad.getDesignator();
-                Value v = ctv_analyser.get_value(desig);
+                Value v = ast.evalExpr(desig);
                 sorter.addAt(v.as_u32(), ad.getInit());
             } else {
                 sorter.add(ie);

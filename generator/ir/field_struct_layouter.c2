@@ -16,7 +16,6 @@
 module ir_generator;
 
 import ast;
-import ctv_analyser;
 import ir local;
 import ir_context;
 
@@ -132,7 +131,7 @@ field:
             //printf("BITFIELD(%d, %d) size %d\n", fi.info.bitfield_offset, fi.info.bitfield_width, bitfield_base_size);
 
             if (e.isCtv()) {
-                ast.Value value = ctv_analyser.get_value(e);
+                ast.Value value = ast.evalExpr(e);
                 value.mask(fi.info.bitfield_width);
                 value.left_shift2(fi.info.bitfield_offset);
                 u64 v = value.as_u64();
@@ -191,7 +190,7 @@ fn void FieldStructLayouter.finalizeExpr(FieldStructLayouter* l, const ast.Struc
                 ast.Expr* e = fi.expr;
                 Ref value_ref;
                 if (e.isCtv()) {
-                    ast.Value value = ctv_analyser.get_value(e);
+                    ast.Value value = ast.evalExpr(e);
                     value.mask(fi.info.bitfield_width);
                     if (fi.info.bitfield_offset) value.left_shift2(fi.info.bitfield_offset);
                     u64 v = value.as_u64();
