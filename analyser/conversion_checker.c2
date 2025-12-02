@@ -323,7 +323,7 @@ fn bool Checker.checkPointer2Func(Checker* c, const Type* lcanon, const Type* rc
     const PointerType* ptr = (PointerType*)rcanon;
     QualType inner = ptr.getInner();
     if (!inner.isVoid()) {
-        return c.conversionError("incompatible pointer to function conversion");
+        return c.conversionError("incompatible pointer to function conversion:");
     }
     c.builder.insertImplicitCast(ImplicitCastKind.BitCast, c.expr_ptr, c.lhs);
     return true;
@@ -495,7 +495,7 @@ fn bool Checker.checkFunc2Builtin(Checker* c, const Type* lcanon, const Type* rc
         FunctionDecl* fd = ft.getDecl();
         if (fd.canBeNil()) return true; // Variable with Function type (eg callback)
 
-        // TODO not always comparision (bool b = test1);
+        // TODO not always comparison (bool b = test1);
         c.diags.error(c.loc, "comparison of function '%s' will always be true", fd.asDecl().getFullName());
         return false;
     }

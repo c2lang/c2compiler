@@ -385,7 +385,7 @@ fn QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType
 // 7  pointer vs function
 // 8  function vs pointer
 // 9  function vs function
-const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvComparision = {
+const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvComparison = {
     //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
     //  Builtin vs
     {   2,      1,      0,      1,      4,      0,     0,     0  },
@@ -409,7 +409,7 @@ fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualT
     assert(lcanon.isValid());
     assert(rcanon.isValid());
 
-    u8 res = BinOpConvComparision[lcanon.getKind()][rcanon.getKind()];
+    u8 res = BinOpConvComparison[lcanon.getKind()][rcanon.getKind()];
     switch (res) {
     case 0: // cannot happen
         ma.error(e.getLoc(), "invalid operands to binary expression ('%s' and '%s')", lhs.diagName(), rhs.diagName());
