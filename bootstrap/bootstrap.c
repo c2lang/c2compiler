@@ -33380,7 +33380,7 @@ static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* m
       _Bool is_non_static = true;
       ast_TypeRef* ref = ast_VarDecl_getTypeRef(params[0]);
       const ast_Ref* param_ref = ast_TypeRef_getUser(ref);
-      if (ast_Decl_isStructType(pd)) {
+      if (0 && ast_Decl_isStructType(pd)) {
          is_non_static = ast_TypeRef_isPointerTo(ref, ast_QualType_getIndex(&prefixType));
       } else {
          is_non_static = ((param_ref && param_ref->decl == prefix->decl) || ast_TypeRef_isPointerTo(ref, ast_QualType_getIndex(&prefixType)));

@@ -10,6 +10,9 @@ fn void Type.init(Type n) {
 
 fn void myfunc() {
     Type t;
-    t.init();       // @error{cannot access static type-function through variable}
+    // this is no longer an error but an init function should have a side effect on its argument
+    // hence should take a pointer.
+    // the compiler might complain that t is passed by value but is uninitialized
+    t.init();       // not an error{cannot access static type-function through variable}
 }
 
