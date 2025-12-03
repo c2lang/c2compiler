@@ -20,6 +20,7 @@ import attr local;
 import color local;
 import file_utils;
 import keywords;
+import src_loc local;
 import string_buffer;
 import string_list;
 import string_pool;
@@ -30,34 +31,125 @@ import ctype;
 import stdio local;
 import stdlib local;
 import string local;
+import unistd;
 
-Color col_keyword    = Byellow;
-Color col_type       = Green;
-Color col_feature    = Blue;
-Color col_attr       = Blue;
-Color col_identifier = Normal;
-Color col_integer    = Magenta;
-Color col_float      = Magenta;
-Color col_charconst  = Magenta;
-Color col_string     = Magenta;
-Color col_comment    = Bcyan;
-Color col_invalid    = Bred;
-Color col_error      = Bred;
-Color col_normal     = Normal;
+type Style enum u8 {
+    Normal,
+    Identifier,
+    Integer,
+    Float,
+    Charconst,
+    String,
+    Operator,
+    Type,
+    Keyword,
+    Function,
+    Attr,
+    Feature,
+    Invalid,
+    Comment,
+    Warning,
+    Error,
+}
 
 fn void usage(const char* me) {
-    printf("Usage: %s file.c2 ...\n", me);
-    exit(1);
+    printf("Usage: %s [options] file.c2 ...\n"
+           "    -c  --check  only check syntax, no content output\n"
+           "    --color      force colorized output\n"
+           "    --nocolor    disable colorized output\n"
+           , me);
 }
 
 type C2cat struct {
     string_pool.Pool* pool;
     string_buffer.Buf* out;
+    string_buffer.Buf* out2;
     c2_tokenizer.Tokenizer* tokenizer;
     AttrRegistry attr_registry;
+    const char* filename;
     const char* input;
     u32 offset;
-    u32 in_attributes; // 0 no, 1 seen @, 2 (, ) -> 0
+    u32 length;
+    u8 in_attributes; // 0 no, 1 seen @, 2 (, ) -> 0
+    bool check_only;
+    c2_tokenizer.ErrorLevel error_level;
+    Style* token_style;
+    Color* style_color;
+}
+
+Style[elemsof(Kind)] token_style;
+Color[elemsof(Style)] style_color = {
+    [Style.Normal]     = Normal,
+    [Style.Identifier] = None,
+    [Style.Integer]    = Magenta,
+    [Style.Float]      = Magenta,
+    [Style.Charconst]  = Magenta,
+    [Style.String]     = Magenta,
+    [Style.Operator]   = None,
+    [Style.Type]       = Green,
+    [Style.Keyword]    = Byellow,
+    [Style.Function]   = White,
+    [Style.Attr]       = Blue,
+    [Style.Feature]    = Blue,
+    [Style.Invalid]    = Bred,
+    [Style.Comment]    = Bcyan,
+    [Style.Warning]    = Bred,
+    [Style.Error]      = Bred,
+}
+
+fn bool init_colors() {
+    // TODO: make token_style global, initialized using designated ranges
+    for (Kind k = Kind.min; k <= Kind.max; k++) {
+        Style style = Normal;
+        switch (k) {
+        case None:
+            style = Normal;
+            break;
+        case Identifier:
+            style = Identifier;
+            break;
+        case IntegerLiteral:
+            style = Integer;
+            break;
+        case FloatLiteral:
+            style = Float;
+            break;
+        case CharLiteral:
+            style = Charconst;
+            break;
+        case StringLiteral:
+            style = String;
+            break;
+        case LParen ... GreaterGreaterEqual:
+            style = Operator;
+            break;
+        case KW_bool ... KW_void:
+            style = Type;
+            break;
+        case KW_as ... KW_while:
+            if (k.isQualifier()) style = Type;
+            else style = Keyword;
+            break;
+        case Feat_if ... Feat_warning:
+            style = Feature;
+            break;
+        case Invalid:
+            style = Invalid;
+            break;
+        case LineComment:
+        case BlockComment:
+            style = Comment;
+            break;
+        case Eof:
+            style = Normal;
+            break;
+        case Error:
+            style = Error;
+            break;
+        }
+        token_style[k] = style;
+    }
+    return true;
 }
 
 fn bool C2cat.is_attribute(C2cat* ctx, u32 name_idx) {
@@ -80,167 +172,129 @@ fn void C2cat.update_state(C2cat* ctx, const Token* tok) {
 
 fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
     string_buffer.Buf* out = ctx.out;
+    u32 pos = tok.loc - ctx.tokenizer.loc_start;    // token start offset
+    u32 tok_len = tok.len;                          // token length in bytes
 
-    if (ctx.offset != 0) {
-        // copy stuff from file to out (from end of last token to start of current)
-        if (tok.done) return;
-        if (ctx.offset <= tok.loc) {
-            u32 len = tok.loc - ctx.offset;
-            if (len) out.add2(ctx.input + ctx.offset, len);
-        } else {
-            out.add1('\n');
-            out.color(col_error);
-            out.print("error: offset=%d tok.loc=%d", ctx.offset, tok.loc);
-            out.color(col_normal);
-            out.add1('\n');
+    if (pos < ctx.offset) {
+        // token starts before end of previous token, this is an error
+        ctx.print_error(Error, tok.loc, "invalid token position (offset=%d pos=%d)", ctx.offset, pos);
+        ctx.offset = pos;
+    }
+    if (pos > ctx.offset) {
+        if (!ctx.check_only) {
+            // copy stuff from file to out (from end of last token to start of current)
+            out.add2(ctx.input + ctx.offset, pos - ctx.offset);
         }
-    }
-
-    if (tok.kind >= LParen && tok.kind < KW_bool) {
-        const char* str = tok.kind.str();
-        out.add(str);
-        ctx.offset = tok.loc + (u32)strlen(str);
-        return;
-    }
-    if (tok.kind.isBuiltinTypeOrVoid()) {
-        const char* str = tok.kind.str();
-        out.color(col_type);
-        out.add(str);
-        out.color(col_normal);
-        ctx.offset = tok.loc + (u32)strlen(str);
-        return;
-    }
-    if (tok.kind.isQualifier()) {
-        const char* str = tok.kind.str();
-        out.color(col_type);
-        out.add(str);
-        out.color(col_normal);
-        ctx.offset = tok.loc + (u32)strlen(str);
-        return;
-    }
-    if (tok.kind.isKeyword()) {
-        const char* str = tok.kind.str();
-        out.color(col_keyword);
-        out.add(str);
-        out.color(col_normal);
-        ctx.offset = tok.loc + (u32)strlen(str);
-        return;
-    }
-    if (tok.kind >= Feat_if && tok.kind <= Feat_endif) {
-        const char* str = tok.kind.str();
-        out.color(col_feature);
-        out.add(str);
-        out.color(col_normal);
-        ctx.offset = tok.loc + (u32)strlen(str);
-        return;
-    }
-    switch (tok.kind) {
-    case Identifier:
-        const char* str = ctx.pool.idx2str(tok.name_idx);
-        Color col = col_identifier;
-
-        if (ctx.in_attributes)
-            col = ctx.is_attribute(tok.name_idx) ? col_attr : col_invalid;
-        out.color(col);
-        out.add(str);
-        out.color(col_normal);
-        ctx.offset = tok.loc + (u32)strlen(str);
-        return;
-    case IntegerLiteral:
-        out.color(col_integer);
-        char[64] tmp;
-        i32 len;
-        switch (tok.getRadix()) {
-        case Hex:
-            len = sprintf(tmp, "0x%x", tok.int_value);
-            break;
-        default:
-            len = sprintf(tmp, "%d", tok.int_value);
-            break;
-        }
-        out.add(tmp);
-        ctx.offset = tok.loc + len;
-        break;
-    case FloatLiteral:
-        out.color(col_float);
-        char[64] tmp;
-        i32 len;
-        switch (tok.getRadix()) {
-        case Hex:
-            len = sprintf(tmp, "%a", tok.float_value);
-            break;
-        default:
-            len = sprintf(tmp, "%#.16g", tok.float_value);
-            break;
-        }
-        out.add(tmp);
-        if (tok.suffix_F) out.add1('F');
-        ctx.offset = tok.loc + len;
-        break;
-    case CharLiteral:
-        out.color(col_charconst);
-        char[64] tmp;
-        i32 len = 0;
-        switch (tok.getRadix()) {
-        case Hex:
-            len = sprintf(tmp, "'\\x%02x'", tok.char_value);
-            break;
-        case Octal:
-            len = sprintf(tmp, "'\\%o'", tok.char_value);
-            break;
-        default:
-            if (ctype.isprint(tok.char_value)) {
-                len = sprintf(tmp, "'%c'", tok.char_value);
-            } else {
-                tmp[0] = 0;
-                // TODO print nicely (eg \n etc)
+        // check for whitespace only
+        for (u32 i = ctx.offset; i < pos; i++) {
+            if (!ctype.isspace(ctx.input[i])) {
+                ctx.print_error(Error, ctx.tokenizer.loc_start + i,
+                                "non space character '\\x%2x' between tokens",
+                                ctx.input[i] & 0xFF);
+                break;
             }
-            break;
         }
-        out.add(tmp);
-        ctx.offset = tok.loc + len;
-        break;
-    case StringLiteral:
-        out.color(col_string);
-        out.add1('"');
-        u32 len = out.encodeBytes(ctx.pool.idx2str(tok.text_idx), tok.text_len, '"');
-        out.add1('"');
-        ctx.offset = tok.loc + len + 2;
-        break;
-    case LineComment:
-        out.color(col_comment);
-        const char* str = ctx.pool.idx2str(tok.text_idx);
-        out.print("//%s", str);
-        ctx.offset = tok.loc + (u32)strlen(str) + 2;
-        break;
-    case BlockComment:
-        out.color(col_comment);
-        const char* str = ctx.pool.idx2str(tok.text_idx);
-        out.print("/*%s*/", str);
-        ctx.offset = tok.loc + (u32)strlen(str) + 4;
-        break;
-    case Invalid:
-        out.color(col_invalid);
-        out.print("%s", tok.invalid);
-        ctx.offset = tok.loc + (u32)strlen(tok.invalid);
-        break;
-    case Error:
-        out.add1('\n');
-        out.color(col_error);
-        out.print("error: %s", ctx.tokenizer.error_msg);
-        out.color(col_normal);
-        out.add1('\n');
-        break;
-    default:
-        out.color(col_error);
-        out.print("token %s\n", tok.kind.str());
-        ctx.offset = tok.loc + 1;
-        break;
+        ctx.offset = pos;
     }
-    out.color(col_normal);
+
+    Style s = ctx.token_style[tok.kind];
+    if (tok.kind == Kind.Identifier) {
+        if (ctx.in_attributes) {
+            s = ctx.is_attribute(tok.name_idx) ? Style.Attr : Style.Invalid;
+        } else
+        if (ctx.input[ctx.offset + tok_len] == '(') {
+            s = Style.Function;
+        }
+    }
+
+    if (!ctx.check_only) {
+        if (s && ctx.style_color[s]) out.color(ctx.style_color[s]);
+        out.add2(ctx.input + ctx.offset, tok_len);
+        if (s && ctx.style_color[s]) out.color(ctx.style_color[Style.Normal]);
+    }
+    ctx.offset += tok_len;
 }
 
-public fn i32 c2cat(const char* filename, bool use_color)
+type Location struct {
+    u32 line, column, line_start, line_length;
+}
+
+fn bool Location.init(Location* loc, const char* src, u32 offset) {
+    u32 line = 0;
+    u32 line_start = 0;
+    u32 i;
+    for (i = 0; i < offset; i++) {
+        if (src[i] == '\0') {
+            loc.line = 0;
+            loc.column = 0;
+            loc.line_start = 0;
+            loc.line_length = 0;
+            return false;
+        }
+        if (src[i] == '\n') {
+            line++;
+            line_start = i + 1;
+        }
+    }
+    loc.line = line + 1;
+    loc.column = offset - line_start + 1;
+    loc.line_start = line_start;
+    while (src[i] && src[i] != '\n') i++;
+    loc.line_length = i - line_start;
+    return true;
+}
+
+fn void C2cat.print_error(C2cat* ctx,
+                          c2_tokenizer.ErrorLevel level,
+                          SrcLoc loc,
+                          const char* format @(printf_format), ...)
+{
+    string_buffer.Buf* out2 = ctx.out2;
+    if (!ctx.check_only && !ctx.out.endsWith('\n')) out2.add1('\n');
+    out2.color(ctx.style_color[Style.Error]);
+    Location sloc.init(ctx.input, loc - ctx.tokenizer.loc_start);
+    if (sloc.line) {
+        out2.print("%s:%d:%d: ", ctx.filename, sloc.line, sloc.column);
+    } else {
+        out2.print("%s: ", ctx.filename);
+    }
+    switch (ctx.error_level = level) {
+    case Note:
+        out2.add("note: ");
+        break;
+    case Warning:
+        out2.add("warning: ");
+        break;
+    default:
+        out2.add("error: ");
+        break;
+    }
+    va_list args;
+    va_start(args, format);
+    out2.vprintf(format, args);
+    out2.color(ctx.style_color[Style.Normal]);
+    out2.add1('\n');
+    va_end(args);
+    if (sloc.line) {
+        out2.print("%.*s\n", (i32)sloc.line_length, ctx.input + sloc.line_start);
+        out2.print("%*s^\n", (i32)sloc.column - 1, "");
+    }
+    if (!ctx.check_only) {
+        fputs(ctx.out.data(), stdout);
+        fflush(stdout);
+        ctx.out.clear();
+    }
+    fputs(ctx.out2.data(), stderr);
+    fflush(stderr);
+    ctx.out2.clear();
+}
+
+fn void C2cat.on_tokenizer_error(void* arg, c2_tokenizer.ErrorLevel level, SrcLoc loc, const char* msg) {
+    C2cat* ctx = arg;
+    ctx.print_error(level, loc, "%s", msg);
+}
+
+fn i32 c2cat_file(const char* filename, bool use_color, bool use_color2, bool check_only)
 {
     file_utils.File file.init("", filename);
     if (!file.load()) {
@@ -248,52 +302,71 @@ public fn i32 c2cat(const char* filename, bool use_color)
         return -1;
     }
 
-    C2cat ctx = { }
-    ctx.pool = string_pool.create(16*1024, 1024);
-    ctx.out = string_buffer.create(16*1024, use_color, 2);
-    ctx.offset = 0;
-    ctx.input = file.data();
-    ctx.in_attributes = 0;
-    u32 file_size = file.data_size();
-
-    string_list.List features;
-    features.init(ctx.pool);
+    string_pool.Pool* pool = string_pool.create(16*1024, 1024);
+    string_buffer.Buf* out = string_buffer.create(16*1024, use_color, 2);
+    string_buffer.Buf* out2 = string_buffer.create(1024, use_color2, 2);
     string_buffer.Buf* buf = string_buffer.create(1024, false, 0);
-    keywords.Info kwinfo;
-    kwinfo.init(ctx.pool);
-    c2_tokenizer.Tokenizer tokenizer;
-    tokenizer.init(ctx.pool, buf, ctx.input, 0, &kwinfo, &features, nil, nil, true);
+    const char* input = file.data();
+    u32 file_size = file.data_size();
+    keywords.Info kwinfo.init(pool);
+    string_list.List features.init(pool);
+
+    C2cat ctx = {
+        .pool = pool,
+        .out = out,
+        .out2 = out2,
+        .filename = filename,
+        .input = input,
+        .offset = 0,
+        .length = file_size,
+        .in_attributes = 0,
+        .check_only = check_only,
+        .token_style = token_style,
+        .style_color = style_color,
+    }
+
+    c2_tokenizer.Tokenizer tokenizer.init(pool, buf, input, 1, &kwinfo, &features,
+                                          C2cat.on_tokenizer_error, &ctx, true);
     ctx.tokenizer = &tokenizer;
     ctx.attr_registry.init(ctx.pool);
 
-    Token tok;
-    tok.init();
+    Token tok.init();
 
     while (!tok.done) {
         tokenizer.lex(&tok);
-        //printf("%4d %s\n", tok.loc, tok.kind.str());
-
+        if (ctx.error_level) {
+            if (ctx.error_level == FatalError) goto done;
+            ctx.error_level = (c2_tokenizer.ErrorLevel)0;
+        }
         ctx.update_state(&tok);
-
         ctx.print_token(&tok);
     }
 
-    if (ctx.offset <= file_size) {
-        u32 len = file_size - ctx.offset;
-        if (len) ctx.out.add2(ctx.input + ctx.offset, len);
-    } else {
-        ctx.out.add1('\n');
-        ctx.out.color(col_error);
-        ctx.out.print("error: offset=%d file_size=%d", ctx.offset, file_size);
-        ctx.out.color(col_normal);
-        ctx.out.add1('\n');
+    if (ctx.offset < ctx.length) {
+        // EOF token starts before end of file, this is an error
+        ctx.print_error(Error, tok.loc, "invalid EOF token position (offset=%d length=%d)",
+                        ctx.offset, ctx.length);
     }
-    fputs(ctx.out.data(), stdout);
-    fflush(stdout);
+    if (ctx.offset > ctx.length) {
+        if (!ctx.check_only) {
+            u32 len = ctx.length - ctx.offset;
+            out.color(style_color[Style.Error]);
+            out.add2(ctx.input + ctx.offset, len);
+            out.color(style_color[Style.Normal]);
+        }
+        // EOF token should have ctx.offset == ctx.length
+        ctx.print_error(Warning, tok.loc, "trailing bytes after end of file token");
+    }
+    if (!ctx.check_only) {
+        fputs(out.data(), stdout);
+        fflush(stdout);
+    }
 
-    ctx.pool.free();
-    ctx.out.free();
+done:
+    out.free();
+    out2.free();
     buf.free();
+    pool.free();
     file.close();
 
     return 0;
@@ -302,11 +375,49 @@ public fn i32 c2cat(const char* filename, bool use_color)
 public fn i32 main(i32 argc, const char** argv)
 {
     bool use_color = color.useColor();
-    if (argc == 1) usage(argv[0]);
+    bool use_color2 = unistd.isatty(2);
+    bool check_only = false;
+    i32 filenum = 0;
+    i32 nfiles = 0;
+    init_colors();
     for (i32 i = 1; i < argc; i++) {
-        if (argc > 2)
-            printf("==> %s <==\n", argv[i]);
-        c2cat(argv[i], use_color);
+        nfiles += (*argv[i] != '-');
+    }
+    for (i32 i = 1; i < argc; i++) {
+        const char* arg = argv[i];
+        if (*arg == '-') {
+            switch (arg) {
+            case "-c":
+            case "--check":
+                check_only = true;
+                break;
+            case "--color":
+                use_color = true;
+                break;
+            case "--nocolor":
+                use_color = false;
+                use_color2 = false;
+                break;
+            case "-?":
+            case "-h":
+            case "--help":
+                usage(argv[0]);
+                exit(EXIT_SUCCESS);
+            default:
+                fprintf(stderr, "c2cat: unknown option %s\n", arg);
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            if (nfiles > 1) {
+                if (filenum++) printf("\n");
+                printf("==> %s <==\n", arg);
+            }
+            c2cat_file(arg, use_color, use_color2, check_only);
+        }
+    }
+    if (!nfiles) {
+        usage(argv[0]);
+        exit(EXIT_FAILURE);
     }
     return 0;
 }
