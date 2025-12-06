@@ -40,6 +40,10 @@ fn void Generator.emitVarDecl(Generator* gen, VarDecl* vd, string_buffer.Buf* ou
             out.add(" = ");
         }
         gen.emitExpr(out, ie);
+    } else {
+        if (!vd.hasAttrNoInit()) {
+            out.add(" = { 0 }");
+        }
     }
 }
 
