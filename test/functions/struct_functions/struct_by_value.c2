@@ -25,6 +25,10 @@ fn Foo Bar.getF(Bar b) {
     return b.f;
 }
 
+fn Foo test2(Bar* b) {
+    return b.getF();
+}
+
 fn i32 test1() {
     Bar b.init(20);
     return b.getF().getA();
