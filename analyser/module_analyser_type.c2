@@ -77,7 +77,7 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
                 ma.errorRange(initval.getLoc(), initval.getRange(), "initializer is not a compile-time value");
                 return;
             }
-            Value ctv = ctv_analyser.get_value(initval);
+            Value ctv = ast.evalExpr(initval);
             if (value.kind == ValueKind.Error) {
                 ma.errorRange(initval.getLoc(), initval.getRange(), "%s", ctv.error_msg);
                 return;
@@ -248,7 +248,7 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
                 return QualType_Invalid;
             }
 
-            Value value = ctv_analyser.get_value(sizeExpr);
+            Value value = ast.evalExpr(sizeExpr);
             if (value.isNegative()) {
                 ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size has negative value '%s'", value.str());
                 return QualType_Invalid;

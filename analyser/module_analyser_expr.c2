@@ -18,7 +18,6 @@ module module_analyser;
 import ast local;
 import ast_builder;
 import conversion_checker;
-import ctv_analyser;
 import src_loc local;
 
 fn QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue, u32 side) {
@@ -437,7 +436,7 @@ fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 s
             // check range
             u32 size = at.getSize();
             if (size != 0) { // dont give error if arrays has size 0 (allowed for struct members)
-                Value val = ctv_analyser.get_value(index);
+                Value val = ast.evalExpr(index);
                 u64 idx = val.as_u64();
                 if (idx >= size) {
                     ma.error(index.getLoc(), "array out-of-bounds access [%d] in array of [%d]", idx, size);
@@ -511,7 +510,7 @@ fn bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType base
     // TODO only allow CTV expressions
     if (!e.isCtv()) return false;
 
-    Value val = ctv_analyser.get_value(e);
+    Value val = ast.evalExpr(e);
     if (val.isNegative()) {
         ma.errorRange(e.getLoc(), e.getRange(), "bitoffset index value '%s' is negative", val.str());
         return false;

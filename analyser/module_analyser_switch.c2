@@ -16,7 +16,6 @@
 module module_analyser;
 
 import ast local;
-import ctv_analyser;
 import init_checker;
 import src_loc local;
 import scope;
@@ -330,7 +329,7 @@ fn bool Analyser.analyseCaseExpr(Analyser* ma,
                 ma.error(cond.getLoc(), "case condition is not compile-time constant");
                 return false;
             }
-            Value v = ctv_analyser.get_value(cond);
+            Value v = ast.evalExpr(cond);
             index = v.as_u32();
             *name_idxp = 0;
             if (loc) {

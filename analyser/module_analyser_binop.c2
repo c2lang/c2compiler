@@ -19,7 +19,6 @@ import ast local;
 import c_prec local;
 import c2_prec local;
 import conversion_checker;
-import ctv_analyser;
 
 fn bool validBinOpKind(QualType t) {
     t = t.getCanonicalType();
@@ -650,7 +649,7 @@ fn bool Analyser.checkShiftArgs(Analyser* ma, Expr* lhs, Expr* rhs) {
     // Do not reduce width of signed types to allow `i32 a = 1 << 31;`
 
     if (lhs.isCtv()) {
-        Value val = ctv_analyser.get_value(lhs);
+        Value val = ast.evalExpr(lhs);
         if (val.isNegative()) {
             ma.error(lhs.getLoc(), "shifting a negative signed value is undefined");
             return false;
@@ -659,7 +658,7 @@ fn bool Analyser.checkShiftArgs(Analyser* ma, Expr* lhs, Expr* rhs) {
 
     // check rhs
     if (rhs.isCtv()) {
-        Value val = ctv_analyser.get_value(rhs);
+        Value val = ast.evalExpr(rhs);
         if (val.isNegative()) {
             ma.error(rhs.getLoc(), "shift count is negative");
             return false;
@@ -678,7 +677,7 @@ fn bool Analyser.checkShiftArgs(Analyser* ma, Expr* lhs, Expr* rhs) {
 fn bool Analyser.checkZero(Analyser* ma, Expr* e, const char* operation) {
     if (!e.isCtv()) return true;
 
-    Value val = ctv_analyser.get_value(e);
+    Value val = ast.evalExpr(e);
     if (val.isDecimal()) {
         if (val.isZero()) {
             ma.error(e.getLoc(), "%s by zero is undefined", operation);

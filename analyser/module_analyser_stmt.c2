@@ -16,7 +16,6 @@
 module module_analyser;
 
 import ast local;
-import ctv_analyser;
 import label_vector local;
 import scope;
 
@@ -269,7 +268,7 @@ fn FlowBits Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
         if (qt.isInvalid()) goto done;
         ma.checker.check(builtins[BuiltinKind.Bool], qt, cond, (*cond).getLoc());
         if ((*cond).isCtv()) {
-            Value v = ctv_analyser.get_value((*cond));
+            Value v = ast.evalExpr((*cond));
             if (v.isZero()) {
                 // TODO: body is never reached
             } else {
@@ -304,7 +303,7 @@ fn FlowBits Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
 
     Expr* cond = getCondExpr(w.getCond());
     if (cond.isCtv()) {
-        Value v = ctv_analyser.get_value(cond);
+        Value v = ast.evalExpr(cond);
         if (v.isZero()) {
             // TODO: body is never reached
         } else {

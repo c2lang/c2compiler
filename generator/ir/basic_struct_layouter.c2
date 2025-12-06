@@ -16,7 +16,6 @@
 module ir_generator;
 
 import ast;
-import ctv_analyser;
 
 type BasicStructLayouter struct {
     Generator* gen;
@@ -55,7 +54,7 @@ fn void BasicStructLayouter.add(BasicStructLayouter* l,
     if (ml.is_bitfield) {
         l.bitfield_base_size = ml.size;
         if (e.isCtv()) {
-            ast.Value value = ctv_analyser.get_value(e);
+            ast.Value value = ast.evalExpr(e);
             value.mask(ml.bitfield_width);
             value.left_shift2(ml.bitfield_offset);
             u64 v = value.as_u64();

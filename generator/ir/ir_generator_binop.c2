@@ -19,7 +19,6 @@ import ast local;
 import bit_utils;
 import ir local;
 import ir_context;
-import ctv_analyser;
 
 fn void Generator.emitAssign(Generator* gen, ir.Ref* result, const Expr* lhs, const Expr* rhs) {
     // special case is needed because setting Bitfield is not a simple store
@@ -348,7 +347,7 @@ fn void Generator.emitBitfieldAssign(Generator* gen, ir.Ref* result, const Expr*
     const VarDecl* vd = (VarDecl*)d;
     const Expr* bitfield = vd.getBitfield();
     // TODO already convert to IntegerLiteral (if not already) in analyser?
-    Value val = ctv_analyser.get_value(bitfield);
+    Value val = ast.evalExpr(bitfield);
     u32 width = val.as_u32();
     u32 mask = bit_utils.get_mask32(width); // TEMP u32
     u32 bit_offset = 0; // TODO get bitfield-offset

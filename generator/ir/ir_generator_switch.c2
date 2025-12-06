@@ -16,7 +16,6 @@
 module ir_generator;
 
 import ast local;
-import ctv_analyser;
 import ir local;
 import ir_context;
 
@@ -86,7 +85,7 @@ fn bool Generator.emitSwitchCase(Generator* gen,
             const RangeExpr* r = (RangeExpr*)case_cond;
             case_cond = r.getLHS();
         }
-        v = ctv_analyser.get_value(case_cond);
+        v = ast.evalExpr(case_cond);
     }
     // TEMP always take u32 for now
     BlockKind kind = sc.isDefault() ? BlockKind.SwitchDefault : BlockKind.SwitchCase;

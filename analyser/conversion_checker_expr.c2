@@ -16,7 +16,6 @@
 module conversion_checker;
 
 import ast local;
-import ctv_analyser;
 
 type ExprWidth struct {
     u8 width;   // in bits
@@ -47,7 +46,7 @@ fn ExprWidth getExprWidth(const Expr* e) {
     ExprWidth result = {}
 
     if (e.isCtv()) {
-        Value v = ctv_analyser.get_value(e);
+        Value v = ast.evalExpr(e);
         result.width = v.getWidth();
         result.is_signed = v.isNegative();
         return result;

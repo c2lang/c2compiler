@@ -16,7 +16,6 @@
 module module_analyser;
 
 import ast local;
-import ctv_analyser;
 import name_vector local;
 import size_analyser;
 
@@ -86,7 +85,7 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
                     ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "bit-field size is not a compile-time value");
                     return;
                 }
-                Value value = ctv_analyser.get_value(bitfield);
+                Value value = ast.evalExpr(bitfield);
                 if (value.isZero()) {
                     if (name)
                         ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "zero width for bit-field '%s'", name);
