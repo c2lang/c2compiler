@@ -1,0 +1,33 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    i32 a;
+}
+
+fn void Foo.init(Foo* f, i32 a) {
+    f.a = a;
+}
+
+fn i32 Foo.getA(const Foo f) {
+    return f.a;
+}
+
+type Bar struct {
+    Foo f;
+}
+
+fn void Bar.init(Bar* b, i32 a) {
+    b.f.init(a);
+}
+
+fn Foo Bar.getF(Bar b) {
+    return b.f;
+}
+
+fn i32 test1() {
+    Bar b.init(20);
+    return b.getF().getA();
+}
+
+
