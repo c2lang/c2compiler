@@ -14,6 +14,7 @@ u64[] a = {
     0b10000000000000000000000000000000000000000000000000000000000000000, // @error{integer literal is too large to be represented in any integer type}
 
     1a, // @error{invalid character 'a' in decimal constant}
+    1f, // @error{invalid character 'f' in decimal constant}
     1z, // @error{invalid character 'z' in decimal constant}
     1_, // @error{digit separator '_' not surrounded by digits}
     18446744073709551615,
