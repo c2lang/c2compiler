@@ -1,0 +1,38 @@
+module test;
+
+import stdio local;
+
+type Enum enum u8 { No, Yes, Maybe }
+
+u32[Enum] a = {
+    [No]= 0,
+    [Yes]= 1,
+    [Maybe]= 2,
+}
+
+static_assert(elemsof(a), elemsof(Enum));
+
+public fn i32 main() {
+    printf("%d\n", a[No]);
+    printf("%d\n", a[Yes]);
+    printf("%d\n", a[Maybe]);
+    a[No] = 3;
+    a[Yes] = 4;
+    a[Maybe] = 5;
+    printf("%d\n", a[No]);
+    printf("%d\n", a[Yes]);
+    printf("%d\n", a[Maybe]);
+    printf("%d\n", a[0 ? Enum.Yes : Enum.No]);
+    Enum e = Yes;
+    printf("%d\n", a[e]);
+    printf("%d\n", a[Enum.max]);
+    i32 i = 1;
+    i32[] aa = {
+        printf("%d\n", a[No + 1]),    // @error{use of undeclared identifier 'No'}
+        printf("%d\n", a[1 ? Yes :  // @error{use of undeclared identifier 'Yes'}
+                         No]),  // @error{use of undeclared identifier 'No'}
+        printf("%d\n", a[1]),   // @error{array subscript must have enum type 'test.Enum'}
+        printf("%d\n", a[i]),   // @error{array subscript must have enum type 'test.Enum'}
+    }
+    return 0;
+}
