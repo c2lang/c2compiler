@@ -161,10 +161,15 @@ fn bool Analyser.analyseInitListExpr(Analyser* ma, InitListExpr* ile, QualType e
 }
 
 // Note: this function should only be called from analyseInitListArray directly!
-fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expectedType) {
+fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expectedType, bool isEnumIndex, QualType indexType) {
     ArrayDesignatedInitExpr* ad = (ArrayDesignatedInitExpr*)e;
+    QualType qt;
 
-    QualType qt = ma.analyseExpr(ad.getDesignator2(), false, RHS);
+    if (isEnumIndex && ma.checkEnumArg(ad.getDesignator2(), indexType)) {
+        qt = indexType;
+    } else {
+        qt = ma.analyseExpr(ad.getDesignator2(), false, RHS);
+    }
     if (qt.isInvalid()) return false;
 
     Expr* de = ad.getDesignator();
@@ -172,6 +177,8 @@ fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expe
         ma.errorRange(de.getLoc(), de.getRange(), "array index is not a compile-time value");
         return false;
     }
+
+    // TODO: compute index value, check if designator is integer and < array length if specified
 
     Expr* val = ad.getInit();
 
@@ -211,7 +218,7 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
             continue;
         }
         if (value.isArrayDesignatedInit()) {
-            ok &= ma.analyseArrayDesignatedInit(value, et);
+            ok &= ma.analyseArrayDesignatedInit(value, et, at.isEnumIndex(), at.getIndexType());
             have_designators = true;
         } else {
             ok &= ma.analyseInitExpr(&values[i], et, values[i].getLoc(), false, false);
