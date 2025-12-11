@@ -40,7 +40,7 @@ public fn FloatLiteral* FloatLiteral.create(ast_context.Context* c, SrcLoc loc, 
 #if AstStatistics
     Stats.addExpr(ExprKind.FloatLiteral, sizeof(FloatLiteral));
 #endif
-    i.base.setType(ast.builtins[kind]);
+    i.base.setType(getBuiltinQT(kind));
 
     return i;
 }

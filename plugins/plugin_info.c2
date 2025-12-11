@@ -41,7 +41,7 @@ public type Info struct {
     ast_context.Context* context;
     ast_builder.Builder* builder;
     ast.Globals* ast_globals;
-    ast.QualType* ast_builtins;
+    void* ast_builtins__;  // part of ast_globals now
 
     AddSourceFn addSource;
     RegisterAttrFn register_attr;

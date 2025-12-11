@@ -302,7 +302,7 @@ fn bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Type*
 
     BuiltinKind kind = bi.getKind();
     if (kind == BuiltinKind.Bool) {
-        c.builder.insertImplicitCast(PointerToBoolean, c.expr_ptr, builtins[BuiltinKind.Bool]);
+        c.builder.insertImplicitCast(PointerToBoolean, c.expr_ptr, getBuiltinQT(Bool));
         return true;
     }
 
@@ -321,7 +321,7 @@ fn bool Checker.checkPointer2Builtin(Checker* c, const Type* lcanon, const Type*
         }
     }
 
-    c.builder.insertImplicitCast(PointerToInteger, c.expr_ptr, builtins[BuiltinKind.USize]);
+    c.builder.insertImplicitCast(PointerToInteger, c.expr_ptr, getBuiltinQT(USize));
     return true;
 }
 
@@ -660,7 +660,7 @@ const u8[elemsof(BuiltinKind)][elemsof(BuiltinKind)] ConditionalOperatorResult =
 }
 public fn QualType get_common_arithmetic_type(BuiltinType* bi1, BuiltinType* bi2) {
     BuiltinKind kind = (BuiltinKind)ConditionalOperatorResult[bi2.getBaseKind()][bi1.getBaseKind()];
-    return ast.builtins[kind];
+    return getBuiltinQT(kind);
 }
 
 /*
@@ -714,17 +714,17 @@ public fn QualType usual_arithmetic_conversion(const BuiltinType* b1, const Buil
 
     switch(UsualArithmeticConversions[k2][k1]) {
     case 0:
-        return ast.builtins[BuiltinKind.Int32];
+        return getBuiltinQT(Int32);
     case 1:
-        return ast.builtins[BuiltinKind.UInt32];
+        return getBuiltinQT(UInt32);
     case 2:
-        return ast.builtins[BuiltinKind.Int64];
+        return getBuiltinQT(Int64);
     case 3:
-        return ast.builtins[BuiltinKind.UInt64];
+        return getBuiltinQT(UInt64);
     case 4:
-        return ast.builtins[BuiltinKind.Float32];
+        return getBuiltinQT(Float32);
     case 5:
-        return ast.builtins[BuiltinKind.Float64];
+        return getBuiltinQT(Float64);
     case 6:
         break;
     }

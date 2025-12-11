@@ -423,7 +423,7 @@ fn QualType usualUnaryConversions(Expr* e) {
 
     if (!canon.isBuiltin()) return QualType_Invalid;
     BuiltinType* bi = canon.getBuiltin();
-    if (bi.isPromotableIntegerType()) return ast.builtins[BuiltinKind.Int32];
+    if (bi.isPromotableIntegerType()) return getBuiltinQT(Int32);
     return qt;
 }
 
@@ -554,13 +554,13 @@ fn QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* ba
         Value width = lval.minus(&rval);
         u64 w = width.as_u64() + 1;
         if (w <= 8) {
-            ltype = ast.builtins[BuiltinKind.UInt8];
+            ltype = getBuiltinQT(UInt8);
         } else if (w <= 16) {
-            ltype = ast.builtins[BuiltinKind.UInt16];
+            ltype = getBuiltinQT(UInt16);
         } else if (w <= 32) {
-            ltype = builtins[BuiltinKind.UInt32];
+            ltype = getBuiltinQT(UInt32);
         } else {
-            ltype = ast.builtins[BuiltinKind.UInt64];
+            ltype = getBuiltinQT(UInt64);
         }
 
         bo.setWidth((u8)w);

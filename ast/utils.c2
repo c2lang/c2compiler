@@ -97,6 +97,10 @@ static_assert(8, sizeof(TypeRef));
 public const QualType QualType_Invalid = { }
 
 public type Globals struct @(opaque) {
+    QualType[elemsof(BuiltinKind)] builtins;
+    QualType void_type;
+    QualType void_ptr_type;
+
     string_pool.Pool* names_pool;
     PointerPool pointers;
     StringTypePool string_types;
@@ -112,8 +116,6 @@ public type Globals struct @(opaque) {
     BuiltinKind[elemsof(BuiltinKind)] builtinType_baseTypes;
 
     u32[elemsof(attr.AttrKind)] attr_name_indexes;
-    QualType void_type;
-    QualType void_ptr_type;
 
     string_buffer.Buf* dump_buf;
 #if AstStatistics
@@ -123,7 +125,6 @@ public type Globals struct @(opaque) {
 
 // The only globals for AST are here, since they must be set explicitly for plugins!!
 Globals* globals;
-public QualType* builtins;
 
 // for plugins
 public fn Globals* getGlobals() { return globals; }
@@ -133,7 +134,6 @@ public fn void setGlobals(Globals* g) @(unused){
     globals = g;
     attr.initialize(g.attr_name_indexes);
 }
-
 
 // wordsize in bytes, must NOT be called from Plugin!
 public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, bool use_color) {
@@ -152,9 +152,8 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
 #endif
 
     // create all Qualtypes for builtin-types, 1 extra for void-ptr
-    builtins = stdlib.malloc(elemsof(BuiltinKind) * sizeof(QualType));
     for (u32 i=0; i<elemsof(BuiltinKind); i++) {
-        builtins[i].set((Type*)BuiltinType.create(c, (BuiltinKind)i));
+        globals.builtins[i].set((Type*)BuiltinType.create(c, (BuiltinKind)i));
     }
 
     globals.void_type.set((Type*)VoidType.create(c));
@@ -198,7 +197,6 @@ public fn void deinit(bool print_stats) {
     globals.pointers.clear();
     globals.string_types.clear();
     stdlib.free(globals);
-    stdlib.free(builtins);
     globals.dump_buf.free();
 }
 
@@ -229,6 +227,10 @@ public fn Type* getPointerType(QualType inner) {
 
 public fn QualType getVoidQT() {
     return globals.void_type;
+}
+
+public fn QualType getBuiltinQT(BuiltinKind kind) {
+    return globals.builtins[kind];
 }
 
 fn u32 addAST(AST* ast_) {
