@@ -26,8 +26,19 @@ bool show_timing = false;
 
 const u32 BUF_SIZE = 4096;
 
+Color col_normal  = color.Normal;
+Color col_error   = color.Red;
+Color col_warning = color.Yellow;
+Color col_debug   = color.Blue;
+Color col_timing  = color.Blue;
+
 public fn void init() {
     use_color = color.useColor();
+    col_normal  = color.getConfigColor("normal",  color.Normal);
+    col_error   = color.getConfigColor("error",   color.Red);
+    col_warning = color.getConfigColor("warning", color.Yellow);
+    col_debug   = color.getConfigColor("debug",   color.Blue);
+    col_timing  = color.getConfigColor("timing",  color.Blue);
 }
 
 public fn void setDebug(bool enable) {
@@ -47,7 +58,7 @@ public fn void debug(const char* format @(printf_format), ...) {
     vsnprintf(buf, sizeof(buf), format, args);
     va_end(args);
     if (use_color) {
-        printf("%s%s%s\n", color.Blue.str(), buf, color.Normal.str());
+        printf("%s%s%s\n", col_debug.str(), buf, col_normal.str());
     } else {
         printf("%s\n", buf);
     }
@@ -69,7 +80,7 @@ public fn void warn(const char* format @(printf_format), ...) {
     vsnprintf(buf, sizeof(buf), format, args);
     va_end(args);
     if (use_color) {
-        fprintf(stderr, "%swarning: %s%s\n", color.Yellow.str(), buf, color.Normal.str());
+        fprintf(stderr, "%swarning: %s%s\n", col_warning.str(), buf, col_normal.str());
     } else {
         fprintf(stderr, "warning: %s\n", buf);
     }
@@ -79,32 +90,40 @@ public fn void error(const char* format @(printf_format), ...) {
     char[BUF_SIZE] buf;
     va_list args;
     va_start(args, format);
-    vsprintf(buf, format, args);
+    vsnprintf(buf, sizeof(buf), format, args);
     va_end(args);
     if (use_color) {
-        fprintf(stderr, "%serror: %s%s\n", color.Red.str(), buf, color.Normal.str());
+        fprintf(stderr, "%serror: %s%s\n", col_error.str(), buf, col_normal.str());
     } else {
         fprintf(stderr, "error: %s\n", buf);
     }
 }
 
-public fn void error_diag(const char* loc, const char* format @(printf_format), ...) {
+public fn void diag(bool err, const char* loc, const char* format @(printf_format), ...) {
     char[BUF_SIZE] buf;
     va_list args;
     va_start(args, format);
-    vsprintf(buf, format, args);
+    vsnprintf(buf, sizeof(buf), format, args);
     va_end(args);
-    if (use_color) {
-        fprintf(stderr, "%s%s: error: %s%s\n", color.Red.str(), loc, buf, color.Normal.str());
+    if (err) {
+        if (use_color) {
+            fprintf(stderr, "%s%s: error: %s%s\n", col_error.str(), loc, buf, col_normal.str());
+        } else {
+            fprintf(stderr, "%s: error: %s\n", loc, buf);
+        }
     } else {
-        fprintf(stderr, "%s: error: %s\n", loc, buf);
+        if (use_color) {
+            fprintf(stderr, "%s%s: warning: %s%s\n", col_warning.str(), loc, buf, col_normal.str());
+        } else {
+            fprintf(stderr, "%s: warning: %s\n", loc, buf);
+        }
     }
 }
 
 public fn void log_time(const char* item, u64 duration) {
     if (!show_timing) return;
     if (use_color) {
-        printf("%s%s took %d usec%s\n", color.Blue.str(), item, duration, color.Normal.str());
+        printf("%s%s took %d usec%s\n", col_timing.str(), item, duration, col_normal.str());
     } else {
         printf("%s took %d usec\n", item, duration);
     }

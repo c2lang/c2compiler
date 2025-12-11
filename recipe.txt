@@ -31,6 +31,7 @@ set ast
     ast_utils/attr.c2
     ast_utils/attr_table.c2
     ast_utils/color.c2
+    ast_utils/color_config.c2
     ast_utils/constants.c2
     ast_utils/context.c2
     ast_utils/number_radix.c2
@@ -372,9 +373,11 @@ executable tester
 #    $config TesterDebug
 
     ast_utils/color.c2
+    ast_utils/color_config.c2
     ast_utils/constants.c2
     ast_utils/string_buffer.c2
 
+    common/console.c2
     common/file/file_utils.c2
     common/file/reader.c2
     common/file/writer.c2
@@ -393,12 +396,14 @@ executable c2cat
 	$backend c
 
     ast_utils/color.c2
+    ast_utils/color_config.c2
     ast_utils/constants.c2
     ast_utils/number_radix.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
     ast_utils/string_pool.c2
 
+    common/console.c2
     common/file/file_utils.c2
     common/file/reader.c2
     common/string_list.c2
@@ -423,6 +428,7 @@ executable c2loc
 	$backend c
 
     ast_utils/color.c2
+    ast_utils/color_config.c2
     ast_utils/constants.c2
     ast_utils/src_loc.c2
     ast_utils/string_buffer.c2
@@ -430,6 +436,7 @@ executable c2loc
 
     common/build_target.c2
     common/file_list.c2
+    common/console.c2
     common/file/file_utils.c2
     common/file/reader.c2
     common/library_list.c2
