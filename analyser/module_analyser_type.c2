@@ -230,36 +230,54 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
     u32 num_arrays = ref.getNumArrays();
     // Note: iterate in reverse, since outer array comes first
     for (u32 i=num_arrays; i>0; i--) {
-        Expr* sizeExpr = ref.getArray(i-1);  // note: ImplicitCast could have been inserted
+        Expr** sizeExpr_p = ref.getArray2(i - 1);
+        Expr* sizeExpr = *sizeExpr_p;
         u32 size = 0;
+        bool is_enum = false;
+        QualType qt = QualType_Invalid;
         if (sizeExpr) {
-            QualType qt = ma.analyseExpr(ref.getArray2(i-1), true, RHS);
+            qt = ma.analyseExpr(sizeExpr_p, false, RHS);
             if (qt.isInvalid()) return qt;
-            sizeExpr = ref.getArray(i-1);  // note: ImplicitCast could have been inserted
+            sizeExpr = *sizeExpr_p;
+            if (sizeExpr.isNValue()) {
+                const EnumType* et = qt.getEnumTypeOrNil();
+                if (!et) {
+                    ma.error(ref.getLoc(), "array size must be an integer or an enum type ('%s')", qt.diagName());
+                    return QualType_Invalid;
+                }
+                const EnumTypeDecl* etd = et.getDecl();
+                is_enum = true;
+                size = etd.getNumConstants();
+            } else {
+                qt = ma.convertRvalue(sizeExpr_p, qt);
+                if (qt.isInvalid()) return qt;
 
-            // TODO canonical?
-            if (!qt.isInteger()) {
-                ma.error(ref.getLoc(), "array size has non-integer type '%s'", qt.diagName());
-                return QualType_Invalid;
-            }
+                sizeExpr = *sizeExpr_p;  // note: ImplicitCast could have been inserted
 
-            if (!sizeExpr.isCtv()) {
-                ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size is not a compile-time value");
-                return QualType_Invalid;
-            }
+                // TODO canonical?
+                if (!qt.isInteger()) {
+                    ma.error(ref.getLoc(), "array size has non-integer type '%s'", qt.diagName());
+                    return QualType_Invalid;
+                }
 
-            Value value = ast.evalExpr(sizeExpr);
-            if (value.isNegative()) {
-                ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size has negative value '%s'", value.str());
-                return QualType_Invalid;
+                if (!sizeExpr.isCtv()) {
+                    ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size is not a compile-time value");
+                    return QualType_Invalid;
+                }
+
+                Value value = ast.evalExpr(sizeExpr);
+                if (value.isNegative()) {
+                    ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size has negative value '%s'", value.str());
+                    return QualType_Invalid;
+                }
+                size = value.as_u32();
             }
-            size = value.as_u32();
         }
         if (resolved.isVoid()) {
             ma.error(ref.getLoc(), "array element has invalid type 'void'");
             return QualType_Invalid;
         }
-        resolved = ma.builder.actOnArrayType(resolved, sizeExpr != nil, size);
+        resolved = ma.builder.actOnArrayType(resolved, sizeExpr != nil, size, is_enum, qt);
     }
     if (ref.isIncrArray()) {
         resolved = ma.builder.actOnIncrementalArrayType(resolved);
@@ -296,7 +314,7 @@ fn QualType Analyser.analyseIncrTypeRef(Analyser* ma, TypeRef* ref, u32 size) {
         return QualType_Invalid;
     }
     // always insert a one-dimensional array with size entries
-    resolved = ma.builder.actOnArrayType(resolved, true, size);
+    resolved = ma.builder.actOnArrayType(resolved, true, size, false, QualType_Invalid);
 
     if (ref.isUser()) ref.setDest(base.getIndex());
     return resolved;

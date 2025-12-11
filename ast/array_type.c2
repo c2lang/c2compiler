@@ -22,6 +22,7 @@ type ArrayTypeBits struct {
     u32 : NumTypeBits;
     u32 has_size : 1;       // if it has an sizeExpr
     u32 is_incremental : 1;
+    u32 is_enum_index : 1;
 }
 
 public type ArrayType struct @(opaque) {
@@ -29,21 +30,29 @@ public type ArrayType struct @(opaque) {
     QualType elem;
     u32 size;       // set during analysis, number of elements
     // Note: 4 bytes padding here on 64-bit systems
+    QualType[0] index_type;
 }
 
 public fn ArrayType* ArrayType.create(ast_context.Context* c,
-                                        QualType elem,
-                                        bool has_size,
-                                        u32 size)
+                                      QualType elem,
+                                      bool has_size,
+                                      u32 length,
+                                      bool is_enum_index,
+                                      QualType index_type)
 {
-    ArrayType* t = c.alloc(sizeof(ArrayType));
+    u32 size = sizeof(ArrayType) + is_enum_index * sizeof(QualType);
+    ArrayType* t = c.alloc(size);
     t.base.init(TypeKind.Array);
     t.base.arrayTypeBits.is_incremental = false;
     t.base.arrayTypeBits.has_size = has_size;
     t.elem = elem;
-    t.size = size;
+    t.size = length;
+    if (is_enum_index) {
+        t.base.arrayTypeBits.is_enum_index = true;
+        t.index_type[0] = index_type;
+    }
 #if AstStatistics
-    Stats.addType(TypeKind.Array, sizeof(ArrayType));
+    Stats.addType(TypeKind.Array, size);
 #endif
     return t;
 }
@@ -82,6 +91,15 @@ public fn u32 ArrayType.getSize(const ArrayType* t) { return t.size; }
 public fn void ArrayType.setSize(ArrayType* t, u32 size) {
     t.base.arrayTypeBits.has_size = true;
     t.size = size;
+}
+
+public fn bool ArrayType.isEnumIndex(const ArrayType* t) {
+    return t.base.arrayTypeBits.is_enum_index;
+}
+
+public fn QualType ArrayType.getIndexType(const ArrayType* t) {
+    if (t.base.arrayTypeBits.is_enum_index) return t.index_type[0];
+    return QualType_Invalid;
 }
 
 fn void ArrayType.printPreName(const ArrayType* t, string_buffer.Buf* out) {

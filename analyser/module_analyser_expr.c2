@@ -24,29 +24,29 @@ fn QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue, u
     assert(e_ptr);
     QualType result = ma.analyseExprInner(e_ptr, side);
     if (result.isInvalid()) return result;
+    (*e_ptr).setType(result);
+    if (need_rvalue) return ma.convertRvalue(e_ptr, result);
+    return result;
+}
 
+fn QualType Analyser.convertRvalue(Analyser* ma, Expr** e_ptr, QualType result) {
     Expr* e = *e_ptr;
-    e.setType(result);
+    if (e.isLValue()) {
+        QualType canon = result.getCanonicalType();
+        assert(canon.isValid());
 
-    if (need_rvalue) {
-        if (e.isLValue()) {
-            QualType canon = result.getCanonicalType();
-            assert(canon.isValid());
-
-            if (canon.isArray()) {
-                result = getPointerFromArray(ma.builder, canon);
-                ma.builder.insertImplicitCast(ArrayToPointerDecay, e_ptr, result);
-            } else {
-                // LValueToRValue conversion strips const of type
-                result.unsetConst();
-                ma.builder.insertImplicitCast(LValueToRValue, e_ptr, result);
-            }
-        } else if (e.isNValue()) {
-            ma.error(e.getLoc(), "lvalue/rvalue required");
-            return QualType_Invalid;
+        if (canon.isArray()) {
+            result = getPointerFromArray(ma.builder, canon);
+            ma.builder.insertImplicitCast(ArrayToPointerDecay, e_ptr, result);
+        } else {
+            // LValueToRValue conversion strips const of type
+            result.unsetConst();
+            ma.builder.insertImplicitCast(LValueToRValue, e_ptr, result);
         }
+    } else if (e.isNValue()) {
+        ma.error(e.getLoc(), "lvalue/rvalue required");
+        return QualType_Invalid;
     }
-
     return result;
 }
 
@@ -468,15 +468,34 @@ fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 s
         return QualType_Invalid;
     }
 
-    QualType qidx = ma.analyseExpr(sub.getIndex2(), true, RHS);
+    // if base is array with enum index_type -> resolve index with enum scope
+    bool is_enum_index = false;
+    QualType index_type = QualType_Invalid;
+    QualType qidx;
+    QualType otype = orig.getType();
+    otype = otype.getCanonicalType();
+    if (otype.isArray()) {
+        const ArrayType* at = otype.getArrayType();
+        is_enum_index = at.isEnumIndex();
+        index_type = at.getIndexType();
+    }
+    if (is_enum_index && ma.checkEnumArg(sub.getIndex2(), index_type)) {
+        qidx = index_type;
+    } else {
+        qidx = ma.analyseExpr(sub.getIndex2(), true, RHS);
+    }
     if (qidx.isInvalid()) return qidx;
     QualType canon = qidx.getCanonicalType();
+    index = sub.getIndex();
     if (!canon.isInteger() && !canon.isEnum()) {
-        ma.error(sub.getIndex().getLoc(), "array subscript is not an integer");
+        ma.error(index.getLoc(), "array subscript is not an integer");
+        return QualType_Invalid;
+    }
+    if (is_enum_index && index_type.getTypeOrNil() != canon.getTypeOrNil()) {
+        ma.error(index.getLoc(), "array subscript must have enum type '%s'", index_type.diagName());
         return QualType_Invalid;
     }
 
-    index = sub.getIndex();
     if (index.isCtv()) {
         QualType q2 = orig.getType();
         ArrayType* at = q2.getArrayTypeOrNil();
