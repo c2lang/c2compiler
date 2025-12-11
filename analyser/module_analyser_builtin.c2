@@ -87,7 +87,7 @@ fn QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
 
     size_analyser.TypeSize info = size_analyser.sizeOfType(qt);
     e.setUValue(info.size);
-    return builtins[BuiltinKind.UInt32];
+    return getBuiltinQT(UInt32);
 }
 
 fn QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
@@ -107,13 +107,13 @@ fn QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
             return QualType_Invalid;
         }
         b.setUValue(at.getSize());
-        return builtins[BuiltinKind.UInt32];
+        return getBuiltinQT(UInt32);
     }
     const EnumType* et = qt.getEnumTypeOrNil();
     if (et) {
         const EnumTypeDecl* etd = et.getDecl();
         b.setUValue(etd.getNumConstants());
-        return builtins[BuiltinKind.UInt32];
+        return getBuiltinQT(UInt32);
     }
     ma.error(inner.getLoc(), "elemsof can only be used on arrays/enums");
     return QualType_Invalid;
@@ -149,7 +149,7 @@ fn QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
     QualType qt = ma.analyseExpr(&inner, false, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
 
-    e.setType(builtins[BuiltinKind.UInt32]);
+    e.setType(getBuiltinQT(UInt32));
 
     StructType* st = qt.getStructTypeOrNil();
     if (!st) {

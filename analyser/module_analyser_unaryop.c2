@@ -151,7 +151,7 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
     case LNot:
         if (!canon.isScalar()) goto invalid_type;
         e.copyConstantFlags(inner);
-        return builtins[BuiltinKind.Bool];
+        return getBuiltinQT(Bool);
     }
     return t;
 
@@ -284,22 +284,22 @@ fn QualType getMinusType(QualType qt) {
     case Int8:
     case Int16:
     case Bool:
-        return ast.builtins[BuiltinKind.Int32];
+        return getBuiltinQT(Int32);
     case Int32:
     case Int64:
         return qt;
     case UInt8:
     case UInt16:
     case UInt32:
-        return ast.builtins[BuiltinKind.Int32];
+        return getBuiltinQT(Int32);
     case UInt64:
-        return ast.builtins[BuiltinKind.Int64];
+        return getBuiltinQT(Int64);
     case Float32:
     case Float64:
     case ISize:
         return qt;
     case USize:
-        return builtins[BuiltinKind.ISize];
+        return getBuiltinQT(ISize);
     }
     return QualType_Invalid;
 }

@@ -663,7 +663,7 @@ public fn void Builder.applyAttributes(Builder* b, Decl* d) {
 }
 
 public fn QualType Builder.actOnBuiltinType(Builder*, BuiltinKind kind) {
-    return builtins[kind];
+    return getBuiltinQT(kind);
 }
 
 public fn QualType Builder.actOnVoidType(Builder*) {

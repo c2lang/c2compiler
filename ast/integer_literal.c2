@@ -40,7 +40,7 @@ public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc l
 #if AstStatistics
     Stats.addExpr(ExprKind.IntegerLiteral, sizeof(IntegerLiteral));
 #endif
-    i.base.setType(builtins[kind]);
+    i.base.setType(getBuiltinQT(kind));
 
     return i;
 }

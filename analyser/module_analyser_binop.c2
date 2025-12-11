@@ -225,12 +225,12 @@ fn QualType Analyser.checkBinopShiftArgs(Analyser* ma, BinaryOperator* b, QualTy
 
     // perform integer promotion on both arguments
     if (bl.isPromotableIntegerType()) {
-        lcanon = ast.builtins[BuiltinKind.Int32];
+        lcanon = getBuiltinQT(Int32);
         width = 32;
         if (!assign) ma.builder.insertImplicitCast(IntegralCast, b.getLHS2(), lcanon);
     }
     if (br.isPromotableIntegerType()) {
-        rcanon = ast.builtins[BuiltinKind.Int32];
+        rcanon = getBuiltinQT(Int32);
         ma.builder.insertImplicitCast(IntegralCast, b.getRHS2(), rcanon);
     }
     Expr* lhs = b.getLHS();
@@ -267,7 +267,7 @@ fn QualType Analyser.checkBinopLogical(Analyser* ma, BinaryOperator* b, QualType
     }
     if (!validTestType(rhs)) return ma.invalidBinOp1(b, b.getRHS(), rhs);
 
-    return builtins[BuiltinKind.Bool];
+    return getBuiltinQT(Bool);
 }
 
 // 0  cannot happen
@@ -503,7 +503,7 @@ fn QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType
         QualType t1 = pt1.getInner();
         QualType t2 = pt2.getInner();
         if (t1.getTypeOrNil() != t2.getTypeOrNil() || t1.isVoid() || t2.isVoid()) goto invalid;
-        return builtins[BuiltinKind.ISize];
+        return getBuiltinQT(ISize);
     }
     return ma.invalidBinOp2(b, lhs, rhs);
 }
@@ -569,7 +569,7 @@ fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualT
         // TODO should detect comparison between i32/u32 and i32/u32
         // TODO i32 < u32 is not the same as i32 = u32! dont use checker
         //if (ma.checker.check(lhs, rhs, &e, e.getLoc())) return QualType_Invalid;
-        return builtins[BuiltinKind.Bool];
+        return getBuiltinQT(Bool);
     case 3: // builtin : enum
         rcanon = rcanon.getImplType();
         goto builtin;
@@ -585,7 +585,7 @@ fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualT
             ma.error(e.getLoc(), "comparing pointers to different types ('%s' and '%s')", lhs.diagName(), rhs.diagName());
             return QualType_Invalid;
         }
-        return builtins[BuiltinKind.Bool];
+        return getBuiltinQT(Bool);
     case 5: // enum : builtin
         lcanon = lcanon.getImplType();
         goto builtin;
@@ -594,7 +594,7 @@ fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualT
             ma.error(e.getLoc(), "comparing enums of different types ('%s' and '%s')", lhs.diagName(), rhs.diagName());
             return QualType_Invalid;
         }
-        return builtins[BuiltinKind.Bool];
+        return getBuiltinQT(Bool);
     case 7: // pointer : function
         if (is_relative) return ma.invalidFuncCompare(b);
         // TODO accept 0 == f, (void*)0 == f and (void*)nil == f
@@ -607,7 +607,7 @@ fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualT
         return ma.checkFuncTest(lcanon.getFunctionType(), e.getLoc());
     case 9: // function : function
         if (is_relative) return ma.invalidFuncCompare(b);
-        return builtins[BuiltinKind.Bool];
+        return getBuiltinQT(Bool);
     case 10: // invalid lhs
         return ma.invalidBinOp1(b, b.getLHS(), lhs);
     case 11: // invalid rhs
@@ -621,7 +621,7 @@ fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualT
 fn QualType Analyser.checkFuncTest(Analyser* ma, FunctionType* ft, SrcLoc loc) {
     // only allow nil vs weak-function or function pointer
     FunctionDecl* fd = ft.getDecl();
-    if (fd.isType() || fd.hasAttrWeak()) return builtins[BuiltinKind.Bool]; // Variable with Function type (eg callback)
+    if (fd.isType() || fd.hasAttrWeak()) return getBuiltinQT(Bool); // Variable with Function type (eg callback)
     ma.error(loc, "comparison of function '%s' will always be true", fd.asDecl().getFullName());
     return QualType_Invalid;
 }
@@ -669,7 +669,7 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     if (opcode.isComparison()) {
         // special case for enum comparison without prefix (eg kind >= KW_void)
         if (ma.checkEnumArg(b.getRHS2(), ltype))
-            return builtins[BuiltinKind.Bool];
+            return getBuiltinQT(Bool);
     }
     QualType rtype;
     if (opcode == BinaryOpcode.Assign) {

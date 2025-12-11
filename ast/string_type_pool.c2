@@ -78,7 +78,7 @@ fn QualType StringTypePool.get(StringTypePool* p, u32 len) {
     }
     if (p.count == p.capacity) p.resize(p.capacity * 2);
 
-    Type* t = (Type*)ArrayType.create(p.context, builtins[BuiltinKind.Char], true, len, false, QualType_Invalid);
+    Type* t = (Type*)ArrayType.create(p.context, getBuiltinQT(Char), true, len, false, QualType_Invalid);
     u32 idx = p.count;
     p.slots[idx].len = len;
     p.slots[idx].type_ = t;

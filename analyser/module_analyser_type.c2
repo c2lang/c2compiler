@@ -316,7 +316,7 @@ fn QualType Analyser.analyseIncrTypeRef(Analyser* ma, TypeRef* ref, u32 size) {
     QualType resolved = base;
     u32 num_ptrs = ref.getNumPointers();
     for (u32 i=0; i<num_ptrs; i++) {
-        resolved = ma.builder.actOnPointerType(resolved) ;
+        resolved = ma.builder.actOnPointerType(resolved);
     }
 
     if (resolved.isVoid()) {
