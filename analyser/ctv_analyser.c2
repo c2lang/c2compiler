@@ -75,7 +75,7 @@ public fn bool checkTypeRange(diagnostics.Diags* diags, QualType qt, Value* valu
 
     BuiltinType* bi = canon.getBuiltin();
     // TODO: check float32 range
-    if (bi.getKind() == BuiltinKind.Float32 || bi.getKind() == BuiltinKind.Float64) return true;
+    if (bi.isFloatingPoint()) return true;
 
     Limit limit.init(bi.getWidth(), bi.isSigned());
 

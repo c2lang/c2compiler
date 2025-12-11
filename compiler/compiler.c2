@@ -314,7 +314,6 @@ fn void Compiler.build(Compiler* c,
     info.target = target;
     info.components = &c.components;
     info.ast_globals = ast.getGlobals();
-    info.ast_builtins = ast.builtins;
     info.astPool = c.astPool;
     info.auxPool = c.auxPool;
     info.context = c.context;

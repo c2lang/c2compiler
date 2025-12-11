@@ -308,8 +308,7 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
         }
         break;
     case Char:
-        // TODO check can be more efficient
-        if (!qt.isChar() && !qt.isInt8() && !qt.isUInt8()) {
+        if (!qt.isCharCompatible()) {
             ma.error(arg.getStartLoc(), "format '%%c' expects a character argument");
         }
         break;

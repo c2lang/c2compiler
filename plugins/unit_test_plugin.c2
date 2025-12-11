@@ -71,7 +71,6 @@ fn void plugin_init(void* arg, plugin_info.Info* info) {
     p.info = info;
     p.decls.clear();
     ast.setGlobals(info.ast_globals);
-    ast.builtins = info.ast_builtins;
 
     p.attr_name = info.astPool.addStr("unittest", true);
     info.registerAttr(p.attr_name, handle_attr, p);

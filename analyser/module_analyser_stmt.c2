@@ -215,7 +215,7 @@ fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_ass
     assert(s.isExpr());
     QualType qt = ma.analyseExpr((Expr**)s_ptr, true, RHS);
     Expr* e = (Expr*)*s_ptr;
-    if (qt.isValid()) ma.checker.check(builtins[BuiltinKind.Bool], qt, (Expr**)s_ptr, e.getLoc());
+    if (qt.isValid()) ma.checker.check(getBuiltinQT(Bool), qt, (Expr**)s_ptr, e.getLoc());
     e = (Expr*)*s_ptr;    // re-read in case of ImplicitCast insertions
 
     if (check_assign && e.isAssignment()) {
@@ -266,7 +266,7 @@ fn FlowBits Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
     if (cond) {
         QualType qt = ma.analyseExpr(cond, true, RHS);
         if (qt.isInvalid()) goto done;
-        ma.checker.check(builtins[BuiltinKind.Bool], qt, cond, (*cond).getLoc());
+        ma.checker.check(getBuiltinQT(Bool), qt, cond, (*cond).getLoc());
         if ((*cond).isCtv()) {
             Value v = ast.evalExpr((*cond));
             if (v.isZero()) {
@@ -435,7 +435,7 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
     if (qt.isInvalid()) return;
 
     Expr* inner = a.getInner();
-    ma.checker.check(builtins[BuiltinKind.Bool], qt, a.getInner2(), inner.getLoc());
+    ma.checker.check(getBuiltinQT(Bool), qt, a.getInner2(), inner.getLoc());
 }
 
 fn void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {

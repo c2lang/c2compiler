@@ -204,7 +204,6 @@ const ir.Type[elemsof(BuiltinKind)] Ast_type2ir_type = {
     [BuiltinKind.ISize]   = I64,  // TODO 32-bit
     [BuiltinKind.USize]   = U64,  // TODO 32-bit
     [BuiltinKind.Bool]    = I8,    // TODO ir.Type.I1?
-    [BuiltinKind.Void]    = None,
 }
 
 fn ir.Type builtin2irtype(BuiltinKind k) {
@@ -217,6 +216,8 @@ fn ir.Type Generator.type2irtype(Generator* gen, QualType qt) {
     case Builtin:
         BuiltinType* bi = canon.getBuiltin();
         return builtin2irtype(bi.getKind());
+    case Void:
+        return None;
     case Pointer:
         // TODO 32-bits
         return ir.Type.I64;

@@ -40,7 +40,7 @@ public fn CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u3
 #if AstStatistics
     Stats.addExpr(ExprKind.CharLiteral, sizeof(CharLiteral));
 #endif
-    e.base.setType(builtins[BuiltinKind.Char]);
+    e.base.setType(getBuiltinQT(Char));
     return e;
 }
 
