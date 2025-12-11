@@ -182,7 +182,8 @@ public fn Decl* Builder.actOnFunctionTypeDecl(Builder* b,
                                            params,
                                            num_params,
                                            is_variadic,
-                                           true);
+                                           false,   // is_local
+                                           true);   // is_type
 
     FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fd);
     b.ast.addTypeDecl(d.asDecl());
@@ -209,7 +210,8 @@ public fn Decl* Builder.actOnStructMemberType(Builder* b,
                                            params,
                                            num_params,
                                            is_variadic,
-                                           false);
+                                           false,   // is_local
+                                           false);  // is_type
     fd.setMemberType();
     return (Decl*)fd;
 }
@@ -729,9 +731,10 @@ public fn FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
                                                     const Ref* prefix,
                                                     VarDecl** params,
                                                     u32 num_params,
-                                                    bool is_variadic)
+                                                    bool is_variadic,
+                                                    bool is_local)
 {
-    is_public |= b.is_interface;
+    is_public |= b.is_interface & !is_local;
     FunctionDecl* f = FunctionDecl.create(b.context,
                                           name,
                                           loc,
@@ -742,10 +745,13 @@ public fn FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
                                           params,
                                           num_params,
                                           is_variadic,
-                                          false);
+                                          is_local,
+                                          false);    // is_type
     b.ast.addFunc(f);
-    if (!prefix) b.addSymbol(name, f.asDecl());
-    if (b.is_interface) f.asDecl().setExternal();
+    if (!is_local) {
+        if (!prefix) b.addSymbol(name, f.asDecl());
+        if (b.is_interface) f.asDecl().setExternal();
+    }
     return f;
 }
 
@@ -1073,7 +1079,7 @@ public fn void Builder.insertImplicitCast(Builder* b,
     *e_ptr = ic;
 }
 
-fn void Builder.addSymbol(Builder* b, u32 name_idx, Decl* d) {
+public fn void Builder.addSymbol(Builder* b, u32 name_idx, Decl* d) {
     Decl* old = b.mod.findSymbol(name_idx);
     if (old) {
         b.diags.error(d.getLoc(), "redefinition of '%s'", idx2name(name_idx));
