@@ -156,7 +156,7 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
         ImplicitCastExpr* i = (ImplicitCastExpr*)e;
         if (i.getKind() == IntegralCast) {
             QualType qt = e.getType();
-            if (qt.getBuiltinKind() == Float32) {
+            if (qt.isFloat32()) {
                 if (prec > Prefix) out.lparen();
                 gen.emitCast(out, qt, false);
                 gen.emitExpr2(out, i.getInner(), Prefix);
@@ -413,7 +413,6 @@ const bool[] Size_prefix = {
     [BuiltinKind.ISize] = true,
     [BuiltinKind.USize] = true,
     [BuiltinKind.Bool] = false,
-    [BuiltinKind.Void] = false,
 }
 
 fn void emitNumberFormat(BuiltinKind kind, char letter, string_buffer.Buf* out) {

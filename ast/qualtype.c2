@@ -109,9 +109,8 @@ public fn bool QualType.isScalar(const QualType qt) {
     QualType canon = qt.getCanonicalType();
     const Type* t = canon.getTypeOrNil();
     if (t.isBuiltinType()) {
-        BuiltinType* bi = (BuiltinType*)t;
         // bool and arithmetic types are allowed
-        return !bi.isVoid();
+        return true;
     }
     if (canon.isPointer()) return true;
     if (canon.isFunction()) return true;
@@ -199,7 +198,8 @@ public fn u32 QualType.getSize(const QualType qt, bool deref_ptr) {
 }
 
 public fn bool QualType.isBool(const QualType qt) {
-    return qt.getTypeOrNil() == builtins[BuiltinKind.Bool].getTypeOrNil();
+    const BuiltinType* bi = qt.getBuiltinTypeOrNil();
+    return (bi && bi.isBool());
 }
 
 public fn bool QualType.isBuiltin(const QualType qt) {
@@ -215,23 +215,23 @@ public fn bool QualType.isStruct(const QualType qt) {
 }
 
 public fn bool QualType.isInteger(const QualType qt) {
-    const Type* t = qt.getTypeOrNil();
-    if (!t.isBuiltinType()) return false;
-    const BuiltinType* bi = (BuiltinType*)t;
-    return bi.isInteger();
+    const BuiltinType* bi = qt.getBuiltinTypeOrNil();
+    return (bi && bi.isInteger());
 }
 
 public fn bool QualType.isFloat(const QualType qt) {
-    const Type* t = qt.getTypeOrNil();
-    if (!t.isBuiltinType()) return false;
-    const BuiltinType* bi = (BuiltinType*)t;
-    return bi.isFloatingPoint();
+    const BuiltinType* bi = qt.getBuiltinTypeOrNil();
+    return (bi && bi.isFloatingPoint());
 }
 
-public fn BuiltinKind QualType.getBuiltinKind(const QualType* qt) {
-    const Type* t = qt.getTypeOrNil();
-    if (!t || !t.isBuiltinType()) return Void;
-    const BuiltinType* bi = (BuiltinType*)t;
+public fn bool QualType.isFloat32(const QualType qt) {
+    const BuiltinType* bi = qt.getBuiltinTypeOrNil();
+    return (bi && bi.getKind() == Float32);
+}
+
+fn BuiltinKind QualType.getBuiltinKind(const QualType* qt) {
+    const BuiltinType* bi = qt.getBuiltinTypeOrNil();
+    assert(bi);
     return bi.getKind();
 }
 
@@ -367,32 +367,34 @@ public fn EnumType* QualType.getEnumTypeOrNil(const QualType qt) {
     return nil;
 }
 
+public fn bool QualType.isCharCompatible(const QualType qt) {
+    QualType canon = qt.getCanonicalType();
+    const Type* t = canon.getTypeOrNil();
+    if (t.getKind() != TypeKind.Builtin) return false;
+    const BuiltinType* bi = (BuiltinType*)t;
+    BuiltinKind kind = bi.getKind();
+    return kind == Char || kind == Int8 || kind == UInt8;
+}
+
 public fn bool QualType.isChar(const QualType qt) {
     const Type* t = qt.getTypeOrNil();
     if (t.getKind() != TypeKind.Builtin) return false;
     const BuiltinType* bi = (BuiltinType*)t;
-    return bi.isChar();
-}
-
-public fn bool QualType.isInt8(const QualType qt) {
-    const Type* t = qt.getTypeOrNil();
-    if (t.getKind() != TypeKind.Builtin) return false;
-    const BuiltinType* bi = (BuiltinType*)t;
-    return bi.isInt8();
+    return bi.getKind() == Char;
 }
 
 public fn bool QualType.isUInt8(const QualType qt) {
     const Type* t = qt.getTypeOrNil();
     if (t.getKind() != TypeKind.Builtin) return false;
     const BuiltinType* bi = (BuiltinType*)t;
-    return bi.isUInt8();
+    return bi.getKind() == UInt8;
 }
 
 public fn bool QualType.promotesToInt32(const QualType qt) {
     const Type* t = qt.getTypeOrNil();
     if (t.getKind() != TypeKind.Builtin) return false;
     const BuiltinType* bi = (BuiltinType*)t;
-    return bi.getKind() == BuiltinKind.Int32 || bi.isPromotableIntegerType();
+    return bi.getKind() == Int32 || bi.isPromotableIntegerType();
 }
 
 public fn bool QualType.needsCtvInit(const QualType qt) {
@@ -413,6 +415,7 @@ public fn bool QualType.needsCtvInit(const QualType qt) {
     case Struct:    return true;
     case Enum:      return true;
     case Function:  return false;
+    case Void:      return true;
     case Alias:     return false;   // is never a canonical type
     case Module:    return false;
     }

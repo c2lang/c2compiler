@@ -69,7 +69,6 @@ fn void init(void* arg, plugin_info.Info* info) {
 fn void generate_module(void* arg) {
     Plugin* p = arg;
     ast.setGlobals(p.info.ast_globals);
-    ast.builtins = p.info.ast_builtins;
 
     // create module git_version
     u32 mod_name = p.info.astPool.addStr("git_version", true);

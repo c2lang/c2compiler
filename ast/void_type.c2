@@ -1,0 +1,42 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import ast_context;
+import string_buffer;
+
+type VoidType struct {
+    Type base;
+}
+
+fn VoidType* VoidType.create(ast_context.Context* c) {
+    VoidType* b = c.alloc(sizeof(VoidType));
+    b.base.init(TypeKind.Void);
+    b.base.setCanonicalType(QualType.create(&b.base));
+#if AstStatistics
+    Stats.addType(TypeKind.Void, sizeof(VoidType));
+#endif
+    return b;
+}
+
+fn void VoidType.print(const VoidType* b, string_buffer.Buf* out) {
+    out.add("void");
+}
+
+fn void VoidType.fullPrint(const VoidType* t, string_buffer.Buf* out, u32 indent) {
+    out.indent(indent);
+    out.print("VoidType [%p] void\n", t);
+}

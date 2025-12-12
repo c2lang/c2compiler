@@ -24,6 +24,7 @@ public type TypeKind enum u8 {
     Struct,
     Enum,
     Function,
+    Void,
     Alias,
     Module,
 }
@@ -35,6 +36,7 @@ const char*[] typeKind_names = {
     "Struct",
     "Enum",
     "Function",
+    "Void",
     "Alias",
     "Module",
 }
@@ -103,7 +105,7 @@ fn bool Type.isEnumType(const Type* t) {
 }
 
 public fn bool Type.isVoidType(const Type* t) {
-    return t == builtins[BuiltinKind.Void].getTypeOrNil();
+    return (t.getKind() == TypeKind.Void);
 }
 
 public fn void Type.dump(const Type* t) @(unused) {
@@ -135,6 +137,8 @@ fn u32 Type.getAlignment(const Type* t) {
         return it.getTypeOrNil().getAlignment();
     case Function:
         break;
+    case Void:
+        return 0;
     case Alias:
         QualType canon = t.getCanonicalType();
         return canon.getAlignment();
@@ -172,6 +176,8 @@ fn u32 Type.getSize(const Type* t, bool deref_ptr) {
         return it.getTypeOrNil().getSize(false);
     case Function:
         break;
+    case Void:
+        return 0;
     case Alias:
         QualType canon = t.getCanonicalType();
         return canon.getAlignment();
@@ -203,6 +209,9 @@ fn void Type.print(const Type* t, string_buffer.Buf* out) {
     case Function:
         FunctionType.print((FunctionType*)t, out);
         break;
+    case Void:
+        VoidType.print((VoidType*)t, out);
+        break;
     case Alias:
         AliasType.print((AliasType*)t, out);
         break;
@@ -231,6 +240,9 @@ fn void Type.fullPrint(const Type* t, string_buffer.Buf* out, u32 indent) {
         break;
     case Function:
         FunctionType.fullPrint((FunctionType*)t, out, indent);
+        break;
+    case Void:
+        VoidType.fullPrint((VoidType*)t, out, indent);
         break;
     case Alias:
         AliasType.fullPrint((AliasType*)t, out, indent);

@@ -72,7 +72,6 @@ fn void init(void* arg, plugin_info.Info* info) {
     Plugin* p = arg;
     p.info = info;
     ast.setGlobals(info.ast_globals);
-    ast.builtins = info.ast_builtins;
 
     console.debug("shell_cmd: loading %s", p.config_file);
     file_utils.File file.init("", p.config_file);
