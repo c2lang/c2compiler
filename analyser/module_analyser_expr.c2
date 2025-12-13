@@ -111,6 +111,14 @@ fn QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
         e.copyConstantFlags(inner);
         e.copyValType(inner);
         return qt;
+    case Alternate:
+        AlternateExpr* p = (AlternateExpr*)e;
+        QualType qt = ma.analyseExpr(p.getInner2(), false, side);
+        ma.analyseExpr(p.getGenerated2(), false, side);
+        Expr* inner = p.getInner();
+        e.copyConstantFlags(inner);
+        e.copyValType(inner);
+        return qt;
     }
     return QualType_Invalid;
 }
