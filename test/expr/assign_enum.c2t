@@ -27,7 +27,7 @@ int32_t main(void)
 {
     test_State s1 = test_State_ON;
     if (s1 > test_State_OFF && s1 >= test_State_ON && s1 <= test_State_ON && s1 < test_State_OTHER && s1 == test_State_ON && s1 != test_State_OFF) s1 = test_State_OFF;
-    printf("State s0 is %u\n", test_s0);
-    printf("State s1 is %u\n", s1);
+    printf("State s0 is %d\n", test_s0);
+    printf("State s1 is %d\n", s1);
     return 0;
 }

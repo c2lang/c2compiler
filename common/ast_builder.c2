@@ -1093,3 +1093,7 @@ public fn Expr* Builder.actOnNamedArgument(Builder* b, SrcLoc loc, u32 name, Exp
     return (Expr*)NamedArgument.create(b.context, loc, name, inner);
 }
 
+public fn Expr* Builder.actOnAlternate(Builder* b, Expr* original, Expr* generated) {
+    return (Expr*)AlternateExpr.create(b.context, original, generated);
+}
+

@@ -17,7 +17,6 @@ module c_generator;
 
 import ast local;
 import c_prec local;
-import printf_utils;
 import string_buffer;
 
 fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
@@ -177,6 +176,10 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
     case NamedArgument:
         NamedArgument* n = (NamedArgument*)e;
         gen.emitExpr(out, n.getInner());
+        break;
+    case Alternate:
+        const AlternateExpr* n = (AlternateExpr*)e;
+        gen.emitExpr(out, n.getGenerated());
         break;
     }
 }
@@ -388,84 +391,6 @@ fn void Generator.emitArrayDesigExpr(Generator* gen, string_buffer.Buf* out, Exp
     gen.emitExpr(out, ad.getDesignator());
     out.add("] = ");
     gen.emitExpr(out, ad.getInit());
-}
-
-type FormatChanger struct {
-    const char* format;
-    Expr** args;
-    u32 idx;
-    u32 last_offset;
-    string_buffer.Buf* out;
-}
-
-const bool[] Size_prefix = {
-    [BuiltinKind.Char] = false,
-    [BuiltinKind.Int8] = false,
-    [BuiltinKind.Int16] = false,
-    [BuiltinKind.Int32] = false,
-    [BuiltinKind.Int64] = true,
-    [BuiltinKind.UInt8] = false,
-    [BuiltinKind.UInt16] = false,
-    [BuiltinKind.UInt32] = false,
-    [BuiltinKind.UInt64] = true,
-    [BuiltinKind.Float32] = false,
-    [BuiltinKind.Float64] = true,
-    [BuiltinKind.ISize] = true,
-    [BuiltinKind.USize] = true,
-    [BuiltinKind.Bool] = false,
-}
-
-fn void emitNumberFormat(BuiltinKind kind, char letter, string_buffer.Buf* out) {
-    // TODO: use proper prefix depending on target
-#if 0
-    if (kind == BuiltinKind.ISize) {
-        return;
-    }
-    if (kind == BuiltinKind.USize) {
-        return;
-    }
-#endif
-    if (Size_prefix[kind]) out.add1('l');
-    if (letter == 'd' && !builtinKind2Signed(kind))
-        letter = 'u';
-    // Assume all supported formats are implemented in the target libc
-    out.add1(letter);
-}
-
-// TODO: move to generator/c_generator_call.c2
-fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32 offset, i32 stars, char c) {
-    FormatChanger* fc = context;
-
-    /* copy optional flags, width and precision */
-    fc.out.encodeBytes(fc.format + fc.last_offset, offset - fc.last_offset, '"');
-
-    fc.idx += stars;
-    QualType qt = fc.args[fc.idx].getType();
-    qt = qt.getCanonicalType();
-    switch (specifier) {
-    case Integer:
-        if (qt.isEnum()) {
-            EnumType* et = qt.getEnumType();
-            qt = et.getImplType();
-        }
-        fallthrough;
-    case FloatingPoint:
-        BuiltinType* bt = qt.getBuiltinTypeOrNil();
-        if (!bt) {
-            fc.args[fc.idx].dump();
-        }
-        assert(bt);
-        emitNumberFormat(bt.getKind(), c, fc.out);
-        break;
-    default:
-        fc.out.add1(c);
-        // no need to change
-        break;
-    }
-
-    fc.last_offset = offset + 1;
-    fc.idx++;
-    return true;
 }
 
 fn void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {

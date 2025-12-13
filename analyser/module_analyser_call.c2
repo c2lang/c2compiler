@@ -19,8 +19,10 @@ import ast local;
 import printf_utils;
 import scope;
 import src_loc local;
+import string_buffer;
 
 import stdio;
+import string;
 
 const char[] DiagTooManyArgs = "too many arguments to %sfunction call, expected %d, have %d";
 const char[] DiagTooFewArgs = "too few arguments to %sfunction call, expected %d, have %d";
@@ -163,7 +165,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
 
     //stdio.printf("CALL (%d | %d)\n", func_num_args, call_num_args);
     bool has_printf_format = false;
-    u32 printf_call_idx = 0;
+    u32 format_arg_idx = 0;
     while (1) {
         //stdio.printf("ARG [%d | %d]\n", func_arg_index, call_arg_index);
         if (func_arg_index >= func_num_args) break;
@@ -212,7 +214,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
 
         if (vd.hasPrintfFormat()) {
             has_printf_format = true;
-            printf_call_idx = call_arg_index;
+            format_arg_idx = call_arg_index;
         }
 
         func_arg_index++;
@@ -253,10 +255,10 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         }
 
         if (has_printf_format) {
-            u32 num_args = call_num_args - printf_call_idx - 1;
-            bool change_format = false;
-            ma.checkPrintArgs(call_args[printf_call_idx], num_args, &call_args[printf_call_idx+1], &change_format);
-            call.setPrintfFormat(printf_call_idx, change_format);
+            u32 num_args = call_num_args - format_arg_idx - 1;
+            call.setPrintfFormat(format_arg_idx);
+            if (!ma.checkPrintfArgs(&call_args[format_arg_idx], num_args, &call_args[format_arg_idx+1]))
+                return QualType_Invalid;
         }
     }
     return fd.getRType();
@@ -265,17 +267,54 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
 type FormatAnalyser struct {
     Analyser* ma;
     const char* format;
+    Expr** args;
     u32 num_args;
     u32 idx;
     SrcLoc loc;
-    bool change_format;
-    Expr** args;
+    u32 last_offset;
+    string_buffer.Buf* out;
+}
+
+const bool[] Format_needs_l_prefix = {
+    [BuiltinKind.Char] = false,
+    [BuiltinKind.Int8] = false,
+    [BuiltinKind.Int16] = false,
+    [BuiltinKind.Int32] = false,
+    [BuiltinKind.Int64] = true,
+    [BuiltinKind.UInt8] = false,
+    [BuiltinKind.UInt16] = false,
+    [BuiltinKind.UInt32] = false,
+    [BuiltinKind.UInt64] = true,
+    [BuiltinKind.Float32] = false,
+    [BuiltinKind.Float64] = true,
+    [BuiltinKind.ISize] = true,
+    [BuiltinKind.USize] = true,
+    [BuiltinKind.Bool] = false,
+}
+
+const bool[] Format_needs_u_prefix = {
+    [BuiltinKind.Char] = false,
+    [BuiltinKind.Int8] = false,
+    [BuiltinKind.Int16] = false,
+    [BuiltinKind.Int32] = false,
+    [BuiltinKind.Int64] = false,
+    [BuiltinKind.UInt8] = false,
+    [BuiltinKind.UInt16] = false,
+    [BuiltinKind.UInt32] = true,
+    [BuiltinKind.UInt64] = true,
+    [BuiltinKind.Float32] = false,
+    [BuiltinKind.Float64] = false,
+    [BuiltinKind.ISize] = false,
+    [BuiltinKind.USize] = true,
+    [BuiltinKind.Bool] = false,
 }
 
 fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32 offset, i32 stars, char c) {
     FormatAnalyser* fa = context;
     Analyser* ma = fa.ma;
     Expr** args = fa.args;
+
+    fa.out.add2(fa.format + fa.last_offset, offset - fa.last_offset);
 
     if (c == '\0') {
         ma.error(fa.loc + offset, "missing conversion specifier at end of format string");
@@ -313,7 +352,6 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
         }
         break;
     case Integer:
-        fa.change_format = true;
         if (qt.isEnum()) {
             EnumType* et = qt.getEnumType();
             qt = et.getImplType();
@@ -321,10 +359,15 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
         BuiltinType* bi = qt.getBuiltinTypeOrNil();
         if (!bi || !bi.isIntegerOrBool()) {
             ma.error(arg.getStartLoc(), "format '%%%c' expects an integer argument", c);
+            break;
         }
+        BuiltinKind kind = bi.getKind();
+        // TODO add ll prefix on LLP targets (64-bit long long and pointers, but 32-bit long)
+        if (Format_needs_l_prefix[kind]) fa.out.add1('l');
+        if (c == 'd' && Format_needs_u_prefix[kind]) c = 'u';
+        // Assume all supported formats are implemented in the target libc
         break;
     case FloatingPoint:
-        fa.change_format = true;
         BuiltinType* bi = qt.getBuiltinTypeOrNil();
         if (!bi || !bi.isFloatingPoint()) {
             ma.error(arg.getStartLoc(), "format '%%%c' expects a floating-point argument", c);
@@ -356,39 +399,47 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
         }
         return false;
     }
+    fa.out.add1(c);
 
+    fa.last_offset = offset + 1;
     fa.idx++;
     return true;
 }
 
-fn void Analyser.checkPrintArgs(Analyser* ma, Expr* format, u32 num_args, Expr** args, bool* change_format) {
-    // if format is StringLiteral or vardecl of type char[], it will wrapped in ArrayToPointerDecay
-    // otherwise it's a VarDecl of type (const) char* we cannot check and report this as an error
-    if (!format.isImplicitCast()) goto not_constant;
-    ImplicitCastExpr* ic = (ImplicitCastExpr*)format;
-    if (!ic.isArrayToPointerDecay()) goto not_constant;
-    format = ic.getInner();
-
-    SrcLoc format_loc;
+fn bool Analyser.checkPrintfArgs(Analyser* ma, Expr** format_ptr, u32 num_args, Expr** args) {
+    Expr* format = *format_ptr;
+    SrcLoc format_loc = format.getLoc();
     const char* format_text = printf_utils.get_format(format, &format_loc);
-    if (!format_text) goto not_constant;
+    if (!format_text) {
+        ma.error(format_loc, "format argument is not a constant string");
+        return false;
+    }
 
-    FormatAnalyser fa = { ma, format_text, num_args, 0, format_loc, false, args }
+    string_buffer.Buf* out = string_buffer.create(256, false, 0);
+    FormatAnalyser fa = { ma, format_text, args, num_args, 0, format_loc, 0, out }
+
     if (!printf_utils.parseFormat(format_text, on_format_specifier, &fa)) {
         // error already reported
-        return;
+        out.free();
+        return false;
     }
-    *change_format = fa.change_format;
+    out.add(format_text + fa.last_offset);
 
     if (fa.idx < num_args) {
         ma.error(args[fa.idx].getLoc(), "too many arguments for format");
-        return;
+        out.free();
+        return false;
     }
-    return;
-
-not_constant:
-    ma.error(format.getLoc(), "format argument is not a constant string");
-    return;
+    const char* new_format_text = out.data();
+    if (string.strcmp(format_text, new_format_text)) {
+        u32 len = out.size();
+        Expr* new_format = ma.builder.actOnStringLiteral(0, len, ma.astPool.add(new_format_text, len, true), len);
+        QualType qt = getPointerFromArray(ma.builder, new_format.getType());
+        ma.builder.insertImplicitCast(ArrayToPointerDecay, &new_format, qt);
+        *format_ptr = ma.builder.actOnAlternate(*format_ptr, new_format);
+    }
+    out.free();
+    return true;
 }
 
 fn void create_template_name(char* name, const char* orig, u16 idx) {

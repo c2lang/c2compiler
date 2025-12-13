@@ -268,6 +268,9 @@ fn IdentifierKind getInnerExprAddressOf(const Expr* e) {
     case NamedArgument:
         NamedArgument* n = (NamedArgument*)e;
         return getInnerExprAddressOf(n.getInner());
+    case Alternate:
+        AlternateExpr* n = (AlternateExpr*)e;
+        return getInnerExprAddressOf(n.getOriginal());
     }
 
     return IdentifierKind.Unresolved;

@@ -111,6 +111,19 @@ fn QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
         e.copyConstantFlags(inner);
         e.copyValType(inner);
         return qt;
+    case Alternate:
+#if 0
+        AlternateExpr* p = (AlternateExpr*)e;
+        QualType qt = ma.analyseExpr(p.getOriginal2(), false, side);
+        ma.analyseExpr(p.getGenerated2(), false, side);
+        Expr* original = p.getOriginal();
+        e.copyConstantFlags(original);
+        e.copyValType(original);
+        return qt;
+#else
+        // Alternate nodes are only created by the analyser
+        break;
+#endif
     }
     return QualType_Invalid;
 }

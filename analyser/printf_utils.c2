@@ -20,50 +20,58 @@ import ctype;
 import src_loc local;
 
 public fn const char* get_format(Expr* format, SrcLoc* format_loc) {
-    const char* format_text = nil;
-    switch (format.getKind()) {
-    case StringLiteral:
-        StringLiteral* s = (StringLiteral*)format;
-        format_text = s.getText();
-        // set location to first character of string literal
-        // this works for simple strings only: multi-strings, raw strings,
-        // strings with escape sequences may show an incorrect position for
-        // format specifier errors.
-        *format_loc = format.getLoc() + 1;
-        break;
-    case Identifier:
-        QualType qt = format.getType();
-        assert(qt.isArray());
-        ArrayType* at = qt.getArrayType();
-        qt = at.getElemType();
-        if (!qt.isConst()) return nil;
+    // if format is StringLiteral or vardecl of type char[], it will wrapped in ArrayToPointerDecay
+    // otherwise it's a VarDecl of type (const) char* we cannot check and report this as an error
 
-        IdentifierExpr* id = (IdentifierExpr*)format;
-        Decl* decl = id.getDecl();
-        assert(decl.isVariable());
-        VarDecl* vd = (VarDecl*)decl;
-        Expr* initExpr = vd.getInit();
-        assert(initExpr);
-        return get_format(initExpr, format_loc);
-    case Member:
-        QualType qt = format.getType();
-        assert(qt.isArray());
-        ArrayType* at = qt.getArrayType();
-        qt = at.getElemType();
-        if (!qt.isConst()) return nil;
+    if (!format.isImplicitCast()) return nil;
+    ImplicitCastExpr* ic = (ImplicitCastExpr*)format;
+    if (!ic.isArrayToPointerDecay()) return nil;
+    format = ic.getInner();
+    *format_loc = format.getLoc();
 
-        MemberExpr* m = (MemberExpr*)format;
-        Decl* decl = m.getFullDecl();
-        assert (decl.isVariable());
-        VarDecl* vd = (VarDecl*)decl;
-        Expr* initExpr = vd.getInit();
-        assert(initExpr);
-        return get_format(initExpr, format_loc);
-    default:
-        assert(0);
-        break;
+    for (;;) {
+        switch (format.getKind()) {
+        case StringLiteral:
+            // set location to first character of string literal
+            // this works for simple strings only: multi-strings, raw strings,
+            // strings with escape sequences may show an incorrect position for
+            // format specifier errors.
+            *format_loc = format.getLoc() + 1;
+            StringLiteral* s = (StringLiteral*)format;
+            return s.getText();
+        case Identifier:
+            QualType qt = format.getType();
+            assert(qt.isArray());
+            ArrayType* at = qt.getArrayType();
+            qt = at.getElemType();
+            if (!qt.isConst()) return nil;
+
+            IdentifierExpr* id = (IdentifierExpr*)format;
+            Decl* decl = id.getDecl();
+            assert(decl.isVariable());
+            VarDecl* vd = (VarDecl*)decl;
+            format = vd.getInit();
+            assert(format);
+            continue;
+        case Member:
+            QualType qt = format.getType();
+            assert(qt.isArray());
+            ArrayType* at = qt.getArrayType();
+            qt = at.getElemType();
+            if (!qt.isConst()) return nil;
+
+            MemberExpr* m = (MemberExpr*)format;
+            Decl* decl = m.getFullDecl();
+            assert (decl.isVariable());
+            VarDecl* vd = (VarDecl*)decl;
+            format = vd.getInit();
+            assert(format);
+            continue;
+        default:
+            assert(0);
+            return nil;
+        }
     }
-    return format_text;
 }
 
 public type Specifier enum u8 {

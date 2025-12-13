@@ -128,6 +128,10 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         NamedArgument* n = (NamedArgument*)e;
         gen.emitExpr(result, n.getInner());
         break;
+    case Alternate:
+        AlternateExpr* n = (AlternateExpr*)e;
+        gen.emitExpr(result, n.getGenerated());
+        break;
     }
 }
 
@@ -374,6 +378,10 @@ fn void Generator.emitCond(Generator* gen, const Expr* e, BlockId true_blk, Bloc
     case NamedArgument:
         NamedArgument* n = (NamedArgument*)e;
         gen.emitCond(n.getInner(), true_blk, false_blk, start_blk);
+        break;
+    case Alternate:
+        AlternateExpr* n = (AlternateExpr*)e;
+        gen.emitCond(n.getGenerated(), true_blk, false_blk, start_blk);
         break;
     }
     gen.emitExpr(&ref, e);

@@ -145,15 +145,10 @@ fn void Finder.handleVarDecl(Finder* s, VarDecl* d) {
 fn void Finder.handleExpr(Finder* s, Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
-        break;
     case FloatLiteral:
-        break;
     case BooleanLiteral:
-        break;
     case CharLiteral:
-        break;
     case StringLiteral:
-        break;
     case Nil:
         break;
     case Identifier:
@@ -229,6 +224,11 @@ fn void Finder.handleExpr(Finder* s, Expr* e) {
     case NamedArgument:
         NamedArgument* n = (NamedArgument*)e;
         s.handleExpr(n.getInner());
+        break;
+    case Alternate:
+        AlternateExpr* n = (AlternateExpr*)e;
+        s.handleExpr(n.getOriginal());
+        //s.handleExpr(n.getGenerated());
         break;
     }
 }

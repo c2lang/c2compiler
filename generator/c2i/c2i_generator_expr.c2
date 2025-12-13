@@ -150,6 +150,10 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
     case NamedArgument:
         NamedArgument.printLiteral((NamedArgument*)e, out);
         break;
+    case Alternate:
+        const AlternateExpr* n = (AlternateExpr*)e;
+        gen.emitExpr(out, n.getOriginal());
+        break;
     }
 }
 

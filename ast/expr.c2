@@ -43,6 +43,7 @@ public type ExprKind enum u8 {
     ImplicitCast,
     Range,
     NamedArgument,
+    Alternate,
 }
 
 const char*[] exprKind_names = {
@@ -70,6 +71,7 @@ const char*[] exprKind_names = {
     "ImplicitCast",
     "RangeExpr",
     "NamedArgument",
+    "Alternate",
 }
 static_assert(elemsof(ExprKind), elemsof(exprKind_names));
 
@@ -185,6 +187,8 @@ fn Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
         return RangeExpr.instantiate((RangeExpr*)e, inst);
     case NamedArgument:
         return NamedArgument.instantiate((NamedArgument*)e, inst);
+    case Alternate:
+        return AlternateExpr.instantiate((AlternateExpr*)e, inst);
     }
     e.dump();
     assert(0);
@@ -391,6 +395,8 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
         return ((RangeExpr*)e).getStartLoc();
     case NamedArgument:
         return ((NamedArgument*)e).getStartLoc();
+    case Alternate:
+        return ((AlternateExpr*)e).getStartLoc();
     }
     return e.base.loc;
 }
@@ -445,6 +451,8 @@ public fn SrcLoc Expr.getEndLoc(const Expr* e) {
         return ((RangeExpr*)e).getEndLoc();
     case NamedArgument:
         return ((NamedArgument*)e).getEndLoc();
+    case Alternate:
+        return ((AlternateExpr*)e).getEndLoc();
     }
     return e.base.loc;
 }
@@ -494,6 +502,9 @@ public fn bool Expr.needsSemi(const Expr* e) {
     case NamedArgument:
         const NamedArgument* n = (NamedArgument*)e;
         return n.getInner().needsSemi();
+    case Alternate:
+        const AlternateExpr* n = (AlternateExpr*)e;
+        return n.getOriginal().needsSemi();
     }
     return true;
 }
@@ -578,6 +589,9 @@ fn void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
     case NamedArgument:
         NamedArgument.print((NamedArgument*)e, out, indent);
         break;
+    case Alternate:
+        AlternateExpr.print((AlternateExpr*)e, out, indent);
+        break;
     }
 }
 
@@ -655,7 +669,10 @@ public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
         return;
     case NamedArgument:
         NamedArgument.printLiteral((NamedArgument*)e, out);
-        break;
+        return;
+    case Alternate:
+        AlternateExpr.printLiteral((AlternateExpr*)e, out);
+        return;
     }
     out.print("<<kind=%d>>", e.getKind());
 }

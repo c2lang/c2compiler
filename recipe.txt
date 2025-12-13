@@ -72,6 +72,7 @@ set ast
 
     # ast expressions
     ast/expr.c2
+    ast/alternate_expr.c2
     ast/array_designated_init_expr.c2
     ast/array_subscript_expr.c2
     ast/binary_operator.c2
@@ -232,12 +233,11 @@ executable c2c
     analyser/struct_field_init_checker.c2
     analyser/name_vector.c2
     analyser/label_vector.c2
+    analyser/printf_utils.c2
     analyser/scope.c2
     analyser/size_analyser.c2
     analyser/struct_func_list.c2
     analyser/unused_checker.c2
-
-    analyser_utils/printf_utils.c2
 
     compiler/c2recipe.c2
     compiler/c2recipe_parser.c2

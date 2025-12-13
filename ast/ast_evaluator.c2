@@ -118,6 +118,9 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
     case NamedArgument:
         const NamedArgument* n = (NamedArgument*)e;
         return eval.get_value(n.getInner());
+    case Alternate:
+        const AlternateExpr* n = (AlternateExpr*)e;
+        return eval.get_value(n.getOriginal());
     }
     return Value.error("expression is not constant");
 }

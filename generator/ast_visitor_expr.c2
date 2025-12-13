@@ -22,15 +22,10 @@ fn void Visitor.handleExpr(Visitor* v, Expr* e) {
 
     switch (e.getKind()) {
     case IntegerLiteral:
-        return;
     case FloatLiteral:
-        return;
     case BooleanLiteral:
-        return;
     case CharLiteral:
-        return;
     case StringLiteral:
-        return;
     case Nil:
         return;
     case Identifier:
@@ -118,6 +113,10 @@ fn void Visitor.handleExpr(Visitor* v, Expr* e) {
     case NamedArgument:
         NamedArgument* n = (NamedArgument*)e;
         v.handleExpr(n.getInner());
+        break;
+    case Alternate:
+        AlternateExpr* n = (AlternateExpr*)e;
+        v.handleExpr(n.getOriginal());
         break;
     }
 }

@@ -357,6 +357,10 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         NamedArgument* n = (NamedArgument*)e;
         gen.emitInit(n.getInner(), size);
         break;
+    case Alternate:
+        AlternateExpr* n = (AlternateExpr*)e;
+        gen.emitInit(n.getGenerated(), size);
+        break;
     }
 }
 

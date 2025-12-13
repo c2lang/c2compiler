@@ -1,0 +1,74 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import ast_context;
+import string_buffer;
+import src_loc local;
+
+public type AlternateExpr struct @(opaque) {
+    Expr base;
+    Expr* original;
+    Expr* generated;
+}
+
+public fn AlternateExpr* AlternateExpr.create(ast_context.Context* c, Expr* original, Expr* generated) @(unused) {
+    AlternateExpr* e = c.alloc(sizeof(AlternateExpr));
+    e.base.init(ExprKind.Alternate, original.getLoc(), 0, 0, 0, ValType.NValue);
+    e.original = original;
+    e.generated = generated;
+    e.base.setType(original.getType());
+#if AstStatistics
+    Stats.addExpr(ExprKind.Alternate, sizeof(AlternateExpr));
+#endif
+    return e;
+}
+
+fn Expr* AlternateExpr.instantiate(AlternateExpr* e, Instantiator* inst) {
+    return (Expr*)AlternateExpr.create(inst.c, e.original.instantiate(inst), e.generated.instantiate(inst));
+}
+
+public fn Expr* AlternateExpr.getOriginal(const AlternateExpr* e) { return e.original; }
+
+//public fn Expr** AlternateExpr.getOriginal2(AlternateExpr* e) { return &e.original; }
+
+public fn Expr* AlternateExpr.getGenerated(const AlternateExpr* e) { return e.generated; }
+
+//public fn Expr** AlternateExpr.getGenerated2(AlternateExpr* e) { return &e.generated; }
+
+fn void AlternateExpr.print(const AlternateExpr* e, string_buffer.Buf* out, u32 indent) {
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
+    out.newline();
+
+    e.original.print(out, indent + 1);
+    e.generated.print(out, indent + 1);
+}
+
+fn SrcLoc AlternateExpr.getStartLoc(const AlternateExpr* e) {
+    return e.original.getStartLoc();
+}
+
+fn SrcLoc AlternateExpr.getEndLoc(const AlternateExpr* e) {
+    return e.original.getEndLoc();
+}
+
+fn void AlternateExpr.printLiteral(const AlternateExpr* e, string_buffer.Buf* out) {
+    out.lparen();
+    e.original.printLiteral(out);
+    out.rparen();
+}
+
