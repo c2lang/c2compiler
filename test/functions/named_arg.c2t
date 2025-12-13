@@ -90,10 +90,10 @@ static void test_foo3(const char* s)
 
 static void test_test1(const char* s)
 {
-   printf("check_case(\"%s\", true) -> %u\n", s, test_check_case(s, true));
-   printf("check_case(\"%s\", false) -> %u\n", s, test_check_case(s, false));
-   printf("check_case(\"%s\", is_upper: true) -> %u\n", s, test_check_case(s, true));
-   printf("check_case(\"%s\", is_upper: false) -> %u\n", s, test_check_case(s, false));
+   printf("check_case(\"%s\", true) -> %d\n", s, test_check_case(s, true));
+   printf("check_case(\"%s\", false) -> %d\n", s, test_check_case(s, false));
+   printf("check_case(\"%s\", is_upper: true) -> %d\n", s, test_check_case(s, true));
+   printf("check_case(\"%s\", is_upper: false) -> %d\n", s, test_check_case(s, false));
 }
 
 int32_t main(int32_t argc, char** argv)

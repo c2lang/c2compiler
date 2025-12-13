@@ -26,7 +26,6 @@ type CallExprBits struct {
     u32 calls_static_sf : 1;
     u32 is_template_call : 1;
     u32 printf_format : 4;  // 1-based, 0 means no printf-format
-    u32 change_format : 1;   // if c-generator needs to re-write format
     u32 has_auto_args : 1;   // if c-generator needs to insert extra arguments (file, line)
     u32 is_noreturn : 1;
     u32 num_args : 8;
@@ -156,22 +155,17 @@ public fn bool CallExpr.isNoreturn(const CallExpr* e) {
     return e.base.base.callExprBits.is_noreturn;
 }
 
-// note: both idx are 0-based
-public fn void CallExpr.setPrintfFormat(CallExpr* e, u32 format_idx, bool change_format) {
+// note: format_idx is 0-based
+public fn void CallExpr.setPrintfFormat(CallExpr* e, u32 format_idx) {
     e.base.base.callExprBits.printf_format = format_idx + 1;
-    e.base.base.callExprBits.change_format = change_format;
 }
 
 fn bool CallExpr.isPrintfCall(const CallExpr* e) {
     return e.base.base.callExprBits.printf_format != 0;
 }
 
-public fn u32 CallExpr.getPrintfFormat(const CallExpr* e) {
+fn u32 CallExpr.getPrintfFormat(const CallExpr* e) {
     return e.base.base.callExprBits.printf_format - 1;
-}
-
-public fn bool CallExpr.needFormatChange(const CallExpr* e) {
-    return e.base.base.callExprBits.change_format;
 }
 
 public fn void CallExpr.setHasAutoArgs(CallExpr* e) {
@@ -218,7 +212,7 @@ fn void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) {
     if (e.base.base.callExprBits.calls_static_sf) out.add(" STF");
     if (e.base.base.callExprBits.is_noreturn) out.add(" noreturn");
     if (e.isPrintfCall()) {
-        out.print(" printf=%d|%d", e.getPrintfFormat(), e.needFormatChange());
+        out.print(" printf=%d", e.getPrintfFormat());
     }
     if (e.hasAutoArgs()) out.add(" auto-args");
     out.newline();
