@@ -113,11 +113,11 @@ fn void ArrayType.printPostName(const ArrayType* t, string_buffer.Buf* out) {
     } else {
         out.print("%d", t.size);
     }
+    //if (t.isEnumIndex()) out.add(" e");
     out.add1(']');
 }
 
 fn void ArrayType.print(const ArrayType* t, string_buffer.Buf* out) {
-    // TODO print preName, postName
     ArrayType* at = t.elem.getArrayTypeOrNil();
     if (at) at.printPreName(out);
     else t.elem.printInner(out, false, true, true);

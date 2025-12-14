@@ -1,0 +1,43 @@
+// @warnings{no-unused}
+module test;
+
+import stdio local;
+
+type Enum enum u8 { No, Yes, Maybe }
+type Enum2 enum u8 { A, B, C, D }
+
+u32[Enum][Enum2] a = {
+    [No]    = { 1, 2, 3, 4 },
+    [Yes]   = { 5, 6, 7, 8 },
+    [Maybe] = { 9, 10, 11, 12 },
+}
+
+static_assert(elemsof(a), elemsof(Enum));
+
+
+fn Enum getYes() { return Yes; }
+
+const Enum[2] Other = { Maybe, Yes }
+
+public fn i32 main(i32 argc, const char** argv) {
+    Enum e = Maybe;
+
+    u32[] aa = {
+        a[No][D],
+        a[Yes][B],
+        a[Enum.Yes][C],
+        a[argc ? Enum.Yes : Enum.No][A],
+        a[Other[1]][B],
+        a[getYes()][B],
+        a[(Enum)argc][B],
+        a[e][B],
+        a[Enum.max][Enum2.max],
+
+        a[Enum2.B][A],    // @error{array subscript must have enum type 'test.Enum'}
+        a[Yes][Enum.Yes], // @error{array subscript must have enum type 'test.Enum2'}
+        a[argc][B],       // @error{array subscript must have enum type 'test.Enum'}
+        a[Yes][argc],     // @error{array subscript must have enum type 'test.Enum2'}
+    }
+    return 0;
+}
+

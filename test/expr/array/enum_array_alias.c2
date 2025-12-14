@@ -1,0 +1,38 @@
+// @warnings{no-unused}
+module test;
+
+type Enum enum u8 { No, Yes, Maybe }
+
+u32[Enum] a = {
+    [No]= 0,
+    [Yes]= 1,
+    [Maybe]= 2,
+}
+
+type Foo enum u8 { A, B, C }
+
+fn Enum getYes() { return Yes; }
+const Enum[2] Other = { Maybe, Yes }
+
+type Bar u32[Enum];
+Bar b;
+
+public fn i32 main(i32 argc, const char** argv) {
+
+    u32[] aa = {
+        b[No],
+        b[Enum.Yes],
+        b[argc ? Enum.Yes : Enum.No],
+        b[Other[1]],
+        b[getYes()],
+        b[(Enum)argc],
+
+        b[Foo.B],   // @error{array subscript must have enum type 'test.Enum'}
+        b[argc],    // @error{array subscript must have enum type 'test.Enum'}
+        b[No + 1],  // @error{use of undeclared identifier 'No'}
+        b[1 ? Yes : // @error{use of undeclared identifier 'Yes'}
+              No],  // @error{use of undeclared identifier 'No'}
+    }
+    return 0;
+}
+

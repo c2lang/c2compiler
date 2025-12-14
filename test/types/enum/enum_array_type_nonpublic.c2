@@ -1,0 +1,9 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum u8 { A, B, C }
+
+type T1 u32[Foo];
+
+public type T2 u32[Foo]; // @error{public declaration using non-public variable 'test.Foo'}
+
