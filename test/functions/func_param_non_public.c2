@@ -1,0 +1,29 @@
+// @warnings{no-unused}
+module test;
+
+public type Foo struct @(opaque) {
+    i32 x;
+}
+
+type Bar struct {
+    i32 x;
+}
+
+fn void test1(
+              fn void(Foo*) cb1,
+              fn void(Foo) cb2,
+              fn void(Bar*) cb3,
+              fn void(Bar) cb4,
+              fn Bar*(i32) cb5,
+              )
+{}
+
+public fn void test2(
+                     fn void(Foo*) cb1,
+                     fn void(Foo) cb2, // @error{public declaration using opaque type 'test.Foo' by value}
+                     fn void(Bar*) cb3,     // @error{public declaration using non-public type 'test.Bar'}
+                     fn void(Bar) cb4,     // @error{public declaration using non-public type 'test.Bar'}
+                     fn Bar*(i32) cb5, // @error{public declaration using non-public type 'test.Bar'}
+                     )
+{}
+

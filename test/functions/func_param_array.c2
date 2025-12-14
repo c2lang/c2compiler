@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1(fn void(void*, i32)[2] cb)  // @error{array types are not allowed here}
+{
+}
+

@@ -192,7 +192,7 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
         if (base.isInvalid()) return base;
         if (!base.hasCanonicalType()) return QualType_Invalid;
         break;
-    case StructMemberType:
+    case Function:
         base = ma.analyseStructMemberTypeRef(ref);
         if (base.isInvalid()) return base;
         if (!base.hasCanonicalType()) return QualType_Invalid;

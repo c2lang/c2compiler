@@ -1,0 +1,64 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+type Cb1 fn void(void*, fn bool(i32, i32), i32);
+type Cb2 fn bool(i32, i32);
+
+Cb1 cb1 = callback1;
+Cb2 cb2 = callback2;
+
+fn void callback1(void* arg, fn bool(i32, i32), i32 a) { }
+
+fn bool callback2(i32 a, i32 b) { return true; }
+
+fn void test1(void* arg,
+              fn void(void* arg, fn bool(i32, i32), i32 a) cb,
+              fn bool(i32, i32) inner,
+              i32 a)
+{
+    cb(arg, callback2, a);
+    cb(arg, inner, a);
+    cb(arg, nil, a);
+}
+
+fn void test2() {
+    test1(nil, callback1, callback2, 10);
+    test1(nil, nil, nil, 10);
+}
+// @expect{atleast, cgen/build.c}
+typedef void (*test_Cb1)(void* _arg0,  _arg1, int32_t _arg2);
+typedef _Bool (*test_Cb2)(int32_t _arg0, int32_t _arg1);
+
+static void test_callback1(void* arg, _Bool (*_arg1)(int32_t _arg0, int32_t _arg1), int32_t a);
+static test_Cb1 test_cb1 = test_callback1;
+static _Bool test_callback2(int32_t a, int32_t b);
+static test_Cb2 test_cb2 = test_callback2;
+static void test_test1(void* arg, void (*cb)(void* arg, _Bool (*_arg1)(int32_t _arg0, int32_t _arg1), int32_t a), _Bool (*inner)(int32_t _arg0, int32_t _arg1), int32_t a);
+static void test_test2(void);
+
+static void test_callback1(void* arg, _Bool (*_arg1)(int32_t _arg0, int32_t _arg1), int32_t a)
+{
+}
+
+static _Bool test_callback2(int32_t a, int32_t b)
+{
+   return true;
+}
+
+static void test_test1(void* arg, void (*cb)(void* arg, _Bool (*_arg1)(int32_t _arg0, int32_t _arg1), int32_t a), _Bool (*inner)(int32_t _arg0, int32_t _arg1), int32_t a)
+{
+   cb(arg, test_callback2, a);
+   cb(arg, inner, a);
+   cb(arg, NULL, a);
+}
+
+static void test_test2(void)
+{
+   test_test1(NULL, test_callback1, test_callback2, 10);
+   test_test1(NULL, NULL, NULL, 10);
+}
+

@@ -1,7 +1,10 @@
 // @warnings{no-unused}
 module test;
 
+type Callback fn void(void* arg, i32 a);
+
 type Foo struct {
-    fn void (void* arg)[3] cb;  // @error{expected identifier}
+    Callback[2] cb1;
+    fn void(void* arg, i32 a)[2] cb2;   // @error{arrays are not allowed for untyped function type members}
 }
 

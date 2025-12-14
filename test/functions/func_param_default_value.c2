@@ -1,0 +1,16 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1(fn void(void* arg, i32 a = 2) cb) // @error{default parameter values are not allowed in type definitions}
+{
+   //cb(arg, a);
+   //cb(arg);
+}
+
+fn void callback(void* arg, i32 a) {
+}
+
+public fn void test2() {
+    test1(nil, callback, 10);
+}
+

@@ -162,13 +162,20 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
 
             bool is_variadic = p.parseFunctionParams(&params, is_public, false);
 
-            Decl* fd = p.builder.actOnStructMemberType(&rtype,
-                                                       (VarDecl**)params.getDecls(),
-                                                       params.size(),
-                                                       is_variadic);
+            Decl* fd = p.builder.actOnFunctionType(&rtype,
+                                                   (VarDecl**)params.getDecls(),
+                                                   params.size(),
+                                                   is_variadic,
+                                                   DefKind.StructMember);
             // TODO attributes?
             //p.parseOptionalAttributes();
             params.free();
+
+            TypeRefHolder ref.init();
+            ref.setFunction((Decl*)fd);
+            if (p.tok.kind == Kind.LSquare) {
+                p.error("arrays are not allowed for untyped function type members");
+            }
 
             p.expectIdentifier();
             u32 name = p.tok.name_idx;
@@ -177,8 +184,6 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             p.checkMemberName();
             p.consumeToken();
 
-            TypeRefHolder ref.init();
-            ref.setStructMemberType(fd);
             VarDecl* member = p.builder.actOnStructMember(name, loc, is_public, &ref, nil);
             members.add(member.asDecl());
 

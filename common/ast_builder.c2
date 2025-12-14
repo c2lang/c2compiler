@@ -182,7 +182,7 @@ public fn Decl* Builder.actOnFunctionTypeDecl(Builder* b,
                                            params,
                                            num_params,
                                            is_variadic,
-                                           true);
+                                           DefKind.Type);
 
     FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fd);
     b.ast.addTypeDecl(d.asDecl());
@@ -195,22 +195,22 @@ public fn Decl* Builder.actOnFunctionTypeDecl(Builder* b,
     return dd;
 }
 
-public fn Decl* Builder.actOnStructMemberType(Builder* b,
-                                            const TypeRefHolder* rtype,
-                                            VarDecl** params,
-                                            u32 num_params,
-                                            bool is_variadic)
+public fn Decl* Builder.actOnFunctionType(Builder* b,
+                                          const TypeRefHolder* rtype,
+                                          VarDecl** params,
+                                          u32 num_params,
+                                          bool is_variadic,
+                                          DefKind def_kind)
 {
     FunctionDecl* fd = FunctionDecl.create(b.context,
                                            0, 0, false,
-                                           0,  // b.ast_idx  HMM TODO
+                                           b.ast_idx,
                                            rtype,
                                            nil,
                                            params,
                                            num_params,
                                            is_variadic,
-                                           false);
-    fd.setMemberType();
+                                           def_kind);
     return (Decl*)fd;
 }
 
@@ -742,7 +742,7 @@ public fn FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
                                           params,
                                           num_params,
                                           is_variadic,
-                                          false);
+                                          DefKind.Global);
     b.ast.addFunc(f);
     if (!prefix) b.addSymbol(name, f.asDecl());
     if (b.is_interface) f.asDecl().setExternal();

@@ -23,14 +23,14 @@ import string;
 public type TypeRefKind enum u8 {
     Builtin,
     User,
-    StructMemberType,
+    Function,
 }
 
 fn const char* TypeRefKind.str(TypeRefKind k) {
     switch (k) {
     case Builtin:   return "builtin";
     case User:      return "user";
-    case StructMemberType: return "structmemberfn";
+    case Function:  return "function";
     }
     return nil;
 }
@@ -49,9 +49,8 @@ type TypeRefBits struct {
 public type Ref struct {
     SrcLoc loc;
     u32 name_idx;
-    Decl* decl; // set during analysis, or during parsing for StructMemberType
+    Decl* decl; // set during analysis, or during parsing for Function
 }
-
 static_assert(16, sizeof(Ref));
 
 public fn const char* Ref.getName(const Ref* r) {
@@ -168,9 +167,9 @@ public fn void TypeRefHolder.setUser(TypeRefHolder* h, SrcLoc loc, u32 name_idx)
     h.user.decl = nil;
 }
 
-public fn void TypeRefHolder.setStructMemberType(TypeRefHolder* h, Decl* fd) {
+public fn void TypeRefHolder.setFunction(TypeRefHolder* h, Decl* fd) {
     TypeRef* r = (TypeRef*)&h.ref;
-    r.flags.kind = TypeRefKind.StructMemberType;
+    r.flags.kind = TypeRefKind.Function;
     h.user.loc = 0;
     h.user.name_idx = 0;
     h.user.decl = fd;
@@ -213,7 +212,7 @@ fn void TypeRef.init(TypeRef* dest, const TypeRefHolder* h) {
         dest.refs[0] = h.user;
         if (r.hasPrefix()) dest.refs[1] = h.prefix;
         break;
-    case StructMemberType:
+    case Function:
         dest.refs[0] = h.user;
         break;
     }
@@ -297,8 +296,8 @@ fn bool TypeRef.isBuiltin(const TypeRef* r) {
     return r.flags.kind == TypeRefKind.Builtin;
 }
 
-public fn bool TypeRef.isStructMemberFn(const TypeRef* r) {
-    return r.flags.kind == TypeRefKind.StructMemberType;
+public fn bool TypeRef.isFunction(const TypeRef* r) {
+    return r.flags.kind == TypeRefKind.Function;
 }
 
 public fn bool TypeRef.isVoid(const TypeRef* r) {
@@ -342,7 +341,7 @@ public fn SrcLoc TypeRef.getLoc(const TypeRef* r) {
     case User:
         if (r.hasPrefix()) return r.refs[1].loc;
         else return r.refs[0].loc;
-    case StructMemberType:
+    case Function:
         //TODO
         //return r.user.decl.getLoc();
         break;
@@ -425,7 +424,7 @@ fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool prin
             out.add(d.getName());
         }
         break;
-    case StructMemberType:
+    case Function:
         out.add("FN TODO");
         // TODO
         break;
@@ -462,7 +461,7 @@ fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
         }
         out.add(idx2name(r.refs[0].name_idx));
         break;
-    case StructMemberType:
+    case Function:
         out.add("fn ");
         assert(r.refs[0].decl);
         const FunctionDecl* fd = (FunctionDecl*)r.refs[0].decl;

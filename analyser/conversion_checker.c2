@@ -478,9 +478,19 @@ fn bool checkFunc2Func(const FunctionDecl* fdl, const FunctionDecl* fdr) {
     for (u32 i=0; i<num1; i++) {
         Decl* a1 = args1[i];
         Decl* a2 = args2[i];
+
         ql = a1.getType();
         qr = a2.getType();
-        if (ql.ptr != qr.ptr) return false;
+        if (ql.ptr != qr.ptr) {
+            if (ql.isFunction() && qr.isFunction()) {
+                FunctionType* ft = ql.getFunctionType();
+                FunctionDecl* fd1 = ft.getDecl();
+                ft = qr.getFunctionType();
+                FunctionDecl* fd2 = ft.getDecl();
+                if (checkFunc2Func(fd1, fd2)) continue;
+            }
+            return false;
+        }
     }
 
     if (fdl.isVariadic() != fdr.isVariadic()) return false;

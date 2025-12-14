@@ -154,6 +154,7 @@ fn void Generator.emitCName(Generator* gen, string_buffer.Buf* out, const Decl* 
 }
 
 fn void Generator.emitCNameMod(Generator* /*gen*/, string_buffer.Buf* out, const Decl* d, Module* mod) {
+    if (!d.getName()) return;
     if (d.isExternal() && d.getModule().isForeign()) {
         const char* cname = d.getCName();
         if (cname) {
@@ -377,6 +378,7 @@ fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl*
             FunctionDecl* fd = ft.getDecl();
             if (fd.isMemberType()) {
                 gen.gen_member_type_func(fd, out, d.getName());
+                out.add(";\n");
                 return;
             }
         }
@@ -816,13 +818,12 @@ fn void Generator.on_ast_decl(void* arg, AST* a) {
 }
 
 fn void Generator.gen_member_type_func(Generator* gen, FunctionDecl* fd, string_buffer.Buf* out, const char* name) {
-    // generate something like: void (*name)(void* arg);\n
+    // generate something like: void (*name)(void* arg)
     Decl* d = (Decl*)fd;
 
     gen.emitTypePre(out, fd.getRType());
     out.print(" (*%s)", name);
     gen.emitFuncParams(fd, out);
-    out.add(";\n");
 }
 
 fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer.Buf* out) {
@@ -887,7 +888,23 @@ fn void Generator.emitFuncParams(Generator* gen, FunctionDecl* fd, string_buffer
     for (u32 i=0; i<num_params; i++) {
         Decl* argx = (Decl*)params[i];
         if (i != 0) out.add(", ");
-        gen.emitTypePre(out, argx.getType());
+        QualType qt = argx.getType();
+        if (qt.isFunction()) {
+            FunctionType* ft = qt.getFunctionType();
+            FunctionDecl* fd2 = ft.getDecl();
+            if (fd2.isParam()) {
+                const char* name = argx.getName();
+                char[8] temp;
+                if (!name) {
+                    stdio.sprintf(temp, "_arg%d", i);
+                    name = temp;
+                }
+                gen.gen_member_type_func(fd2, out, name);
+                continue;
+            }
+        }
+
+        gen.emitTypePre(out, qt);
         out.space();
         const char* name = argx.getName();
         if (name) out.add(name);

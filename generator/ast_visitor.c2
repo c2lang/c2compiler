@@ -119,7 +119,7 @@ fn void Visitor.handleTypeRef(Visitor* v, const TypeRef* r) {
 
         const Ref* user = r.getUser();
         v.on_ref(v.arg, user);
-    } else if (r.isStructMemberFn()) {
+    } else if (r.isFunction()) {
         const Ref* member = r.getStructMemberType();
         v.handleFunction((FunctionDecl*)member.decl);
     }

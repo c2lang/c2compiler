@@ -1,0 +1,40 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+fn void test1(void* arg,
+              fn void(void* arg, i32 a) cb,
+              i32 a)
+{
+   cb(arg, a);
+}
+
+fn void callback(void* arg, i32 a) {
+}
+
+public fn void test2() {
+    test1(nil, callback, 10);
+}
+
+// @expect{atleast, cgen/build.c}
+static void test_test1(void* arg, void (*cb)(void* arg, int32_t a), int32_t a);
+static void test_callback(void* arg, int32_t a);
+static void test_test2(void);
+
+static void test_test1(void* arg, void (*cb)(void* arg, int32_t a), int32_t a)
+{
+   cb(arg, a);
+}
+
+static void test_callback(void* arg, int32_t a)
+{
+}
+
+static void test_test2(void)
+{
+   test_test1(NULL, test_callback, 10);
+}
+

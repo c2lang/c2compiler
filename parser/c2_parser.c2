@@ -580,7 +580,33 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool accept_default
 
     TypeRefHolder ref.init();
     // Note: dont check arrays in this phase, but in Analyser
-    p.parseTypeSpecifier(&ref);
+    if (p.tok.kind == Kind.KW_fn) {
+        p.consumeToken(); // fn
+
+        TypeRefHolder rtype.init();
+        p.parseSingleTypeSpecifier(&rtype);
+
+        DeclList params.init();
+
+        bool is_variadic = p.parseFunctionParams(&params, is_public, false);
+
+        Decl* fd = p.builder.actOnFunctionType(&rtype,
+                                               (VarDecl**)params.getDecls(),
+                                               params.size(),
+                                               is_variadic,
+                                               DefKind.Param);
+        // TODO attributes?
+        //p.parseOptionalAttributes();
+        params.free();
+
+        ref.setFunction((Decl*)fd);
+
+        if (p.tok.kind == Kind.LSquare) {
+            p.error("array types are not allowed here");
+        }
+    }  else {
+        p.parseTypeSpecifier(&ref);
+    }
 
     u32 name = 0;
     SrcLoc loc = p.tok.loc;

@@ -18,6 +18,7 @@ module ast;
 import ast_context;
 import src_loc local;
 import string_buffer;
+
 import string;
 
 public type CallKind enum u8 {
@@ -35,15 +36,29 @@ const char*[] callKind_names = {
 }
 static_assert(elemsof(CallKind), elemsof(callKind_names));
 
+public type DefKind enum u8 {
+    Global,         // fn void (..) { .. }
+    Type,           // type A fn ..
+    StructMember,   // (in struct) fn void(..) member;
+    Param,          // fn void a( fn void(..) cb)
+    Template,       // ..
+}
+
+const char*[] defKind_names = {
+    "global",
+    "type",
+    "struct-member",
+    "template",
+    "param",
+}
+
 type FunctionDeclBits struct {
     u32 : NumDeclBits;
     u32 is_variadic : 1;
     u32 has_prefix : 1;     // is a (static) type-function
     u32 call_kind : 2;  // CallKind
     u32 has_return : 1;     // if it returns something, set during analysis
-    u32 is_template : 1;
-    u32 is_type : 1;     // part of FunctionTypeDecl
-    u32 is_member_type : 1;    // if function is defined in struct as member type
+    u32 def_kind : 3;
     u32 has_body : 1;    // if function is defined in C2
 }
 
@@ -81,16 +96,16 @@ public type FunctionDecl struct @(opaque) {
 }
 
 public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
-                                              u32 name,
-                                              SrcLoc loc,
-                                              bool is_public,
-                                              u32 ast_idx,
-                                              const TypeRefHolder* rtype,
-                                              const Ref* prefix,
-                                              VarDecl** params,
-                                              u32 num_params,
-                                              bool is_variadic,
-                                              bool is_type)
+                                            u32 name,
+                                            SrcLoc loc,
+                                            bool is_public,
+                                            u32 ast_idx,
+                                            const TypeRefHolder* rtype,
+                                            const Ref* prefix,
+                                            VarDecl** params,
+                                            u32 num_params,
+                                            bool is_variadic,
+                                            DefKind def_kind)
 {
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + rtype.getExtraSize();
     FunctionDecl* d = c.alloc(size);
@@ -99,7 +114,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     d.base.init(DeclKind.Function, name, loc, is_public, qt, ast_idx);
     d.base.functionDeclBits.is_variadic = is_variadic;
     d.base.functionDeclBits.call_kind = prefix ? CallKind.StaticTypeFunc : CallKind.Normal;
-    d.base.functionDeclBits.is_type = is_type;
+    d.base.functionDeclBits.def_kind = def_kind;
     d.body = nil;
     d.rt = QualType_Invalid;
     d.num_params = (u8)num_params;
@@ -144,8 +159,7 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     d.base.init(DeclKind.Function, name, loc, is_public, qt, ast_idx);
     d.base.functionDeclBits.is_variadic = is_variadic;
     d.base.functionDeclBits.call_kind = CallKind.Normal;
-    d.base.functionDeclBits.is_template = 1;
-    d.base.functionDeclBits.is_type  = false;
+    d.base.functionDeclBits.def_kind = DefKind.Template;
     d.body = nil;
     d.rt = QualType_Invalid;
     d.num_params = (u8)num_params;
@@ -182,7 +196,7 @@ public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instant
     // copy members
     fd2.base = fd.base;
     // note: the instantiation is no longer a template function (otherwise ignored by analyseFunctionProto)
-    fd2.base.functionDeclBits.is_template = 0;
+    fd2.base.functionDeclBits.def_kind = DefKind.Global;
     FunctionType* ftype = FunctionType.create(inst.c, fd2);
     fd2.base.qt = QualType.create(ftype.asType());
 
@@ -245,11 +259,17 @@ public fn bool FunctionDecl.isInline(const FunctionDecl* d) {
 
 public fn bool FunctionDecl.canBeNil(const FunctionDecl* d) {
     // Variable with Function type (eg callback)
-    return d.isType() || d.isMemberType() || d.hasAttrWeak();
-}
-
-public fn bool FunctionDecl.isType(const FunctionDecl* d) {
-    return d.base.functionDeclBits.is_type;
+    switch (d.getDefKind()) {
+    case Global:
+        break;
+    case Type:
+    case StructMember:
+    case Param:
+        return true;
+    case Template:
+        break;
+    }
+    return d.hasAttrWeak();
 }
 
 public fn void FunctionDecl.setRType(FunctionDecl* d, QualType rt) {
@@ -277,8 +297,24 @@ public fn bool FunctionDecl.hasPrefix(const FunctionDecl* d) {
     return d.base.functionDeclBits.has_prefix;
 }
 
+public fn bool FunctionDecl.isType(const FunctionDecl* d) {
+    return d.base.functionDeclBits.def_kind == DefKind.Type;
+}
+
 public fn bool FunctionDecl.isTemplate(const FunctionDecl* d) {
-    return d.base.functionDeclBits.is_template;
+    return d.base.functionDeclBits.def_kind == DefKind.Template;
+}
+
+public fn bool FunctionDecl.isMemberType(const FunctionDecl* d) {
+    return d.base.functionDeclBits.def_kind == DefKind.StructMember;
+}
+
+public fn bool FunctionDecl.isParam(const FunctionDecl* d) {
+    return d.base.functionDeclBits.def_kind == DefKind.Param;
+}
+
+fn DefKind FunctionDecl.getDefKind(const FunctionDecl* d) {
+    return (DefKind)d.base.functionDeclBits.def_kind;
 }
 
 public fn u32 FunctionDecl.getTemplateNameIdx(const FunctionDecl* d) {
@@ -441,14 +477,6 @@ public fn const char* FunctionDecl.getDiagKind(const FunctionDecl* d) {
     return "";
 }
 
-public fn void FunctionDecl.setMemberType(FunctionDecl* d) {
-    d.base.functionDeclBits.is_member_type = 1;
-}
-
-public fn bool FunctionDecl.isMemberType(const FunctionDecl* d) {
-    return d.base.functionDeclBits.is_member_type;
-}
-
 fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 indent) {
     bool valid_type = d.base.qt.isValid();
     d.base.printKind(out, indent, valid_type);
@@ -463,8 +491,8 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
     out.color(col_Attr);
     out.add(callKind_names[d.getCallKind()]);
     d.base.printAttrs(out);
-    if (d.base.functionDeclBits.is_type) out.add(" Type");
-    if (d.base.functionDeclBits.is_member_type) out.add(" MemberType");
+    out.add(" def:");
+    out.add(defKind_names[d.getDefKind()]);
     out.color(col_Expr); // purple
     if (d.hasAttrUnusedParams()) out.add(" unused-params");
     if (d.hasAttrNoReturn()) out.add(" noreturn");
@@ -482,10 +510,12 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
         out.add(d.prefix.getName());
         out.add1('.');
     }
-    out.add(d.base.getName());
+    const char* name = d.base.getName();
+    if (name) out.add(name);
+    else out.add("<unnamed>");
     out.newline();
 
-    if (d.base.functionDeclBits.is_template) {
+    if (d.base.functionDeclBits.def_kind == DefKind.Template) {
         out.indent(indent + 1);
         out.color(col_Template);
         out.print("template %s\n", idx2name(d.template_name));
