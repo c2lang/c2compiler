@@ -22,6 +22,7 @@ import string;
 
 public type TypeRefKind enum u8 {
     Builtin,
+    Void,
     User,
     Function,
 }
@@ -29,6 +30,7 @@ public type TypeRefKind enum u8 {
 fn const char* TypeRefKind.str(TypeRefKind k) {
     switch (k) {
     case Builtin:   return "builtin";
+    case Void:      return "void";
     case User:      return "user";
     case Function:  return "function";
     }
@@ -159,6 +161,12 @@ public fn void TypeRefHolder.setBuiltin(TypeRefHolder* h, BuiltinKind kind, SrcL
     r.loc = loc;
 }
 
+public fn void TypeRefHolder.setVoid(TypeRefHolder* h, SrcLoc loc) {
+    TypeRef* r = (TypeRef*)&h.ref;
+    r.flags.kind = TypeRefKind.Void;
+    r.loc = loc;
+}
+
 public fn void TypeRefHolder.setUser(TypeRefHolder* h, SrcLoc loc, u32 name_idx) {
     TypeRef* r = (TypeRef*)&h.ref;
     r.flags.kind = TypeRefKind.User;
@@ -207,6 +215,7 @@ fn void TypeRef.init(TypeRef* dest, const TypeRefHolder* h) {
     // copy for tail-allocated info
     switch (r.getKind()) {
     case Builtin:
+    case Void:
         break;
     case User:
         dest.refs[0] = h.user;
@@ -301,7 +310,7 @@ public fn bool TypeRef.isFunction(const TypeRef* r) {
 }
 
 public fn bool TypeRef.isVoid(const TypeRef* r) {
-    return r.isBuiltin() && r.flags.num_ptrs == 0 && r.getBuiltinKind() == BuiltinKind.Void;
+    return r.flags.kind == TypeRefKind.Void;
 }
 
 public fn bool TypeRef.isConstCharPtr(const TypeRef* r) {
@@ -337,6 +346,7 @@ public fn TypeRefKind TypeRef.getKind(const TypeRef* r) {
 public fn SrcLoc TypeRef.getLoc(const TypeRef* r) {
     switch (r.getKind()) {
     case Builtin:
+    case Void:
         break;
     case User:
         if (r.hasPrefix()) return r.refs[1].loc;
@@ -415,6 +425,9 @@ fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool prin
     case Builtin:
         out.add(builtinType_names[r.flags.builtin_kind]);
         break;
+    case Void:
+        out.add("void");
+        break;
     case User:
         Decl* d = r.refs[0].decl;
         assert(d);
@@ -453,6 +466,9 @@ fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
     switch ((TypeRefKind)r.flags.kind) {
     case Builtin:
         out.add(builtinType_names[r.flags.builtin_kind]);
+        break;
+    case Void:
+        out.add("void");
         break;
     case User:
         if (r.flags.has_prefix) {

@@ -187,6 +187,10 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
         base = ma.builder.actOnBuiltinType(kind);
         assert(base.isValid());
         break;
+    case Void:
+        base = ma.builder.actOnVoidType();
+        assert(base.isValid());
+        break;
     case User:
         base = ma.analyseUserTypeRef(ref);
         if (base.isInvalid()) return base;
@@ -290,14 +294,20 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
 fn QualType Analyser.analyseIncrTypeRef(Analyser* ma, TypeRef* ref, u32 size) {
     // TODO refactor common code with analyseTypeRef
     QualType base;
-    if (ref.isUser()) {
-        base = ma.analyseUserTypeRef(ref);
-        if (base.isInvalid()) return base;
-        assert(base.hasCanonicalType());
-    } else {
+    switch (ref.getKind()) {
+    case Builtin:
         BuiltinKind kind = ref.getBuiltinKind();
         base = ma.builder.actOnBuiltinType(kind);
         assert(base.isValid());
+        break;
+    case User:
+        base = ma.analyseUserTypeRef(ref);
+        if (base.isInvalid()) return base;
+        assert(base.hasCanonicalType());
+        break;
+    default:
+        assert(0);
+        break;
     }
 
     if (ref.isConst()) base.setConst();

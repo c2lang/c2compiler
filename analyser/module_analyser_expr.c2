@@ -243,21 +243,24 @@ fn IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
 // 8  function : pointer
 // 9  function : function
 // 10  struct : struct
+// 11  void : void
 // TODO: accept pointer/function : 0 and 0 : pointer/function
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] CondOpTable = {
-    //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
+    //  Builtin Pointer Array   Struct  Enum    Func   Void   Alias  Module
     //  Builtin :
-    {   2,      1,      0,      1,      3,      0,     0,     0  },
+    {   2,      1,      0,      1,      3,      0,     1,     0,     0  },
     //  Pointer :
-    {   1,      4,      0,      1,      1,      7,     0,     0  },
+    {   1,      4,      0,      1,      1,      7,     1,     0,     0  },
     //  Array :
-    {   0,      0,      0,      0,      0,      0,     0,     0  },
+    {   0,      0,      0,      0,      0,      0,     0,     0,     0  },
     //  Struct :
-    {   1,      1,      0,     10,      1,      1,     0,     0  },
+    {   1,      1,      0,     10,      1,      1,     1,     0,     0  },
     //  Enum :
-    {   5,      1,      0,      1,      6,      1,     0,     0  },
+    {   5,      1,      0,      1,      6,      1,     1,     0,     0  },
     //  Function :
-    {   1,      8,      0,      1,      1,      9,     0,     0  },
+    {   1,      8,      0,      1,      1,      9,     1,     0,     0  },
+    //  Void:
+    {   1,      1,      0,      1,      1,      1,    11,     0,     0  },
     // Alias + Module are zero
 }
 fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
@@ -296,7 +299,7 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
         BuiltinType* br = rcanon.getBuiltin();
         // Use modified version of usual_arithmetic_conversion
         QualType optype = conversion_checker.get_common_arithmetic_type(bl, br);
-        if (!optype.isValid() || optype.isVoid()) goto invalid;
+        if (!optype.isValid()) goto invalid;
         BuiltinType* bi = optype.getBuiltin();
         if (bl != bi) {
             ma.builder.insertImplicitCast(IntegralCast, cond.getLHS2(), optype);
@@ -342,6 +345,8 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
             ma.error(e.getLoc(), "ternary operands are structs or unions of different types ('%s' and '%s')", lhs.diagName(), rhs.diagName());
             return QualType_Invalid;
         }
+        return lhs;
+    case 11: // void : void
         return lhs;
     }
     e.dump();
@@ -403,14 +408,9 @@ fn QualType usualUnaryConversions(Expr* e) {
     QualType qt = e.getType();
     QualType canon = qt.getCanonicalType();
 
-    if (canon.isBuiltin()) {
-        BuiltinType* bi = canon.getBuiltin();
-        if (bi.isPromotableIntegerType()) return ast.builtins[BuiltinKind.Int32];
-    } else if (canon.isPointer()) {
-        // TODO depend on arch width
-        return ast.builtins[BuiltinKind.UInt64];
-    }
-
+    if (!canon.isBuiltin()) return QualType_Invalid;
+    BuiltinType* bi = canon.getBuiltin();
+    if (bi.isPromotableIntegerType()) return ast.builtins[BuiltinKind.Int32];
     return qt;
 }
 

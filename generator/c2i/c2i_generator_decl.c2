@@ -140,6 +140,9 @@ fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType q
         BuiltinType* bt = (BuiltinType*)qt.getType();
         out.add(bt.kind2str());
         return;
+    case Void:
+        out.add("void");
+        return;
     case Pointer:
         PointerType* pt = (PointerType*)qt.getType();
         gen.emitTypePre(out, pt.getInner());

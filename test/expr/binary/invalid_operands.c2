@@ -943,7 +943,7 @@ fn void fun2() {
         f1() >>= d,    // @error{lvalue required as left operand of assignment}
 
         f1() + p,      // @error{invalid operand type 'void' for binary expression '+'}
-        f1() - p,      // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() - p,      // @error{invalid operand type 'void' for binary expression '-'}
         f1() * p,      // @error{invalid operands to binary expression ('void' and 'char*')}
         f1() / p,      // @error{invalid operands to binary expression ('void' and 'char*')}
         f1() % p,      // @error{invalid operands to binary expression ('void' and 'char*')}
@@ -952,12 +952,12 @@ fn void fun2() {
         f1() ^ p,      // @error{invalid operands to binary expression ('void' and 'char*')}
         f1() << p,     // @error{invalid operands to binary expression ('void' and 'char*')}
         f1() >> p,     // @error{invalid operands to binary expression ('void' and 'char*')}
-        f1() <= p,     // @error{invalid operands to binary expression ('void' and 'char*')}
-        f1() < p,      // @error{invalid operands to binary expression ('void' and 'char*')}
-        f1() == p,     // @error{invalid operands to binary expression ('void' and 'char*')}
-        f1() != p,     // @error{invalid operands to binary expression ('void' and 'char*')}
-        f1() >= p,     // @error{invalid operands to binary expression ('void' and 'char*')}
-        f1() > p,      // @error{invalid operands to binary expression ('void' and 'char*')}
+        f1() <= p,     // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < p,      // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == p,     // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != p,     // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= p,     // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > p,      // @error{invalid operand type 'void' for binary expression '>'}
         f1() += p,     // @error{lvalue required as left operand of assignment}
         f1() -= p,     // @error{lvalue required as left operand of assignment}
         f1() *= p,     // @error{lvalue required as left operand of assignment}
@@ -970,7 +970,7 @@ fn void fun2() {
         f1() >>= p,    // @error{lvalue required as left operand of assignment}
 
         f1() + vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
-        f1() - vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() - vp,     // @error{invalid operand type 'void' for binary expression '-'}
         f1() * vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
         f1() / vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
         f1() % vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
@@ -979,12 +979,12 @@ fn void fun2() {
         f1() ^ vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
         f1() << vp,    // @error{invalid operands to binary expression ('void' and 'void*')}
         f1() >> vp,    // @error{invalid operands to binary expression ('void' and 'void*')}
-        f1() <= vp,    // @error{invalid operands to binary expression ('void' and 'void*')}
-        f1() < vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
-        f1() == vp,    // @error{invalid operands to binary expression ('void' and 'void*')}
-        f1() != vp,    // @error{invalid operands to binary expression ('void' and 'void*')}
-        f1() >= vp,    // @error{invalid operands to binary expression ('void' and 'void*')}
-        f1() > vp,     // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() <= vp,    // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < vp,     // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == vp,    // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != vp,    // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= vp,    // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > vp,     // @error{invalid operand type 'void' for binary expression '>'}
         f1() += vp,    // @error{lvalue required as left operand of assignment}
         f1() -= vp,    // @error{lvalue required as left operand of assignment}
         f1() *= vp,    // @error{lvalue required as left operand of assignment}
@@ -1132,7 +1132,7 @@ fn void fun2() {
         f1() >>= 1.0,  // @error{lvalue required as left operand of assignment}
 
         f1() + nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
-        f1() - nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() - nil,    // @error{invalid operand type 'void' for binary expression '-'}
         f1() * nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
         f1() / nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
         f1() % nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
@@ -1141,12 +1141,12 @@ fn void fun2() {
         f1() ^ nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
         f1() << nil,   // @error{invalid operands to binary expression ('void' and 'void*')}
         f1() >> nil,   // @error{invalid operands to binary expression ('void' and 'void*')}
-        f1() <= nil,   // @error{invalid operands to binary expression ('void' and 'void*')}
-        f1() < nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
-        f1() == nil,   // @error{invalid operands to binary expression ('void' and 'void*')}
-        f1() != nil,   // @error{invalid operands to binary expression ('void' and 'void*')}
-        f1() >= nil,   // @error{invalid operands to binary expression ('void' and 'void*')}
-        f1() > nil,    // @error{invalid operands to binary expression ('void' and 'void*')}
+        f1() <= nil,   // @error{invalid operand type 'void' for binary expression '<='}
+        f1() < nil,    // @error{invalid operand type 'void' for binary expression '<'}
+        f1() == nil,   // @error{invalid operand type 'void' for binary expression '=='}
+        f1() != nil,   // @error{invalid operand type 'void' for binary expression '!='}
+        f1() >= nil,   // @error{invalid operand type 'void' for binary expression '>='}
+        f1() > nil,    // @error{invalid operand type 'void' for binary expression '>'}
         f1() += nil,   // @error{lvalue required as left operand of assignment}
         f1() -= nil,   // @error{lvalue required as left operand of assignment}
         f1() *= nil,   // @error{lvalue required as left operand of assignment}

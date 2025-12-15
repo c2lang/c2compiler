@@ -223,6 +223,11 @@ public fn TypeSize sizeOfType(QualType qt) {
         result.size = pointerSize;
         result.align = pointerSize;
         break;
+    case Void:
+        result.size = 0;
+        result.align = 0;
+        result.is_signed = false;
+        break;
     case Alias:
         assert(0);  // cannot occur here
         break;

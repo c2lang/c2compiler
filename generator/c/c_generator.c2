@@ -252,9 +252,7 @@ const char*[] builtinType_cnames = {
     "ssize_t",
     "size_t",
     "_Bool",
-    "void",
 }
-
 static_assert(elemsof(BuiltinKind), elemsof(builtinType_cnames));
 
 fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType qt) {
@@ -295,6 +293,9 @@ fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType q
         FunctionDecl* fd = ft.getDecl();
         decl = (Decl*)fd;
         break;
+    case Void:
+        out.add("void");
+        return;
     case Alias:
         AliasType* at = (AliasType*)qt.getType();
         decl = (Decl*)at.getDecl();
@@ -333,6 +334,7 @@ fn void Generator.genTypeIfNeeded(Generator* gen, QualType qt, bool full) {
 
     switch (qt.getKind()) {
     case Builtin:
+    case Void:
         return;
     case Pointer:
         PointerType* pt = (PointerType*)qt.getType();

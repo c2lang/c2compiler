@@ -112,6 +112,8 @@ public type Globals struct @(opaque) {
     BuiltinKind[elemsof(BuiltinKind)] builtinType_baseTypes;
 
     u32[elemsof(attr.AttrKind)] attr_name_indexes;
+    QualType void_type;
+    QualType void_ptr_type;
 
     string_buffer.Buf* dump_buf;
 #if AstStatistics
@@ -150,15 +152,16 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
 #endif
 
     // create all Qualtypes for builtin-types, 1 extra for void-ptr
-    builtins = stdlib.malloc((elemsof(BuiltinKind) + 1) * sizeof(QualType));
+    builtins = stdlib.malloc(elemsof(BuiltinKind) * sizeof(QualType));
     for (u32 i=0; i<elemsof(BuiltinKind); i++) {
         builtins[i].set((Type*)BuiltinType.create(c, (BuiltinKind)i));
     }
 
+    globals.void_type.set((Type*)VoidType.create(c));
     // create void* Type so its easy to check if a type is a void*
-    Type* void_ptr = ast.getPointerType(builtins[BuiltinKind.Void]);
-    builtins[elemsof(BuiltinKind)].set(void_ptr);
-    void_ptr.setCanonicalType(builtins[elemsof(BuiltinKind)]);
+    Type* void_ptr = ast.getPointerType(globals.void_type);
+    globals.void_ptr_type.set(void_ptr);
+    void_ptr.setCanonicalType(globals.void_ptr_type);
 
     string.memcpy(globals.builtinType_sizes, BuiltinType_default_sizes, sizeof(BuiltinType_default_sizes));
     globals.builtinType_sizes[BuiltinKind.ISize] = wordsize;
@@ -217,11 +220,15 @@ public fn const char* idx2name(u32 idx) {
 }
 
 fn QualType getVoidPtr() {
-    return builtins[elemsof(BuiltinKind)];
+    return globals.void_ptr_type;
 }
 
 public fn Type* getPointerType(QualType inner) {
     return globals.pointers.getPointer(inner);
+}
+
+public fn QualType getVoidQT() {
+    return globals.void_type;
 }
 
 fn u32 addAST(AST* ast_) {
@@ -272,6 +279,7 @@ public fn void setTypePublicUsed(QualType qt) {
     Decl* d = nil;
     switch (t.getKind()) {
     case Builtin:
+    case Void:
         return;
     case Pointer:
         PointerType* pt = (PointerType*)t;

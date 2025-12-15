@@ -25,7 +25,6 @@ fn bool validArithType(QualType t) {
     t = t.getCanonicalType();
     switch (t.getKind()) {
     case Builtin:
-        return !t.isVoid();
     case Enum:
         return true;
     default:
@@ -37,7 +36,7 @@ fn bool validIntegerType(QualType t) {
     t = t.getCanonicalType();
     switch (t.getKind()) {
     case Builtin:
-        return !t.isVoid() && !t.isFloat();
+        return !t.isFloat();
     case Enum:
         return true;
     default:
@@ -50,7 +49,6 @@ fn bool validTestType(QualType t) {
     if (!t.isValid()) return false;
     switch (t.getKind()) {
     case Builtin:
-        return !t.isVoid();
     case Pointer:
     case Enum:
     case Function:
@@ -282,19 +280,21 @@ fn QualType Analyser.checkBinopLogical(Analyser* ma, BinaryOperator* b, QualType
 // 7  enum -= builtin
 // 8  enum -= enum -> int (CTV)
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvAddSubAss = {
-    //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
+    //  Builtin Pointer Array   Struct  Enum    Func   Void   Alias  Module
     //  Builtin += / -=
-    {   4,      2,      0,      2,      5,      2,     0,     0  },
+    {   4,      2,      0,      2,      5,      2,     2,     0,     0  },
     //  Pointer += / -=
-    {   6,      3,      0,      2,      6,      2,     0,     0  },
+    {   6,      3,      0,      2,      6,      2,     2,     0,     0  },
     //  Array += / -=
-    {   0,      0,      0,      0,      0,      0,     0,     0  },
+    {   0,      0,      0,      0,      0,      0,     0,     0,     0  },
     //  Struct += / -=
-    {   1,      1,      0,      3,      1,      3,     0,     0  },
+    {   1,      1,      0,      3,      1,      3,     3,     0,     0  },
     //  Enum += / -=
-    {   7,      1,      0,      2,      8,      2,     0,     0  },
+    {   7,      1,      0,      2,      8,      2,     2,     0,     0  },
     //  Function += / -=
-    {   1,      3,      0,      3,      1,      3,     0,     0  },
+    {   1,      3,      0,      3,      1,      3,     3,     0,     0  },
+    //  Void += / -=
+    {   1,      1,      0,      3,      1,      3,     3,     0,     0  },
     // Alias + Module are zero
 }
 fn QualType Analyser.checkBinopAddSubAssign(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
@@ -309,14 +309,11 @@ fn QualType Analyser.checkBinopAddSubAssign(Analyser* ma, BinaryOperator* b, Qua
         break;
     case 1: // invalid lhs
     invalid_lhs:
-        if (rcanon.isVoid()) goto invalid;
         return ma.invalidBinOp1(b, b.getLHS(), lhs);
     case 2: // invalid rhs
     invalid_rhs:
-        if (lcanon.isVoid()) goto invalid;
         return ma.invalidBinOp1(b, b.getRHS(), rhs);
     case 3: // invalid operands
-    invalid:
         return ma.invalidBinOp2(b, lhs, rhs);
     case 4: // builtin - builtin
     case 5: // builtin - enum -> int
@@ -347,19 +344,21 @@ fn QualType Analyser.checkBinopAddSubAssign(Analyser* ma, BinaryOperator* b, Qua
 // TODO remove Alias/Module (+Array, need to move) since already checked
 // TODO need to fix C2C.c++ (asserts of elemsof(..) -2), then table can be 5x5
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvAdd = {
-    //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
+    //  Builtin Pointer Array   Struct  Enum    Func   Void   Alias  Module
     //  Builtin +
-    {   4,      7,      0,      2,      5,      2,     0,     0  },
+    {   4,      7,      0,      2,      5,      2,     2,     0,     0  },
     //  Pointer +
-    {   8,      3,      0,      2,      8,      3,     0,     0  },
+    {   8,      3,      0,      2,      8,      3,     2,     0,     0  },
     //  Array +
-    {   0,      0,      0,      0,      0,      0,     0,     0  },
+    {   0,      0,      0,      0,      0,      0,     0,     0,     0  },
     //  Struct +
-    {   1,      1,      0,      3,      1,      3,     0,     0  },
+    {   1,      1,      0,      3,      1,      3,     3,     0,     0  },
     //  Enum +
-    {   6,      7,      0,      2,      3,      2,     0,     0  },
+    {   6,      7,      0,      2,      3,      2,     2,     0,     0  },
     //  Function +
-    {   1,      3,      0,      3,      1,      3,     0,     0  },
+    {   1,      3,      0,      3,      1,      3,     3,     0,     0  },
+    //  Void +
+    {   1,      1,      0,      3,      1,      3,     3,     0,     0  },
     // Alias + Module are zero
 }
 fn QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
@@ -374,12 +373,10 @@ fn QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualType
         break;
     case 1: // invalid lhs
     invalid_lhs:
-        if (rcanon.isVoid()) goto invalid;
         if (rcanon.isVoidPtr())  goto invalid;
         return ma.invalidBinOp1(b, b.getLHS(), lhs);
     case 2: // invalid rhs
     invalid_rhs:
-        if (lcanon.isVoid()) goto invalid;
         if (lcanon.isVoidPtr())  goto invalid;
         return ma.invalidBinOp1(b, b.getRHS(), rhs);
     case 3: // invalid operands
@@ -391,11 +388,7 @@ fn QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualType
         BuiltinType* br = rcanon.getBuiltin();
         // TODO move somewhere else (used at many places)
         QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
-        if (!optype.isValid()) {
-            if (!lcanon.isVoid()) goto invalid_rhs;
-            if (!rcanon.isVoid()) goto invalid_lhs;
-            goto invalid;
-        }
+        if (!optype.isValid()) goto invalid;
         BuiltinType* bi = optype.getBuiltin();
         if (bl != bi) {
             ma.builder.insertImplicitCast(IntegralCast, b.getLHS2(), optype);
@@ -434,19 +427,21 @@ fn QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualType
 // 8  pointer - builtin/enum
 // 9  pointer - pointer -> isize
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvSub = {
-    //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
+    //  Builtin Pointer Array   Struct  Enum    Func   Void   Alias  Module
     //  Builtin -
-    {   4,      3,      0,      2,      5,      2,     0,     0  },
+    {   4,      3,      0,      2,      5,      2,     2,     0,     0  },
     //  Pointer -
-    {   8,      9,      0,      1,      8,      2,     0,     0  },
+    {   8,      9,      0,      1,      8,      2,     2,     0,     0  },
     //  Array -
-    {   0,      0,      0,      0,      0,      0,     0,     0  },
+    {   0,      0,      0,      0,      0,      0,     0,     0,     0  },
     //  Struct -
-    {   1,      1,      0,      3,      1,      3,     0,     0  },
+    {   1,      1,      0,      3,      1,      3,     3,     0,     0  },
     //  Enum -
-    {   6,      3,      0,      2,      7,      2,     0,     0  },
+    {   6,      3,      0,      2,      7,      2,     2,     0,     0  },
     //  Function -
-    {   1,      1,      0,      3,      1,      3,     0,     0  },
+    {   1,      1,      0,      3,      1,      3,     3,     0,     0  },
+    //  Void += / -=
+    {   1,      1,      0,      3,      1,      3,     3,     0,     0  },
     // Alias + Module are zero
 }
 fn QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs) {
@@ -461,11 +456,9 @@ fn QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType
         break;
     case 1: // invalid lhs
     invalid_lhs:
-        if (rcanon.isVoid()) goto invalid;
         return ma.invalidBinOp1(b, b.getLHS(), lhs);
     case 2: // invalid rhs
     invalid_rhs:
-        if (lcanon.isVoid()) goto invalid;
         return ma.invalidBinOp1(b, b.getRHS(), rhs);
     case 3: // invalid operands
     invalid:
@@ -476,11 +469,7 @@ fn QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType
         BuiltinType* br = rcanon.getBuiltin();
         // TODO move somewhere else (used at many places)
         QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
-        if (!optype.isValid()) {
-            if (!lcanon.isVoid()) goto invalid_rhs;
-            if (!rcanon.isVoid()) goto invalid_lhs;
-            goto invalid;
-        }
+        if (!optype.isValid()) goto invalid;
         BuiltinType* bi = optype.getBuiltin();
         if (bl != bi) {
             ma.builder.insertImplicitCast(IntegralCast, b.getLHS2(), optype);
@@ -533,19 +522,21 @@ fn QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType
 // 11  invalid rhs
 // TODO: accept pointer/function : 0 and 0 : pointer/function
 const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvComparison = {
-    //  Builtin Pointer Array   Struct  Enum    Func   Alias  Module
+    //  Builtin Pointer Array   Struct  Enum    Func   Void   Alias  Module
     //  Builtin :
-    {   2,      1,      0,     11,      3,      0,     0,     0  },
+    {   2,      1,      0,     11,      3,      0,    11,     0,     0  },
     //  Pointer :
-    {   1,      4,      0,     11,      1,      7,     0,     0  },
+    {   1,      4,      0,     11,      1,      7,    11,     0,     0  },
     //  Array :
-    {   0,      0,      0,      0,      0,      0,     0,     0  },
+    {   0,      0,      0,      0,      0,      0,     0,     0,     0  },
     //  Struct :
-    {  10,     10,      0,      1,     10,     10,     0,     0  },
+    {  10,     10,      0,      1,     10,     10,     1,     0,     0  },
     //  Enum :
-    {   5,      1,      0,     11,      6,      1,     0,     0  },
+    {   5,      1,      0,     11,      6,      1,    11,     0,     0  },
     //  Function :
-    {   1,      8,      0,     11,      1,      9,     0,     0  },
+    {   1,      8,      0,     11,      1,      9,     1,     0,     0  },
+    //  Void += / -=
+    {  10,     10,      0,      1,     10,      1,     1,     0,     0  },
     // Alias + Module are zero
 }
 fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualType lhs, QualType rhs, bool is_relative) {
@@ -567,11 +558,7 @@ fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualT
         BuiltinType* br = rcanon.getBuiltin();
         // TODO move somewhere else (used at many places)
         QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
-        if (!optype.isValid()) {
-            if (!lcanon.isVoid()) goto invalid_rhs;
-            if (!rcanon.isVoid()) goto invalid_lhs;
-            goto invalid;
-        }
+        if (!optype.isValid()) goto invalid;
         BuiltinType* bi = optype.getBuiltin();
         if (bl != bi) {
             ma.builder.insertImplicitCast(IntegralCast, b.getLHS2(), optype);
@@ -622,12 +609,8 @@ fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualT
         if (is_relative) return ma.invalidFuncCompare(b);
         return builtins[BuiltinKind.Bool];
     case 10: // invalid lhs
-    invalid_lhs:
-        if (rcanon.isVoid()) goto invalid;
         return ma.invalidBinOp1(b, b.getLHS(), lhs);
     case 11: // invalid rhs
-    invalid_rhs:
-        if (lcanon.isVoid()) goto invalid;
         return ma.invalidBinOp1(b, b.getRHS(), rhs);
     }
     ma.error(e.getLoc(), "TODO BINOP %d", res);

@@ -69,8 +69,8 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
     e = *e_ptr; // re-read in case of ImplicitCast insertions
     Expr* inner = u.getInner();
 
-    if (t.isVoid()) goto invalid_type;
     QualType canon = t.getCanonicalType();
+    if (canon.isVoid()) goto invalid_type;
 
     switch (u.getOpcode()) {
     case PostInc:
@@ -122,7 +122,12 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
             t = t.getCanonicalType();
             const PointerType* p = t.getPointerType();
             // TODO copy flags from inner
-            return p.getInner();
+            t = p.getInner();
+            if (t.isVoid()) {
+                ma.error(e.getLoc(), "cannot dereference a void pointer");
+                return QualType_Invalid;
+            }
+            break;
         } else {
             ma.error(e.getLoc(), "indirection requires pointer operand ('%s' invalid)", t.diagName());
             return QualType_Invalid;
@@ -144,6 +149,7 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
         t = usualUnaryConversions(inner);
         break;
     case LNot:
+        if (!canon.isScalar()) goto invalid_type;
         e.copyConstantFlags(inner);
         return builtins[BuiltinKind.Bool];
     }
@@ -159,7 +165,7 @@ fn bool Analyser.checkIncrDecr(Analyser* ma, Expr* inner, QualType t, bool is_in
     if (!ma.checkAssignment(inner, t, operand, loc)) return false;
 
     t = t.getCanonicalType();
-    if (!t.isBuiltin() && !t.isPointer() && !t.isEnum()) {
+    if (!t.isBuiltin() && !t.isEnum() && (!t.isPointer() || t.isVoidPtr())) {
         ma.error(loc, "cannot %s value of type '%s'", is_incr ? "increment" : "decrement", t.diagName());
         return false;
     }
@@ -291,8 +297,6 @@ fn QualType getMinusType(QualType qt) {
         return qt;
     case USize:
         return builtins[BuiltinKind.ISize];
-    case Void:
-        break;
     }
     return QualType_Invalid;
 }

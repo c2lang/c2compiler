@@ -159,6 +159,10 @@ public fn bool Kind.isQualifier(Kind kind) {
 }
 
 public fn bool Kind.isBuiltinType(Kind kind) {
+    return kind >= Kind.KW_bool && kind < Kind.KW_void;
+}
+
+public fn bool Kind.isBuiltinTypeOrVoid(Kind kind) {
     return kind >= Kind.KW_bool && kind <= Kind.KW_void;
 }
 

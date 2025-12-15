@@ -109,6 +109,7 @@ set ast
     ast/qualtype.c2
     ast/struct_type.c2
     ast/type_ref.c2
+    ast/void_type.c2
 
     # ast utility function
 	ast/array_value_list.c2

@@ -268,7 +268,7 @@ fn void Parser.errorAt(Parser* p, SrcLoc loc, const char* format @(printf_format
 fn void Parser.parseModule(Parser* p, bool is_interface, bool is_generated) {
     p.expectAndConsume(Kind.KW_module);
     // accept builtin types as module names
-    if (!p.tok.kind.isBuiltinType())
+    if (!p.tok.kind.isBuiltinTypeOrVoid())
         p.expectIdentifier();
 
     const char*modname = p.pool.idx2str(p.tok.name_idx);
@@ -789,7 +789,6 @@ const BuiltinKind[] Tok2builtin = {
     USize,      // KW_usize
     Float32,    // KW_f32
     Float64,    // KW_f64
-    Void,       // KW_void
 }
 
 fn BuiltinKind tokKindToBuiltinKind(token.Kind kind) {
@@ -805,6 +804,9 @@ fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref) {
     if (kind.isBuiltinType()) {
         ref.setBuiltin(tokKindToBuiltinKind(p.tok.kind), p.tok.loc);
         if (kind >= Kind.KW_reg8 && kind <= Kind.KW_reg64) ref.setVolatile();
+        p.consumeToken();
+    } else if (kind == KW_void) {
+        ref.setVoid(p.tok.loc);
         p.consumeToken();
     } else if (kind == Kind.Identifier) {
         p.parseFullTypeIdentifier(ref);

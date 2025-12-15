@@ -73,6 +73,6 @@ public fn void FloatLiteral.printLiteral(const FloatLiteral* e, string_buffer.Bu
         break;
     }
     QualType qt = e.base.getType();
-    if (qt.getBuiltinKind() == Float32) out.add1('F');
+    if (qt.isFloat32()) out.add1('F');
 }
 
