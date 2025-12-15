@@ -26,3 +26,29 @@ fn void test3(const Outer* o) {
     i32 a = o.i.get();      // @error{pointer conversion discards const qualifier}
 }
 
+fn void test1v(volatile Outer* o) {
+    Inner* i = &o.i;    // @error{pointer conversion discards volatile qualifier}
+}
+
+fn void test2v(volatile Outer* o) {
+    volatile Inner* i = &o.i;
+    i32 b = i.get();    // @error{pointer conversion discards volatile qualifier}
+}
+
+fn void test3v(volatile Outer* o) {
+    i32 a = o.i.get();  // @error{pointer conversion discards volatile qualifier}
+}
+
+fn void test1cv(const volatile Outer* o) {
+    Inner* i = &o.i;    // @error{pointer conversion discards qualifiers}
+}
+
+fn void test2cv(const volatile Outer* o) {
+    const volatile Inner* i = &o.i;
+    i32 b = i.get();    // @error{pointer conversion discards qualifiers}
+}
+
+fn void test3cv(const volatile Outer* o) {
+    i32 a = o.i.get();  // @error{pointer conversion discards qualifiers}
+}
+

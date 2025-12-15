@@ -72,5 +72,50 @@ type Callback fn void (Foo* f);
 
 fn void test7() {
     Callback cb = Foo.next; // ok
+}
 
+fn void testv2() {
+    volatile Foo fc = Foo.B;
+    fc.str();
+    fc.next();  // @error{pointer conversion discards volatile qualifier}
+}
+
+fn void testv3() {
+    volatile Foo fc = Foo.B;
+    volatile Foo* fcp = &fc;
+    fcp.str();
+    fcp.next();  // @error{pointer conversion discards volatile qualifier}
+}
+
+fn void testv4(volatile Foo* f) {
+    Foo.next(f);   // @error{pointer conversion discards volatile qualifier}
+}
+
+type Callbackv fn void (volatile Foo* f);
+
+fn void testv7() {
+    Callbackv cb = Foo.next; // @error{invalid function conversion from 'void (test.Foo*)' to 'Callbackv'}
+}
+
+fn void testcv2() {
+    const volatile Foo fc = Foo.B;
+    fc.str();
+    fc.next();  // @error{pointer conversion discards qualifiers}
+}
+
+fn void testcv3() {
+    const volatile Foo fc = Foo.B;
+    const volatile Foo* fcp = &fc;
+    fcp.str();
+    fcp.next();  // @error{pointer conversion discards qualifiers}
+}
+
+fn void testcv4(const volatile Foo* f) {
+    Foo.next(f);   // @error{pointer conversion discards qualifiers}
+}
+
+type Callbackcv fn void (const volatile Foo* f);
+
+fn void testcv7() {
+    Callbackcv cb = Foo.next; // @error{invalid function conversion from 'void (test.Foo*)' to 'Callbackcv'}
 }

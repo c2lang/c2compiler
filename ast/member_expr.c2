@@ -38,6 +38,7 @@ type MemberExprBits struct {
     u32 is_struct_func : 1; // not only a function with prefix, but also used that way
     u32 is_static_sf : 1;
     u32 is_const_base : 1;
+    u32 is_volatile_base : 1;
     u32 conversion : 2; // MemberConversion
     u32 is_bitfield : 1;
 }
@@ -222,6 +223,14 @@ fn bool MemberExpr.isConstBase(const MemberExpr* e) {
     return e.base.base.memberExprBits.is_const_base;
 }
 
+public fn void MemberExpr.setVolatileBase(MemberExpr* e, bool b) {
+    e.base.base.memberExprBits.is_volatile_base = b;
+}
+
+fn bool MemberExpr.isVolatileBase(const MemberExpr* e) {
+    return e.base.base.memberExprBits.is_volatile_base;
+}
+
 // returns the final decl after a.b.c.d <-  returns c. Must be fully analysed
 // does not work when first expr is an expr!
 public fn Decl* MemberExpr.getPrevLastDecl(const MemberExpr* e) {
@@ -275,6 +284,7 @@ public fn QualType MemberExpr.getBaseType(const MemberExpr* m) {
         qt = m.refs[m.hasExpr() + numRefs-2].decl.getType();
     }
     if (m.isConstBase()) qt.setConst();
+    if (m.isVolatileBase()) qt.setVolatile();
     return qt;
 }
 
@@ -295,6 +305,7 @@ fn void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent
     if (e.isTypeFunc()) out.add(" TF");
     if (e.isStaticTypeFunc()) out.add(" STF");
     if (e.isConstBase()) out.add(" const-base");
+    if (e.isVolatileBase()) out.add(" volatile-base");
     switch (e.getConversion()) {
     case None:
         break;

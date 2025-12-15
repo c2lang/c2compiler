@@ -3,25 +3,116 @@ module test;
 
 type Foo enum u8 { A, B, C }
 
-fn void Foo.func1(Foo f) { }
+fn i32 Foo.func1(Foo f) { return 1; }
+fn i32 Foo.func2(const Foo f) { return 2; }
+fn i32 Foo.func3(volatile Foo f) { return 3; }
+fn i32 Foo.func4(const volatile Foo f) { return 4; }
+fn i32 Foo.func5(Foo* f) { return 5; }
+fn i32 Foo.func6(const Foo* f) { return 6; }
+fn i32 Foo.func7(volatile Foo* f) { return 7; }
+fn i32 Foo.func8(const volatile Foo* f) { return 8; }
 
-fn void Foo.func2(const Foo f) { }
-
-fn void Foo.func3(Foo* f) { }
-
-fn void Foo.func4(const Foo* f) { }
-
-fn void test1(const Foo f) {
-    f.func1();
-    f.func2();
-    f.func4();
-    f.func3();  // @error{pointer conversion discards const qualifier}
+fn void test1(Foo f) {
+    i32[] a = {
+        f.func1(),
+        f.func2(),
+        f.func3(),
+        f.func4(),
+        f.func5(),
+        f.func6(),
+        f.func7(),
+        f.func8(),
+    }
 }
 
-fn void test2(const Foo* f) {
-    f.func1();
-    f.func2();
-    f.func4();
-    f.func3();  // @error{pointer conversion discards const qualifier}
+fn void test2(const Foo f) {
+    i32[] a = {
+        f.func1(),
+        f.func2(),
+        f.func3(),
+        f.func4(),
+        f.func5(),  // @error{pointer conversion discards const qualifier}
+        f.func6(),
+        f.func7(),  // @error{pointer conversion discards const qualifier}
+        f.func8(),
+    }
+}
+
+fn void test3(volatile Foo f) {
+    i32[] a = {
+        f.func1(),
+        f.func2(),
+        f.func3(),
+        f.func4(),
+        f.func5(),  // @error{pointer conversion discards volatile qualifier}
+        f.func6(),  // @error{pointer conversion discards volatile qualifier}
+        f.func7(),
+        f.func8(),
+    }
+}
+
+fn void test4(const volatile Foo f) {
+    i32[] a = {
+        f.func1(),
+        f.func2(),
+        f.func3(),
+        f.func4(),
+        f.func5(),  // @error{pointer conversion discards qualifiers}
+        f.func6(),  // @error{pointer conversion discards volatile qualifier}
+        f.func7(),  // @error{pointer conversion discards const qualifier}
+        f.func8(),
+    }
+}
+
+fn void test5(Foo* f) {
+    i32[] a = {
+        f.func1(),
+        f.func2(),
+        f.func3(),
+        f.func4(),
+        f.func5(),
+        f.func6(),
+        f.func7(),
+        f.func8(),
+    }
+}
+
+fn void test6(const Foo* f) {
+    i32[] a = {
+        f.func1(),
+        f.func2(),
+        f.func3(),
+        f.func4(),
+        f.func5(),  // @error{pointer conversion discards const qualifier}
+        f.func6(),
+        f.func7(),  // @error{pointer conversion discards const qualifier}
+        f.func8(),
+    }
+}
+
+fn void test7(volatile Foo* f) {
+    i32[] a = {
+        f.func1(),
+        f.func2(),
+        f.func3(),
+        f.func4(),
+        f.func5(),  // @error{pointer conversion discards volatile qualifier}
+        f.func6(),  // @error{pointer conversion discards volatile qualifier}
+        f.func7(),
+        f.func8(),
+    }
+}
+
+fn void test8(const volatile Foo* f) {
+    i32[] a = {
+        f.func1(),
+        f.func2(),
+        f.func3(),
+        f.func4(),
+        f.func5(),  // @error{pointer conversion discards qualifiers}
+        f.func6(),  // @error{pointer conversion discards volatile qualifier}
+        f.func7(),  // @error{pointer conversion discards const qualifier}
+        f.func8(),
+    }
 }
 

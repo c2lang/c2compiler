@@ -415,9 +415,19 @@ fn bool Checker.checkPointers(Checker* c, const Type* lcanon, const Type* rcanon
     if (rquals == 0) return true;
 
     u32 lquals = linner.getQuals();
-    if (((~lquals) & rquals) & 0x3) {
-        c.diags.error(c.loc, "pointer conversion discards const qualifier");
-        return false;
+    u32 discarded = (rquals & ~lquals) & (QualType_Const | QualType_Volatile);
+    if (discarded) {
+        switch (discarded) {
+        case QualType_Const:
+            c.diags.error(c.loc, "pointer conversion discards const qualifier");
+            return false;
+        case QualType_Volatile:
+            c.diags.error(c.loc, "pointer conversion discards volatile qualifier");
+            return false;
+        default:
+            c.diags.error(c.loc, "pointer conversion discards qualifiers");
+            return false;
+        }
     }
     return true;
 }
