@@ -434,9 +434,10 @@ fn bool Analyser.checkPrintfArgs(Analyser* ma, Expr** format_ptr, u32 num_args, 
     if (string.strcmp(format_text, new_format_text)) {
         u32 len = out.size();
         Expr* new_format = ma.builder.actOnStringLiteral(0, len, ma.astPool.add(new_format_text, len, true), len);
-        QualType qt = getPointerFromArray(ma.builder, new_format.getType());
-        ma.builder.insertImplicitCast(ArrayToPointerDecay, &new_format, qt);
-        *format_ptr = ma.builder.actOnAlternate(*format_ptr, new_format);
+        ImplicitCastExpr* ic = (ImplicitCastExpr*)*format_ptr;
+        Expr* orig = ic.getInner();
+        ic.setInner(new_format);
+        *format_ptr = ma.builder.actOnAlternate(orig, *format_ptr);
     }
     out.free();
     return true;

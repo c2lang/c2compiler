@@ -92,6 +92,10 @@ public fn bool ImplicitCastExpr.isArrayToPointerDecay(const ImplicitCastExpr* e)
 
 public fn Expr* ImplicitCastExpr.getInner(const ImplicitCastExpr* e) { return e.inner; }
 
+public fn void ImplicitCastExpr.setInner(ImplicitCastExpr* e, Expr* inner) {
+    e.inner = inner;
+}
+
 fn SrcLoc ImplicitCastExpr.getStartLoc(const ImplicitCastExpr* e) {
     return e.getInner().getStartLoc();
 }
