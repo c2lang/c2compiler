@@ -675,7 +675,8 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     if (opcode == BinaryOpcode.Assign) {
         if (!ma.analyseInitExpr(b.getRHS2(), ltype, e.getLoc(), false, false))
             return QualType_Invalid;
-        rtype = b.getRHS().getType();
+        //rtype = b.getRHS().getType();
+        return ltype;
     } else {
         rtype = ma.analyseExpr(b.getRHS2(), true, RHS);
     }

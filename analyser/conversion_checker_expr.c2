@@ -216,7 +216,13 @@ fn ExprWidth getTypeWidth(QualType qt) {
     qt = qt.getCanonicalType();
     if (qt.isEnum()) {
         EnumType* et = qt.getEnumType();
-        qt = et.getImplType();
+        //qt = et.getImplType();
+        EnumTypeDecl* etd = et.getDecl();
+        u32 num = etd.getNumConstants();
+        EnumConstantDecl** constants = etd.getConstants();
+        Value vmax = constants[num - 1].getValue();
+        ExprWidth result = { .width = vmax.getWidth() }
+        return result;
     }
     if (qt.isBuiltin()) {
         const BuiltinType* bi = qt.getBuiltin();

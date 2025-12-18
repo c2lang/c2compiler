@@ -352,6 +352,87 @@ public fn bool Expr.isBitfield(const Expr* e) {
     return m.isBitfield();
 }
 
+public fn bool Expr.isPositiveOrUB(const Expr* e) {
+    switch (e.getKind()) {
+    case IntegerLiteral:
+    case FloatLiteral:
+    case BooleanLiteral:
+    case CharLiteral:
+        return true;
+    case StringLiteral:
+    case Nil:
+    case Identifier:
+    case Type:
+    case Call:
+    case InitList:
+    case FieldDesignatedInit:
+    case ArrayDesignatedInit:
+        break;
+    case BinaryOperator:
+        BinaryOperator* b = (BinaryOperator*)e;
+        switch (b.getOpcode()) {
+        case Multiply:
+        case Divide:
+        case Remainder:
+        case Add:
+        case Subtract:
+            return b.getLHS().isPositiveOrUB() && b.getRHS().isPositiveOrUB();
+        case ShiftLeft:
+        case ShiftRight:
+        case LessThan:
+        case GreaterThan:
+        case LessEqual:
+        case GreaterEqual:
+        case Equal:
+        case NotEqual:
+        case And:
+        case Xor:
+        case Or:
+        case LAnd:
+        case LOr:
+            return true;
+        default:
+            break;
+        }
+        break;
+    case UnaryOperator:
+        UnaryOperator* u = (UnaryOperator*)e;
+        switch (u.getOpcode()) {
+        case Plus:
+            return u.getInner().isPositiveOrUB();
+        case Minus:
+            return false;
+        case Not:
+        case LNot:
+            return true;
+        default:
+            break;
+        }
+        break;
+    case ConditionalOperator:
+        ConditionalOperator* c = (ConditionalOperator*)e;
+        return c.getLHS().isPositiveOrUB() && c.getRHS().isPositiveOrUB();
+    case Builtin:
+        return true;
+    case ArraySubscript:
+    case Member:
+        break;
+    case Paren:
+        return ((ParenExpr*)e).getInner().isPositiveOrUB();
+    case BitOffset:
+        break;
+    case ExplicitCast:
+    case ImplicitCast:
+        return ((ImplicitCastExpr*)e).getInner().isPositiveOrUB();
+    case Range:
+    case NamedArgument:
+        break;
+    case Alternate:
+        return ((AlternateExpr*)e).getOriginal().isPositiveOrUB();
+    }
+    return false;
+}
+
 public fn SrcLoc Expr.getLoc(const Expr* e) { return e.base.loc; }
 
 public fn SrcLoc Expr.getStartLoc(const Expr* e) {

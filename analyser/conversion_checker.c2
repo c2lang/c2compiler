@@ -342,13 +342,15 @@ fn bool Checker.checkIntConversion(Checker* c, const BuiltinType* bi) {
     ExprWidth w = getExprWidth(e);
     //stdio.printf("INT CONVERSION signed|width: %d %d -> %d %d\n", w.is_signed, w.width, bi.isSigned(), w.width);
 
+    if (w.width > wl) return false;
+
     if (w.is_signed != bi.isSigned()) {
-        // dont allow signed -> unsigned: fully defined but requires explicit cast in c2
-        if (w.is_signed) return false;
         // allow unsigned -> signed only if value is preserved (eg. u16 fits in i32)
-        return w.width < wl;
+        if (!w.is_signed) return w.width < wl;
+        // only allow signed -> unsigned if positive: fully defined but requires explicit cast in c2
+        if (!e.isPositiveOrUB()) return false;
     }
-    return w.width <= wl;
+    return true;
 }
 
 // Note: try to fix array type that has been decayed to a pointer
