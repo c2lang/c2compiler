@@ -16,7 +16,7 @@
 module module_analyser;
 
 import ast local;
-import printf_utils;
+import printf_utils local;
 import scope;
 import src_loc local;
 import string_buffer;
@@ -164,8 +164,8 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     }
 
     //stdio.printf("CALL (%d | %d)\n", func_num_args, call_num_args);
-    bool has_printf_format = false;
-    u32 format_arg_idx = 0;
+    u8 format_arg_idx = 0;
+    FormatAttr format_attr = fd.getFormatAttr(&format_arg_idx);
     while (1) {
         //stdio.printf("ARG [%d | %d]\n", func_arg_index, call_arg_index);
         if (func_arg_index >= func_num_args) break;
@@ -212,11 +212,6 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         if (!ma.analyseInitExpr(&call_args[call_arg_index], d.getType(), arg.getLoc(), false, false))
             return QualType_Invalid;
 
-        if (vd.hasPrintfFormat()) {
-            has_printf_format = true;
-            format_arg_idx = call_arg_index;
-        }
-
         func_arg_index++;
         call_arg_index++;
     }
@@ -254,10 +249,11 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             call_arg_index++;
         }
 
-        if (has_printf_format) {
+        if (format_attr) {
+            format_arg_idx -= num_auto_args + isTypeFuncCall;
             u32 num_args = call_num_args - format_arg_idx - 1;
-            call.setPrintfFormat(format_arg_idx);
-            if (!ma.checkPrintfArgs(&call_args[format_arg_idx], num_args, &call_args[format_arg_idx+1]))
+            call.setFormatAttr(format_attr);
+            if (!ma.checkFormatArgs(&call_args[format_arg_idx], num_args, &call_args[format_arg_idx+1], format_attr))
                 return QualType_Invalid;
         }
     }
@@ -273,58 +269,54 @@ type FormatAnalyser struct {
     SrcLoc loc;
     u32 last_offset;
     string_buffer.Buf* out;
+    FormatAttr format_attr;
 }
 
-const bool[] Format_needs_l_prefix = {
-    [BuiltinKind.Char] = false,
-    [BuiltinKind.Int8] = false,
-    [BuiltinKind.Int16] = false,
-    [BuiltinKind.Int32] = false,
-    [BuiltinKind.Int64] = true,
-    [BuiltinKind.UInt8] = false,
-    [BuiltinKind.UInt16] = false,
-    [BuiltinKind.UInt32] = false,
-    [BuiltinKind.UInt64] = true,
-    [BuiltinKind.Float32] = false,
-    [BuiltinKind.Float64] = true,
-    [BuiltinKind.ISize] = true,
-    [BuiltinKind.USize] = true,
-    [BuiltinKind.Bool] = false,
-}
+fn bool on_printf_specifier(void* context, u32 offset, PrintfSpecifier specifier, PrintfConversion* conv) {
+    if (specifier == Percent) return true;
 
-const bool[] Format_needs_u_prefix = {
-    [BuiltinKind.Char] = false,
-    [BuiltinKind.Int8] = false,
-    [BuiltinKind.Int16] = false,
-    [BuiltinKind.Int32] = false,
-    [BuiltinKind.Int64] = false,
-    [BuiltinKind.UInt8] = false,
-    [BuiltinKind.UInt16] = false,
-    [BuiltinKind.UInt32] = true,
-    [BuiltinKind.UInt64] = true,
-    [BuiltinKind.Float32] = false,
-    [BuiltinKind.Float64] = false,
-    [BuiltinKind.ISize] = false,
-    [BuiltinKind.USize] = true,
-    [BuiltinKind.Bool] = false,
-}
-
-fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32 offset, i32 stars, char c) {
     FormatAnalyser* fa = context;
     Analyser* ma = fa.ma;
     Expr** args = fa.args;
 
+    offset += conv.len;
     fa.out.add2(fa.format + fa.last_offset, offset - fa.last_offset);
 
-    if (c == '\0') {
-        ma.error(fa.loc + offset, "missing conversion specifier at end of format string");
+    char c = conv.c;
+    if (specifier == Invalid) {
+        SrcLoc loc = fa.loc + offset;  // approximate location of offending letter
+        switch (c) {
+        case '\0':
+            ma.error(loc, "missing conversion specifier at end of format string");
+            break;
+        case '%':
+            ma.error(loc, "invalid '%%%%' conversion specifier");
+            break;
+        case 'h':
+        case 'j':
+        case 'l':
+        case 't':
+        case 'w':
+        case 'z':
+        case 'L':
+            ma.error(loc, "format length modifier '%c' should be omitted", c);
+            break;
+        case 'i':
+        case 'u':
+            ma.error(loc, "invalid format specifier '%%%c', should use '%%d'", c);
+            break;
+        default:
+            ma.error(loc, "invalid format specifier '%%%c'", c);
+            break;
+        }
         return false;
     }
+    u32 stars = conv.has_width_star + conv.has_prec_star;
     if (fa.idx + stars >= fa.num_args) {
         ma.error(fa.loc + offset, "too many format specifiers or not enough arguments");
         return false;
     }
-    for (i32 i = 0; i < stars; i++) {
+    for (u32 i = 0; i < stars; i++) {
         Expr* arg = args[fa.idx];
         QualType qt = arg.getType();
         qt = qt.getCanonicalType();
@@ -339,7 +331,7 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
     qt = qt.getCanonicalType();
 
     switch (specifier) {
-    case Other:
+    case Invalid:
         break;
     case String:
         if (!qt.isCharPointer()) {
@@ -361,11 +353,11 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
             ma.error(arg.getStartLoc(), "format '%%%c' expects an integer argument", c);
             break;
         }
-        BuiltinKind kind = bi.getKind();
         // TODO add ll prefix on LLP targets (64-bit long long and pointers, but 32-bit long)
-        if (Format_needs_l_prefix[kind]) fa.out.add1('l');
-        if (c == 'd' && Format_needs_u_prefix[kind]) c = 'u';
-        // Assume all supported formats are implemented in the target libc
+        u32 width = bi.getWidth();
+        if (width > 32) fa.out.add1('l');
+        if (c == 'd' && width >= 32 && bi.isUnsigned()) c = 'u';
+        // Assume target libc supports %b
         break;
     case FloatingPoint:
         BuiltinType* bi = qt.getBuiltinTypeOrNil();
@@ -378,26 +370,24 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
             ma.error(arg.getStartLoc(), "format '%%p' expects a pointer argument");
         }
         break;
-    case Invalid:
-        switch (c) {
-        case 'h':
-        case 'j':
-        case 'l':
-        case 't':
-        case 'w':
-        case 'z':
-        case 'L':
-            ma.error(fa.loc + offset, "format length modifier '%c' should be omitted", c);
-            break;
-        case 'i':
-        case 'u':
-            ma.error(fa.loc + offset, "invalid format specifier '%%%c', should use '%%d'", c);
-            break;
-        default:
-            ma.error(fa.loc + offset, "invalid format specifier '%%%c'", c);
-            break;
+    case Offset:
+        if (qt.isPointer()) {
+            const PointerType* p = qt.getPointerType();
+            QualType t = p.getInner();
+            BuiltinType* bi = t.getBuiltinTypeOrNil();
+            if (bi && bi.isInteger()) {
+                u32 width = bi.getWidth();
+                // TODO add ll prefix on LLP targets (64-bit long long and pointers, but 32-bit long)
+                if (width < 16) fa.out.add1('h');
+                if (width < 32) fa.out.add1('h');
+                if (width > 32) fa.out.add1('l');
+                break;
+            }
         }
-        return false;
+        ma.error(arg.getStartLoc(), "format '%%n' expects an integer pointer argument");
+        break;
+    case Percent:
+        break;
     }
     fa.out.add1(c);
 
@@ -406,22 +396,194 @@ fn bool on_format_specifier(void* context, printf_utils.Specifier specifier, u32
     return true;
 }
 
-fn bool Analyser.checkPrintfArgs(Analyser* ma, Expr** format_ptr, u32 num_args, Expr** args) {
+fn bool on_scanf_specifier(void* context, u32 offset, ScanfSpecifier specifier, ScanfConversion* conv) {
+    FormatAnalyser* fa = context;
+    Analyser* ma = fa.ma;
+    Expr** args = fa.args;
+
+    offset += conv.len;
+    fa.out.add2(fa.format + fa.last_offset, offset - fa.last_offset);
+
+    char c = conv.c;
+    if (specifier == Invalid) {
+        SrcLoc loc = fa.loc + offset;  // approximate location of offending letter
+        switch (c) {
+        case '\0':
+            ma.error(loc, "missing conversion specifier at end of format string");
+            break;
+        case '%':
+            ma.error(loc, "invalid '%%%%' conversion specifier");
+            break;
+        case 'h':
+        case 'j':
+        case 'l':
+        case 't':
+        case 'w':
+        case 'z':
+        case 'L':
+            ma.error(loc, "conversion length modifier '%c' should be omitted", c);
+            break;
+        case 'i':
+        case 'u':
+            ma.error(loc, "invalid conversion specifier '%%%c', should use '%%d'", c);
+            break;
+        default:
+            ma.error(loc, "invalid conversion specifier '%%%c'", c);
+            break;
+        }
+        return false;
+    }
+    if (!conv.has_star) {
+        if (fa.idx >= fa.num_args) {
+            ma.error(fa.loc + offset, "too many conversion specifiers or not enough arguments");
+            return false;
+        }
+        Expr* arg = args[fa.idx++];
+        QualType qt = arg.getType();
+        qt = qt.getCanonicalType();
+        QualType tt = QualType_Invalid;
+        BuiltinType* bi = nil;
+        if (qt.isPointer()) {
+            const PointerType* p = qt.getPointerType();
+            tt = p.getInner();
+            tt = tt.getImplType();
+            bi = tt.getBuiltinTypeOrNil();
+        }
+        switch (specifier) {
+        case Invalid:
+            break;
+        case String:
+        case Scanset:
+            if (!qt.isCharPointer()) {
+                ma.error(arg.getStartLoc(), "conversion '%%s' expects a string argument");
+            }
+            // TODO: check array length and specify it if missing
+            break;
+        case Char:
+            if (!bi || !tt.isCharCompatible()) {
+                ma.error(arg.getStartLoc(), "conversion '%%c' expects a character pointer argument");
+            }
+            // TODO: check array length if field width is present
+            break;
+        case Integer:
+        case Offset:
+            if (!bi || !bi.isIntegerOrBool()) {
+                ma.error(arg.getStartLoc(), "conversion '%%%c' expects an integer pointer argument", c);
+                break;
+            }
+            u32 width = bi.getWidth();
+            // TODO add ll prefix on LLP targets (64-bit long long and pointers, but 32-bit long)
+            if (width < 16) fa.out.add1('h');
+            if (width < 32) fa.out.add1('h');
+            if (width > 32) fa.out.add1('l');
+            if (c == 'd' && bi.isUnsigned()) c = 'u';
+            // Assuming target libc supports %b
+            break;
+        case FloatingPoint:
+            if (!bi || !bi.isFloatingPoint()) {
+                ma.error(arg.getStartLoc(), "conversion '%%%c' expects a floating-point pointer argument", c);
+            }
+            if (bi.getWidth() > 32) fa.out.add1('l');
+            break;
+        case Pointer:
+            if (!bi || (!tt.isPointer() && !tt.isFunction())) {
+                ma.error(arg.getStartLoc(), "conversion '%%p' expects a pointer to a pointer argument");
+            }
+            break;
+        case Percent:
+            break;
+        }
+    }
+    fa.out.add1(c);
+    if (conv.len2) fa.out.add2(fa.format + offset + 1, conv.len2);
+    fa.last_offset = offset + 1 + conv.len2;
+    return true;
+}
+
+fn const char* get_format(Expr* format, SrcLoc* format_loc) {
+    // if format is StringLiteral or vardecl of type char[], it will wrapped in ArrayToPointerDecay
+    // otherwise it's a VarDecl of type (const) char* we cannot check and report this as an error
+
+    if (!format.isImplicitCast()) return nil;
+    ImplicitCastExpr* ic = (ImplicitCastExpr*)format;
+    if (!ic.isArrayToPointerDecay()) return nil;
+    format = ic.getInner();
+    *format_loc = format.getLoc();
+
+    for (;;) {
+        switch (format.getKind()) {
+        case StringLiteral:
+            // set location to first character of string literal
+            // this works for simple strings only: multi-strings, raw strings,
+            // strings with escape sequences may show an incorrect position for
+            // format specifier errors.
+            *format_loc = format.getLoc() + 1;
+            StringLiteral* s = (StringLiteral*)format;
+            return s.getText();
+        case Identifier:
+            QualType qt = format.getType();
+            assert(qt.isArray());
+            ArrayType* at = qt.getArrayType();
+            qt = at.getElemType();
+            if (!qt.isConst()) return nil;
+
+            IdentifierExpr* id = (IdentifierExpr*)format;
+            Decl* decl = id.getDecl();
+            assert(decl.isVariable());
+            VarDecl* vd = (VarDecl*)decl;
+            format = vd.getInit();
+            assert(format);
+            continue;
+        case Member:
+            QualType qt = format.getType();
+            assert(qt.isArray());
+            ArrayType* at = qt.getArrayType();
+            qt = at.getElemType();
+            if (!qt.isConst()) return nil;
+
+            MemberExpr* m = (MemberExpr*)format;
+            Decl* decl = m.getFullDecl();
+            assert (decl.isVariable());
+            VarDecl* vd = (VarDecl*)decl;
+            format = vd.getInit();
+            assert(format);
+            continue;
+        default:
+            assert(0);
+            return nil;
+        }
+    }
+}
+
+fn bool Analyser.checkFormatArgs(Analyser* ma, Expr** format_ptr, u32 num_args, Expr** args, FormatAttr format_attr) {
     Expr* format = *format_ptr;
     SrcLoc format_loc = format.getLoc();
-    const char* format_text = printf_utils.get_format(format, &format_loc);
+    const char* format_text = get_format(format, &format_loc);
     if (!format_text) {
         ma.error(format_loc, "format argument is not a constant string");
         return false;
     }
 
     string_buffer.Buf* out = string_buffer.create(256, false, 0);
-    FormatAnalyser fa = { ma, format_text, args, num_args, 0, format_loc, 0, out }
+    FormatAnalyser fa = { ma, format_text, args, num_args, 0, format_loc, 0, out, format_attr }
 
-    if (!printf_utils.parseFormat(format_text, on_format_specifier, &fa)) {
-        // error already reported
-        out.free();
-        return false;
+    switch (format_attr) {
+    case None:
+        break; // should not happen;
+    case Printf:
+        if (!parsePrintfFormat(format_text, on_printf_specifier, &fa)) {
+            // error already reported
+            out.free();
+            return false;
+        }
+        break;
+    case Scanf:
+        if (!parseScanfFormat(format_text, on_scanf_specifier, &fa)) {
+            // error already reported
+            out.free();
+            return false;
+        }
+        break;
     }
     out.add(format_text + fa.last_offset);
 

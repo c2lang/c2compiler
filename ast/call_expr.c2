@@ -25,7 +25,7 @@ type CallExprBits struct {
     u32 calls_type_func : 1;
     u32 calls_static_sf : 1;
     u32 is_template_call : 1;
-    u32 printf_format : 4;  // 1-based, 0 means no printf-format
+    u32 format_attr : 2;
     u32 has_auto_args : 1;   // if c-generator needs to insert extra arguments (file, line)
     u32 is_noreturn : 1;
     u32 num_args : 8;
@@ -155,17 +155,12 @@ public fn bool CallExpr.isNoreturn(const CallExpr* e) {
     return e.base.base.callExprBits.is_noreturn;
 }
 
-// note: format_idx is 0-based
-public fn void CallExpr.setPrintfFormat(CallExpr* e, u32 format_idx) {
-    e.base.base.callExprBits.printf_format = format_idx + 1;
+public fn void CallExpr.setFormatAttr(CallExpr* e, FormatAttr kind) {
+    e.base.base.callExprBits.format_attr = kind;
 }
 
-fn bool CallExpr.isPrintfCall(const CallExpr* e) {
-    return e.base.base.callExprBits.printf_format != 0;
-}
-
-fn u32 CallExpr.getPrintfFormat(const CallExpr* e) {
-    return e.base.base.callExprBits.printf_format - 1;
+fn FormatAttr CallExpr.getFormatAttr(const CallExpr* e) {
+    return (FormatAttr)e.base.base.callExprBits.format_attr;
 }
 
 public fn void CallExpr.setHasAutoArgs(CallExpr* e) {
@@ -211,8 +206,10 @@ fn void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) {
     if (e.base.base.callExprBits.calls_type_func) out.add(" TF");
     if (e.base.base.callExprBits.calls_static_sf) out.add(" STF");
     if (e.base.base.callExprBits.is_noreturn) out.add(" noreturn");
-    if (e.isPrintfCall()) {
-        out.print(" printf=%d", e.getPrintfFormat());
+    switch (e.getFormatAttr()) {
+    case None: break;
+    case Printf: out.print(" printf"); break;
+    case Scanf: out.print(" scanf"); break;
     }
     if (e.hasAutoArgs()) out.add(" auto-args");
     out.newline();

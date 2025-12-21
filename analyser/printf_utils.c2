@@ -15,80 +15,36 @@
 
 module printf_utils;
 
-import ast local;
-import ctype;
-import src_loc local;
+import ctype local;
 
-public fn const char* get_format(Expr* format, SrcLoc* format_loc) {
-    // if format is StringLiteral or vardecl of type char[], it will wrapped in ArrayToPointerDecay
-    // otherwise it's a VarDecl of type (const) char* we cannot check and report this as an error
-
-    if (!format.isImplicitCast()) return nil;
-    ImplicitCastExpr* ic = (ImplicitCastExpr*)format;
-    if (!ic.isArrayToPointerDecay()) return nil;
-    format = ic.getInner();
-    *format_loc = format.getLoc();
-
-    for (;;) {
-        switch (format.getKind()) {
-        case StringLiteral:
-            // set location to first character of string literal
-            // this works for simple strings only: multi-strings, raw strings,
-            // strings with escape sequences may show an incorrect position for
-            // format specifier errors.
-            *format_loc = format.getLoc() + 1;
-            StringLiteral* s = (StringLiteral*)format;
-            return s.getText();
-        case Identifier:
-            QualType qt = format.getType();
-            assert(qt.isArray());
-            ArrayType* at = qt.getArrayType();
-            qt = at.getElemType();
-            if (!qt.isConst()) return nil;
-
-            IdentifierExpr* id = (IdentifierExpr*)format;
-            Decl* decl = id.getDecl();
-            assert(decl.isVariable());
-            VarDecl* vd = (VarDecl*)decl;
-            format = vd.getInit();
-            assert(format);
-            continue;
-        case Member:
-            QualType qt = format.getType();
-            assert(qt.isArray());
-            ArrayType* at = qt.getArrayType();
-            qt = at.getElemType();
-            if (!qt.isConst()) return nil;
-
-            MemberExpr* m = (MemberExpr*)format;
-            Decl* decl = m.getFullDecl();
-            assert (decl.isVariable());
-            VarDecl* vd = (VarDecl*)decl;
-            format = vd.getInit();
-            assert(format);
-            continue;
-        default:
-            assert(0);
-            return nil;
-        }
-    }
-}
-
-public type Specifier enum u8 {
-    Other,          // %% or unknown
+public type PrintfSpecifier enum u8 {
+    Invalid,        // unknown or length prefix
     String,         // %s, %-s, %4s
     Char,           // %c
     Integer,        // %i, %-i, %-8i, %08i, %x, %o
     FloatingPoint,  // %f
     Pointer,        // %p
-    Invalid,        // other
+    Offset,         // %n
+    Percent,        // %%
+}
+
+public type PrintfConversion struct {
+    char c;
+    u8 nflags;
+    bool has_width : 1;
+    bool has_width_star : 1;
+    bool has_prec : 1;
+    bool has_prec_star : 1;
+    u32 len;
+    i32 width;
+    i32 prec;
 }
 
 // cp points after first %, len is # of characters between % and conversion specifier (so '%d' -> len 0)
-fn Specifier getSpecifier(const char* format, u32* len, i32 *pstars, char* c) {
+fn PrintfSpecifier getPrintfSpecifier(const char* format, PrintfConversion* conv) {
     const char* cp = format;
-    Specifier spec = Specifier.Invalid;
-    i32 stars = 0;
+
+    *conv = { .width = -1, .prec = -1 }
 
     for (;;) {
         /* skip optional flags */
@@ -99,39 +55,46 @@ fn Specifier getSpecifier(const char* format, u32* len, i32 *pstars, char* c) {
         case '#':
         case '\'':  // non-standard extension
         case '0':
+            conv.nflags++;
             cp++;
             continue;
         }
         break;
     }
     if (*cp == '*') {
-        stars++;
+        conv.has_width = true;
+        conv.has_width_star = true;
         cp++;
-    } else {
-        while (ctype.isdigit(*cp)) {
-            cp++;
+    } else
+    if (isdigit(*cp)) {
+        conv.has_width = true;
+        conv.width = *cp++ - '0';
+        while (isdigit(*cp)) {
+            conv.width = conv.width * 10 + *cp++ - '0';
         }
     }
     if (*cp == '.') {
+        conv.has_prec = true;
         cp++;
         if (*cp == '*') {
-            stars++;
+            conv.has_prec_star = true;
             cp++;
-        } else {
-            while (ctype.isdigit(*cp)) {
-                cp++;
+        } else
+        if (isdigit(*cp)) {
+            conv.prec = *cp++ - '0';
+            while (isdigit(*cp)) {
+                conv.prec = conv.prec * 10 + *cp++ - '0';
             }
         }
     }
-    switch (*c = *cp) {
+    conv.len = (u32)(cp - format);
+    switch (conv.c = *cp) {
     case '%':
         // only if it is first char
-        if (cp == format)
-            spec = Specifier.Other;
-        break;
+        if (cp == format) return Percent;
+        return Invalid;
     case 'c':
-        spec = Specifier.Char;
-        break;
+        return Char;
     case 'a':
     case 'e':
     case 'f':
@@ -140,45 +103,127 @@ fn Specifier getSpecifier(const char* format, u32* len, i32 *pstars, char* c) {
     case 'E':
     case 'F':
     case 'G':
-        spec = Specifier.FloatingPoint;
-        break;
+        return FloatingPoint;
     case 'p':
-        spec = Specifier.Pointer;
-        break;
+        return Pointer;
     case 's':
-        spec = Specifier.String;
-        break;
+        return String;
     case 'b':
     case 'B':
     case 'd':
     case 'o':
     case 'x':
     case 'X':
-        spec = Specifier.Integer;
-        break;
+        return Integer;
+    case 'n':
+        return Offset;
     }
-    *pstars = stars;
-    *len = (u32)(cp - format);
-    return spec;
+    return Invalid;
 }
 
-// return whether parseFormat should continue.
-public type FormatHandler fn bool (void* arg, Specifier specifier, u32 offset, i32 stars, char letter);
+public type PrintfFormatHandler fn bool (void* arg, u32 offset, PrintfSpecifier specifier, PrintfConversion* conv);
 
-public fn bool parseFormat(const char* format, FormatHandler handler, void* arg) {
+public fn bool parsePrintfFormat(const char* format, PrintfFormatHandler handler, void* arg) {
     const char* cp = format;
     while (*cp) {
         if (*cp++ == '%') {
-            u32 len = 0;
-            i32 stars = 0;
-            char c = 0;
-            Specifier s = getSpecifier(cp, &len, &stars, &c);
-            cp += len;
-            if (s != Specifier.Other) {
-                if (!handler(arg, s, (u32)(cp - format), stars, c))
-                    return false;
-            }
+            u32 offset = (u32)(cp - format);
+            PrintfConversion conv;
+            PrintfSpecifier s = getPrintfSpecifier(cp, &conv);
+            cp += conv.len;
             if (*cp) cp++;
+            if (!handler(arg, offset, s, &conv)) return false;
+        }
+    }
+    return true;
+}
+
+public type ScanfSpecifier enum u8 {
+    Invalid,        // unknown or length prefix
+    String,         // %s, %-s, %4s
+    Char,           // %c
+    Integer,        // %i, %-i, %-8i, %08i, %x, %o
+    FloatingPoint,  // %f
+    Pointer,        // %p
+    Scanset,        // %[   only scanf
+    Offset,         // %n
+    Percent,        // %%
+}
+
+public type ScanfConversion struct {
+    char c;
+    bool has_star;
+    bool has_width;
+    u32 len;        // characters between % and the conversion specifier
+    i32 width;      // specified width
+    u32 len2;       // extra characters for Scanset conversion
+}
+
+public type ScanfFormatHandler fn bool (void* arg, u32 offset, ScanfSpecifier specifier, ScanfConversion* conv);
+
+// format points after first %
+fn ScanfSpecifier getScanfSpecifier(const char* format, ScanfConversion* conv) {
+    const char* cp = format;
+    *conv = { .width = -1 }
+
+    if (*cp == '*') {
+        conv.has_star = true;
+        cp++;
+    }
+    if (isdigit(*cp)) {
+        conv.has_width = true;
+        conv.width = *cp++ - '0';
+        while (isdigit(*cp)) {
+            conv.width = conv.width * 10 + *cp++ - '0';
+        }
+    }
+    conv.len = (u32)(cp - format);
+    switch (conv.c = *cp) {
+    case '%':
+        if (cp == format) return Percent;
+        return Invalid;
+    case 'b':
+    case 'd':
+    case 'i':
+    case 'o':
+    case 'u':
+    case 'x':
+        return Integer;
+    case 'a':
+    case 'e':
+    case 'f':
+    case 'g':
+        return FloatingPoint;
+    case 'c':
+        return Char;
+    case 's':
+        return String;
+    case '[':
+        u32 pos = 1;
+        if (cp[pos] == '^') pos++;
+        if (cp[pos] == '[') pos++;
+        while (cp[pos] && cp[pos++] != ']') continue;
+        conv.len2 = pos - 1;
+        return Scanset;
+    case 'p':
+        return Pointer;
+    case 'n':
+        return Offset;
+    }
+    return Invalid;
+}
+
+public fn bool parseScanfFormat(const char* format, ScanfFormatHandler handler, void* arg) {
+    const char* cp = format;
+    while (*cp) {
+        if (*cp++ == '%') {
+            u32 offset = (u32)(cp - format);
+            ScanfConversion conv;
+            ScanfSpecifier s = getScanfSpecifier(cp, &conv);
+            cp += conv.len;
+            if (*cp) cp++;
+            cp += conv.len2;
+            if (!handler(arg, offset, s, &conv)) return false;
         }
     }
     return true;

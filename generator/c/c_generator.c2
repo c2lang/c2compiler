@@ -856,9 +856,13 @@ fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer
         out.add("__attribute__((destructor)) ");
     }
 
-    u8 printf_arg = fd.getAttrPrintf();
-    if (printf_arg) {
-        out.print("__attribute__((__format__(printf, %d, %d))) ", printf_arg, fd.getNumParams() +1);
+    u8 format_arg;
+    if (FormatAttr format_attr = fd.getFormatAttr(&format_arg)) {
+        out.print("__attribute__((__format__(%s, %d, %d))) ",
+                  format_attr == Printf ? "printf" :
+                  format_attr == Scanf ? "scanf" :
+                  "",
+                  fd.getNumParams(), fd.getNumParams() + 1);
     }
     if (out.endsWith(' ')) {
         out.trim(1);

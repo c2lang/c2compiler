@@ -72,6 +72,7 @@ type FunctionDeclFlags struct {
     u32 attr_constructor : 1;
     u32 attr_destructor : 1;
     u32 attr_pure : 1;
+    u32 format_attr : 2; // FormatAttr
 }
 
 public type FunctionDecl struct @(opaque) {
@@ -82,7 +83,7 @@ public type FunctionDecl struct @(opaque) {
     }
     QualType rt;          // return type after analysis
     u8 num_params;
-    u8 attr_printf_arg;        // 0 means not present
+    u8 attr_format_arg;
     u16 instance_idx;     // template functions only
     u32 template_name;    // index into string pool
     SrcLoc template_loc;
@@ -118,7 +119,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     d.body = nil;
     d.rt = QualType_Invalid;
     d.num_params = (u8)num_params;
-    d.attr_printf_arg = 0;
+    d.attr_format_arg = 0;
     d.instance_idx = 0;
     d.template_name = 0;
     d.template_loc = 0;
@@ -163,7 +164,7 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     d.body = nil;
     d.rt = QualType_Invalid;
     d.num_params = (u8)num_params;
-    d.attr_printf_arg = 0;
+    d.attr_format_arg = 0;
     d.instance_idx = 0;
     d.template_name = template_name;
     d.template_loc = template_loc;
@@ -205,7 +206,7 @@ public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instant
         fd2.body = fd.body.instantiate(inst);
     fd2.rt = QualType_Invalid;
     fd2.num_params = fd.num_params;
-    fd2.attr_printf_arg = fd.attr_printf_arg;
+    fd2.attr_format_arg = fd.attr_format_arg;
     fd2.instance_idx = 0;
     fd2.template_name = 0;
     fd2.template_loc = fd.template_loc;
@@ -457,18 +458,14 @@ public fn bool FunctionDecl.hasAttrPure(const FunctionDecl* d) {
     return d.flags.attr_pure;
 }
 
-public fn void FunctionDecl.setAttrPrintf(FunctionDecl* d, u8 arg) {
-    d.attr_printf_arg = arg;
+public fn void FunctionDecl.setFormatAttr(FunctionDecl* d, FormatAttr format_attr, u8 format_arg) {
+    d.flags.format_attr = format_attr;
+    d.attr_format_arg = format_arg;
 }
 
-/*
-public fn bool FunctionDecl.hasAttrPrintf(const FunctionDecl* d) {
-    return d.attr_printf_arg != 0;
-}
-*/
-
-public fn u8 FunctionDecl.getAttrPrintf(const FunctionDecl* d) {
-    return d.attr_printf_arg;
+public fn FormatAttr FunctionDecl.getFormatAttr(const FunctionDecl* d, u8 *format_arg_ptr) {
+    *format_arg_ptr = d.attr_format_arg;
+    return (FormatAttr)d.flags.format_attr;
 }
 
 public fn const char* FunctionDecl.getDiagKind(const FunctionDecl* d) {
@@ -498,7 +495,12 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
     if (d.hasAttrNoReturn()) out.add(" noreturn");
     if (d.hasAttrInline()) out.add(" inline");
     if (d.hasAttrWeak()) out.add(" weak");
-    if (d.attr_printf_arg != 0) out.print(" printf_format=%d", d.attr_printf_arg);
+    u8 format_arg = 0;
+    switch (d.getFormatAttr(&format_arg)) {
+    case None: break;
+    case Printf: out.print(" printf_format=%d", format_arg); break;
+    case Scanf: out.print(" scanf_format=%d", format_arg); break;
+    }
     if (d.hasAttrConstructor()) out.add(" constructor");
     if (d.hasAttrDestructor()) out.add(" destructor");
     if (d.hasAttrPure()) out.add(" pure");
