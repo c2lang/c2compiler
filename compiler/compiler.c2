@@ -264,7 +264,9 @@ fn void Compiler.build(Compiler* c,
     if (opts.ubsan) c.addFeature("__UBSAN__", "1");
 
     c.addFeature("USE_NATIVE_CTYPES", "1");
-
+#ifndef BOOTSTRAP
+    c.addFeature("EXPERIMENTAL", "1");
+#endif
     c.parser = c2_parser.create(sm,
                                 diags,
                                 c.astPool,

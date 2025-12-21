@@ -527,7 +527,10 @@ public fn bool Builder.hasEmbedAttr(Builder* b) {
 fn bool Builder.actOnParamAttr(Builder* b, VarDecl* d, const Attr* a) {
     switch (a.kind) {
     case PrintfFormat:
-        d.setPrintfFormat();
+        d.setFormatAttr(Printf);
+        return true;
+    case ScanfFormat:
+        d.setFormatAttr(Scanf);
         return true;
     case AutoFile:
         if (d.hasAutoAttr()) break;

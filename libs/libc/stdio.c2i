@@ -107,9 +107,15 @@ fn c_int printf(const c_char* __format @(printf_format), ...);
 fn c_int sprintf(c_char* __s, const c_char* __format @(printf_format), ...);
 fn c_int snprintf(c_char* __s, c_size size, const c_char* __format @(printf_format), ...);
 fn c_int dprintf(c_int __fd, const c_char* __fmt @(printf_format), ...);
+#if EXPERIMENTAL
+fn c_int fscanf(FILE* stream, const c_char* format @(scanf_format), ...);
+fn c_int scanf(const c_char* format @(scanf_format), ...);
+fn c_int sscanf(const c_char* s, const c_char* format @(scanf_format), ...);
+#else
 fn c_int fscanf(FILE* __stream, const c_char* __format, ...);
 fn c_int scanf(const c_char* __format, ...);
 fn c_int sscanf(const c_char* __s, const c_char* __format, ...);
+#endif
 fn c_int fgetc(FILE* __stream);
 fn c_int getc(FILE* __stream);
 fn c_int getchar();
@@ -175,15 +181,19 @@ fn c_int ferror_unlocked(FILE* __stream);
 //fn c_int fileno_unlocked(FILE* __stream);
 
 fn c_int asprintf(c_char**, const c_char* @(printf_format), ...);
+fn c_int vasprintf(c_char**, const c_char* format, va_list ap);
 fn c_char* ctermid_r(c_char*);
 fn c_char* fgetln(FILE*, c_size*);
 fn const c_char* fmtcheck(const c_char*, const c_char*);
 fn c_int fpurge(FILE *);
-//fn c_int vasprintf(c_char**, const c_char*, va_list);
 fn FILE *zopen(const c_char*, const c_char*, c_int);
 
-fn c_int vdprintf(c_int __fd, const c_char *format, va_list ap);
-fn c_int vfprintf(FILE* stream, const c_char *format, va_list ap);
+fn c_int vdprintf(c_int __fd, const c_char* format, va_list ap);
+fn c_int vfprintf(FILE* stream, const c_char* format, va_list ap);
 fn c_int vprintf(const c_char* format, va_list ap);
 fn c_int vsprintf(c_char* str, const c_char *format, va_list ap);
 fn c_int vsnprintf(c_char* str, c_size size, const c_char *format, va_list ap);
+
+fn c_int vfscanf(FILE* stream, const c_char* format, va_list ap);
+fn c_int vscanf(const c_char* format, va_list ap);
+fn c_int vsscanf(const c_char* str, const c_char* format, va_list ap);

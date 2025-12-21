@@ -92,9 +92,6 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
             if (vd.hasAutoAttr()) {
                 ma.error(vd.getAssignLoc(), "automatic argument cannot have default value");
             }
-            if (vd.hasPrintfFormat()) {
-                ma.error(vd.getAssignLoc(), "printf_format parameter cannot have default value");
-            }
             Expr** initExpr = vd.getInit2();
             ma.analyseInitExpr(initExpr, res, vd.getAssignLoc(), false, true);
         }
@@ -117,9 +114,9 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
             }
         }
 
-        if (vd.hasPrintfFormat()) {
-            ma.checkPrintfFormat(vd, res, i, fd);
-            fd.setAttrPrintf((u8)i + 1); // change to 1-based
+        if (FormatAttr format_attr = vd.getFormatAttr()) {
+            ma.checkFormatArgument(vd, res, i, fd, format_attr);
+            fd.setFormatAttr(format_attr, (u8)i);
         }
 
         // Note: we dont check the arg name for clash here, but when checking body
@@ -287,26 +284,36 @@ fn void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope
     ma.popCheck();
 }
 
+fn void Analyser.checkFormatArgument(Analyser* ma, VarDecl* vd, QualType qt, u32 idx, FunctionDecl* fd, FormatAttr format_attr) {
+    Decl* d = (Decl*)vd;
+    const char* attr_name = "format";
 
-fn void Analyser.checkPrintfFormat(Analyser* ma, VarDecl* v, QualType qt, u32 idx, FunctionDecl* fd) {
-    Decl* d = (Decl*)v;
+    switch (format_attr) {
+    case None: break;
+    case Printf: attr_name = "printf_format"; break;
+    case Scanf: attr_name = "scanf_format"; break;
+    }
+
+    if (vd.hasInit()) {
+        ma.error(vd.getAssignLoc(), "%s parameter cannot have default value", attr_name);
+        return;
+    }
     if (!qt.isCharPointer()) {
-        ma.error(d.getLoc(), "printf_format parameter must have type 'const char*'");
+        ma.error(d.getLoc(), "%s parameter must have type 'const char*'", attr_name);
         return;
     }
-    if (v.hasAutoAttr()) {
-        ma.error(d.getLoc(), "printf_format parameter cannot be an auto-argument");
+    if (vd.hasAutoAttr()) {
+        ma.error(d.getLoc(), "%s parameter cannot be an auto-argument", attr_name);
         return;
     }
-
     if (!fd.isVariadic()) {
-        ma.error(d.getLoc(), "printf_format functions must have a variable number of arguments");
+        ma.error(d.getLoc(), "%s functions must have a variable number of arguments", attr_name);
         return;
     }
 
     u32 num_params = fd.getNumParams();
     if (idx != num_params - 1) {
-        ma.error(d.getLoc(), "printf_format parameter must be the last parameter");
+        ma.error(d.getLoc(), "%s parameter must be the last parameter", attr_name);
         return;
     }
 }

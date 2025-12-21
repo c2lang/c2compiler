@@ -42,6 +42,12 @@ type AutoAttr enum u32 {
     Func,
 }
 
+public type FormatAttr enum u8 {
+    None,
+    Printf,
+    Scanf,
+}
+
 type VarDeclBits struct {
     u32 : NumDeclBits;
     u32 kind : 3;
@@ -52,7 +58,7 @@ type VarDeclBits struct {
     u32 attr_weak : 1; // globals only
     u32 addr_used : 1;
     u32 auto_attr : 2;  // AutoAttr, for parameters only
-    u32 printf_format : 1; // for parameters only
+    u32 format_attr : 2; // FormatAttr, for parameters only
 }
 
 public type BitFieldLayout struct {
@@ -337,12 +343,12 @@ public fn bool VarDecl.hasAutoAttr(const VarDecl* d) {
     return d.base.varDeclBits.auto_attr != AutoAttr.None;
 }
 
-public fn void VarDecl.setPrintfFormat(VarDecl* d) {
-    d.base.varDeclBits.printf_format = 1;
+public fn void VarDecl.setFormatAttr(VarDecl* d, FormatAttr kind) {
+    d.base.varDeclBits.format_attr = kind;
 }
 
-public fn bool VarDecl.hasPrintfFormat(const VarDecl* d) {
-    return d.base.varDeclBits.printf_format;
+public fn FormatAttr VarDecl.getFormatAttr(const VarDecl* d) {
+    return (FormatAttr)d.base.varDeclBits.format_attr;
 }
 
 fn void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
@@ -368,7 +374,11 @@ fn void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     case Line: out.add(" auto_line"); break;
     case Func: out.add(" auto_func"); break;
     }
-    if (d.base.varDeclBits.printf_format) out.add(" printf_format");
+    switch (d.getFormatAttr()) {
+    case None: break;
+    case Printf: out.add(" printf_format"); break;
+    case Scanf: out.add(" scanf_format"); break;
+    }
     if (d.base.varDeclBits.has_init_call) out.add(" init_call");
     d.base.printBits(out);
     d.base.printAttrs(out);
