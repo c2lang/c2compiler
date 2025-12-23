@@ -1,6 +1,13 @@
 // @warnings{no-unused}
 module test;
 
-fn void f1() @(foobar) {}     // @error{unknown attribute 'foobar'}
+i32 var @(foobar);             // @warning{unknown attribute 'foobar'}
 
+type Enum enum u8 @(foobar) {  // @warning{unknown attribute 'foobar'}
+    None,
+}
+
+fn void f1() @(foobar) {}      // @warning{unknown attribute 'foobar'}
+
+fn void f2(i32 a @(foobar)) {} // @warning{unknown attribute 'foobar'}
 

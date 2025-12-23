@@ -16,7 +16,7 @@
 module plugin_main;
 
 import ast local;
-import attr;
+import attr local;
 import console;
 import plugin_info;
 import string_buffer;
@@ -91,9 +91,9 @@ fn void generate_types(Plugin *p) {
     p.info.addSource(p.info.fn_arg, "generated", out);
 }
 
-fn bool handle_attr(void* arg, Decl* d, const attr.Attr* a) {
+fn bool handle_attr(void* arg, Decl* d, const Attr* a) {
     Plugin* p = arg;
-    assert(a.name  == p.attr_name);
+    assert(a.name == p.attr_name);
 
     if (!d.isStructType()) {
         p.info.diags.error(a.loc, "attribute 'unittest' can only be applied to structs");

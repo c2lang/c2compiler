@@ -393,6 +393,7 @@ executable c2cat
 	$warnings no-unused
 	$backend c
 
+    ast_utils/attr.c2
     ast_utils/color.c2
     ast_utils/constants.c2
     ast_utils/number_radix.c2

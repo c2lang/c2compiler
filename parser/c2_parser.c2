@@ -17,7 +17,7 @@ module c2_parser;
 
 import ast_builder local;
 import ast local;
-import attr;
+import attr local;
 import c2_tokenizer;
 import color;
 import constants;
@@ -65,6 +65,8 @@ public type Parser struct @(opaque) {
     u32 varargs_idx;
     u32 stdarg_idx;
 
+    AttrRegistry attr_registry;
+
     stmt_list.List* stmt_lists;
     u32 stmt_list_count;
 
@@ -89,6 +91,7 @@ public fn Parser* create(SourceMgr* sm,
     p.va_list_idx = pool.addStr("va_list", true);
     p.varargs_idx = pool.addStr("varargs", true);
     p.stdarg_idx = pool.addStr("stdarg", true);
+    p.attr_registry.init(pool);
 
     // create a stack of stmt_lists to re-use (resize stack if needed)
     p.stmt_lists = malloc(NumStmtLists * sizeof(stmt_list.List));
@@ -373,30 +376,32 @@ fn void Parser.parseTopLevel(Parser* p) {
                   name=<number>
 */
 
-// returns if embed attribute was seen
-fn void Parser.parseOptionalAttributes(Parser* p) {
-    if (p.tok.kind != Kind.At) return;
+fn bool findName(const u32* names, u32 count, u32 name) {
+    for (u32 i = 0; i < count; i++) {
+        if (names[i] == name) return true;
+    }
+    return false;
+}
+
+// returns the number of attributes parsed and stored in Builder
+fn u32 Parser.parseOptionalAttributes(Parser* p) {
+    if (p.tok.kind != Kind.At) return 0;
     p.consumeToken();
 
     p.expectAndConsume(Kind.LParen);
 
-    u32[16] dups;
+    u32[elemsof(AttrKind)] dups;
     u32 num_attrs = 0;
+    u32 count = 0;
 
     while (1) {
         p.expectIdentifier();
-        attr.Attr a;
-        a.name = p.tok.name_idx;
-        a.loc = p.tok.loc;
-        a.value_kind = attr.ValueKind.None;
-
-        assert(num_attrs < elemsof(dups));
-
-        for (u32 i=0; i<num_attrs; i++) {
-            if (dups[i] == a.name) p.error("duplicate attribute");
+        Attr a = {
+            .name = p.tok.name_idx,
+            .kind = p.attr_registry.find(p.tok.name_idx),
+            .value_kind = None,
+            .loc = p.tok.loc,
         }
-        dups[num_attrs++] = a.name;
-
         p.consumeToken();
 
         if (p.tok.kind == Kind.Equal) {
@@ -404,58 +409,43 @@ fn void Parser.parseOptionalAttributes(Parser* p) {
             a.value.loc = p.tok.loc;
             switch (p.tok.kind) {
             case StringLiteral:
-                a.value_kind = attr.ValueKind.String;
+                a.value_kind = String;
                 a.value.text = p.tok.text_idx;
                 if (p.tok.text_len == 0) {
+                    // TODO: should be tested in Attr.checkArgument()
                     p.error("attribute argument cannot be an empty string");
                 }
                 p.consumeToken();
                 break;
             case IntegerLiteral:
-                a.value_kind = attr.ValueKind.Number;
+                a.value_kind = Number;
                 // TODO: either check overflow or make it 64-bit
                 a.value.number = (u32)p.tok.int_value;
                 p.consumeToken();
                 break;
             default:
                 p.error("expected attribute argument");
-                return;
+                break;
             }
         }
-
-        p.builder.actOnAttr(&a);
+        if (findName(dups, num_attrs, a.name)) {
+            p.diags.error(a.loc, "duplicate attribute");
+        } else {
+            if (num_attrs >= elemsof(dups)) p.error("too many attributes");
+            dups[num_attrs++] = a.name;
+            count += p.builder.actOnAttr(&a);
+        }
 
         if (p.tok.kind != Kind.Comma) break;
         p.consumeToken();
     }
 
     p.expectAndConsume(Kind.RParen);
+    return count;
 }
 
-fn void Parser.parseParamOptionalAttributes(Parser* p, VarDecl* d) {
-    if (p.tok.kind != Kind.At) return;
-    p.consumeToken();
-
-    p.expectAndConsume(Kind.LParen);
-
-    bool has_error = false;
-    while (1) {
-        p.expectIdentifier();
-        u32 attr_id = p.tok.name_idx;
-        SrcLoc loc = p.tok.loc;
-        p.consumeToken();
-
-        if (p.tok.kind == Kind.Equal) {
-            p.error("a parameter attribute cannot have a value");
-        }
-        if (!has_error) {
-            has_error = !p.builder.actOnParamAttr(d, attr_id, loc);
-        }
-        if (p.tok.kind != Kind.Comma) break;
-        p.consumeToken();
-    }
-
-    p.expectAndConsume(Kind.RParen);
+fn void Parser.applyAttributes(Parser* p, Decl* d, u32 count) {
+    if (count) p.builder.applyAttributes(d, count);
 }
 
 fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
@@ -525,8 +515,8 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
 
     params.free();
 
-    p.parseOptionalAttributes();
-    p.builder.applyAttributes((Decl*)f);
+    u32 num_attr = p.parseOptionalAttributes();
+    p.applyAttributes((Decl*)f, num_attr);
 
     if (p.is_interface) {
         if (p.tok.kind == Kind.Semicolon) {
@@ -601,7 +591,8 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool accept_default
                                                is_variadic,
                                                DefKind.Param);
         // TODO attributes?
-        //p.parseOptionalAttributes();
+        //u32 num_attr = p.parseOptionalAttributes();
+        //p.applyAttributes((Decl*)fd, num_attr);
         params.free();
 
         ref.setFunction((Decl*)fd);
@@ -639,7 +630,8 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool accept_default
 
     VarDecl* param = p.builder.actOnFunctionParam(name, loc, is_public, &ref, assignLoc, initValue);
 
-    p.parseParamOptionalAttributes(param);
+    u32 num_attr = p.parseOptionalAttributes();
+    p.applyAttributes((Decl*)param, num_attr);
 
     return param;
 }
@@ -707,7 +699,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
         Expr* initValue = nil;
         SrcLoc assignLoc = 0;
 
-        p.parseOptionalAttributes();
+        u32 num_attr = p.parseOptionalAttributes();
 
         switch (p.tok.kind) {
         case Equal:
@@ -728,7 +720,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
 
         bool has_embed = p.builder.hasEmbedAttr();
         Decl* d = p.builder.actOnGlobalVarDecl(name, loc, is_public, &ref, assignLoc, has_embed, initValue);
-        p.builder.applyAttributes(d);
+        p.applyAttributes(d, num_attr);
 
         if (p.tok.kind != Kind.Comma)
             break;

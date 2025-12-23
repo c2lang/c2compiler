@@ -16,6 +16,7 @@
 module c2cat_main;
 
 import c2_tokenizer;
+import attr local;
 import color local;
 import file_utils;
 import keywords;
@@ -53,38 +54,14 @@ type C2cat struct {
     string_pool.Pool* pool;
     string_buffer.Buf* out;
     c2_tokenizer.Tokenizer* tokenizer;
+    AttrRegistry attr_registry;
     const char* input;
     u32 offset;
     u32 in_attributes; // 0 no, 1 seen @, 2 (, ) -> 0
 }
 
-const char*[] attr_names = {
-    "export",
-    "packed",
-    "unused",
-    "unused_params",
-    "section",
-    "noreturn",
-    "inline",
-    "printf_format",
-    "aligned",
-    "weak",
-    "opaque",
-    "cname",
-    "no_typedef",
-    "constructor",
-    "destructor",
-    "pure",
-    "auto_file",
-    "auto_line",
-    "auto_func",
-}
-
-fn bool is_attribute(const char* str) {
-    for (u32 i=0; i<elemsof(attr_names); i++) {
-        if (strcmp(str, attr_names[i]) == 0) return true;
-    }
-    return false;
+fn bool C2cat.is_attribute(C2cat* ctx, u32 name_idx) {
+    return ctx.attr_registry.find(name_idx) != Unknown;
 }
 
 fn void C2cat.update_state(C2cat* ctx, const Token* tok) {
@@ -160,16 +137,13 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
     switch (tok.kind) {
     case Identifier:
         const char* str = ctx.pool.idx2str(tok.name_idx);
+        Color col = col_identifier;
 
-        if (ctx.in_attributes && is_attribute(str)) {
-            out.color(col_attr);
-            out.add(str);
-            out.color(col_normal);
-        } else {
-            out.color(col_identifier);
-            out.add(str);
-            out.color(col_normal);
-        }
+        if (ctx.in_attributes)
+            col = ctx.is_attribute(tok.name_idx) ? col_attr : col_invalid;
+        out.color(col);
+        out.add(str);
+        out.color(col_normal);
         ctx.offset = tok.loc + (u32)strlen(str);
         return;
     case IntegerLiteral:
@@ -290,6 +264,7 @@ public fn i32 c2cat(const char* filename, bool use_color)
     c2_tokenizer.Tokenizer tokenizer;
     tokenizer.init(ctx.pool, buf, ctx.input, 0, &kwinfo, &features, nil, nil, true);
     ctx.tokenizer = &tokenizer;
+    ctx.attr_registry.init(ctx.pool);
 
     Token tok;
     tok.init();

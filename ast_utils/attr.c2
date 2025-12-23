@@ -71,14 +71,14 @@ const char*[] attrKind_names = {
 
 static_assert(elemsof(AttrKind), elemsof(attrKind_names));
 
-public type ValueKind enum u8 {
+public type AttrValueKind enum u8 {
     None,
     Number,
     String,
 }
 
 // Note: Value itself does not need to know the kind
-public type Value struct {
+public type AttrValue struct {
     SrcLoc loc;
     union {
         u32 text;
@@ -87,40 +87,38 @@ public type Value struct {
 }
 
 public type Attr struct {
+    void* decl;
     u32 name;  // needed for unknown attributes
-    AttrKind kind;
-    ValueKind value_kind;
     SrcLoc loc;
-    Value value;
+    AttrKind kind;
+    AttrValueKind value_kind;
+    AttrValue value;
 }
+static_assert(32, sizeof(Attr));
 
 // Note: only meant for printing (since not allocated in StringPool)
-public fn const char* kind2name(AttrKind k) {
-    return attrKind_names[k];
+public fn const char* Attr.kind2name(const Attr* a) {
+    return attrKind_names[a.kind];
 }
 
-public fn void register(string_pool.Pool* pool, u32* indexes) {
+public type AttrRegistry struct {
+    u32[elemsof(AttrKind)] name_indexes;
+}
+
+public fn void AttrRegistry.init(AttrRegistry* ar, string_pool.Pool* pool) {
     // skip unknown attribute
-    indexes[0] = 0;
-    for (u32 i=1; i<elemsof(attrKind_names); i++) {
-        indexes[i] = pool.addStr(attrKind_names[i], true);
+    ar.name_indexes[0] = 0;
+    for (u32 i = 1; i < elemsof(AttrKind); i++) {
+        ar.name_indexes[i] = pool.addStr(attrKind_names[i], true);
     }
 }
 
-// Note: this is different per plugin!
-const u32* name_indexes;
-
-public fn void initialize(const u32* indexes) {
-    name_indexes = indexes;
-}
-
-public fn AttrKind find(u32 name_idx) {
+public fn AttrKind AttrRegistry.find(AttrRegistry* ar, u32 name_idx) {
     // skip unused
-    for (u32 i=1; i<elemsof(AttrKind); i++) {
-        if (name_idx == name_indexes[i]) return (AttrKind)i;
+    for (u32 i = 1; i < elemsof(AttrKind); i++) {
+        if (name_idx == ar.name_indexes[i]) return (AttrKind)i;
     }
-
-    return AttrKind.Unknown;
+    return Unknown;
 }
 
 const AttrReq[] Required_arg = {
@@ -162,30 +160,30 @@ fn bool isPowerOf2(u32 val) {
     return val && !(val & (val - 1));
 }
 
-public fn AttrReq check(const Attr* a) {
+public fn AttrReq Attr.checkArgument(const Attr* a) {
     switch (Required_arg[a.kind]) {
     case NoArg:
-        if (a.value_kind != ValueKind.None) return AttrReq.NoArg;
+        if (a.value_kind != None) return NoArg;
         break;
     case Number:
         switch (a.value_kind) {
         case None:
-            return AttrReq.Arg;
+            return Arg;
         case Number:
-            if (a.kind == AttrKind.Aligned) {
-                if (!isPowerOf2(a.value.number)) return AttrReq.Power2;
+            if (a.kind == Aligned) {
+                if (!isPowerOf2(a.value.number)) return Power2;
             }
             break;
         case String:
-            return AttrReq.Number;
+            return Number;
         }
         break;
     case String:
         switch (a.value_kind) {
         case None:
-            return AttrReq.Arg;
+            return Arg;
         case Number:
-            return AttrReq.String;
+            return String;
         case String:
             break;
         }
@@ -193,6 +191,6 @@ public fn AttrReq check(const Attr* a) {
     default:
         break;
     }
-    return AttrReq.Ok;
+    return Ok;
 }
 

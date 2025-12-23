@@ -197,7 +197,7 @@ fn void Compiler.build(Compiler* c,
 
     c.parse_queue.init(false, 64);
 
-    c.attr_handler = attr_handler.create(diags);
+    c.attr_handler = attr_handler.create(diags, target.getWarnings());
     c.builder = ast_builder.create(c.context,
                                    diags,
                                    c.auxPool,

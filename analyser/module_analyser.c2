@@ -18,7 +18,7 @@ module module_analyser;
 import ast local;
 import ast_context;
 import ast_builder;
-import attr;
+import attr local;
 import conversion_checker as conv;
 import diagnostics;
 import file_utils;
@@ -557,7 +557,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
     }
 
     const AST* a = d.getAST();
-    const attr.Value* embed = a.getAttr(d, attr.AttrKind.Embed);
+    const Attr* embed = a.getAttr(d, Embed);
 
     if (canon.isArray() && !ref.isIncrArray()) {
         const ArrayType* at = canon.getArrayType();
@@ -589,7 +589,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         }
 
         // open file, copy contents to StringPool and close
-        const char* filename = ma.astPool.idx2str(embed.text);
+        const char* filename = ma.astPool.idx2str(embed.value.text);
         file_utils.File reader.init("", filename);
         if (!reader.load()) {
             ma.error(embed.loc, "error opening embedded file '%s': %s", filename, reader.getError());
@@ -641,12 +641,12 @@ fn void Analyser.checkVarDeclAttributes(Analyser* ma, VarDecl* v) {
 
         const AST* a = d.getAST();
 
-        const attr.Value* section = a.getAttr(d, attr.AttrKind.Section);
+        const Attr* section = a.getAttr(d, Section);
         if (section) {
             ma.error(section.loc, "attribute 'section' cannot be applied to constants");
         }
 
-        const attr.Value* aligned = a.getAttr(d, attr.AttrKind.Aligned);
+        const Attr* aligned = a.getAttr(d, Aligned);
         if (aligned) {
             ma.error(aligned.loc, "attribute 'aligned' cannot be applied to constants");
         }

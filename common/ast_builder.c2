@@ -26,9 +26,8 @@ import src_loc local;
 import string_pool;
 
 import stdlib local;
-import string;
 
-public type Builder struct  @(opaque) {
+public type Builder struct @(opaque) {
     Context* context;           // no ownership
     diagnostics.Diags* diags;   // no ownership
     string_pool.Pool* auxPool;  // no ownership
@@ -342,7 +341,7 @@ public fn VarDecl* Builder.actOnVarDecl(Builder* b,
 
 fn void Builder.storeAttr(Builder* b, Decl* d, const Attr* a) {
     d.setHasAttr();
-    b.ast.storeAttr(d, a.kind, &a.value);
+    b.ast.storeAttr(d, a);
 }
 
 public fn void Builder.actOnArrayValue(Builder* b,
@@ -352,21 +351,6 @@ public fn void Builder.actOnArrayValue(Builder* b,
 {
     ArrayValue* avd = ArrayValue.create(b.context, name, loc, initValue);
     b.ast.addArrayValue(avd);
-}
-
-fn bool Builder.checkAttr(Builder* b, const Attr* a) {
-    switch (a.kind) {
-    case CName:
-    case CDef:
-        if (!b.is_interface) {
-            b.diags.error(a.loc, "attribute 'cname' can only be used in interface files");
-            return false;
-        }
-        break;
-    default:
-        break;
-    }
-    return true;
 }
 
 fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
@@ -409,13 +393,13 @@ fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
         fd.setAttrPure();
         break;
     default:
-        b.diags.error(a.loc, "attribute '%s' is not applicable to functions", kind2name(a.kind));
+        b.diags.error(a.loc, "attribute '%s' is not applicable to functions", a.kind2name());
         break;
     }
 }
 
 fn void Builder.actOnStructAttr(Builder* b, Decl* d, const Attr* a) {
-    StructTypeDecl* std =(StructTypeDecl*)d;
+    StructTypeDecl* std = (StructTypeDecl*)d;
 
     switch (a.kind) {
     case Export:
@@ -429,7 +413,7 @@ fn void Builder.actOnStructAttr(Builder* b, Decl* d, const Attr* a) {
         break;
     case Section:
         b.diags.error(a.loc, "attribute '%s' cannot be applied to type declarations",
-                kind2name(a.kind));
+                      a.kind2name());
         break;
     case Aligned:
         std.setAttrAlignment(a.value.number);
@@ -448,12 +432,12 @@ fn void Builder.actOnStructAttr(Builder* b, Decl* d, const Attr* a) {
             std.setAttrNoTypeDef();
         } else {
             b.diags.error(a.loc, "attribute '%s' can only be used in interfaces",
-                kind2name(a.kind));
+                          a.kind2name());
         }
         break;
     default:
         b.diags.error(a.loc, "attribute '%s' is not applicable to structs",
-                kind2name(a.kind));
+                      a.kind2name());
         break;
     }
 }
@@ -465,21 +449,21 @@ fn bool Builder.actOnTypeAttr(Builder* b, Decl* d, const Attr* a) {
         break;
     case Packed:
         b.diags.error(a.loc, "attribute '%s' can only be applied to struct/union types",
-                kind2name(a.kind));
+                      a.kind2name());
         return false;
     case Unused:
         d.setAttrUnused();
         break;
     case Opaque:
         b.diags.error(a.loc, "attribute '%s' can only be applied to struct/union types",
-                kind2name(a.kind));
+                      a.kind2name());
         return false;
     case CName:
         b.storeAttr(d, a);
         break;
     default:
         b.diags.error(a.loc, "attribute '%s' is not applicable to Enum/Alias types",
-                kind2name(a.kind));
+                      a.kind2name());
         return false;
     }
     return true;
@@ -487,6 +471,11 @@ fn bool Builder.actOnTypeAttr(Builder* b, Decl* d, const Attr* a) {
 
 fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
     VarDecl* vd = (VarDecl*)d;
+
+    if (vd.getKind() == FunctionParam) {
+        b.actOnParamAttr(vd, a);
+        return;
+    }
 
     switch (a.kind) {
     case Export:
@@ -514,14 +503,14 @@ fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
         break;
     default:
         b.diags.error(a.loc, "attribute '%s' is not applicable to variables",
-                kind2name(a.kind));
+                      a.kind2name());
         break;
     }
 }
 
 public fn bool Builder.hasOpaqueAttr(Builder* b) {
     for (u32 i=0; i<b.num_attrs; i++) {
-        const attr.Attr* a = &b.attrs[i];
+        const Attr* a = &b.attrs[i];
         if (b.attrs[i].kind == Opaque) return true;
     }
     return false;
@@ -529,23 +518,14 @@ public fn bool Builder.hasOpaqueAttr(Builder* b) {
 
 public fn bool Builder.hasEmbedAttr(Builder* b) {
     for (u32 i=0; i<b.num_attrs; i++) {
-        const attr.Attr* a = &b.attrs[i];
+        const Attr* a = &b.attrs[i];
         if (b.attrs[i].kind == Embed) return true;
     }
     return false;
 }
 
-public fn bool Builder.actOnParamAttr(Builder* b,
-                                      VarDecl* d,
-                                      u32 name,
-                                      SrcLoc loc)
-{
-    AttrKind kind = attr.find(name);
-    switch (kind) {
-    case Unknown:
-        // TODO should be a warning
-        b.diags.error(loc, "unknown attribute '%s'", ast.idx2name(name));
-        return false;
+fn bool Builder.actOnParamAttr(Builder* b, VarDecl* d, const Attr* a) {
+    switch (a.kind) {
     case PrintfFormat:
         d.setPrintfFormat();
         return true;
@@ -562,41 +542,44 @@ public fn bool Builder.actOnParamAttr(Builder* b,
         d.setAttrAutoFunc();
         return true;
     default:
-        b.diags.error(loc, "attribute '%s' cannot be applied to function parameters",
-                      ast.idx2name(name));
+        b.diags.error(a.loc, "attribute '%s' cannot be applied to function parameters",
+                      ast.idx2name(a.name));
         return false;
     }
-    b.diags.error(loc, "invalid combination of attributes");
+    b.diags.error(a.loc, "invalid combination of attributes");
     return false;
 }
 
-public fn void Builder.actOnAttr(Builder* b, attr.Attr* a) {
-    a.kind = attr.find(a.name);
+public fn bool Builder.actOnAttr(Builder* b, const Attr* a) {
+    switch (a.kind) {
+    case CName:
+    case CDef:
+        if (!b.is_interface) {
+            b.diags.error(a.loc, "attribute '%s' can only be used in interface files", a.kind2name());
+            return false;
+        }
+        break;
+    default:
+        break;
+    }
 
-    if (!b.checkAttr(a)) return;
-
-    if (a.kind != AttrKind.Unknown) {
-        AttrReq req = attr.check(a);
-        switch (req) {
+    if (a.kind != Unknown) {
+        switch (a.checkArgument()) {
         case NoArg:
-            b.diags.error(a.loc, "attribute '%s' has no argument",
-                kind2name(a.kind));
-            return;
+            b.diags.error(a.loc, "attribute '%s' has no argument", a.kind2name());
+            return false;
         case Arg:
-            b.diags.error(a.loc, "attribute '%s' needs an argument",
-                kind2name(a.kind));
-            return;
+            b.diags.error(a.loc, "attribute '%s' needs an argument", a.kind2name());
+            return false;
         case Number:
-            b.diags.error(a.value.loc, "attribute '%s' needs a number argument",
-                kind2name(a.kind));
-            return;
+            b.diags.error(a.value.loc, "attribute '%s' needs a number argument", a.kind2name());
+            return false;
         case String:
-            b.diags.error(a.value.loc, "attribute '%s' needs a string argument",
-                kind2name(a.kind));
-            return;
+            b.diags.error(a.value.loc, "attribute '%s' needs a string argument", a.kind2name());
+            return false;
         case Power2:
             b.diags.error(a.value.loc, "requested alignment is not a power of 2");
-            return;
+            return false;
         case Ok:
             break;
         }
@@ -605,11 +588,12 @@ public fn void Builder.actOnAttr(Builder* b, attr.Attr* a) {
     // always store attribute and apply later in applyAttributes()
     if (b.num_attrs == elemsof(b.attrs)) {
         b.diags.error(a.loc, "too many attributes");
-        return;
+        return false;
     }
 
-    string.memcpy(&b.attrs[b.num_attrs], a , sizeof(Attr));
+    b.attrs[b.num_attrs] = *a;
     b.num_attrs++;
+    return true;
 }
 
 public fn void Builder.clearAttributes(Builder* b) {
@@ -648,18 +632,19 @@ fn void Builder.applyAttribute(Builder* b, Decl* d, const Attr* a) {
     }
 }
 
-public fn void Builder.applyAttributes(Builder* b, Decl* d) {
+public fn void Builder.applyAttributes(Builder* b, Decl* d, u32 count) {
     assert(d);
-    for (u32 i=0; i<b.num_attrs; i++) {
-        const attr.Attr* a = &b.attrs[i];
+    assert(count <= b.num_attrs);
+    for (u32 i = 0; i < count; i++) {
+        const Attr* a = &b.attrs[b.num_attrs - count + i];
 
-        if (a.kind == AttrKind.Unknown) {
-            b.attr_handler.handle(d, a);
+        if (a.kind == Unknown) {
+            if (!b.attr_handler.handle(d, a)) b.storeAttr(d, a);
         } else {
             b.applyAttribute(d, a);
         }
     }
-    b.num_attrs = 0;
+    b.num_attrs -= count;
 }
 
 public fn QualType Builder.actOnBuiltinType(Builder*, BuiltinKind kind) {

@@ -16,7 +16,7 @@
 module ast;
 
 import src_loc local;
-import attr;
+import attr local;
 import string_buffer;
 import stdio;
 
@@ -291,8 +291,8 @@ public fn const char* Decl.getCName(const Decl* d) {
     if (!d.hasAttr()) return nil;
 
     const AST* a = d.getAST();
-    const attr.Value* cname = a.getAttr(d, attr.AttrKind.CName);
-    if (cname) return idx2name(cname.text);
+    const Attr* cname = a.getAttr(d, CName);
+    if (cname) return idx2name(cname.value.text);
     return nil;
 }
 
@@ -300,7 +300,7 @@ public fn bool Decl.hasCName(const Decl* d) {
     if (!d.hasAttr()) return false;
 
     const AST* a = d.getAST();
-    const attr.Value* cname = a.getAttr(d, attr.AttrKind.CName);
+    const Attr* cname = a.getAttr(d, CName);
     return cname;
 }
 
@@ -308,8 +308,8 @@ public fn const char* Decl.getCDef(const Decl* d) {
     if (!d.hasAttr()) return nil;
 
     const AST* a = d.getAST();
-    const attr.Value* cdef = a.getAttr(d, attr.AttrKind.CDef);
-    if (cdef) return idx2name(cdef.text);
+    const Attr* cdef = a.getAttr(d, CDef);
+    if (cdef) return idx2name(cdef.value.text);
     return nil;
 }
 
@@ -317,8 +317,8 @@ public fn const char* Decl.getSection(const Decl* d) {
     if (!d.hasAttr()) return nil;
 
     const AST* a = d.getAST();
-    const attr.Value* section = a.getAttr(d, attr.AttrKind.Section);
-    if (section) return idx2name(section.text);
+    const Attr* section = a.getAttr(d, Section);
+    if (section) return idx2name(section.value.text);
     return nil;
 }
 
@@ -432,25 +432,25 @@ fn void Decl.printAttrs(const Decl* d, string_buffer.Buf* out) {
 
     const AST* a = d.getAST();
     // Note: just request 4 here, ideally we should iterate over all
-    const attr.Value* cname = a.getAttr(d, attr.AttrKind.CName);
+    const Attr* cname = a.getAttr(d, CName);
     if (cname) {
         out.color(col_Attr);
-        out.print(" cname='%s'", idx2name(cname.text));
+        out.print(" cname='%s'", idx2name(cname.value.text));
     }
-    const attr.Value* cdef = a.getAttr(d, attr.AttrKind.CDef);
+    const Attr* cdef = a.getAttr(d, CDef);
     if (cdef) {
         out.color(col_Attr);
-        out.print(" cdef='%s'", idx2name(cdef.text));
+        out.print(" cdef='%s'", idx2name(cdef.value.text));
     }
-    const attr.Value* section = a.getAttr(d, attr.AttrKind.Section);
+    const Attr* section = a.getAttr(d, Section);
     if (section) {
         out.color(col_Attr);
-        out.print(" section='%s'", idx2name(section.text));
+        out.print(" section='%s'", idx2name(section.value.text));
     }
-    const attr.Value* embed = a.getAttr(d, attr.AttrKind.Embed);
+    const Attr* embed = a.getAttr(d, Embed);
     if (embed) {
         out.color(col_Attr);
-        out.print(" embed='%s'", idx2name(embed.text));
+        out.print(" embed='%s'", idx2name(embed.value.text));
     }
 }
 

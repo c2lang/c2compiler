@@ -15,7 +15,7 @@
 
 module ast;
 
-import attr;
+import attr local;
 import color local;
 import ast_context local;
 import string_buffer;
@@ -115,8 +115,6 @@ public type Globals struct @(opaque) {
     u32[elemsof(BuiltinKind)] builtinType_width;
     BuiltinKind[elemsof(BuiltinKind)] builtinType_baseTypes;
 
-    u32[elemsof(attr.AttrKind)] attr_name_indexes;
-
     string_buffer.Buf* dump_buf;
 #if AstStatistics
     Stats stats;
@@ -130,10 +128,7 @@ Globals* globals;
 public fn Globals* getGlobals() { return globals; }
 
 // only used by plugins
-public fn void setGlobals(Globals* g) @(unused){
-    globals = g;
-    attr.initialize(g.attr_name_indexes);
-}
+public fn void setGlobals(Globals* g) @(unused) { globals = g; }
 
 // wordsize in bytes, must NOT be called from Plugin!
 public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, bool use_color) {
@@ -180,9 +175,6 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
         globals.builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int64;
         globals.builtinType_baseTypes[BuiltinKind.USize] = BuiltinKind.UInt64;
     }
-
-    attr.register(astPool, globals.attr_name_indexes);
-    attr.initialize(globals.attr_name_indexes);
 }
 
 public fn void deinit(bool print_stats) {
@@ -329,5 +321,5 @@ Color col_Error = Color.Red;
 Color col_Calc = Color.Yellow;    // all calculated value
 Color col_Normal = Color.Normal;
 
-public type AttrHandlerFn fn bool (void* arg, Decl* d, const attr.Attr* a);
+public type AttrHandlerFn fn bool (void* arg, Decl* d, const Attr* a);
 

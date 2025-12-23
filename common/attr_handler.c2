@@ -16,8 +16,9 @@
 module attr_handler;
 
 import ast;
-import attr;
+import attr local;
 import diagnostics;
+import warning_flags;
 
 import stdlib;
 import string;
@@ -30,15 +31,18 @@ type Entry struct {
 
 public type Handler struct @(opaque) {
     diagnostics.Diags* diags;   // no ownership
+    const warning_flags.Flags* warnings;
 
     Entry* entries;
     u32 count;
     u32 capacity;
 }
 
-public fn Handler* create(diagnostics.Diags* diags) {
+public fn Handler* create(diagnostics.Diags* diags,
+                          const warning_flags.Flags* warnings) {
     Handler* h = stdlib.calloc(1, sizeof(Handler));
     h.diags = diags;
+    h.warnings = warnings;
     return h;
 }
 
@@ -68,13 +72,14 @@ public fn bool Handler.register(Handler* h, u32 name, ast.AttrHandlerFn func, vo
     return true;
 }
 
-public fn bool Handler.handle(Handler* h, ast.Decl* d, const attr.Attr* a) {
+public fn bool Handler.handle(Handler* h, ast.Decl* d, const Attr* a) {
     for (u32 i=0; i<h.count; i++) {
         Entry* e = &h.entries[i];
         if (e.name == a.name) return e.func(e.arg, d, a);
     }
-    // TODO give unknown attr error here
-    h.diags.error(a.loc, "unknown attribute '%s'", ast.idx2name(a.name));
+    if (!h.warnings.no_unknown_attribute) {
+        h.diags.warn(a.loc, "unknown attribute '%s'", ast.idx2name(a.name));
+    }
     return false;
 }
 

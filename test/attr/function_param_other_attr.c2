@@ -3,3 +3,10 @@ module test;
 fn void run(i32 a @(unused)) { // @error{attribute 'unused' cannot be applied to function parameters}
 }
 
+fn void run2(i32 a @(weak),            // @error{attribute 'weak' cannot be applied to function parameters}
+             i32 b @(export),          // @error{attribute 'export' cannot be applied to function parameters}
+             i32 c @(embed="file.c2"), // @error{attribute 'embed' cannot be applied to function parameters}
+             i32 d @(packed),          // @error{attribute 'packed' cannot be applied to function parameters}
+             i32 e @(section="test"),  // @error{attribute 'section' cannot be applied to function parameters}
+             i32 f @(aligned=8),       // @error{attribute 'aligned' cannot be applied to function parameters}
+             i32 g @(cname="ggg")) {}  // @error{attribute 'cname' can only be used in interface files}

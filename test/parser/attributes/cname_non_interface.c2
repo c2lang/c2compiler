@@ -6,3 +6,8 @@ public type Foo struct @(cname="foo")    // @error{attribute 'cname' can only be
     i32 a;
 }
 
+public type Foo2 struct @(cdef="foo")    // @error{attribute 'cdef' can only be used in interface files}
+{
+    i32 a;
+}
+

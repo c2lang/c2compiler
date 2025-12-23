@@ -580,6 +580,9 @@ fn void Parser.parseWarnings(Parser* p) {
         case "unreachable-code":
             warnings.no_unreachable_code = disable;
             break;
+        case "unknown-attribute":
+            warnings.no_unknown_attribute = disable;
+            break;
         case "promote-to-error":
             warnings.are_errors = !disable;
             break;

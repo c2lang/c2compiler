@@ -8,8 +8,20 @@ fn void log1(u32 line @(auto_line, auto_file)) {    // @error{invalid combinatio
 fn void log2(const char* line @(auto_line, auto_file)) {    // @error{invalid combination of attributes}
 }
 
-fn void log3(const char* line @(auto_file, auto_func)) {    // @error{invalid combination of attributes}
+fn void log3(const char* file @(auto_file, auto_func)) {    // @error{invalid combination of attributes}
 }
 
-fn void log4(const char* line @(auto_file, auto_line, auto_func)) {    // @error{invalid combination of attributes}
+fn void log4(const char* line @(auto_file,
+                                auto_line,      // @error{invalid combination of attributes}
+                                auto_func)) {   // @error{invalid combination of attributes}
 }
+
+fn void logd1(u32 line @(auto_line, auto_line)) {    // @error{duplicate attribute}
+}
+
+fn void logd2(const char* file @(auto_file, auto_file)) {    // @error{duplicate attribute}
+}
+
+fn void logd3(const char* func @(auto_func, auto_func)) {    // @error{duplicate attribute}
+}
+
