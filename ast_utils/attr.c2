@@ -29,6 +29,7 @@ public type AttrKind enum u8 {
     NoReturn,       //        Func
     Inline,         //        Func
     PrintfFormat,   //             | Var, function param only
+    ScanfFormat,    //             | Var, function param only
     Aligned,        // Type | Func | Var, needs number arg
     Weak,           //        Func | Var
     Opaque,         // Struct
@@ -54,6 +55,7 @@ const char*[] attrKind_names = {
     "noreturn",
     "inline",
     "printf_format",
+    "scanf_format",
     "aligned",
     "weak",
     "opaque",
@@ -114,7 +116,7 @@ public fn void AttrRegistry.init(AttrRegistry* ar, string_pool.Pool* pool) {
 }
 
 public fn AttrKind AttrRegistry.find(AttrRegistry* ar, u32 name_idx) {
-    // skip unused
+    // skip unknown
     for (u32 i = 1; i < elemsof(AttrKind); i++) {
         if (name_idx == ar.name_indexes[i]) return (AttrKind)i;
     }
@@ -131,6 +133,7 @@ const AttrReq[] Required_arg = {
     [AttrKind.NoReturn]     = AttrReq.NoArg,
     [AttrKind.Inline]       = AttrReq.NoArg,
     [AttrKind.PrintfFormat] = AttrReq.NoArg,
+    [AttrKind.ScanfFormat]  = AttrReq.NoArg,
     [AttrKind.Aligned]      = AttrReq.Number,
     [AttrKind.Weak]         = AttrReq.NoArg,
     [AttrKind.Opaque]       = AttrReq.NoArg,

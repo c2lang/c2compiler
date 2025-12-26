@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+i32 var @(custom); // @warning{unknown attribute 'custom'}
+
+type Enum enum u8 @(custom) { // @warning{unknown attribute 'custom'}
+    None,
+}
+
+fn void foo(i32 a) @(custom) {} // @warning{unknown attribute 'custom'}
+
+fn void run(i32 a @(custom)) {} // @warning{unknown attribute 'custom'}
+
