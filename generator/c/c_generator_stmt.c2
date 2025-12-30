@@ -444,8 +444,8 @@ fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) 
 
     const u32 num_stmts = c.getNumStmts();
     if (num_stmts == 0) {
-        out.indent(indent+1);
-        out.add("fallthrough;\n");
+        //out.indent(indent+1);
+        //out.add("fallthrough;\n");
     } else {
         Stmt** stmts = c.getStmts();
         for (u32 i=0; i<num_stmts; i++) {

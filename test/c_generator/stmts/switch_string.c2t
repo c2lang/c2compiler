@@ -53,7 +53,6 @@ static int32_t test_test1(char* str)
    case 3: // "aa"
       return 2;
    case 4: // "aaa"
-      fallthrough;
    case 5: // "bbb"
       return 3;
    case 0: // nil

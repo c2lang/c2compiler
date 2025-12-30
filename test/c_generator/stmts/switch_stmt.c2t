@@ -86,7 +86,6 @@ static void test_test1(int32_t i)
     case 5:
         return;
     case 6:
-        fallthrough;
     default:
         i += 10;
         break;
