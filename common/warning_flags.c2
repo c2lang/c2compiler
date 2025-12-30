@@ -28,6 +28,7 @@ public type Flags struct {
     bool no_unused_enum_constant;
     bool no_unreachable_code;
     bool no_unknown_attribute;
+    bool no_deprecated;
     bool are_errors;
 }
 

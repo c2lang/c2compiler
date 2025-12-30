@@ -583,6 +583,9 @@ fn void Parser.parseWarnings(Parser* p) {
         case "unknown-attribute":
             warnings.no_unknown_attribute = disable;
             break;
+        case "deprecated":
+            warnings.no_deprecated = disable;
+            break;
         case "promote-to-error":
             warnings.are_errors = !disable;
             break;

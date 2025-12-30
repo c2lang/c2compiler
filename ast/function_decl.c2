@@ -16,6 +16,7 @@
 module ast;
 
 import ast_context;
+import attr local;
 import src_loc local;
 import string_buffer;
 
@@ -72,6 +73,7 @@ type FunctionDeclFlags struct {
     u32 attr_constructor : 1;
     u32 attr_destructor : 1;
     u32 attr_pure : 1;
+    u32 attr_deprecated : 1;
     u32 format_attr : 2; // FormatAttr
 }
 
@@ -468,6 +470,14 @@ public fn FormatAttr FunctionDecl.getFormatAttr(const FunctionDecl* d, u8 *forma
     return (FormatAttr)d.flags.format_attr;
 }
 
+public fn void FunctionDecl.setAttrDeprecated(FunctionDecl* d) {
+    d.flags.attr_deprecated = 1;
+}
+
+public fn bool FunctionDecl.hasAttrDeprecated(const FunctionDecl* d) {
+    return d.flags.attr_deprecated;
+}
+
 public fn const char* FunctionDecl.getDiagKind(const FunctionDecl* d) {
     CallKind ck = d.getCallKind();
     if (ck == CallKind.TypeFunc) return "type-";
@@ -504,6 +514,13 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
     if (d.hasAttrConstructor()) out.add(" constructor");
     if (d.hasAttrDestructor()) out.add(" destructor");
     if (d.hasAttrPure()) out.add(" pure");
+    if (d.hasAttrDeprecated()) {
+        const Decl* dd = &d.base;
+        const AST* a = dd.getAST();
+        const Attr* deprecated = a.getAttr(dd, Deprecated);
+        const char* msg = idx2name(deprecated.value.text);
+        out.print(" deprecated=\"%s\"", msg);
+    }
 
     out.space();
     out.color(col_Value);

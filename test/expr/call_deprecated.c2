@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+module test;
+
+import stdio local;
+import string local;
+
+fn void test1() {
+    char[128] buf;
+    gets(buf);  // @warning{function stdio.gets is deprecated: function cannot be used safely}
+}
+
+fn void test2(char* dest, const char* src) {
+    strncpy(dest, src, 10);  // @warning{function string.strncpy is deprecated: function has misleading semantics}
+}
+
+fn void test3(char* dest, const char* src) {
+    strncat(dest, src, 10);  // @warning{function string.strncat is deprecated: function has misleading semantics}
+}

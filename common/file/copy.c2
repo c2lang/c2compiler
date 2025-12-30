@@ -15,15 +15,13 @@
 
 module file_utils;
 
-import string local;
-
 // NOTE: depends on reader + writer
 public fn i32 copy_file(const char* source, const char* dest) {
     // Note: not most optimal yet
 
     // create required sub-directories in dest
     char[file_utils.Max_path] tmp;
-    strncpy(tmp, dest, elemsof(tmp));
+    pstrcpy(tmp, elemsof(tmp), dest);
     const char* base = get_basename(tmp);
     if (base != tmp) {
         u32 len = (u32)(base - tmp);
