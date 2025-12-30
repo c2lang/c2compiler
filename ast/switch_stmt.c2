@@ -29,13 +29,13 @@ type SwitchStmtBits struct {
 
 public type SwitchStmt struct @(opaque) {
     Stmt base;
-    Expr* cond;
+    Stmt* cond;
     SwitchCase*[0] cases; // tail-allocated
 }
 
 public fn SwitchStmt* SwitchStmt.create(ast_context.Context* c,
                                           SrcLoc loc,
-                                          Expr* cond,
+                                          Stmt* cond,
                                           SwitchCase** cases,
                                           u32 numCases,
                                           bool has_default)
@@ -68,11 +68,11 @@ fn Stmt* SwitchStmt.instantiate(SwitchStmt* s, Instantiator* inst) {
     return (Stmt*)s2;
 }
 
-public fn Expr* SwitchStmt.getCond(const SwitchStmt* s) {
+public fn Stmt* SwitchStmt.getCond(const SwitchStmt* s) {
     return s.cond;
 }
 
-public fn Expr** SwitchStmt.getCond2(SwitchStmt* s) {
+public fn Stmt** SwitchStmt.getCond2(SwitchStmt* s) {
     return s.cond ? &s.cond : nil;
 }
 

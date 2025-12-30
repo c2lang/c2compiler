@@ -338,9 +338,25 @@ fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
     const u32 num_cases = sw.getNumCases();
     SwitchCase** cases = sw.getCases();
 
+    Stmt* cond = sw.getCond();
+    bool is_decl = cond.isDecl();
+    if (is_decl) {
+        out.add("{\n");
+        indent++;
+        gen.emitStmt(cond, indent, true);
+        out.indent(indent);
+    }
     if (sw.isString()) {
+        // TODO move this transformation to analyser
         out.add("switch (c2_strswitch(");
-        gen.emitExpr(out, sw.getCond());
+        if (is_decl) {
+            DeclStmt* ds = (DeclStmt*)cond;
+            VarDecl* vd = ds.getDecl(0);
+            out.add(vd.asDecl().getName());
+        } else {
+            assert(cond.isExpr());
+            gen.emitExpr(out, (Expr*)cond);
+        }
         out.add1(',');
         bool has_s2 = false;
         for (u32 i = 0; i < num_cases; i++) {
@@ -381,12 +397,24 @@ fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
         out.add("}\n");
     } else {
         out.add("switch (");
-        gen.emitExpr(out, sw.getCond());
+        if (is_decl) {
+            DeclStmt* ds = (DeclStmt*)cond;
+            VarDecl* vd = ds.getDecl(0);
+            out.add(vd.asDecl().getName());
+        } else {
+            assert(cond.isExpr());
+            gen.emitExpr(out, (Expr*)cond);
+        }
         out.add(") {\n");
 
         for (u32 i = 0; i < num_cases; i++) {
             gen.emitCase(cases[i], indent, nil);
         }
+        out.indent(indent);
+        out.add("}\n");
+    }
+    if (is_decl) {
+        indent--;
         out.indent(indent);
         out.add("}\n");
     }

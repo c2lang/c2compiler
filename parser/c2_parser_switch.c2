@@ -28,11 +28,14 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
 
     p.expectAndConsume(Kind.LParen);
 
+    Stmt* cond;
     if (p.isDeclaration()) {
-        p.error("declarations inside a switch condition are not allowed");
+        // !checkSemi, !allowLocal, isCondition
+        cond = p.parseDeclStmt(false, false, true);
+    } else {
+        Expr* e = p.parseExpr();
+        cond = e.asStmt();
     }
-    Expr* cond = p.parseExpr();
-
     p.expectAndConsume(Kind.RParen);
 
     p.expectAndConsume(Kind.LBrace);

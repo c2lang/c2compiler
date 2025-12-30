@@ -22,6 +22,25 @@ import scope;
 import string_buffer;
 import string;
 
+fn QualType Analyser.analyseSwitchExpr(Analyser* ma, Stmt** s_ptr) {
+    Stmt* s = *s_ptr;
+    if (s.isDecl()) {
+        QualType qt = ma.analyseDeclStmt(s);
+        if (qt.isValid()) {
+            DeclStmt* ds = (DeclStmt*)s;
+            VarDecl* vd = ds.getDecl(0);
+            if (!vd.getInit()) {
+                ma.error(vd.asDecl().getLoc(), "variable declaration in switch expression must have an initializer");
+                return QualType_Invalid;
+            }
+        }
+        return qt;
+    }
+
+    assert(s.isExpr());
+    return ma.analyseExpr((Expr**)s_ptr, true, RHS);
+}
+
 fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     FlowBits flow = 0;
     SwitchStmt* sw = (SwitchStmt*)s;
@@ -31,8 +50,8 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     bool is_string = false;
 
     EnumTypeDecl* etd = nil;
-    // TODO switch is not a condition, not a bool!
-    QualType ct = ma.analyseExpr(sw.getCond2(), true, RHS);
+
+    QualType ct = ma.analyseSwitchExpr(sw.getCond2());
     if (ct.isInvalid()) {
         ma.scope.exit(ma.has_error);
         return FlowNext | FlowError;

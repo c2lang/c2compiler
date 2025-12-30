@@ -1,10 +1,21 @@
 // @warnings{no-unused}
 module test;
 
-fn void test1() {
-    switch (char* str = "apple") { // @error{declarations inside a switch condition are not allowed}
+fn const char* test1() {
+    switch (const char* str = "apple") {
     case "pear":
-        break;
+        return "";
+    default:
+        return str;
+    }
+}
+
+fn const char* test2() {
+    switch (const char* str) { // @error{variable declaration in switch expression must have an initializer}
+    case "pear":
+        return "";
+    default:
+        return str;
     }
 }
 

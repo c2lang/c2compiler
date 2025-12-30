@@ -172,7 +172,7 @@ fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
         break;
     case Switch:
         SwitchStmt* sw = (SwitchStmt*)s;
-        v.handleExpr(sw.getCond());
+        v.handleStmt(sw.getCond());
         const u32 numcases = sw.getNumCases();
         SwitchCase** cases = sw.getCases();
         for (u32 i=0; i<numcases; i++) {

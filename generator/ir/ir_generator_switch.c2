@@ -23,7 +23,10 @@ fn void Generator.emitSwitchStmt(Generator* gen, const Stmt* s) {
     ir_context.Context* c = gen.ctx;
     SwitchStmt* sw = (SwitchStmt*)s;
 
-    Expr* cond = sw.getCond();
+    Stmt* cond_stmt = sw.getCond();
+
+    assert(cond_stmt.isExpr()); // TODO handle switch (Decl* d = ..) ..
+    Expr* cond = (Expr*)cond_stmt;
     if (cond.isCtv()) {
         assert(0);
         // TODO
