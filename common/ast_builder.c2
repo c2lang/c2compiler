@@ -392,6 +392,10 @@ fn void Builder.actOnFunctionAttr(Builder* b, Decl* d, const Attr* a) {
     case Pure:
         fd.setAttrPure();
         break;
+    case Deprecated:
+        fd.setAttrDeprecated();
+        b.storeAttr(d, a);
+        break;
     default:
         b.diags.error(a.loc, "attribute '%s' is not applicable to functions", a.kind2name());
         break;

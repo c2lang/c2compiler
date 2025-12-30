@@ -481,3 +481,7 @@ const u32 _SC_V7_ILP32_OFF32 = 113;
 
 fn c_ulong lseek (i32 fd, c_ulong offset, i32 whence);
 
+fn char* mktemp(char* tpl);
+fn c_int mkstemp(char* tpl);
+fn char* mkdtemp(char* tpl);
+

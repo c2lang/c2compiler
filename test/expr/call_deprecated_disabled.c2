@@ -1,0 +1,19 @@
+// @warnings{no-unused}
+// @warnings{no-deprecated}
+module test;
+
+import stdio local;
+import string local;
+
+fn void test1() {
+    char[128] buf;
+    gets(buf);
+}
+
+fn void test2(char* dest, const char* src) {
+    strncpy(dest, src, 10);
+}
+
+fn void test3(char* dest, const char* src) {
+    strncat(dest, src, 10);
+}

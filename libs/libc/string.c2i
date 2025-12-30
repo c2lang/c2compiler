@@ -14,14 +14,17 @@ fn void* memcpy(void* dest, const void* src, c_size n);
 fn void* memccpy(void* dest, const void* src, c_int c, c_size n);
 fn void* memmove(void* dest, const void* src, c_size n);
 fn c_char* strcpy(c_char* dest, const c_char* src);
-fn c_char* strncpy(c_char* dest, const c_char* src, c_size n);
+#if EXPERIMENTAL
+fn c_char* strncpy(c_char* dest, const c_char* src, c_size n) @(deprecated="function has misleading semantics");
+#endif
 fn c_char* strdup(const c_char* s);
 fn c_char* strndup(const c_char* s, c_size n);
 
 /* 7.26.3 Concatenation functions */
 fn c_char* strcat(c_char* dest, const c_char* src);
-fn c_char* strncat(c_char* dest, const c_char* src, c_size n);
-
+#if EXPERIMENTAL
+fn c_char* strncat(c_char* dest, const c_char* src, c_size n) @(deprecated="function has misleading semantics");
+#endif
 /* 7.26.4 Comparison functions */
 fn c_int memcmp(const void* s1, const void* s2, c_size n);
 fn c_int strcmp(const c_char* s1, const c_char* s2);
