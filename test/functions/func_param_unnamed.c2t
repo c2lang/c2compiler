@@ -13,5 +13,5 @@ fn void test1(void* arg,
 }
 
 // @expect{atleast, cgen/build.c}
-static void test_test1(void* arg, void (*_arg1)(void* arg, int32_t a), _Bool (*_arg2)(void* _arg0, char _arg1), int32_t a);
+static void test_test1(void* arg, void (*_arg1)(void* arg, int32_t a), bool (*_arg2)(void* _arg0, char _arg1), int32_t a);
 

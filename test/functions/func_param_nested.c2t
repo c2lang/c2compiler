@@ -31,25 +31,25 @@ fn void test2() {
 }
 // @expect{atleast, cgen/build.c}
 typedef void (*test_Cb1)(void* _arg0,  _arg1, int32_t _arg2);
-typedef _Bool (*test_Cb2)(int32_t _arg0, int32_t _arg1);
+typedef bool (*test_Cb2)(int32_t _arg0, int32_t _arg1);
 
-static void test_callback1(void* arg, _Bool (*_arg1)(int32_t _arg0, int32_t _arg1), int32_t a);
+static void test_callback1(void* arg, bool (*_arg1)(int32_t _arg0, int32_t _arg1), int32_t a);
 static test_Cb1 test_cb1 = test_callback1;
-static _Bool test_callback2(int32_t a, int32_t b);
+static bool test_callback2(int32_t a, int32_t b);
 static test_Cb2 test_cb2 = test_callback2;
-static void test_test1(void* arg, void (*cb)(void* arg, _Bool (*_arg1)(int32_t _arg0, int32_t _arg1), int32_t a), _Bool (*inner)(int32_t _arg0, int32_t _arg1), int32_t a);
+static void test_test1(void* arg, void (*cb)(void* arg, bool (*_arg1)(int32_t _arg0, int32_t _arg1), int32_t a), bool (*inner)(int32_t _arg0, int32_t _arg1), int32_t a);
 static void test_test2(void);
 
-static void test_callback1(void* arg, _Bool (*_arg1)(int32_t _arg0, int32_t _arg1), int32_t a)
+static void test_callback1(void* arg, bool (*_arg1)(int32_t _arg0, int32_t _arg1), int32_t a)
 {
 }
 
-static _Bool test_callback2(int32_t a, int32_t b)
+static bool test_callback2(int32_t a, int32_t b)
 {
    return true;
 }
 
-static void test_test1(void* arg, void (*cb)(void* arg, _Bool (*_arg1)(int32_t _arg0, int32_t _arg1), int32_t a), _Bool (*inner)(int32_t _arg0, int32_t _arg1), int32_t a)
+static void test_test1(void* arg, void (*cb)(void* arg, bool (*_arg1)(int32_t _arg0, int32_t _arg1), int32_t a), bool (*inner)(int32_t _arg0, int32_t _arg1), int32_t a)
 {
    cb(arg, test_callback2, a);
    cb(arg, inner, a);

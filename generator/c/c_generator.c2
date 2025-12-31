@@ -251,7 +251,7 @@ const char*[] builtinType_cnames = {
     "double",
     "ssize_t",
     "size_t",
-    "_Bool",
+    "bool",
 }
 static_assert(elemsof(BuiltinKind), elemsof(builtinType_cnames));
 
@@ -1438,6 +1438,11 @@ const char[] Include_guard1 =
 const char[] C_types =
     ```c
     // --- internally added ---
+    #if !defined __STDC_VERSION__ || __STDC_VERSION__ < 202311L
+    #define bool _Bool
+    #define true 1
+    #define false 0
+    #endif
     typedef signed char int8_t;
     typedef unsigned char uint8_t;
     typedef signed short int16_t;
@@ -1447,8 +1452,6 @@ const char[] C_types =
     ```;
 const char[] C_defines =
     ```c
-    #define true 1
-    #define false 0
 
     #define NULL ((void*)0)
     #define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))
