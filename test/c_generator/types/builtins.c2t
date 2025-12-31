@@ -25,7 +25,7 @@ type S struct {
 
 typedef struct test_S_ test_S;
 struct test_S_ {
-    _Bool b;
+    bool b;
     int8_t i_8;
     int16_t i_16;
     int32_t i_32;

@@ -49,27 +49,27 @@ public fn i32 main(i32 argc, char** argv) {
 }
 
 // @expect{atleast, cgen/build.c}
-static _Bool test_check_case(const char* s, _Bool is_upper);
-static void test_fun1(const char* s, _Bool is_upper, _Bool is_lower);
-static void test_fun3(const char* s, _Bool _arg1, _Bool is_lower);
+static bool test_check_case(const char* s, bool is_upper);
+static void test_fun1(const char* s, bool is_upper, bool is_lower);
+static void test_fun3(const char* s, bool _arg1, bool is_lower);
 static void test_foo1(const char* s);
 static void test_foo2(const char* s);
 static void test_foo3(const char* s);
 static void test_test1(const char* s);
 int32_t main(int32_t argc, char** argv);
 
-static _Bool test_check_case(const char* s, _Bool is_upper)
+static bool test_check_case(const char* s, bool is_upper)
 {
    if (is_upper) return isupper(*s);
    else return islower(*s);
 
 }
 
-static void test_fun1(const char* s, _Bool is_upper, _Bool is_lower)
+static void test_fun1(const char* s, bool is_upper, bool is_lower)
 {
 }
 
-static void test_fun3(const char* s, _Bool _arg1, _Bool is_lower)
+static void test_fun3(const char* s, bool _arg1, bool is_lower)
 {
 }
 

@@ -24,7 +24,7 @@ typedef struct test_Foo_ test_Foo;
 struct test_Foo_ {
     int32_t i;
     int8_t* cp;
-    _Bool b;
+    bool b;
 };
 
 static test_Foo test_f = { };
