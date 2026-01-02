@@ -284,16 +284,16 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
 
     // Create a new stack frame and link it to the caller's
     // TODO: handle Stack frames as separate allocated objects
-    Evaluator eval;
-
-    if (num_args > elemsof(eval.args)) {
-        return Value.error("too many arguments in pure function evaluation");
-    }
+    Evaluator eval /*@(noinit)*/;
     eval.prev = caller;
     eval.fd = fd;
     eval.num_args = num_args;
     eval.depth = caller.depth + 1;
     eval.complexity = caller.complexity + 1;
+
+    if (num_args > elemsof(eval.args)) {
+        return Value.error("too many arguments in pure function evaluation");
+    }
 
     //VarDecl** params = fd.getParams();
 
