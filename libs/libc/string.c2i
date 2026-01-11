@@ -12,13 +12,13 @@ void* memcpy(void* dest, const void* src, size_t n);
 void* memccpy(void* dest, const void* src, int c, size_t n);
 void* memmove(void* dest, const void* src, size_t n);
 char* strcpy(char* dest, const char* src);
-char* strncpy(char* dest, const char* src, size_t n) @(deprecated="function has misleading semantics");
+char* strncpy(char* dest, const char* src, size_t n) @(deprecated="function has misleading semantics, consider using strlcpy");
 char* strdup(const char* s);
 char* strndup(const char* s, size_t n);
 
 /* 7.26.3 Concatenation functions */
 char* strcat(char* dest, const char* src);
-char* strncat(char* dest, const char* src, size_t n) @(deprecated="function has misleading semantics");
+char* strncat(char* dest, const char* src, size_t n) @(deprecated="function has misleading semantics, consider using strlcat");
 
 /* 7.26.4 Comparison functions */
 int memcmp(const void* s1, const void* s2, size_t n);
@@ -69,4 +69,47 @@ char* strchrnul(const char* s, int c);
 char* strnstr(const char* s1, const char* s2, size_t n);
 size_t strlcpy(char* dest, const char* src, size_t n);
 size_t strlcat(char* dest, const char* src, size_t n);
+#else
+/*
+ * Find the first occurrence of s2 in s1, where the search is limited to the
+ * first n c_characters of s.
+ */
+char *strnstr(const char *s1, const char *s2, size_t n) {
+    /* simplistic algorithm with O(n2) worst case */
+    char c = *s2++;
+    if (c == '\0') return (char *)s1;
+    size_t len = strlen(s2);
+    for (; n-- >= len && *s1; s1++) {
+        if (*s1 == c) {
+            for (size_t i = 1;; i++) {
+                if (i == len)
+                    return (char *)s1;
+                if (s1[i] != s2[i])
+                    break;
+            }
+        }
+    }
+    return nil;
+}
+
+size_t strlcpy(char *dst, const char *src, size_t n) {
+    for (size_t i = 0; i < n; i++) {
+        if ((dst[i] = *src++) == '\0') return i;
+    }
+    if (n) dst[n - 1] = '\0';
+    while (*src++) n++;
+    return n;
+}
+
+size_t strlcat(char *dst, const char *src, size_t n) {
+    size_t i = 0;
+    while (i < n && dst[i]) i++;
+    while (i < n) {
+        if ((dst[i] = *src++) == '\0') return i;
+        i++;
+    }
+    if (n) dst[n - 1] = '\0';
+    while (*src++) n++;
+    return n;
+}
 #endif
