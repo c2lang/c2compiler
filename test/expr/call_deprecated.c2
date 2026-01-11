@@ -6,13 +6,13 @@ import string local;
 
 fn void test1() {
     char[128] buf;
-    gets(buf);  // @warning{function stdio.gets is deprecated: function cannot be used safely}
+    gets(buf);  // @warning{function stdio.gets is deprecated: function cannot be used safely, consider using getsn}
 }
 
 fn void test2(char* dest, const char* src) {
-    strncpy(dest, src, 10);  // @warning{function string.strncpy is deprecated: function has misleading semantics}
+    strncpy(dest, src, 10);  // @warning{function string.strncpy is deprecated: function has misleading semantics, consider using strlcpy}
 }
 
 fn void test3(char* dest, const char* src) {
-    strncat(dest, src, 10);  // @warning{function string.strncat is deprecated: function has misleading semantics}
+    strncat(dest, src, 10);  // @warning{function string.strncat is deprecated: function has misleading semantics, consider using strlcat}
 }
