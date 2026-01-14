@@ -52,7 +52,11 @@ public fn u32 ImportDeclList.size(const ImportDeclList* l) {
     return l.count;
 }
 
-public fn ImportDecl** ImportDeclList.getDecls(const ImportDeclList* l) {
+public fn ImportDecl* ImportDeclList.get(const ImportDeclList* l, u32 i) {
+    return l.decls[i];
+}
+
+public fn ImportDecl** ImportDeclList.getDecls(const ImportDeclList* l) @(unused) {
     return l.decls;
 }
 

@@ -1,0 +1,36 @@
+// @warnings{no-unused}
+module test;
+
+import stdio local;
+
+public template<X = i32> {
+    fn X max(X a, X b) { return (a >= b) ? a : b; }
+    fn X min(X a, X b) { return (a <= b) ? a : b; }
+    fn X abs(X a) { return (a < 0) ? -a : a; }
+}
+
+// multiple template arguments not supported yet
+public template(X = const char*, Y = usize) {
+    fn X get(X* a, Y idx) { return a[idx]; }
+}
+
+// template integer arguments not supported yet
+public template(X, Min = 0, Max = 1000) {
+    fn X clamp(X a) { return a < Min ? Min : a > Max ? Max : a; }
+}
+
+public fn i32 main() {
+    i32 status = 0;
+    i32 a1 = max<i32>(0, 1);
+    status += (a1 == 1);
+    u64 a2 = min<u64>(0, 1);
+    status += (a2 == 0);
+    i32 a3 = max<i32>(0, 1);
+    status += (a3 == 1);
+    char[] str = "ab";
+    const char *a4 = max<const char*>(str, str + 1);
+    status += (a4 == str + 1);
+    //i32 a5 = clamp<i32>(100);
+    //status += (a5 == 100);
+    return status;
+}
