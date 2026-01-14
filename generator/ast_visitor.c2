@@ -53,6 +53,7 @@ public fn void Visitor.handle(Visitor* v, Decl* d) {
         break;
     case StructType:
         StructTypeDecl* s = (StructTypeDecl*)d;
+        if (s.isTemplate()) break;
         u32 num_members = s.getNumMembers();
         Decl** members = s.getMembers();
         for (u32 i=0; i<num_members; i++) {

@@ -31,7 +31,7 @@ public type AST struct @(opaque) {
     string_pool.Pool* auxPool;
     void* ptr;  // pointer used during analyser/generation (in analysis: Scope*)
     u32 name;   // into auxPool
-    u32 idx;    // ast idx
+    u16 idx;    // ast idx
     bool is_interface;
     bool is_generated;
 
@@ -44,8 +44,7 @@ public type AST struct @(opaque) {
 
     attr_table.Table* attrs;
 }
-
-static_assert(144+64, sizeof(AST));
+static_assert(200, sizeof(AST));
 
 fn AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod, bool is_interface, bool is_generated) {
     AST* a = stdlib.calloc(1, sizeof(AST));
@@ -79,7 +78,7 @@ public fn const char* AST.getFilename(const AST* a) @(unused) {
     return a.auxPool.idx2str(a.name);
 }
 
-public fn u32 AST.getIdx(const AST* a) { return a.idx; }
+public fn u16 AST.getIdx(const AST* a) { return a.idx; }
 
 public fn const char* AST.getName(const AST* a) {
     return a.mod.getName();
@@ -90,8 +89,8 @@ public fn u32 AST.getNameIdx(const AST* a) {
 }
 
 public fn SrcLoc AST.getLoc(const AST* a) {
-    ImportDecl** imports = a.imports.getDecls();
-    Decl* d = (Decl*)imports[0];
+    // Note: use the first 'Import' since it is really the module statement
+    Decl* d = (Decl*)a.imports.get(0);
     return d.getLoc();
 }
 
@@ -106,9 +105,8 @@ public fn void AST.addImport(AST* a, ImportDecl* d) {
 }
 
 public fn ImportDecl* AST.findImport(const AST* a, u32 name) {
-    ImportDecl** imports = a.imports.getDecls();
     for (u32 i=1; i<a.imports.size(); i++) {
-        ImportDecl* d = imports[i];
+        ImportDecl* d = a.imports.get(i);
         if (d.asDecl().getNameIdx() == name) return d;
 
     }
@@ -146,10 +144,9 @@ public fn void AST.addArrayValue(AST* a, ArrayValue* v) {
 public type ImportVisitor fn void (void* arg, ImportDecl* d);
 
 public fn void AST.visitImports(const AST* a, ImportVisitor visitor, void* arg) {
-    ImportDecl** imports = a.imports.getDecls();
     // Note: skip first 'Import' since it is really the module statement
     for (u32 i=1; i<a.imports.size(); i++) {
-        visitor(arg, imports[i]);
+        visitor(arg, a.imports.get(i));
     }
 }
 
@@ -167,17 +164,15 @@ fn void AST.visitArrayValues(AST* a, ArrayValueVisitor visitor, void* arg) {
 public type FunctionVisitor fn void (void* arg, FunctionDecl* d);
 
 fn void AST.visitTypeFunctions(const AST* a, FunctionVisitor visitor, void* arg) {
-    FunctionDecl** functions = a.functions.getDecls();
     for (u32 i=0; i<a.functions.size(); i++) {
-        FunctionDecl* d = functions[i];
+        FunctionDecl* d = a.functions.get(i);
         if (d.hasPrefix()) visitor(arg, d);
     }
 }
 
 public fn void AST.visitFunctions(const AST* a, FunctionVisitor visitor, void* arg) {
-    FunctionDecl** functions = a.functions.getDecls();
     for (u32 i=0; i<a.functions.size(); i++) {
-        FunctionDecl* d = functions[i];
+        FunctionDecl* d = a.functions.get(i);
         visitor(arg, d);
     }
 }
@@ -185,18 +180,16 @@ public fn void AST.visitFunctions(const AST* a, FunctionVisitor visitor, void* a
 public type TypeDeclVisitor fn void (void* arg, Decl* d);
 
 public fn void AST.visitTypeDecls(const AST* a, TypeDeclVisitor visitor, void* arg) {
-    Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
-        visitor(arg, types[i]);
+        visitor(arg, a.types.get(i));
     }
 }
 
 public type VarDeclVisitor fn void (void* arg, VarDecl* d);
 
 public fn void AST.visitVarDecls(const AST* a, VarDeclVisitor visitor, void* arg) {
-    Decl** variables = a.variables.getDecls();
     for (u32 i=0; i<a.variables.size(); i++) {
-        visitor(arg, (VarDecl*)variables[i]);
+        visitor(arg, (VarDecl*)a.variables.get(i));
     }
 }
 
@@ -213,9 +206,8 @@ public type DeclVisitor fn void (void* arg, Decl* d);
 
 public fn void AST.visitDecls(const AST* a, DeclVisitor visitor, void* arg) {
     // imports
-    ImportDecl** imports = a.imports.getDecls();
     for (u32 i=0; i<a.imports.size(); i++) {
-        visitor(arg, (Decl*)imports[i]);
+        visitor(arg, (Decl*)a.imports.get(i));
     }
 
     a.visitDeclsWithoutImports(visitor, arg);
@@ -223,29 +215,24 @@ public fn void AST.visitDecls(const AST* a, DeclVisitor visitor, void* arg) {
 
 fn void AST.visitDeclsWithoutImports(const AST* a, DeclVisitor visitor, void* arg) {
     // types
-    Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
-        visitor(arg, types[i]);
+        visitor(arg, a.types.get(i));
     }
 
     // variables
-    Decl** variables = a.variables.getDecls();
     for (u32 i=0; i<a.variables.size(); i++) {
-        visitor(arg, variables[i]);
+        visitor(arg, a.variables.get(i));
     }
 
     // functions
-    FunctionDecl** functions = a.functions.getDecls();
     for (u32 i=0; i<a.functions.size(); i++) {
-        FunctionDecl* d = functions[i];
-        visitor(arg, (Decl*)d);
+        visitor(arg, (Decl*)a.functions.get(i));
     }
 }
 
 fn Decl* AST.findType(const AST* a, u32 name_idx) {
-    Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
-        Decl* d = types[i];
+        Decl* d = a.types.get(i);
         if (d.getNameIdx() == name_idx) return d;
     }
     return nil;
@@ -274,28 +261,28 @@ fn void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs) {
     out.color(col_Normal);
     out.print("---- AST %s ----\n", a.getFilename());
 
-    ImportDecl** imports = a.imports.getDecls();
     for (u32 i=1; i<a.imports.size(); i++) {
-        imports[i].print(out, 0);
+        ImportDecl* d = a.imports.get(i);
+        d.print(out, 0);
     }
     if (a.imports.size() > 1) out.newline();
 
-    Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
-        types[i].print(out, 0);
+        Decl* d = a.types.get(i);
+        d.print(out, 0);
         out.newline();
     }
 
-    Decl** variables = a.variables.getDecls();
     for (u32 i=0; i<a.variables.size(); i++) {
-        variables[i].print(out, 0);
+        Decl* d = a.variables.get(i);
+        d.print(out, 0);
         out.newline();
     }
 
     if (show_funcs) {
-        FunctionDecl** functions = a.functions.getDecls();
         for (u32 i=0; i<a.functions.size(); i++) {
-            functions[i].print(out, 0);
+            FunctionDecl* d = a.functions.get(i);
+            d.print(out, 0);
             out.newline();
         }
     }
@@ -308,21 +295,21 @@ fn void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs) {
 
 fn void AST.setExported(AST* a) {
     // types, cannot be really exported, but do mark as such (for used?)
-    Decl** types = a.types.getDecls();
     for (u32 i=0; i<a.types.size(); i++) {
-        types[i].setExportedIfPublic();
+        Decl* d = a.types.get(i);
+        d.setExportedIfPublic();
     }
 
     // variables
-    Decl** variables = a.variables.getDecls();
     for (u32 i=0; i<a.variables.size(); i++) {
-        variables[i].setExportedIfPublic();
+        Decl* d = a.variables.get(i);
+        d.setExportedIfPublic();
     }
 
     // functions
-    Decl** functions = (Decl**)a.functions.getDecls();
     for (u32 i=0; i<a.functions.size(); i++) {
-        functions[i].setExportedIfPublic();
+        Decl* d = (Decl*)a.functions.get(i);
+        d.setExportedIfPublic();
     }
 }
 

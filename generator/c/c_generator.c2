@@ -406,6 +406,7 @@ fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl*
 
 fn void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
     StructTypeDecl* std = (StructTypeDecl*)d;
+    if (std.isTemplate()) return;
     if (std.isGlobal()) {
         if (std.isStruct()) out.add("struct ");
         else out.add("union ");
@@ -688,6 +689,7 @@ fn void Generator.on_forward_structs(void* arg, Decl* d) {
 
 fn void Generator.emitForwardStructDecl(Generator* gen, Decl* d, string_buffer.Buf* out) {
     StructTypeDecl* std = (StructTypeDecl*)d;
+    if (std.isTemplate()) return;
     if (std.hasAttrNoTypeDef()) return;
 
     out.add("typedef ");
@@ -735,6 +737,7 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
         break;
     case StructType:
         StructTypeDecl* std = (StructTypeDecl*)d;
+        if (std.isTemplate()) break;
         Fragment* f = gen.getFragment();
         gen.emitStruct(f.buf, d, 0);
         gen.addFragment(f, d.isPublic() && !std.isOpaque());

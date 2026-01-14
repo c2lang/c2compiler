@@ -29,6 +29,31 @@ const char[] DiagTooManyArgs = "too many arguments to %sfunction call, expected 
 const char[] DiagTooFewArgs = "too few arguments to %sfunction call, expected %d, have %d";
 const char[] NoteDeclaredHere = "'%s' is defined here";
 
+fn QualType Analyser.analyseTemplateExpr(Analyser* ma, Expr** e_ptr) {
+    Expr* e = *e_ptr;
+    TemplateExpr* tp = (TemplateExpr*)e;
+    Expr** func = tp.getFunc2();
+    Expr* origFn = tp.getFunc();  // store here to avoid the likely inserted FunctionPointerDecay cast
+    QualType qt = ma.analyseExpr(func, true, RHS);
+    if (qt.isInvalid()) return QualType_Invalid;
+    FunctionType* ft = qt.getFunctionTypeOrNil();
+    if (!ft) {
+        ma.errorRange(origFn.getLoc(), origFn.getRange(), "object type %s is not a function template", qt.diagName());
+        return QualType_Invalid;
+    }
+    FunctionDecl* fd = ft.getDecl();
+    if (!fd.isTemplate() || fd.isTemplateTypeFunction()) {
+        ma.errorRange(e.getLoc(), e.getRange(), "function %s is not a template function", fd.asDecl().getFullName());
+        return QualType_Invalid;
+    }
+
+    FunctionDecl* fd2 = ma.instantiateFunctionTemplate(fd, tp.getInstanceASTIdx(), tp.getArgs(), tp.getNumArgs());
+    if (!fd2) return QualType_Invalid;
+    fd2.asDecl().setUsed();
+    tp.setDecl(fd2.asDecl());
+    return fd2.asDecl().getType();
+}
+
 fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     CallExpr* call = (CallExpr*)e;
@@ -60,17 +85,10 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     if (fd.hasAttrNoReturn()) call.setNoreturn();
 
     if (fd.isTemplate()) {
-        if (!call.getTemplateArg()) {
-            ma.errorRange(e.getLoc(), e.getRange(), "function %s requires a template argument", fd.asDecl().getFullName());
-            return QualType_Invalid;
-        }
-        fd = ma.instantiateTemplateFunction(call, fd);
-        if (!fd) return QualType_Invalid;
-    } else {
-        if (call.getTemplateArg()) {
-            ma.errorRange(e.getLoc(), e.getRange(), "function %s is not a template function", fd.asDecl().getFullName());
-            return QualType_Invalid;
-        }
+        // TODO handle default type arguments
+        // TODO auto-instantiate based on actual argument types
+        ma.errorRange(e.getLoc(), e.getRange(), "function %s requires a template argument", fd.asDecl().getFullName());
+        return QualType_Invalid;
     }
 
     if (fd.hasAttrDeprecated() && !ma.warnings.no_deprecated) {
@@ -624,12 +642,18 @@ fn void Analyser.opaque_callback(void* arg, SrcLoc loc, Decl* d) {
     ma.error(loc," using opaque type '%s'", qt.diagName());
 }
 
-fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* call, FunctionDecl* fd) {
-    TypeRef* template_arg = call.getTemplateArg();
+fn FunctionDecl* Analyser.instantiateFunctionTemplate(Analyser* ma, FunctionDecl* fd, u16 instance_ast_idx, Expr** args, u32 num_args) {
+    // Only handle first argument for now, convert to type
+    TypeRef* template_arg = ma.getTemplateArg(*args);
+    if (!template_arg) return nil;
     QualType templateType = ma.analyseTypeRef(template_arg);
     if (templateType.isInvalid()) return nil;
 
-    FunctionDecl* instance = ma.mod.findInstance(fd, templateType);
+    // TODO create instiator, analyse/evaluate template expressions,
+    //   initialize TemplateSubst array from values or qualtypes,
+    //   compute instance name and check if name exists already
+
+    FunctionDecl* instance = (FunctionDecl*)ma.mod.findInstance(fd.asDecl(), templateType);
     if (!instance) {
         // note: template_arg decl is set here
         bool used_opaque = false;
@@ -639,11 +663,14 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
             Decl* d = (Decl*)std;
             used_opaque = (std.isOpaque() && d.getModule() != ma.mod);
         }
+        // TODO: use TemplateSpec in Instantiator
+        const TemplateSpec* spec = fd.getTemplateSpec();
         Instantiator inst = {
             .c = ma.context,
             .ref = template_arg,
-            .template_name = fd.getTemplateNameIdx(),
-            .instance_ast_idx = call.getInstanceASTIdx(),
+            .template_vars = spec.getTemplateVars(),
+            .template_len = spec.getTemplateLen(),
+            .instance_ast_idx = instance_ast_idx,
             .used_opaque = used_opaque,
             .arg = ma,
             .on_error = Analyser.opaque_callback,
@@ -653,6 +680,13 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
         ma.analyseFunction(instance);
         if (ma.has_error) return nil;
         d.setChecked();
+
+        // add instance to avoid recursive instantiation for the same type
+        u16 instance_idx = ma.mod.addInstance(fd.asDecl(), templateType, instance.asDecl());
+        char[64] name;
+        // TODO: use a more readable name, eg: max$i32
+        create_template_name(name, fd.asDecl().getName(), instance_idx);
+        d.setNameIdx(ma.astPool.addStr(name, true));
 
         // Note: we need a separate scope for the body
         Module* template_mod = fd.asDecl().getModule();
@@ -669,15 +703,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
         analyser.free();
 
         if (ma.has_error) return nil;
-
-        u16 instance_idx = ma.mod.addInstance(fd, templateType, instance);
-        instance.setTemplateInstanceIdx(instance_idx);
-        char[64] name;
-        create_template_name(name, d.getName(), instance_idx);
-        instance.setInstanceName(ma.astPool.addStr(name, true));
     }
-    call.setTemplateIdx(instance.getTemplateInstanceIdx());
-
     return instance;
 }
 

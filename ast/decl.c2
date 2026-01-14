@@ -104,6 +104,24 @@ fn void Decl.init(Decl* d, DeclKind k, u32 name_idx, SrcLoc loc, bool is_public,
     d.qt = qt;
 }
 
+fn Decl* Decl.instantiate(const Decl* d, Instantiator* inst) {
+    switch (d.getKind()) {
+    case Function:
+    case Import:
+        break;
+    case StructType:
+        return (Decl*)((StructTypeDecl*)d).instantiate(inst);
+    case EnumType:
+    case EnumConstant:
+    case FunctionType:
+    case AliasType:
+        break;
+    case Variable:
+        return (Decl*)((VarDecl*)d).instantiate(inst);
+    }
+    return (Decl*)d;
+}
+
 public fn bool Decl.hasGenIdx(const Decl* d) {
     return d.declBits.has_gen_idx;
 }
@@ -137,6 +155,7 @@ public fn bool Decl.isCheckInProgress(const Decl* d) {
     return d.getCheckState() == InProgress;
 }
 
+public fn void Decl.setUnchecked(Decl* d) @(unused) { d.declBits.check_state = DeclCheckState.Unchecked; }
 public fn void Decl.setChecked(Decl* d) { d.declBits.check_state = DeclCheckState.Checked; }
 public fn void Decl.setCheckInProgress(Decl* d) { d.declBits.check_state = DeclCheckState.InProgress; }
 
@@ -167,6 +186,7 @@ public fn void Decl.setAttrUnused(Decl* d) { d.declBits.attr_unused = 1; }
 
 public fn bool Decl.hasAttrUnused(const Decl* d) { return d.declBits.attr_unused; }
 
+public fn void Decl.setNameIdx(Decl* d, u32 name_idx) { d.name_idx = name_idx; }
 
 public fn bool Decl.isStructType(const Decl* d) {
     return d.getKind() == StructType;
@@ -221,7 +241,7 @@ public fn void Decl.setType(Decl* d, QualType qt) { d.qt = qt; }
 
 public fn AST* Decl.getAST(const Decl* d) { return idx2ast(d.ast_idx); }
 
-fn u32 Decl.getASTIdx(const Decl* d) { return d.ast_idx; }
+public fn u16 Decl.getASTIdx(const Decl* d) { return d.ast_idx; }
 
 public fn Module* Decl.getModule(const Decl* d) {
     const AST* a = d.getAST();
@@ -298,6 +318,21 @@ public fn const char* Decl.getCName(const Decl* d) {
     return nil;
 }
 
+public fn bool Decl.setCName(Decl* d, u32 cname_idx) {
+    AST* ast_ = d.getAST();
+    if (!ast_) return false;
+    Attr a = {
+        .kind = CName,
+        .value_kind = String,
+        .value = {
+            .text = cname_idx,
+        }
+    }
+    d.setHasAttr();
+    ast_.storeAttr(d, &a);
+    return true;
+}
+
 public fn bool Decl.hasCName(const Decl* d) {
     if (!d.hasAttr()) return false;
 
@@ -329,6 +364,8 @@ public fn const char* Decl.getFullName(const Decl* d) {
     local u32 tmp_id = 0;
     u32 tmp_size = elemsof(tmp_buf[0]);
     char* tmp = tmp_buf[tmp_id++ & 3];
+    tmp[0] = '?';
+    tmp[1] = '\0';
 
     const char* modname = d.getModuleName();
 
@@ -351,7 +388,17 @@ public fn const char* Decl.getFullName(const Decl* d) {
         Decl* ed = (Decl*)etd;
         stdio.snprintf(tmp, tmp_size, "%s.%s.%s", modname, ed.getName(), d.getName());
         break;
-    default:
+    case Variable:
+        if (((VarDecl*)d).isGlobal()) {
+            stdio.snprintf(tmp, tmp_size, "%s.%s", modname, d.getName());
+        } else {
+            stdio.snprintf(tmp, tmp_size, "%s", d.getName());
+        }
+        break;
+    case StructType:
+    case EnumType:
+    case FunctionType:
+    case AliasType:
         stdio.snprintf(tmp, tmp_size, "%s.%s", modname, d.getName());
         break;
     }

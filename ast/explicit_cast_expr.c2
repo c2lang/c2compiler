@@ -52,8 +52,7 @@ public fn ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c,
 }
 
 fn Expr* ExplicitCastExpr.instantiate(ExplicitCastExpr* e, Instantiator* inst) {
-    bool matches = e.dest.matchesTemplate(inst.template_name);
-    u32 extra = matches ? inst.ref.getExtraSize() : e.dest.getExtraSize();
+    u32 extra = e.dest.instantiateExtraSize(inst);
     u32 size = sizeof(ExplicitCastExpr) + extra;
 
     ExplicitCastExpr* e2 = inst.c.alloc(size);

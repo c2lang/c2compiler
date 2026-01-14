@@ -64,6 +64,7 @@ fn ExprWidth getExprWidth(const Expr* e) {
         return getTypeWidth(e.getType());
     case Type:
         break;
+    case Template:
     case Call:
         return getTypeWidth(e.getType());
     case InitList:

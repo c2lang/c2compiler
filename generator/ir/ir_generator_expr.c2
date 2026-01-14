@@ -50,6 +50,7 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         gen.emitIdentifier(result, e);
         break;
     case Type:
+    case Template:
         assert(0);
         break;
     case Call:
@@ -341,6 +342,7 @@ fn void Generator.emitCond(Generator* gen, const Expr* e, BlockId true_blk, Bloc
         assert(0); // should have cast?
         break;
     case Type:
+    case Template:
         assert (0);
         break;
     case Call:

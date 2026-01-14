@@ -20,6 +20,17 @@ import name_vector local;
 import size_analyser;
 
 fn void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
+    if (d.isTemplate()) {
+        // do analyze template names (eg X) for name clash
+        const TemplateSpec* spec = d.getTemplateSpec();
+        u32 len = spec.getTemplateLen();
+        const TemplateVar* vars = spec.getTemplateVars();
+        for (u32 i = 0; i < len; i++) {
+            ma.scope.checkGlobalSymbol(vars[i].name, vars[i].loc);
+        }
+        return;  // only analyse on instantiation
+    }
+
     if (d.isOpaque()) {
         ma.checkStack[ma.checkIndex-1].usedPublic = false;
         ma.usedPublic = false;
@@ -198,10 +209,11 @@ fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVector*
             if (names.find(name_idx, &old_index)) {
                 ma.error(member.getLoc(), "duplicate struct/union member '%s'", member.getName());
                 ma.note(locs.get(old_index), "previous declaration is here");
-                return;
+                //return;
+            } else {
+                names.add(name_idx);
+                locs.add(member.getLoc());
             }
-            names.add(name_idx);
-            locs.add(member.getLoc());
 
             if (member.isStructType()) {
                 NameVector sub_names.init(sub.getNumMembers());
@@ -213,5 +225,4 @@ fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVector*
         }
     }
 }
-
 

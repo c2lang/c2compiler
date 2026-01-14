@@ -57,6 +57,9 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
     case Type:
         // should not happen
         break;
+    case Template:
+        // TODO: should evaluate to a function decl
+        break;
     case Call:
         const CallExpr* c = (CallExpr*)e;
         return eval.eval_call(c);
@@ -227,7 +230,10 @@ fn Value Evaluator.get_unaryop_value(Evaluator* eval, const UnaryOperator* e) {
 }
 
 fn Value Evaluator.get_decl_value(Evaluator* eval, const Decl* d) {
-    assert(d);
+    //assert(d);
+    if (!d) {
+        return Value.error("unresolved definition");
+    }
     switch (d.getKind()) {
     case EnumConstant:
         const EnumConstantDecl* ecd = (EnumConstantDecl*)d;
