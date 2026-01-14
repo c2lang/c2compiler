@@ -1,0 +1,82 @@
+/* Copyright 2022-2026 Bas van den Berg, Charlie Gordon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import ast_context;
+import src_loc local;
+import string_buffer;
+
+import string;
+
+public const u32 MaxTemplateArg = 7;
+
+public type TemplateVar struct {
+    u32 name;
+    SrcLoc loc;
+    Expr* def;
+}
+
+public type TemplateSpec struct @(opaque) {
+    SrcLoc loc;
+    bool is_public;
+    u8 len;
+    u16 ast_idx;    // into globals.ast_list, 0 means nil
+    TemplateVar[0] vars;
+}
+
+public fn TemplateSpec* TemplateSpec.create(ast_context.Context* c,
+                                            SrcLoc loc,
+                                            bool is_public,
+                                            u32 ast_idx,
+                                            TemplateVar* vars,
+                                            u32 len)
+{
+    u32 size = sizeof(TemplateSpec) + len * sizeof(TemplateVar);
+    TemplateSpec* d = c.alloc(size);
+    d.is_public = is_public;
+    d.len = (u8)len;
+    d.ast_idx = (u16)ast_idx;
+    string.memcpy(d.vars, vars, len * sizeof(TemplateVar));
+
+#if AstStatistics
+    Stats.addTemplateSpec(size);
+#endif
+    return d;
+}
+
+public fn u32 TemplateSpec.getTemplateLen(const TemplateSpec* spec) {
+    return spec.len;
+}
+
+public fn const TemplateVar* TemplateSpec.getTemplateVars(const TemplateSpec* spec) {
+    return spec.vars;
+}
+
+fn void TemplateSpec.print(const TemplateSpec* spec, string_buffer.Buf* out, u32 indent) {
+    out.indent(indent + 1);
+    out.color(col_Template);
+    if (spec.len > 1) {
+        out.add("template(");
+        for (u32 i = 0; i < spec.len; i++) {
+            if (i) out.add(", ");
+            out.add(idx2name(spec.vars[i].name));
+        }
+        out.add(")\n");
+    } else {
+        out.print("template %s\n", idx2name(spec.vars[0].name));
+    }
+}
+

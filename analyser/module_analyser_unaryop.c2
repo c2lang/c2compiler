@@ -221,6 +221,7 @@ fn IdentifierKind getInnerExprAddressOf(const Expr* e) {
         IdentifierExpr* i = (IdentifierExpr*)e;
         return i.getKind();
     case Type:
+    case Template:
     case Call:
     case InitList:
     case FieldDesignatedInit:
