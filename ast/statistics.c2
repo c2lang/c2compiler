@@ -32,7 +32,7 @@ type Stats struct {
     Stat[elemsof(ExprKind)] exprs;
     Stat[elemsof(StmtKind)] stmts;
     Stat[elemsof(DeclKind)] decls;
-    Stat[3] others; // 0=ArrayValue, 1=StaticAssert, 2=SwitchCase
+    Stat[4] others; // 0=ArrayValue, 1=StaticAssert, 2=SwitchCase, 3=TemplateSpec
 }
 
 fn void Stats.reset(Stats* s) {
@@ -67,7 +67,7 @@ fn void Stats.addDecl(DeclKind kind, u32 size) {
     globals.stats.decls[kind].add(size);
 }
 
-const char*[] other_names = { "ArrayValue", "StaticAssert", "SwitchCase" }
+const char*[] other_names = { "ArrayValue", "StaticAssert", "SwitchCase", "TemplateSpec" }
 
 fn void Stats.addArrayValue(u32 size) {
     globals.stats.others[0].add(size);
@@ -79,6 +79,10 @@ fn void Stats.addStaticAssert(u32 size) {
 
 fn void Stats.addSwitchCase(u32 size) {
     globals.stats.others[2].add(size);
+}
+
+fn void Stats.addTemplateSpec(u32 size) {
+    globals.stats.others[3].add(size);
 }
 
 fn void Stat.slack(const Stat* ss, u32* countp, u32* totalp) {
@@ -153,7 +157,7 @@ fn void Stats.dump(const Stats* s) {
     printf("--- Other ---\n");
     u32 otherTotal = 0;
     u32 otherCount = 0;
-    for (u32 i=0; i<3; i++) {
+    for (u32 i = 0; i < elemsof(s.others); i++) {
         s.others[i].dump(other_names[i], &otherCount, &otherTotal);
     }
     printf("  %20s  %6d  %7d\n", "total", otherCount, otherTotal);

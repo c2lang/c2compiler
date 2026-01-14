@@ -1,0 +1,126 @@
+// @warnings{no-unused}
+module vector;
+
+import stdio local;
+import stdlib local;
+import string local;
+
+//public template(T, N = 4) {
+public template(T) {
+
+    // template integer arguments not supported yet
+    const u32 N = 4;
+
+    type Vector struct {
+        u32 len;
+        u32 cap;
+        T* ptr;
+        T[N] stash;
+    }
+
+    fn void Vector.init(Vector* v) {
+        v.len = 0;
+        v.len = 0;
+        v.cap = elemsof(v.stash);
+        v.ptr = v.stash;
+    }
+
+    fn void Vector.free(Vector* v) {
+        if (v.cap > elemsof(v.stash)) free(v.ptr);
+        v.len = 0;
+        v.cap = 0;
+    }
+
+    fn void Vector.add(Vector* v, T e) {
+        if (v.len >= v.cap) {
+            if (N > 0 && v.cap == 0) {
+                v.cap = elemsof(v.stash);
+                v.ptr = v.stash;
+            } else {
+                u32 cap2 = v.cap + v.cap / 2 + 2;
+                T* vec2 = malloc(cap2 * sizeof(const T));   // need const because T is ambiguous
+                memcpy(vec2, v.ptr, v.len * sizeof(const T));
+                if (v.cap > elemsof(v.stash)) free(v.ptr);
+                v.cap = cap2;
+                v.ptr = vec2;
+            }
+        }
+        v.ptr[v.len] = e;
+        v.len++;
+    }
+
+    fn void Vector.clear(Vector* v) { v.len = 0; }
+    fn u32 Vector.size(const Vector* v) { return v.len; }
+
+    fn T Vector.get(const Vector* v, u32 idx) {
+        //assert(idx < v.len);
+        return v.ptr[idx];
+    }
+
+    fn const T* Vector.getPtr(const Vector* v, u32 idx = 0) {
+        return &v.ptr[idx];
+    }
+
+    type IntVector struct { Vector<T> base; }
+
+    fn void IntVector.init(IntVector* v) { v.base.init(); }
+    fn void IntVector.free(IntVector* v) { v.base.free(); }
+    fn void IntVector.add(IntVector* v, T e) { v.base.add(e); }
+    fn void IntVector.clear(IntVector* v) { v.base.clear(); }
+    fn u32 IntVector.size(const IntVector* v) { return v.base.size(); }
+    fn T IntVector.get(const IntVector* v, u32 idx) { return v.base.get(idx); }
+    fn const T* IntVector.getPtr(const IntVector* v, u32 idx = 0) { return v.base.getPtr(idx); }
+
+    fn i32 IntVector.printlen(const IntVector* v) {
+        i32 max_len = 1;
+        for (u32 i = 0; i < v.size(); i++) {
+            i32 len = snprintf(nil, 0, "%d", v.get(i));
+            if (max_len < len) max_len = len;
+        }
+        return max_len;
+    }
+
+    fn void IntVector.print(const IntVector* v,
+                            const char* prefix = "{", const char* suffix = " }\n",
+                            i32 printlen = 1)
+    {
+        fputs(prefix, stdout);
+        for (u32 i = 0; i < v.size(); i++) {
+            if (i > 0) putchar(',');
+            printf(" %*d", printlen, v.get(i));
+        }
+        fputs(suffix, stdout);
+    }
+}
+
+IntVector<u8> v0;
+
+public fn i32 main(i32 argc, char** argv) {
+
+    IntVector<i32> v1.init();
+    IntVector<i64> v2.init();
+
+    for (i32 i = 1; i < argc; i++) {
+        i32 x = atoi(argv[i]);
+        v1.add(x);
+        v2.add(x * 10000000000);
+    }
+
+    v0.print("v0 = {", " }\n");
+    v1.print("v1 = {", " }\n");
+    v2.print("v2 = {", " }\n");
+
+    Vector<IntVector<i64> > v2d.init();
+    for (u32 i = 0; i < 10; i++) {
+        IntVector<i64> v.init();
+        for (u32 j = 0; j < 10; j++) v.add(i + j);
+        v2d.add(v);
+    }
+    i32 width = snprintf(nil, 0, "%d", 9 * 9);
+    printf("{\n");
+    for (u32 i = 0; i < v2d.size(); i++) {
+        v2d.getPtr(i).print("  {", " }\n", width);
+    }
+    printf("}\n");
+    return 0;
+}
