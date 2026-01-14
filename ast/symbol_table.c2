@@ -46,7 +46,11 @@ public fn u32 SymbolTable.size(const SymbolTable* t) {
     return t.num_public + t.num_private;
 }
 
-public fn Decl** SymbolTable.getDecls(const SymbolTable* t) {
+public fn Decl* SymbolTable.get(const SymbolTable* t, u32 i) {
+    return t.decls[i];
+}
+
+public fn Decl** SymbolTable.getDecls(const SymbolTable* t) @(unused) {
     return t.decls;
 }
 
@@ -124,9 +128,8 @@ public fn void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
         out.newline();
         if (d.isStructType()) {
             StructTypeDecl* std = (StructTypeDecl*)d;
-            const FunctionDecl** fds = std.getStructFunctions();
             for (u32 j=0; j<std.getNumStructFunctions(); j++) {
-                Decl* fd = (Decl*)fds[j];
+                Decl* fd = (Decl*)std.getStructFunction(j);
                 out.color(fd.isUsed() ? color.Normal : color.Grey);
                 out.indent(6);
                 out.print("%s.%s()", name, fd.getName());

@@ -113,7 +113,7 @@ public fn bool Value.isDecimal(const Value* v) {
     return v.kind == Integer;
 }
 
-fn bool Value.isError(const Value* v) {
+public fn bool Value.isError(const Value* v) {
     return v.kind == Error;
 }
 

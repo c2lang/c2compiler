@@ -296,6 +296,7 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         gen.ctx.addInitSymbol(sid);
         break;
     case Type:
+    case Template:
     case Call:
         e.dump();
         assert(0);  // should be CTV

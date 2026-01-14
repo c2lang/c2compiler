@@ -22,8 +22,15 @@ import scope;
 // Note: only analyses prototype + args, not the function body
 fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
     if (fd.isTemplate()) {
-        // do analyze template name (eg X) for name clash
-        ma.scope.checkGlobalSymbol(fd.getTemplateNameIdx(), fd.getTemplateLoc());
+        // do analyze template names (eg X) for name clash
+        const TemplateSpec* spec = fd.getTemplateSpec();
+        if (spec) {
+            u32 len = spec.getTemplateLen();
+            const TemplateVar* vars = spec.getTemplateVars();
+            for (u32 i = 0; i < len; i++) {
+                ma.scope.checkGlobalSymbol(vars[i].name, vars[i].loc);
+            }
+        }
 
         // check rtype for array-type
         TypeRef* rtype = fd.getReturnTypeRef();
@@ -128,16 +135,15 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
     bool is_typefn = false;
     if (num_params && fd.hasPrefix()) {
         // check if SF if first arg is (const) Struct* or (const) Struct
-        // Note: use TypeRef, since it's faster to check
-        const Ref* prefix = fd.getPrefix();
-        const Decl* pd = prefix.decl;
-        assert(pd);
-        QualType prefixType = pd.getType();
-
-        TypeRef* ref = params[0].getTypeRef();
-        const Ref* param_ref = ref.getUser();
-        // Note: for enum types it can be the Type or a pointer to that type
-        bool is_non_static = ((param_ref && param_ref.decl == prefix.decl) || ref.isPointerTo(prefixType.getIndex()));
+        // Note: use TypeRef, since it's simpler to check
+        const Ref* func_prefix = fd.getPrefix();
+        const TypeRef* arg_ref = params[0].getTypeRef();
+        const Ref* user = arg_ref.getUser();
+        bool is_non_static = (user &&
+                              user.name_idx == func_prefix.name_idx &&
+                              arg_ref.getNumPointers() <= 1 &&
+                              !arg_ref.hasPrefix() &&
+                              !arg_ref.isTemplate());
         if (is_non_static) {
             fd.setCallKind(TypeFunc);
             is_typefn = true;
