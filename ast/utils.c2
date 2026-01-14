@@ -35,7 +35,7 @@ static_assert(32, sizeof(FunctionTypeDecl));
 static_assert(32, sizeof(VarDecl));
 static_assert(40, sizeof(EnumConstantDecl));
 static_assert(40, sizeof(ImportDecl));
-static_assert(48, sizeof(StructTypeDecl));
+static_assert(56, sizeof(StructTypeDecl));
 static_assert(80, sizeof(FunctionDecl));
 
 static_assert(8, sizeof(Stmt));
@@ -210,7 +210,7 @@ public fn QualType getBuiltinQT(BuiltinKind kind) {
     return globals.builtins[kind];
 }
 
-fn u32 Globals.addAST(Globals* g, AST* a) {
+fn u16 Globals.addAST(Globals* g, AST* a) {
     if (g.ast_count >= g.ast_capacity) {
         if (g.ast_capacity == 0) g.ast_capacity = 16;
         else g.ast_capacity *= 2;
@@ -227,7 +227,7 @@ fn u32 Globals.addAST(Globals* g, AST* a) {
     u32 idx = g.ast_count;
     g.ast_list[idx] = a;
     g.ast_count++;
-    return idx;
+    return (u16)idx;
 }
 
 fn AST* Globals.idx2ast(Globals* g, u32 idx) {
@@ -247,7 +247,7 @@ fn void flushDumpBuf(string_buffer.Buf* out) {
 Color col_Stmt = Color.Bmagenta;
 Color col_Decl = Color.Bgreen;
 Color col_Expr = Color.Bmagenta;
-Color col_Attr = Color.Bblue;
+Color col_Attr = Color.Blue;
 Color col_Template = Color.Green;
 //Color col_Cast = Color.Red;
 Color col_Type = Color.Green;

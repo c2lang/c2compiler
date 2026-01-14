@@ -150,6 +150,19 @@ public fn void Buf.add(Buf* buf, const char* text) {
     buf.add2(text, len);
 }
 
+// append a possibly qualified name or number as part of a mangled name
+public fn void Buf.addMangledName(Buf* buf, const char* text, bool member) {
+    //buf.print("%d", (u32)strlen(text));
+    if (member) buf.add1('$');
+    char first = *text;
+    if (first == '-') text++;
+    while (char c = *text++) {
+        if (c == '.') c = '_';
+        buf.add1(c);
+    }
+    if (first == '-') buf.add1('n');
+}
+
 public fn void Buf.add2(Buf* buf, const char* text, u32 len) {
     if (buf.size_ + len + 1 > buf.capacity) {
         // truncate if resize fails.

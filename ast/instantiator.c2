@@ -20,15 +20,30 @@ import src_loc;
 
 public type OpaqueErrorfn fn void (void* arg, src_loc.SrcLoc loc, Decl* decl);
 
+public type TemplateSubst struct {
+    u32 name_idx;
+    bool is_type;
+    union {
+        TypeRef* ref;
+        Expr* lit;
+    }
+}
+
 public type Instantiator struct {
     ast_context.Context* c;
     const TypeRef* ref;
-    u32 template_name;
+    const TemplateVar *template_vars;
+    u32 template_len;
+    u32 template_type_name;
     u16 instance_ast_idx;
     // for opaque checking
     bool used_opaque;
     void* arg;
     OpaqueErrorfn on_error;
+    TypeRefHolder template_type_ref;
+
+    u32 subst_len;
+    TemplateSubst[1 + MaxTemplateArg] subst;
 }
 
 fn void Instantiator.on_opaque(Instantiator* inst, src_loc.SrcLoc loc, Decl* decl) {
