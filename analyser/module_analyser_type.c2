@@ -42,7 +42,6 @@ fn void Analyser.analyseAliasType(Analyser* ma, AliasTypeDecl* a) {
 fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
     u32 num_constants = d.getNumConstants();
     EnumConstantDecl** constants = d.getConstants();
-    Value value = { }
     QualType implType = d.getImplType();
 
     if (num_constants == 0) {
@@ -50,6 +49,9 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
         return;
     }
 
+    bool is_regular = true;
+    Value value = { }
+    Value prev_value;
     for (u32 i=0; i<num_constants; i++) {
         EnumConstantDecl* c = constants[i];
         Decl* ecd = (Decl*)c;
@@ -70,6 +72,7 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
 
         Expr* initval = c.getInit();
         if (initval) {
+            // NOTE: associated values are analysed in a separate phase
             QualType res = ma.analyseExpr(c.getInit2(), true, RHS);
             if (res.isInvalid()) return;
             initval = c.getInit();  // re-read in case of ImplicitCast has been inserted
@@ -93,10 +96,17 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
         } else {
             if (!ctv_analyser.checkTypeRange(ma.diags, implType, &value, cd.getLoc(), nil)) return;
         }
+        if (i == 0) {
+            if (!value.isZero()) is_regular = false;
+        } else {
+            if (!value.isNext(&prev_value)) is_regular = false;
+        }
+        prev_value = value;
         c.setValue(value);
         ecd.setChecked();
         value.incr();
     }
+    if (is_regular) d.setRegular();
 }
 
 fn QualType Analyser.analyseStructMemberTypeRef(Analyser* ma, TypeRef* ref) {
@@ -252,6 +262,10 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
                 const EnumTypeDecl* etd = et.getDecl();
                 is_enum = true;
                 size = etd.getNumConstants();
+                if (!etd.isRegular()) {
+                    ma.error(ref.getLoc(), "%s is not a regular enum", qt.diagName());
+                    return QualType_Invalid;
+                }
             } else {
                 qt = ma.convertRvalue(sizeExpr_p, qt);
                 if (qt.isInvalid()) return qt;

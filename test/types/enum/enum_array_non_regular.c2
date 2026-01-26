@@ -1,0 +1,13 @@
+// @warnings{no-unused}
+module test;
+
+type Kind enum u8 {
+    A,
+    B,
+    D = 6,
+}
+
+const u32[Kind] Numbers = { // @error{test.Kind is not a regular enum}
+    [A] = 2,
+}
+

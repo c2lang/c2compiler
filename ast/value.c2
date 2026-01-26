@@ -649,6 +649,12 @@ fn bool Value.is_greater_equal(const Value* v1, const Value* v2) {
     return false;
 }
 
+public fn bool Value.isNext(const Value* v1, const Value* v2) {
+    if (v1.kind != Integer || v2.kind != Integer) return false;
+    if (v1.negative || v2.negative) return false;
+    return v1.uvalue - 1  == v2.uvalue;
+}
+
 public fn void Value.mask(Value* v, u32 width) {
     if (v.negative) {
         v.uvalue = ~v.uvalue + 1;

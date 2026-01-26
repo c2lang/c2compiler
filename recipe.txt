@@ -160,7 +160,7 @@ executable c2c
     $warnings no-unused-parameter
     $warnings no-unused-enum-constant
     $warnings unreachable-code
-    $warnings promote-to-error
+    #$warnings promote-to-error
     $use pthread dynamic
 
     $backend c

@@ -23,6 +23,7 @@ import string;
 type EnumTypeDeclBits struct {
     u32 : NumDeclBits;
     u32 is_incremental : 1;
+    u32 is_regular : 1;
     u32 num_constants : 12;
 }
 
@@ -71,6 +72,14 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
     Stats.addDecl(DeclKind.EnumType, size);
 #endif
     return d;
+}
+
+public fn void EnumTypeDecl.setRegular(EnumTypeDecl* d) {
+    d.base.enumTypeDeclBits.is_regular = true;
+}
+
+public fn bool EnumTypeDecl.isRegular(const EnumTypeDecl* d) {
+    return d.base.enumTypeDeclBits.is_regular;
 }
 
 /*
@@ -166,7 +175,9 @@ public fn Decl* EnumTypeDecl.findFunction(const EnumTypeDecl* d, u32 name_idx) {
 fn void EnumTypeDecl.print(EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
     d.base.printKind(out, indent, true);
     d.base.printBits(out);
+    out.color(col_Attr);
     if (d.isIncremental()) out.add(" incremental");
+    if (d.isRegular()) out.add(" regular");
     d.base.printAttrs(out);
     d.base.printName(out);
     out.space();
