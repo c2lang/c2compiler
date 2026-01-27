@@ -24,15 +24,11 @@ fn void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
         ma.checkStack[ma.checkIndex-1].usedPublic = false;
         ma.usedPublic = false;
     }
-    u32 num_members = d.getNumMembers();
+    NameVector names.init(d.getNumMembers());
 
-    NameVector names.init(num_members);
-    NameVector locs.init(num_members);
-
-    ma.analyseStructNames(d, &names, &locs);
+    ma.analyseStructNames(d, &names);
 
     names.free();
-    locs.free();
 
     ma.analyseStructMembers(d);
 
@@ -175,7 +171,7 @@ fn void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
     // TODO check initValue
 }
 
-fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVector* names, NameVector* locs) {
+fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVector* names) {
     // note: already checked that struct doesn't have 0 members
     u32 count = d.getNumMembers();
     Decl** members = d.getMembers();
@@ -191,27 +187,22 @@ fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameVector*
         if (name_idx == 0) {
             // can be anonymous sub-struct/union or anonymous bit-field
             if (member.isStructType()) {
-                ma.analyseStructNames(sub, names, locs);
+                ma.analyseStructNames(sub, names);
             }
         } else {
-            u32 old_index;
-            if (names.find(name_idx, &old_index)) {
+            if (NamePosition* found = names.findPtr(name_idx)) {
                 ma.error(member.getLoc(), "duplicate struct/union member '%s'", member.getName());
-                ma.note(locs.get(old_index), "previous declaration is here");
+                ma.note(found.loc, "previous declaration is here");
                 return;
             }
-            names.add(name_idx);
-            locs.add(member.getLoc());
+            names.add({ name_idx, member.getLoc() });
 
             if (member.isStructType()) {
                 NameVector sub_names.init(sub.getNumMembers());
-                NameVector sub_locs.init(sub.getNumMembers());
-                ma.analyseStructNames(sub, &sub_names, &sub_locs);
+                ma.analyseStructNames(sub, &sub_names);
                 sub_names.free();
-                sub_locs.free();
             }
         }
     }
 }
-
 
