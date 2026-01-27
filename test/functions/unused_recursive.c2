@@ -1,0 +1,9 @@
+module test;
+
+fn i32 fib(i32 n) {     // @warning{unused function 'test.fib'}
+    return n <= 2 ? 1 : fib(n - 1) + fib(n - 2);
+}
+
+public fn i32 main() {
+    return 1;
+}

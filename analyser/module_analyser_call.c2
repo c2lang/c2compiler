@@ -56,7 +56,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     */
 
     FunctionDecl* fd = ft.getDecl();
-    fd.asDecl().setUsed();
+    if (fd != ma.curFunction) fd.asDecl().setUsed();
     if (fd.hasAttrNoReturn()) call.setNoreturn();
 
     if (fd.isTemplate()) {
@@ -702,7 +702,7 @@ fn QualType Analyser.analysePureCallExpr(Analyser* ma, Expr* e) {
     }
 
     FunctionDecl* fd = ft.getDecl();
-    fd.asDecl().setUsed();
+    if (fd != ma.curFunction) fd.asDecl().setUsed();
 
     if (!fd.hasAttrPure()) {
         ma.error(e.getLoc(), "only pure functions can be called in global initializers");

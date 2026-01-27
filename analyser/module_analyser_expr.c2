@@ -154,8 +154,9 @@ fn Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
     e.setType(qt);
     i.setDecl(d);
 
-    if (side & RHS || side == 0) d.setUsed();
-    else {
+    if (side & RHS || side == 0) {
+        if (d != (Decl*)ma.curFunction) d.setUsed();
+    } else {
         // parameters are used if LHS|RHS
         if (d.isVarDecl()) {
             VarDecl* vd = (VarDecl*)d;
