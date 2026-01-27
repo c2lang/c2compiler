@@ -1,0 +1,133 @@
+/* Copyright 2022-2026 Bas van den Berg, Charlie Gordon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import ast_context;
+import src_loc local;
+import string_buffer;
+import string;
+
+type TemplateExprBits struct {
+    u32 : NumExprBits;
+    u32 num_args : 8;
+}
+
+public type TemplateExpr struct @(opaque) {
+    Expr base;
+    SrcLoc endLoc;
+    u16 instance_ast_idx;
+    Decl* decl;
+    Expr* func;
+    Expr*[0] args; // tail-allocated, variable size
+}
+
+public fn TemplateExpr* TemplateExpr.create(ast_context.Context* c,
+                                            SrcLoc loc,
+                                            SrcLoc endLoc,
+                                            Expr* func,
+                                            u16 ast_idx,
+                                            Expr** args,
+                                            u32 num_args)
+{
+    u32 size = sizeof(TemplateExpr) + num_args * sizeof(Expr*);
+    TemplateExpr* e = c.alloc(size);
+    e.base.init(ExprKind.Template, loc, 0, 0, 1, ValType.RValue);
+    e.base.base.templateExprBits.num_args = (u8)num_args;
+    e.endLoc = endLoc;
+    e.instance_ast_idx = ast_idx;
+    e.decl = nil;
+    e.func = func;
+    string.memcpy(e.args, args, num_args * sizeof(Expr*));
+#if AstStatistics
+    Stats.addExpr(ExprKind.Template, size);
+#endif
+    return e;
+}
+
+fn Expr* TemplateExpr.instantiate(TemplateExpr* e, Instantiator* inst) {
+    u32 num_args = e.base.base.templateExprBits.num_args;
+    u32 size = sizeof(TemplateExpr) + num_args * sizeof(Expr*);
+    TemplateExpr* e2 = inst.c.alloc(size);
+    e2.base = e.base;
+    e2.endLoc = e.endLoc;
+    e2.instance_ast_idx = e.instance_ast_idx;
+    e2.decl = nil;
+    e2.func = e.func.instantiate(inst);
+    for (u32 i = 0; i < num_args; i++) {
+        e2.args[i] = e.args[i].instantiate(inst);
+    }
+#if AstStatistics
+    Stats.addExpr(ExprKind.Call, size);
+#endif
+    return (Expr*)e2;
+}
+
+public fn u16 TemplateExpr.getInstanceASTIdx(const TemplateExpr* e) {
+    return e.instance_ast_idx;
+}
+
+fn SrcLoc TemplateExpr.getStartLoc(const TemplateExpr* e) {
+    return e.func.getStartLoc();
+}
+
+fn SrcLoc TemplateExpr.getEndLoc(const TemplateExpr* e) { return e.endLoc; }
+
+public fn Decl* TemplateExpr.getDecl(const TemplateExpr* e) { return e.decl; }
+
+public fn void TemplateExpr.setDecl(TemplateExpr* e, Decl* decl) { e.decl = decl; }
+
+public fn Expr* TemplateExpr.getFunc(const TemplateExpr* e) { return e.func; }
+
+public fn Expr** TemplateExpr.getFunc2(TemplateExpr* e) { return &e.func; }
+
+public fn u32 TemplateExpr.getNumArgs(const TemplateExpr* e) {
+    return e.base.base.templateExprBits.num_args;
+}
+
+public fn Expr** TemplateExpr.getArgs(TemplateExpr* e) {
+    return e.args;
+}
+
+public fn Expr* TemplateExpr.getArg(const TemplateExpr* e, u32 i) {
+    return e.args[i];
+}
+
+#if 0
+public fn Expr** TemplateExpr.getArg2(TemplateExpr* e, u32 i) {
+    return &e.args[i];
+}
+#endif
+
+fn void TemplateExpr.printLiteral(const TemplateExpr* e, string_buffer.Buf* out) {
+    e.func.printLiteral(out);
+    out.add1('<');
+    for (u32 i = 0; i < e.getNumArgs(); i++) {
+        if (i) out.add(", ");
+        e.args[i].printLiteral(out);
+    }
+    out.add1('>');
+}
+
+fn void TemplateExpr.print(const TemplateExpr* e, string_buffer.Buf* out, u32 indent) {
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
+    out.newline();
+    e.func.print(out, indent + 1);
+    for (u32 i=0; i<e.getNumArgs(); i++) {
+        e.args[i].print(out, indent + 1);
+    }
+}
+

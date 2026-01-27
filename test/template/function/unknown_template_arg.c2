@@ -7,6 +7,7 @@ fn X max(X left, X right) template X {
 }
 
 fn void test1() {
+    // possibly error{use of undeclared identifier 'Foo'}
     i32 a = max<Foo>(1, 2); // @error{unknown type 'Foo'}
 }
 
