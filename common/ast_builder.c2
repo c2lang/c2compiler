@@ -881,8 +881,8 @@ public fn SwitchCase* Builder.actOnCase(Builder* b,
                              conds, num_conds, stmts, num_stmts);
 }
 
-public fn Stmt* Builder.actOnAssertStmt(Builder* b, SrcLoc loc, Expr* inner) {
-    return (Stmt*)AssertStmt.create(b.context, loc, inner);
+public fn Stmt* Builder.actOnAssertStmt(Builder* b, SrcLoc loc, Expr* inner, Expr* call) {
+    return (Stmt*)AssertStmt.create(b.context, loc, inner, call);
 }
 
 public fn Stmt* Builder.actOnBreakStmt(Builder* b, SrcLoc loc) {
