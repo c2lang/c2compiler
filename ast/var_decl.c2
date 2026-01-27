@@ -103,7 +103,6 @@ public fn VarDecl* VarDecl.create(ast_context.Context* c,
     // Note: for incremental arrays, the initValue will be set later
     if (initValue || ref.isIncrArray() || has_embed) size += sizeof(VarDeclInit);
     assert (kind != VarDeclKind.StructMember);
-    size = (size + 7) & ~0x7; // round to 8-byte (temp)
 
     VarDecl* d = c.alloc(size);
     d.base.init(DeclKind.Variable, name, loc, is_public, QualType_Invalid, ast_idx);
@@ -131,7 +130,6 @@ public fn VarDecl* VarDecl.createStructMember(ast_context.Context* c,
 {
     u32 size = sizeof(VarDecl) + ref.getExtraSize();
     if (bitfield) size += sizeof(BitFieldInfo); // see above
-    size = (size + 7) & ~0x7; // round to 8-byte (temp)
 
     VarDecl* d = c.alloc(size);
     d.base.init(DeclKind.Variable, name, loc, is_public, QualType_Invalid, ast_idx);
@@ -160,7 +158,7 @@ fn VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
     if (vd.base.varDeclBits.has_init) extra += sizeof(VarDeclInit);
     if (vd.base.varDeclBits.is_bitfield) extra += sizeof(BitFieldInfo);
     u32 size = sizeof(VarDecl) + extra;
-    size = (size + 7) & ~0x7; // round to 8-byte (temp)
+
     VarDecl* vd2 = inst.c.alloc(size);
     vd2.base = vd.base;
     vd2.typeRef.instantiate(&vd.typeRef, inst);
