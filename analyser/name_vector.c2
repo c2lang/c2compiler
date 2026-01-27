@@ -61,7 +61,7 @@ public fn u32 NameVector.add(NameVector* v, u32 name_idx) {
     return index;
 }
 
-public fn u32 NameVector.get(const NameVector* v, u32 idx) {
+public fn u32 NameVector.get(const NameVector* v, u32 idx) @(unused) {
     return v.data[idx];
 }
 

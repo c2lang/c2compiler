@@ -236,6 +236,7 @@ executable c2c
     analyser/module_sorter.c2
     analyser/struct_field_init_checker.c2
     analyser/name_vector.c2
+    analyser/name_map.c2
     analyser/label_vector.c2
     analyser/printf_utils.c2
     analyser/scope.c2
