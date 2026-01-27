@@ -71,7 +71,6 @@ public type MemberExpr struct @(opaque) {
 public fn MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, const Ref* refs, u32 refcount) {
     u32 size = sizeof(MemberExpr) + refcount * sizeof(MemberRef) + (refcount - 1) * sizeof(u32);
     if (base) size += sizeof(MemberRef);
-    size = (size + 7) & ~0x7; // round to 8-byte (temp)
     MemberExpr* e = c.alloc(size);
     e.base.init(ExprKind.Member, refs[0].loc, 0, 0, 0, ValType.NValue);
     e.base.base.memberExprBits.num_refs = refcount;
@@ -99,9 +98,7 @@ fn Expr* MemberExpr.instantiate(MemberExpr* e, Instantiator* inst) {
     u32 refcount = e.base.base.memberExprBits.num_refs;
     Expr* base = e.getExprBase();
     u32 size = sizeof(MemberExpr) + refcount * sizeof(MemberRef) + (refcount - 1) * sizeof(u32);
-
     if (base) size += sizeof(MemberRef);
-    size = (size + 7) & ~0x7; // round to 8-byte (temp)
     MemberExpr* e2 = inst.c.alloc(size);
 
     string.memcpy(e2, e, size);

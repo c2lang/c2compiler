@@ -19,7 +19,8 @@ module ast;
 import string;
 import stdio local;
 
-const u32 NCat = 1;
+const u32 NCat = 1;             // 32 for fine grained analysis
+const u32 BucketWidth = 8;      // 4 or less for slack analysis
 
 type Stat struct {
     u32[NCat] count;
@@ -32,8 +33,6 @@ type Stats struct {
     Stat[elemsof(StmtKind)] stmts;
     Stat[elemsof(DeclKind)] decls;
     Stat[3] others; // 0=ArrayValue, 1=StaticAssert, 2=SwitchCase
-    //Stat arrayValues;
-    //Stat staticAsserts;
 }
 
 fn void Stats.reset(Stats* s) {
@@ -41,10 +40,15 @@ fn void Stats.reset(Stats* s) {
 }
 
 fn void Stat.add(Stat* ss, u32 size) {
-    u32 cat = (size + 7) >> 3;
-    if (cat >= NCat) cat = NCat - 1;
-    ss.count[cat]++;
-    ss.size[cat] += size;
+    if (NCat > 1) {
+        u32 cat = (size + BucketWidth - 1) / BucketWidth;
+        if (cat >= NCat) cat = NCat - 1;
+        ss.count[cat]++;
+        ss.size[cat] += (size + 7) & ~0x7;
+    } else {
+        ss.count[0]++;
+        ss.size[0] += (size + 7) & ~0x7;
+    }
 }
 
 fn void Stats.addType(TypeKind kind, u32 size) {
@@ -77,6 +81,17 @@ fn void Stats.addSwitchCase(u32 size) {
     globals.stats.others[2].add(size);
 }
 
+fn void Stat.slack(const Stat* ss, u32* countp, u32* totalp) {
+    if (BucketWidth & 0x7) {
+        for (u32 cat = 0; cat < NCat; cat++) {
+            if (u32 frac = (cat * BucketWidth) & 0x7) {
+                *countp += ss.count[cat];
+                *totalp += ss.count[cat] * (8 - frac);
+            }
+        }
+    }
+}
+
 fn void Stat.dump(const Stat* ss, const char* name, u32* countp, u32* totalp) {
     u32 count = 0;
     u32 size = 0;
@@ -90,10 +105,10 @@ fn void Stat.dump(const Stat* ss, const char* name, u32* countp, u32* totalp) {
         if (!ss.count[cat]) continue;
         if (count == ss.count[cat]) {
             // no repeat if single category
-            if (NCat > 1) printf("  %d", cat * 8);
+            if (NCat > 1) printf("  %d", cat * BucketWidth);
             break;
         }
-        printf("  %d:%d/%d", cat * 8, ss.count[cat], ss.size[cat]);
+        printf("  %d:%d/%d", cat * BucketWidth, ss.count[cat], ss.size[cat]);
     }
     printf("\n");
     *countp += count;
@@ -151,7 +166,18 @@ fn void Stats.dump(const Stats* s) {
     u32 totalCount = typesCount + exprCount + stmtCount + declCount + otherCount;
     u32 totalSize = typesTotal + exprTotal + stmtTotal + declTotal + otherTotal;
     printf("  %20s  %6d  %7d\n", "objects", totalCount, totalSize);
-
+    if (NCat > 1 && BucketWidth < 8) {
+        u32 slackCount = 0;
+        u32 slackTotal = 0;
+        u32 nStats = sizeof(Stats) / sizeof(Stat);
+        Stat* sp = (Stat*)s;
+        for (u32 i = 0; i < nStats; i++) {
+            sp[i].slack(&slackCount, &slackTotal);
+        }
+        if (slackCount) {
+            printf("  %20s  %6d  %7d\n", "slack", slackCount, slackTotal);
+        }
+    }
     printf("---------------------------------------\n");
 }
 

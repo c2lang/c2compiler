@@ -115,7 +115,6 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     u32 size = sizeof(StructTypeDecl) + num_members * sizeof(Decl*);
     size += sizeof(StructLayout);
     size += num_members * sizeof(StructMemberLayout); // to store StructMemberLayouts
-    size = (size + 7) & ~0x7; // round to 8-byte (temp)
     StructTypeDecl* d = c.alloc(size);
     StructType* stype = StructType.create(c, d);
     QualType qt = QualType.create(stype.asType());
