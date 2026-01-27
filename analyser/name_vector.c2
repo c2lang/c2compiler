@@ -18,8 +18,13 @@ module name_vector;
 import stdlib;
 import string;
 
+public type NamePosition struct {
+    u32 name_idx;
+    u32 loc;
+}
+
 public type NameVector struct {
-    u32* data;
+    NamePosition* data;
     u32 count;
     u32 capacity;
 }
@@ -28,7 +33,7 @@ public fn void NameVector.init(NameVector* v, u32 capacity) @(unused) {
     v.data = nil;
     v.count = 0;
     v.capacity = capacity;
-    if (capacity) v.data = stdlib.malloc(capacity * sizeof(u32));
+    if (capacity) v.data = stdlib.malloc(capacity * sizeof(NamePosition));
 }
 
 public fn void NameVector.free(NameVector* v) {
@@ -44,30 +49,35 @@ public fn void NameVector.clear(NameVector* v) {
 
 fn void NameVector.resize(NameVector* v) {
     v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
-    void* data2 = stdlib.malloc(v.capacity * sizeof(u32));
+    void* data2 = stdlib.malloc(v.capacity * sizeof(NamePosition));
     if (v.data) {
-        string.memcpy(data2, v.data, v.count * sizeof(u32));
+        string.memcpy(data2, v.data, v.count * sizeof(NamePosition));
         stdlib.free(v.data);
     }
     v.data = data2;
 }
 
-public fn u32 NameVector.add(NameVector* v, u32 name_idx) {
+public fn u32 NameVector.add(NameVector* v, NamePosition name_pos) {
     if (v.count == v.capacity) v.resize();
 
     u32 index = v.count;
-    v.data[index] = name_idx;
+    v.data[index] = name_pos;
     v.count++;
     return index;
 }
 
-public fn u32 NameVector.get(const NameVector* v, u32 idx) {
-    return v.data[idx];
+public fn NamePosition* NameVector.findPtr(NameVector* v, u32 name_idx) {
+    for (u32 i=0; i<v.count; i++) {
+        if (v.data[i].name_idx == name_idx) {
+            return &v.data[i];
+        }
+    }
+    return nil;
 }
 
-public fn bool NameVector.find(NameVector* v, u32 name_idx, u32* index) {
+public fn bool NameVector.findIndex(NameVector* v, u32 name_idx, u32* index) {
     for (u32 i=0; i<v.count; i++) {
-        if (v.data[i] == name_idx) {
+        if (v.data[i].name_idx == name_idx) {
             *index = i;
             return true;
         }
