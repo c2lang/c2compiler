@@ -134,9 +134,8 @@ fn void generate_tests(void* arg) {
     console.debug("unittest: generating tests");
     u64 t1 = utils.now();
 
-    Decl** decls = p.decls.getDecls();
     for (u32 i=0; i<p.decls.size(); i++) {
-        Decl* d = decls[i];
+        Decl* d = p.decls.get(i);
         Module* m = d.getModule();
         p.cur_prefix = d.getNameIdx();
 
@@ -151,9 +150,8 @@ fn void generate_tests(void* arg) {
         out.add("import c2test as ct;\n\n");
 
         out.add("public const ct.C2Test[] Test_functions = {\n");
-        FunctionDecl** tests = p.tests.getDecls();
         for (u32 j=0; j<p.tests.size(); j++) {
-            Decl* func = (Decl*)tests[j];
+            Decl* func = (Decl*)p.tests.get(j);
             // TODO dont use fullName since we dont need the module prefix
             out.print("   { \"%s\", (ct.TestFn)(%s) },\n", func.getName(), func.getFullName());
         }
@@ -189,8 +187,6 @@ fn void generate_tests(void* arg) {
 }
 
 fn void Plugin.generate_c2test_main(Plugin* p) {
-    Decl** decls = p.decls.getDecls();
-
     string_buffer.Buf* out = string_buffer.create(1024, false, 2);
 
     // Note: this would be so much easier if we used the load_file plugin. But that
@@ -199,7 +195,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
     out.add("import c2test local;\n\n");
 
     for (u32 i=0; i<p.decls.size(); i++) {
-        Module* m = decls[i].getModule();
+        Module* m = p.decls.get(i).getModule();
         out.print("import %s;\n", m.getName());
     }
 
@@ -207,7 +203,7 @@ fn void Plugin.generate_c2test_main(Plugin* p) {
 
     out.add("const Group*[] groups = {\n");
     for (u32 i=0; i<p.decls.size(); i++) {
-        Module* m = decls[i].getModule();
+        Module* m = p.decls.get(i).getModule();
         out.print("  &%s.TestGroup,\n", m.getName());
     }
     out.add("}\n\n");
