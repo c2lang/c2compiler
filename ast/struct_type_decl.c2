@@ -166,9 +166,8 @@ public fn bool StructTypeDecl.isUnion(const StructTypeDecl* d) {
     return !d.base.structTypeDeclBits.is_struct;
 }
 
-fn const FunctionDecl** StructTypeDecl.getStructFunctions(const StructTypeDecl* d) {
-    // TEMP const-cast until ptr-ptr -> const ptr-ptr is fixed in analyser
-    return (const FunctionDecl**)d.struct_functions;
+fn FunctionDecl* StructTypeDecl.getStructFunction(const StructTypeDecl* d, u32 i) {
+    return d.struct_functions[i];
 }
 
 fn u32 StructTypeDecl.getNumStructFunctions(const StructTypeDecl* d) {
