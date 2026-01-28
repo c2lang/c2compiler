@@ -56,6 +56,10 @@ public fn u32 FunctionDeclList.size(const FunctionDeclList* l) {
     return l.count;
 }
 
+public fn FunctionDecl* FunctionDeclList.get(const FunctionDeclList* l, u32 i) @(unused) {
+    return l.decls[i];
+}
+
 public fn FunctionDecl** FunctionDeclList.getDecls(const FunctionDeclList* l) {
     return l.decls;
 }

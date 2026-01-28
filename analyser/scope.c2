@@ -109,10 +109,8 @@ public fn void Scope.reset(Scope* s) {
 fn void Scope.addImports(Scope* s) {
     // Note: this also adds the module itself (import[0])
 
-    u32 num_imports = s.imports.size();
-    ast.ImportDecl** imports = s.imports.getDecls();
-    for (u32 i=0; i<num_imports; i++) {
-        ast.ImportDecl* id = imports[i];
+    for (u32 i = 0; i < s.imports.size(); i++) {
+        ast.ImportDecl* id = s.imports.get(i);
         ast.Decl* d = (ast.Decl*)id;
         u32 name_idx = id.getImportNameIdx();
 
@@ -306,10 +304,8 @@ fn const char* Scope.findBestMatch(const Scope* s, u32 name_idx, const char* nam
     if (best_dist <= max_dist) return hint;
 
     // search perfect match (u32) in modules that are not imported locally (printf -> stdio.printf)
-    u32 num_imports = s.imports.size();
-    ast.ImportDecl** imports = s.imports.getDecls();
-    for (u32 i=0; i<num_imports; i++) {
-        ast.ImportDecl* id = imports[i];
+    for (u32 i = 0; i < s.imports.size(); i++) {
+        ast.ImportDecl* id = s.imports.get(i);
         if (id.isLocal()) continue;
         const ast.Module* m = id.getDest();
         ast.Decl* d = m.findSymbol(name_idx);
@@ -317,8 +313,8 @@ fn const char* Scope.findBestMatch(const Scope* s, u32 name_idx, const char* nam
     }
 
     // search global namespace
-    for (u32 i=0; i<num_imports; i++) {
-        ast.ImportDecl* id = imports[i];
+    for (u32 i = 0; i < s.imports.size(); i++) {
+        ast.ImportDecl* id = s.imports.get(i);
         if (!id.isLocal()) continue;
         const ast.Module* m = id.getDest();
         const ast.SymbolTable* st = m.getSymbols();
@@ -375,11 +371,9 @@ public fn ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc, bool usedPubl
 
 // returns false if symbol exists and will give errors then
 public fn bool Scope.checkGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
-    u32 num_imports = s.imports.size();
-    ast.ImportDecl** imports = s.imports.getDecls();
     ast.Decl* decl = nil;
-    for (u32 i=0; i<num_imports; i++) {
-        ast.ImportDecl* id = imports[i];
+    for (u32 i = 0; i < s.imports.size(); i++) {
+        ast.ImportDecl* id = s.imports.get(i);
         // check if it is the import itself
         if (name_idx == id.getImportNameIdx()) {
             decl = (ast.Decl*)id;
@@ -485,10 +479,8 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
     ast.ImportDecl* used_import = nil;
     bool ambiguous = false;
 
-    u32 num_imports = s.imports.size();
-    ast.ImportDecl** imports = s.imports.getDecls();
-    for (u32 i=0; i<num_imports; i++) {
-        ast.ImportDecl* id = imports[i];
+    for (u32 i = 0; i < s.imports.size(); i++) {
+        ast.ImportDecl* id = s.imports.get(i);
         if (!id.isLocal()) continue;    // this includes implicit self-import
 
         ast.Module* dest = id.getDest();
@@ -544,8 +536,8 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
     } else {
         if (search_privates) {
             // try finding a non-public symbol
-            for (u32 i=0; i<num_imports; i++) {
-                ast.ImportDecl* id = imports[i];
+            for (u32 i = 0; i < s.imports.size(); i++) {
+                ast.ImportDecl* id = s.imports.get(i);
                 if (!id.isLocal()) continue;
                 ast.Module* dest = id.getDest();
                 ast.Decl* d = dest.findPrivateSymbol(name_idx);
