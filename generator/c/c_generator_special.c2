@@ -239,14 +239,11 @@ fn void Generator.createExportsFile(Generator* gen, const char* output_dir, comp
 
     // iterate all mods in main Component
     module_list.List* mods = mainComp.getModules();
-    u32 count = mods.length();
 
-    for (u32 i=0; i<count; i++) {
+    for (u32 i = 0; i < mods.length(); i++) {
         const ast.SymbolTable* symbols = mods.at(i).getSymbols();
-        ast.Decl** decls = symbols.getDecls();
-        u32 num_symbols = symbols.size();
-        for (u32 j=0; j<num_symbols; j++) {
-            ast.Decl* d = decls[j];
+        for (u32 j = 0; j < symbols.size(); j++) {
+            ast.Decl* d = symbols.get(j);
             if (!d.isExported()) continue;
             if (!d.isFunction() && !d.isVariable()) continue;
             out.add("\t\t");

@@ -190,6 +190,10 @@ public fn Expr** CallExpr.getArgs(CallExpr* e) {
     return e.args;
 }
 
+public fn Expr* CallExpr.getArg(const CallExpr* e, u32 i) {
+    return e.args[i];
+}
+
 fn void CallExpr.printLiteral(const CallExpr* e, string_buffer.Buf* out) {
     e.func.printLiteral(out);
     out.lparen();

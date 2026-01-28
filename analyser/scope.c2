@@ -106,10 +106,8 @@ public fn void Scope.reset(Scope* s) {
 fn void Scope.addImports(Scope* s) {
     // Note: this also adds the module itself (import[0])
 
-    u32 num_imports = s.imports.size();
-    ast.ImportDecl** imports = s.imports.getDecls();
-    for (u32 i=0; i<num_imports; i++) {
-        ast.ImportDecl* id = imports[i];
+    for (u32 i = 0; i < s.imports.size(); i++) {
+        ast.ImportDecl* id = s.imports.get(i);
         ast.Decl* d = (ast.Decl*)id;
         u32 name_idx = id.getImportNameIdx();
 
@@ -308,11 +306,9 @@ public fn ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc, bool usedPubl
 
 // returns false if symbol exists and will give errors then
 public fn bool Scope.checkGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
-    u32 num_imports = s.imports.size();
-    ast.ImportDecl** imports = s.imports.getDecls();
     ast.Decl* decl = nil;
-    for (u32 i=0; i<num_imports; i++) {
-        ast.ImportDecl* id = imports[i];
+    for (u32 i = 0; i < s.imports.size(); i++) {
+        ast.ImportDecl* id = s.imports.get(i);
         // check if it is the import itself
         if (name_idx == id.getImportNameIdx()) {
             decl = (ast.Decl*)id;
@@ -418,10 +414,8 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
     ast.ImportDecl* used_import = nil;
     bool ambiguous = false;
 
-    u32 num_imports = s.imports.size();
-    ast.ImportDecl** imports = s.imports.getDecls();
-    for (u32 i=0; i<num_imports; i++) {
-        ast.ImportDecl* id = imports[i];
+    for (u32 i = 0; i < s.imports.size(); i++) {
+        ast.ImportDecl* id = s.imports.get(i);
         if (!id.isLocal()) continue;    // this includes implicit self-import
 
         ast.Module* dest = id.getDest();
@@ -477,8 +471,8 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
     } else {
         if (search_privates) {
             // try finding a non-public symbol
-            for (u32 i=0; i<num_imports; i++) {
-                ast.ImportDecl* id = imports[i];
+            for (u32 i = 0; i < s.imports.size(); i++) {
+                ast.ImportDecl* id = s.imports.get(i);
                 if (!id.isLocal()) continue;
                 ast.Module* dest = id.getDest();
                 ast.Decl* d = dest.findPrivateSymbol(name_idx);
