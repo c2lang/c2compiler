@@ -17,7 +17,7 @@ module ast;
 
 import src_loc local;
 import string_buffer;
-import stdio;
+
 import string;
 
 public type TypeRefKind enum u8 {
@@ -538,7 +538,6 @@ public fn const char* TypeRef.diagName(const TypeRef* r) {
     local char[128] result;
     string_buffer.Buf buf.init(result, elemsof(result), false, false, 0);
     r.print(&buf, true);
-    stdio.puts(result);
     return result;
 }
 

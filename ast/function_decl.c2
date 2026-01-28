@@ -49,8 +49,8 @@ const char*[] defKind_names = {
     "global",
     "type",
     "struct-member",
-    "template",
     "param",
+    "template",
 }
 
 type FunctionDeclBits struct {

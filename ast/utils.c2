@@ -188,8 +188,9 @@ public fn void deinit(bool print_stats) {
     globals.ast_list = nil;
     globals.pointers.clear();
     globals.string_types.clear();
-    stdlib.free(globals);
     globals.dump_buf.free();
+    stdlib.free(globals);
+    globals = nil;
 }
 
 public fn u32 getWordSize() {
