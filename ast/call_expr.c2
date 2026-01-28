@@ -168,7 +168,7 @@ public fn Expr** CallExpr.getArgs(CallExpr* e) {
     return e.args;
 }
 
-fn Expr* CallExpr.getArg(const CallExpr* e, u32 i) {
+public fn Expr* CallExpr.getArg(const CallExpr* e, u32 i) {
     return e.args[i];
 }
 
