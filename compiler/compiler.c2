@@ -272,7 +272,8 @@ fn void Compiler.build(Compiler* c,
                                 c.astPool,
                                 c.builder,
                                 &c.kwinfo,
-                                target.getFeatures());
+                                target.getFeatures(),
+                                c.target.hasAsserts());
 
     ast.initialize(c.context, c.astPool, c.targetInfo.intWidth / 8, color.useColor());
 
