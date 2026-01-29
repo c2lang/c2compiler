@@ -805,7 +805,7 @@ fn f64 fabs(f64 d) {
 // string and trying to avoid using exponential notation
 // TODO: should be in the C2 library as a type function f64.str()
 public fn char *ftoa(char *dest, usize size, f64 d) {
-    char[32] buf;
+    char[32] buf /*@(noinit)*/;
     usize pos = 0;
 
     if (size < 2) {
