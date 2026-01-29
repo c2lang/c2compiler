@@ -227,8 +227,7 @@ fn void TypeRef.init(TypeRef* dest, const TypeRefHolder* h) {
     }
 
     for (u32 i=0; i<r.flags.num_arrays; i++) {
-        Expr** a = dest.getArray2(i);
-        *a = h.arrays[i];
+        dest.setArray(i, h.arrays[i]);
     }
 }
 
@@ -415,6 +414,13 @@ public fn Expr** TypeRef.getArray2(TypeRef* r, u32 idx) {
     const u8* ptr = (u8*)r.refs + numrefs * sizeof(Ref);
     Expr** arrays = (Expr**)ptr;
     return &arrays[idx];
+}
+
+fn void TypeRef.setArray(TypeRef* r, u32 idx, Expr* d) {
+    const u32 numrefs = r.isUser() + r.flags.has_prefix;
+    const u8* ptr = (u8*)r.refs + numrefs * sizeof(Ref);
+    Expr** arrays = (Expr**)ptr;
+    arrays[idx] = d;
 }
 
 fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool print_prefix) {
