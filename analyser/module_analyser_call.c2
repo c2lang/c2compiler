@@ -73,11 +73,11 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         }
     }
 
-    if (fd.hasAttrDeprecated() && !ma.warnings.no_deprecated) {
+    if (fd.hasAttrDeprecated() && ma.warnings.test(W_deprecated)) {
         const AST* a = ((Decl*)fd).getAST();
         const Attr* deprecated = a.getAttr(((Decl*)fd), Deprecated);
         const char* msg = ma.astPool.idx2str(deprecated.value.text);
-        ma.warn(origFn.getLoc(), "function %s is deprecated: %s", fd.asDecl().getFullName(), msg);
+        ma.warn(W_deprecated, origFn.getLoc(), "function %s is deprecated: %s", fd.asDecl().getFullName(), msg);
         //return QualType_Invalid;
     }
 
@@ -663,7 +663,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
                                              d.getAST().getImports(),
                                              template_mod,
                                              template_mod.getSymbols(),
-                                             !ma.warnings.no_unused_variable);
+                                             ma.warnings.test(W_unused_variable));
         analyser.analyseFunctionBody(instance, tmpScope);
         tmpScope.free();
         analyser.free();
