@@ -50,6 +50,8 @@ set ast
     ast/import_decl.c2
     ast/static_assert.c2
     ast/struct_type_decl.c2
+    ast/template_expr.c2
+    ast/template_spec.c2
     ast/value.c2
     ast/var_decl.c2
 

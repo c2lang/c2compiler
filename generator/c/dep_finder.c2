@@ -92,6 +92,7 @@ fn void Finder.handleFunction(Finder* s, FunctionDecl* d) {
 }
 
 fn void Finder.handleStruct(Finder* s, StructTypeDecl* d) {
+    if (d.isTemplate()) return; // TODO skip template structures for now
     // TODO if opaque, only check members in full(non-interface) mode
     u32 num_members = d.getNumMembers();
     Decl** members = d.getMembers();
@@ -159,6 +160,11 @@ fn void Finder.handleExpr(Finder* s, Expr* e) {
     case Type:
         TypeExpr* t = (TypeExpr*)e;
         s.handleTypeRef(t.getTypeRef());
+        break;
+    case Template:
+        TemplateExpr* c = (TemplateExpr*)e;
+        for (u32 i = 0; i < c.getNumArgs(); i++)
+            s.handleExpr(c.getArg(i));
         break;
     case Call:
         break;
