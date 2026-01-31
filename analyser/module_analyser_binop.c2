@@ -671,8 +671,20 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
         if (ma.checkEnumArg(b.getRHS2(), ltype))
             return getBuiltinQT(Bool);
     }
+
     QualType rtype;
     if (opcode == BinaryOpcode.Assign) {
+        Expr* rhs = b.getRHS();
+        // check if sub-struct, dont allow assignment then
+        if (ltype.isStruct() && rhs.isInitList()) {
+            StructType* st = ltype.getStructType();
+            StructTypeDecl* std = st.getDecl();
+            if (!std.isGlobal()) {
+                ma.error(e.getLoc(), "cannot assign a sub-struct with an initializer list");
+                return QualType_Invalid;
+            }
+
+        }
         if (!ma.analyseInitExpr(b.getRHS2(), ltype, e.getLoc(), false, false))
             return QualType_Invalid;
         //rtype = b.getRHS().getType();

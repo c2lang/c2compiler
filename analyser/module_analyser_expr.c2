@@ -182,36 +182,36 @@ fn Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
 
 fn IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
     Expr* e = *e_ptr;
-    IdentifierKind kind = IdentifierKind.Unresolved;
+    IdentifierKind kind = Unresolved;
     switch (d.getKind()) {
     case Function:
         e.setCtc();
         e.setRValue();
-        kind = IdentifierKind.Function;
+        kind = Function;
         break;
     case Import:
         e.setCtc();
-        kind = IdentifierKind.Module;
+        kind = Module;
         break;
     case StructType:
-        kind = IdentifierKind.Type;
+        kind = Type;
         break;
     case EnumType:
         e.setCtc();
-        kind = IdentifierKind.Type;
+        kind = Type;
         break;
     case EnumConstant:
         e.setCtc();
         e.setCtv();
         e.setRValue();
-        kind = IdentifierKind.EnumConstant;
+        kind = EnumConstant;
         break;
     case FunctionType:
         e.setCtc();
-        kind = IdentifierKind.Type;
+        kind = Type;
         break;
     case AliasType:
-        kind = IdentifierKind.Type;
+        kind = Type;
         break;
     case Variable:
         VarDecl* vd = (VarDecl*)d;
@@ -224,10 +224,10 @@ fn IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
         case GlobalVar:
         case LocalVar:
         case FunctionParam:
-            kind = IdentifierKind.Var;
+            kind = Var;
             break;
         case StructMember:
-            kind = IdentifierKind.StructMember;
+            kind = StructMember;
             break;
         }
         break;

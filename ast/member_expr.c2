@@ -184,7 +184,7 @@ public fn void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) {
 
 /*
 public fn bool MemberExpr.isVarKind(const MemberExpr* e) {
-    return e.getKind() == IdentifierKind.Var;
+    return e.getKind() == Var;
 }
 */
 
@@ -294,7 +294,7 @@ fn void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent
     e.base.printTypeBits(out);
     out.space();
     IdentifierKind kind = e.getKind();
-    if (kind == IdentifierKind.Unresolved) out.color(col_Error);
+    if (kind == Unresolved) out.color(col_Error);
     else out.color(col_Attr);
     out.add(kind.str());
     out.color(col_Attr);

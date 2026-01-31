@@ -217,7 +217,7 @@ fn Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl*
         i.setDecl(d);
         d.setUsed();
         member.setLValue();
-        i.setKind(IdentifierKind.StructMember);
+        i.setKind(StructMember);
     } else {
         assert(member.isMember());
         MemberExpr* m = (MemberExpr*)member;
@@ -231,7 +231,7 @@ fn Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl*
             d.setUsed();
             m.setDecl(d, i);
         }
-        m.setKind(IdentifierKind.StructMember);
+        m.setKind(StructMember);
     }
     member.setType(d.getType());
     b.setUValue(base_offset);

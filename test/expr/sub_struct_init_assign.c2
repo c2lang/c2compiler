@@ -1,0 +1,17 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    i32 a;
+    struct b {
+        i32 c;
+    }
+}
+
+fn void test1() {
+    Foo f = {}
+    Foo g = {}
+    f.b = {}     // @error{cannot assign a sub-struct with an initializer list}
+}
+
+

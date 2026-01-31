@@ -1,0 +1,20 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    i32 a;
+    struct b {
+        i32 c;
+    }
+}
+
+fn void test1() {
+    Foo f = {}
+    Foo g = {}
+    f.b = g.b;
+}
+
+fn void test2(Foo* f, Foo* g) {
+    f.b = g.b;
+}
+
