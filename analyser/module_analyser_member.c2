@@ -24,30 +24,29 @@ const char[] DiagStaticThoughVar = "cannot access static type-function through v
 
 fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
-    MemberExpr* m =(MemberExpr*)e;
+    MemberExpr* m = (MemberExpr*)e;
 
     SrcLoc baseLoc = 0;
-    ValType valtype = ValType.NValue;
+    ValType valtype = NValue;
     QualType baseType = QualType_Invalid;
 
     CallKind ck = Invalid;
+    u32 start = 0;
 
     if (m.hasExpr()) {
-        Expr* exprBase = m.getExprBase();
+        Expr* exprBase = m.getBaseExpr();
+        baseLoc = exprBase.getLoc();
         // note: no ImplicitCast can be added
         baseType = ma.analyseExpr(&exprBase, false, side);
         if (baseType.isInvalid()) return QualType_Invalid;
 
         valtype = exprBase.getValType();
-
-        //stdio.printf("EXPR BASE\n");
-        //baseType.dump();
+        start = 1;
     }
 
     Decl* d = nil;
-    u32 refcount = m.getNumRefs();
-    bool is_substruct;
-    for (u32 i=0; i<refcount; i++) {
+    bool is_substruct = false;
+    for (u32 i = start; i < 2; i++) {
         is_substruct = false;
         u32 name_idx = m.getNameIdx(i);
         SrcLoc loc = m.getLoc(i);
@@ -55,6 +54,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
         //stdio.printf("  [%d/%d] %s\n", i, refcount, m.getName(i));
 
         if (baseType.isInvalid()) {
+            // first member
             d = ma.scope.find(name_idx, loc, ma.usedPublic);
             if (!d) {
                 ma.has_error = true;
@@ -121,15 +121,14 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 //stdio.printf("ENUM BASE  (type: %d)\n", valtype == ValType.NValue);
                 EnumType* et = (EnumType*)t;
                 EnumTypeDecl* etd = et.getDecl();
+                d = (Decl*)etd;
 
                 // check if constant/enum-function (by first casing)
-                const char* last = m.getLastMemberName();
-                if (ctype.isupper(last[0]) || name_idx == ma.min_idx || name_idx == ma.max_idx) {   // search for constants
-                    if (valtype != ValType.NValue) {    // variable of Enum type (eg Enum a; a.x)
+                const char* name = m.getMemberName();
+                if (ctype.isupper(name[0]) || name_idx == ma.min_idx || name_idx == ma.max_idx) {   // search for constants
+                    if (valtype != NValue) {    // variable of Enum type (eg Enum a; a.x)
                         // TODO reset msg to normal invalid base
-                        // TODO use range
-                        //ma.errorRange(baseLoc, m.getRange(i), "invalid member reference base (enum constant/variable)");
-                        ma.error(baseLoc, "invalid member reference base (enum constant/variable)");
+                        ma.errorRange(baseLoc, m.getBaseRange(), "invalid member reference base (enum constant/variable)");
                         return QualType_Invalid;
                     }
                     EnumConstantDecl* ecd;
@@ -143,7 +142,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                     } else {
                         ecd = etd.findConstant(name_idx);
                         if (!ecd) {
-                            ma.error(loc, "enum '%s' has no constant '%s'", d.getFullName(), m.getLastMemberName());
+                            ma.error(loc, "enum '%s' has no constant '%s'", d.getFullName(), name);
                             return QualType_Invalid;
                         }
                     }
@@ -154,10 +153,9 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                     }
                     // no need to update baseType
                 } else {    // search for enum-function
-                    d = (Decl*)etd;
                     Decl* ef = etd.findFunction(name_idx);
                     if (!ef) {
-                        ma.error(loc, "enum '%s' has no function '%s'", d.getFullName(), m.getLastMemberName());
+                        ma.error(loc, "enum '%s' has no function '%s'", d.getFullName(), name);
                         return QualType_Invalid;
                     }
                     //FunctionDecl* fd = (FunctionDecl*)ef);
@@ -167,7 +165,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                     baseType = ef.getType();
                     if (!ma.scope.checkAccess(d, loc)) return QualType_Invalid;
                 }
-                valtype = ValType.RValue;
+                valtype = RValue;
                 break;
             case Alias:
                 assert(0);
@@ -188,7 +186,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 valtype = decl2valtype(d);
                 break;
             default:
-                ma.errorRange(loc, m.getRange(i), "invalid member reference base");
+                ma.errorRange(loc, m.getBaseRange(), "invalid member reference base");
                 return QualType_Invalid;
             }
         }
@@ -196,14 +194,12 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
         baseLoc = loc;
 
         // Note: a.b.c  = 1; -> b is always used, c only if in RHS
-        if (i == refcount -1) {
+        if (i == 1) {
             if (side & RHS) d.setUsed();
         } else {
             d.setUsed();
         }
         m.setDecl(d, i);
-
-        //baseType.dump();
     }
 
     if (is_substruct) {
@@ -278,7 +274,7 @@ fn Decl* Analyser.analyseStructMemberAccess(Analyser* ma, StructTypeDecl* std, u
         // StructTypeDecl for substruct or VarDecl for normal members
         // TODO FIX THIS (do in outer?)
 #if 1
-        if (side && valtype == ValType.NValue) {
+        if (side && valtype == NValue) {
             QualType t = std.asDecl().getType();
             ma.error(loc, "member access needs an instantiation of type '%s'", t.diagName());
             return nil;
@@ -303,7 +299,7 @@ fn TypeKind Analyser.analyseBaseType(Analyser* ma, QualType baseType) {
 fn ValType decl2valtype(const Decl* d) {
     switch (d.getKind()) {
     case Function:
-        return ValType.RValue;
+        return RValue;
     case Import:
     case StructType:
     case EnumType:
@@ -312,8 +308,8 @@ fn ValType decl2valtype(const Decl* d) {
     case AliasType:
         break;
     case Variable:
-        return ValType.LValue;
+        return LValue;
     }
-    return ValType.NValue;
+    return NValue;
 }
 

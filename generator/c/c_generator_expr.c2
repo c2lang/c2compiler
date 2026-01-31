@@ -124,7 +124,8 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
         }
         break;
     case Member:
-        gen.emitMemberExpr(out, e);
+        MemberContext mc = {}
+        gen.emitMemberExpr(out, (MemberExpr*)e, &mc);
         break;
     case Paren:
         ParenExpr* p = (ParenExpr*)e;
@@ -248,131 +249,80 @@ fn void emitDotOrArrow(string_buffer.Buf* out, QualType qt) {
     else out.add1('.');
 }
 
-fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
-    MemberExpr* m = (MemberExpr*)e;
-    bool need_dot = false;
-    QualType baseType = { }
-    if (m.hasExpr()) {
-        Expr* base = m.getExprBase();
-        gen.emitExpr2(out, base, Postfix);
-        baseType = base.getType();
-        need_dot = true;
-    }
+type MemberContext struct {
+    bool need_dot;
+    QualType baseType;
+    bool is_local;
+}
 
-    // dont switch on final, just generate
-    u32 numrefs = m.getNumRefs();
-    bool is_local = false;
-    for (u32 i=0; i<numrefs; i++) {
-        Decl* d = m.getDecl(i);
-        switch (d.getKind()) {
-        case Function:
-            if (need_dot) emitDotOrArrow(out, baseType);
-            baseType = d.getType();
-            gen.emitCNameMod(out, d, d.getModule());
-            break;
-        case Import:
-            // ignore
-            break;
-        case StructType:
-            // Note: can be substruct here or Type
-            if (need_dot) emitDotOrArrow(out, baseType);
-            StructTypeDecl* std = (StructTypeDecl*)d;
-            // Dont generate anything for Type, will be in prefix
-            if (!std.isGlobal()) {
-                baseType = d.getType();
-                out.add(d.getName());
-                need_dot = true;
-            }
-            break;
-        case EnumType:
-            // ignore
-            gen.genDeclIfNeeded(d);
-            break;
-        case EnumConstant:
-            gen.emitCNameMod(out, d, d.getModule());
-            break;
-        case FunctionType:
-            assert(0);
-            break;
-        case AliasType:
-            gen.emitCNameMod(out, d, d.getModule());
-            break;
-        case Variable:
-            if (need_dot) emitDotOrArrow(out, baseType);
-            baseType = d.getType();
-            if (is_local) {
-                out.add(d.getName());
-            } else {
-                gen.emitDeclName(out, d);
-            }
-            need_dot = true;
-            is_local = true;
-            break;
+fn void Generator.emitMemberDecl(Generator* gen, string_buffer.Buf* out, Decl* d, MemberContext* mc = nil) {
+    switch (d.getKind()) {
+    case Function:
+        if (mc.need_dot) emitDotOrArrow(out, mc.baseType);
+        mc.baseType = d.getType();
+        gen.emitCNameMod(out, d, d.getModule());
+        break;
+    case Import:
+        // ignore
+        break;
+    case StructType:
+        // Note: can be substruct here or Type
+        if (mc.need_dot) emitDotOrArrow(out, mc.baseType);
+        StructTypeDecl* std = (StructTypeDecl*)d;
+        // Dont generate anything for Type, will be in prefix
+        if (!std.isGlobal()) {
+            mc.baseType = d.getType();
+            out.add(d.getName());
+            mc.need_dot = true;
         }
+        break;
+    case EnumType:
+        // ignore
+        gen.genDeclIfNeeded(d);
+        break;
+    case EnumConstant:
+        gen.emitCNameMod(out, d, d.getModule());
+        break;
+    case FunctionType:
+        assert(0);
+        break;
+    case AliasType:
+        gen.emitCNameMod(out, d, d.getModule());
+        break;
+    case Variable:
+        if (mc.need_dot) emitDotOrArrow(out, mc.baseType);
+        mc.baseType = d.getType();
+        if (mc.is_local) {
+            out.add(d.getName());
+        } else {
+            gen.emitDeclName(out, d);
+        }
+        mc.need_dot = true;
+        mc.is_local = true;
+        break;
     }
 }
 
-fn void Generator.emitMemberExprBase(Generator* gen, string_buffer.Buf* out, Expr* e) {
-    // Note: used by SF/SSF calls
-    MemberExpr* m = (MemberExpr*)e;
-
-    bool need_dot = false;
-    QualType baseType = { }
+fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, MemberExpr* m, MemberContext* mc, bool base_only = false) {
     if (m.hasExpr()) {
-        Expr* base = m.getExprBase();
-        gen.emitExpr2(out, base, Postfix);
-        baseType = base.getType();
-        need_dot = true;
-    }
-
-    // dont switch on final, just generate
-    u32 numrefs = m.getNumRefs();
-    numrefs -= 1;   // Skip final arg
-    bool is_local = false;
-    for (u32 i=0; i<numrefs; i++) {
-        Decl* d = m.getDecl(i);
-        switch (d.getKind()) {
-        case Function:
-            if (need_dot) emitDotOrArrow(out, baseType);
-            baseType = d.getType();
-            gen.emitCNameMod(out, d, d.getModule());
-            break;
-        case Import:
-            // ignore
-            break;
-        case StructType:
-            // Note: always substruct here
-            if (need_dot) emitDotOrArrow(out, baseType);
-            baseType = d.getType();
-            out.add(d.getName());
-            need_dot = true;
-            break;
-        case EnumType:
-            // ignore
-            gen.genDeclIfNeeded(d);
-            break;
-        case EnumConstant:
-            gen.emitCNameMod(out, d, d.getModule());
-            break;
-        case FunctionType:
-            assert(0);
-            break;
-        case AliasType:
-            gen.emitCNameMod(out, d, d.getModule());
-            break;
-        case Variable:
-            if (need_dot) emitDotOrArrow(out, baseType);
-            baseType = d.getType();
-            if (is_local) {
-                out.add(d.getName());
-            } else {
-                gen.emitDeclName(out, d);
-            }
-            need_dot = true;
-            is_local = true;
-            break;
+        Expr* base = m.getBaseExpr();
+        if (base.isIdentifier()) {
+            IdentifierExpr* e = (IdentifierExpr*)base;
+            gen.emitMemberDecl(out, e.getDecl(), mc);
+        } else
+        if (base.isMember()) {
+            MemberExpr* e = (MemberExpr*)base;
+            gen.emitMemberExpr(out, e, mc);
+        } else {
+            gen.emitExpr2(out, base, Postfix);
+            mc.baseType = base.getType();
+            mc.need_dot = true;
         }
+    } else {
+        gen.emitMemberDecl(out, m.getDecl(0), mc);
     }
+    // dont switch on final, just generate
+    if (!base_only) gen.emitMemberDecl(out, m.getDecl(1), mc);
 }
 
 fn void Generator.emitFieldDesigExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {

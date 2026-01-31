@@ -564,13 +564,9 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
                     p.error("local qualified variables cannot have an init call");
                 if (isCondition)
                     p.error("cannot use an init call inside a condition");
+                u32 name_len = p.tok.len;
                 p.consumeToken();
-                Ref[2] refs;
-                refs[0].loc = loc;
-                refs[0].name_idx = name;
-                refs[1].loc = p.tok.loc;
-                refs[1].name_idx = p.tok.name_idx;
-                Expr* func = p.builder.actOnMemberExpr(nil, refs, 2);
+                Expr* func = p.builder.actOnMemberExpr(nil, name, name_len, p.tok.loc, p.tok.name_idx);
                 p.consumeToken();
                 initValue = p.parseCallExpr(func);
                 has_init_call = true;

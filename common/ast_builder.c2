@@ -905,8 +905,8 @@ public fn Stmt* Builder.actOnGotoStmt(Builder* b, u32 name, SrcLoc loc) {
     return (Stmt*)GotoStmt.create(b.context, name, loc);
 }
 
-public fn IdentifierExpr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, u32 name) {
-    return IdentifierExpr.create(b.context, loc, name);
+public fn Expr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, u32 name, u32 name_len) {
+    return (Expr*)IdentifierExpr.create(b.context, loc, name, name_len);
 }
 
 public fn Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, u32 src_len, u64 value, Radix radix, BuiltinKind kind) {
@@ -1025,8 +1025,8 @@ public fn Expr* Builder.actOnExplicitCast(Builder* b,
     return (Expr*)ExplicitCastExpr.create(b.context, loc, src_len, ref, inner, c_style);
 }
 
-public fn Expr* Builder.actOnMemberExpr(Builder* b, Expr* base, const Ref* refs, u32 refcount) {
-    return (Expr*)MemberExpr.create(b.context, base, refs, refcount);
+public fn Expr* Builder.actOnMemberExpr(Builder* b, Expr* base, u32 base_name_idx, u32 base_len, SrcLoc loc, u32 member_name_idx) {
+    return (Expr*)MemberExpr.create(b.context, base, base_name_idx, base_len, loc, member_name_idx);
 }
 
 public fn Expr* Builder.actOnRange(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {

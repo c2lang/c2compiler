@@ -129,12 +129,15 @@ fn void Visitor.handleCallExpr(Visitor* v, CallExpr* c) {
 }
 
 fn void Visitor.handleMemberExpr(Visitor* v, MemberExpr* m) {
-    if (m.hasExpr()) v.handleExpr(m.getExprBase());
-
-    for (u32 i=0; i<m.getNumRefs(); i++) {
-        Ref ref = m.getRef(i);
+    Ref ref;
+    if (m.hasExpr()) {
+        v.handleExpr(m.getBaseExpr());
+    } else {
+        ref = m.getBaseRef();
         v.on_ref(v.arg, &ref);
     }
+    ref = m.getRef();
+    v.on_ref(v.arg, &ref);
 }
 
 fn void Visitor.handleBuiltinExpr(Visitor* v, BuiltinExpr* b) {

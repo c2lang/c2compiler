@@ -21,8 +21,7 @@ import ir local;
 import ir_context;
 
 // NOTE: should not be used for LHS bitfields!
-fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) {
-    const MemberExpr* m = (MemberExpr*)e;
+fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const MemberExpr* m, bool base_only = false) {
     ir_context.Context* c = gen.ctx;
 
     u32 tail = 0;
@@ -51,31 +50,40 @@ fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) 
 next:
     // base
     ir.Ref base_ref;
-    QualType base_type;
-    u32 idx = 0;
+    QualType base_type = {}
+    u32 start = 1;
     if (m.hasExpr()) {
-        const Expr* base = m.getExprBase();
-        gen.emitExpr(&base_ref, base);
-        base_type = base.getType();
-    } else {
-        Decl* base = m.getDecl(idx);
-        if (base.isImport()) {  // skip module prefix
-            idx++;
-            base = m.getDecl(idx);
+        const Expr* base = m.getBaseExpr();
+        // TODO: handle MemberExpr
+        if (base.isIdentifier()) {
+            // ignore module prefix
+            IdentifierExpr* i = (IdentifierExpr*)base;
+            Decl* dd = i.getDecl();
+            if (!dd.isImport()) {
+                gen.emitExpr(&base_ref, base);
+                base_type = base.getType();
+            }
+        } else {
+            gen.emitExpr(&base_ref, base);
+            base_type = base.getType();
         }
-        idx++;
+    } else {
+        Decl* base = m.getDecl(0);
+        if (base.isImport()) {  // skip module prefix
+            base = m.getDecl(1);
+            start = 2;
+        }
         assert(base.isVarDecl());
         gen.emitVarDecl(&base_ref, base);
         base_type = base.getType();
     }
 
     // member (a.b.c.etc)
-    u32 numrefs = m.getNumRefs();
-    numrefs -= tail;
+    u32 numrefs = 2 - tail;
 
     // TODO needs overhaul, a big mess at the moment
 
-    for (u32 i=idx; i<numrefs; i++) {
+    for (u32 i=start; i<numrefs; i++) {
         // for final only load if conversion is set?
         // First add offset, then deref!, also should not have to do this here anymore!
         bool is_pointer = base_type.isPointer();
@@ -92,7 +100,7 @@ next:
         u32 offset = 0;
         Decl* dd = std.findMember(d.getNameIdx(), &offset);
         if (!dd) {
-            e.dump();
+            ((Expr*)m).dump();
         }
         assert(dd);
 

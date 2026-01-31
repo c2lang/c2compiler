@@ -167,9 +167,8 @@ fn QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
 }
 
 fn QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
-    // syntax: Type* to_container(Type, member, member*)
-    //         const Type* to_container(Type, member, const member*)
-    Expr* inner = b.getInner();
+    // syntax: const? volatile? Type* to_container(Type, member, const? volatile? member*)
+    Expr* inner = b.getInner(); // Type
     QualType qt = ma.analyseExpr(&inner, false, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
 
@@ -186,32 +185,40 @@ fn QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
     Expr* member = b.getToContainerMember();
     Decl* d = ma.findMemberOffset(b, std, member);
     if (!d) return QualType_Invalid;
-    QualType qmem = d.getType();
-    qmem = ma.builder.actOnPointerType(qmem);
 
     // check ptr
-    QualType qptr = ma.analyseExpr(b.getToContainerPointer2(), false, RHS);
+    Expr** pptr = b.getToContainerPointer2();
+    QualType qptr = ma.analyseExpr(pptr, false, RHS);
     if (qptr.isInvalid()) return QualType_Invalid;
 
-    // Note: 3rd argument may be const ptr, but result will be const ptr as well then
-    Expr* eptr = b.getToContainerPointer();
-    if (!ma.checker.check(qptr, qmem, b.getToContainerPointer2(), eptr.getLoc())) {
+    // Note: 3rd argument may be const/volatile ptr: copy qualifiers to result type
+    PointerType* pt = qptr.getPointerType();
+    qt.copyQuals(pt.getInner());
+
+    // Construct expected pointer type with proper qualifiers
+    QualType qmem = d.getType();
+    qmem.copyQuals(pt.getInner());
+    QualType expectedType = ma.builder.actOnPointerType(qmem);
+
+    if (!ma.checker.check(expectedType, qptr, pptr, (*pptr).getLoc())) {
         return QualType_Invalid;
     }
 
-    if (qptr.isConstPtr()) qt.setConst();
     return ma.builder.actOnPointerType(qt);
 }
 
-fn Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl* std, Expr* member) {
-    u32 base_offset = 0;
-    Decl* d = nil;
+type FindMemberOffsetContext struct {
+    StructTypeDecl* std;
+    u32 base_offset;
+}
 
+fn Decl* Analyser.findMemberOffsetAux(Analyser* ma, FindMemberOffsetContext* ctx, Expr* member) {
+    Decl* d = nil;
     if (member.isIdentifier()) {
         IdentifierExpr* i = (IdentifierExpr*)member;
         u32 name_idx = i.getNameIdx();
 
-        d = ma.findStructMemberOffset(std, name_idx, member.getLoc(), &base_offset);
+        d = ma.findStructMemberOffset(ctx.std, name_idx, member.getLoc(), &ctx.base_offset);
         if (!d) return nil;
 
         i.setDecl(d);
@@ -221,20 +228,33 @@ fn Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl*
     } else {
         assert(member.isMember());
         MemberExpr* m = (MemberExpr*)member;
-        for (u32 i=0; i<m.getNumRefs(); i++) {
+        u32 start = 0;
+        if (m.hasExpr()) {
+            d = ma.findMemberOffsetAux(ctx, m.getBaseExpr());
+            if (!d) return nil;
+            if (d.isStructType()) ctx.std = (StructTypeDecl*)d;
+            start = 1;
+        }
+        for (u32 i = start; i < 2; i++) {
             u32 name_idx = m.getNameIdx(i);
             SrcLoc loc = m.getLoc(i);
-            d = ma.findStructMemberOffset(std, name_idx, loc, &base_offset);
+            d = ma.findStructMemberOffset(ctx.std, name_idx, loc, &ctx.base_offset);
             if (!d) return nil;
 
-            if (d.isStructType()) std = (StructTypeDecl*)d;
+            if (d.isStructType()) ctx.std = (StructTypeDecl*)d;
             d.setUsed();
             m.setDecl(d, i);
         }
         m.setKind(StructMember);
     }
     member.setType(d.getType());
-    b.setUValue(base_offset);
+    return d;
+}
+
+fn Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl* std, Expr* member) {
+    FindMemberOffsetContext ctx = { std, 0 }
+    Decl* d = ma.findMemberOffsetAux(&ctx, member);
+    if (d) b.setUValue(ctx.base_offset);
     return d;
 }
 

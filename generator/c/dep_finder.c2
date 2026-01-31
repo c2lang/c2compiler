@@ -245,7 +245,7 @@ fn void Finder.handleMemberExpr(Finder* s, MemberExpr* m) {
     Decl* d = m.getFullDecl();
     if (d.isEnumConstant()) {
         // change Constant -> Enum
-        d = m.getPrevLastDecl();
+        d = m.getBaseDecl();
         assert(d.isEnum());
     }
     // TODO also add dep to struct for (static)type-functions

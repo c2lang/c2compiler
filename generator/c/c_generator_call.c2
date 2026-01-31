@@ -72,7 +72,8 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
                     out.add1('*');
                     break;
                 }
-                gen.emitMemberExprBase(out, func);
+                MemberContext mc = {}
+                gen.emitMemberExpr(out, m, &mc, true);
             }
         } else {
             bool no_trace = gen.no_trace;

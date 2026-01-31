@@ -167,7 +167,7 @@ fn Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
     IdentifierKind kind = ma.setExprFlags(e_ptr, d);
     i.setKind(kind);
 
-    if (ma.usedPublic && !d.isPublic() && d.isGlobal()) {
+    if (ma.usedPublic && !d.isPublic() && d.isGlobal() && !d.isImport()) {
         // Note: can also be a function or type for inline function bodies
         const char* kind_str = type2str(qt);
         if (ma.scope.inFunction()) {
@@ -400,12 +400,12 @@ fn bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft, c
             case Type:
                 break;
             case Var:
-                ma.error(loc, "cannot assign to read-only variable '%s'", m.getLastMemberName());
+                ma.error(loc, "cannot assign to read-only variable '%s'", m.getMemberName());
                 return false;
             case EnumConstant:
                 break;
             case StructMember:
-                ma.error(loc, "assignment of member '%s' in read-only object", m.getLastMemberName());
+                ma.error(loc, "assignment of member '%s' in read-only object", m.getMemberName());
                 return false;
             case Label:
                 break;

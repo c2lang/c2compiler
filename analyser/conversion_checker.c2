@@ -147,6 +147,7 @@ public fn bool Checker.check(Checker* c, QualType lhs, QualType rhs, Expr** e_pt
     const Type* rcanon = t2.getTypeOrNil();
 
     if (lcanon == rcanon) {
+#if 0   // This is bogus!
         //u32 lquals = lhs.getQuals();
         //u32 rquals = rhs.getQuals();
         // TODO: check constness of pointed thing instead of that of pointer
@@ -155,6 +156,7 @@ public fn bool Checker.check(Checker* c, QualType lhs, QualType rhs, Expr** e_pt
             c.diags.error(loc, "conversion discards const qualifier");
             return false;
         }
+#endif
         return true;
     }
 

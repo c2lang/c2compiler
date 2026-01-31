@@ -36,13 +36,13 @@ fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     ir.Ref name_ref;
     if (is_tf) {
         Expr* func = call.getFunc();
+        const MemberExpr* m = (MemberExpr*)func;
 
         // MemberExpr is marked as TF, so emitMemberExpr should only emit base part
         ir.Ref ref;
-        gen.emitMemberExpr(&ref, func);
+        gen.emitMemberExpr(&ref, m, true);
         arg_refs.add(ref);
 
-        const MemberExpr* m = (MemberExpr*)func;
         gen.emitSymbol(&name_ref, m.getFullDecl());
     } else {
         gen.emitExpr(&name_ref, call.getFunc());

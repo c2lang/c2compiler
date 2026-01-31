@@ -252,13 +252,8 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         p.error("expected expression");
         break;
     case 1: // Identifier
-        // Fast-path, keep checking multiple identifier.identifier. etc
-        // parse them all in a single MemberExpr
-        if (p.peekToken(1) == Dot) {
-            res = p.parsePureMemberExpr();
-        } else {
-            res = p.parseIdentifier().asExpr();
-        }
+        // parse all members in a single shot
+        res = p.parsePureMemberExpr();
         couldBeTemplateCall = true;
 /*
         // Make sure to pass down the right value for isAddressOfOperand.
@@ -448,60 +443,29 @@ fn Expr* Parser.parseTemplateCallExpr(Parser* p, Expr* func, const TypeRefHolder
 }
 
 fn Expr* Parser.parseImpureMemberExpr(Parser* p, Expr* base) {
-    // a[x].b.c, a[x] is base
-    p.consumeToken();   // dot
-    p.expectIdentifier();
-
-    Ref[MemberExprMaxDepth] ref;
-
-    ref[0].loc = p.tok.loc;
-    ref[0].name_idx = p.tok.name_idx;
-    u32 refcount = 1;
-    p.consumeToken();
-
-    while (p.tok.kind == Dot) {
-        p.consumeToken();
+    // Create simple `MemberExpr` for all parts
+    for (;;) {
+        p.consumeToken();   // dot
         p.expectIdentifier();
-
-        if (refcount == elemsof(ref)) p.error("max member depth is %d", MemberExprMaxDepth);
-
-        ref[refcount].loc = p.tok.loc;
-        ref[refcount].name_idx = p.tok.name_idx;
-        refcount++;
+        base = p.builder.actOnMemberExpr(base, 0, 0, p.tok.loc, p.tok.name_idx);
         p.consumeToken();
+        if (p.tok.kind != Dot) break;
     }
-
-    return p.builder.actOnMemberExpr(base, ref, refcount);
+    return base;
 }
 
 fn Expr* Parser.parsePureMemberExpr(Parser* p) {
-    // parse as many <id>.<id>.<id> and store them in a single member-expr
-    Ref[MemberExprMaxDepth] ref;
-
-    ref[0].loc = p.tok.loc;
-    ref[0].name_idx = p.tok.name_idx;
-    u32 refcount = 1;
+    SrcLoc loc = p.tok.loc;
+    u32 name_idx = p.tok.name_idx;
+    u32 name_len = p.tok.len;
     p.consumeToken();
-
-    while (p.tok.kind == Dot) {
-        p.consumeToken();
-        p.expectIdentifier();
-
-        if (refcount == elemsof(ref)) p.error("max member depth is %d", MemberExprMaxDepth);
-
-        ref[refcount].loc = p.tok.loc;
-        ref[refcount].name_idx = p.tok.name_idx;
-        refcount++;
-        p.consumeToken();
-    }
-
-    return p.builder.actOnMemberExpr(nil, ref, refcount);
-}
-
-fn IdentifierExpr* Parser.parseIdentifier(Parser* p) {
-    IdentifierExpr* e = p.builder.actOnIdentifier(p.tok.loc, p.tok.name_idx);
+    if (p.tok.kind != Dot) return p.builder.actOnIdentifier(loc, name_idx, name_len);
+    p.consumeToken();  // Dot
+    p.expectIdentifier();
+    Expr* lhs = p.builder.actOnMemberExpr(nil, name_idx, name_len, p.tok.loc, p.tok.name_idx);
     p.consumeToken();
-    return e;
+    if (p.tok.kind != Dot) return lhs;
+    return p.parseImpureMemberExpr(lhs);
 }
 
 fn Expr* Parser.parseStringLiteral(Parser* p) {
@@ -628,8 +592,6 @@ fn Expr* Parser.parseElemsof(Parser* p) {
     p.consumeToken();
 
     p.expectAndConsume(LParen);
-
-    p.expectIdentifier();
 
     // TODO parse as TypeRefholder (can have module.prefix and array index
     Expr* res = p.parseFullIdentifier();
@@ -789,11 +751,7 @@ fn Expr* Parser.parseToContainerExpr(Parser* p) {
 //   identifier.identifier.identifier etc
 fn Expr* Parser.parseFullIdentifier(Parser* p) {
     p.expectIdentifier();
-
-    if (p.peekToken(1) == Dot) {
-        return p.parsePureMemberExpr();
-    }
-    return p.parseIdentifier().asExpr();
+    return p.parsePureMemberExpr();
 }
 
 /*

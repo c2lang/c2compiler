@@ -108,7 +108,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
                 call.setCallsTypeFunc();
                 baseType = m.getBaseType();
                 // loc points to the last member of the function name
-                loc = m.getLastLoc();
+                loc = m.getMemberLoc();
             }
             break;
         case StaticTypeFunc:
@@ -149,7 +149,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             if (!baseType.isPointer()) {
                 // TODO: Check if structure is lvalue. If not, we should add a local object to
                 // store the rvalue and use that as the lvalue
-                Expr* base = m.getExprBase();
+                Expr* base = m.getBaseExpr();
                 if (base && !base.isLValue()) {
                     ma.errorRange(m.getLoc(0), base.getRange(), "type function needs lvalue");
                     return QualType_Invalid;

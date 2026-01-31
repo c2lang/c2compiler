@@ -78,7 +78,7 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         gen.emitArraySubscript(result, e);
         break;
     case Member:
-        gen.emitMemberExpr(result, e);
+        gen.emitMemberExpr(result, (MemberExpr*)e);
         break;
     case Paren:
         ParenExpr* p = (ParenExpr*)e;

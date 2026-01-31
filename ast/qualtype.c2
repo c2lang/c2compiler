@@ -171,12 +171,6 @@ public fn QualType QualType.getImplType(const QualType* qt) {
     return canon;
 }
 
-// Note: should be valid and PointerType
-public fn bool QualType.isConstPtr(const QualType qt) {
-    PointerType* pt = qt.getPointerType();
-    return pt.inner.isConst();
-}
-
 public fn TypeKind QualType.getKind(const QualType qt) {
     Type* t = qt.getType();
     return t.getKind();

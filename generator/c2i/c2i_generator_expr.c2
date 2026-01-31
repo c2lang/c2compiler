@@ -174,19 +174,19 @@ fn void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, cons
 }
 
 fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, const MemberExpr* m) {
-    const Expr* base = m.getExprBase();
+    const Expr* base = m.getBaseExpr();
     if (base) {
         gen.emitExpr(out, base);
-    }
-    for (u32 i=0; i<m.getNumRefs(); i++) {
-        if (i != 0 || base) out.add1('.');
-        Ref r = m.getRef(i);
-        if (i == 0 && r.decl.getModule() != gen.mod) {
-            out.add(r.decl.getFullName());
+    } else {
+        Decl* d = m.getDecl(0);
+        if (d.getModule() != gen.mod) {
+            out.add(d.getFullName());
         } else {
-            out.add(r.decl.getName());
+            out.add(d.getName());
         }
     }
+    out.add1('.');
+    out.add(m.getName(1));
 }
 
 fn void Generator.emitFieldDesigExpr(Generator* gen, string_buffer.Buf* out, const FieldDesignatedInitExpr* fdi) {

@@ -374,7 +374,7 @@ fn void Generator.emitBitfieldAssign(Generator* gen, ir.Ref* result, const Expr*
 
     ir.Ref base;
     // TODO need without load
-    gen.emitMemberExpr(&base, lhs);
+    gen.emitMemberExpr(&base, (MemberExpr*)lhs);
 
     ir.Ref dest = base;
     if (!allBitsSet) {
