@@ -1,0 +1,44 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module file1;
+
+import stdlib;
+
+fn void test1() @(noreturn) {
+    stdlib.exit(-1);
+}
+
+fn i32 test2() {
+    test1();
+}
+
+public fn i32 main() {
+    test2();
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+
+__attribute__((noreturn))
+void exit(int __status);
+
+// --- module file1 ---
+__attribute__((noreturn))
+static void file1_test1(void);
+static int32_t file1_test2(void);
+int32_t main(void);
+
+__attribute__((noreturn))
+static void file1_test1(void)
+{
+   exit(-1);
+}
+
+static int32_t file1_test2(void)
+{
+   file1_test1();
+}
+

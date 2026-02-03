@@ -841,20 +841,13 @@ fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer
         gen.emitSectionAttr(out, section);
         out.space();
     }
-    if (fd.hasAttrInline()) {
-        // Note: inline functions are always static
-        //out.add("__inline__ ");
-        out.add("static inline ");
-    }
-    if (fd.hasAttrWeak()) {
-        out.add("__attribute__((weak)) ");
-    }
-    if (fd.hasAttrConstructor()) {
-        out.add("__attribute__((constructor)) ");
-    }
-    if (fd.hasAttrDestructor()) {
-        out.add("__attribute__((destructor)) ");
-    }
+
+    // Note: inline functions are always static
+    if (fd.hasAttrInline()) out.add("static inline ");
+    if (fd.hasAttrWeak()) out.add("__attribute__((weak)) ");
+    if (fd.hasAttrConstructor()) out.add("__attribute__((constructor)) ");
+    if (fd.hasAttrDestructor()) out.add("__attribute__((destructor)) ");
+    if (fd.hasAttrNoReturn()) out.add("__attribute__((noreturn)) ");
 
     u8 format_arg;
     if (FormatAttr format_attr = fd.getFormatAttr(&format_arg)) {
