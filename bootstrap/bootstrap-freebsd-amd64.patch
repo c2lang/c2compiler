@@ -1,22 +1,22 @@
-118c118
+131c131
 < extern int* __errno_location(void);
 ---
 > extern int* __error(void);
-123c123
+136c136
 < #define c_errno_ENAMETOOLONG 36
 ---
 > #define c_errno_ENAMETOOLONG 63
-165,166c165,166
+179,180c179,180
 <    long long d_off;
 <    unsigned short d_reclen;
 ---
 >    unsigned long long d_seekoff;
 >    uint16_t d_reclen;
-167a168,170
+181a182,184
 >    uint8_t d_pad0;
 >    uint16_t d_namlen;
 >    uint16_t d_pad1;
-183,184c186,189
+197,198c200,203
 < #define libc_fcntl_O_CREAT 0100
 < #define libc_fcntl_O_TRUNC 01000
 ---
@@ -24,19 +24,19 @@
 > #define libc_fcntl_O_CREAT 01000
 > #define libc_fcntl_O_TRUNC 02000
 > #define libc_fcntl_O_CLOEXEC 04000000
-205,206c210,211
+219,220c224,225
 < extern FILE* stdout;
 < extern FILE* stderr;
 ---
 > extern FILE* __stdoutp;
 > extern FILE* __stderrp;
-285a291,295
+301a307,311
 > struct timespec {
 >    long tv_sec;
 >    long tv_nsec;
 > };
 > 
-287,290c297,301
+303,306c313,317
 <    unsigned long st_dev;
 <    unsigned long st_ino;
 <    unsigned long st_nlink;
@@ -47,7 +47,7 @@
 >    uint64_t st_nlink;
 >    unsigned short st_mode;
 >    unsigned short st_padding0;
-293,303c304,315
+309,319c320,331
 <    unsigned long st_rdev;
 <    long st_size;
 <    long st_blksize;
@@ -72,11 +72,11 @@
 >    unsigned int st_flags;
 >    uint64_t st_gen;
 >    uint64_t st_lspare[10];
-337c349
+353c365
 < #define sys_utsname_NAME_LEN 65
 ---
 > #define sys_utsname_NAME_LEN 256
-339,344c351,356
+355,360c367,372
 <    char sysname[65];
 <    char nodename[65];
 <    char release[65];
@@ -90,7 +90,7 @@
 >    char version[256];
 >    char machine[256];
 >    char domainname[256];
-347c359,365
+363c375,381
 < int uname(utsname* buf);
 ---
 > int __xuname(int len, void* _arg1);
@@ -100,351 +100,353 @@
 >    return __xuname(sys_utsname_NAME_LEN, name);
 > }
 > 
-355c373
+371c389
 < #define unistd__SC_NPROCESSORS_ONLN 84
 ---
 > #define unistd__SC_NPROCESSORS_ONLN 58
-379c397
+395c413
 < #define pthread_SIZEOF_ATTR_T 64
 ---
 > #define pthread_SIZEOF_ATTR_T 8
-381c399
+397c415
 <    char __size[64];
 ---
 >    char __size[8];
-387c405
+403c421
 < #define pthread_SIZEOF_MUTEX_T 40
 ---
 > #define pthread_SIZEOF_MUTEX_T 8
-389c407
+405c423
 <    char size[40];
 ---
 >    char size[8];
-393c411
+409c427
 < #define pthread_SIZEOF_MUTEXATTR_T 4
 ---
 > #define pthread_SIZEOF_MUTEXATTR_T 8
-395c413
+411c429
 <    char size[4];
 ---
 >    char size[8];
-399c417
+415c433
 < #define pthread_SIZEOF_COND_T 48
 ---
 > #define pthread_SIZEOF_COND_T 8
-401c419
+417c435
 <    char size[48];
 ---
 >    char size[8];
-405c423
+421c439
 < #define pthread_SIZEOF_CONDATTR_T 4
 ---
 > #define pthread_SIZEOF_CONDATTR_T 8
-407c425
+423c441
 <    char size[4];
 ---
 >    char size[8];
-420c438
+436c454
 < #define dlfcn_RTLD_DEFAULT ((void*)(size_t)(0))
 ---
 > #define dlfcn_RTLD_DEFAULT ((void*)(size_t)(-2))
-2316c2334
+2323c2341
 <       fprintf(stderr, "%swarning: %s%s\n", color_Color_str(color_Yellow), buf, color_Color_str(color_Normal));
 ---
 >       fprintf(__stderrp, "%swarning: %s%s\n", color_Color_str(color_Yellow), buf, color_Color_str(color_Normal));
-2318c2336
+2325c2343
 <       fprintf(stderr, "warning: %s\n", buf);
 ---
 >       fprintf(__stderrp, "warning: %s\n", buf);
-2331c2349
+2338c2356
 <       fprintf(stderr, "%serror: %s%s\n", color_Color_str(color_Red), buf, color_Color_str(color_Normal));
 ---
 >       fprintf(__stderrp, "%serror: %s%s\n", color_Color_str(color_Red), buf, color_Color_str(color_Normal));
-2333c2351
+2340c2358
 <       fprintf(stderr, "error: %s\n", buf);
 ---
 >       fprintf(__stderrp, "error: %s\n", buf);
-2346c2364
+2353c2371
 <       fprintf(stderr, "%s%s: error: %s%s\n", color_Color_str(color_Red), loc, buf, color_Color_str(color_Normal));
 ---
 >       fprintf(__stderrp, "%s%s: error: %s%s\n", color_Color_str(color_Red), loc, buf, color_Color_str(color_Normal));
-2348c2366
+2355c2373
 <       fprintf(stderr, "%s: error: %s\n", loc, buf);
 ---
 >       fprintf(__stderrp, "%s: error: %s\n", loc, buf);
-2522c2540
+2529c2547
 <    (*__errno_location()) = c_errno_ENAMETOOLONG;
 ---
 >    (*__error()) = c_errno_ENAMETOOLONG;
-2537c2555
+2544c2562
 <    (*__errno_location()) = c_errno_ENAMETOOLONG;
 ---
 >    (*__error()) = c_errno_ENAMETOOLONG;
-2552c2570
+2559c2577
 <    (*__errno_location()) = c_errno_ENAMETOOLONG;
 ---
 >    (*__error()) = c_errno_ENAMETOOLONG;
-2567c2585
+2574c2592
 <          if (mkdir(tmp, 0777) && (*__errno_location()) != c_errno_EEXIST) return (*__errno_location());
 ---
 >          if (mkdir(tmp, 0777) && (*__error()) != c_errno_EEXIST) return (*__error());
-2570c2588
+2577c2595
 <       if (p > &tmp[512 - 2]) return (*__errno_location()) = c_errno_ENAMETOOLONG;
 ---
 >       if (p > &tmp[512 - 2]) return (*__error()) = c_errno_ENAMETOOLONG;
-2660c2678
+2667c2685
 <          if ((*__errno_location()) != c_errno_EINTR) return -1;
 ---
 >          if ((*__error()) != c_errno_EINTR) return -1;
-2676c2694
+2683c2701
 <       file->error = (*__errno_location());
 ---
 >       file->error = (*__error());
-2681c2699
+2688c2706
 <       file->error = (*__errno_location());
 ---
 >       file->error = (*__error());
-2704c2722
+2711c2729
 <       file->error = (*__errno_location());
 ---
 >       file->error = (*__error());
-2762c2780
+2769c2787
 <          if ((*__errno_location()) != c_errno_EINTR) return -1;
 ---
 >          if ((*__error()) != c_errno_EINTR) return -1;
-2773c2791
+2780c2798
 <       file->error = (*__errno_location());
 ---
 >       file->error = (*__error());
-2778c2796
+2785c2803
 <       file->error = (*__errno_location());
 ---
 >       file->error = (*__error());
-2938,2939c2956,2957
+2945,2946c2963,2964
 <       fprintf(stderr, "[exec] %s\n", msg);
 <       fflush(stderr);
 ---
 >       fprintf(__stderrp, "[exec] %s\n", msg);
 >       fflush(__stderrp);
-2949c2967
+2956c2974
 <       fprintf(stderr, "pipe() failed: %s\n", strerror((*__errno_location())));
 ---
 >       fprintf(__stderrp, "pipe() failed: %s\n", strerror((*__error())));
-2953c2971
+2960c2978
 <       fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror((*__errno_location())));
 ---
 >       fprintf(__stderrp, "fcncl(FD_CLOEXEC) failed: %s\n", strerror((*__error())));
-2960c2978
+2967c2985
 <       fprintf(stderr, "fork() failed: %s\n", strerror((*__errno_location())));
 ---
 >       fprintf(__stderrp, "fork() failed: %s\n", strerror((*__error())));
-2972c2990
+2979c2997
 <          process_utils_child_error(error_pipe[1], "cannot open output '%s': %s", filename, strerror((*__errno_location())));
 ---
 >          process_utils_child_error(error_pipe[1], "cannot open output '%s': %s", filename, strerror((*__error())));
-2975c2993
+2982c3000
 <          if ((*__errno_location()) != c_errno_EINTR) process_utils_child_error(error_pipe[1], "dup2(): %s", strerror((*__errno_location())));
 ---
 >          if ((*__error()) != c_errno_EINTR) process_utils_child_error(error_pipe[1], "dup2(): %s", strerror((*__error())));
-2982c3000
+2989c3007
 <             process_utils_child_error(error_pipe[1], "cannot change to dir '%s': %s", path, strerror((*__errno_location())));
 ---
 >             process_utils_child_error(error_pipe[1], "cannot change to dir '%s': %s", path, strerror((*__error())));
-2999c3017
+3006c3024
 <       fflush(stdout);
 ---
 >       fflush(__stdoutp);
-3001,3002c3019,3020
+3008,3009c3026,3027
 <       int32_t lasterr = (*__errno_location());
 <       fprintf(stderr, "failed to start %s: %s\n", cmd, strerror(lasterr));
 ---
 >       int32_t lasterr = (*__error());
 >       fprintf(__stderrp, "failed to start %s: %s\n", cmd, strerror(lasterr));
-3010c3028
+3017c3035
 <          fprintf(stderr, "Error reading pipe\n");
 ---
 >          fprintf(__stderrp, "Error reading pipe\n");
-3022c3040
+3029c3047
 <          fprintf(stderr, "Error waiting for pid: %s\n", strerror((*__errno_location())));
 ---
 >          fprintf(__stderrp, "Error waiting for pid: %s\n", strerror((*__error())));
-3076c3094
+3083c3101
 <       fprintf(stderr, "pipe() failed: %s\n", strerror((*__errno_location())));
 ---
 >       fprintf(__stderrp, "pipe() failed: %s\n", strerror((*__error())));
-3080c3098
+3087c3105
 <       fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror((*__errno_location())));
 ---
 >       fprintf(__stderrp, "fcncl(FD_CLOEXEC) failed: %s\n", strerror((*__error())));
-3087c3105
+3094c3112
 <       fprintf(stderr, "pipe() failed: %s\n", strerror((*__errno_location())));
 ---
 >       fprintf(__stderrp, "pipe() failed: %s\n", strerror((*__error())));
-3094c3112
+3101c3119
 <       fprintf(stderr, "fork() failed: %s\n", strerror((*__errno_location())));
 ---
 >       fprintf(__stderrp, "fork() failed: %s\n", strerror((*__error())));
-3105c3123
+3112c3130
 <          if ((*__errno_location()) != c_errno_EINTR) process_utils_child_error(error_pipe[1], "dup(): %s", strerror((*__errno_location())));
 ---
 >          if ((*__error()) != c_errno_EINTR) process_utils_child_error(error_pipe[1], "dup(): %s", strerror((*__error())));
-3109c3127
+3116c3134
 <          if ((*__errno_location()) != c_errno_EINTR) process_utils_child_error(error_pipe[1], "dup2(): %s", strerror((*__errno_location())));
 ---
 >          if ((*__error()) != c_errno_EINTR) process_utils_child_error(error_pipe[1], "dup2(): %s", strerror((*__error())));
-3113c3131
+3120c3138
 <             process_utils_child_error(error_pipe[1], "cannot change to dir '%s': %s", path, strerror((*__errno_location())));
 ---
 >             process_utils_child_error(error_pipe[1], "cannot change to dir '%s': %s", path, strerror((*__error())));
-3129,3130c3147,3148
+3136,3137c3154,3155
 <       int32_t lasterr = (*__errno_location());
 <       fprintf(stderr, "failed to start %s: %s\n", cmd, strerror(lasterr));
 ---
 >       int32_t lasterr = (*__error());
 >       fprintf(__stderrp, "failed to start %s: %s\n", cmd, strerror(lasterr));
-3139c3157
+3146c3164
 <          fprintf(stderr, "Error reading pipe\n");
 ---
 >          fprintf(__stderrp, "Error reading pipe\n");
-3154c3172
+3161c3179
 <          fprintf(stderr, "Error waiting for pid: %s\n", strerror((*__errno_location())));
 ---
 >          fprintf(__stderrp, "Error waiting for pid: %s\n", strerror((*__error())));
-3167c3185
+3174c3192
 <             fprintf(stderr, "error reading process output\n");
 ---
 >             fprintf(__stderrp, "error reading process output\n");
-3180c3198
+3187c3205
 <          fprintf(stderr, "child exited ABNORMALLY\n");
 ---
 >          fprintf(__stderrp, "child exited ABNORMALLY\n");
-3371c3389
+3378c3396
 <          fprintf(stderr, "%s%serror:%s cannot open %s: %s\n", tmp, color_Color_str(color_Red), color_Color_str(color_Normal), filename, file_utils_File_getError(&file));
 ---
 >          fprintf(__stderrp, "%s%serror:%s cannot open %s: %s\n", tmp, color_Color_str(color_Red), color_Color_str(color_Normal), filename, file_utils_File_getError(&file));
-3373c3391
+3380c3398
 <          fprintf(stderr, "%serror: cannot open %s: %s\n", tmp, filename, file_utils_File_getError(&file));
 ---
 >          fprintf(__stderrp, "%serror: cannot open %s: %s\n", tmp, filename, file_utils_File_getError(&file));
-3816c3834
+3823c3841
 <          if ((*__errno_location()) != c_errno_ENOENT) {
 ---
 >          if ((*__error()) != c_errno_ENOENT) {
-4001c4019
+4020c4038
 <          fprintf(stderr, "[build-file] warning: environment variable '%s' not set!\n", raw + 1);
 ---
 >          fprintf(__stderrp, "[build-file] warning: environment variable '%s' not set!\n", raw + 1);
-4048c4066
+4067c4085
 <             fprintf(stderr, "[build-file] missing options for %s\n", name);
 ---
 >             fprintf(__stderrp, "[build-file] missing options for %s\n", name);
-4066c4084
+4085c4103
 <       fprintf(stderr, "Error: %s\n", yaml_Parser_getMessage(parser));
 ---
 >       fprintf(__stderrp, "Error: %s\n", yaml_Parser_getMessage(parser));
-8012c8030
-< static const char git_version_Describe[9] = "13c3112b";
+8269c8287
+< static const char git_version_Describe[9] = "67e27b96";
 ---
-> static const char git_version_Describe[15] = "13c3112b-dirty";
-20799c20817
+> static const char git_version_Describe[15] = "67e27b96-dirty";
+21408c21426
 <             fprintf(stderr, "function prototype not supported: %s\n", ast_FunctionDecl_getCName(fd));
 ---
 >             fprintf(__stderrp, "function prototype not supported: %s\n", ast_FunctionDecl_getCName(fd));
-21717c21735
+22317c22335
 <    fputs(string_buffer_Buf_data(out), stderr);
 ---
 >    fputs(string_buffer_Buf_data(out), __stderrp);
-21748c21766
+22348c22366
 <       fputs(string_buffer_Buf_data(out), stderr);
 ---
 >       fputs(string_buffer_Buf_data(out), __stderrp);
-23696c23714
+24120c24138
 <       fprintf(stderr, "%s: %serror:%s %s\n", locstr, color_Color_str(color_Red), color_Color_str(color_Normal), msg);
 ---
 >       fprintf(__stderrp, "%s: %serror:%s %s\n", locstr, color_Color_str(color_Red), color_Color_str(color_Normal), msg);
-23698c23716
+24122c24140
 <       fprintf(stderr, "%s: error: %s\n", locstr, msg);
 ---
 >       fprintf(__stderrp, "%s: error: %s\n", locstr, msg);
-23714c23732
+24138c24156
 <       fprintf(stderr, "%s: %swarning:%s %s\n", locstr, color_Color_str(color_Red), color_Color_str(color_Normal), msg);
 ---
 >       fprintf(__stderrp, "%s: %swarning:%s %s\n", locstr, color_Color_str(color_Red), color_Color_str(color_Normal), msg);
-23716c23734
+24140c24158
 <       fprintf(stderr, "%s: warning: %s\n", locstr, msg);
 ---
 >       fprintf(__stderrp, "%s: warning: %s\n", locstr, msg);
-35690c35708
+36505c36523
 <       fprintf(stderr, "error: missing node %s\n", path);
 ---
 >       fprintf(__stderrp, "error: missing node %s\n", path);
-35717c35735
+36532c36550
 <          fprintf(stderr, "error in manifest: invalid library kind '%s'\n", kind);
 ---
 >          fprintf(__stderrp, "error in manifest: invalid library kind '%s'\n", kind);
-35723c35741
+36538c36556
 <       fprintf(stderr, "error in manifest: a library must be dynamic static and/or source\n");
 ---
 >       fprintf(__stderrp, "error in manifest: a library must be dynamic static and/or source\n");
-35732c35750
+36547c36565
 <       fprintf(stderr, "manifest: a source library must have c2 as language\n");
 ---
 >       fprintf(__stderrp, "manifest: a source library must have c2 as language\n");
-35748c35766
+36563c36581
 <          fprintf(stderr, "manifest: sources are only allowed for source library kind\n");
 ---
 >          fprintf(__stderrp, "manifest: sources are only allowed for source library kind\n");
-35753c35771
+36568c36586
 <          fprintf(stderr, "manifest: sources are required for source library kind\n");
 ---
 >          fprintf(__stderrp, "manifest: sources are required for source library kind\n");
-35902c35920
+36717c36735
 <          console_warn("cannot read '%s': %s", path, strerror((*__errno_location())));
 ---
 >          console_warn("cannot read '%s': %s", path, strerror((*__error())));
-38213c38231
+39020c39038
 <       console_error("cannot create directory %s: %s", dir, strerror((*__errno_location())));
 ---
 >       console_error("cannot create directory %s: %s", dir, strerror((*__error())));
-38270c38288
+39077c39095
 <    const char* make = "make";
 ---
 >    const char* make = "gmake";
-38273c38291
+39080c39098
 <       console_error("cannot launch C compilation: %s", strerror((*__errno_location())));
 ---
 >       console_error("cannot launch C compilation: %s", strerror((*__error())));
-39694c39712
+40484c40502
 <       console_error("cannot copy file to %s: %s", dest, strerror((*__errno_location())));
 ---
 >       console_error("cannot copy file to %s: %s", dest, strerror((*__error())));
-41939c41957
+43429c43447
 <    fputs(string_buffer_Buf_data(out), stdout);
 ---
 >    fputs(string_buffer_Buf_data(out), __stdoutp);
-45056,45057c45074,45075
-<    ir_context_WorkQueue* q = malloc(64);
+45260c45278
+<    ir_context_Context* c = calloc(1, 1032);
+---
+>    ir_context_Context* c = calloc(1, 1000);
+46551c46569
 <    memset(q, 0, 64);
 ---
->    ir_context_WorkQueue* q = malloc(32);
 >    memset(q, 0, 32);
-45971c45989
+47471c47489
 <       console_error("cannot create directory %s: %s", ir_dir, strerror((*__errno_location())));
 ---
 >       console_error("cannot create directory %s: %s", ir_dir, strerror((*__error())));
-47700c47718
+49169c49187
 <       console_error("cannot create directory %s: %s", info->output_dir, strerror((*__errno_location())));
 ---
 >       console_error("cannot create directory %s: %s", info->output_dir, strerror((*__error())));
-47896c47914
+49365c49383
 <       console_error("error getting system info: %s", strerror((*__errno_location())));
 ---
 >       console_error("error getting system info: %s", strerror((*__error())));
-48153c48171
+49621c49639
 <       console_error("cannot open library dir '%s': %s", dirname, strerror((*__errno_location())));
 ---
 >       console_error("cannot open library dir '%s': %s", dirname, strerror((*__error())));
-48729c48747
+50223c50241
 <          console_error("c2c: cannot chdir to %s: %s", c->opts.other_dir, strerror((*__errno_location())));
 ---
 >          console_error("c2c: cannot chdir to %s: %s", c->opts.other_dir, strerror((*__error())));
