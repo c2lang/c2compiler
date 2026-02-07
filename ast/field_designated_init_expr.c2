@@ -32,12 +32,12 @@ public fn FieldDesignatedInitExpr* FieldDesignatedInitExpr.create(ast_context.Co
                                                                   Expr* initValue)
 {
     FieldDesignatedInitExpr* e = c.alloc(sizeof(FieldDesignatedInitExpr));
-    e.base.init(ExprKind.FieldDesignatedInit, loc, 0, 0, 0, ValType.RValue);
+    e.base.init(FieldDesignatedInit, loc, 0, 0, 0, RValue);
     e.field_name = field;
     e.initValue = initValue;
     e.fif = nil;
 #if AstStatistics
-    Stats.addExpr(ExprKind.FieldDesignatedInit, sizeof(FieldDesignatedInitExpr));
+    Stats.addExpr(FieldDesignatedInit, sizeof(FieldDesignatedInitExpr));
 #endif
     return e;
 }

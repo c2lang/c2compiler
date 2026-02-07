@@ -181,7 +181,7 @@ public fn Decl* Builder.actOnFunctionTypeDecl(Builder* b,
                                            params,
                                            num_params,
                                            is_variadic,
-                                           DefKind.Type);
+                                           Type);
 
     FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fd);
     b.ast.addTypeDecl(d.asDecl());
@@ -272,7 +272,7 @@ public fn Decl* Builder.actOnGlobalVarDecl(Builder* b,
 {
     is_public |= b.is_interface;
     VarDecl* vd = VarDecl.create(b.context,
-                                 VarDeclKind.GlobalVar,
+                                 GlobalVar,
                                  name,
                                  loc,
                                  is_public,
@@ -299,7 +299,7 @@ public fn VarDecl* Builder.actOnFunctionParam(Builder* b,
 {
     is_public |= b.is_interface;
     return VarDecl.create(b.context,
-                          VarDeclKind.FunctionParam,
+                          FunctionParam,
                           name,
                           loc,
                           is_public,
@@ -325,7 +325,7 @@ public fn VarDecl* Builder.actOnVarDecl(Builder* b,
                                         bool has_init_call)
 {
     VarDecl* d = VarDecl.create(b.context,
-                                VarDeclKind.LocalVar,
+                                LocalVar,
                                 name,
                                 loc,
                                 false,
@@ -740,7 +740,7 @@ public fn FunctionDecl* Builder.actOnFunctionDecl(Builder* b,
                                           params,
                                           num_params,
                                           is_variadic,
-                                          DefKind.Global);
+                                          Global);
     b.ast.addFunc(f);
     if (!prefix) b.addSymbol(name, f.asDecl());
     if (b.is_interface) f.asDecl().setExternal();

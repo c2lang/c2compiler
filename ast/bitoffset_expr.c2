@@ -32,11 +32,11 @@ public type BitOffsetExpr struct @(opaque) {
 
 public fn BitOffsetExpr* BitOffsetExpr.create(ast_context.Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) {
     BitOffsetExpr* e = c.alloc(sizeof(BitOffsetExpr));
-    e.base.init(ExprKind.BitOffset, loc, 0, 0, 0, ValType.RValue);
+    e.base.init(BitOffset, loc, 0, 0, 0, RValue);
     e.lhs = lhs;
     e.rhs = rhs;
 #if AstStatistics
-    Stats.addExpr(ExprKind.BitOffset, sizeof(BitOffsetExpr));
+    Stats.addExpr(BitOffset, sizeof(BitOffsetExpr));
 #endif
     return e;
 }

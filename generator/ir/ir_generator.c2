@@ -189,21 +189,21 @@ fn const char* Generator.createStringVar(Generator* gen) {
     return out.data();
 }
 
-const ir.Type[elemsof(BuiltinKind)] Ast_type2ir_type = {
-    [BuiltinKind.Char]    = I8,
-    [BuiltinKind.Int8]    = I8,
-    [BuiltinKind.Int16]   = I16,
-    [BuiltinKind.Int32]   = I32,
-    [BuiltinKind.Int64]   = I64,
-    [BuiltinKind.UInt8]   = U8,
-    [BuiltinKind.UInt16]  = U16,
-    [BuiltinKind.UInt32]  = U32,
-    [BuiltinKind.UInt64]  = U64,
-    [BuiltinKind.Float32] = F32,
-    [BuiltinKind.Float64] = F64,
-    [BuiltinKind.ISize]   = I64,  // TODO 32-bit
-    [BuiltinKind.USize]   = U64,  // TODO 32-bit
-    [BuiltinKind.Bool]    = I8,    // TODO ir.Type.I1?
+const ir.Type[BuiltinKind] Ast_type2ir_type = {
+    [Char]    = I8,
+    [Int8]    = I8,
+    [Int16]   = I16,
+    [Int32]   = I32,
+    [Int64]   = I64,
+    [UInt8]   = U8,
+    [UInt16]  = U16,
+    [UInt32]  = U32,
+    [UInt64]  = U64,
+    [Float32] = F32,
+    [Float64] = F64,
+    [ISize]   = I64,  // TODO 32-bit
+    [USize]   = U64,  // TODO 32-bit
+    [Bool]    = I8,    // TODO ir.Type.I1?
 }
 
 fn ir.Type builtin2irtype(BuiltinKind k) {

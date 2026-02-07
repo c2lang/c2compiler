@@ -102,10 +102,10 @@ public fn VarDecl* VarDecl.create(ast_context.Context* c,
     // Note: assignLoc only used for initValue
     // Note: for incremental arrays, the initValue will be set later
     if (initValue || ref.isIncrArray() || has_embed) size += sizeof(VarDeclInit);
-    assert (kind != VarDeclKind.StructMember);
+    assert (kind != StructMember);
 
     VarDecl* d = c.alloc(size);
-    d.base.init(DeclKind.Variable, name, loc, is_public, QualType_Invalid, ast_idx);
+    d.base.init(Variable, name, loc, is_public, QualType_Invalid, ast_idx);
     d.base.varDeclBits.kind = kind;
     d.typeRef.init(ref);
     if (initValue || has_embed) {
@@ -115,7 +115,7 @@ public fn VarDecl* VarDecl.create(ast_context.Context* c,
         init.loc = assignLoc;
     }
 #if AstStatistics
-    Stats.addDecl(DeclKind.Variable, size);
+    Stats.addDecl(Variable, size);
 #endif
     return d;
 }
@@ -132,7 +132,7 @@ public fn VarDecl* VarDecl.createStructMember(ast_context.Context* c,
     if (bitfield) size += sizeof(BitFieldInfo); // see above
 
     VarDecl* d = c.alloc(size);
-    d.base.init(DeclKind.Variable, name, loc, is_public, QualType_Invalid, ast_idx);
+    d.base.init(Variable, name, loc, is_public, QualType_Invalid, ast_idx);
     d.base.varDeclBits.kind = VarDeclKind.StructMember;
     if (name == 0) d.base.setUsed();  // set unnamed member to used
     d.typeRef.init(ref);
@@ -145,7 +145,7 @@ public fn VarDecl* VarDecl.createStructMember(ast_context.Context* c,
         info.layout.bit_offset = 0;
     }
 #if AstStatistics
-    Stats.addDecl(DeclKind.Variable, size);
+    Stats.addDecl(Variable, size);
 #endif
     return d;
 }
@@ -176,7 +176,7 @@ fn VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
         info2.expr = info1.expr.instantiate(inst);
     }
 #if AstStatistics
-    Stats.addDecl(DeclKind.Variable, size);
+    Stats.addDecl(Variable, size);
 #endif
     return vd2;
 }
@@ -202,19 +202,19 @@ public fn VarDeclKind VarDecl.getKind(const VarDecl* d) {
 }
 
 public fn bool VarDecl.isGlobal(const VarDecl* d) {
-    return d.getKind() == VarDeclKind.GlobalVar;
+    return d.getKind() == GlobalVar;
 }
 
 public fn bool VarDecl.isLocal(const VarDecl* d) {
-    return d.getKind() == VarDeclKind.LocalVar;
+    return d.getKind() == LocalVar;
 }
 
 public fn bool VarDecl.isParameter(const VarDecl* d) {
-    return d.getKind() == VarDeclKind.FunctionParam;
+    return d.getKind() == FunctionParam;
 }
 
 fn bool VarDecl.isStructMember(const VarDecl* d) {
-    return d.getKind() == VarDeclKind.StructMember;
+    return d.getKind() == StructMember;
 }
 
 fn bool VarDecl.isBitField(const VarDecl* d) {
@@ -313,12 +313,16 @@ public fn bool VarDecl.hasAttrWeak(const VarDecl* d) {
     return d.base.varDeclBits.attr_weak;
 }
 
+fn AutoAttr VarDecl.getAutoAttr(const VarDecl* d) {
+    return (AutoAttr)d.base.varDeclBits.auto_attr;
+}
+
 public fn void VarDecl.setAttrAutoFile(VarDecl* d) {
     d.base.varDeclBits.auto_attr = AutoAttr.File;
 }
 
 public fn bool VarDecl.hasAttrAutoFile(const VarDecl* d) {
-    return d.base.varDeclBits.auto_attr == AutoAttr.File;
+    return d.getAutoAttr() == File;
 }
 
 public fn void VarDecl.setAttrAutoLine(VarDecl* d) {
@@ -326,7 +330,7 @@ public fn void VarDecl.setAttrAutoLine(VarDecl* d) {
 }
 
 public fn bool VarDecl.hasAttrAutoLine(const VarDecl* d) {
-    return d.base.varDeclBits.auto_attr == AutoAttr.Line;
+    return d.getAutoAttr() == Line;
 }
 
 public fn void VarDecl.setAttrAutoFunc(VarDecl* d) {
@@ -334,11 +338,11 @@ public fn void VarDecl.setAttrAutoFunc(VarDecl* d) {
 }
 
 public fn bool VarDecl.hasAttrAutoFunc(const VarDecl* d) {
-    return d.base.varDeclBits.auto_attr == AutoAttr.Func;
+    return d.getAutoAttr() == Func;
 }
 
 public fn bool VarDecl.hasAutoAttr(const VarDecl* d) {
-    return d.base.varDeclBits.auto_attr != AutoAttr.None;
+    return d.getAutoAttr() != None;
 }
 
 public fn void VarDecl.setFormatAttr(VarDecl* d, FormatAttr kind) {

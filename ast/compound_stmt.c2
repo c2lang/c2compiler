@@ -36,14 +36,14 @@ public fn CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc endLo
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt*);
 
     CompoundStmt* s = c.alloc(size);
-    s.base.init(StmtKind.Compound, endLoc);
+    s.base.init(Compound, endLoc);
     s.base.compoundStmtBits.count = count;
 
     if (count) {
         string.memcpy(s.stmts, stmts, count * sizeof(Stmt*));
     }
 #if AstStatistics
-    Stats.addStmt(StmtKind.Compound, size);
+    Stats.addStmt(Compound, size);
 #endif
     return s;
 }
@@ -59,7 +59,7 @@ fn CompoundStmt* CompoundStmt.instantiate(CompoundStmt* s, Instantiator* inst) {
         s2.stmts[i] = s.stmts[i].instantiate(inst);
     }
 #if AstStatistics
-    Stats.addStmt(StmtKind.Compound, size);
+    Stats.addStmt(Compound, size);
 #endif
     return s2;
 }

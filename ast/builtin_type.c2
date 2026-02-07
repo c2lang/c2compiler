@@ -36,133 +36,126 @@ public type BuiltinKind enum u8 {
     Bool,
 }
 
-const char*[] builtinType_names = {
-    [BuiltinKind.Char] = "char",
-    [BuiltinKind.Int8] = "i8",
-    [BuiltinKind.Int16] = "i16",
-    [BuiltinKind.Int32] = "i32",
-    [BuiltinKind.Int64] = "i64",
-    [BuiltinKind.UInt8] = "u8",
-    [BuiltinKind.UInt16] = "u16",
-    [BuiltinKind.UInt32] = "u32",
-    [BuiltinKind.UInt64] = "u64",
-    [BuiltinKind.Float32] = "f32",
-    [BuiltinKind.Float64] = "f64",
-    [BuiltinKind.ISize] = "isize",
-    [BuiltinKind.USize] = "usize",
-    [BuiltinKind.Bool] = "bool",
+const char*[BuiltinKind] builtinType_names = {
+    [Char] = "char",
+    [Int8] = "i8",
+    [Int16] = "i16",
+    [Int32] = "i32",
+    [Int64] = "i64",
+    [UInt8] = "u8",
+    [UInt16] = "u16",
+    [UInt32] = "u32",
+    [UInt64] = "u64",
+    [Float32] = "f32",
+    [Float64] = "f64",
+    [ISize] = "isize",
+    [USize] = "usize",
+    [Bool] = "bool",
 }
-static_assert(elemsof(BuiltinKind), elemsof(builtinType_names));
 
-const bool[] BuiltinType_promotable = {
-    [BuiltinKind.Char] = true,
-    [BuiltinKind.Int8] = true,
-    [BuiltinKind.Int16] = true,
-    [BuiltinKind.Int32] = false,
-    [BuiltinKind.Int64] = false,
-    [BuiltinKind.UInt8] = true,
-    [BuiltinKind.UInt16] = true,
-    [BuiltinKind.UInt32] = false,
-    [BuiltinKind.UInt64] = false,
-    [BuiltinKind.Float32] = false,
-    [BuiltinKind.Float64] = false,
-    [BuiltinKind.ISize] = false,
-    [BuiltinKind.USize] = false,
-    [BuiltinKind.Bool] = true,
+const bool[BuiltinKind] BuiltinType_promotable = {
+    [Char] = true,
+    [Int8] = true,
+    [Int16] = true,
+    [Int32] = false,
+    [Int64] = false,
+    [UInt8] = true,
+    [UInt16] = true,
+    [UInt32] = false,
+    [UInt64] = false,
+    [Float32] = false,
+    [Float64] = false,
+    [ISize] = false,
+    [USize] = false,
+    [Bool] = true,
 }
-static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_promotable));
 
-const bool[] BuiltinType_signed = {
-    [BuiltinKind.Char] = false,
-    [BuiltinKind.Int8] = true,
-    [BuiltinKind.Int16] = true,
-    [BuiltinKind.Int32] = true,
-    [BuiltinKind.Int64] = true,
-    [BuiltinKind.UInt8] = false,
-    [BuiltinKind.UInt16] = false,
-    [BuiltinKind.UInt32] = false,
-    [BuiltinKind.UInt64] = false,
-    [BuiltinKind.Float32] = true,
-    [BuiltinKind.Float64] = true,
-    [BuiltinKind.ISize] = true,
-    [BuiltinKind.USize] = false,
-    [BuiltinKind.Bool] = false,
+const bool[BuiltinKind] BuiltinType_signed = {
+    [Char] = false,
+    [Int8] = true,
+    [Int16] = true,
+    [Int32] = true,
+    [Int64] = true,
+    [UInt8] = false,
+    [UInt16] = false,
+    [UInt32] = false,
+    [UInt64] = false,
+    [Float32] = true,
+    [Float64] = true,
+    [ISize] = true,
+    [USize] = false,
+    [Bool] = false,
 }
-static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_signed));
 
-const bool[] BuiltinType_unsigned = {
-    [BuiltinKind.Char] = true,
-    [BuiltinKind.Int8] = false,
-    [BuiltinKind.Int16] = false,
-    [BuiltinKind.Int32] = false,
-    [BuiltinKind.Int64] = false,
-    [BuiltinKind.UInt8] = true,
-    [BuiltinKind.UInt16] = true,
-    [BuiltinKind.UInt32] = true,
-    [BuiltinKind.UInt64] = true,
-    [BuiltinKind.Float32] = false,
-    [BuiltinKind.Float64] = false,
-    [BuiltinKind.ISize] = false,
-    [BuiltinKind.USize] = true,
-    [BuiltinKind.Bool] = false,
+const bool[BuiltinKind] BuiltinType_unsigned = {
+    [Char] = true,
+    [Int8] = false,
+    [Int16] = false,
+    [Int32] = false,
+    [Int64] = false,
+    [UInt8] = true,
+    [UInt16] = true,
+    [UInt32] = true,
+    [UInt64] = true,
+    [Float32] = false,
+    [Float64] = false,
+    [ISize] = false,
+    [USize] = true,
+    [Bool] = false,
 }
-static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_unsigned));
 
-const bool[] BuiltinType_integer = {
-    [BuiltinKind.Char] = true,
-    [BuiltinKind.Int8] = true,
-    [BuiltinKind.Int16] = true,
-    [BuiltinKind.Int32] = true,
-    [BuiltinKind.Int64] = true,
-    [BuiltinKind.UInt8] = true,
-    [BuiltinKind.UInt16] = true,
-    [BuiltinKind.UInt32] = true,
-    [BuiltinKind.UInt64] = true,
-    [BuiltinKind.Float32] = false,
-    [BuiltinKind.Float64] = false,
-    [BuiltinKind.ISize] = true,
-    [BuiltinKind.USize] = true,
-    [BuiltinKind.Bool] = false,
+const bool[BuiltinKind] BuiltinType_integer = {
+    [Char] = true,
+    [Int8] = true,
+    [Int16] = true,
+    [Int32] = true,
+    [Int64] = true,
+    [UInt8] = true,
+    [UInt16] = true,
+    [UInt32] = true,
+    [UInt64] = true,
+    [Float32] = false,
+    [Float64] = false,
+    [ISize] = true,
+    [USize] = true,
+    [Bool] = false,
 }
-static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_integer));
 
 // Default builtin type sizes (adjusted for 32-bit in globals)
-const u32[] BuiltinType_default_sizes = {
-    [BuiltinKind.Char] = 1,
-    [BuiltinKind.Int8] = 1,
-    [BuiltinKind.Int16] = 2,
-    [BuiltinKind.Int32] = 4,
-    [BuiltinKind.Int64] = 8,
-    [BuiltinKind.UInt8] = 1,
-    [BuiltinKind.UInt16] = 2,
-    [BuiltinKind.UInt32] = 4,
-    [BuiltinKind.UInt64] = 8,
-    [BuiltinKind.Float32] = 4,
-    [BuiltinKind.Float64] = 8,
-    [BuiltinKind.ISize] = 8,       // adjusted in global
-    [BuiltinKind.USize] = 8,       // adjusted in global
-    [BuiltinKind.Bool] = 1,
+const u32[BuiltinKind] BuiltinType_default_sizes = {
+    [Char] = 1,
+    [Int8] = 1,
+    [Int16] = 2,
+    [Int32] = 4,
+    [Int64] = 8,
+    [UInt8] = 1,
+    [UInt16] = 2,
+    [UInt32] = 4,
+    [UInt64] = 8,
+    [Float32] = 4,
+    [Float64] = 8,
+    [ISize] = 8,       // adjusted in global
+    [USize] = 8,       // adjusted in global
+    [Bool] = 1,
 }
-static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_default_sizes));
 
 // Default builtin type widths (adjusted for 32-bit in globals)
-const u32[] BuiltinType_default_widths = {
-    [BuiltinKind.Char] = 8,
-    [BuiltinKind.Int8] = 8,
-    [BuiltinKind.Int16] = 16,
-    [BuiltinKind.Int32] = 32,
-    [BuiltinKind.Int64] = 64,
-    [BuiltinKind.UInt8] = 8,
-    [BuiltinKind.UInt16] = 16,
-    [BuiltinKind.UInt32] = 32,
-    [BuiltinKind.UInt64] = 64,
-    [BuiltinKind.Float32] = 0,
-    [BuiltinKind.Float64] = 0,
-    [BuiltinKind.ISize] = 64,       // adjusted in global
-    [BuiltinKind.USize] = 64,       // adjusted in global
-    [BuiltinKind.Bool] = 1,
+const u32[BuiltinKind] BuiltinType_default_widths = {
+    [Char] = 8,
+    [Int8] = 8,
+    [Int16] = 16,
+    [Int32] = 32,
+    [Int64] = 64,
+    [UInt8] = 8,
+    [UInt16] = 16,
+    [UInt32] = 32,
+    [UInt64] = 64,
+    [Float32] = 0,
+    [Float64] = 0,
+    [ISize] = 64,       // adjusted in global
+    [USize] = 64,       // adjusted in global
+    [Bool] = 1,
 }
-static_assert(elemsof(BuiltinKind), elemsof(BuiltinType_default_widths));
 
 public fn const char* BuiltinKind.str(BuiltinKind kind) {
     return builtinType_names[kind];
@@ -179,11 +172,11 @@ public type BuiltinType struct @(opaque) {
 
 fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
     BuiltinType* b = c.alloc(sizeof(BuiltinType));
-    b.base.init(TypeKind.Builtin);
+    b.base.init(Builtin);
     b.base.builtinTypeBits.kind = kind;
     b.base.setCanonicalType(QualType.create(&b.base));
 #if AstStatistics
-    Stats.addType(TypeKind.Builtin, sizeof(BuiltinType));
+    Stats.addType(Builtin, sizeof(BuiltinType));
 #endif
     return b;
 }
@@ -197,12 +190,16 @@ public fn BuiltinKind BuiltinType.getBaseKind(const BuiltinType* b) {
     return globals.builtinType_baseTypes[b.getKind()];
 }
 
+ fn BuiltinKind BuiltinType.getBuiltinKind(const BuiltinType* b) {
+    return (BuiltinKind)b.base.builtinTypeBits.kind;
+}
+
 public fn bool BuiltinType.isInt32(const BuiltinType* b) {
-    return b.base.builtinTypeBits.kind == BuiltinKind.Int32;
+    return b.getBuiltinKind() == Int32;
 }
 
 fn bool BuiltinType.isBool(const BuiltinType* b) {
-    return b.base.builtinTypeBits.kind == BuiltinKind.Bool;
+    return b.getBuiltinKind() == Bool;
 }
 
 public fn const char* BuiltinType.kind2str(const BuiltinType* b) {

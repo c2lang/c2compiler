@@ -29,10 +29,10 @@ public fn AssertStmt* AssertStmt.create(ast_context.Context* c,
                                           Expr* inner)
 {
     AssertStmt* s = c.alloc(sizeof(AssertStmt));
-    s.base.init(StmtKind.Assert, loc);
+    s.base.init(Assert, loc);
     s.inner = inner;
 #if AstStatistics
-    Stats.addStmt(StmtKind.Assert, sizeof(AssertStmt));
+    Stats.addStmt(Assert, sizeof(AssertStmt));
 #endif
     return s;
 }

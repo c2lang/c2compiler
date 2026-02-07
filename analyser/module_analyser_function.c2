@@ -139,7 +139,7 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         // Note: for enum types it can be the Type or a pointer to that type
         bool is_non_static = ((param_ref && param_ref.decl == prefix.decl) || ref.isPointerTo(prefixType.getIndex()));
         if (is_non_static) {
-            fd.setCallKind(CallKind.TypeFunc);
+            fd.setCallKind(TypeFunc);
             is_typefn = true;
         }
     }

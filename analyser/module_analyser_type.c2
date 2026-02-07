@@ -81,7 +81,7 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
                 return;
             }
             Value ctv = ast.evalExpr(initval);
-            if (value.kind == ValueKind.Error) {
+            if (value.kind == Error) {
                 ma.errorRange(initval.getLoc(), initval.getRange(), "%s", ctv.error_msg);
                 return;
             }
@@ -173,12 +173,12 @@ fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     bool full = !ref.isPointer();
     DeclCheckState state = d.getCheckState();
 
-    if (full && state == DeclCheckState.InProgress) {
+    if (full && state == InProgress) {
         ma.error(user.loc, "circular declaration");
         return QualType_Invalid;
     }
 
-    if (full && state != DeclCheckState.Checked) {
+    if (full && state != Checked) {
         ma.analyseGlobalDecl(d);
     }
 

@@ -155,13 +155,13 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
                     return QualType_Invalid;
                 }
                 baseType = ma.builder.actOnPointerType(baseType);
-                m.setConversion(MemberConversion.Addr);
+                m.setConversion(Addr);
             }
         } else {
             // auto convert Foo* -> Foo
             if (baseType.isPointer()) {
                 baseType = baseType.getPointerBaseType();
-                m.setConversion(MemberConversion.Deref);
+                m.setConversion(Deref);
             }
         }
 

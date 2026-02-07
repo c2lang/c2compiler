@@ -81,31 +81,31 @@ public fn void Type.setCanonicalType(Type* t, QualType canon) { t.canonicalType 
 fn u32 Type.getIndex(const Type* t) { return t.ptr_pool_idx; }
 
 fn bool Type.isBuiltinType(const Type* t) {
-    return (t.getKind() == TypeKind.Builtin);
+    return (t.getKind() == Builtin);
 }
 
 public fn bool Type.isArrayType(const Type* t) {
-    return (t.getKind() == TypeKind.Array);
+    return (t.getKind() == Array);
 }
 
 public fn bool Type.isStructType(const Type* t) {
-    return (t.getKind() == TypeKind.Struct);
+    return (t.getKind() == Struct);
 }
 
 public fn bool Type.isPointerType(const Type* t) {
-    return (t.getKind() == TypeKind.Pointer);
+    return (t.getKind() == Pointer);
 }
 
 fn bool Type.isFunctionType(const Type* t) {
-    return (t.getKind() == TypeKind.Function);
+    return (t.getKind() == Function);
 }
 
 fn bool Type.isEnumType(const Type* t) {
-    return (t.getKind() == TypeKind.Enum);
+    return (t.getKind() == Enum);
 }
 
 public fn bool Type.isVoidType(const Type* t) {
-    return (t.getKind() == TypeKind.Void);
+    return (t.getKind() == Void);
 }
 
 public fn void Type.dump(const Type* t) @(unused) {

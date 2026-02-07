@@ -27,12 +27,12 @@ public type AlternateExpr struct @(opaque) {
 
 public fn AlternateExpr* AlternateExpr.create(ast_context.Context* c, Expr* original, Expr* generated) @(unused) {
     AlternateExpr* e = c.alloc(sizeof(AlternateExpr));
-    e.base.init(ExprKind.Alternate, original.getLoc(), 0, 0, 0, ValType.NValue);
+    e.base.init(Alternate, original.getLoc(), 0, 0, 0, NValue);
     e.original = original;
     e.generated = generated;
     e.base.setType(original.getType());
 #if AstStatistics
-    Stats.addExpr(ExprKind.Alternate, sizeof(AlternateExpr));
+    Stats.addExpr(Alternate, sizeof(AlternateExpr));
 #endif
     return e;
 }

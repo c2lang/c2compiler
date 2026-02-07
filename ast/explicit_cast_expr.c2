@@ -39,14 +39,14 @@ public fn ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c,
 {
     u32 size = sizeof(ExplicitCastExpr) + ref.getExtraSize();
     ExplicitCastExpr* e = c.alloc(size);
-    e.base.init(ExprKind.ExplicitCast, loc, 0, 0, 0, ValType.NValue);
+    e.base.init(ExplicitCast, loc, 0, 0, 0, NValue);
     e.base.base.explicitCastExprBits.c_style = c_style;
     e.base.base.explicitCastExprBits.src_len = src_len;
     e.inner = inner;
     e.dest_type = QualType_Invalid;
     e.dest.init(ref);
 #if AstStatistics
-    Stats.addExpr(ExprKind.ExplicitCast, size);
+    Stats.addExpr(ExplicitCast, size);
 #endif
     return e;
 }
@@ -62,7 +62,7 @@ fn Expr* ExplicitCastExpr.instantiate(ExplicitCastExpr* e, Instantiator* inst) {
     e2.dest_type = QualType_Invalid;
     e2.dest.instantiate(&e.dest, inst);
 #if AstStatistics
-    Stats.addExpr(ExprKind.ExplicitCast, size);
+    Stats.addExpr(ExplicitCast, size);
 #endif
     return (Expr*)e2;
 }

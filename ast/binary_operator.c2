@@ -52,7 +52,7 @@ public type BinaryOpcode enum u8 {
     OrAssign,
 }
 
-const char*[] binaryOpcode_names = {
+const char*[BinaryOpcode] binaryOpcode_names = {
     "*",
     "/",
     "%",
@@ -84,10 +84,8 @@ const char*[] binaryOpcode_names = {
     "|=",
 }
 
-static_assert(elemsof(BinaryOpcode), elemsof(binaryOpcode_names));
-
 public fn bool BinaryOpcode.isComparison(BinaryOpcode opcode) {
-    return opcode >= BinaryOpcode.LessThan && opcode <= BinaryOpcode.NotEqual;
+    return opcode >= LessThan && opcode <= NotEqual;
 }
 
 public fn const char* BinaryOpcode.str(BinaryOpcode opcode) {
@@ -107,12 +105,12 @@ public type BinaryOperator struct @(opaque) {
 
 public fn BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) {
     BinaryOperator* e = c.alloc(sizeof(BinaryOperator));
-    e.base.init(ExprKind.BinaryOperator, loc, 0, 0, kind >= BinaryOpcode.Assign, ValType.RValue);
+    e.base.init(BinaryOperator, loc, 0, 0, kind >= BinaryOpcode.Assign, RValue);
     e.base.base.binaryOperatorBits.kind = kind;
     e.lhs = lhs;
     e.rhs = rhs;
 #if AstStatistics
-    Stats.addExpr(ExprKind.BinaryOperator, sizeof(BinaryOperator));
+    Stats.addExpr(BinaryOperator, sizeof(BinaryOperator));
 #endif
     return e;
 }

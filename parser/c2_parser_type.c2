@@ -165,7 +165,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
                                                    (VarDecl**)params.getDecls(),
                                                    params.size(),
                                                    is_variadic,
-                                                   DefKind.StructMember);
+                                                   StructMember);
             // TODO attributes?
             //u32 num_attr = p.parseOptionalAttributes();
             //p.applyAttributes((Decl*)fd, num_attr);

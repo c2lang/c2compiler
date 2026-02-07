@@ -143,23 +143,23 @@ fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
 public fn StmtKind Stmt.getKind(const Stmt* s) { return (StmtKind)s.stmtBits.kind; }
 
 public fn bool Stmt.isExpr(const Stmt* s) {
-    return s.getKind() == StmtKind.Expr;
+    return s.getKind() == Expr;
 }
 
 public fn bool Stmt.isCompound(const Stmt* s) {
-    return s.getKind() == StmtKind.Compound;
+    return s.getKind() == Compound;
 }
 
 public fn bool Stmt.isFallthrough(const Stmt* s) {
-    return s.getKind() == StmtKind.Fallthrough;
+    return s.getKind() == Fallthrough;
 }
 
 public fn bool Stmt.isDecl(const Stmt* s) {
-    return s.getKind() == StmtKind.Decl;
+    return s.getKind() == Decl;
 }
 
 public fn bool Stmt.isLabel(const Stmt* s) {
-    return s.getKind() == StmtKind.Label;
+    return s.getKind() == Label;
 }
 
 public fn SrcLoc Stmt.getLoc(const Stmt* s) {

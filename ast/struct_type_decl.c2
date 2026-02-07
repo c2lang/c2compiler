@@ -119,7 +119,7 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     StructType* stype = StructType.create(c, d);
     QualType qt = QualType.create(stype.asType());
     stype.asType().setCanonicalType(qt);
-    d.base.init(DeclKind.StructType, name, loc, is_public, qt, ast_idx);
+    d.base.init(StructType, name, loc, is_public, qt, ast_idx);
     d.base.structTypeDeclBits.is_struct = is_struct;
     d.base.structTypeDeclBits.is_global = is_global;
 
@@ -140,7 +140,7 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
         string.memset(layout.members, 0, num_members * sizeof(StructMemberLayout));
     }
 #if AstStatistics
-    Stats.addDecl(DeclKind.StructType, size);
+    Stats.addDecl(StructType, size);
 #endif
     return d;
 }

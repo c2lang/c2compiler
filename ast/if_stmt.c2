@@ -36,7 +36,7 @@ public fn IfStmt* IfStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* cond, 
     if (else_stmt) size += sizeof(Stmt*);
 
     IfStmt* s = c.alloc(size);
-    s.base.init(StmtKind.If, loc);
+    s.base.init(If, loc);
     s.cond = cond;
     s.then = then;
 
@@ -45,7 +45,7 @@ public fn IfStmt* IfStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* cond, 
         s.else_stmt[0] = else_stmt;
     }
 #if AstStatistics
-    Stats.addStmt(StmtKind.If, size);
+    Stats.addStmt(If, size);
 #endif
     return s;
 }

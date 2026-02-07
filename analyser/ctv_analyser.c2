@@ -43,7 +43,7 @@ public fn bool checkRange(diagnostics.Diags* diags, QualType qt, const Expr* e) 
 
     Value value = ast.evalExpr((e));
 
-    if (value.kind == ValueKind.Error) {
+    if (value.kind == Error) {
         diags.errorRange(e.getLoc(), e.getRange(), "%s", value.error_msg);
         return false;
     }
@@ -52,7 +52,7 @@ public fn bool checkRange(diagnostics.Diags* diags, QualType qt, const Expr* e) 
 
 public fn bool checkBitfield(diagnostics.Diags* diags, u8 bitfield_width, bool bitfield_signed, const Expr* e) {
     Value value = ast.evalExpr((e));
-    if (value.kind == ValueKind.Error) {
+    if (value.kind == Error) {
         diags.errorRange(e.getLoc(), e.getRange(), "%s", value.error_msg);
         return false;
     }

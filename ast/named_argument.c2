@@ -28,11 +28,11 @@ public type NamedArgument struct @(opaque) {
 
 public fn NamedArgument* NamedArgument.create(ast_context.Context* c, SrcLoc loc, u32 name, Expr* inner) {
     NamedArgument* e = c.alloc(sizeof(NamedArgument));
-    e.base.init(ExprKind.NamedArgument, loc, 0, 0, false, ValType.RValue);
+    e.base.init(NamedArgument, loc, 0, 0, false, RValue);
     e.name = name;
     e.inner = inner;
 #if AstStatistics
-    Stats.addExpr(ExprKind.NamedArgument, sizeof(NamedArgument));
+    Stats.addExpr(NamedArgument, sizeof(NamedArgument));
 #endif
     return e;
 }

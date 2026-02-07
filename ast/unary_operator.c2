@@ -59,12 +59,12 @@ public type UnaryOperator struct @(opaque) {
 
 public fn UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc, UnaryOpcode kind, Expr* inner) {
     UnaryOperator* e = c.alloc(sizeof(UnaryOperator));
-    e.base.init(ExprKind.UnaryOperator, loc, 0, 0, kind <= UnaryOpcode.PreDec,
-                kind == UnaryOpcode.Deref ? ValType.LValue : ValType.RValue);
+    e.base.init(UnaryOperator, loc, 0, 0, kind <= PreDec,
+                kind == Deref ? ValType.LValue : ValType.RValue);
     e.base.base.unaryOperatorBits.kind = kind;
     e.inner = inner;
 #if AstStatistics
-    Stats.addExpr(ExprKind.UnaryOperator, sizeof(UnaryOperator));
+    Stats.addExpr(UnaryOperator, sizeof(UnaryOperator));
 #endif
     return e;
 }
@@ -113,7 +113,7 @@ public fn const char* UnaryOperator.getOpcodeStr(const UnaryOperator* e) {
 }
 
 public fn bool UnaryOperator.isAddrOf(const UnaryOperator* e) {
-    return e.getOpcode() == UnaryOpcode.AddrOf;
+    return e.getOpcode() == AddrOf;
 }
 
 fn void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u32 indent) {

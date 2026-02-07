@@ -37,12 +37,12 @@ public fn ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c,
                                                           Expr* idx)
 {
     ArraySubscriptExpr* e = c.alloc(sizeof(ArraySubscriptExpr));
-    e.base.init(ExprKind.ArraySubscript, loc, 0, 0, 0, ValType.LValue);
+    e.base.init(ArraySubscript, loc, 0, 0, 0, LValue);
     e.base.base.arraySubscriptExprBits.src_len = src_len;
     e.lhs = lhs;
     e.idx = idx;
 #if AstStatistics
-    Stats.addExpr(ExprKind.ArraySubscript, sizeof(ArraySubscriptExpr));
+    Stats.addExpr(ArraySubscript, sizeof(ArraySubscriptExpr));
 #endif
     return e;
 }

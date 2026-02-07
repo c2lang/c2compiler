@@ -62,7 +62,7 @@ fn bool Analyser.isNoReturn(Analyser* ma, Expr* e) {
 fn FlowBits Analyser.analyseStmt(Analyser* ma, Stmt* s, bool checkEffect) {
     FlowBits flow = 0;
     if (ma.scope.isUnreachable()) {
-        if (s.getKind() != StmtKind.Label && !ma.warnings.no_unreachable_code) {
+        if (s.getKind() != Label && !ma.warnings.no_unreachable_code) {
             ma.warn(s.getLoc(), "unreachable code");
         }
         ma.scope.setReachable();  // prevent multiple warnings

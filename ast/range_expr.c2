@@ -27,11 +27,11 @@ public type RangeExpr struct @(opaque) {
 
 public fn RangeExpr* RangeExpr.create(ast_context.Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) {
     RangeExpr* e = c.alloc(sizeof(RangeExpr));
-    e.base.init(ExprKind.Range, loc, 0, 0, false, ValType.RValue);
+    e.base.init(Range, loc, 0, 0, false, RValue);
     e.lhs = lhs;
     e.rhs = rhs;
 #if AstStatistics
-    Stats.addExpr(ExprKind.Range, sizeof(RangeExpr));
+    Stats.addExpr(Range, sizeof(RangeExpr));
 #endif
     return e;
 }

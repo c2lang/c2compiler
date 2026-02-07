@@ -36,14 +36,14 @@ public type InitListExpr struct @(opaque) {
 public fn InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc loc, SrcLoc endLoc, Expr** values, u32 num_values) {
     u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);
     InitListExpr* e = c.alloc(size);
-    e.base.init(ExprKind.InitList, loc, 0, 0, 0, ValType.RValue);
+    e.base.init(InitList, loc, 0, 0, 0, RValue);
     e.endLoc = endLoc;
     e.num_values = num_values;
     if (num_values) {
         string.memcpy(e.values, values, num_values * sizeof(Expr*));
     }
 #if AstStatistics
-    Stats.addExpr(ExprKind.InitList, size);
+    Stats.addExpr(InitList, size);
 #endif
     return e;
 }
@@ -59,7 +59,7 @@ fn Expr* InitListExpr.instantiate(InitListExpr* e, Instantiator* inst) {
         e2.values[i] = e.values[i].instantiate(inst);
     }
 #if AstStatistics
-    Stats.addExpr(ExprKind.InitList, size);
+    Stats.addExpr(InitList, size);
 #endif
     return (Expr*)e2;
 }

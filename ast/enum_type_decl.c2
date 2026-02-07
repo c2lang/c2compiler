@@ -51,7 +51,7 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
     EnumTypeDecl* d = c.alloc(size);
     EnumType* etype = EnumType.create(c, d);
     QualType qt = QualType.create((Type*)etype);
-    d.base.init(DeclKind.EnumType, name, loc, is_public, qt, ast_idx);
+    d.base.init(EnumType, name, loc, is_public, qt, ast_idx);
     d.base.enumTypeDeclBits.is_incremental = is_incremental;
     d.base.enumTypeDeclBits.num_constants = num_constants;
     d.implType = implType;
@@ -69,7 +69,7 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
         }
     }
 #if AstStatistics
-    Stats.addDecl(DeclKind.EnumType, size);
+    Stats.addDecl(EnumType, size);
 #endif
     return d;
 }

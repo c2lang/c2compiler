@@ -39,44 +39,44 @@ public type Value struct {
 static_assert(16, sizeof(Value));
 
 fn Value Value.createUnsigned(u64 uvalue) {
-    Value result = { .kind = ValueKind.Integer, .uvalue = uvalue }
+    Value result = { .kind = Integer, .uvalue = uvalue }
     return result;
 }
 
 fn Value Value.createSigned(i64 svalue) {
     if (svalue < 0) {
-        Value result = { .kind = ValueKind.Integer, .negative = true, .uvalue = ~svalue + 1 }
+        Value result = { .kind = Integer, .negative = true, .uvalue = ~svalue + 1 }
         return result;
     } else {
-        Value result = { .kind = ValueKind.Integer, .uvalue = (u64)svalue }
+        Value result = { .kind = Integer, .uvalue = (u64)svalue }
         return result;
     }
 }
 
 fn Value Value.createBool(bool value) {
-    Value result = { .kind = ValueKind.Integer, .uvalue = value }
+    Value result = { .kind = Integer, .uvalue = value }
     return result;
 }
 
 fn Value Value.createFloat(f64 fvalue) {
-    Value result = { .kind = ValueKind.Float, .fvalue = fvalue }
+    Value result = { .kind = Float, .fvalue = fvalue }
     return result;
 }
 
 fn Value Value.error(const char* msg) {
-    Value result = { .kind = ValueKind.Error, .error_msg = msg }
+    Value result = { .kind = Error, .error_msg = msg }
     return result;
 }
 
 fn void Value.setUnsigned(Value* v, u64 uvalue) {
-    v.kind = ValueKind.Integer;
+    v.kind = Integer;
     v.overflow = false;
     v.negative = false;
     v.uvalue = uvalue;
 }
 
 fn void Value.setSigned(Value* v, i64 svalue) {
-    v.kind = ValueKind.Integer;
+    v.kind = Integer;
     v.overflow = false;
     if (svalue < 0) {
         v.negative = true;
@@ -88,7 +88,7 @@ fn void Value.setSigned(Value* v, i64 svalue) {
 }
 
 fn void Value.setFloat(Value* v, f64 fvalue) {
-    v.kind = ValueKind.Float;
+    v.kind = Float;
     v.overflow = false;
     v.negative = false;
     v.fvalue = fvalue;
@@ -107,15 +107,15 @@ public fn bool Value.isNegative(const Value* v) {
 }
 
 public fn bool Value.isFloat(const Value* v) {
-    return v.kind == ValueKind.Float;
+    return v.kind == Float;
 }
 
 public fn bool Value.isDecimal(const Value* v) {
-    return v.kind == ValueKind.Integer;
+    return v.kind == Integer;
 }
 
 fn bool Value.isError(const Value* v) {
-    return v.kind == ValueKind.Error;
+    return v.kind == Error;
 }
 
 public fn bool Value.isZero(const Value* v) {
@@ -131,7 +131,7 @@ public fn bool Value.isZero(const Value* v) {
 }
 
 fn f64 Value.toFloat(const Value* v) {
-    if (v.kind == ValueKind.Integer) {
+    if (v.kind == Integer) {
         // TODO: warn about loss of precision
         f64 f = (f64)v.uvalue;
         return (v.negative) ? -f : f;
@@ -141,14 +141,14 @@ fn f64 Value.toFloat(const Value* v) {
 }
 
 public fn u8 Value.as_u8(const Value* v) {
-    assert (v.kind == ValueKind.Integer);
+    assert (v.kind == Integer);
     u64 res = v.uvalue;
     if (v.negative) res = ~res + 1;
     return (u8)res;
 }
 
 public fn u16 Value.as_u16(const Value* v) {
-    assert (v.kind == ValueKind.Integer);
+    assert (v.kind == Integer);
     u64 res = v.uvalue;
     if (v.negative) res = ~res + 1;
     return (u16)res;
@@ -156,7 +156,7 @@ public fn u16 Value.as_u16(const Value* v) {
 
 public fn i32 Value.as_i32(const Value* v) @(unused) {
     u64 res = 0;
-    if (v.kind == ValueKind.Integer) {
+    if (v.kind == Integer) {
         res = v.uvalue;
         if (v.negative) res = ~res + 1;
     }
@@ -165,7 +165,7 @@ public fn i32 Value.as_i32(const Value* v) @(unused) {
 
 public fn u32 Value.as_u32(const Value* v) {
     u64 res = 0;
-    if (v.kind == ValueKind.Integer) {
+    if (v.kind == Integer) {
         res = v.uvalue;
         if (v.negative) res = ~res + 1;
     }
@@ -174,7 +174,7 @@ public fn u32 Value.as_u32(const Value* v) {
 
 public fn u64 Value.as_u64(const Value* v) {
     u64 res = 0;
-    if (v.kind == ValueKind.Integer) {
+    if (v.kind == Integer) {
         res = v.uvalue;
         if (v.negative) res = ~res + 1;
     }
@@ -182,7 +182,7 @@ public fn u64 Value.as_u64(const Value* v) {
 }
 
 public fn u8 Value.getWidth(const Value* v) {
-    if (v.kind != ValueKind.Integer) {
+    if (v.kind != Integer) {
         // TODO: handle f32 vs f64? all constant floating point
         //       computations are currently performed as double
         return 64;
@@ -294,7 +294,7 @@ fn Value Value.add(const Value* v1, const Value* v2) {
             break;
         case Float:
             result.fvalue = result.toFloat() + v2.fvalue;
-            result.kind = ValueKind.Float;
+            result.kind = Float;
             break;
         default:
             result = *v2;
@@ -329,7 +329,7 @@ fn Value Value.multiply(const Value* v1, const Value* v2) {
             break;
         case Float:
             result.fvalue = result.toFloat() * v2.fvalue;
-            result.kind = ValueKind.Float;
+            result.kind = Float;
             break;
         default:
             result = *v2;
@@ -362,7 +362,7 @@ fn Value Value.divide(const Value* v1, const Value* v2) {
             break;
         case Float:
             result.fvalue = result.toFloat() / v2.fvalue;
-            result.kind = ValueKind.Float;
+            result.kind = Float;
             break;
         default:
             result = *v2;

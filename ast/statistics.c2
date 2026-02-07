@@ -150,7 +150,7 @@ fn void Stats.dump(const Stats* s) {
     u32 declCount = 0;
     //for (u32 i = DeclKind.min; i <= DeclKind.max; i++) {
     for (u32 i=enum_min(DeclKind); i<=enum_max(DeclKind); i++) {
-        s.decls[i].dump(declKind_names[i], &declCount, &declTotal);
+        s.decls[i].dump(declKind_names[(DeclKind)i], &declCount, &declTotal);
     }
     printf("  %20s  %6d  %7d\n", "total", declCount, declTotal);
 

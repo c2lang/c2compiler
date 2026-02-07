@@ -28,7 +28,7 @@ fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) 
     u32 tail = 0;
 
     IdentifierKind kind = m.getKind();
-    if (kind == IdentifierKind.Var || kind == IdentifierKind.Function) {
+    if (kind == Var || kind == Function) {
         // TODO handle struct function (Analyser will have checked that it's followed by call)
         if (m.isTypeFunc()) {
             // only emit base part, not last
@@ -47,7 +47,7 @@ fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const Expr* e) 
         return;
     }
 
-    assert(kind == IdentifierKind.StructMember);
+    assert(kind == StructMember);
 next:
     // base
     ir.Ref base_ref;

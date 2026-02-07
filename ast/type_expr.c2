@@ -36,11 +36,11 @@ public fn TypeExpr* TypeExpr.create(ast_context.Context* c,
 {
     u32 size = sizeof(TypeExpr) + ref.getExtraSize();
     TypeExpr* e = c.alloc(size);
-    e.base.init(ExprKind.Type, loc, 0, 0, 0, ValType.NValue);
+    e.base.init(Type, loc, 0, 0, 0, NValue);
     e.base.base.typeExprBits.src_len = src_len;
     e.typeRef.init(ref);
 #if AstStatistics
-    Stats.addExpr(ExprKind.Type, size);
+    Stats.addExpr(Type, size);
 #endif
     return e;
 }
@@ -53,7 +53,7 @@ fn Expr* TypeExpr.instantiate(TypeExpr* e, Instantiator* inst) {
     e2.base = e.base;
     e2.typeRef.instantiate(&e.typeRef, inst);
 #if AstStatistics
-    Stats.addExpr(ExprKind.Type, size);
+    Stats.addExpr(Type, size);
 #endif
     return (Expr*)e2;
 }

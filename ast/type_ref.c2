@@ -423,7 +423,7 @@ fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool prin
 
     switch ((TypeRefKind)r.flags.kind) {
     case Builtin:
-        out.add(builtinType_names[r.flags.builtin_kind]);
+        out.add(builtinType_names[r.getBuiltinKind()]);
         break;
     case Void:
         out.add("void");
@@ -465,7 +465,7 @@ fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
 
     switch ((TypeRefKind)r.flags.kind) {
     case Builtin:
-        out.add(builtinType_names[r.flags.builtin_kind]);
+        out.add(builtinType_names[r.getBuiltinKind()]);
         break;
     case Void:
         out.add("void");

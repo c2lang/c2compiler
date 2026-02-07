@@ -60,7 +60,7 @@ public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
     size += (clobbers.size() * sizeof(Expr*));
     size += (num_inputs + num_outputs) * sizeof(u32);
     AsmStmt* s = c.alloc(size);
-    s.base.init(StmtKind.Asm, loc);
+    s.base.init(Asm, loc);
     s.base.asmStmtBits.is_basic = is_basic;
     s.base.asmStmtBits.is_volatile = is_volatile;
     s.num_outputs = (u8)num_outputs;
@@ -92,7 +92,7 @@ public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
     }
 
 #if AstStatistics
-    Stats.addStmt(StmtKind.Asm, size);
+    Stats.addStmt(Asm, size);
 #endif
     return s;
 }

@@ -25,10 +25,10 @@ public type AliasType struct @(opaque) {
 
 fn AliasType* AliasType.create(ast_context.Context* c, AliasTypeDecl* decl) {
     AliasType* t = c.alloc(sizeof(AliasType));
-    t.base.init(TypeKind.Alias);
+    t.base.init(Alias);
     t.decl = decl;
 #if AstStatistics
-    Stats.addType(TypeKind.Alias, sizeof(AliasType));
+    Stats.addType(Alias, sizeof(AliasType));
 #endif
     return t;
 }

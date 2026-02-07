@@ -72,7 +72,7 @@ public fn MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, cons
     u32 size = sizeof(MemberExpr) + refcount * sizeof(MemberRef) + (refcount - 1) * sizeof(u32);
     if (base) size += sizeof(MemberRef);
     MemberExpr* e = c.alloc(size);
-    e.base.init(ExprKind.Member, refs[0].loc, 0, 0, 0, ValType.NValue);
+    e.base.init(Member, refs[0].loc, 0, 0, 0, NValue);
     e.base.base.memberExprBits.num_refs = refcount;
     u32 offset = 0;
     if (base) {
@@ -89,7 +89,7 @@ public fn MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, cons
         locs[i] = refs[i+1].loc;    // shift them all
     }
 #if AstStatistics
-    Stats.addExpr(ExprKind.Member, size);
+    Stats.addExpr(Member, size);
 #endif
     return e;
 }
@@ -105,7 +105,7 @@ fn Expr* MemberExpr.instantiate(MemberExpr* e, Instantiator* inst) {
     if (base) e2.refs[0].expr = base.instantiate(inst);
 
 #if AstStatistics
-    Stats.addExpr(ExprKind.Member, size);
+    Stats.addExpr(Member, size);
 #endif
     return (Expr*)e2;
 }

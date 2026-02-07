@@ -31,11 +31,11 @@ public type ParenExpr struct @(opaque) {
 
 public fn ParenExpr* ParenExpr.create(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* inner) {
     ParenExpr* e = c.alloc(sizeof(ParenExpr));
-    e.base.init(ExprKind.Paren, loc, 0, 0, 0, ValType.NValue);
+    e.base.init(Paren, loc, 0, 0, 0, NValue);
     e.base.base.parenExprBits.src_len = src_len;
     e.inner = inner;
 #if AstStatistics
-    Stats.addExpr(ExprKind.Paren, sizeof(ParenExpr));
+    Stats.addExpr(Paren, sizeof(ParenExpr));
 #endif
     return e;
 }

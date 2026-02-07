@@ -35,13 +35,13 @@ public fn ConditionalOperator* ConditionalOperator.create(ast_context.Context* c
                                                             Expr* rhs)
 {
     ConditionalOperator* e = c.alloc(sizeof(ConditionalOperator));
-    e.base.init(ExprKind.ConditionalOperator, questionLoc, 0, 1, 1, ValType.RValue);
+    e.base.init(ConditionalOperator, questionLoc, 0, 1, 1, ValType.RValue);
     e.colonLoc = colonLoc;
     e.cond = cond;
     e.lhs = lhs;
     e.rhs = rhs;
 #if AstStatistics
-    Stats.addExpr(ExprKind.ConditionalOperator, sizeof(ConditionalOperator));
+    Stats.addExpr(ConditionalOperator, sizeof(ConditionalOperator));
 #endif
     return e;
 }

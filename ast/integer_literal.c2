@@ -33,12 +33,12 @@ public type IntegerLiteral struct @(opaque) {
 
 public fn IntegerLiteral* IntegerLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, u64 val, Radix radix, BuiltinKind kind) {
     IntegerLiteral* i = c.alloc(sizeof(IntegerLiteral));
-    i.base.init(ExprKind.IntegerLiteral, loc, 1, 1, 0, ValType.RValue);
+    i.base.init(IntegerLiteral, loc, 1, 1, 0, RValue);
     i.base.base.integerLiteralBits.radix = radix;
     i.base.base.integerLiteralBits.src_len = src_len;
     i.val = val;
 #if AstStatistics
-    Stats.addExpr(ExprKind.IntegerLiteral, sizeof(IntegerLiteral));
+    Stats.addExpr(IntegerLiteral, sizeof(IntegerLiteral));
 #endif
     i.base.setType(getBuiltinQT(kind));
 

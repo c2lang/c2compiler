@@ -628,7 +628,7 @@ fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl
 
 fn bool Generator.emitExprValue(Generator* gen, string_buffer.Buf* out, Expr* e) {
     Value result = ast.evalExpr(e);
-    if (result.kind == ValueKind.Error) {
+    if (result.kind == Error) {
         gen.diags.errorRange(e.getLoc(), e.getRange(), "%s", result.error_msg);
         return false;
     }

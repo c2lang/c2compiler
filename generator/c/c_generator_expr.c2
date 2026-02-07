@@ -221,7 +221,7 @@ fn void Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, Exp
     out.add(b.getOpcodeStr());
     out.space();
     Expr* rhs = b.getRHS();
-    if (opcode == BinaryOpcode.Assign && rhs.isInitList()) {
+    if (opcode == Assign && rhs.isInitList()) {
         gen.emitCast(out, lhs.getType(), true);
     }
     // enforce left associativity if not assignment

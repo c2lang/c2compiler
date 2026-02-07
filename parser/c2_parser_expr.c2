@@ -142,7 +142,7 @@ fn Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
 
         if (p.tok.kind == Kind.LBrace && opToken.kind == Kind.Equal) {
             Expr* rhs = p.parseInitList();
-            BinaryOpcode opcode = BinaryOpcode.Assign;
+            BinaryOpcode opcode = Assign;
             return p.builder.actOnBinaryOperator(opToken.loc, opcode, lhs, rhs);
         }
 
@@ -217,19 +217,19 @@ const u8[128] CastExprTokenLookup = {
 // Note: tried lookup table, was slower..
 fn UnaryOpcode convertTokenToUnaryOpcode(Kind kind) {
     switch (kind) {
-    case Exclaim: return UnaryOpcode.LNot;
-    case Star: return UnaryOpcode.Deref;
-    case Amp: return UnaryOpcode.AddrOf;
-    case PlusPlus:   return UnaryOpcode.PreInc;
-    case Plus: return UnaryOpcode.Plus;
-    case Minus: return UnaryOpcode.Minus;
-    case MinusMinus: return UnaryOpcode.PreDec;
-    case Tilde: return UnaryOpcode.Not;
+    case Exclaim: return LNot;
+    case Star: return Deref;
+    case Amp: return AddrOf;
+    case PlusPlus:   return PreInc;
+    case Plus: return Plus;
+    case Minus: return Minus;
+    case MinusMinus: return PreDec;
+    case Tilde: return Not;
     default:
         assert(0);
         break;
     }
-    return UnaryOpcode.PreInc;
+    return PreInc;
 }
 
 fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp*/) {
@@ -369,11 +369,11 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
             lhs = p.parseImpureMemberExpr(lhs);
             break;
         case PlusPlus:
-            lhs = p.builder.actOnUnaryOperator(p.tok.loc, UnaryOpcode.PostInc, lhs);
+            lhs = p.builder.actOnUnaryOperator(p.tok.loc, PostInc, lhs);
             p.consumeToken();
             break;
         case MinusMinus:
-            lhs = p.builder.actOnUnaryOperator(p.tok.loc, UnaryOpcode.PostDec, lhs);
+            lhs = p.builder.actOnUnaryOperator(p.tok.loc, PostDec, lhs);
             p.consumeToken();
             break;
         case Less:
@@ -622,7 +622,7 @@ fn Expr* Parser.parseSizeof(Parser* p) {
     u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(Kind.RParen);
 
-    return p.builder.actOnBuiltinExpr(loc, src_len, res, BuiltinExprKind.Sizeof);
+    return p.builder.actOnBuiltinExpr(loc, src_len, res, Sizeof);
 }
 
 fn Expr* Parser.parseElemsof(Parser* p) {
@@ -639,7 +639,7 @@ fn Expr* Parser.parseElemsof(Parser* p) {
 
     u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(Kind.RParen);
-    return p.builder.actOnBuiltinExpr(loc, src_len, res, BuiltinExprKind.Elemsof);
+    return p.builder.actOnBuiltinExpr(loc, src_len, res, Elemsof);
 }
 
 fn Expr* Parser.parseInitValue(Parser* p, bool allow_designators) {

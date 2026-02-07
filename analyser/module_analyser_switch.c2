@@ -388,7 +388,7 @@ fn bool Analyser.checkEnumConstantCase(Analyser* ma,
     e.setCtv();
     e.setRValue();
     id.setDecl(d);
-    id.setKind(IdentifierKind.EnumConstant);
+    id.setKind(EnumConstant);
 
     // check for duplicate value
     Value v = ecd.getValue();

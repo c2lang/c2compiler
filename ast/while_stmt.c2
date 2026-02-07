@@ -30,11 +30,11 @@ public fn WhileStmt* WhileStmt.create(ast_context.Context* c, SrcLoc loc,
                                         Stmt* body)
 {
     WhileStmt* s = c.alloc(sizeof(WhileStmt));
-    s.base.init(StmtKind.While, loc);
+    s.base.init(While, loc);
     s.cond = cond;
     s.body = body;
 #if AstStatistics
-    Stats.addStmt(StmtKind.While, sizeof(WhileStmt));
+    Stats.addStmt(While, sizeof(WhileStmt));
 #endif
     return s;
 }

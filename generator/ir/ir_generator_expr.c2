@@ -247,7 +247,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, ir.Ref* result, const Expr* 
         ir.Ref value;
         value.init(RefKind.Value, 1);
         InstrKind k;
-        if (uo.getOpcode() == UnaryOpcode.PostInc || uo.getOpcode() == UnaryOpcode.PreInc) {
+        if (uo.getOpcode() == PostInc || uo.getOpcode() == PreInc) {
             k = InstrKind.Add;
         } else {
             k = InstrKind.Sub;
@@ -256,7 +256,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, ir.Ref* result, const Expr* 
 
         // store
         gen.ctx.addStoreInstr(t, right, left);
-        if (uo.getOpcode() <= UnaryOpcode.PostDec) {
+        if (uo.getOpcode() <= PostDec) {
             *result = left_val;
         } else {
             *result = right;

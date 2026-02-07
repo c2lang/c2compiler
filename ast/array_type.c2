@@ -42,7 +42,7 @@ public fn ArrayType* ArrayType.create(ast_context.Context* c,
 {
     u32 size = sizeof(ArrayType) + is_enum_index * sizeof(QualType);
     ArrayType* t = c.alloc(size);
-    t.base.init(TypeKind.Array);
+    t.base.init(Array);
     t.base.arrayTypeBits.is_incremental = false;
     t.base.arrayTypeBits.has_size = has_size;
     t.elem = elem;
@@ -52,7 +52,7 @@ public fn ArrayType* ArrayType.create(ast_context.Context* c,
         t.index_type[0] = index_type;
     }
 #if AstStatistics
-    Stats.addType(TypeKind.Array, size);
+    Stats.addType(Array, size);
 #endif
     return t;
 }
@@ -61,13 +61,13 @@ public fn ArrayType* ArrayType.createIncremental(ast_context.Context* c,
                                                    QualType elem)
 {
     ArrayType* t = c.alloc(sizeof(ArrayType));
-    t.base.init(TypeKind.Array);
+    t.base.init(Array);
     t.base.arrayTypeBits.is_incremental = true;
     t.base.arrayTypeBits.has_size = false;
     t.elem = elem;
     t.size = 0;
 #if AstStatistics
-    Stats.addType(TypeKind.Array, sizeof(ArrayType));
+    Stats.addType(Array, sizeof(ArrayType));
 #endif
     return t;
 }

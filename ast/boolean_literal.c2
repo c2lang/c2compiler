@@ -30,11 +30,11 @@ public type BooleanLiteral struct @(opaque) {
 
 public fn BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc loc, bool val) {
     BooleanLiteral* e = c.alloc(sizeof(BooleanLiteral));
-    e.base.init(ExprKind.BooleanLiteral, loc, 1, 1, 0, ValType.RValue);
+    e.base.init(BooleanLiteral, loc, 1, 1, 0, RValue);
     e.base.base.booleanLiteralBits.value = val;
     e.base.setType(getBuiltinQT(Bool));
 #if AstStatistics
-    Stats.addExpr(ExprKind.BooleanLiteral, sizeof(BooleanLiteral));
+    Stats.addExpr(BooleanLiteral, sizeof(BooleanLiteral));
 #endif
     return e;
 }

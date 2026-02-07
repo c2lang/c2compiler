@@ -30,7 +30,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     ValType valtype = ValType.NValue;
     QualType baseType = QualType_Invalid;
 
-    CallKind ck = CallKind.Invalid;
+    CallKind ck = Invalid;
 
     if (m.hasExpr()) {
         Expr* exprBase = m.getExprBase();
@@ -106,10 +106,10 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 }
                 // NOTE: for struct function calls, the base does not get an LValueToRValue cast,
                 // so dont set base-const here
-                if (is_ptr && ck != CallKind.Invalid) is_const = is_volatile = false;
+                if (is_ptr && ck != Invalid) is_const = is_volatile = false;
                 m.setConstBase(is_const);
                 m.setVolatileBase(is_volatile);
-                if (ck == CallKind.Invalid) {
+                if (ck == Invalid) {
                     if (is_const) baseType.setConst();
                     if (is_volatile) baseType.setVolatile();
                 }
@@ -162,7 +162,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                     }
                     //FunctionDecl* fd = (FunctionDecl*)ef);
                     // Note: not always CallExpr here, but use CallKind enum since same meaning
-                    ck = valtype == ValType.NValue ? CallKind.StaticTypeFunc : CallKind.TypeFunc;
+                    ck = (valtype == NValue) ? CallKind.StaticTypeFunc : CallKind.TypeFunc;
                     d = ef;
                     baseType = ef.getType();
                     if (!ma.scope.checkAccess(d, loc)) return QualType_Invalid;
@@ -220,10 +220,10 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
         if (side == RHS) e.setRValue();
     } else {
 
-        if (ck == CallKind.Invalid && d.isFunction()) ck = CallKind.Normal;
+        if (ck == Invalid && d.isFunction()) ck = Normal;
         // NOTE: set SF/SSF based on member: Foo.next will be SSF, f.next SF
-        if (ck == CallKind.TypeFunc) m.setIsTypeFunc();
-        if (ck == CallKind.StaticTypeFunc) m.setIsStaticTypeFunc();
+        if (ck == TypeFunc) m.setIsTypeFunc();
+        if (ck == StaticTypeFunc) m.setIsStaticTypeFunc();
         // Note: dont call setValType here, done in setExprFlags
 
         if (e.isCtv()) e.setRValue(); // TODO still needed after setExprFlags?
@@ -233,7 +233,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
 }
 
 fn Decl* Analyser.analyseStructMemberAccess(Analyser* ma, StructTypeDecl* std, u32 name_idx, SrcLoc loc, ValType valtype, u32 side, CallKind* ck) {
-    *ck = CallKind.Invalid; // TODO convert to bool isSFCall
+    *ck = Invalid; // TODO convert to bool isSFCall
     Decl* d = ma.findStructMember(std, name_idx, loc);
     if (!d) return nil;
 
@@ -244,32 +244,32 @@ fn Decl* Analyser.analyseStructMemberAccess(Analyser* ma, StructTypeDecl* std, u
     if (d.isFunction()) {
         FunctionDecl* fd = (FunctionDecl*)d;
         CallKind callkind = fd.getCallKind();
-        assert(callkind != CallKind.Normal);
+        assert(callkind != Normal);
         switch (valtype) {
         case NValue:
-            if (callkind != CallKind.StaticTypeFunc) {
+            if (callkind != StaticTypeFunc) {
                 // sometimes handy to be able to (see Type.fullPrint())
                 //ma.error(loc, "non-static struct functions need an instantiation of type");
                 //return QualType_Invalid;
             }
-            *ck = CallKind.StaticTypeFunc;
+            *ck = StaticTypeFunc;
             break;
         case RValue:
             // TODO fallthrough?
-            if (callkind == CallKind.StaticTypeFunc) {
+            if (callkind == StaticTypeFunc) {
                 ma.error(loc, DiagStaticThoughVar);
                 return nil;
             }
-            assert(callkind == CallKind.TypeFunc);
-            *ck = CallKind.TypeFunc;
+            assert(callkind == TypeFunc);
+            *ck = TypeFunc;
             break;
         case LValue:
-            if (callkind == CallKind.StaticTypeFunc) {
+            if (callkind == StaticTypeFunc) {
                 ma.error(loc, DiagStaticThoughVar);
                 return nil;
             }
-            assert(callkind == CallKind.TypeFunc);
-            *ck = CallKind.TypeFunc;
+            assert(callkind == TypeFunc);
+            *ck = TypeFunc;
             break;
         }
         if (!ma.scope.checkAccess(d, loc)) return nil;

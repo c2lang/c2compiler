@@ -26,10 +26,10 @@ public type FunctionTypeDecl struct @(opaque) {
 public fn FunctionTypeDecl* FunctionTypeDecl.create(ast_context.Context* c, FunctionDecl* func) {
     FunctionTypeDecl* ftd = c.alloc(sizeof(FunctionTypeDecl));
     Decl* d = func.asDecl();
-    ftd.base.init(DeclKind.FunctionType, d.getNameIdx(), d.getLoc(), d.isPublic(), d.getType(), d.getASTIdx());
+    ftd.base.init(FunctionType, d.getNameIdx(), d.getLoc(), d.isPublic(), d.getType(), d.getASTIdx());
     ftd.func = func;
 #if AstStatistics
-    Stats.addDecl(DeclKind.FunctionType, sizeof(FunctionTypeDecl));
+    Stats.addDecl(FunctionType, sizeof(FunctionTypeDecl));
 #endif
     return ftd;
 }

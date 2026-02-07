@@ -27,10 +27,10 @@ public type StructType struct @(opaque) {
 // Note: not public, since only called by StructTypeDecl
 fn StructType* StructType.create(ast_context.Context* c, StructTypeDecl* decl) {
     StructType* t = c.alloc(sizeof(StructType));
-    t.base.init(TypeKind.Struct);
+    t.base.init(Struct);
     t.decl = decl;
 #if AstStatistics
-    Stats.addType(TypeKind.Struct, sizeof(StructType));
+    Stats.addType(Struct, sizeof(StructType));
 #endif
     return t;
 }

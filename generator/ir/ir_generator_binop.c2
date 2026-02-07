@@ -252,7 +252,7 @@ fn void Generator.emitLogicalOr(Generator* gen, ir.Ref* result, const Expr* e) {
 fn void Generator.emitShift(Generator* gen, ir.Ref* result, const Expr* e) {
     const BinaryOperator* b = (BinaryOperator*)e;
     InstrKind k;
-    if (b.getOpcode() == BinaryOpcode.ShiftLeft) {
+    if (b.getOpcode() == ShiftLeft) {
         k = InstrKind.Shl;
     } else {
         //QualType qt = e.getType();

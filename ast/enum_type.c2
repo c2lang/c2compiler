@@ -25,10 +25,10 @@ public type EnumType struct @(opaque) {
 
 fn EnumType* EnumType.create(ast_context.Context* c, EnumTypeDecl* decl) {
     EnumType* t = c.alloc(sizeof(EnumType));
-    t.base.init(TypeKind.Enum);
+    t.base.init(Enum);
     t.decl = decl;
 #if AstStatistics
-    Stats.addType(TypeKind.Enum, sizeof(EnumType));
+    Stats.addType(Enum, sizeof(EnumType));
 #endif
     t.base.setCanonicalType(QualType.create((Type*)t));
     return t;

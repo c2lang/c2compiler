@@ -26,10 +26,10 @@ public type GotoStmt struct @(opaque) {
 
 public fn GotoStmt* GotoStmt.create(ast_context.Context* c, u32 name, SrcLoc loc) {
     GotoStmt* s = c.alloc(sizeof(GotoStmt));
-    s.base.init(StmtKind.Goto, loc);
+    s.base.init(Goto, loc);
     s.name = name;
 #if AstStatistics
-    Stats.addStmt(StmtKind.Goto, sizeof(GotoStmt));
+    Stats.addStmt(Goto, sizeof(GotoStmt));
 #endif
     return s;
 }

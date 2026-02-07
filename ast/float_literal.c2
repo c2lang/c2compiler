@@ -33,12 +33,12 @@ public type FloatLiteral struct @(opaque) {
 
 public fn FloatLiteral* FloatLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, f64 val, Radix radix, BuiltinKind kind) {
     FloatLiteral* i = c.alloc(sizeof(FloatLiteral));
-    i.base.init(ExprKind.FloatLiteral, loc, 1, 1, 0, ValType.RValue);
+    i.base.init(FloatLiteral, loc, 1, 1, 0, RValue);
     i.base.base.floatLiteralBits.radix = radix;
     i.base.base.floatLiteralBits.src_len = src_len;
     i.val = val;
 #if AstStatistics
-    Stats.addExpr(ExprKind.FloatLiteral, sizeof(FloatLiteral));
+    Stats.addExpr(FloatLiteral, sizeof(FloatLiteral));
 #endif
     i.base.setType(getBuiltinQT(kind));
 

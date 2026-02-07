@@ -25,9 +25,9 @@ public type FallthroughStmt struct @(opaque) {
 
 public fn FallthroughStmt* FallthroughStmt.create(ast_context.Context* c, SrcLoc loc) {
     FallthroughStmt* s = c.alloc(sizeof(FallthroughStmt));
-    s.base.init(StmtKind.Fallthrough, loc);
+    s.base.init(Fallthrough, loc);
 #if AstStatistics
-    Stats.addStmt(StmtKind.Fallthrough, sizeof(FallthroughStmt));
+    Stats.addStmt(Fallthrough, sizeof(FallthroughStmt));
 #endif
     return s;
 }

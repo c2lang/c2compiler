@@ -41,13 +41,13 @@ public fn ImportDecl* ImportDecl.create(ast_context.Context* c,
                                           bool is_local)
 {
     ImportDecl* d = c.alloc(sizeof(ImportDecl));
-    d.base.init(DeclKind.Import, name, loc, false, QualType_Invalid, ast_idx);
+    d.base.init(Import, name, loc, false, QualType_Invalid, ast_idx);
     d.base.importDeclBits.is_local = is_local;
     d.alias_idx = alias_name;
     d.alias_loc = alias_loc;
     d.dest = nil;
 #if AstStatistics
-    Stats.addDecl(DeclKind.Import, sizeof(ImportDecl));
+    Stats.addDecl(Import, sizeof(ImportDecl));
 #endif
     return d;
 }

@@ -25,9 +25,9 @@ public type ContinueStmt struct @(opaque) {
 
 public fn ContinueStmt* ContinueStmt.create(ast_context.Context* c, SrcLoc loc) {
     ContinueStmt* s = c.alloc(sizeof(ContinueStmt));
-    s.base.init(StmtKind.Continue, loc);
+    s.base.init(Continue, loc);
 #if AstStatistics
-    Stats.addStmt(StmtKind.Continue, sizeof(ContinueStmt));
+    Stats.addStmt(Continue, sizeof(ContinueStmt));
 #endif
     return s;
 }

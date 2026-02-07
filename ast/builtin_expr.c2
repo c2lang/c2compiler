@@ -29,7 +29,7 @@ public type BuiltinExprKind enum u8 {
 }
 
 // Keep in sync
-const char*[] builtin_names = {
+const char*[BuiltinExprKind] builtin_names = {
     "sizeof",
     "elemsof",
     "enum_min",
@@ -37,8 +37,6 @@ const char*[] builtin_names = {
     "offsetof",
     "to_container",
 }
-
-static_assert(elemsof(BuiltinExprKind), elemsof(builtin_names));
 
 type BuiltinExprBits struct {
     u32 : NumExprBits;
@@ -68,13 +66,13 @@ public type BuiltinExpr struct @(opaque) {
 public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* inner, BuiltinExprKind kind) {
     const u32 size = sizeof(BuiltinExpr);
     BuiltinExpr* e = c.alloc(size);
-    e.base.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
+    e.base.init(Builtin, loc, true, true, false, RValue);
     e.base.base.builtinExprBits.kind = kind;
     e.base.base.builtinExprBits.src_len = src_len;
     e.inner = inner;
     e.value.setUnsigned(0);
 #if AstStatistics
-    Stats.addExpr(ExprKind.Builtin, size);
+    Stats.addExpr(Builtin, size);
 #endif
     return e;
 }
@@ -82,14 +80,14 @@ public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, u3
 public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* typeExpr, Expr* member) {
     const u32 size = sizeof(BuiltinExpr) + sizeof(OffsetOfData);
     BuiltinExpr* e = c.alloc(size);
-    e.base.init(ExprKind.Builtin, loc, true, true, false, ValType.RValue);
+    e.base.init(Builtin, loc, true, true, false, RValue);
     e.base.base.builtinExprBits.kind = BuiltinExprKind.OffsetOf;
     e.base.base.builtinExprBits.src_len = src_len;
     e.inner = typeExpr;
     e.value.setUnsigned(0);
     e.offset[0].member = member;
 #if AstStatistics
-    Stats.addExpr(ExprKind.Builtin, size);
+    Stats.addExpr(Builtin, size);
 #endif
     return e;
 }
@@ -97,7 +95,7 @@ public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc
 public fn BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* typeExpr, Expr* member, Expr* pointer) {
     const u32 size = sizeof(BuiltinExpr) + sizeof(ToContainerData);
     BuiltinExpr* e = c.alloc(size);
-    e.base.init(ExprKind.Builtin, loc, false, false, false, ValType.RValue);
+    e.base.init(Builtin, loc, false, false, false, RValue);
     e.base.base.builtinExprBits.kind = BuiltinExprKind.ToContainer;
     e.base.base.builtinExprBits.src_len = src_len;
     e.inner = typeExpr;
@@ -105,7 +103,7 @@ public fn BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, Src
     e.container[0].member = member;
     e.container[0].pointer = pointer;
 #if AstStatistics
-    Stats.addExpr(ExprKind.Builtin, size);
+    Stats.addExpr(Builtin, size);
 #endif
     return e;
 }
@@ -152,22 +150,22 @@ fn SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) {
 }
 
 public fn Expr* BuiltinExpr.getOffsetOfMember(const BuiltinExpr* b) {
-    assert(b.getKind() == BuiltinExprKind.OffsetOf);
+    assert(b.getKind() == OffsetOf);
     return b.offset[0].member;
 }
 
 public fn Expr* BuiltinExpr.getToContainerMember(const BuiltinExpr* b) {
-    assert(b.getKind() == BuiltinExprKind.ToContainer);
+    assert(b.getKind() == ToContainer);
     return b.container[0].member;
 }
 
 public fn Expr* BuiltinExpr.getToContainerPointer(const BuiltinExpr* b) {
-    assert(b.getKind() == BuiltinExprKind.ToContainer);
+    assert(b.getKind() == ToContainer);
     return b.container[0].pointer;
 }
 
 public fn Expr** BuiltinExpr.getToContainerPointer2(BuiltinExpr* b) {
-    assert(b.getKind() == BuiltinExprKind.ToContainer);
+    assert(b.getKind() == ToContainer);
     return &b.container[0].pointer;
 }
 

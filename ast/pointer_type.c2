@@ -26,10 +26,10 @@ public type PointerType struct @(opaque) {
 // Note: non-public, since all pointers should be created via ast.getPointerType()
 fn PointerType* PointerType.create(ast_context.Context* c, QualType inner) {
     PointerType* t = c.alloc(sizeof(PointerType));
-    t.base.init(TypeKind.Pointer);
+    t.base.init(Pointer);
     t.inner = inner;
 #if AstStatistics
-    Stats.addType(TypeKind.Pointer, sizeof(PointerType));
+    Stats.addType(Pointer, sizeof(PointerType));
 #endif
     return t;
 }

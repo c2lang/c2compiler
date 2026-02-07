@@ -29,13 +29,13 @@ public type ForStmt struct @(opaque) {
 
 public fn ForStmt* ForStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* init, Expr* cond, Expr* cont, Stmt* body) {
     ForStmt* s = c.alloc(sizeof(ForStmt));
-    s.base.init(StmtKind.For, loc);
+    s.base.init(For, loc);
     s.init = init;
     s.cond = cond;
     s.cont = cont;
     s.body = body;
 #if AstStatistics
-    Stats.addStmt(StmtKind.For, sizeof(ForStmt));
+    Stats.addStmt(For, sizeof(ForStmt));
 #endif
     return s;
 }

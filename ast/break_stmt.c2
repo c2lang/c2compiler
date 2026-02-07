@@ -25,9 +25,9 @@ public type BreakStmt struct @(opaque) {
 
 public fn BreakStmt* BreakStmt.create(ast_context.Context* c, SrcLoc loc) {
     BreakStmt* s = c.alloc(sizeof(BreakStmt));
-    s.base.init(StmtKind.Break, loc);
+    s.base.init(Break, loc);
 #if AstStatistics
-    Stats.addStmt(StmtKind.Break, sizeof(BreakStmt));
+    Stats.addStmt(Break, sizeof(BreakStmt));
 #endif
     return s;
 }

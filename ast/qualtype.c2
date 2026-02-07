@@ -74,7 +74,7 @@ public fn bool QualType.isConstant(const QualType qt) {
 
     if (canon.isConst()) return true;
 
-    if (t.getKind() == TypeKind.Array) {
+    if (t.isArrayType()) {
         // constant if either array or element is const
         const ArrayType* at = (ArrayType*)t;
         canon = at.getElemType();
@@ -300,7 +300,7 @@ public fn BuiltinType* QualType.getBuiltin(const QualType qt) {
 
 public fn BuiltinType* QualType.getBuiltinTypeOrNil(const QualType qt) {
     const Type* t = qt.getTypeOrNil();
-    if (t && t.getKind() == TypeKind.Builtin) return (BuiltinType*)t;
+    if (t && t.isBuiltinType()) return (BuiltinType*)t;
     return nil;
 }
 
@@ -332,27 +332,27 @@ public fn EnumType* QualType.getEnum(const QualType qt) {
 // NOTE: doesn't check if kind is ok
 public fn FunctionType* QualType.getFunctionTypeOrNil(const QualType qt) {
     const Type* t = qt.getTypeOrNil();
-    if (t && t.getKind() == TypeKind.Function) return (FunctionType*)t;
+    if (t && t.isFunctionType()) return (FunctionType*)t;
     return nil;
 }
 
 public fn StructType* QualType.getStructTypeOrNil(const QualType qt) {
     const Type* t = qt.getTypeOrNil();
-    if (t && t.getKind() == TypeKind.Struct) return (StructType*)t;
+    if (t && t.isStructType()) return (StructType*)t;
     return nil;
 }
 
 /*
 public fn PointerType* QualType.getPointerTypeOrNil(const QualType qt) {
     const Type* t = qt.getTypeOrNil();
-    if (t && t.getKind() == TypeKind.Pointer) return (PointerType*)t);
+    if (t && t.isPointerType()) return (PointerType*)t);
     return nil;
 }
 */
 
 public fn ArrayType* QualType.getArrayTypeOrNil(const QualType qt) {
     const Type* t = qt.getTypeOrNil();
-    if (t && t.getKind() == TypeKind.Array) return (ArrayType*)t;
+    if (t && t.isArrayType()) return (ArrayType*)t;
     return nil;
 }
 
@@ -363,14 +363,14 @@ public fn EnumType* QualType.getEnumType(const QualType qt) {
 // Note: does not check if Type is valid, only if Type is EnumType
 public fn EnumType* QualType.getEnumTypeOrNil(const QualType qt) {
     const Type* t = qt.getTypeOrNil();
-    if (t.getKind() == TypeKind.Enum) return (EnumType*)t;
+    if (t.isEnumType()) return (EnumType*)t;
     return nil;
 }
 
 public fn bool QualType.isCharCompatible(const QualType qt) {
     QualType canon = qt.getCanonicalType();
     const Type* t = canon.getTypeOrNil();
-    if (t.getKind() != TypeKind.Builtin) return false;
+    if (!t.isBuiltinType()) return false;
     const BuiltinType* bi = (BuiltinType*)t;
     BuiltinKind kind = bi.getKind();
     return kind == Char || kind == Int8 || kind == UInt8;
@@ -378,21 +378,21 @@ public fn bool QualType.isCharCompatible(const QualType qt) {
 
 public fn bool QualType.isChar(const QualType qt) {
     const Type* t = qt.getTypeOrNil();
-    if (t.getKind() != TypeKind.Builtin) return false;
+    if (!t.isBuiltinType()) return false;
     const BuiltinType* bi = (BuiltinType*)t;
     return bi.getKind() == Char;
 }
 
 public fn bool QualType.isUInt8(const QualType qt) {
     const Type* t = qt.getTypeOrNil();
-    if (t.getKind() != TypeKind.Builtin) return false;
+    if (!t.isBuiltinType()) return false;
     const BuiltinType* bi = (BuiltinType*)t;
     return bi.getKind() == UInt8;
 }
 
 public fn bool QualType.promotesToInt32(const QualType qt) {
     const Type* t = qt.getTypeOrNil();
-    if (t.getKind() != TypeKind.Builtin) return false;
+    if (!t.isBuiltinType()) return false;
     const BuiltinType* bi = (BuiltinType*)t;
     return bi.getKind() == Int32 || bi.isPromotableIntegerType();
 }

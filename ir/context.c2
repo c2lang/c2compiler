@@ -147,7 +147,7 @@ public fn SymbolId Context.addStringLiteral(Context* c, const char* name, const 
     s.g.init_value_count = 1;
 
     InitValue* v = c.init_values.add();
-    v.init(InitValueKind.Text, text_idx);
+    v.init(Text, text_idx);
     return id;
 }
 
@@ -225,51 +225,51 @@ public fn void Context.addInitZero(Context* c, u32 size) {
     assert(size < 0x0FFFFFFF);
     assert(c.b.cur_global);
     InitValue* v = c.init_values.add();
-    v.init(InitValueKind.Zero, size);
+    v.init(Zero, size);
 }
 
 public fn void Context.addInitValueU8(Context* c, u8 value) {
     InitValue* v = c.init_values.add();
-    v.init(InitValueKind.Byte, value);
+    v.init(Byte, value);
 }
 
 public fn void Context.addInitValueU16(Context* c, u16 value) {
     InitValue* v = c.init_values.add();
-    v.init(InitValueKind.Short, value);
+    v.init(Short, value);
 }
 
 public fn void Context.addInitValueU32(Context* c, u32 value) {
     InitValue* v = c.init_values.add();
     if (value < 0x0FFFFFFF) {
-        v.init(InitValueKind.Word, value);
+        v.init(Word, value);
     } else {
         Constant constant = { .uvalue = value }
         u32 idx = c.constants.add(&constant);
-        v.init(InitValueKind.Word2, idx);
+        v.init(Word2, idx);
     }
 }
 
 public fn void Context.addInitValueU64(Context* c, u64 value) {
     InitValue* v = c.init_values.add();
     if (value < 0x0FFFFFFF) {
-        v.init(InitValueKind.Long, (u32)value);
+        v.init(Long, (u32)value);
     } else {
         Constant constant = { .uvalue = value }
         u32 idx = c.constants.add(&constant);
-        v.init(InitValueKind.Long2, idx);
+        v.init(Long2, idx);
     }
 }
 
 public fn void Context.addInitSymbol(Context* c, SymbolId id) {
     InitValue* v = c.init_values.add();
-    v.init(InitValueKind.Symbol, id);
+    v.init(Symbol, id);
 }
 
 // size = strlen()
 public fn void Context.addInitString(Context* c, const char* text, u32 size) {
     InitValue* v = c.init_values.add();
     u32 text_idx = c.pool.add(text, size, false);
-    v.init(InitValueKind.Text, text_idx);
+    v.init(Text, text_idx);
 }
 
 public fn void Context.setFunctionReturnType(Context* c, Type t) {

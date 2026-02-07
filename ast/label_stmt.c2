@@ -33,11 +33,11 @@ public type LabelStmt struct @(opaque) {
 
 public fn LabelStmt* LabelStmt.create(ast_context.Context* c, u32 name, SrcLoc loc, Stmt *stmt) {
     LabelStmt* s = c.alloc(sizeof(LabelStmt));
-    s.base.init(StmtKind.Label, loc);
+    s.base.init(Label, loc);
     s.name = name;
     s.stmt = stmt;
 #if AstStatistics
-    Stats.addStmt(StmtKind.Label, sizeof(LabelStmt));
+    Stats.addStmt(Label, sizeof(LabelStmt));
 #endif
     return s;
 }

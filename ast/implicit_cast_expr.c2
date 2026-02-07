@@ -51,7 +51,7 @@ public type ImplicitCastExpr struct @(opaque) {
 
 public fn ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcLoc loc, ImplicitCastKind kind, Expr* inner) {
     ImplicitCastExpr* e = c.alloc(sizeof(ImplicitCastExpr));
-    e.base.init(ExprKind.ImplicitCast, loc, 0, 0, 0, ValType.RValue);
+    e.base.init(ImplicitCast, loc, 0, 0, 0, RValue);
     e.base.base.implicitCastBits.kind = kind;
     e.inner = inner;
     e.base.copyConstantFlags(inner);
@@ -77,7 +77,7 @@ public fn ImplicitCastExpr* ImplicitCastExpr.create(ast_context.Context* c, SrcL
         break;
     }
 #if AstStatistics
-    Stats.addExpr(ExprKind.ImplicitCast, sizeof(ImplicitCastExpr));
+    Stats.addExpr(ImplicitCast, sizeof(ImplicitCastExpr));
 #endif
     return e;
 }
@@ -87,7 +87,7 @@ public fn ImplicitCastKind ImplicitCastExpr.getKind(const ImplicitCastExpr* e) {
 }
 
 public fn bool ImplicitCastExpr.isArrayToPointerDecay(const ImplicitCastExpr* e) {
-    return e.getKind() == ImplicitCastKind.ArrayToPointerDecay;
+    return e.getKind() == ArrayToPointerDecay;
 }
 
 public fn Expr* ImplicitCastExpr.getInner(const ImplicitCastExpr* e) { return e.inner; }

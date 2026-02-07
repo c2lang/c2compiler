@@ -74,7 +74,7 @@ fn QualType Analyser.invalidFuncCompare(Analyser* ma, BinaryOperator* b) {
     return QualType_Invalid;
 }
 
-const u32[] Binop_lhs = {
+const u32[BinaryOpcode] Binop_lhs = {
     RHS,        // Multiply
     RHS,        // Divide
     RHS,        // Remainder
@@ -105,8 +105,6 @@ const u32[] Binop_lhs = {
     LHS|RHS,    // XorAssign
     LHS|RHS,    // OrAssign
 }
-
-static_assert(elemsof(BinaryOpcode), elemsof(Binop_lhs));
 
 /*
     // convert aliasType + enum to impl for check
@@ -655,7 +653,7 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     BinaryOpcode opcode = b.getOpcode();
 
     bool need_lhs_rvalue = true;
-    if (opcode >= BinaryOpcode.Assign) need_lhs_rvalue = false;
+    if (opcode >= Assign) need_lhs_rvalue = false;
 
     QualType ltype = ma.analyseExpr(b.getLHS2(), need_lhs_rvalue, Binop_lhs[opcode]);
     if (ltype.isInvalid()) return QualType_Invalid;
@@ -673,7 +671,7 @@ fn QualType Analyser.analyseBinaryOperator(Analyser* ma, Expr** e_ptr) {
     }
 
     QualType rtype;
-    if (opcode == BinaryOpcode.Assign) {
+    if (opcode == Assign) {
         Expr* rhs = b.getRHS();
         // check if sub-struct, dont allow assignment then
         if (ltype.isStruct() && rhs.isInitList()) {

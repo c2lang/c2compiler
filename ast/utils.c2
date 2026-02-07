@@ -111,9 +111,9 @@ public type Globals struct @(opaque) {
     u32 ast_capacity;
     AST** ast_list;
 
-    u32[elemsof(BuiltinKind)] builtinType_sizes;
-    u32[elemsof(BuiltinKind)] builtinType_width;
-    BuiltinKind[elemsof(BuiltinKind)] builtinType_baseTypes;
+    u32[BuiltinKind] builtinType_sizes;
+    u32[BuiltinKind] builtinType_width;
+    BuiltinKind[BuiltinKind] builtinType_baseTypes;
 
     string_buffer.Buf* dump_buf;
 #if AstStatistics
@@ -166,7 +166,7 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
     globals.builtinType_width[BuiltinKind.USize] = wordsize * 8;
 
     for (u32 i=0; i<elemsof(BuiltinKind); i++) {
-        globals.builtinType_baseTypes[i] = (BuiltinKind)i;
+        globals.builtinType_baseTypes[(BuiltinKind)i] = (BuiltinKind)i;
     }
     if (wordsize == 4) {
         globals.builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int32;

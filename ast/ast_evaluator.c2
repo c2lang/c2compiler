@@ -136,7 +136,7 @@ fn Value Evaluator.get_binaryop_value(Evaluator* eval, const BinaryOperator* e) 
 
     BinaryOpcode op = e.getOpcode();
     Value right;
-    if (!(op >= BinaryOpcode.LAnd && op <= BinaryOpcode.LOr))
+    if (!(op >= LAnd && op <= LOr))
         right = eval.get_value(e.getRHS());
 
     switch (op) {
@@ -402,7 +402,7 @@ type Cont enum u8 {
 
 fn Cont Evaluator.error(Evaluator* sf, const char* msg) {
     sf.result = Value.error(msg);
-    return Cont.Abort;
+    return Abort;
 }
 
 fn Cont Stmt.eval(Stmt* s, Evaluator* sf) {
@@ -424,7 +424,7 @@ fn Cont Stmt.eval(Stmt* s, Evaluator* sf) {
     case Asm:         return ((AsmStmt*)s).eval(sf);
     case Assert:      return ((AssertStmt*)s).eval(sf);
     }
-    return Cont.Abort;
+    return Abort;
 }
 
 fn Cont ReturnStmt.eval(ReturnStmt* r, Evaluator* sf) {
@@ -432,20 +432,20 @@ fn Cont ReturnStmt.eval(ReturnStmt* r, Evaluator* sf) {
     if (e) {
         sf.result = sf.get_value(e);
         if (sf.result.isError())
-            return Cont.Error;
-        return Cont.Return;
+            return Error;
+        return Return;
     } else {
         sf.error("void return");
-        return Cont.Return;
+        return Return;
     }
 }
 
 fn Cont Expr.eval(Expr* e, Evaluator* sf) {
     sf.result = sf.get_value(e);
     if (sf.result.isError())
-        return Cont.Error;
+        return Error;
     else
-        return Cont.Normal;
+        return Normal;
 }
 
 fn Cont IfStmt.eval(IfStmt* s, Evaluator* sf) {
@@ -459,16 +459,16 @@ fn Cont IfStmt.eval(IfStmt* s, Evaluator* sf) {
         // TODO initialisation must assign value
     }
     if (!e)
-        return Cont.Abort;
+        return Abort;
     sf.result = sf.get_value(e);
     if (sf.result.isError())
-        return Cont.Error;
+        return Error;
     if (!sf.result.isZero()) {
         return s.getThen().eval(sf);
     } else {
         Stmt* s1 = s.getElse();
         if (s1) return s1.eval(sf);
-        return Cont.Normal;
+        return Normal;
     }
 }
 
@@ -484,19 +484,19 @@ fn Cont WhileStmt.eval(WhileStmt* s, Evaluator* sf) {
             // TODO initialisation must assign value
         }
         if (!e)
-            return Cont.Abort;
+            return Abort;
         sf.result = sf.get_value(e);
         if (sf.result.isError())
-            return Cont.Error;
+            return Error;
         if (sf.result.isZero())
-            return Cont.Normal;
+            return Normal;
         Cont cont = s.getBody().eval(sf);
         switch (cont) {
         case Normal:
         case Continue:
             break;
         case Break:
-            return Cont.Normal;
+            return Normal;
         case Return:
         case Goto:
         case Abort:
@@ -512,7 +512,7 @@ fn Cont ForStmt.eval(ForStmt* s, Evaluator* sf) {
     Cont cont;
     if (s1) {
         cont = s1.eval(sf);
-        if (cont != Cont.Normal)
+        if (cont != Normal)
             return cont;
     }
     for (;;) {
@@ -520,9 +520,9 @@ fn Cont ForStmt.eval(ForStmt* s, Evaluator* sf) {
         if (e) {
             sf.result = sf.get_value(e);
             if (sf.result.isError())
-                return Cont.Error;
+                return Error;
             if (sf.result.isZero())
-                return Cont.Normal;
+                return Normal;
         }
         cont = s.getBody().eval(sf);
         switch (cont) {
@@ -530,7 +530,7 @@ fn Cont ForStmt.eval(ForStmt* s, Evaluator* sf) {
         case Continue:
             break;
         case Break:
-            return Cont.Normal;
+            return Normal;
         case Return:
         case Goto:
         case Abort:
@@ -541,7 +541,7 @@ fn Cont ForStmt.eval(ForStmt* s, Evaluator* sf) {
         if (e) {
             sf.result = sf.get_value(e);
             if (sf.result.isError())
-                return Cont.Error;
+                return Error;
         }
     }
 }
@@ -551,9 +551,9 @@ fn Cont SwitchStmt.eval(SwitchStmt* s, Evaluator* sf) {
     return sf.error("switch not supported");
 }
 
-fn Cont BreakStmt.eval(BreakStmt* s, Evaluator* sf) { return Cont.Break; }
-fn Cont ContinueStmt.eval(ContinueStmt* s, Evaluator* sf) { return Cont.Continue; }
-fn Cont FallthroughStmt.eval(FallthroughStmt* s, Evaluator* sf) { return Cont.Normal; }
+fn Cont BreakStmt.eval(BreakStmt* s, Evaluator* sf) { return Break; }
+fn Cont ContinueStmt.eval(ContinueStmt* s, Evaluator* sf) { return Continue; }
+fn Cont FallthroughStmt.eval(FallthroughStmt* s, Evaluator* sf) { return Normal; }
 
 fn Cont LabelStmt.eval(LabelStmt* s, Evaluator* sf) {
     Stmt* s1 = s.getStmt();
@@ -570,10 +570,10 @@ fn Cont CompoundStmt.eval(CompoundStmt* body, Evaluator* sf) {
     Stmt** stmts = body.getStmts();
     for (u32 i = 0; i < count; i++) {
         Cont cont = stmts[i].eval(sf);
-        if (cont != Cont.Normal)
+        if (cont != Normal)
             return cont;
     }
-    return Cont.Normal;
+    return Normal;
 }
 
 fn Cont DeclStmt.eval(DeclStmt* s, Evaluator* sf) {
@@ -588,10 +588,10 @@ fn Cont AssertStmt.eval(AssertStmt* s, Evaluator* sf) {
     Expr* e = s.getInner();
     sf.result = sf.get_value(e);
     if (sf.result.isError())
-        return Cont.Error;
+        return Error;
     if (sf.result.isZero()) {
         // TODO assertion string should be computed at parse time
         return sf.error("assertion failed");
     }
-    return Cont.Normal;
+    return Normal;
 }

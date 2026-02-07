@@ -24,10 +24,10 @@ type VoidType struct {
 
 fn VoidType* VoidType.create(ast_context.Context* c) {
     VoidType* b = c.alloc(sizeof(VoidType));
-    b.base.init(TypeKind.Void);
+    b.base.init(Void);
     b.base.setCanonicalType(QualType.create(&b.base));
 #if AstStatistics
-    Stats.addType(TypeKind.Void, sizeof(VoidType));
+    Stats.addType(Void, sizeof(VoidType));
 #endif
     return b;
 }

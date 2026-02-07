@@ -32,12 +32,12 @@ public type StringLiteral struct @(opaque) {
 
 public fn StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, u32 value, u32 len) {
     StringLiteral* e = c.alloc(sizeof(StringLiteral));
-    e.base.init(ExprKind.StringLiteral, loc, 0, 1, 0, ValType.LValue);
+    e.base.init(StringLiteral, loc, 0, 1, 0, LValue);
     e.base.base.stringLiteralBits.src_len = src_len;
     e.value = value;
     e.size = len + 1;   // size includes the null terminator
 #if AstStatistics
-    Stats.addExpr(ExprKind.StringLiteral, sizeof(StringLiteral));
+    Stats.addExpr(StringLiteral, sizeof(StringLiteral));
 #endif
     e.base.setType(getStringType(len + 1));
     return e;

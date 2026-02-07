@@ -32,21 +32,7 @@ public type DeclKind enum u8 {
     Variable,
 }
 
-public type DeclCheckState enum u8 {
-    Unchecked,
-    InProgress,
-    Checked,
-}
-
-const char*[] declCheckState_names = {
-    "unchecked",
-    "in-progress",
-    "checked",
-}
-
-static_assert(elemsof(DeclCheckState), elemsof(declCheckState_names));
-
-const char*[] declKind_names = {
+const char*[DeclKind] declKind_names = {
     "FunctionDecl",
     "ImportDecl",
     "StructTypeDecl",
@@ -57,7 +43,17 @@ const char*[] declKind_names = {
     "VarDecl",
 }
 
-static_assert(elemsof(DeclKind), elemsof(declKind_names));
+public type DeclCheckState enum u8 {
+    Unchecked,
+    InProgress,
+    Checked,
+}
+
+const char*[DeclCheckState] declCheckState_names = {
+    "unchecked",
+    "in-progress",
+    "checked",
+}
 
 type DeclBits struct {
     u32 kind : 4;
@@ -133,8 +129,14 @@ public fn const char* Decl.getCheckStateName(const Decl* d) {
 }
 */
 
-public fn bool Decl.isChecked(const Decl* d) { return d.declBits.check_state == DeclCheckState.Checked; }
-public fn bool Decl.isCheckInProgress(const Decl* d) { return d.declBits.check_state == DeclCheckState.InProgress; }
+public fn bool Decl.isChecked(const Decl* d) {
+    return d.getCheckState() == Checked;
+}
+
+public fn bool Decl.isCheckInProgress(const Decl* d) {
+    return d.getCheckState() == InProgress;
+}
+
 public fn void Decl.setChecked(Decl* d) { d.declBits.check_state = DeclCheckState.Checked; }
 public fn void Decl.setCheckInProgress(Decl* d) { d.declBits.check_state = DeclCheckState.InProgress; }
 
@@ -167,33 +169,33 @@ public fn bool Decl.hasAttrUnused(const Decl* d) { return d.declBits.attr_unused
 
 
 public fn bool Decl.isStructType(const Decl* d) {
-    return d.getKind() == DeclKind.StructType;
+    return d.getKind() == StructType;
 }
 
 public fn bool Decl.isImport(const Decl* d) {
-    return d.getKind() == DeclKind.Import;
+    return d.getKind() == Import;
 }
 
 public fn bool Decl.isEnum(const Decl* d) {
-    return d.getKind() == DeclKind.EnumType;
+    return d.getKind() == EnumType;
 }
 
 public fn bool Decl.isEnumConstant(const Decl* d) {
-    return d.getKind() == DeclKind.EnumConstant;
+    return d.getKind() == EnumConstant;
 }
 
 public fn bool Decl.isFunction(const Decl* d) {
-    return d.getKind() == DeclKind.Function;
+    return d.getKind() == Function;
 }
 
 /*
 public fn bool Decl.isFunctionType(const Decl* d) {
-    return d.getKind() == DeclKind.FunctionType;
+    return d.getKind() == FunctionType;
 }
 */
 
 public fn bool Decl.isVariable(const Decl* d) {
-    return  d.getKind() == DeclKind.Variable;
+    return  d.getKind() == Variable;
 }
 
 public fn const char* Decl.getName(const Decl* d) {
@@ -270,7 +272,7 @@ public fn bool Decl.isTypeDecl(const Decl* d) {
 }
 
 public fn bool Decl.isVarDecl(const Decl* d) {
-    return d.getKind() == DeclKind.Variable;
+    return d.getKind() == Variable;
 }
 
 public fn const char* Decl.getKindName(const Decl* d) {
@@ -410,7 +412,7 @@ fn void Decl.printBits(const Decl* d, string_buffer.Buf* out) {
     out.color(col_Attr);
     if (d.isPublic()) out.add(" public");
     DeclCheckState cs = d.getCheckState();
-    if (cs != DeclCheckState.Checked) {
+    if (cs != Checked) {
         out.space();
         out.add(declCheckState_names[cs]);
     }

@@ -33,12 +33,12 @@ public type CharLiteral struct @(opaque) {
 
 public fn CharLiteral* CharLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, u8 val, Radix radix) {
     CharLiteral* e = c.alloc(sizeof(CharLiteral));
-    e.base.init(ExprKind.CharLiteral, loc, 1, 1, 0, ValType.RValue);
+    e.base.init(CharLiteral, loc, 1, 1, 0, RValue);
     e.base.base.charLiteralBits.value = val;
     e.base.base.charLiteralBits.radix = radix;
     e.base.base.charLiteralBits.src_len = src_len;
 #if AstStatistics
-    Stats.addExpr(ExprKind.CharLiteral, sizeof(CharLiteral));
+    Stats.addExpr(CharLiteral, sizeof(CharLiteral));
 #endif
     e.base.setType(getBuiltinQT(Char));
     return e;

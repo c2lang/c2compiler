@@ -50,7 +50,7 @@ public fn CallExpr* CallExpr.create(ast_context.Context* c,
 {
     u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
     CallExpr* e = c.alloc(size);
-    e.base.init(ExprKind.Call, loc, 0, 0, 1, ValType.RValue);
+    e.base.init(Call, loc, 0, 0, 1, RValue);
     e.base.base.callExprBits.num_args = (u8)num_args;
     e.endLoc = endLoc;
     e.template_idx = 0;
@@ -58,7 +58,7 @@ public fn CallExpr* CallExpr.create(ast_context.Context* c,
     e.func = func;
     string.memcpy(e.args, args, num_args * sizeof(Expr*));
 #if AstStatistics
-    Stats.addExpr(ExprKind.Call, size);
+    Stats.addExpr(Call, size);
 #endif
     return e;
 }
@@ -75,7 +75,7 @@ public fn CallExpr* CallExpr.createTemplate(ast_context.Context* c,
     u32 size = sizeof(CallExpr) + num_args * sizeof(Expr*);
     size += sizeof(TypeRef) + ref.getExtraSize();
     CallExpr* e = c.alloc(size);
-    e.base.init(ExprKind.Call, loc, 0, 0, 1, ValType.RValue);
+    e.base.init(Call, loc, 0, 0, 1, RValue);
     e.base.base.callExprBits.is_template_call = 1;
     e.base.base.callExprBits.num_args = (u8)num_args;
     e.endLoc = endLoc;
@@ -86,7 +86,7 @@ public fn CallExpr* CallExpr.createTemplate(ast_context.Context* c,
     TypeRef* destRef = (TypeRef*)&e.args[num_args];
     destRef.init(ref);
 #if AstStatistics
-    Stats.addExpr(ExprKind.Call, size);
+    Stats.addExpr(Call, size);
 #endif
     return e;
 }
@@ -105,7 +105,7 @@ fn Expr* CallExpr.instantiate(CallExpr* e, Instantiator* inst) {
         e2.args[i] = e.args[i].instantiate(inst);
     }
 #if AstStatistics
-    Stats.addExpr(ExprKind.Call, size);
+    Stats.addExpr(Call, size);
 #endif
     return (Expr*)e2;
 }

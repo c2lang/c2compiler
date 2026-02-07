@@ -36,11 +36,11 @@ public fn DeclStmt* DeclStmt.create(ast_context.Context* c,
 {
     u32 size = sizeof(DeclStmt) + sizeof(VarDecl*) * count;
     DeclStmt* s = c.alloc(size);
-    s.base.init(StmtKind.Decl, decl[0].asDecl().getLoc());
+    s.base.init(Decl, decl[0].asDecl().getLoc());
     s.base.declStmtBits.count = count;
     memcpy(s.decl, decl, sizeof(VarDecl*) * count);
 #if AstStatistics
-    Stats.addStmt(StmtKind.Decl, size);
+    Stats.addStmt(Decl, size);
 #endif
     return s;
 }

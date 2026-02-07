@@ -240,7 +240,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, const CallExp
     assert(!call.isTemplateCall()); // TODO
 
     Expr* func = call.getFunc();
-    assert(func.getKind() == ExprKind.ImplicitCast);
+    assert(func.isImplicitCast());
     ImplicitCastExpr* ic = (ImplicitCastExpr*)func;
     func = ic.getInner();
 

@@ -589,7 +589,7 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool accept_default
                                                (VarDecl**)params.getDecls(),
                                                params.size(),
                                                is_variadic,
-                                               DefKind.Param);
+                                               Param);
         // TODO attributes?
         //u32 num_attr = p.parseOptionalAttributes();
         //p.applyAttributes((Decl*)fd, num_attr);

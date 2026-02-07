@@ -32,11 +32,11 @@ public fn ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.Co
                                                                     Expr* initValue)
 {
     ArrayDesignatedInitExpr* e = c.alloc(sizeof(ArrayDesignatedInitExpr));
-    e.base.init(ExprKind.ArrayDesignatedInit, loc, 0, 0, 0, ValType.RValue);
+    e.base.init(ArrayDesignatedInit, loc, 0, 0, 0, RValue);
     e.designator = designator;
     e.initValue = initValue;
 #if AstStatistics
-    Stats.addExpr(ExprKind.ArrayDesignatedInit, sizeof(ArrayDesignatedInitExpr));
+    Stats.addExpr(ArrayDesignatedInit, sizeof(ArrayDesignatedInitExpr));
 #endif
     return e;
 }

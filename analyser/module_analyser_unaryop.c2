@@ -96,7 +96,7 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
         }
         t = ma.builder.actOnPointerType(canon);
         e.copyCtcFlags(inner);
-        if (inner.getKind() == ExprKind.ArraySubscript) {
+        if (inner.getKind() == ArraySubscript) {
             // Fix &a[b] as ctc if a is ctc and b is ctv
             // a[b] should be ctc in this case, but C does not accept it because of separate compilation
             // TODO: handle constant 2D and 3D arrays
@@ -104,11 +104,11 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
             if (e1.getBase().isCtc() && e1.getIndex().isCtv())
                 e.setCtc();
         } else
-        if (inner.getKind() == ExprKind.UnaryOperator) {
+        if (inner.getKind() == UnaryOperator) {
             // Fix &*a as ctc if a is ctc
             // *a should be ctc in this case, but C does not accept it because of separate compilation
             UnaryOperator* e1 = (UnaryOperator*)inner;
-            if (e1.getOpcode() == UnaryOpcode.Deref)
+            if (e1.getOpcode() == Deref)
                 e.copyCtcFlags(e1.getInner());
         }
         if (inner.isBitfield()) {
@@ -230,9 +230,9 @@ fn IdentifierKind getInnerExprAddressOf(const Expr* e) {
         break;
     case UnaryOperator:
         UnaryOperator* e1 = (UnaryOperator*)e;
-        if (e1.getOpcode() == UnaryOpcode.Deref) {
+        if (e1.getOpcode() == Deref) {
             // TODO check for 2D or 3D arrays
-            return IdentifierKind.Var;  // &*e is OK
+            return Var;  // &*e is OK
         }
         break;
     case ConditionalOperator:
@@ -244,8 +244,8 @@ fn IdentifierKind getInnerExprAddressOf(const Expr* e) {
         // a[b] is an LValue if not an array itself and if b is not a BitOffset
         // TODO: reject if a[b] is itself an array
         Expr* index = a.getIndex();
-        if (index.getKind() != ExprKind.BitOffset)
-            return IdentifierKind.Var;
+        if (index.getKind() != BitOffset)
+            return Var;
         break;
     case Member:
         MemberExpr* m = (MemberExpr*)e;
@@ -254,7 +254,7 @@ fn IdentifierKind getInnerExprAddressOf(const Expr* e) {
         ParenExpr* p = (ParenExpr*)e;
         return getInnerExprAddressOf(p.getInner());
     case BitOffset:
-        return IdentifierKind.Unresolved;
+        return Unresolved;
     case ExplicitCast:
         ExplicitCastExpr* c = (ExplicitCastExpr*)e;
         // TODO: this seems incorrect, casts should not produce LValues
@@ -273,7 +273,7 @@ fn IdentifierKind getInnerExprAddressOf(const Expr* e) {
         return getInnerExprAddressOf(n.getOriginal());
     }
 
-    return IdentifierKind.Unresolved;
+    return Unresolved;
 }
 
 fn QualType getMinusType(QualType qt) {

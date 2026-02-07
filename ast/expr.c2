@@ -132,7 +132,7 @@ fn void Expr.init(Expr* e,
                   bool has_effect,
                   ValType valtype)
 {
-    e.base.init(StmtKind.Expr, loc);
+    e.base.init(Expr, loc);
     e.base.exprBits.kind = k;
     e.base.exprBits.is_ctv = ctv;
     e.base.exprBits.is_ctc = ctc;
@@ -201,35 +201,35 @@ public fn Stmt* Expr.asStmt(Expr* e) { return &e.base; }
 public fn ExprKind Expr.getKind(const Expr* e) { return (ExprKind)e.base.exprBits.kind; }
 
 public fn bool Expr.isStringLiteral(const Expr* e) {
-    return e.getKind() == ExprKind.StringLiteral;
+    return e.getKind() == StringLiteral;
 }
 
 public fn bool Expr.isNil(const Expr* e) {
-    return e.getKind() == ExprKind.Nil;
+    return e.getKind() == Nil;
 }
 
 public fn bool Expr.isIdentifier(const Expr* e) {
-    return e.getKind() == ExprKind.Identifier;
+    return e.getKind() == Identifier;
 }
 
 public fn bool Expr.isCall(const Expr* e) {
-    return e.getKind() == ExprKind.Call;
+    return e.getKind() == Call;
 }
 
 public fn bool Expr.isUnaryOp(const Expr* e) {
-    return e.getKind() == ExprKind.UnaryOperator;
+    return e.getKind() == UnaryOperator;
 }
 
 public fn bool Expr.isImplicitCast(const Expr* e) {
-    return e.getKind() == ExprKind.ImplicitCast;
+    return e.getKind() == ImplicitCast;
 }
 
 public fn bool Expr.isType(const Expr* e) {
-    return e.getKind() == ExprKind.Type;
+    return e.getKind() == Type;
 }
 
 public fn bool Expr.isInitList(const Expr* e) {
-    return e.getKind() == ExprKind.InitList;
+    return e.getKind() == InitList;
 }
 
 public fn bool Expr.isTilde(const Expr* e) {
@@ -237,43 +237,43 @@ public fn bool Expr.isTilde(const Expr* e) {
         const ParenExpr* p = (ParenExpr*)e;
         e = p.getInner();
     }
-    if (e.getKind() == ExprKind.UnaryOperator) {
+    if (e.getKind() == UnaryOperator) {
         const UnaryOperator* u = (UnaryOperator*)e;
-        return (u.getOpcode() == UnaryOpcode.Not);
+        return (u.getOpcode() == Not);
     }
     return false;
 }
 
 public fn bool Expr.isBinaryOperator(const Expr* e) {
-    return e.getKind() == ExprKind.BinaryOperator;
+    return e.getKind() == BinaryOperator;
 }
 
 public fn bool Expr.isMember(const Expr* e) {
-    return e.getKind() == ExprKind.Member;
+    return e.getKind() == Member;
 }
 
 public fn bool Expr.isFieldDesignatedInit(const Expr* e) {
-    return e.getKind() == ExprKind.FieldDesignatedInit;
+    return e.getKind() == FieldDesignatedInit;
 }
 
 public fn bool Expr.isArrayDesignatedInit(const Expr* e) {
-    return e.getKind() == ExprKind.ArrayDesignatedInit;
+    return e.getKind() == ArrayDesignatedInit;
 }
 
 public fn bool Expr.isBitOffset(const Expr* e) {
-    return e.getKind() == ExprKind.BitOffset;
+    return e.getKind() == BitOffset;
 }
 
 fn bool Expr.isParen(const Expr* e) {
-    return e.getKind() == ExprKind.Paren;
+    return e.getKind() == Paren;
 }
 
 public fn bool Expr.isRange(const Expr* e) {
-    return e.getKind() == ExprKind.Range;
+    return e.getKind() == Range;
 }
 
 public fn bool Expr.isAssignment(const Expr* e) {
-    return e.isBinaryOperator() && ((BinaryOperator*)e).getOpcode() == BinaryOpcode.Assign;
+    return e.isBinaryOperator() && ((BinaryOperator*)e).getOpcode() == Assign;
 }
 
 public fn bool Expr.isInitlistAssignment(const Expr* e) {
@@ -281,7 +281,7 @@ public fn bool Expr.isInitlistAssignment(const Expr* e) {
 }
 
 public fn bool Expr.isNamedArgument(const Expr* e) {
-    return e.getKind() == ExprKind.NamedArgument;
+    return e.getKind() == NamedArgument;
 }
 
 public fn bool Expr.isCtv(const Expr* e) { return e.base.exprBits.is_ctv; }

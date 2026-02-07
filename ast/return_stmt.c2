@@ -34,14 +34,14 @@ public fn ReturnStmt* ReturnStmt.create(ast_context.Context* c, SrcLoc loc, Expr
     if (value) size += sizeof(Expr*);
 
     ReturnStmt* s = c.alloc(size);
-    s.base.init(StmtKind.Return, loc);
+    s.base.init(Return, loc);
 
     if (value) {
         s.base.returnStmtBits.has_value = 1;
         s.value[0] = value;
     }
 #if AstStatistics
-    Stats.addStmt(StmtKind.Return, size);
+    Stats.addStmt(Return, size);
 #endif
     return s;
 }
