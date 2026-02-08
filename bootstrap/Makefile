@@ -29,7 +29,7 @@ endif
 
 ifeq (FreeBSD,$(SYSTEM))
 CC:=clang
-LDFLAGS:=
+LDFLAGS:=-lpthread
 BOOTSTRAP_FILE:=../output/bootstrap/bootstrap-freebsd-amd64.c
 endif
 

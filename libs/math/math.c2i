@@ -21,7 +21,7 @@ const c_int FP_INFINITE   = 0x01;
 const c_int FP_NAN        = 0x02;
 const c_int FP_NORMAL     = 0x04;
 const c_int FP_SUBNORMAL  = 0x08;
-const c_int FP_ZERO       = 0x10
+const c_int FP_ZERO       = 0x10;
 #endif
 #if SYSTEM_DARWIN
 const c_int FP_NAN        = 1;
