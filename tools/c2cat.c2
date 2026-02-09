@@ -67,13 +67,13 @@ fn bool C2cat.is_attribute(C2cat* ctx, u32 name_idx) {
 fn void C2cat.update_state(C2cat* ctx, const Token* tok) {
     switch (ctx.in_attributes) {
     case 0:
-        if (tok.kind == Kind.At) ctx.in_attributes = 1;
+        if (tok.kind == At) ctx.in_attributes = 1;
         break;
     case 1:
-        if (tok.kind == Kind.LParen) ctx.in_attributes = 2;
+        if (tok.kind == LParen) ctx.in_attributes = 2;
         break;
     case 2:
-        if (tok.kind == Kind.RParen) ctx.in_attributes = 0;
+        if (tok.kind == RParen) ctx.in_attributes = 0;
         break;
     }
 }
@@ -96,7 +96,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         }
     }
 
-    if (tok.kind >= Kind.LParen && tok.kind < Kind.KW_bool) {
+    if (tok.kind >= LParen && tok.kind < KW_bool) {
         const char* str = tok.kind.str();
         out.add(str);
         ctx.offset = tok.loc + (u32)strlen(str);
@@ -126,7 +126,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         ctx.offset = tok.loc + (u32)strlen(str);
         return;
     }
-    if (tok.kind >= Kind.Feat_if && tok.kind <= Kind.Feat_endif) {
+    if (tok.kind >= Feat_if && tok.kind <= Feat_endif) {
         const char* str = tok.kind.str();
         out.color(col_feature);
         out.add(str);

@@ -19,14 +19,13 @@ import stmt_list;
 import case_list;
 import expr_list;
 import ast local;
-import token local;
 import src_loc local;
 
 fn Stmt* Parser.parseSwitchStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
-    p.expectAndConsume(Kind.LParen);
+    p.expectAndConsume(LParen);
 
     Stmt* cond;
     if (p.isDeclaration()) {
@@ -36,15 +35,15 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
         Expr* e = p.parseExpr();
         cond = e.asStmt();
     }
-    p.expectAndConsume(Kind.RParen);
+    p.expectAndConsume(RParen);
 
-    p.expectAndConsume(Kind.LBrace);
+    p.expectAndConsume(LBrace);
 
     // TODO: potential memory leak on error
     case_list.List cases.init();
 
     bool has_default = false;
-    while (p.tok.kind != Kind.RBrace) {
+    while (p.tok.kind != RBrace) {
         SwitchCase* c = nil;
         switch (p.tok.kind) {
         case KW_case:
@@ -61,7 +60,7 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
         cases.add(c);
     }
 
-    p.expectAndConsume(Kind.RBrace);
+    p.expectAndConsume(RBrace);
 
     Stmt* s = p.builder.actOnSwitchStmt(loc, cond, cases.getData(), cases.size(), has_default);
     cases.free();
@@ -71,15 +70,15 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
 fn void Parser.parseCaseCondition(Parser* p, expr_list.List* list) {
     for (;;) {
         Expr* e = p.parseExpr();
-        if (p.tok.kind == Kind.Ellipsis) {
+        if (p.tok.kind == Ellipsis) {
             SrcLoc loc = p.tok.loc;
             p.consumeToken();
             Expr* e1 = p.parseExpr();
             e = p.builder.actOnRange(loc, e, e1);
         }
         list.add(e);
-        if (p.tok.kind == Kind.Colon) break;
-        p.expectAndConsume(Kind.Comma);
+        if (p.tok.kind == Colon) break;
+        p.expectAndConsume(Comma);
     }
 }
 
@@ -92,7 +91,7 @@ fn SwitchCase* Parser.parseCase(Parser* p, bool is_default) {
     if (!is_default) {
         p.parseCaseCondition(&conds);
     }
-    p.expectAndConsume(Kind.Colon);
+    p.expectAndConsume(Colon);
 
     stmt_list.List* stmts = p.getStmtList();
 

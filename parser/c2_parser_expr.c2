@@ -19,7 +19,6 @@ module c2_parser;
 import ast local;
 import c2_prec local;
 import constants;
-import number_radix local;
 import token local;
 import src_loc local;
 
@@ -38,80 +37,79 @@ fn Expr* Parser.parseAssignmentExpression(Parser* p) {
     return p.parseRHSOfBinaryExpression(lhs, Prec.Assignment);
 }
 
-const Prec[128] BinOpPrecLookup = {
-    [Kind.Comma] = Comma,
+const Prec[Kind] BinOpPrecLookup = {
+    [Comma]          = Comma,
 
-    [Kind.Equal]               = Assignment,
-    [Kind.StarEqual]           = Assignment,
-    [Kind.SlashEqual]          = Assignment,
-    [Kind.PercentEqual]        = Assignment,
-    [Kind.PlusEqual]           = Assignment,
-    [Kind.MinusEqual]          = Assignment,
-    [Kind.LessLessEqual]       = Assignment,
-    [Kind.GreaterGreaterEqual] = Assignment,
-    [Kind.AmpEqual]            = Assignment,
-    [Kind.CaretEqual]          = Assignment,
-    [Kind.PipeEqual]           = Assignment,
+    [Equal]          = Assignment,
+    [StarEqual]      = Assignment,
+    [SlashEqual]     = Assignment,
+    [PercentEqual]   = Assignment,
+    [PlusEqual]      = Assignment,
+    [MinusEqual]     = Assignment,
+    [LessLessEqual]  = Assignment,
+    [GreaterGreaterEqual] = Assignment,
+    [AmpEqual]       = Assignment,
+    [CaretEqual]     = Assignment,
+    [PipeEqual]      = Assignment,
 
-    [Kind.Question] = Conditional,
+    [Question]       = Conditional,
 
-    [Kind.PipePipe] = LogicalAndOr,
-    [Kind.AmpAmp]   = LogicalAndOr,
+    [PipePipe]       = LogicalAndOr,
+    [AmpAmp]         = LogicalAndOr,
 
-    [Kind.ExclaimEqual] = Relational,
-    [Kind.EqualEqual]   = Relational,
-    [Kind.LessEqual]    = Relational,
-    [Kind.Less]         = Relational,
-    [Kind.Greater]      = Relational,
-    [Kind.GreaterEqual] = Relational,
+    [ExclaimEqual]   = Relational,
+    [EqualEqual]     = Relational,
+    [LessEqual]      = Relational,
+    [Less]           = Relational,
+    [Greater]        = Relational,
+    [GreaterEqual]   = Relational,
 
-    [Kind.Plus]  = Additive,
-    [Kind.Minus] = Additive,
+    [Plus]           = Additive,
+    [Minus]          = Additive,
 
-    [Kind.Pipe]  = Bitwise,
-    [Kind.Caret] = Bitwise,
-    [Kind.Amp]   = Bitwise,
+    [Pipe]           = Bitwise,
+    [Caret]          = Bitwise,
+    [Amp]            = Bitwise,
 
-    [Kind.LessLess] = Shift,
-    [Kind.GreaterGreater] = Shift,
+    [LessLess]       = Shift,
+    [GreaterGreater] = Shift,
 
-    [Kind.Percent] = Multiplicative,
-    [Kind.Slash]   = Multiplicative,
-    [Kind.Star]    = Multiplicative,
+    [Percent]        = Multiplicative,
+    [Slash]          = Multiplicative,
+    [Star]           = Multiplicative,
 }
 
-
 // Note: all empty entries are also 0 (= BinaryOpcode.Multiply)
-const BinaryOpcode[128] BinOpTokenLookup = {
-    [Kind.Star]           = Multiply,
-    [Kind.Slash]          = Divide,
-    [Kind.Percent]        = Remainder,
-    [Kind.Plus]           = Add,
-    [Kind.Minus]          = Subtract,
-    [Kind.LessLess]       = ShiftLeft,
-    [Kind.GreaterGreater] = ShiftRight,
-    [Kind.Less]           = LessThan,
-    [Kind.Greater]        = GreaterThan,
-    [Kind.LessEqual]      = LessEqual,
-    [Kind.GreaterEqual]   = GreaterEqual,
-    [Kind.EqualEqual]     = Equal,
-    [Kind.ExclaimEqual]   = NotEqual,
-    [Kind.Amp]            = And,
-    [Kind.Caret]          = Xor,
-    [Kind.Pipe]           = Or,
-    [Kind.AmpAmp]         = LAnd,
-    [Kind.PipePipe]       = LOr,
-    [Kind.Equal]          = Assign,
-    [Kind.StarEqual]      = MulAssign,
-    [Kind.SlashEqual]     = DivAssign,
-    [Kind.PercentEqual]   = RemAssign,
-    [Kind.PlusEqual]      = AddAssign,
-    [Kind.MinusEqual]     = SubAssign,
-    [Kind.LessLessEqual]  = ShlAssign,
-    [Kind.GreaterGreaterEqual] = ShrAssign,
-    [Kind.AmpEqual]       = AndAssign,
-    [Kind.CaretEqual]     = XorAssign,
-    [Kind.PipeEqual]      = OrAssign,
+const BinaryOpcode[Kind] BinOpTokenLookup = {
+    [Star]           = Multiply,
+    [Slash]          = Divide,
+    [Percent]        = Remainder,
+    [Plus]           = Add,
+    [Minus]          = Subtract,
+    [LessLess]       = ShiftLeft,
+    [GreaterGreater] = ShiftRight,
+    [Less]           = LessThan,
+    [Greater]        = GreaterThan,
+    [LessEqual]      = LessEqual,
+    [GreaterEqual]   = GreaterEqual,
+    [EqualEqual]     = Equal,
+    [ExclaimEqual]   = NotEqual,
+    [Amp]            = And,
+    [Caret]          = Xor,
+    [Pipe]           = Or,
+    [AmpAmp]         = LAnd,
+    [PipePipe]       = LOr,
+    [Equal]          = Assign,
+    [StarEqual]      = MulAssign,
+    [SlashEqual]     = DivAssign,
+    [PercentEqual]   = RemAssign,
+    [PlusEqual]      = AddAssign,
+    [MinusEqual]     = SubAssign,
+    [LessLessEqual]  = ShlAssign,
+    [GreaterGreaterEqual] = ShrAssign,
+    [AmpEqual]       = AndAssign,
+    [CaretEqual]     = XorAssign,
+    [PipeEqual]      = OrAssign,
 }
 
 fn Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
@@ -121,26 +119,26 @@ fn Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
     while (1) {
         if (nextTokPrec < minPrec) return lhs;
 
-        if (p.tok.kind == Kind.Comma) return lhs;
+        if (p.tok.kind == Comma) return lhs;
 
         Token opToken = p.tok;
         p.consumeToken();
 
         Expr* ternaryMiddle = nil;
-        if (nextTokPrec == Prec.Conditional) {
-            if (p.tok.kind == Kind.Colon) {
+        if (nextTokPrec == Conditional) {
+            if (p.tok.kind == Colon) {
                 p.error("TODO conditional expr"); // or warning?
             } else {
                 ternaryMiddle = p.parseExpr();
             }
 
-            if (p.tok.kind == Kind.Colon) {
+            if (p.tok.kind == Colon) {
                 colonLoc = p.tok.loc;
                 p.consumeToken();
             }
         }
 
-        if (p.tok.kind == Kind.LBrace && opToken.kind == Kind.Equal) {
+        if (p.tok.kind == LBrace && opToken.kind == Equal) {
             Expr* rhs = p.parseInitList();
             BinaryOpcode opcode = Assign;
             return p.builder.actOnBinaryOperator(opToken.loc, opcode, lhs, rhs);
@@ -151,7 +149,7 @@ fn Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
         Prec thisPrec = nextTokPrec;
         nextTokPrec = BinOpPrecLookup[p.tok.kind];
 
-        bool isRightAssoc = (thisPrec == Prec.Conditional || thisPrec == Prec.Assignment);
+        bool isRightAssoc = (thisPrec == Conditional || thisPrec == Assignment);
 
         if (thisPrec < nextTokPrec || (thisPrec == nextTokPrec && isRightAssoc)) {
             rhs = p.parseRHSOfBinaryExpression(rhs, (Prec)(thisPrec + !isRightAssoc));
@@ -172,46 +170,46 @@ fn Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
     }
 }
 
-const u8[128] CastExprTokenLookup = {
-    //[Kind.Comma] = Prec.Comma,
-    [Kind.Identifier] = 1,
-    [Kind.IntegerLiteral] = 2,
-    [Kind.FloatLiteral] = 3,
-    [Kind.CharLiteral] = 4,
-    [Kind.StringLiteral] = 5,
-    [Kind.LParen] = 6,
-    [Kind.Star] = 7,
-    [Kind.Tilde] = 7,
-    [Kind.Plus] = 7,
-    [Kind.Minus] = 7,
-    [Kind.Exclaim] = 7,
-    [Kind.Amp] = 7,
-    [Kind.PlusPlus] = 7,
-    [Kind.MinusMinus] = 7,
-    [Kind.KW_cast] = 8,
-    [Kind.KW_elemsof] = 9,
-    [Kind.KW_enum_min] = 10,
-    [Kind.KW_enum_max] = 10,
-    [Kind.KW_false] = 11,
-    [Kind.KW_true] = 11,
-    [Kind.KW_nil] = 12,
-    [Kind.KW_offsetof] = 13,
-    [Kind.KW_sizeof] = 14,
-    [Kind.KW_to_container] = 15,
-    [Kind.KW_bool] = 16,
-    [Kind.KW_char] = 16,
-    [Kind.KW_i8] = 16,
-    [Kind.KW_i16] = 16,
-    [Kind.KW_i32] = 16,
-    [Kind.KW_i64] = 16,
-    [Kind.KW_u8] = 16,
-    [Kind.KW_u16] = 16,
-    [Kind.KW_u32] = 16,
-    [Kind.KW_u64] = 16,
-    [Kind.KW_isize] = 16,
-    [Kind.KW_usize] = 16,
-    [Kind.KW_f32] = 16,
-    [Kind.KW_f64] = 16,
+const u8[Kind] CastExprTokenLookup = {
+    //[Comma] = Prec.Comma,
+    [Identifier] = 1,
+    [IntegerLiteral] = 2,
+    [FloatLiteral] = 3,
+    [CharLiteral] = 4,
+    [StringLiteral] = 5,
+    [LParen] = 6,
+    [Star] = 7,
+    [Tilde] = 7,
+    [Plus] = 7,
+    [Minus] = 7,
+    [Exclaim] = 7,
+    [Amp] = 7,
+    [PlusPlus] = 7,
+    [MinusMinus] = 7,
+    [KW_cast] = 8,
+    [KW_elemsof] = 9,
+    [KW_enum_min] = 10,
+    [KW_enum_max] = 10,
+    [KW_false] = 11,
+    [KW_true] = 11,
+    [KW_nil] = 12,
+    [KW_offsetof] = 13,
+    [KW_sizeof] = 14,
+    [KW_to_container] = 15,
+    [KW_bool] = 16,
+    [KW_char] = 16,
+    [KW_i8] = 16,
+    [KW_i16] = 16,
+    [KW_i32] = 16,
+    [KW_i64] = 16,
+    [KW_u8] = 16,
+    [KW_u16] = 16,
+    [KW_u32] = 16,
+    [KW_u64] = 16,
+    [KW_isize] = 16,
+    [KW_usize] = 16,
+    [KW_f32] = 16,
+    [KW_f64] = 16,
 }
 
 // Note: tried lookup table, was slower..
@@ -256,7 +254,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
     case 1: // Identifier
         // Fast-path, keep checking multiple identifier.identifier. etc
         // parse them all in a single MemberExpr
-        if (p.peekToken(1) == Kind.Dot) {
+        if (p.peekToken(1) == Dot) {
             res = p.parsePureMemberExpr();
         } else {
             res = p.parseIdentifier().asExpr();
@@ -274,7 +272,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         if (val <= i32.max)
             kind = Int32;
         else
-        if (val <= u32.max && p.tok.getRadix() != Radix.Default)
+        if (val <= u32.max && p.tok.getRadix() != Default)
             kind = UInt32;
         else
         if (val <= i64.max)
@@ -302,7 +300,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
     case 7: // Star, Tilde, Plus, Minus, Exclaim, Amp, PlusPlus, MinusMinus
         SrcLoc loc = p.tok.loc;
         p.consumeToken();
-        bool is_addrof_op = (savedKind == Kind.Amp);
+        bool is_addrof_op = (savedKind == Amp);
         res = p.parseCastExpr(false, is_addrof_op);
         UnaryOpcode opcode = convertTokenToUnaryOpcode(savedKind);
         return p.builder.actOnUnaryOperator(loc, opcode, res);
@@ -313,9 +311,9 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         res = p.parseElemsof();
         break;
     case 10: // KW_enum_min, KW_enum_max
-        return p.parseEnumMinMax(savedKind == Kind.KW_enum_min);
+        return p.parseEnumMinMax(savedKind == KW_enum_min);
     case 11: // KW_false, KW_true
-        res = p.builder.actOnBooleanConstant(p.tok.loc, savedKind == Kind.KW_true);
+        res = p.builder.actOnBooleanConstant(p.tok.loc, savedKind == KW_true);
         p.consumeToken();
         break;
     case 12: // KW_nil
@@ -330,7 +328,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         res = p.parseToContainerExpr();
         break;
     case 16: // builtin type
-        if (p.peekToken(1) == Kind.Dot) {
+        if (p.peekToken(1) == Dot) {
             p.addImplicitImport(p.tok.name_idx, false);
             res = p.parsePureMemberExpr();
         } else {
@@ -354,7 +352,7 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
             SrcLoc loc = p.tok.loc;
             p.consumeToken();
             Expr* idx = p.parseExpr();
-            if (p.tok.kind  == Kind.Colon) {
+            if (p.tok.kind == Colon) {
                 // BitOffset <expr> : <expr>
                 SrcLoc colon_loc = p.tok.loc;
                 p.consumeToken();
@@ -362,7 +360,7 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
                 idx = p.builder.actOnBitOffsetExpr(colon_loc, idx, rhs);
             }
             u32 src_len = p.tok.loc + 1 - loc;
-            p.expectAndConsume(Kind.RSquare);
+            p.expectAndConsume(RSquare);
             lhs = p.builder.actOnArraySubscriptExpr(loc, src_len, lhs, idx);
             break;
         case Dot:
@@ -383,8 +381,8 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
                 TypeRefHolder ref.init();
                 p.parseTypeSpecifier(&ref);
 
-                p.expectAndConsume(Kind.Greater);
-                if (p.tok.kind != Kind.LParen) {
+                p.expectAndConsume(Greater);
+                if (p.tok.kind != LParen) {
                     p.error("missing argument list for template function call");
                 }
                 lhs = p.parseTemplateCallExpr(lhs, &ref);
@@ -403,27 +401,27 @@ fn Expr* Parser.parseCallExpr(Parser* p, Expr* func) {
 
     ExprList args.init();
 
-    while (p.tok.kind != Kind.RParen) {
+    while (p.tok.kind != RParen) {
 
-        if (p.tok.kind == Kind.Identifier && p.peekToken(1) == Kind.Colon) {
+        if (p.tok.kind == Identifier && p.peekToken(1) == Colon) {
             SrcLoc nameLoc = p.tok.loc;
             u32 name_idx = p.tok.name_idx;
             p.consumeToken();  // name
             p.consumeToken();  // ':'
-            Expr* inner = (p.tok.kind == Kind.LBrace) ? p.parseInitList() : p.parseExpr();
+            Expr* inner = (p.tok.kind == LBrace) ? p.parseInitList() : p.parseExpr();
             Expr* arg = p.builder.actOnNamedArgument(nameLoc, name_idx, inner);
             args.add(arg);
         } else
-        if (p.tok.kind == Kind.LBrace) {
+        if (p.tok.kind == LBrace) {
             args.add(p.parseInitList());
         } else {
             args.add(p.parseExpr());
         }
-        if (p.tok.kind != Kind.Comma) break;
+        if (p.tok.kind != Comma) break;
         p.consumeToken();
     }
     SrcLoc endLoc = p.tok.loc + 1;
-    p.expectAndConsume(Kind.RParen);
+    p.expectAndConsume(RParen);
     Expr* res = p.builder.actOnCallExpr(loc, endLoc, func, args.getExprs(), args.size());
     args.free();
     return res;
@@ -435,15 +433,15 @@ fn Expr* Parser.parseTemplateCallExpr(Parser* p, Expr* func, const TypeRefHolder
 
     ExprList args.init();
 
-    while (p.tok.kind != Kind.RParen) {
+    while (p.tok.kind != RParen) {
 
         args.add(p.parseExpr());
 
-        if (p.tok.kind != Kind.Comma) break;
+        if (p.tok.kind != Comma) break;
         p.consumeToken();
     }
     SrcLoc endLoc = p.tok.loc + 1;
-    p.expectAndConsume(Kind.RParen);
+    p.expectAndConsume(RParen);
     Expr* res = p.builder.actOnTemplateCallExpr(loc, endLoc, func, args.getExprs(), args.size(), ref);
     args.free();
     return res;
@@ -461,7 +459,7 @@ fn Expr* Parser.parseImpureMemberExpr(Parser* p, Expr* base) {
     u32 refcount = 1;
     p.consumeToken();
 
-    while (p.tok.kind == Kind.Dot) {
+    while (p.tok.kind == Dot) {
         p.consumeToken();
         p.expectIdentifier();
 
@@ -485,7 +483,7 @@ fn Expr* Parser.parsePureMemberExpr(Parser* p) {
     u32 refcount = 1;
     p.consumeToken();
 
-    while (p.tok.kind == Kind.Dot) {
+    while (p.tok.kind == Dot) {
         p.consumeToken();
         p.expectIdentifier();
 
@@ -513,7 +511,7 @@ fn Expr* Parser.parseStringLiteral(Parser* p) {
     u32 len = p.tok.text_len;
     p.consumeToken();
     // concatenate multi-strings
-    if (p.tok.kind == Kind.StringLiteral) {
+    if (p.tok.kind == StringLiteral) {
         char* tmp = p.multi_string;
         const char *p1 = p.pool.idx2str(idx);
         if (len > constants.MaxMultiString) {
@@ -521,7 +519,7 @@ fn Expr* Parser.parseStringLiteral(Parser* p) {
         }
         string.memcpy(tmp, p1, len);
 
-        while (p.tok.kind == Kind.StringLiteral) {
+        while (p.tok.kind == StringLiteral) {
             const char *p2 = p.pool.idx2str(p.tok.text_idx);
             usize len2 = p.tok.text_len;
             if (len + len2 > constants.MaxMultiString) {
@@ -541,11 +539,11 @@ fn Expr* Parser.parseParenExpr(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
-    if (p.parseAsCastType(0, Kind.RParen)) {
+    if (p.parseAsCastType(0, RParen)) {
         TypeRefHolder ref.init();
         p.parseTypeSpecifier(&ref);
-        p.expectAndConsume(Kind.RParen);
-        if (p.tok.kind == Kind.LBrace) {
+        p.expectAndConsume(RParen);
+        if (p.tok.kind == LBrace) {
             // compound literal
             p.error("Compound literals are not supported");
         } else {
@@ -559,22 +557,22 @@ fn Expr* Parser.parseParenExpr(Parser* p) {
 
     Expr* res = p.parseExpr();
     u32 src_len = p.tok.loc + 1 - loc;
-    p.expectAndConsume(Kind.RParen);
+    p.expectAndConsume(RParen);
 
     return p.builder.actOnParenExpr(loc, src_len, res);
 }
 
 fn bool Parser.isTemplateFunctionCall(Parser* p) {
-    assert(p.tok.kind == Kind.Less);
+    assert(p.tok.kind == Less);
     // check if tokens after < could be type, followed by >(
     // longest token line could be mod.type**
 
     // type must start with either a qualifier or an identifier
     //   or a builtin not followed by a dot.
     Kind kind = p.peekToken(1);
-    if (kind != Kind.Identifier) {
+    if (kind != Identifier) {
         if (kind.isQualifier()) return true;
-        return kind.isBuiltinTypeOrVoid() && (p.peekToken(2) != Kind.Dot);
+        return kind.isBuiltinTypeOrVoid() && (p.peekToken(2) != Dot);
     }
 
     u32 stars = 0;
@@ -589,7 +587,7 @@ fn bool Parser.isTemplateFunctionCall(Parser* p) {
         case Dot:
             break;
         case Greater:
-            return p.peekToken(ahead + 1) == Kind.LParen;
+            return p.peekToken(ahead + 1) == LParen;
         case KW_const:
         case KW_volatile:
             return true;
@@ -604,7 +602,7 @@ fn Expr* Parser.parseSizeof(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
-    p.expectAndConsume(Kind.LParen);
+    p.expectAndConsume(LParen);
 
     Expr* res = nil;
     if (p.parseAsType()) {
@@ -620,7 +618,7 @@ fn Expr* Parser.parseSizeof(Parser* p) {
     }
 
     u32 src_len = p.tok.loc + 1 - loc;
-    p.expectAndConsume(Kind.RParen);
+    p.expectAndConsume(RParen);
 
     return p.builder.actOnBuiltinExpr(loc, src_len, res, Sizeof);
 }
@@ -629,7 +627,7 @@ fn Expr* Parser.parseElemsof(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
-    p.expectAndConsume(Kind.LParen);
+    p.expectAndConsume(LParen);
 
     p.expectIdentifier();
 
@@ -638,7 +636,7 @@ fn Expr* Parser.parseElemsof(Parser* p) {
     res = p.parsePostfixExprSuffix(res, false);
 
     u32 src_len = p.tok.loc + 1 - loc;
-    p.expectAndConsume(Kind.RParen);
+    p.expectAndConsume(RParen);
     return p.builder.actOnBuiltinExpr(loc, src_len, res, Elemsof);
 }
 
@@ -660,14 +658,14 @@ fn Expr* Parser.parseInitValue(Parser* p, bool allow_designators) {
 
 fn Expr* Parser.parseInitList(Parser* p) {
     SrcLoc loc = p.tok.loc;
-    p.expectAndConsume(Kind.LBrace);
+    p.expectAndConsume(LBrace);
 
     ExprList values.init();
 
-    while (p.tok.kind != Kind.RBrace) {
+    while (p.tok.kind != RBrace) {
         Expr* e = p.parseInitValue(true);
         values.add(e);
-        if (p.tok.kind == Kind.Comma) {
+        if (p.tok.kind == Comma) {
             p.consumeToken();
         } else {
             break;
@@ -675,10 +673,10 @@ fn Expr* Parser.parseInitList(Parser* p) {
     }
 
     // check for missing comma between array inits. eg: {} {}
-    if (p.tok.kind == Kind.LBrace) p.expect(Kind.Comma); // always gives error
+    if (p.tok.kind == LBrace) p.expect(Comma); // always gives error
 
     SrcLoc endLoc = p.tok.loc + 1;
-    p.expectAndConsume(Kind.RBrace);
+    p.expectAndConsume(RBrace);
     Expr* e = p.builder.actOnInitList(loc, endLoc, values.getExprs(), values.size());
     values.free();
     return e;
@@ -691,7 +689,7 @@ fn Expr* Parser.parseFieldDesignator(Parser* p) {
     u32 field = p.tok.name_idx;
     p.consumeToken();
 
-    p.expectAndConsume(Kind.Equal);
+    p.expectAndConsume(Equal);
     Expr* value = p.parseInitValue(false);
 
     return p.builder.actOnFieldDesignatedInit(loc, field, value);
@@ -702,8 +700,8 @@ fn Expr* Parser.parseArrayDesignator(Parser* p) {
     p.consumeToken();   // '['
 
     Expr* designator = p.parseAssignmentExpression();
-    p.expectAndConsume(Kind.RSquare);
-    p.expectAndConsume(Kind.Equal);
+    p.expectAndConsume(RSquare);
+    p.expectAndConsume(Equal);
 
     Expr* initValue = p.parseInitValue(false);
     return p.builder.actOnArrayDesignatedInit(loc, designator, initValue);
@@ -713,17 +711,17 @@ fn Expr* Parser.parseExplicitCastExpr(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
-    p.expectAndConsume(Kind.Less);
+    p.expectAndConsume(Less);
     TypeRefHolder ref.init();
     p.parseTypeSpecifier(&ref);
-    p.expectAndConsume(Kind.Greater);
+    p.expectAndConsume(Greater);
 
     if (ref.isArray()) p.error("array types are not allowed here");
 
-    p.expectAndConsume(Kind.LParen);
+    p.expectAndConsume(LParen);
     Expr* expr = p.parseExpr();
     u32 src_len = p.tok.loc + 1 - loc;
-    p.expectAndConsume(Kind.RParen);
+    p.expectAndConsume(RParen);
 
     return p.builder.actOnExplicitCast(loc, src_len, &ref, expr, false);
 }
@@ -734,13 +732,13 @@ fn Expr* Parser.parseExplicitCastExpr(Parser* p) {
 fn Expr* Parser.parseEnumMinMax(Parser* p, bool is_min) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
-    p.expectAndConsume(Kind.LParen);
+    p.expectAndConsume(LParen);
 
     p.expectIdentifier();
     // TODO parse as TypeRefHolder
     Expr* expr = p.parseExpr();
     u32 src_len = p.tok.loc + 1 - loc;
-    p.expectAndConsume(Kind.RParen);
+    p.expectAndConsume(RParen);
 
     return p.builder.actOnBuiltinExpr(loc, src_len, expr,
                                       is_min ? BuiltinExprKind.EnumMin : BuiltinExprKind.EnumMax);
@@ -749,17 +747,17 @@ fn Expr* Parser.parseEnumMinMax(Parser* p, bool is_min) {
 fn Expr* Parser.parseOffsetOfExpr(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
-    p.expectAndConsume(Kind.LParen);
+    p.expectAndConsume(LParen);
 
     // TODO use TypeRefHolder (modified version to only allow identifiers)
     Expr* structExpr = p.parseFullIdentifier();
 
-    p.expectAndConsume(Kind.Comma);
+    p.expectAndConsume(Comma);
 
     Expr* member = p.parseFullIdentifier();
 
     u32 src_len = p.tok.loc + 1 - loc;
-    p.expectAndConsume(Kind.RParen);
+    p.expectAndConsume(RParen);
 
     return p.builder.actOnOffsetOfExpr(loc, src_len, structExpr, member);
 }
@@ -767,20 +765,20 @@ fn Expr* Parser.parseOffsetOfExpr(Parser* p) {
 fn Expr* Parser.parseToContainerExpr(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
-    p.expectAndConsume(Kind.LParen);
+    p.expectAndConsume(LParen);
 
     Expr* structExpr = p.parseFullIdentifier();
 
-    p.expectAndConsume(Kind.Comma);
+    p.expectAndConsume(Comma);
 
     Expr* member = p.parseFullIdentifier();
 
-    p.expectAndConsume(Kind.Comma);
+    p.expectAndConsume(Comma);
 
     Expr* pointer = p.parseExpr();
 
     u32 src_len = p.tok.loc + 1 - loc;
-    p.expectAndConsume(Kind.RParen);
+    p.expectAndConsume(RParen);
 
     return p.builder.actOnToContainerExpr(loc, src_len, structExpr, member, pointer);
 }
@@ -792,7 +790,7 @@ fn Expr* Parser.parseToContainerExpr(Parser* p) {
 fn Expr* Parser.parseFullIdentifier(Parser* p) {
     p.expectIdentifier();
 
-    if (p.peekToken(1) == Kind.Dot) {
+    if (p.peekToken(1) == Dot) {
         return p.parsePureMemberExpr();
     }
     return p.parseIdentifier().asExpr();
@@ -827,15 +825,15 @@ fn bool Parser.parseAsType(Parser* p) {
     // type must start with either a qualifier or an identifier
     //   or a builtin not followed by a dot.
     Kind kind = p.tok.kind;
-    if (kind != Kind.Identifier) {
+    if (kind != Identifier) {
         if (kind.isQualifier()) return true;
-        return kind.isBuiltinTypeOrVoid() && (p.peekToken(1) != Kind.Dot);
+        return kind.isBuiltinTypeOrVoid() && (p.peekToken(1) != Dot);
     }
     Token t2 = p.tok;
     // parse potential member expression
     u32 ahead = 1;
-    while (p.peekToken(ahead) == Kind.Dot) {
-        if (p.peekToken2(ahead + 1, &t2) != Kind.Identifier)
+    while (p.peekToken(ahead) == Dot) {
+        if (p.peekToken2(ahead + 1, &t2) != Identifier)
             return false;
         ahead += 2;
     }
@@ -899,10 +897,10 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
         }
         // must have an identifier or a member expression
         // but still potentially ambiguous.
-        if (kind != Kind.Identifier)
+        if (kind != Identifier)
             return 0;
-        while (p.peekToken(ahead) == Kind.Dot) {
-            if (p.peekToken2(ahead + 1, &t2) != Kind.Identifier)
+        while (p.peekToken(ahead) == Dot) {
+            if (p.peekToken2(ahead + 1, &t2) != Identifier)
                 return 0;
             ahead += 2;
         }
@@ -918,7 +916,7 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
             ahead++;
             break;
         case RParen:
-            if (close_tok != Kind.RParen)
+            if (close_tok != RParen)
                 return 0;
             ahead++;
             if (!ambiguous) return ahead;
@@ -968,13 +966,13 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
             break;
         case Less:
             // parametric type X<type>
-            ahead = p.parseAsCastType(ahead, Kind.Greater);
+            ahead = p.parseAsCastType(ahead, Greater);
             if (!ahead)
                 return 0;
             stars = 0;
             break;
         case Greater:
-            if (close_tok != Kind.Greater)
+            if (close_tok != Greater)
                 return 0;
             ahead++;
             return ahead;
