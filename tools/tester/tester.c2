@@ -143,11 +143,11 @@ fn u32 online_cpus() {
 fn void handle_file(TestQueue* queue, const char* filename) {
     TestKind kind;
     if (endsWith(filename, ".c2")) {
-        kind = TestKind.C2;
+        kind = C2;
     } else if (endsWith(filename, ".c2t")) {
-        kind = TestKind.C2T;
+        kind = C2T;
     } else if (endsWith(filename, ".c2a")) {
-        kind = TestKind.C2A;
+        kind = C2A;
     } else {
         return;
     }
