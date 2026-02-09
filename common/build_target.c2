@@ -274,7 +274,7 @@ public fn BackEndKind Target.getBackEnd(const Target* t) {
 }
 
 public fn bool Target.hasBackEnd(const Target* t) {
-    return t.backend != BackEndKind.None;
+    return t.backend != None;
 }
 
 public fn void Target.setBackEnd(Target* t, BackEndKind kind) {

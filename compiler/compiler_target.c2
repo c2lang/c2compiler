@@ -38,29 +38,29 @@ fn void getNativeTarget(Info* info) {
         exit(EXIT_FAILURE);
         break;
     case Linux:
-        info.vendor = Vendor.Unknown; // hardcoded
-        info.abi = Abi.GNU;           // hardcoded
+        info.vendor = Unknown;  // hardcoded
+        info.abi = GNU;         // hardcoded
         break;
     case Darwin:
-        info.vendor = Vendor.Apple; // hardcoded
-        info.abi = Abi.MACHO;       // hardcoded
+        info.vendor = Apple;    // hardcoded
+        info.abi = MACHO;       // hardcoded
         break;
     case Cygwin:
-        info.vendor = Vendor.Unknown;
-        info.abi = Abi.WIN32;
+        info.vendor = Unknown;
+        info.abi = WIN32;
         break;
     case FreeBSD:
-        info.vendor = Vendor.Unknown;
-        info.abi = Abi.BSD;
+        info.vendor = Unknown;
+        info.abi = BSD;
         break;
     case OpenBSD:
-        info.vendor = Vendor.Unknown;
-        info.abi = Abi.BSD;
+        info.vendor = Unknown;
+        info.abi = BSD;
         break;
     }
 
     info.arch = str2arch(un.machine);
-    if (info.arch == Arch.Unknown) {
+    if (info.arch == Unknown) {
         console.error("unsupported arch: '%s'", un.machine);
         exit(EXIT_FAILURE);
     }
@@ -84,17 +84,17 @@ fn bool fromString(Info* info, const char* triple) {
         return false;
 
     info.arch = str2arch(arch_str);
-    if (info.arch == Arch.Unknown) {
+    if (info.arch == Unknown) {
         console.error("unsupported arch: %s", arch_str);
         return false;
     }
     info.vendor = str2vendor(vendor_str);
     info.sys = str2sys(sys_str);
-    if (info.sys == System.Unknown) {
+    if (info.sys == Unknown) {
         //fprintf(stderr, "unknown vendor: %s\n", sys_str);
     }
     info.abi = str2abi(abi_str);
-    if (info.abi == Abi.Unknown) {
+    if (info.abi == Unknown) {
         console.error("unsupported ABI: %s", abi_str);
         return false;
     }

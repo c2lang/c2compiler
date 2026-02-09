@@ -43,7 +43,7 @@ public type Kind enum u8 {
     ExternalSourceLib,
 }
 
-const char*[] kind_names = {
+const char*[Kind] kind_names = {
     "internal",
     "image",
     "executable",
@@ -54,8 +54,6 @@ const char*[] kind_names = {
     "external dynamic library",
     "external source library",
 }
-
-static_assert(elemsof(Kind), elemsof(kind_names));
 
 public type Component struct @(opaque) {
     u32 name_idx;   // into auxPool
