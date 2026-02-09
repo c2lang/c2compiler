@@ -145,18 +145,18 @@ type Compiler struct {
 fn component.Kind target2compKind(build_target.Kind k) {
     switch (k) {
     case Image:
-        return component.Kind.Image;
+        return Image;
     case Executable:
-        return component.Kind.Executable;
+        return Executable;
     case StaticLibrary:
-        return component.Kind.StaticLibrary;
+        return StaticLibrary;
     case DynamicLibrary:
-        return component.Kind.DynamicLibrary;
+        return DynamicLibrary;
     case SourceLibrary:
-        return component.Kind.SourceLibrary;
+        return SourceLibrary;
     }
 
-    return component.Kind.Executable;
+    return Executable;
 }
 
 const char[] C2_trace @(embed="generator/c2_trace.c2");
@@ -207,7 +207,7 @@ fn void Compiler.build(Compiler* c,
 
     c.allmodules.init(false, 128);
     c.components.init();
-    c.is_image = target.getKind() == build_target.Kind.Image;
+    c.is_image = target.getKind() == Image;
     c.libdirs.init(c.auxPool);
 
     const char* target_str = opts.target_triple;

@@ -1326,7 +1326,7 @@ public fn void generate(string_pool.Pool* astPool,
     // re-mark used globals from entry points recursively
     component.Component* mainComp = comps.getLast();
 
-    if (gen.target_kind != build_target.Kind.Executable) {
+    if (gen.target_kind != Executable) {
         gen.generateC2TypesHeader();
     }
 

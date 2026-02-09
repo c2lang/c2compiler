@@ -293,7 +293,7 @@ fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirna
                 Component* comp = component.create(c.context,
                                                    c.auxPool,
                                                    name_idx,
-                                                   Kind.ExternalStaticLib); // doesn't matter
+                                                   ExternalStaticLib); // doesn't matter
                 string_list.List mods.init(c.auxPool);   // need to be astPool, but here it doesn't matter
                 manifest.parse(c.sm, file_id, c.astPool, c.auxPool, comp, &mods);
                 c.components.add(comp);

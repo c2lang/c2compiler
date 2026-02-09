@@ -24,7 +24,6 @@ import file_utils;
 import module_list;
 import string_buffer;
 import string_list;
-import target_info;
 
 import string;
 import stdio;
@@ -46,8 +45,7 @@ fn void Generator.createMakefile(Generator* gen,
     const char* ldflags2 = "";
     const char* asmflags = "";
 
-    if (gen.targetInfo.sys == target_info.System.FreeBSD
-    ||  gen.targetInfo.sys == target_info.System.OpenBSD) {
+    if (gen.targetInfo.sys == FreeBSD || gen.targetInfo.sys == OpenBSD) {
         cc = "clang";
     }
     if (gen.build_info) {
@@ -152,8 +150,7 @@ fn void Generator.createMakefile(Generator* gen,
             if (!c.isExternal()) continue;
             const char* linkname = c.getLinkName();
 
-            if (gen.targetInfo.sys == target_info.System.FreeBSD
-            ||  gen.targetInfo.sys == target_info.System.OpenBSD) {
+            if (gen.targetInfo.sys == FreeBSD || gen.targetInfo.sys == OpenBSD) {
                 // ignore "dl" library on BSD systems: libc handles dlopen etc.
                 if (linkname && !string.strcmp(linkname, "dl")) continue;
             }
@@ -199,7 +196,7 @@ fn void Generator.createMakefile(Generator* gen,
         break;
     case DynamicLibrary:
         out.add("CFLAGS+=-fPIC\n");
-        if (gen.targetInfo.sys == target_info.System.Darwin) {
+        if (gen.targetInfo.sys == Darwin) {
             stdio.sprintf(target_name, "lib%s.dylib", gen.target);
         } else {
             stdio.sprintf(target_name, "lib%s.so", gen.target);
@@ -208,7 +205,7 @@ fn void Generator.createMakefile(Generator* gen,
 
         out.print("../%s: $(objects) $(headers)\n", target_name);
 
-        if (gen.targetInfo.sys == target_info.System.Darwin) {
+        if (gen.targetInfo.sys == Darwin) {
             out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o $$(dirname $$(pwd))/%s $(LDFLAGS2)\n", target_name);
         } else {
             out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n",
@@ -232,7 +229,7 @@ fn void Generator.createMakefile(Generator* gen,
 }
 
 fn void Generator.createExportsFile(Generator* gen, const char* output_dir, component.Component* mainComp) {
-    if (gen.target_kind != build_target.Kind.DynamicLibrary) return;
+    if (gen.target_kind != DynamicLibrary) return;
 
     string_buffer.Buf* out = gen.out;
     out.clear();
