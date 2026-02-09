@@ -119,7 +119,7 @@ public fn void Db.init(Db* db,
     db.errorMsg = string_buffer.create(128, false, 2);
     db.recipe = string_buffer.create(4096, false, 2);
 
-    if (kind == TestKind.C2) { // only for single file test
+    if (kind == C2) { // only for single file test
         file_utils.make_path(db.current_file, elemsof(db.current_file), cwd, filename);
     }
 }
@@ -363,11 +363,11 @@ fn bool Db.parseExpect(Db* db) {
     }
     db.cur++;
     const char* modeStr = db.readWord();
-    ExpectMode em = ExpectMode.ATLEAST;
+    ExpectMode em = ATLEAST;
     if (same_string(modeStr, "atleast")) {
-        em = ExpectMode.ATLEAST;
+        em = ATLEAST;
     } else if (same_string(modeStr, "complete")) {
-        em = ExpectMode.COMPLETE;
+        em = COMPLETE;
     } else {
         db.errorMsg.print("unknown mode: %s", modeStr);
         return false;
@@ -413,14 +413,14 @@ fn bool Db.parseKeyword(Db* db) {
         if (!db.runSkipped) db.skip = true;
         return true;
     case "recipe":
-        if (db.kind != TestKind.C2T) {
+        if (db.kind != C2T) {
             db.errorMsg.add("keyword 'recipe' only allowed in .c2t files");
             return false;
         }
         db.cur += 7;
         return db.parseRecipe();
     case "warnings":
-        if (db.kind != TestKind.C2) {
+        if (db.kind != C2) {
             db.errorMsg.add("keyword 'warnings' only allowed in .c2 files");
             return false;
         }
@@ -428,14 +428,14 @@ fn bool Db.parseKeyword(Db* db) {
         db.skipLine();
         break;
     case "file":
-        if (db.kind == TestKind.C2) {
+        if (db.kind == C2) {
             db.errorMsg.add("keyword 'file' only allowed in .c2t/.c2a files");
             return false;
         }
         db.cur += 4;
         return db.parseFile();
     case "expect":
-        if (db.kind != TestKind.C2T && db.kind != TestKind.C2A) {
+        if (db.kind != C2T && db.kind != C2A) {
             db.errorMsg.add("keyword 'expect' only allowed in .c2t/.c2a files");
             return false;
         }
@@ -489,15 +489,15 @@ fn void Db.parseTags(Db* db, const char* start, const char* end) {
     if (!cp) return;
     cp += 4;    // skip "// @";
 
-    Type kind = Type.ERROR;
+    Type kind = ERROR;
     if (strstart(cp, "error{", &cp)) {
-        kind = Type.ERROR;
+        kind = ERROR;
     } else
     if (strstart(cp, "warning{", &cp)) {
-        kind = Type.WARNING;
+        kind = WARNING;
     } else
     if (strstart(cp, "note{", &cp)) {
-        kind = Type.NOTE;
+        kind = NOTE;
     } else {
         db.error("unknown tag, expect note/warning/error");
         return;
@@ -542,7 +542,7 @@ fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
     if (cp == end) return;
 
     // TODO if .c2t/.cta, only accept tags or comments
-    if (db.kind != TestKind.C2 && !strstart(cp, "// ", nil)) {
+    if (db.kind != C2 && !strstart(cp, "// ", nil)) {
         db.error("unexpected line");
         return;
     }
@@ -554,14 +554,14 @@ fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
                 return;
             db.recipe.print("    $warnings %s\n", name);
         } else if (strstart(cp, "target{", &cp)) {
-            if (db.kind != TestKind.C2) {
+            if (db.kind != C2) {
                 db.error("keyword 'target' only allowed in .c2 files");
                 return;
             }
             if (!db.readUntil(db.target, elemsof(db.target), cp, '}', "target"))
                 return;
         } else if (strstart(cp, "file{", &cp)) {
-            if (db.kind == TestKind.C2) {
+            if (db.kind == C2) {
                 db.error("invalid @file tag in .c2 test");
                 return;
             }
@@ -573,21 +573,21 @@ fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
             db.recipe.print("  %s\n", db.current_file);
             db.file_start = end + 1;
             db.line_offset = db.line_nr;
-            db.mode = Mode.Infile;
+            db.mode = Infile;
         } else if (strstart(cp, "expect{", &cp)) {
-            if (db.kind != TestKind.C2T) {
+            if (db.kind != C2T) {
                 db.error("invalid @expect tag in .c2/.cta test");
                 return;
             }
             char[128] name;
             if (!db.readUntil(name, elemsof(name), cp, '}', "filename"))
                 return;
-            db.currentExpect = expect_file.create(name, ExpectMode.ATLEAST);
+            db.currentExpect = expect_file.create(name, ATLEAST);
             // TODO check for name duplicates
             db.addExpected(db.currentExpect);
-            db.mode = Mode.InExpectFile;
+            db.mode = InExpectFile;
         } else if (strstart(cp, "backend c", &cp)) {
-            if (db.kind != TestKind.C2T) {
+            if (db.kind != C2T) {
                 db.error("invalid @backend c tag in .c2/c2a test");
                 return;
             }
@@ -612,7 +612,7 @@ fn void Db.parseLineFile(Db* db, const char* start, const char* end) {
         const char* file_end = start;
         db.writeFile(db.current_file, db.file_start, (u32)(file_end - db.file_start));
         db.file_start = nil;
-        db.mode = Mode.Outside;
+        db.mode = Outside;
         db.parseLine(start, end);
         return;
     }
@@ -624,7 +624,7 @@ fn void Db.parseLineExpect(Db* db, const char* start, const char* end) {
     // if line starts with '// @' stop InExpectFile mode
     if (strstart(start, "// @", nil)) {
         db.currentExpect = nil;
-        db.mode = Mode.Outside;
+        db.mode = Outside;
         db.parseLine(start, end);
         return;
     }

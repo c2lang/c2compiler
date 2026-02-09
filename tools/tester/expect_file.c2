@@ -108,7 +108,7 @@ fn bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, cons
 #endif
 
     if (!f.expectedLine) {
-        if (f.mode == ExpectMode.COMPLETE) {
+        if (f.mode == COMPLETE) {
             color_print2(f.output, colError, "  in file %s: line %d\n     unexpected line '%s'", f.filename, line_nr, line);
             return false;
         } else {
@@ -122,7 +122,7 @@ fn bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, cons
         f.expIndex++;
         f.setExpected();
     } else {
-        if (f.mode == ExpectMode.COMPLETE || f.consecutive) {
+        if (f.mode == COMPLETE || f.consecutive) {
             color_print2(f.output, colError, "  in file %s: line %d\n  expected '%s'\n       got '%s'", f.filename, line_nr, f.expectedLine, line);
             return false;
         }
