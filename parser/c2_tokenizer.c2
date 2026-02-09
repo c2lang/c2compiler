@@ -326,7 +326,7 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
                     continue;
                 }
                 if (t.raw_mode) {
-                    result.kind = Kind.Invalid;
+                    result.kind = Invalid;
                     result.len = (u16)len;
                     string.memcpy(result.invalid, t.cur, len);
                     t.cur += len;
@@ -345,8 +345,8 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.lex_identifier(result);
             if (result.name_idx <= t.kwinfo.max_index) {
                 Kind k = t.kwinfo.indexes[result.name_idx];
-                assert(k != Kind.None);
-                if (k == Kind.Error) {
+                assert(k != None);
+                if (k == Error) {
                     result.reserved = true;
                     return;
                 }
@@ -357,24 +357,24 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.lex_number(result);
             return;
         case LPAREN:
-            result.kind = Kind.LParen;
+            result.kind = LParen;
             t.cur++;
             return;
         case RPAREN:
-            result.kind = Kind.RParen;
+            result.kind = RParen;
             t.cur++;
             return;
         case LSQUARE:
-            result.kind = Kind.LSquare;
+            result.kind = LSquare;
             t.cur++;
             return;
         case RSQUARE:
-            result.kind = Kind.RSquare;
+            result.kind = RSquare;
             t.cur++;
             return;
         case NEWLINE:
             if (t.stop_at_eol) {
-                result.kind = Kind.Eof;
+                result.kind = Eof;
                 result.len = 0;
                 return;
             }
@@ -384,11 +384,11 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
         case EXCLAIM:
             t.cur++;
             if (*t.cur == '=') {
-                result.kind = Kind.ExclaimEqual;
+                result.kind = ExclaimEqual;
                 result.len = 2;
                 t.cur++;
             } else {
-                result.kind = Kind.Exclaim;
+                result.kind = Exclaim;
             }
             return;
         case BQUOTE:
@@ -411,40 +411,40 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
         case STAR:
             t.cur++;
             if (*t.cur == '=') {
-                result.kind = Kind.StarEqual;
+                result.kind = StarEqual;
                 result.len = 2;
                 t.cur++;
             } else {
-                result.kind = Kind.Star;
+                result.kind = Star;
             }
             return;
         case PLUS:
             t.cur++;
             if (*t.cur == '+') {
                 t.cur++;
-                result.kind = Kind.PlusPlus;
+                result.kind = PlusPlus;
                 result.len = 2;
                 return;
             }
             if (*t.cur == '=') {
                 t.cur++;
-                result.kind = Kind.PlusEqual;
+                result.kind = PlusEqual;
                 result.len = 2;
                 return;
             }
-            result.kind = Kind.Plus;
+            result.kind = Plus;
             return;
         case MINUS:
             t.cur++;
             if (*t.cur == '-') {
                 t.cur++;
-                result.kind = Kind.MinusMinus;
+                result.kind = MinusMinus;
                 result.len = 2;
                 return;
             }
             if (*t.cur == '=') {
                 t.cur++;
-                result.kind = Kind.MinusEqual;
+                result.kind = MinusEqual;
                 result.len = 2;
                 return;
             }
@@ -453,10 +453,10 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
                 t.error(result, "use the dot operators instead of '->'");
                 return;
             }
-            result.kind = Kind.Minus;
+            result.kind = Minus;
             return;
         case COMMA:
-            result.kind = Kind.Comma;
+            result.kind = Comma;
             t.cur++;
             return;
         case DOT:
@@ -464,32 +464,32 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             if (t.cur[0] == '.') {
                 if (t.cur[1] == '.') {
                     t.cur += 2;
-                    result.kind = Kind.Ellipsis;
+                    result.kind = Ellipsis;
                     result.len = 3;
                 } else {
-                    result.kind = Kind.Dot;
+                    result.kind = Dot;
                 }
             } else if (isdigit(t.cur[0])) {
                 t.cur--;
                 t.lex_number(result);
             } else {
-                result.kind = Kind.Dot;
+                result.kind = Dot;
             }
             return;
         case PERCENT:
             t.cur++;
             if (*t.cur == '=') {
-                result.kind = Kind.PercentEqual;
+                result.kind = PercentEqual;
                 result.len = 2;
                 t.cur++;
             } else {
-                result.kind = Kind.Percent;
+                result.kind = Percent;
             }
             return;
         case SLASH:
             t.cur++;
             if (*t.cur == '=') {
-                result.kind = Kind.SlashEqual;
+                result.kind = SlashEqual;
                 result.len = 2;
                 t.cur++;
                 return;
@@ -502,21 +502,21 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
                 if (t.lex_block_comment(result)) return;
                 continue;
             }
-            result.kind = Kind.Slash;
+            result.kind = Slash;
             return;
         case COLON:
-            result.kind = Kind.Colon;
+            result.kind = Colon;
             t.cur++;
             return;
         case SEMI_COLON:
-            result.kind = Kind.Semicolon;
+            result.kind = Semicolon;
             t.cur++;
             return;
         case LESS:
             t.cur++;
             if (*t.cur == '=') {
                 t.cur++;
-                result.kind = Kind.LessEqual;
+                result.kind = LessEqual;
                 result.len = 2;
                 return;
             }
@@ -524,31 +524,31 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
                 t.cur++;
                 if (*t.cur == '=') {
                     t.cur++;
-                    result.kind = Kind.LessLessEqual;
+                    result.kind = LessLessEqual;
                     result.len = 3;
                 } else {
-                    result.kind = Kind.LessLess;
+                    result.kind = LessLess;
                     result.len = 2;
                 }
                 return;
             }
-            result.kind = Kind.Less;
+            result.kind = Less;
             return;
         case EQUAL:
             t.cur++;
             if (*t.cur == '=') {
-                result.kind = Kind.EqualEqual;
+                result.kind = EqualEqual;
                 result.len = 2;
                 t.cur++;
             } else {
-                result.kind = Kind.Equal;
+                result.kind = Equal;
             }
             return;
         case GREATER:
             t.cur++;
             if (*t.cur == '=') {
                 t.cur++;
-                result.kind = Kind.GreaterEqual;
+                result.kind = GreaterEqual;
                 result.len = 2;
                 return;
             }
@@ -556,76 +556,76 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
                 t.cur++;
                 if (*t.cur == '=') {
                     t.cur++;
-                    result.kind = Kind.GreaterGreaterEqual;
+                    result.kind = GreaterGreaterEqual;
                     result.len = 3;
                 } else {
-                    result.kind = Kind.GreaterGreater;
+                    result.kind = GreaterGreater;
                     result.len = 2;
                 }
                 return;
             }
-            result.kind = Kind.Greater;
+            result.kind = Greater;
             return;
         case QUESTION:
-            result.kind = Kind.Question;
+            result.kind = Question;
             t.cur++;
             return;
         case AT:
-            result.kind = Kind.At;
+            result.kind = At;
             t.cur++;
             return;
         case AMP:
             t.cur++;
             if (*t.cur == '&') {
-                result.kind = Kind.AmpAmp;
+                result.kind = AmpAmp;
                 result.len = 2;
                 t.cur++;
                 return;
             }
             if (*t.cur == '=') {
-                result.kind = Kind.AmpEqual;
+                result.kind = AmpEqual;
                 result.len = 2;
                 t.cur++;
                 return;
             }
-            result.kind = Kind.Amp;
+            result.kind = Amp;
             return;
         case CARET:
             t.cur++;
             if (*t.cur == '=') {
                 t.cur++;
-                result.kind = Kind.CaretEqual;
+                result.kind = CaretEqual;
                 result.len = 2;
                 return;
             }
-            result.kind = Kind.Caret;
+            result.kind = Caret;
             return;
         case LBRACE:
-            result.kind = Kind.LBrace;
+            result.kind = LBrace;
             t.cur++;
             return;
         case RBRACE:
-            result.kind = Kind.RBrace;
+            result.kind = RBrace;
             t.cur++;
             return;
         case PIPE:
             t.cur++;
             if (*t.cur == '|') {
-                result.kind = Kind.PipePipe;
+                result.kind = PipePipe;
                 result.len = 2;
                 t.cur++;
                 return;
             }
             if (*t.cur == '=') {
-                result.kind = Kind.PipeEqual;
+                result.kind = PipeEqual;
                 result.len = 2;
                 t.cur++;
                 return;
             }
-            result.kind = Kind.Pipe;
+            result.kind = Pipe;
             return;
         case TILDE:
-            result.kind = Kind.Tilde;
+            result.kind = Tilde;
             t.cur++;
             return;
         case CR:
@@ -637,7 +637,7 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
                 return;
             }
             if (t.stop_at_eol) {
-                result.kind = Kind.Eof;
+                result.kind = Eof;
                 result.len = 0;
                 return;
             }
@@ -651,7 +651,7 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
                 t.error(result, "un-terminated %s", top.kind.str());
                 return;
             }
-            result.kind = Kind.Eof;
+            result.kind = Eof;
             result.len = 0;
             result.done = true;
             return;
@@ -659,7 +659,7 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
         // should not come here without goto
 invalid_char:
         if (t.raw_mode) {
-            result.kind = Kind.Invalid;
+            result.kind = Invalid;
             result.invalid[0] = *t.cur;
             t.cur += 1;
             return;
@@ -679,7 +679,7 @@ fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf
     va_end(args);
 
     result.loc = t.loc_start + (SrcLoc)(t.cur - t.input_start);
-    result.kind = Kind.Error;
+    result.kind = Error;
     result.error_msg = t.error_msg;
     result.done = true;
     if (t.on_error) t.on_error(t.on_error_arg, FatalError, result.loc, t.error_msg);
@@ -714,7 +714,7 @@ fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const ch
 }
 
 fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
-    result.kind = Kind.Identifier;
+    result.kind = Identifier;
     const char* start = t.cur;
     const char* end = t.cur + 1;
     while (Identifier_char[(u8)(*end)]) end++;
@@ -760,7 +760,7 @@ fn void Tokenizer.lex_number_error(Tokenizer* t, Token* result, const char *p, c
 }
 
 fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
-    result.kind = Kind.IntegerLiteral;
+    result.kind = IntegerLiteral;
     const char* start = t.cur;
     const char* p = start;
     u64 value = 0;
@@ -890,7 +890,7 @@ fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* st
     const char* p = start;
     usize pos = 0;
     u8 seen_dot = 0;
-    result.kind = Kind.FloatLiteral;
+    result.kind = FloatLiteral;
     result.float_value = 0;
     for (;;) {
         if (!isdigit(*p)) {
@@ -945,7 +945,7 @@ fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char
     const char* p = start;
     usize pos = 0;
     u8 seen_dot = 0;
-    result.kind = Kind.FloatLiteral;
+    result.kind = FloatLiteral;
     result.float_value = 0;
     if (*p == '0' && (p[1] == 'x' || p[1] == 'X')) {
         buf[pos++] = *p++;
@@ -1111,7 +1111,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype
 }
 
 fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
-    result.kind = Kind.CharLiteral;
+    result.kind = CharLiteral;
     const char *start = t.cur;
 
     t.cur++; // skip single quote
@@ -1170,7 +1170,7 @@ fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
 }
 
 fn void Tokenizer.lex_raw_string_literal(Tokenizer* t, Token* result) {
-    result.kind = Kind.StringLiteral;
+    result.kind = StringLiteral;
     result.raw = 1;
     const char* start = t.cur;
 
@@ -1286,7 +1286,7 @@ fn void Tokenizer.lex_raw_string_literal(Tokenizer* t, Token* result) {
 }
 
 fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
-    result.kind = Kind.StringLiteral;
+    result.kind = StringLiteral;
     const char* start = t.cur;
 
     t.buf.clear();
@@ -1352,7 +1352,7 @@ fn bool Tokenizer.lex_line_comment(Tokenizer* t, Token* result) {
     t.cur += len;
 
     if (t.raw_mode) {
-        result.kind = Kind.LineComment;
+        result.kind = LineComment;
         result.text_len = len;
         result.len = (u16)(len + 2);
         result.text_idx = t.pool.add(start, len, false);
@@ -1380,7 +1380,7 @@ fn bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
                 t.cur += 2;
                 if (t.raw_mode) {
                     usize len = (usize)(t.cur - start - 2);
-                    result.kind = Kind.BlockComment;
+                    result.kind = BlockComment;
                     result.len = (u16)(len + 4);
                     result.text_len = (u32)len;
                     result.text_idx = t.pool.add(start, len, false);
@@ -1415,7 +1415,7 @@ fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
     t.cur = skip_blanks(t.cur + 1);
 
     Kind kind;
-    for (kind = Kind.Feat_if; kind < Kind.Invalid; kind++) {
+    for (kind = Feat_if; kind < Invalid; kind++) {
         const char *word = kind.str() + 1;
         if (compare_word(t.cur, word)) {
             t.cur += string.strlen(word);
@@ -1425,7 +1425,7 @@ fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
     result.kind = kind;
 
     if (t.raw_mode) {
-        if (kind == Kind.Invalid) {
+        if (kind == Invalid) {
             result.invalid[0] = '#';
             t.cur = start + 1;
         }
@@ -1471,11 +1471,11 @@ fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, Kind kind) {
     // parse pptokens instead of raw text
     string_buffer.Buf msg.init(t.error_msg, elemsof(t.error_msg), false, false, 0);
     SrcLoc last_loc = 0;
-    while (t.lex_preproc(&tok) != Kind.Eof) {
+    while (t.lex_preproc(&tok) != Eof) {
         // replace blanks with a single space
         if (last_loc && last_loc < tok.loc) msg.add1(' ');
         // copy string text or token source
-        if (tok.kind == Kind.StringLiteral) {
+        if (tok.kind == StringLiteral) {
             msg.add2(t.pool.idx2str(tok.text_idx), tok.text_len);
         } else {
             msg.add2(t.input_start + (tok.loc - t.loc_start), tok.len);
@@ -1484,9 +1484,9 @@ fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, Kind kind) {
     }
     msg.size();  // ensure null terminator
 
-    if (kind == Kind.Feat_error) {
+    if (kind == Feat_error) {
         const char* start = t.input_start + (result.loc - t.loc_start);
-        result.kind = Kind.Error;
+        result.kind = Error;
         result.done = true;
         result.len = (u16)(t.cur - start);
         result.error_msg = t.error_msg;
@@ -1535,18 +1535,18 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
                 const char *id = t.pool.idx2str(result.name_idx);
                 if (!string.strcmp(id, "defined")) {
                     bool has_paren = false;
-                    if (t.lex_preproc(result) == Kind.LParen) {
+                    if (t.lex_preproc(result) == LParen) {
                         has_paren = true;
                         t.lex_preproc(result);
                     }
-                    if (result.kind == Kind.Identifier) {
+                    if (result.kind == Identifier) {
                         id = t.pool.idx2str(result.name_idx);
                     } else {
                         t.error(result, "missing identifier after 'defined'");
                         return 0;
                     }
                     if (has_paren) {
-                        if (t.lex_preproc(result) != Kind.RParen)
+                        if (t.lex_preproc(result) != RParen)
                             goto syntax_error;
                     }
                     val = t.features.contains(id);
@@ -1679,11 +1679,11 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
             sp--;
             switch (sp.op) {
             case LParen:
-                if (op != Kind.RParen) {
+                if (op != RParen) {
                     t.error(result, "missing parenthesis in preprocessor expression");
                     return 0;
                 }
-                op = Kind.None;
+                op = None;
                 goto unary;
             case Star:
                 val = sp.val * val; /* XXX: potential overflow */
@@ -1741,7 +1741,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
                 val = sp.val || val;
                 continue;
             case Colon:
-                if (sp > stack && sp[-1].op == Kind.Question) {
+                if (sp > stack && sp[-1].op == Question) {
                     sp--;
                     val = sp.val ? sp[1].val : val;
                     continue;
@@ -1752,7 +1752,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
                 return 0;
             }
         }
-        if (op == Kind.Eof)
+        if (op == Eof)
             break;
         if (sp >= stack + MAX_LEVEL) {
         too_deep:
@@ -1775,7 +1775,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
 fn bool Tokenizer.handle_if(Tokenizer* t, Token* result, Kind kind) {
     Feature* top = &t.feature_stack[t.feature_count];
 
-    if (kind == Kind.Feat_if || kind == Kind.Feat_ifdef || kind == Kind.Feat_ifndef) {
+    if (kind == Feat_if || kind == Feat_ifdef || kind == Feat_ifndef) {
         if (t.feature_count >= constants.MaxFeatureDepth) {
             t.error(result, "feature nesting too much");
             return true;
@@ -1806,18 +1806,18 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result, Kind kind) {
         }
     }
 
-    if (kind == Kind.Feat_if || kind == Kind.Feat_elif) {
+    if (kind == Feat_if || kind == Feat_elif) {
         if (!t.parse_ppexpr(result))
             top.skipping = 1;
     } else {
-        /* handle Kind.Feat_ifdef, Kind.Feat_ifndef */
-        if (t.lex_preproc(result) == Kind.Identifier) {
+        /* handle Feat_ifdef, Feat_ifndef */
+        if (t.lex_preproc(result) == Identifier) {
             // TODO use feature value
             // XXX: cannot use t.features.contains_idx(result.name_idx)
             //      because t.pool and t.features.pool are different in c2c
             if (!t.features.contains(t.pool.idx2str(result.name_idx)))
                 top.skipping = 1;
-            if (kind == Kind.Feat_ifndef)
+            if (kind == Feat_ifndef)
                 top.skipping ^= 1;
         } else {
             t.error(result, "missing identifier after %s, got %s",

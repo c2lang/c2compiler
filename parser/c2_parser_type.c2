@@ -17,7 +17,6 @@ module c2_parser;
 
 //import ast_builder local;
 import ast local;
-import token local;
 import src_loc local;
 
 import ctype local;
@@ -70,7 +69,7 @@ fn void Parser.parseFunctionType(Parser* p, u32 name, SrcLoc loc, bool is_public
     u32 num_attr = p.parseOptionalAttributes();
     params.free();
 
-    p.expectAndConsume(Kind.Semicolon);
+    p.expectAndConsume(Semicolon);
     p.applyAttributes(ftd, num_attr);
 }
 
@@ -81,9 +80,9 @@ fn void Parser.parseStructType(Parser* p, bool is_struct, u32 name, SrcLoc loc, 
 
     DeclList members.init();
 
-    if (p.tok.kind == Kind.LBrace) {
+    if (p.tok.kind == LBrace) {
         p.parseStructBlock(&members, is_public);
-    } else if (p.tok.kind == Kind.Semicolon) {
+    } else if (p.tok.kind == Semicolon) {
         if (!p.is_interface) p.error("undefined structs are only allowed in interface files");
         if (!p.builder.hasOpaqueAttr()) p.error("undefined structs must have the opaque attribute");
         p.consumeToken();
@@ -112,7 +111,7 @@ fn void Parser.checkMemberName(Parser* p) {
 }
 
 fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
-    p.expectAndConsume(Kind.LBrace);
+    p.expectAndConsume(LBrace);
 
     while (1) {
         //Syntax:
@@ -120,15 +119,15 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
         // struct_member ::= STRUCT <IDENTIFIER> LBRACE struct_block RBRACE.
         // struct_member ::= UNION <IDENTIFIER> LBRACE struct_block RBRACE.
 
-        if (p.tok.kind == Kind.RBrace) break;
+        if (p.tok.kind == RBrace) break;
 
-        if (p.tok.kind == Kind.KW_union || p.tok.kind == Kind.KW_struct) {
-            bool is_struct = p.tok.kind == Kind.KW_struct;
+        if (p.tok.kind == KW_union || p.tok.kind == KW_struct) {
+            bool is_struct = p.tok.kind == KW_struct;
             p.consumeToken();
             // name is optional
             u32 name = 0;
             SrcLoc loc = 0;
-            if (p.tok.kind == Kind.Identifier) {
+            if (p.tok.kind == Identifier) {
                 name = p.tok.name_idx;
                 loc = p.tok.loc;
 
@@ -151,7 +150,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             continue;
         }
 
-        if (p.tok.kind == Kind.KW_fn) {
+        if (p.tok.kind == KW_fn) {
             p.consumeToken(); // fn
 
             TypeRefHolder rtype.init();
@@ -173,7 +172,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
 
             TypeRefHolder ref.init();
             ref.setFunction((Decl*)fd);
-            if (p.tok.kind == Kind.LSquare) {
+            if (p.tok.kind == LSquare) {
                 p.error("arrays are not allowed for untyped function type members");
             }
 
@@ -195,7 +194,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
         for (;;) {
             u32 name = 0;
             SrcLoc loc;
-            if (p.tok.kind == Kind.Colon) { // anonymous bit-field
+            if (p.tok.kind == Colon) { // anonymous bit-field
                 loc = p.tok.loc;
             } else {
                 p.expectIdentifier();
@@ -207,23 +206,23 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             }
 
             Expr* bitfield = nil;
-            if (p.tok.kind == Kind.Colon) {
+            if (p.tok.kind == Colon) {
                 p.consumeToken();
                 bitfield = p.parseExpr();
             }
             VarDecl* member = p.builder.actOnStructMember(name, loc, is_public, &ref, bitfield);
             members.add(member.asDecl());
-            if (p.tok.kind != Kind.Comma)
+            if (p.tok.kind != Comma)
                 break;
             p.consumeToken();
             if (ref.isPointer() || ref.isArray())
                 p.error("pointer and array members must be defined separately");
         }
 semi_colon:
-        p.expectAndConsume(Kind.Semicolon);
+        p.expectAndConsume(Semicolon);
     }
 
-    p.expectAndConsume(Kind.RBrace);
+    p.expectAndConsume(RBrace);
 }
 
 fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
@@ -265,17 +264,17 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
 
     u32 num_attr = p.parseOptionalAttributes();
 
-    p.expectAndConsume(Kind.LBrace);
+    p.expectAndConsume(LBrace);
 
     bool is_incr = false;
 
     DeclList constants.init();
 
-    if (p.tok.kind == Kind.Plus) {
+    if (p.tok.kind == Plus) {
         is_incr = true;
         p.consumeToken();
     } else {
-        while (p.tok.kind == Kind.Identifier) {
+        while (p.tok.kind == Identifier) {
             u32 const_name = p.tok.name_idx;
 
             const char* name_str = p.pool.idx2str(const_name);
@@ -288,7 +287,7 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
             p.consumeToken();
 
             Expr* init_expr = nil;
-            if (p.tok.kind == Kind.Equal) {
+            if (p.tok.kind == Equal) {
                 p.consumeToken();
                 init_expr = p.parseExpr(); // p.parseConstantExpr()
             }
@@ -299,7 +298,7 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
                                                                      init_expr);
             constants.add(constant.asDecl());
 
-            if (p.tok.kind != Kind.Comma) break;
+            if (p.tok.kind != Comma) break;
             p.consumeToken();
         }
 
@@ -308,7 +307,7 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
         }
     }
 
-    p.expectAndConsume(Kind.RBrace);
+    p.expectAndConsume(RBrace);
 
     Decl* d = p.builder.actOnEnumType(name,
                                       loc,
@@ -329,7 +328,7 @@ fn void Parser.parseAliasType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
 
     Decl* d = p.builder.actOnAliasType(name, loc, is_public, &ref);
     u32 num_attr = p.parseOptionalAttributes();
-    p.expectAndConsume(Kind.Semicolon);
+    p.expectAndConsume(Semicolon);
     p.applyAttributes(d, num_attr);
 }
 

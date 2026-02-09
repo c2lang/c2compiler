@@ -103,7 +103,7 @@ fn Stmt* Parser.parseStmt(Parser* p) {
         a * b != .. -> no
 */
 fn bool Parser.isTypeSpec(Parser* p) {
-    assert(p.tok.kind == Kind.Identifier);
+    assert(p.tok.kind == Identifier);
     Kind kind;
 
     // State: 0 = ID1, 1 = ID2, 2 = pointers, 3 = arrays, 4 = hasname
@@ -131,7 +131,7 @@ fn bool Parser.isTypeSpec(Parser* p) {
             }
             if (state == 0) {
                 kind = p.peekToken(ahead++);
-                if (kind != Kind.Identifier) {
+                if (kind != Identifier) {
                     // syntax error
                     return false;
                 }
@@ -198,7 +198,7 @@ fn u32 Parser.skipArray(Parser* p, u32 ahead, Kind endKind) {
     id:             // id = label
 */
 fn Stmt* Parser.parseDeclOrStmt(Parser* p) {
-    assert(p.tok.kind == Kind.Identifier);
+    assert(p.tok.kind == Identifier);
     bool isDecl = p.isTypeSpec();
 
     if (isDecl) {
@@ -207,22 +207,22 @@ fn Stmt* Parser.parseDeclOrStmt(Parser* p) {
     }
 
     Kind kind = p.peekToken(1);
-    if (kind == Kind.Colon) return p.parseLabelStmt();
+    if (kind == Colon) return p.parseLabelStmt();
 
     return p.parseExprStmt();
 }
 
 fn CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
-    p.expectAndConsume(Kind.LBrace);
+    p.expectAndConsume(LBrace);
 
     stmt_list.List* stmts = p.getStmtList();
 
-    while (p.tok.kind != Kind.RBrace) {
+    while (p.tok.kind != RBrace) {
         stmts.add(p.parseStmt());
     }
 
     SrcLoc endLoc = p.tok.loc + 1;
-    p.expectAndConsume(Kind.RBrace);
+    p.expectAndConsume(RBrace);
 
     CompoundStmt* s = p.builder.actOnCompoundStmt(endLoc, stmts.getData(), stmts.size());
     p.putStmtList();
@@ -252,9 +252,9 @@ fn Stmt* Parser.parseAsmStmt(Parser* p) {
     bool is_volatile = (quals == QualType_Volatile);
     //TODO check allowed qualifiers
 
-    p.expectAndConsume(Kind.LParen);
+    p.expectAndConsume(LParen);
 
-    p.expect(Kind.StringLiteral);
+    p.expect(StringLiteral);
     Expr* str = p.parseStringLiteral();
 
     ExprList constraints.init();
@@ -262,9 +262,9 @@ fn Stmt* Parser.parseAsmStmt(Parser* p) {
     ExprList clobbers.init();
 
     // Basic Asm stmt
-    if (p.tok.kind == Kind.RParen) {
+    if (p.tok.kind == RParen) {
         p.consumeToken();
-        p.expectAndConsume(Kind.Semicolon);
+        p.expectAndConsume(Semicolon);
         Stmt* s = p.builder.actOnAsmStmt(loc,
                                          true,
                                          is_volatile,
@@ -286,7 +286,7 @@ fn Stmt* Parser.parseAsmStmt(Parser* p) {
     // Extended Asm stmt
 
     // parse Outputs, if present
-    if (p.tok.kind == Kind.Colon) {
+    if (p.tok.kind == Colon) {
         p.consumeToken();
         p.parseAsmOperandsOpt(&names, &constraints, &exprs);
     }
@@ -294,7 +294,7 @@ fn Stmt* Parser.parseAsmStmt(Parser* p) {
     u32 num_outputs = names.length();
 
     // parse Inputs, if present
-    if (p.tok.kind == Kind.Colon) {
+    if (p.tok.kind == Colon) {
         p.consumeToken();
         p.parseAsmOperandsOpt(&names, &constraints, &exprs);
     }
@@ -302,23 +302,23 @@ fn Stmt* Parser.parseAsmStmt(Parser* p) {
     u32 num_inputs = names.length() - num_outputs;
 
     // parse Clobbers, if present
-    if (p.tok.kind == Kind.Colon) {
+    if (p.tok.kind == Colon) {
         p.consumeToken();
 
         // Parse the asm-string list for clobbers if present
-        if (p.tok.kind != Kind.RParen) {
+        if (p.tok.kind != RParen) {
             while (1) {
-                p.expect(Kind.StringLiteral);
+                p.expect(StringLiteral);
                 Expr* e = p.parseStringLiteral();
                 clobbers.add(e);
-                if (p.tok.kind != Kind.Comma) break;
+                if (p.tok.kind != Comma) break;
                 p.consumeToken();
             }
         }
     }
 
-    p.expectAndConsume(Kind.RParen);
-    p.expectAndConsume(Kind.Semicolon);
+    p.expectAndConsume(RParen);
+    p.expectAndConsume(Semicolon);
 
     Stmt* s = p.builder.actOnAsmStmt(loc,
                                      false,
@@ -351,11 +351,11 @@ fn void Parser.parseAsmOperandsOpt(Parser* p,
                                    ExprList* constraints,
                                    ExprList* exprs) {
     // 'asm-operands' isn't present
-    if (p.tok.kind != Kind.StringLiteral && p.tok.kind != Kind.LSquare) return;
+    if (p.tok.kind != StringLiteral && p.tok.kind != LSquare) return;
 
     while (1) {
         // read the [id] if present
-        if (p.tok.kind == Kind.LSquare) {
+        if (p.tok.kind == LSquare) {
             p.consumeToken();
 
             p.expectIdentifier();
@@ -363,22 +363,22 @@ fn void Parser.parseAsmOperandsOpt(Parser* p,
             //SrcLoc loc = p.tok.loc;
             p.consumeToken();
             names.add(name);
-            p.expectAndConsume(Kind.RSquare);
+            p.expectAndConsume(RSquare);
         } else {
             names.add(0);
         }
 
-        p.expect(Kind.StringLiteral);
+        p.expect(StringLiteral);
         Expr* e = p.parseStringLiteral();
         constraints.add(e);
 
         // read the parenthesized expression
-        p.expectAndConsume(Kind.LParen);
+        p.expectAndConsume(LParen);
         e = p.parseExpr();
-        p.expectAndConsume(Kind.RParen);
+        p.expectAndConsume(RParen);
         exprs.add(e);
 
-        if (p.tok.kind != Kind.Comma) return;
+        if (p.tok.kind != Comma) return;
         p.consumeToken();
     }
 }
@@ -386,10 +386,10 @@ fn void Parser.parseAsmOperandsOpt(Parser* p,
 fn Stmt* Parser.parseAssertStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
-    p.expectAndConsume(Kind.LParen);
+    p.expectAndConsume(LParen);
     Expr* inner = p.parseExpr();
-    p.expectAndConsume(Kind.RParen);
-    p.expectAndConsume(Kind.Semicolon);
+    p.expectAndConsume(RParen);
+    p.expectAndConsume(Semicolon);
     return p.builder.actOnAssertStmt(loc, inner);
 }
 
@@ -397,7 +397,7 @@ fn Stmt* Parser.parseBreakStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
-    p.expectAndConsume(Kind.Semicolon);
+    p.expectAndConsume(Semicolon);
     return p.builder.actOnBreakStmt(loc);
 }
 
@@ -405,7 +405,7 @@ fn Stmt* Parser.parseContinueStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
-    p.expectAndConsume(Kind.Semicolon);
+    p.expectAndConsume(Semicolon);
     return p.builder.actOnContinueStmt(loc);
 }
 
@@ -413,12 +413,12 @@ fn Stmt* Parser.parseFallthroughStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
-    p.expectAndConsume(Kind.Semicolon);
+    p.expectAndConsume(Semicolon);
     return p.builder.actOnFallthroughStmt(loc);
 }
 
 fn Stmt* Parser.parseCondition(Parser* p) {
-    p.expectAndConsume(Kind.LParen);
+    p.expectAndConsume(LParen);
 
     Stmt* s;
     if (p.isDeclaration()) {
@@ -428,7 +428,7 @@ fn Stmt* Parser.parseCondition(Parser* p) {
         Expr* cond = p.parseExpr();
         s = cond.asStmt();
     }
-    p.expectAndConsume(Kind.RParen);
+    p.expectAndConsume(RParen);
     return s;
 }
 
@@ -440,7 +440,7 @@ fn Stmt* Parser.parseIfStmt(Parser* p) {
     Stmt* then = p.parseStmt();
 
     Stmt* else_stmt = nil;
-    if (p.tok.kind == Kind.KW_else) {
+    if (p.tok.kind == KW_else) {
         p.consumeToken();
         else_stmt = p.parseStmt();
     }
@@ -454,8 +454,8 @@ fn Stmt* Parser.parseReturnStmt(Parser* p) {
 
     Expr* ret = nil;
     bool need_semi = true;
-    if (p.tok.kind != Kind.Semicolon) {
-        if (p.tok.kind == Kind.LBrace) {
+    if (p.tok.kind != Semicolon) {
+        if (p.tok.kind == LBrace) {
             ret = p.parseInitList();
             need_semi = false;
         } else {
@@ -463,7 +463,7 @@ fn Stmt* Parser.parseReturnStmt(Parser* p) {
         }
     }
 
-    if (need_semi) p.expectAndConsume(Kind.Semicolon);
+    if (need_semi) p.expectAndConsume(Semicolon);
     return p.builder.actOnReturnStmt(loc, ret);
 }
 
@@ -471,11 +471,11 @@ fn Stmt* Parser.parseForStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
-    p.expectAndConsume(Kind.LParen);
+    p.expectAndConsume(LParen);
 
     // init
     Stmt* init = nil;
-    if (p.tok.kind != Kind.Semicolon) {
+    if (p.tok.kind != Semicolon) {
         // parseCondition
         if (p.isDeclaration()) {
             // !checkSemi, !allowLocal, !isCondition
@@ -484,21 +484,21 @@ fn Stmt* Parser.parseForStmt(Parser* p) {
             init = p.parseExpr().asStmt();
         }
     }
-    p.expectAndConsume(Kind.Semicolon);
+    p.expectAndConsume(Semicolon);
 
     // cond
     Expr* cond = nil;
-    if (p.tok.kind != Kind.Semicolon) {
+    if (p.tok.kind != Semicolon) {
         cond = p.parseExpr();
     }
-    p.expectAndConsume(Kind.Semicolon);
+    p.expectAndConsume(Semicolon);
 
     // incr
     Expr* incr = nil;
-    if (p.tok.kind != Kind.RParen) {
+    if (p.tok.kind != RParen) {
         incr = p.parseExpr();
     }
-    p.expectAndConsume(Kind.RParen);
+    p.expectAndConsume(RParen);
 
     Stmt* body = p.parseStmt();
 
@@ -519,7 +519,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
     VarDecl*[MaxMultiDecl] decls;
     u32 num_decls = 0;
     bool has_local = false;
-    if (p.tok.kind == Kind.KW_local) {
+    if (p.tok.kind == KW_local) {
         has_local = true;
         if (!allowLocal) p.error("keyword 'local' is not allowed here");
         p.consumeToken();
@@ -558,8 +558,8 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
             p.error("local variables cannot have attributes");
             break;
         case Dot:
-            if (p.peekToken(1) == Kind.Identifier
-            &&  p.peekToken(2) == Kind.LParen) {
+            if (p.peekToken(1) == Identifier
+            &&  p.peekToken(2) == LParen) {
                 if (has_local)
                     p.error("local qualified variables cannot have an init call");
                 if (isCondition)
@@ -584,7 +584,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
             break;
         }
         decls[num_decls++] = p.builder.actOnVarDecl(name, loc, &ref, assignLoc, initValue, has_local, has_init_call);
-        if (p.tok.kind != Kind.Comma)
+        if (p.tok.kind != Comma)
             break;
         p.consumeToken();
         if (isCondition)
@@ -603,7 +603,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
 fn Stmt* Parser.parseExprStmt(Parser* p) {
     Expr* e = p.parseExpr();
 
-    if (e.needsSemi()) p.expectAndConsume(Kind.Semicolon);
+    if (e.needsSemi()) p.expectAndConsume(Semicolon);
     return e.asStmt();
 }
 
@@ -611,7 +611,7 @@ fn Stmt* Parser.parseLabelStmt(Parser* p) {
     u32 name = p.tok.name_idx;
     SrcLoc loc = p.tok.loc;
     p.consumeToken(); // identifier
-    p.expectAndConsume(Kind.Colon);
+    p.expectAndConsume(Colon);
     Stmt* stmt = nil;
     switch (p.tok.kind) {
     case RBrace:
@@ -632,15 +632,15 @@ fn Stmt* Parser.parseGotoStmt(Parser* p) {
     u32 name =  p.tok.name_idx;
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
-    p.expectAndConsume(Kind.Semicolon);
+    p.expectAndConsume(Semicolon);
     return p.builder.actOnGotoStmt(name, loc);
 }
 
 fn bool Parser.isDeclaration(Parser* p) {
     const Kind kind = p.tok.kind;
-    if (kind == Kind.Identifier) return p.isTypeSpec();
+    if (kind == Identifier) return p.isTypeSpec();
     if (kind.isBuiltinTypeOrVoid()) return true;
-    if (kind == Kind.KW_local) return true;
+    if (kind == KW_local) return true;
     if (kind.isQualifier()) return true;
     return false;
 }
