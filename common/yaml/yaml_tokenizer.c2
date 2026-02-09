@@ -47,7 +47,7 @@ type TokenKind enum u8 {
 }
 
 // NOTE: keep in sync with TokenKind
-const char*[] token_names = {
+const char*[TokenKind] token_names = {
     "none",
     "scalar",
     "'scalar'",

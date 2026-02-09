@@ -29,7 +29,7 @@ type NodeKind enum u8 {
 }
 
 // NOTE: keep in sync with NodeKind
-const char*[] node_names = { "UNK", "SCA", "MAP", "SEQ" }
+const char*[NodeKind] node_names = { "UNK", "SCA", "MAP", "SEQ" }
 
 public type Node struct @(opaque) {
     NodeKind kind;

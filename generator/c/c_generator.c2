@@ -237,7 +237,7 @@ fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, Decl* d) 
     out.add("};\n\n");
 }
 
-const char*[] builtinType_cnames = {
+const char*[BuiltinKind] builtinType_cnames = {
     "char",
     "int8_t",
     "int16_t",
@@ -253,7 +253,6 @@ const char*[] builtinType_cnames = {
     "size_t",
     "bool",
 }
-static_assert(elemsof(BuiltinKind), elemsof(builtinType_cnames));
 
 fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType qt) {
     Decl* decl = nil;
@@ -1326,7 +1325,7 @@ public fn void generate(string_pool.Pool* astPool,
     // re-mark used globals from entry points recursively
     component.Component* mainComp = comps.getLast();
 
-    if (gen.target_kind != build_target.Kind.Executable) {
+    if (gen.target_kind != Executable) {
         gen.generateC2TypesHeader();
     }
 

@@ -54,7 +54,7 @@ type Kind enum u8 {
     Eof,
 }
 
-const char*[] kind_names = {
+const char*[Kind] kind_names = {
     "plugin",
     "[plugin_options]",
     "text",
@@ -75,8 +75,6 @@ const char*[] kind_names = {
     "(set)",
     "eof",
 }
-
-static_assert(elemsof(Kind), elemsof(kind_names));
 
 type Token struct {
     SrcLoc loc;
@@ -242,7 +240,7 @@ fn void Parser.lex(Parser* p, Token* result) {
         case 0:
             p.cur--;
             result.loc = p.loc_start + (SrcLoc)(p.cur - p.input_start);
-            result.kind = Kind.Eof;
+            result.kind = Eof;
             return;
         case ' ':
         case '\t':
@@ -274,7 +272,7 @@ fn void Parser.lex(Parser* p, Token* result) {
             const char* start = p.cur;
             while (*p.cur && !ctype.isspace(*p.cur)) p.cur++;
             result.kind = p.new_line ? Kind.File : Kind.Text;
-            if (*p.cur == 0) result.kind = Kind.Eof;
+            if (*p.cur == 0) result.kind = Eof;
             p.new_line = false;
             u32 len = (u32)(p.cur - start);
             result.value = p.pool.add(start, len, true);
@@ -283,43 +281,43 @@ fn void Parser.lex(Parser* p, Token* result) {
             if (ctype.isalnum(*p.cur)) {
                 result.loc = p.loc_start + (SrcLoc)(p.cur - p.input_start);
                 if (equals(p.cur, "plugin ", 7)) {
-                    result.kind = Kind.Plugin;
+                    result.kind = Plugin;
                     p.cur += 7;
                     p.new_line = false;
                     return;
                 }
                 if (equals(p.cur, "executable ", 11)) {
-                    result.kind = Kind.Executable;
+                    result.kind = Executable;
                     p.cur += 11;
                     p.new_line = false;
                     return;
                 }
                 if (equals(p.cur, "lib ", 4)) {
-                    result.kind = Kind.Lib;
+                    result.kind = Lib;
                     p.cur += 4;
                     p.new_line = false;
                     return;
                 }
                 if (equals(p.cur, "end", 3)) {
-                    result.kind = Kind.End;
+                    result.kind = End;
                     p.cur += 3;
                     p.new_line = false;
                     return;
                 }
                 if (equals(p.cur, "image ", 6)) {
-                    result.kind = Kind.Image;
+                    result.kind = Image;
                     p.cur += 6;
                     p.new_line = false;
                     return;
                 }
                 if (equals(p.cur, "config ", 7)) {
-                    result.kind = Kind.Config;
+                    result.kind = Config;
                     p.cur += 7;
                     p.new_line = false;
                     return;
                 }
                 if (equals(p.cur, "set ", 4)) {
-                    result.kind = Kind.Set;
+                    result.kind = Set;
                     p.cur += 4;
                     p.new_line = false;
                     return;
@@ -354,7 +352,7 @@ fn void Parser.lex_plugin_options(Parser* p, Token* result) {
         if (*p.cur == ']') {
             u32 len = (u32)(p.cur - start);
             result.loc = p.loc_start + (SrcLoc)(start - p.input_start);
-            result.kind = Kind.PluginOptions;
+            result.kind = PluginOptions;
             result.value = p.pool.add(start, len, true);
             p.cur++;
             return;
@@ -379,7 +377,7 @@ fn void Parser.lex_set_use(Parser* p, Token* result) {
     const char* start = p.cur;
     while (is_name(*p.cur)) p.cur++;
 
-    result.kind = Kind.SetUse;
+    result.kind = SetUse;
     u32 len = (u32)(p.cur - start);
     if (len == 0) p.error("expected set name");
 
@@ -410,31 +408,31 @@ fn void Parser.lex_option(Parser* p, Token* result) {
 
     switch (option) {
     case "warnings":
-        result.kind = Kind.Warnings;
+        result.kind = Warnings;
         break;
     case  "backend":
-        result.kind = Kind.Backend;
+        result.kind = Backend;
         break;
     case "disable-asserts":
-        result.kind = Kind.DisableAsserts;
+        result.kind = DisableAsserts;
         break;
     case "nolibc":
-        result.kind = Kind.NoLibc;
+        result.kind = NoLibc;
         break;
     case "config":
-        result.kind = Kind.Config;
+        result.kind = Config;
         break;
     case "export":
-        result.kind = Kind.Export;
+        result.kind = Export;
         break;
     case "plugin":
-        result.kind = Kind.Plugin;
+        result.kind = Plugin;
         break;
     case "use":
-        result.kind = Kind.Use;
+        result.kind = Use;
         break;
     case "asm":
-        result.kind = Kind.AsmFile;
+        result.kind = AsmFile;
         break;
     default:
         p.error("unknown option '%s'", option);
@@ -483,7 +481,7 @@ fn void Parser.parseTop(Parser* p) {
         case Config:
             if (p.targets_started) p.error("global configs must come before targets");
             p.consumeToken();
-            p.expect(Kind.Text, "expect config");
+            p.expect(Text, "expect config");
             if (!p.addGlobalFeature(p.token.value)) {
                 p.error("duplicate config '%s'", p.pool.idx2str(p.token.value));
             }
@@ -508,7 +506,7 @@ fn void Parser.parseTop(Parser* p) {
 
 fn void Parser.parsePlugin(Parser* p, bool is_global) {
     p.consumeToken();
-    p.expect(Kind.Text, "expect plugin name");
+    p.expect(Text, "expect plugin name");
     u32 name = p.token.value;
     SrcLoc loc = p.token.loc;
     p.consumeToken();
@@ -527,10 +525,10 @@ fn void Parser.parsePlugin(Parser* p, bool is_global) {
 
 fn void Parser.parseWarnings(Parser* p) {
     p.consumeToken();
-    p.expect(Kind.Text, "expect options");
+    p.expect(Text, "expect options");
     warning_flags.Flags* warnings = p.target.getWarnings2();
     // TODO no need to store in string pool
-    while (p.is(Kind.Text)) {
+    while (p.is(Text)) {
         const char* option = p.pool.idx2str(p.token.value);
         bool disable = false;
         if (!string.strncmp(option, "no-", 3)) {
@@ -599,8 +597,8 @@ fn void Parser.parseWarnings(Parser* p) {
 
 fn void Parser.parseExecutable(Parser* p) {
     p.consumeToken();
-    p.expect(Kind.Text, "expect target name");
-    p.target = p.recipe.addTarget(p.token.value, p.token.loc, build_target.Kind.Executable);
+    p.expect(Text, "expect target name");
+    p.target = p.recipe.addTarget(p.token.value, p.token.loc, Executable);
     p.consumeToken();
 
     p.parseTarget();
@@ -608,8 +606,8 @@ fn void Parser.parseExecutable(Parser* p) {
 
 fn void Parser.parseImage(Parser* p) {
     p.consumeToken();
-    p.expect(Kind.Text, "expect image name");
-    p.target = p.recipe.addTarget(p.token.value, p.token.loc, build_target.Kind.Image);
+    p.expect(Text, "expect image name");
+    p.target = p.recipe.addTarget(p.token.value, p.token.loc, Image);
     p.consumeToken();
 
     p.parseTarget();
@@ -617,7 +615,7 @@ fn void Parser.parseImage(Parser* p) {
 
 fn void Parser.parseSet(Parser* p) {
     p.consumeToken();
-    p.expect(Kind.Text, "expect set name");
+    p.expect(Text, "expect set name");
 
     Set* old = p.findSet(p.token.value);
     if (old) {
@@ -655,22 +653,22 @@ fn Set* Parser.findSet(Parser* p, u32 name_idx) {
 
 fn void Parser.parseLibrary(Parser* p) {
     p.consumeToken();
-    p.expect(Kind.Text, "expect target name");
+    p.expect(Text, "expect target name");
     u32 name = p.token.value;
     SrcLoc loc = p.token.loc;
     p.consumeToken();
-    p.expect(Kind.Text, "expect lib type");
+    p.expect(Text, "expect lib type");
     u32 kind_name = p.token.value;
-    build_target.Kind kind = build_target.Kind.StaticLibrary;
+    build_target.Kind kind = StaticLibrary;
     switch (p.pool.idx2str(kind_name)) {
     case "static":
-        kind = build_target.Kind.StaticLibrary;
+        kind = StaticLibrary;
         break;
     case "dynamic":
-        kind = build_target.Kind.DynamicLibrary;
+        kind = DynamicLibrary;
         break;
     case "source":
-        kind = build_target.Kind.SourceLibrary;
+        kind = SourceLibrary;
         break;
     default:
         p.error("invalid library kind (allowed: dynamic|static|source)");
@@ -736,7 +734,7 @@ fn void Parser.parseTarget(Parser* p) {
         case Config:
             if (files_started) p.error("$config must come before files");
             p.consumeToken();
-            p.expect(Kind.Text, "expect config");
+            p.expect(Text, "expect config");
             p.target.addFeature(p.token.value);
             // TODO add value
             p.consumeToken();
@@ -744,7 +742,7 @@ fn void Parser.parseTarget(Parser* p) {
         case Export:
             if (files_started) p.error("$export must come before files");
             p.consumeToken();
-            p.expect(Kind.Text, "expect export");
+            p.expect(Text, "expect export");
 
             while (p.token.kind == Kind.Text) {
                 p.target.addExport(p.token.value);
@@ -755,26 +753,26 @@ fn void Parser.parseTarget(Parser* p) {
             if (files_started) p.error("$use must come before files");
             p.consumeToken();
 
-            p.expect(Kind.Text, "expect library name");
+            p.expect(Text, "expect library name");
             u32 libname = p.token.value;
             if (p.target.hasLib(libname)) {
                 p.error("duplicate use of %s", p.pool.idx2str(libname));
             }
             p.consumeToken();
 
-            p.expect(Kind.Text, "expect library type");
+            p.expect(Text, "expect library type");
             const char* libtype = p.pool.idx2str(p.token.value);
             // TODO extract to common function
-            build_target.Kind kind = build_target.Kind.StaticLibrary;
+            build_target.Kind kind = StaticLibrary;
             switch (libtype) {
             case "static":
-                kind = build_target.Kind.StaticLibrary;
+                kind = StaticLibrary;
                 break;
             case "dynamic":
-                kind = build_target.Kind.DynamicLibrary;
+                kind = DynamicLibrary;
                 break;
             case "source":
-                kind = build_target.Kind.SourceLibrary;
+                kind = SourceLibrary;
                 break;
             default:
                 p.error("unknown library kind '%s'", libtype);
@@ -789,7 +787,7 @@ fn void Parser.parseTarget(Parser* p) {
             if (files_started) p.error("$asm must come before files");
             p.consumeToken();
 
-            p.expect(Kind.Text, "expect filename");
+            p.expect(Text, "expect filename");
             if (!p.target.addAsmFile(p.token.value, p.token.loc)) {
                 p.error("duplicate asm file '%s'", p.pool.idx2str(p.token.value));
             }
@@ -820,17 +818,17 @@ fn void Parser.parseTarget(Parser* p) {
 fn void Parser.parseBackend(Parser* p) {
     // syntax: $backend [c/ir] <options>
     p.consumeToken();
-    p.expect(Kind.Text, "expect backend type");
+    p.expect(Text, "expect backend type");
     const char* backend_kind = p.pool.idx2str(p.token.value);
     p.consumeToken();
 
     if (p.target.hasBackEnd()) p.error("duplicate backend");
     switch (backend_kind) {
     case "c":
-        p.target.setBackEnd(build_target.BackEndKind.C);
+        p.target.setBackEnd(C);
         break;
     case "ir":
-        p.target.setBackEnd(build_target.BackEndKind.IR);
+        p.target.setBackEnd(IR);
         break;
     default:
         p.error("unknown backend type (supported: c,ir)");

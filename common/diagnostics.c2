@@ -63,13 +63,13 @@ type Category enum u8 {
     Error,
 }
 
-const char*[] category_names = {
+const char*[Category] category_names = {
     "note",
     "warning",
     "error",
 }
 
-Color[] category_colors = {
+Color[Category] category_colors = {
     Color.Grey,
     Color.Bmagenta,
     Color.Bred,
@@ -79,42 +79,42 @@ public fn void Diags.error(Diags* diags, SrcLoc loc, const char* format @(printf
     va_list args;
     va_start(args, format);
     SrcRange range = { 0, 0 }
-    diags.internal(Category.Error, loc, range, format, args);
+    diags.internal(Error, loc, range, format, args);
     va_end(args);
 }
 
 public fn void Diags.error2(Diags* diags, SrcLoc loc, const char* format, va_list args) {
     SrcRange range = { 0, 0 }
-    diags.internal(Category.Error, loc, range, format, args);
+    diags.internal(Error, loc, range, format, args);
 }
 
 public fn void Diags.note(Diags* diags, SrcLoc loc, const char* format @(printf_format), ...) {
     va_list args;
     va_start(args, format);
     SrcRange range = { 0, 0 }
-    diags.internal(Category.Note, loc, range, format, args);
+    diags.internal(Note, loc, range, format, args);
     va_end(args);
 }
 
 public fn void Diags.note2(Diags* diags, SrcLoc loc, const char* format, va_list args) {
     SrcRange range = { 0, 0 }
-    diags.internal(Category.Note, loc, range, format, args);
+    diags.internal(Note, loc, range, format, args);
 }
 
 public fn void Diags.warn(Diags* diags, SrcLoc loc, const char* format @(printf_format), ...) {
     va_list args;
     va_start(args, format);
     SrcRange range = { 0, 0 }
-    Category category = Category.Warning;
-    if (diags.promote_warnings) category = Category.Error;
+    Category category = Warning;
+    if (diags.promote_warnings) category = Error;
     diags.internal(category, loc, range, format, args);
     va_end(args);
 }
 
 public fn void Diags.warn2(Diags* diags, SrcLoc loc, const char* format, va_list args) {
     SrcRange range = { 0, 0 }
-    Category category = Category.Warning;
-    if (diags.promote_warnings) category = Category.Error;
+    Category category = Warning;
+    if (diags.promote_warnings) category = Error;
     diags.internal(category, loc, range, format, args);
 }
 
@@ -124,7 +124,7 @@ public fn void Diags.errorRange(Diags* diags,
                                 const char* format @(printf_format), ...) {
     va_list args;
     va_start(args, format);
-    diags.internal(Category.Error, loc, range, format, args);
+    diags.internal(Error, loc, range, format, args);
     va_end(args);
 }
 
@@ -133,7 +133,7 @@ public fn void Diags.errorRange2(Diags* diags,
                                  SrcRange range,
                                  const char* format,
                                  va_list args) {
-    diags.internal(Category.Error, loc, range, format, args);
+    diags.internal(Error, loc, range, format, args);
 }
 
 fn void Diags.internal(Diags* diags,
@@ -142,7 +142,7 @@ fn void Diags.internal(Diags* diags,
                        SrcRange range,
                        const char* format,
                        va_list args) {
-    if (category == Category.Error) {
+    if (category == Error) {
         diags.num_errors++;
     } else {
         diags.num_warnings++;
