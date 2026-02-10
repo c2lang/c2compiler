@@ -104,11 +104,15 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
                 u32 field_width = value.as_u32();
                 vd.setBitfieldWidth((u8)field_width);
 
-                if (qt.isEnum() && field_width < type_width) {
-                    if (name)
-                        ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "bit-field '%s' has insufficient bits for enum '%s'", name, qt.diagName());
-                    else
-                        ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "unnamed bit-field has insufficient bits for enum '%s'", qt.diagName());
+                u32 minimum_type_width = qt.getBitFieldWidth(true);
+                if (qt.isEnum() && field_width < minimum_type_width) {
+                    if (name) {
+                        ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "bit-field '%s' has insufficient bits for enum '%s' (need %d bits)",
+                                      name, qt.diagName(), minimum_type_width);
+                    } else {
+                        ma.errorRange(bitfield.getLoc(), bitfield.getRange(), "unnamed bit-field has insufficient bits for enum '%s' (need %d bits)",
+                                      qt.diagName(), minimum_type_width);
+                    }
                     return;
                 }
 

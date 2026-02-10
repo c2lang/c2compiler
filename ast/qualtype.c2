@@ -88,7 +88,7 @@ public fn bool QualType.isValid(const QualType qt) { return qt.ptr != 0; }
 public fn bool QualType.isInvalid(const QualType qt) { return qt.ptr == 0; }
 
 // Note: assumes type is valid
-public fn u32 QualType.getBitFieldWidth(const QualType qt) {
+public fn u32 QualType.getBitFieldWidth(const QualType qt, bool precise = false) {
     QualType canon = qt.getCanonicalType();
     const Type* t = canon.getTypeOrNil();
     if (t.isBuiltinType()) {
@@ -96,10 +96,21 @@ public fn u32 QualType.getBitFieldWidth(const QualType qt) {
         return bi.getWidth();
     }
     if (t.isEnumType()) {
-        // TODO return bits needed for max value to allow use in bitfields
-        EnumType* et = (EnumType*)t;
-        QualType impl = et.getImplType();
-        return impl.getBitFieldWidth();
+        EnumTypeDecl* d = ((EnumType*)t).getDecl();
+        if (d.isRegular() && precise) {
+            u32 n = d.getNumConstants() - 1;
+            u32 bits = 1;
+            for (u32 i = 16; i != 0; i >>= 1) {
+                if (u32 m = n >> i) {
+                    n = m;
+                    bits += i;
+                }
+            }
+            return bits;
+        }
+        // TODO handle non regular enums and signed implementation types
+        QualType impl = d.getImplType();
+        return impl.getBitFieldWidth(precise);
     }
     return 0;
 }
