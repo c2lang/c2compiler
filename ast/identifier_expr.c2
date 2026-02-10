@@ -61,7 +61,7 @@ public type IdentifierExpr struct @(opaque) {
 
 public fn IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc loc, u32 name) {
     IdentifierExpr* e = c.alloc(sizeof(IdentifierExpr));
-    e.base.init(Identifier, loc, 0, 0, 0, ValType.NValue);
+    e.base.init(Identifier, loc, 0, 0, 0, NValue);
     e.name_idx = name;
 #if AstStatistics
     Stats.addExpr(Identifier, sizeof(IdentifierExpr));

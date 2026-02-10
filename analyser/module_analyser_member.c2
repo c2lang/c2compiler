@@ -27,7 +27,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     MemberExpr* m =(MemberExpr*)e;
 
     SrcLoc baseLoc = 0;
-    ValType valtype = ValType.NValue;
+    ValType valtype = NValue;
     QualType baseType = QualType_Invalid;
 
     CallKind ck = Invalid;
@@ -118,14 +118,14 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 // no need to update valtype
                 break;
             case Enum:
-                //stdio.printf("ENUM BASE  (type: %d)\n", valtype == ValType.NValue);
+                //stdio.printf("ENUM BASE  (type: %d)\n", valtype == NValue);
                 EnumType* et = (EnumType*)t;
                 EnumTypeDecl* etd = et.getDecl();
 
                 // check if constant/enum-function (by first casing)
                 const char* last = m.getLastMemberName();
                 if (ctype.isupper(last[0]) || name_idx == ma.min_idx || name_idx == ma.max_idx) {   // search for constants
-                    if (valtype != ValType.NValue) {    // variable of Enum type (eg Enum a; a.x)
+                    if (valtype != NValue) {    // variable of Enum type (eg Enum a; a.x)
                         // TODO reset msg to normal invalid base
                         // TODO use range
                         //ma.errorRange(baseLoc, m.getRange(i), "invalid member reference base (enum constant/variable)");
@@ -167,7 +167,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                     baseType = ef.getType();
                     if (!ma.scope.checkAccess(d, loc)) return QualType_Invalid;
                 }
-                valtype = ValType.RValue;
+                valtype = RValue;
                 break;
             case Alias:
                 assert(0);
@@ -278,7 +278,7 @@ fn Decl* Analyser.analyseStructMemberAccess(Analyser* ma, StructTypeDecl* std, u
         // StructTypeDecl for substruct or VarDecl for normal members
         // TODO FIX THIS (do in outer?)
 #if 1
-        if (side && valtype == ValType.NValue) {
+        if (side && valtype == NValue) {
             QualType t = std.asDecl().getType();
             ma.error(loc, "member access needs an instantiation of type '%s'", t.diagName());
             return nil;
@@ -303,7 +303,7 @@ fn TypeKind Analyser.analyseBaseType(Analyser* ma, QualType baseType) {
 fn ValType decl2valtype(const Decl* d) {
     switch (d.getKind()) {
     case Function:
-        return ValType.RValue;
+        return RValue;
     case Import:
     case StructType:
     case EnumType:
@@ -312,8 +312,8 @@ fn ValType decl2valtype(const Decl* d) {
     case AliasType:
         break;
     case Variable:
-        return ValType.LValue;
+        return LValue;
     }
-    return ValType.NValue;
+    return NValue;
 }
 

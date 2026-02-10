@@ -121,17 +121,15 @@ fn void Stats.dump(const Stats* s) {
     printf("--- Types ---\n");
     u32 typesTotal = 0;
     u32 typesCount = 0;
-    //for (u32 i = TypeKind.min; i <= TypeKind.max; i++) {
-    for (u32 i=enum_min(TypeKind); i<=enum_max(TypeKind); i++) {
-        s.types[i].dump(typeKind_names[i], &typesCount, &typesTotal);
+    for (TypeKind kind = TypeKind.min; kind <= TypeKind.max; kind++) {
+        s.types[kind].dump(typeKind_names[kind], &typesCount, &typesTotal);
     }
     printf("  %20s  %6d  %7d\n", "total", typesCount, typesTotal);
 
     printf("--- Expressions ---\n");
     u32 exprTotal = 0;
     u32 exprCount = 0;
-    //for (u32 i = ExprKind.min; i <= ExprKind.max; i++) {
-    for (u32 i=enum_min(ExprKind); i<=enum_max(ExprKind); i++) {
+    for (ExprKind i = ExprKind.min; i <= ExprKind.max; i++) {
         s.exprs[i].dump(exprKind_names[i], &exprCount, &exprTotal);
     }
     printf("  %20s  %6d  %7d\n", "total", exprCount, exprTotal);
@@ -139,8 +137,7 @@ fn void Stats.dump(const Stats* s) {
     printf("--- Statements ---\n");
     u32 stmtTotal = 0;
     u32 stmtCount = 0;
-    //for (u32 i = StmtKind.min; i <= StmtKind.max; i++) {
-    for (u32 i=enum_min(StmtKind); i<=enum_max(StmtKind); i++) {
+    for (StmtKind i = StmtKind.min; i <= StmtKind.max; i++) {
         s.stmts[i].dump(stmtKind_names[i], &stmtCount, &stmtTotal);
     }
     printf("  %20s  %6d  %7d\n", "total", stmtCount, stmtTotal);
@@ -148,9 +145,8 @@ fn void Stats.dump(const Stats* s) {
     printf("--- Decls ---\n");
     u32 declTotal = 0;
     u32 declCount = 0;
-    //for (u32 i = DeclKind.min; i <= DeclKind.max; i++) {
-    for (u32 i=enum_min(DeclKind); i<=enum_max(DeclKind); i++) {
-        s.decls[i].dump(declKind_names[(DeclKind)i], &declCount, &declTotal);
+    for (DeclKind i = DeclKind.min; i <= DeclKind.max; i++) {
+        s.decls[i].dump(declKind_names[i], &declCount, &declTotal);
     }
     printf("  %20s  %6d  %7d\n", "total", declCount, declTotal);
 

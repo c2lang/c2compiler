@@ -29,7 +29,7 @@ public type TypeKind enum u8 {
     Module,
 }
 
-const char*[] typeKind_names = {
+const char*[TypeKind] typeKind_names = {
     "Builtin",
     "Pointer",
     "Array",
@@ -40,8 +40,6 @@ const char*[] typeKind_names = {
     "Alias",
     "Module",
 }
-
-static_assert(elemsof(TypeKind), elemsof(typeKind_names));
 
 type TypeBits struct {
     TypeKind kind : 8;

@@ -315,11 +315,11 @@ public fn bool TypeRef.isVoid(const TypeRef* r) {
 
 public fn bool TypeRef.isConstCharPtr(const TypeRef* r) {
     return r.flags.is_const && r.isBuiltin() && r.flags.num_ptrs == 1 &&
-           r.flags.num_arrays == 0 && r.getBuiltinKind() == BuiltinKind.Char;
+           r.flags.num_arrays == 0 && r.getBuiltinKind() == Char;
 }
 
 public fn bool TypeRef.isU32(const TypeRef* r) {
-    return r.isBuiltin() && r.flags.num_ptrs == 0 && r.flags.num_arrays == 0 && r.getBuiltinKind() == BuiltinKind.UInt32;
+    return r.isBuiltin() && r.flags.num_ptrs == 0 && r.flags.num_arrays == 0 && r.getBuiltinKind() == UInt32;
 }
 
 fn bool TypeRef.hasPrefix(const TypeRef* r) {

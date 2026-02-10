@@ -32,7 +32,7 @@ public type UnaryOpcode enum u8 {
     LNot,           // !a
 }
 
-const char*[] unaryOpcode_names = {
+const char*[UnaryOpcode] unaryOpcode_names = {
     "++",
     "--",
     "++",
@@ -44,8 +44,6 @@ const char*[] unaryOpcode_names = {
     "~",
     "!",
 }
-
-static_assert(elemsof(UnaryOpcode), elemsof(unaryOpcode_names));
 
 type UnaryOperatorBits struct {
     u32 : NumExprBits;

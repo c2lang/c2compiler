@@ -29,13 +29,12 @@ public type CallKind enum u8 {
     StaticTypeFunc,
 }
 
-const char*[] callKind_names = {
+const char*[CallKind] callKind_names = {
     "Invalid",
     "Normal",
     "SF",
     "SSF",
 }
-static_assert(elemsof(CallKind), elemsof(callKind_names));
 
 public type DefKind enum u8 {
     Global,         // fn void (..) { .. }
@@ -45,7 +44,7 @@ public type DefKind enum u8 {
     Template,       // ..
 }
 
-const char*[] defKind_names = {
+const char*[DefKind] defKind_names = {
     "global",
     "type",
     "struct-member",

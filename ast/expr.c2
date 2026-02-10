@@ -46,7 +46,7 @@ public type ExprKind enum u8 {
     Alternate,
 }
 
-const char*[] exprKind_names = {
+const char*[ExprKind] exprKind_names = {
     "IntegerLiteral",
     "FloatLiteral",
     "BooleanLiteral",
@@ -73,7 +73,6 @@ const char*[] exprKind_names = {
     "NamedArgument",
     "Alternate",
 }
-static_assert(elemsof(ExprKind), elemsof(exprKind_names));
 
 /*
     An LValue may be on the left/right side of an assignment
@@ -102,12 +101,11 @@ public type ValType enum u8 {
     LValue, // can be used as LHS / RHS of assignment
 }
 
-const char*[] valType_names = {
+const char*[ValType] valType_names = {
     "nvalue",
     "rvalue",
     "lvalue",
 }
-static_assert(elemsof(ValType), elemsof(valType_names));
 
 type ExprBits struct {
     u32 : NumStmtBits;
@@ -315,17 +313,17 @@ public fn ValType Expr.getValType(const Expr* e) {
 }
 
 public fn bool Expr.isNValue(const Expr* e) {
-    return e.getValType() == ValType.NValue;
+    return e.getValType() == NValue;
 }
 
 /*
 public fn bool Expr.isRValue(const Expr* e) {
-    return e.getValType() == ValType.RValue;
+    return e.getValType() == RValue;
 }
 */
 
 public fn bool Expr.isLValue(const Expr* e) {
-    return e.getValType() == ValType.LValue;
+    return e.getValType() == LValue;
 }
 
 public fn void Expr.setLValue(Expr* e) {

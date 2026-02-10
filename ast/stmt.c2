@@ -36,7 +36,7 @@ public type StmtKind enum u8 {
     Assert,
 }
 
-const char*[] stmtKind_names = {
+const char*[StmtKind] stmtKind_names = {
     "ReturnStmt",
     "ExprStmt",
     "IfStmt",
@@ -53,8 +53,6 @@ const char*[] stmtKind_names = {
     "Asm",
     "AssertStmt",
 }
-
-static_assert(elemsof(StmtKind), elemsof(stmtKind_names));
 
 type StmtBits struct {
     u32 kind : NumStmtBits;
