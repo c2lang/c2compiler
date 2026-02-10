@@ -48,7 +48,7 @@ type IdentifierExprBits struct {
     u32 : NumExprBits;
     u32 has_decl : 1;
     u32 kind : 3;   // IdentifierKind
-    u32 name_len : 32 - 18;
+    u32 name_len : 32 - NumExprBits - 4;
 }
 
 public type IdentifierExpr struct @(opaque) {

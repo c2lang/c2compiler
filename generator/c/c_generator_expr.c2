@@ -306,10 +306,6 @@ fn void Generator.emitMemberDecl(Generator* gen, string_buffer.Buf* out, Decl* d
 fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, MemberExpr* m, MemberContext* mc, bool base_only = false) {
     if (m.hasExpr()) {
         Expr* base = m.getBaseExpr();
-        if (base.isIdentifier()) {
-            IdentifierExpr* e = (IdentifierExpr*)base;
-            gen.emitMemberDecl(out, e.getDecl(), mc);
-        } else
         if (base.isMember()) {
             MemberExpr* e = (MemberExpr*)base;
             gen.emitMemberExpr(out, e, mc);
