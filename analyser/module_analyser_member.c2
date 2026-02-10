@@ -118,7 +118,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 // no need to update valtype
                 break;
             case Enum:
-                //stdio.printf("ENUM BASE  (type: %d)\n", valtype == ValType.NValue);
+                //stdio.printf("ENUM BASE  (type: %d)\n", valtype == NValue);
                 EnumType* et = (EnumType*)t;
                 EnumTypeDecl* etd = et.getDecl();
                 d = (Decl*)etd;

@@ -28,7 +28,7 @@ public type ImplicitCastKind enum u8 {
     BitCast,    // pointer conversion (char* -> i32*, or void* -> FunctionPtr)
 }
 
-const char*[] implicitCastKind_names = {
+const char*[ImplicitCastKind] implicitCastKind_names = {
     "ArrayToPointerDecay",
     "LValueToRValue",
     "PointerToBoolean",
@@ -36,8 +36,6 @@ const char*[] implicitCastKind_names = {
     "IntegralCast",
     "BitCast",
 }
-
-static_assert(elemsof(ImplicitCastKind), elemsof(implicitCastKind_names));
 
 type ImplicitCastBits struct {
     u32 : NumExprBits;

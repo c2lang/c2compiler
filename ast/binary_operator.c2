@@ -105,7 +105,7 @@ public type BinaryOperator struct @(opaque) {
 
 public fn BinaryOperator* BinaryOperator.create(ast_context.Context* c, SrcLoc loc, BinaryOpcode kind, Expr* lhs, Expr* rhs) {
     BinaryOperator* e = c.alloc(sizeof(BinaryOperator));
-    e.base.init(BinaryOperator, loc, 0, 0, kind >= BinaryOpcode.Assign, RValue);
+    e.base.init(BinaryOperator, loc, 0, 0, kind >= Assign, RValue);
     e.base.base.binaryOperatorBits.kind = kind;
     e.lhs = lhs;
     e.rhs = rhs;

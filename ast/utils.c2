@@ -97,7 +97,7 @@ static_assert(8, sizeof(TypeRef));
 public const QualType QualType_Invalid = { }
 
 public type Globals struct @(opaque) {
-    QualType[elemsof(BuiltinKind)] builtins;
+    QualType[BuiltinKind] builtins;
     QualType void_type;
     QualType void_ptr_type;
 
@@ -147,8 +147,8 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
 #endif
 
     // create all Qualtypes for builtin-types, 1 extra for void-ptr
-    for (u32 i=0; i<elemsof(BuiltinKind); i++) {
-        globals.builtins[i].set((Type*)BuiltinType.create(c, (BuiltinKind)i));
+    for (BuiltinKind kind = BuiltinKind.min; kind <= BuiltinKind.max; kind++) {
+        globals.builtins[kind].set((Type*)BuiltinType.create(c, kind));
     }
 
     globals.void_type.set((Type*)VoidType.create(c));
@@ -158,22 +158,22 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
     void_ptr.setCanonicalType(globals.void_ptr_type);
 
     string.memcpy(globals.builtinType_sizes, BuiltinType_default_sizes, sizeof(BuiltinType_default_sizes));
-    globals.builtinType_sizes[BuiltinKind.ISize] = wordsize;
-    globals.builtinType_sizes[BuiltinKind.USize] = wordsize;
+    globals.builtinType_sizes[ISize] = wordsize;
+    globals.builtinType_sizes[USize] = wordsize;
 
     string.memcpy(globals.builtinType_width, BuiltinType_default_widths, sizeof(BuiltinType_default_widths));
-    globals.builtinType_width[BuiltinKind.ISize] = wordsize * 8;
-    globals.builtinType_width[BuiltinKind.USize] = wordsize * 8;
+    globals.builtinType_width[ISize] = wordsize * 8;
+    globals.builtinType_width[USize] = wordsize * 8;
 
-    for (u32 i=0; i<elemsof(BuiltinKind); i++) {
-        globals.builtinType_baseTypes[(BuiltinKind)i] = (BuiltinKind)i;
+    for (BuiltinKind kind = BuiltinKind.min; kind <= BuiltinKind.max; kind++) {
+        globals.builtinType_baseTypes[kind] = kind;
     }
     if (wordsize == 4) {
-        globals.builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int32;
-        globals.builtinType_baseTypes[BuiltinKind.USize] = BuiltinKind.UInt32;
+        globals.builtinType_baseTypes[ISize] = Int32;
+        globals.builtinType_baseTypes[USize] = UInt32;
     } else {
-        globals.builtinType_baseTypes[BuiltinKind.ISize] = BuiltinKind.Int64;
-        globals.builtinType_baseTypes[BuiltinKind.USize] = BuiltinKind.UInt64;
+        globals.builtinType_baseTypes[ISize] = Int64;
+        globals.builtinType_baseTypes[USize] = UInt64;
     }
 }
 

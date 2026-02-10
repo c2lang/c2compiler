@@ -85,7 +85,7 @@ fn void generate_module(void* arg) {
     ast.TypeRefHolder ref.init();
     ref.setConst();
     ref.addArray(nil);
-    ref.setBuiltin(ast.BuiltinKind.Char, 0);
+    ref.setBuiltin(Char, 0);
 
     // create variable
     u32 version = p.info.astPool.addStr(p.version, false);

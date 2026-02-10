@@ -26,14 +26,12 @@ public type VarDeclKind enum u8 {
     StructMember,
 }
 
-const char*[] varDeclNames = {
+const char*[VarDeclKind] varDeclNames = {
     " global",
     " local",
     " parameter",
     " member",
 }
-
-static_assert(elemsof(VarDeclKind), elemsof(varDeclNames));
 
 type AutoAttr enum u32 {
     None,

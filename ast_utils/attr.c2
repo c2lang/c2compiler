@@ -46,7 +46,7 @@ public type AttrKind enum u8 {
     Deprecated,     //        Func
 }
 
-const char*[] attrKind_names = {
+const char*[AttrKind] attrKind_names = {
     "?",
     "export",
     "packed",
@@ -72,8 +72,6 @@ const char*[] attrKind_names = {
     "embed",
     "deprecated",
 }
-
-static_assert(elemsof(AttrKind), elemsof(attrKind_names));
 
 public type AttrValueKind enum u8 {
     None,
@@ -112,46 +110,45 @@ public type AttrRegistry struct {
 public fn void AttrRegistry.init(AttrRegistry* ar, string_pool.Pool* pool) {
     // skip unknown attribute
     ar.name_indexes[0] = 0;
-    for (u32 i = 1; i < elemsof(AttrKind); i++) {
-        ar.name_indexes[i] = pool.addStr(attrKind_names[i], true);
+    for (AttrKind kind = (AttrKind)1; kind <= AttrKind.max; kind++) {
+        ar.name_indexes[kind] = pool.addStr(attrKind_names[kind], true);
     }
 }
 
 public fn AttrKind AttrRegistry.find(AttrRegistry* ar, u32 name_idx) {
     // skip unknown
-    for (u32 i = 1; i < elemsof(AttrKind); i++) {
-        if (name_idx == ar.name_indexes[i]) return (AttrKind)i;
+    for (AttrKind kind = (AttrKind)1; kind <= AttrKind.max; kind++) {
+        if (name_idx == ar.name_indexes[kind]) return kind;
     }
     return Unknown;
 }
 
-const AttrReq[] Required_arg = {
-    [AttrKind.Unknown]      = AttrReq.NoArg,
-    [AttrKind.Export]       = AttrReq.NoArg,
-    [AttrKind.Packed]       = AttrReq.NoArg,
-    [AttrKind.Unused]       = AttrReq.NoArg,
-    [AttrKind.UnusedParams] = AttrReq.NoArg,
-    [AttrKind.Section]      = AttrReq.String,
-    [AttrKind.NoReturn]     = AttrReq.NoArg,
-    [AttrKind.Inline]       = AttrReq.NoArg,
-    [AttrKind.PrintfFormat] = AttrReq.NoArg,
-    [AttrKind.ScanfFormat]  = AttrReq.NoArg,
-    [AttrKind.Aligned]      = AttrReq.Number,
-    [AttrKind.Weak]         = AttrReq.NoArg,
-    [AttrKind.Opaque]       = AttrReq.NoArg,
-    [AttrKind.CName]        = AttrReq.String,
-    [AttrKind.CDef]         = AttrReq.String,
-    [AttrKind.NoTypeDef]    = AttrReq.NoArg,
-    [AttrKind.Constructor]  = AttrReq.NoArg,
-    [AttrKind.Destructor]   = AttrReq.NoArg,
-    [AttrKind.Pure]         = AttrReq.NoArg,
-    [AttrKind.AutoFile]     = AttrReq.NoArg,
-    [AttrKind.AutoLine]     = AttrReq.NoArg,
-    [AttrKind.AutoFunc]     = AttrReq.NoArg,
-    [AttrKind.Embed]        = AttrReq.String,
-    [AttrKind.Deprecated]   = AttrReq.String,
+const AttrReq[AttrKind] Required_arg = {
+    [Unknown]      = NoArg,
+    [Export]       = NoArg,
+    [Packed]       = NoArg,
+    [Unused]       = NoArg,
+    [UnusedParams] = NoArg,
+    [Section]      = String,
+    [NoReturn]     = NoArg,
+    [Inline]       = NoArg,
+    [PrintfFormat] = NoArg,
+    [ScanfFormat]  = NoArg,
+    [Aligned]      = Number,
+    [Weak]         = NoArg,
+    [Opaque]       = NoArg,
+    [CName]        = String,
+    [CDef]         = String,
+    [NoTypeDef]    = NoArg,
+    [Constructor]  = NoArg,
+    [Destructor]   = NoArg,
+    [Pure]         = NoArg,
+    [AutoFile]     = NoArg,
+    [AutoLine]     = NoArg,
+    [AutoFunc]     = NoArg,
+    [Embed]        = String,
+    [Deprecated]   = String,
 }
-static_assert(elemsof(AttrKind), elemsof(Required_arg));
 
 public type AttrReq enum u8 {
     NoArg = 0,

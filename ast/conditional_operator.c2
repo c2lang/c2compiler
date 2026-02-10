@@ -35,7 +35,7 @@ public fn ConditionalOperator* ConditionalOperator.create(ast_context.Context* c
                                                             Expr* rhs)
 {
     ConditionalOperator* e = c.alloc(sizeof(ConditionalOperator));
-    e.base.init(ConditionalOperator, questionLoc, 0, 1, 1, ValType.RValue);
+    e.base.init(ConditionalOperator, questionLoc, 0, 1, 1, RValue);
     e.colonLoc = colonLoc;
     e.cond = cond;
     e.lhs = lhs;
