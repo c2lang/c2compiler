@@ -72,7 +72,7 @@ fn void Options.free(Options *opts) {
 
 fn void write_file_or_die(const char* filename, string_buffer.Buf* buf) {
     file_utils.File file.init("", filename);
-    if (!file.write(buf.udata(), buf.size())) {
+    if (!file.write(buf.data(), buf.size())) {
         console.error("c2c: cannot write to %s: %s", file.path, file.getError());
         exit(EXIT_FAILURE);
     }

@@ -49,7 +49,6 @@ public fn Buf* Buf.init(Buf* buf, char* data, u32 capacity, bool grow, bool use_
         buf.data_ = malloc(capacity);
         buf.own = true;
     }
-    buf.data_[0] = '\0';
     return buf;
 }
 
@@ -98,16 +97,18 @@ public fn u32 Buf.size(const Buf* buf) {
     return buf.size_;
 }
 
-public fn const char* Buf.data(const Buf* buf) {
+public fn const void* Buf.data(const Buf* buf) {
+    buf.data_[buf.size_] = '\0';
     return buf.data_;
 }
 
-public fn const u8* Buf.udata(const Buf* buf) {
-    return (u8*)buf.data_;
+public fn const char* Buf.str(const Buf* buf) {
+    return buf.data();
 }
 
 public fn void* Buf.detach(Buf* buf, u32 *psize) {
     *psize = buf.size_;
+    buf.data_[buf.size_] = '\0';
     if (buf.own) {
         // try and shrink allocated buffer
         void* data = realloc(buf.data_, buf.size_ + 1);
@@ -132,13 +133,16 @@ public fn void Buf.color(Buf* buf, Color col) {
     if (buf.colors) buf.add(col.str());
 }
 
+public fn char Buf.at(const Buf* buf, u32 i) {
+    return i < buf.size_ ? buf.data_[i] :  '\0';
+}
+
 public fn void Buf.add1(Buf* buf, char c) {
     if (buf.size_ + 2 > buf.capacity) {
         if (!buf.extend(1)) return;
     }
     buf.data_[buf.size_] = c;
     buf.size_ += 1;
-    buf.data_[buf.size_] = '\0';
 }
 
 public fn void Buf.add(Buf* buf, const char* text) {
@@ -153,7 +157,6 @@ public fn void Buf.add2(Buf* buf, const char* text, u32 len) {
     }
     memcpy(&buf.data_[buf.size_], text, len);
     buf.size_ += len;
-    buf.data_[buf.size_] = '\0';
 }
 
 public fn void Buf.newline(Buf* buf) { buf.add1('\n'); }
@@ -163,7 +166,6 @@ public fn void Buf.rparen(Buf* buf) { buf.add1(')'); }
 
 public fn void Buf.stripTrailingSpaces(Buf* buf) {
     while (buf.size_ && buf.data_[buf.size_-1] == ' ') buf.size_--;
-    buf.data_[buf.size_] = '\0';
 }
 
 public fn void Buf.print(Buf* buf, const char* format @(printf_format), ...) {
@@ -187,10 +189,7 @@ public fn void Buf.vprintf(Buf* buf, const char* format, va_list args) {
 
 public fn void Buf.unindent(Buf* buf) {
     u32 i = buf.indent_step;
-    while (i-- > 0) {
-        if (buf.size_ && buf.data_[buf.size_ - 1] == ' ')
-            buf.data_[--buf.size_] = '\0';
-    }
+    while (i-- > 0 && buf.size_ && buf.data_[buf.size_ - 1] == ' ') buf.size_--;
 }
 
 public fn void Buf.indent(Buf* buf, u32 indent) {
@@ -202,7 +201,6 @@ public fn void Buf.indent(Buf* buf, u32 indent) {
 
     char* cur = buf.data_ + buf.size_;
     for (u32 i=0; i<indent; i++) cur[i] = ' ';
-    cur[indent] = 0;
     buf.size_ += indent;
 }
 
@@ -266,8 +264,6 @@ public fn void Buf.encodeHex(Buf* buf, const u8* data, u32 len) @(unused) {
     if (buf.size_ + len * 3 + 1 > buf.capacity) {
         if (!buf.extend(len * 3)) len = (buf.capacity - buf.size_ - 1) / 3;
     }
-    if (len == 0) return;
-
     char* cp = &buf.data_[buf.size_];
     for (u32 i=0; i<len; i++) {
         if (i != 0) *cp++ = ' ';
@@ -275,8 +271,7 @@ public fn void Buf.encodeHex(Buf* buf, const u8* data, u32 len) @(unused) {
         *cp++ = ToHex[v >> 4];
         *cp++ = ToHex[v & 0xF];
     }
-    *cp = 0;
-    buf.size_ += len * 3 - 1;
+    buf.size_ = (u32)(cp - buf.data_);
 }
 
 public fn void Buf.trim(Buf* buf, u32 len) @(unused) {
@@ -286,10 +281,7 @@ public fn void Buf.trim(Buf* buf, u32 len) @(unused) {
 public fn void Buf.resetToLastNewline(Buf* buf) @(unused) {
     while (buf.size_) {
         buf.size_--;
-        if (buf.data_[buf.size_] == '\n') {
-            buf.data_[buf.size_] = 0;
-            return;
-        }
+        if (buf.data_[buf.size_] == '\n') break;
     }
 }
 

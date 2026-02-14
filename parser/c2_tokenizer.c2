@@ -1137,7 +1137,7 @@ fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
             t.error(result, "multi-character character constant");
             return;
         }
-        result.char_value = *t.buf.udata();
+        result.char_value = t.buf.at(0);
         break;
     default:
         u8 c = *t.cur;
@@ -1482,7 +1482,7 @@ fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, Kind kind) {
         }
         last_loc = tok.loc + tok.len;
     }
-    msg.size();  // ensure null terminator
+    msg.data();  // ensure null terminator
 
     if (kind == Feat_error) {
         const char* start = t.input_start + (result.loc - t.loc_start);
