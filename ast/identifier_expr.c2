@@ -81,6 +81,10 @@ public fn void IdentifierExpr.setDecl(IdentifierExpr* e, Decl* decl) {
     e.base.base.identifierExprBits.has_decl = true;
 }
 
+public fn bool IdentifierExpr.hasDecl(const IdentifierExpr* e) {
+    return e.base.base.identifierExprBits.has_decl;
+}
+
 public fn Decl* IdentifierExpr.getDecl(const IdentifierExpr* e) {
     if (!e.base.base.identifierExprBits.has_decl) return nil;
     return e.decl;

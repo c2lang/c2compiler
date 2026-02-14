@@ -123,21 +123,28 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
 
 fn bool Analyser.checkEnumArg(Analyser* ma, Expr** e_ptr, QualType expectedType) {
     Expr* e = *e_ptr;
-    if (e.isIdentifier() && expectedType.isEnum()) {
+    if (expectedType.isEnum()) {
         // Note: can also be another enum variable! (Color c = prevColor)
         EnumType* et = expectedType.getEnum();
         EnumTypeDecl* etd = et.getDecl();
-        IdentifierExpr* ie = (IdentifierExpr*)e;
-        EnumConstantDecl* ecd = etd.findConstant(ie.getNameIdx());
-        if (ecd) {
-            Decl* d = (Decl*)ecd;
-            d.setUsed();
-            e.setType(expectedType);
-            ie.setDecl(d);
-            IdentifierKind kind = ma.setExprFlags(e_ptr, d);
-            ie.setKind(kind);
-            return true;
-        } // else could be Color c = prevColor;
+        if (e.isIdentifier()) {
+            IdentifierExpr* ie = (IdentifierExpr*)e;
+            EnumConstantDecl* ecd = etd.findConstant(ie.getNameIdx());
+            if (ecd) {
+                Decl* d = (Decl*)ecd;
+                d.setUsed();
+                e.setType(expectedType);
+                ie.setDecl(d);
+                IdentifierKind kind = ma.setExprFlags(e_ptr, d);
+                ie.setKind(kind);
+                return true;
+            } // else could be Color c = prevColor;
+        } else
+        if (e.getKind() == ConditionalOperator) {
+            ConditionalOperator* op = (ConditionalOperator*)e;
+            ma.checkEnumArg(op.getLHS2(), expectedType);
+            ma.checkEnumArg(op.getRHS2(), expectedType);
+        }
     }
     return false;
 }

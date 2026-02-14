@@ -36,8 +36,8 @@ public fn i32 main(i32 argc, const char** argv) {
         a[Foo.B],   // @error{array subscript must have enum type 'test.Enum'}
         a[argc],    // @error{array subscript must have enum type 'test.Enum'}
         a[No + 1],  // @error{use of undeclared identifier 'No'}
-        a[1 ? Yes : // @error{use of undeclared identifier 'Yes'}
-              No],  // @error{use of undeclared identifier 'No'}
+        a[1 ? Yes : // Yes is resolved as Enum.Yes
+              No],  // No is resolved as Enum.No
         a[1],       // @error{array subscript must have enum type 'test.Enum'}
         a[argc],    // @error{array subscript must have enum type 'test.Enum'}
     }
