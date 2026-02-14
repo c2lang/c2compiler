@@ -538,6 +538,6 @@ public fn const char* TypeRef.diagName(const TypeRef* r) {
     local char[128] result;
     string_buffer.Buf buf.init(result, elemsof(result), false, false, 0);
     r.print(&buf, true);
-    return result;
+    return buf.str();  // ensure null terminator
 }
 

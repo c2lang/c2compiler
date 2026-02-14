@@ -136,7 +136,7 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
                 }
 
                 if (missing) {
-                    ma.error(s.getLoc(), "unhandled enumeration value%s: %s", missing > 1 ? "s" : "", out.data());
+                    ma.error(s.getLoc(), "unhandled enumeration value%s: %s", missing > 1 ? "s" : "", out.str());
                     flow |= FlowError;
                 }
                 out.free();

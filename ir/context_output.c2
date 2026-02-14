@@ -73,7 +73,7 @@ public fn void Context.writeOutput(Context* c, const char* output_dir, const cha
 
 fn void Context.write(Context* c, const char* output_dir, const char* filename, const string_buffer.Buf* buf) {
     file_utils.File file.init(output_dir, filename);
-    if (!file.write(buf.udata(), buf.size())) {
+    if (!file.write(buf.data(), buf.size())) {
         console.error("cannot write to %s: %s", file.path, file.getError());
     }
 }

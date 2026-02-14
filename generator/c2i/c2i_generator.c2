@@ -73,7 +73,7 @@ fn void Generator.on_module(void* arg, Module* m) {
     m.visitDecls(on_decl, gen);
 
     file_utils.File file.init_ext(gen.output_dir, gen.mod_name, ".c2i");
-    if (!file.write(gen.out.udata(), gen.out.size())) {
+    if (!file.write(gen.out.data(), gen.out.size())) {
         console.error("cannot write to %s: %s", file.path, file.getError());
     }
 

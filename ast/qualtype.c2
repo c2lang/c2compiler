@@ -440,7 +440,7 @@ public fn const char* QualType.diagName(const QualType qt) {
     qt.printInner(&buf, true, true, true);
     //buf.add1('\'');
 
-    return msg;
+    return buf.str();  // ensure null terminator
 }
 
 public fn const char* QualType.diagNameBare(const QualType qt) {
@@ -453,7 +453,7 @@ public fn const char* QualType.diagNameBare(const QualType qt) {
 
     qt.printInner(&buf, true, false, true);
 
-    return msg;
+    return buf.str();  // ensure null terminator
 }
 
 public fn void QualType.dump(const QualType qt) @(unused) {
