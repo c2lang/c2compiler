@@ -90,10 +90,8 @@ fn c_int remove(const c_char* __filename);
 fn c_int rename(const c_char* __old, const c_char* __new);
 
 fn FILE* tmpfile();
-#if EXPERIMENTAL
 fn c_char* tmpnam(c_char* __s) @(deprecated="use unistd.mkstemp instead");
 fn c_char* tempnam(const c_char* __dir, const c_char* __pfx) @(deprecated="use unistd.mkstemp instead");
-#endif
 fn c_int fclose(FILE* __stream);
 fn c_int fflush(FILE* __stream);
 fn FILE* fopen(const c_char* __filename, const c_char* __modes);
@@ -108,15 +106,9 @@ fn c_int printf(const c_char* __format @(printf_format), ...);
 fn c_int sprintf(c_char* __s, const c_char* __format @(printf_format), ...);
 fn c_int snprintf(c_char* __s, c_size size, const c_char* __format @(printf_format), ...);
 fn c_int dprintf(c_int __fd, const c_char* __fmt @(printf_format), ...);
-#if EXPERIMENTAL
 fn c_int fscanf(FILE* stream, const c_char* format @(scanf_format), ...);
 fn c_int scanf(const c_char* format @(scanf_format), ...);
 fn c_int sscanf(const c_char* s, const c_char* format @(scanf_format), ...);
-#else
-fn c_int fscanf(FILE* __stream, const c_char* __format, ...);
-fn c_int scanf(const c_char* __format, ...);
-fn c_int sscanf(const c_char* __s, const c_char* __format, ...);
-#endif
 fn c_int fgetc(FILE* __stream);
 fn c_int getc(FILE* __stream);
 fn c_int getchar();
@@ -126,9 +118,7 @@ fn c_int fputc(c_int __c, FILE* __stream);
 fn c_int putc(c_int __c, FILE* __stream);
 fn c_int putchar(c_int __c);
 fn c_int putchar_unlocked(c_int __c);
-#if EXPERIMENTAL
 fn c_char* gets(c_char* __s) @(deprecated="function cannot be used safely");
-#endif
 fn c_int getw(FILE* __stream);
 fn c_int putw(c_int __w, FILE* __stream);
 fn c_char* fgets(c_char* __s, c_int __n, FILE* __stream);

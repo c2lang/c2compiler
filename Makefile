@@ -28,7 +28,8 @@ c2c: $(C2C)
 $(C2C): output/bootstrap/bootstrap $(C2C_DEPS)
 	@echo "---- running (bootstrapped$(C2FLAGS)) c2c ----"
 	@output/bootstrap/bootstrap c2c $(C2FLAGS) --fast --noplugins
-	@mv output/c2c/c2c output/bootstrap/c2c
+	@rm -rf output/bootstrap/cgen
+	@mv -f output/c2c/* output/bootstrap
 	@echo "---- running c2c (no plugins$(C2FLAGS)) ----"
 	@output/bootstrap/c2c $(C2FLAGS) --noplugins --fast c2c $(PLUGINS)
 	@./install_plugins.sh
@@ -48,18 +49,21 @@ debug:;	@$(MAKE) -B DEBUG=1
 output/tester/tester: tools/tester/*.c2 $(C2C_DEPS) $(C2C)
 	@$(C2C) tester
 
+test-bootstrap: $(C2C)
+	@$(C2C) c2c_bootstrap --bootstrap
+
 rebuild-bootstrap: $(C2C)
 	@echo "generating bootstrap files for various systems/architectures"
-	$(C2C) c2c -b bootstrap/build-linux-x86_64.yaml  --test
-	mv -f output/linux-x86_64/c2c/cgen/build.c bootstrap/bootstrap.c
-	$(C2C) c2c -b bootstrap/build-darwin-x86_64.yaml  --test
-	( diff bootstrap/bootstrap.c output/darwin-x86_64/c2c/cgen/build.c > bootstrap/bootstrap-darwin-x86_64.patch ; true )
-	$(C2C) c2c -b bootstrap/build-darwin-arm64.yaml  --test
-	( diff bootstrap/bootstrap.c output/darwin-arm64/c2c/cgen/build.c > bootstrap/bootstrap-darwin-arm64.patch ; true )
-	$(C2C) c2c -b bootstrap/build-freebsd-amd64.yaml  --test
-	( diff bootstrap/bootstrap.c output/freebsd-amd64/c2c/cgen/build.c > bootstrap/bootstrap-freebsd-amd64.patch ; true )
-	$(C2C) c2c -b bootstrap/build-openbsd-amd64.yaml  --test
-	( diff bootstrap/bootstrap.c output/openbsd-amd64/c2c/cgen/build.c > bootstrap/bootstrap-openbsd-amd64.patch ; true )
+	$(C2C) c2c_bootstrap -b bootstrap/build-linux-x86_64.yaml  --test --bootstrap
+	mv -f output/linux-x86_64/c2c_bootstrap/cgen/build.c bootstrap/bootstrap.c
+	$(C2C) c2c_bootstrap -b bootstrap/build-darwin-x86_64.yaml --test --bootstrap
+	( diff bootstrap/bootstrap.c output/darwin-x86_64/c2c_bootstrap/cgen/build.c > bootstrap/bootstrap-darwin-x86_64.patch ; true )
+	$(C2C) c2c_bootstrap -b bootstrap/build-darwin-arm64.yaml  --test --bootstrap
+	( diff bootstrap/bootstrap.c output/darwin-arm64/c2c_bootstrap/cgen/build.c > bootstrap/bootstrap-darwin-arm64.patch ; true )
+	$(C2C) c2c_bootstrap -b bootstrap/build-freebsd-amd64.yaml --test --bootstrap
+	( diff bootstrap/bootstrap.c output/freebsd-amd64/c2c_bootstrap/cgen/build.c > bootstrap/bootstrap-freebsd-amd64.patch ; true )
+	$(C2C) c2c_bootstrap -b bootstrap/build-openbsd-amd64.yaml --test --bootstrap
+	( diff bootstrap/bootstrap.c output/openbsd-amd64/c2c_bootstrap/cgen/build.c > bootstrap/bootstrap-openbsd-amd64.patch ; true )
 
 test: output/tester/tester
 	@echo "---- running tests ----"

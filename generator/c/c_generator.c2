@@ -1379,6 +1379,7 @@ public fn void build(const char* output_dir)
         return;
     }
 
+    // TODO only run -j for --fast build
     i32 retval = process_utils.run_args(dir, make, "-j", LogFile);
     if (retval != 0) {
         console.error("error during external C compilation");

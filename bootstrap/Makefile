@@ -5,7 +5,7 @@ CFLAGS+=-Wno-unused -Wno-switch
 CFLAGS+=-Wno-unused-parameter -Wno-missing-field-initializers -Wno-format-zero-length
 # silence clang warning on %lb on macOS
 CFLAGS+=-Wno-format
-CFLAGS+=-pipe -std=c99 -funsigned-char -O0 -g
+CFLAGS+=-pipe -std=c99 -funsigned-char -O0
 
 SYSTEM:=$(shell uname -s)
 ARCH:=$(shell uname -m)
@@ -29,7 +29,7 @@ endif
 
 ifeq (FreeBSD,$(SYSTEM))
 CC:=clang
-LDFLAGS:=-lpthread
+LDFLAGS:=
 BOOTSTRAP_FILE:=../output/bootstrap/bootstrap-freebsd-amd64.c
 endif
 
