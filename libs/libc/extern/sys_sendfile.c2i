@@ -1,0 +1,6 @@
+module sys_sendfile extern "C";
+
+typedef u64 Offset @(cname="off_t");
+
+ssize_t sendfile(int __out_fd, int __in_fd, Offset* __offset, size_t __count);
+

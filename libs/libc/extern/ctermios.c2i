@@ -1,0 +1,161 @@
+module ctermios extern "C";
+
+typedef unsigned Flag;
+typedef unsigned Speed;
+typedef unsigned char CC;
+
+const u32 NCCS = 32;
+
+struct Termios @(cname="termios") {
+    Flag c_iflag;       /* input mode flags */
+    Flag c_oflag;       /* output mode flags */
+    Flag c_cflag;       /* control mode flags */
+    Flag c_lflag;       /* local mode flags */
+    CC c_line;          /* line discipline */
+    CC[NCCS] c_cc;      /* control characters */
+    Speed c_ispeed;     /* input speed */
+    Speed c_ospeed;     /* output speed */
+}
+
+/* c_cc characters */
+const unsigned VINTR = 0;
+const unsigned VQUIT = 1;
+const unsigned VERASE = 2;
+const unsigned VKILL = 3;
+const unsigned VEOF = 4;
+const unsigned VTIME = 5;
+const unsigned VMIN = 6;
+const unsigned VSWTC = 7;
+const unsigned VSTART = 8;
+const unsigned VSTOP = 9;
+const unsigned VSUSP = 10;
+const unsigned VEOL = 11;
+const unsigned VREPRINT = 12;
+const unsigned VDISCARD = 13;
+const unsigned VWERASE = 14;
+const unsigned VLNEXT = 15;
+const unsigned VEOL2 = 16;
+
+/* c_iflag bits */
+const unsigned IGNBRK  = 0000001;
+const unsigned BRKINT  = 0000002;
+const unsigned IGNPAR  = 0000004;
+const unsigned PARMRK  = 0000010;
+const unsigned INPCK   = 0000020;
+const unsigned ISTRIP  = 0000040;
+const unsigned INLCR   = 0000100;
+const unsigned IGNCR   = 0000200;
+const unsigned ICRNL   = 0000400;
+const unsigned IUCLC   = 0001000;
+const unsigned IXON    = 0002000;
+const unsigned IXANY   = 0004000;
+const unsigned IXOFF   = 0010000;
+const unsigned IMAXBEL = 0020000;
+const unsigned IUTF8   = 0040000;
+
+/* c_oflag bits */
+const unsigned OPOST   = 0000001;
+const unsigned OLCUC   = 0000002;
+const unsigned ONLCR   = 0000004;
+const unsigned OCRNL   = 0000010;
+const unsigned ONOCR   = 0000020;
+const unsigned ONLRET  = 0000040;
+const unsigned OFILL   = 0000100;
+const unsigned OFDEL   = 0000200;
+const unsigned NLDLY   = 0000400;
+const unsigned NL0     = 0000000;
+const unsigned NL1     = 0000400;
+const unsigned CRDLY   = 0003000;
+const unsigned CR0     = 0000000;
+const unsigned CR1     = 0001000;
+const unsigned CR2     = 0002000;
+const unsigned CR3     = 0003000;
+const unsigned TABDLY  = 0014000;
+const unsigned TAB0    = 0000000;
+const unsigned TAB1    = 0004000;
+const unsigned TAB2    = 0010000;
+const unsigned TAB3    = 0014000;
+const unsigned XTABS   = 0014000;
+const unsigned BSDLY   = 0020000;
+const unsigned BS0     = 0000000;
+const unsigned BS1     = 0020000;
+const unsigned VTDLY   = 0040000;
+const unsigned VT0     = 0000000;
+const unsigned VT1     = 0040000;
+const unsigned FFDLY   = 0100000;
+const unsigned FF0     = 0000000;
+const unsigned FF1     = 0100000;
+
+/* c_cflag bit meaning */
+const unsigned CBAUD   = 0010017;
+const unsigned B0      = 0000000;     /* hang up */
+const unsigned B50     = 0000001;
+const unsigned B75     = 0000002;
+const unsigned B110    = 0000003;
+const unsigned B134    = 0000004;
+const unsigned B150    = 0000005;
+const unsigned B200    = 0000006;
+const unsigned B300    = 0000007;
+const unsigned B600    = 0000010;
+const unsigned B1200   = 0000011;
+const unsigned B1800   = 0000012;
+const unsigned B2400   = 0000013;
+const unsigned B4800   = 0000014;
+const unsigned B9600   = 0000015;
+const unsigned B19200  = 0000016;
+const unsigned B38400  = 0000017;
+const unsigned EXTA    = B19200;
+const unsigned EXTB    = B38400;
+const unsigned CSIZE   = 0000060;
+const unsigned CS5     = 0000000;
+const unsigned CS6     = 0000020;
+const unsigned CS7     = 0000040;
+const unsigned CS8     = 0000060;
+const unsigned CSTOPB  = 0000100;
+const unsigned CREAD   = 0000200;
+const unsigned PARENB  = 0000400;
+const unsigned PARODD  = 0001000;
+const unsigned HUPCL   = 0002000;
+const unsigned CLOCAL  = 0004000;
+const unsigned CBAUDEX = 0010000;
+const unsigned BOTHER  = 0010000;
+const unsigned B57600  = 0010001;
+const unsigned B115200 = 0010002;
+const unsigned B230400 = 0010003;
+const unsigned B460800 = 0010004;
+const unsigned B500000 = 0010005;
+const unsigned B576000 = 0010006;
+const unsigned B921600 = 0010007;
+const unsigned B1000000 = 0010010;
+const unsigned B1152000 = 0010011;
+const unsigned B1500000 = 0010012;
+const unsigned B2000000 = 0010013;
+const unsigned B2500000 = 0010014;
+const unsigned B3000000 = 0010015;
+const unsigned B3500000 = 0010016;
+const unsigned B4000000 = 0010017;
+const unsigned CIBAUD  = 002003600000;  /* input baud rate */
+const unsigned CMSPAR  = 010000000000;  /* mark or space (stick) parity */
+const unsigned CRTSCTS = 020000000000;  /* flow control */
+
+/* c_lflag bits */
+const unsigned ISIG    = 0000001;
+const unsigned ICANON  = 0000002;
+const unsigned XCASE   = 0000004;
+const unsigned ECHO    = 0000010;
+const unsigned ECHOE   = 0000020;
+const unsigned ECHOK   = 0000040;
+const unsigned ECHONL  = 0000100;
+const unsigned NOFLSH  = 0000200;
+const unsigned TOSTOP  = 0000400;
+const unsigned ECHOCTL = 0001000;
+const unsigned ECHOPRT = 0002000;
+const unsigned ECHOKE  = 0004000;
+const unsigned FLUSHO  = 0010000;
+const unsigned PENDIN  = 0040000;
+const unsigned IEXTEN  = 0100000;
+const unsigned EXTPROC = 0200000;
+
+int tcgetattr(int fd, Termios* termios_p);
+int tcsetattr(int fd, int optional_actions, const Termios* termios_p);
+

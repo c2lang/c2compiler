@@ -1,0 +1,150 @@
+module stdlib extern "C";
+
+#if __ASAN__ || __MSAN__ || __UBSAN__
+import string;
+#endif
+
+struct Div_t @(cname="div_t") {
+    int quot;
+    int rem;
+}
+
+struct Ldiv_t @(cname="Ldiv_t") {
+    long quot;
+    long rem;
+}
+
+const int RAND_MAX = 2147483647;      // same as Int32_max
+
+const i8 EXIT_FAILURE = 1;
+const i8 EXIT_SUCCESS = 0;
+
+void* calloc(size_t count, size_t size);
+#if __ASAN__ || __MSAN__ || __UBSAN__
+void* malloc(size_t size) {
+    // fill malloced blocks with junk if debugging
+    void *p = calloc(size, 1);
+    return p ? string.memset(p, 0xAA, size) : p;
+}
+#else
+void* malloc(size_t size);
+#endif
+void* realloc(void* ptr, size_t size);
+//fn void* reallocf(void* ptr, size_t size);
+void* valloc(size_t size);
+void free(void* ptr);
+
+double atof(const char* nptr);
+int atoi(const char* nptr);
+long atol(const char* nptr);
+long long atoll(const char* nptr);
+
+double strtod(const char* nptr, char** endptr);
+float strtof(const char* nptr, char** endptr);
+// NOTE returns long double (16 bytes, bah!)
+//fn long double strtold(const char* nptr, char** endptr);
+long strtol(const char* nptr, char** endptr, int base);
+unsigned long strtoul(const char* nptr, char** endptr, int base);
+long long strtoq(const char* nptr, char** endptr, int base);
+unsigned long long strtouq(const char* nptr, char** endptr, int base);
+long long strtoll(const char* nptr, char** endptr, int base);
+unsigned long long strtoull(const char* nptr, char** endptr, int base);
+
+char* l64a(long n);
+long a64l(const char* s);
+
+long random();
+void srandom(unsigned int __seed);
+char* initstate(unsigned int __seed, char* __statebuf, size_t __statelen);
+char* setstate(char* __statebuf);
+
+struct Random_data @(opaque, cname="random_data");
+
+int random_r(Random_data* __buf, int* __result);
+int srandom_r(unsigned int __seed, Random_data* __buf);
+int initstate_r(unsigned int __seed, char* __statebuf, size_t __statelen, Random_data* __buf);
+int setstate_r(char* __statebuf, Random_data* __buf);
+int rand();
+void srand(unsigned int __seed);
+int rand_r(unsigned int* __seed);
+double drand48();
+double erand48(u16* __xsubi);
+long lrand48();
+long nrand48(u16* __xsubi);
+long mrand48();
+long jrand48(u16* __xsubi);
+void srand48(long __seedval);
+u16* seed48(u16* __seed16v);
+void lcong48(u16* __param);
+
+struct Drand48_data @(opaque, cname="drand48_data");
+
+int drand48_r(Drand48_data* __buffer, double* __result);
+int erand48_r(u16* __xsubi, Drand48_data* __buffer, double* __result);
+int lrand48_r(Drand48_data* __buffer, long* __result);
+int nrand48_r(u16* __xsubi, Drand48_data* __buffer, long* __result);
+int mrand48_r(Drand48_data* __buffer, long* __result);
+int jrand48_r(u16* __xsubi, Drand48_data* __buffer, long* __result);
+int srand48_r(long __seedval, Drand48_data* __buffer);
+int seed48_r(u16* __seed16v, Drand48_data* __buffer);
+int lcong48_r(u16* __param, Drand48_data* __buffer);
+
+int posix_memalign(void** __memptr, size_t __alignment, size_t __size);
+void* aligned_alloc(int __alignment, size_t __size);
+
+void abort() @(noreturn);
+type AtExitFn fn void();
+int atexit(AtExitFn __func);
+int at_quick_exit(AtExitFn __func);
+type OnExitFn fn void(i32, void*);
+int on_exit(OnExitFn __func, void* __arg);
+void exit(int __status) @(noreturn);
+void _exit(int __status) @(noreturn);
+void quick_exit(int __status);
+void _Exit(int __status) @(noreturn);
+
+char* getenv(const char* __name);
+int putenv(char* __string);
+int setenv(const char* __name, const char* __value, int __replace);
+int unsetenv(const char* __name);
+int clearenv();
+
+int mkstemp(char* __template);
+int mkstemps(char* __template, int __suffixlen);
+char* mkdtemp(char* __template);
+int system(const char* __command);
+char* realpath(const char* __name, char* __resolved);
+char* mktemp(char* __template);
+
+type StdlibCompareFn fn i32(const void*, const void*) @(cname="__compar_fn_t");
+void* bsearch(const void* __key, const void* __base, size_t __nmemb, size_t __size, StdlibCompareFn __compar);
+void qsort(void* __base, size_t __nmemb, size_t __size, StdlibCompareFn __compar);
+
+int abs(int __x);
+long labs(long __x);
+Div_t div(int __numer, int __denom);
+Ldiv_t ldiv(long __numer, long __denom);
+
+char* ecvt(double __value, int __ndigit, int* __decpt, int* __sign);
+char* fcvt(double __value, int __ndigit, int* __decpt, int* __sign);
+char* gcvt(double __value, int __ndigit, char* __buf);
+char* qecvt(double __value, int __ndigit, int* __decpt, int* __sign);
+char* qfcvt(double __value, int __ndigit, int* __decpt, int* __sign);
+char* qgcvt(double __value, int __ndigit, char* __buf);
+int ecvt_r(double __value, int __ndigit, int* __decpt, int* __sign, char* __buf, size_t __len);
+int fcvt_r(double __value, int __ndigit, int* __decpt, int* __sign, char* __buf, size_t __len);
+int qecvt_r(double __value, int __ndigit, int* __decpt, int* __sign, char* __buf, size_t __len);
+int qfcvt_r(double __value, int __ndigit, int* __decpt, int* __sign, char* __buf, size_t __len);
+
+int mblen(const char* __s, size_t __n);
+int mbtowc(int* __pwc, const char* __s, size_t __n);
+// needs wchar_t
+//fn int wctomb(char* __s, int __wchar);
+int mbstowcs(int* __pwcs, const char* __s, size_t __n);
+int wcstombs(char* __s, const int* __pwcs, size_t __n);
+int rpmatch(const char* __response);
+// TODO need to parse char* const*
+//fn int getsubopt(char** __optionp, char*const* __tokens, char** __valuep);
+int getsubopt(char** __optionp, char** __tokens, char** __valuep);
+int getloadavg(double* __loadavg, int __nelem);
+

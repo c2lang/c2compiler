@@ -75,6 +75,12 @@ public fn void Builder.setComponent(Builder* b, component.Component* comp) {
     b.is_private = comp.isExternalSourceLib();  // all non-exported modules created here will be private
 }
 
+public fn bool Builder.setExternal(Builder* b, bool is_interface) {
+    bool was_interface = b.is_interface;
+    b.is_interface = is_interface;
+    return was_interface;
+}
+
 public fn void Builder.actOnModule(Builder* b,
                                    u32 mod_name,
                                    SrcLoc mod_loc,

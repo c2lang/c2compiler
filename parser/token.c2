@@ -93,6 +93,18 @@ public type Kind enum u8 {
     KW_f32,
     KW_f64,
     KW_void,        // keep as last BuiltinType, since we check range
+    // C types
+    KW_int,
+    KW_ssize_t,
+    KW_size_t,
+    KW_float,
+    KW_double,
+    KW_short,
+    KW_long,
+    KW_signed,
+    KW_unsigned,
+    // C keywords
+    KW_typedef,
     // other keywords
     KW_as,
     KW_asm,
@@ -108,6 +120,7 @@ public type Kind enum u8 {
     KW_enum_max,
     KW_enum_min,
     KW_enum,
+    KW_extern,
     KW_fallthrough,
     KW_false,
     KW_fn,
@@ -161,8 +174,12 @@ public fn bool Kind.isBuiltinType(Kind kind) {
     return kind >= KW_bool && kind < KW_void;
 }
 
-public fn bool Kind.isBuiltinTypeOrVoid(Kind kind) {
-    return kind >= KW_bool && kind <= KW_void;
+public fn bool Kind.isTypeKeyword(Kind kind) {
+    return kind >= KW_bool && kind <= KW_unsigned;
+}
+
+public fn bool Kind.isCType(Kind kind) {
+    return kind >= KW_int && kind <= KW_unsigned;
 }
 
 // NOTE: keep in sync with TokenKind
@@ -238,6 +255,16 @@ const char*[Kind] token_names = {
     [KW_f32]           = "f32",
     [KW_f64]           = "f64",
     [KW_void]          = "void",
+    [KW_int]           = "int",
+    [KW_ssize_t]       = "ssize_t",
+    [KW_size_t]        = "size_t",
+    [KW_float]         = "float",
+    [KW_double]        = "double",
+    [KW_short]         = "short",
+    [KW_long]          = "long",
+    [KW_signed]        = "signed",
+    [KW_unsigned]      = "unsigned",
+    [KW_typedef]       = "typedef",
     [KW_as]            = "as",
     [KW_asm]           = "asm",
     [KW_assert]        = "assert",
@@ -252,6 +279,7 @@ const char*[Kind] token_names = {
     [KW_enum_max]      = "enum_max",
     [KW_enum_min]      = "enum_min",
     [KW_enum]          = "enum",
+    [KW_extern]        = "extern",
     [KW_fallthrough]   = "fallthrough",
     [KW_false]         = "false",
     [KW_fn]            = "fn",

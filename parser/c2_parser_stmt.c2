@@ -53,26 +53,10 @@ fn Stmt* Parser.parseStmt(Parser* p) {
         return p.parseReturnStmt();
     case KW_switch:
         return p.parseSwitchStmt();
-    case KW_bool:
-    case KW_char:
+    case KW_bool ... KW_f64:        // C2 builtin types
+    case KW_int ... KW_unsigned:    // C type keywords
     case KW_const:
-    case KW_i8:
-    case KW_i16:
-    case KW_i32:
-    case KW_i64:
-    case KW_isize:
-    case KW_f32:
-    case KW_f64:
     case KW_local:
-    case KW_reg8:
-    case KW_reg16:
-    case KW_reg32:
-    case KW_reg64:
-    case KW_u8:
-    case KW_u16:
-    case KW_u32:
-    case KW_u64:
-    case KW_usize:
     case KW_volatile:
     case KW_void:
         // checkSemi, allowLocal, !isCondition
@@ -635,7 +619,7 @@ fn Stmt* Parser.parseGotoStmt(Parser* p) {
 fn bool Parser.isDeclaration(Parser* p) {
     const Kind kind = p.tok.kind;
     if (kind == Identifier) return p.isTypeSpec();
-    if (kind.isBuiltinTypeOrVoid()) return true;
+    if (kind.isTypeKeyword()) return true;
     if (kind == KW_local) return true;
     if (kind.isQualifier()) return true;
     return false;

@@ -1,0 +1,12 @@
+module linux_types extern "C";
+
+// ------ linux/time_types.h
+
+//__kernel_timespec
+struct Timespec {
+    long long tv_sec; // seconds
+    long long tv_nsec; // nanoseconds
+}
+
+// incomplete
+

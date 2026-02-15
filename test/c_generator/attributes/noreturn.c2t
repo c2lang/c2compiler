@@ -23,7 +23,7 @@ public fn i32 main() {
 // @expect{atleast, cgen/build.c}
 
 __attribute__((noreturn))
-void exit(int __status);
+void exit(int32_t __status);
 
 // --- module file1 ---
 __attribute__((noreturn))

@@ -1,0 +1,10 @@
+module linux_ifether extern "C";
+
+const u32 ETH_ALEN = 6;
+
+struct Hdr @(cname="ethhdr", packed) {
+    unsigned char[ETH_ALEN] h_dest;
+    unsigned char[ETH_ALEN] h_source;
+    unsigned short h_proto;    // Big-Endian
+}
+

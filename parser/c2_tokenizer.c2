@@ -72,20 +72,20 @@ type Action enum u8 {
 }
 
 const Action[256] Char_lookup = {
-// 0 - 15
-   [  0]  = EOF,
-   ['\t'] = TABSPACE,
-   ['\n'] = NEWLINE,
-   ['\r'] = CR,
-// 16 - 31
-// 32 - 47
+    // 0 - 15
+    [  0]  = EOF,
+    ['\t'] = TABSPACE,
+    ['\n'] = NEWLINE,
+    ['\r'] = CR,
+    // 16 - 31
+    // 32 - 47
     [' '] = TABSPACE,
     ['!'] = EXCLAIM,
     ['"'] = DQUOTE,
     ['#'] = POUND,
     ['%'] = PERCENT,
     ['&'] = AMP,
-   ['\''] = SQUOTE,
+    ['\''] = SQUOTE,
     ['('] = LPAREN,
     [')'] = RPAREN,
     ['*'] = STAR,
@@ -94,7 +94,7 @@ const Action[256] Char_lookup = {
     ['-'] = MINUS,
     ['.'] = DOT,
     ['/'] = SLASH,
-// 48 - 63
+    // 48 - 63
     ['0'] = DIGIT,
     ['1'] = DIGIT,
     ['2'] = DIGIT,
@@ -111,7 +111,7 @@ const Action[256] Char_lookup = {
     ['='] = EQUAL,
     ['>'] = GREATER,
     ['?'] = QUESTION,
-// 64 - 79
+    // 64 - 79
     ['@'] = AT,
     ['A'] = IDENT,
     ['B'] = IDENT,
@@ -128,7 +128,7 @@ const Action[256] Char_lookup = {
     ['M'] = IDENT,
     ['N'] = IDENT,
     ['O'] = IDENT,
-// 80 - 95
+    // 80 - 95
     ['P'] = IDENT,
     ['Q'] = IDENT,
     ['R'] = IDENT,
@@ -145,7 +145,7 @@ const Action[256] Char_lookup = {
     [']'] = RSQUARE,
     ['^'] = CARET,
     ['_'] = IDENT,   // for parsing libs
-// 96 - 111
+    // 96 - 111
     ['`'] = BQUOTE,
     ['a'] = IDENT,
     ['b'] = IDENT,
@@ -162,7 +162,7 @@ const Action[256] Char_lookup = {
     ['m'] = IDENT,
     ['n'] = IDENT,
     ['o'] = IDENT,
-// 112 - 127
+    // 112 - 127
     ['p'] = IDENT,
     ['q'] = IDENT,
     ['r'] = IDENT,
@@ -275,6 +275,7 @@ public type Tokenizer struct {
     const string_list.List* features;
     bool raw_mode;  // also emit comments and invalid characters
     bool stop_at_eol; // restrict lexing to single line for preprocessor
+    u8 c_mode;      // inside a module extern "C" or an extern "C" {} block
 
     char[256] error_msg;
 }
@@ -346,7 +347,7 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             if (result.name_idx <= t.kwinfo.max_index) {
                 Kind k = t.kwinfo.indexes[result.name_idx];
                 assert(k != None);
-                if (k == Error) {
+                if (k == Error || (k >= KW_int && k <= KW_typedef && !t.c_mode)) {
                     result.reserved = true;
                     return;
                 }

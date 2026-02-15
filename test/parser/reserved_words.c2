@@ -8,7 +8,6 @@ type Foo struct {
     u32 constexpr;  // @error{reserved word 'constexpr' cannot be used as struct/union member name}
     u32 do;         // @error{reserved word 'do' cannot be used as struct/union member name}
     u32 double;     // @error{reserved word 'double' cannot be used as struct/union member name}
-    u32 extern;     // @error{reserved word 'extern' cannot be used as struct/union member name}
     u32 float;      // @error{reserved word 'float' cannot be used as struct/union member name}
     u32 inline;     // @error{reserved word 'inline' cannot be used as struct/union member name}
     u32 int;        // @error{reserved word 'int' cannot be used as struct/union member name}
@@ -35,7 +34,6 @@ fn void foo(
     u32 constexpr,  // @error{reserved word 'constexpr' cannot be used as parameter name}
     u32 do,         // @error{reserved word 'do' cannot be used as parameter name}
     u32 double,     // @error{reserved word 'double' cannot be used as parameter name}
-    u32 extern,     // @error{reserved word 'extern' cannot be used as parameter name}
     u32 float,      // @error{reserved word 'float' cannot be used as parameter name}
     u32 inline,     // @error{reserved word 'inline' cannot be used as parameter name}
     u32 int,        // @error{reserved word 'int' cannot be used as parameter name}
@@ -62,7 +60,6 @@ fn void bar() {
     u32 constexpr;  // @error{reserved word 'constexpr' cannot be used as variable name}
     u32 do;         // @error{reserved word 'do' cannot be used as variable name}
     u32 double;     // @error{reserved word 'double' cannot be used as variable name}
-    u32 extern;     // @error{reserved word 'extern' cannot be used as variable name}
     u32 float;      // @error{reserved word 'float' cannot be used as variable name}
     u32 inline;     // @error{reserved word 'inline' cannot be used as variable name}
     u32 int;        // @error{reserved word 'int' cannot be used as variable name}
@@ -88,7 +85,6 @@ u32 auto;       // @error{reserved word 'auto' cannot be used as variable name}
 u32 constexpr;  // @error{reserved word 'constexpr' cannot be used as variable name}
 u32 do;         // @error{reserved word 'do' cannot be used as variable name}
 u32 double;     // @error{reserved word 'double' cannot be used as variable name}
-u32 extern;     // @error{reserved word 'extern' cannot be used as variable name}
 u32 float;      // @error{reserved word 'float' cannot be used as variable name}
 u32 inline;     // @error{reserved word 'inline' cannot be used as variable name}
 u32 int;        // @error{reserved word 'int' cannot be used as variable name}

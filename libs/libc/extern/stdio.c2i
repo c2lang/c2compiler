@@ -1,0 +1,191 @@
+module stdio extern "C";
+
+import stdarg local;
+
+// possibilities for the third argument to 'setvbuf'
+const u8 _IOFBF = 0; // fully buffered
+const u8 _IOLBF = 1; // line buffering
+const u8 _IONBF = 2; // no buffering
+
+const i8 EOF = -1;
+
+const u8 SEEK_SET = 0;   // Seek from beginning of file.
+const u8 SEEK_CUR = 1;   // Seek from current position.
+const u8 SEEK_END = 2;   // Seek from end of file.
+#if __USE_GNU
+const u8 SEEK_DATA = 3;  // Seek to next data.
+const u8 SEEK_HOLE = 4;  // Seek to next hole.
+#endif
+
+// from libio.h
+struct IO_marker @(cname="_IO_marker") {
+    IO_marker* next;
+    FILE* sbuf;
+    int x_pos;
+}
+
+typedef u64 Offset @(cname="off_t");
+
+//NOTE: _G_fpos_t is some struct(_G_fpos_t.h)
+//typedef _G_fpos_t fpos_t;
+
+#if SYSTEM_LINUX
+struct FILE @(opaque) {}
+
+FILE* stdin;
+FILE* stdout;
+FILE* stderr;
+#endif
+#if SYSTEM_DARWIN
+struct FILE @(opaque) {}
+
+FILE* stdin @(cname="__stdinp");
+FILE* stdout @(cname="__stdoutp");
+FILE* stderr @(cname="__stderrp");
+#endif
+#if SYSTEM_FREEBSD
+struct FILE @(opaque) {}
+
+FILE* stdin @(cname="__stdinp");
+FILE* stdout @(cname="__stdoutp");
+FILE* stderr @(cname="__stderrp");
+#endif
+#if SYSTEM_OPENBSD
+struct Sbuf__ {
+    unsigned char *_base;
+    int _size;
+}
+struct FILE {
+    unsigned char *_p;
+    int _r;
+    int _w;
+    short _flags;
+    short _file;
+    Sbuf__ _bf;
+    int _lbfsize;
+    void *_cookie;
+    void *_close;   //int (*_close)(void *);
+    void *_read;    //int (*_read)(void *, char *, int);
+    void *_seek;    //fpos_t (*_seek)(void *, fpos_t, int);
+    void *_write;   //int (*_write)(void *, const char *, int);
+    Sbuf__ _ext;
+    unsigned char *_up;
+    int _ur;
+    unsigned char[3] _ubuf;
+    unsigned char[1] _nbuf;
+    Sbuf__ _lb;
+    int _blksize;
+    i64 _offset;    // fpos_t
+}
+static_assert(152, sizeof(FILE));
+
+FILE* stdin @(cname="(&__sF[0])", cdef="FILE __sF[]");
+FILE* stdout @(cname="(&__sF[1])", cdef="FILE __sF[]");
+FILE* stderr @(cname="(&__sF[2])", cdef="FILE __sF[]");
+#endif
+
+int remove(const char* __filename);
+int rename(const char* __old, const char* __new);
+
+FILE* tmpfile();
+char* tmpnam(char* __s) @(deprecated="use unistd.mkstemp instead");
+char* tempnam(const char* __dir, const char* __pfx) @(deprecated="use unistd.mkstemp instead");
+int fclose(FILE* __stream);
+int fflush(FILE* __stream);
+FILE* fopen(const char* __filename, const char* __modes);
+FILE* freopen(const char* __filename, const char* __modes, FILE* __stream);
+FILE* fdopen(int __fd, const char* __modes);
+void setbuf(FILE* __stream, char* __buf);
+int setvbuf(FILE* __stream, char* __buf, int __modes, size_t __n);
+void setbuffer(FILE* __stream, char* __buf, size_t __size);
+void setlinebuf(FILE* __stream);
+int fprintf(FILE* __stream, const char* __format @(printf_format), ...);
+int printf(const char* __format @(printf_format), ...);
+int sprintf(char* __s, const char* __format @(printf_format), ...);
+int snprintf(char* __s, size_t size, const char* __format @(printf_format), ...);
+int dprintf(int __fd, const char* __fmt @(printf_format), ...);
+int fscanf(FILE* __stream, const char* __format @(scanf_format), ...);
+int scanf(const char* __format @(scanf_format), ...);
+int sscanf(const char* __s, const char* __format @(scanf_format), ...);
+int fgetc(FILE* __stream);
+int getc(FILE* __stream);
+int getchar();
+int getc_unlocked(FILE* __stream);
+int getchar_unlocked();
+int fputc(int __c, FILE* __stream);
+int putc(int __c, FILE* __stream);
+int putchar(int __c);
+int putchar_unlocked(int __c);
+char* gets(char* __s) @(deprecated="function cannot be used safely");
+int getw(FILE* __stream);
+int putw(int __w, FILE* __stream);
+char* fgets(char* __s, int __n, FILE* __stream);
+ssize_t getdelim(char** __lineptr, size_t* __n, int __delimiter, FILE* __stream);
+ssize_t getline(char** __lineptr, size_t* __n, FILE* __stream);
+int fputs(const char* __s, FILE* __stream);
+int puts(const char* __s);
+int ungetc(int __c, FILE* __stream);
+int fread(void* __ptr, size_t __size, size_t __n, FILE* __stream);
+size_t fwrite(const void* __ptr, size_t __size, size_t __n, FILE* __s);
+int fseek(FILE* __stream, long __off, int __whence);
+long ftell(FILE* __stream);
+void rewind(FILE* __stream);
+int fseeko(FILE* __stream, Offset __off, int __whence);
+Offset ftello(FILE* __stream);
+//fn int fgetpos(FILE* __stream, fpos_t* __pos);
+//fn int fsetpos(FILE* __stream, const fpos_t* __pos);
+void clearerr(FILE* __stream);
+int feof(FILE* __stream);
+int ferror(FILE* __stream);
+void perror(const char* __s);
+int fileno(FILE* __stream);
+FILE* popen(const char* __command, const char* __modes);
+int pclose(FILE* __stream);
+char* ctermid(char* __s);
+void flockfile(FILE* __stream);
+int ftrylockfile(FILE* __stream);
+void funlockfile(FILE* __stream);
+
+// --- Linux only ---
+#if __USE_LARGEFILE64
+FILE* tmpfile64(void);
+#endif
+char* tmpnam_r(char* __s);
+int renameat(int __oldfd, const char* __old, int __newfd, const char* __new);
+FILE* fmemopen(void* __s, size_t __len, const char* __modes);
+FILE* open_memstream(char** __bufloc, size_t* __sizeloc);
+int fflush_unlocked(FILE* __stream);
+int fgetc_unlocked(FILE* __stream);
+int putc_unlocked(int __c, FILE* __stream);
+int fputc_unlocked(int __c, FILE* __stream);
+ssize_t __getdelim(char** __lineptr, size_t* __n, int __delimiter, FILE* __stream);
+int fread_unlocked(void* __ptr, size_t __size, size_t __n, FILE* __stream);
+size_t fwrite_unlocked(const void* __ptr, size_t __size, size_t __n, FILE* __stream);
+void clearerr_unlocked(FILE* __stream);
+int feof_unlocked(FILE* __stream);
+int ferror_unlocked(FILE* __stream);
+
+// --- Darwin/BSD only----
+// unlocked functions below exist, but as macro
+//void clearerr_unlocked(FILE* __stream);
+//int feof_unlocked(FILE* __stream);
+//int ferror_unlocked(FILE* __stream);
+//int fileno_unlocked(FILE* __stream);
+
+int asprintf(char**, const char* @(printf_format), ...);
+char* ctermid_r(char*);
+char* fgetln(FILE*, size_t*);
+const char* fmtcheck(const char*, const char*);
+int fpurge(FILE *);
+//int vasprintf(char**, const char*, va_list);
+FILE *zopen(const char*, const char*, int);
+
+int vdprintf(int __fd, const char *format, va_list ap);
+int vfprintf(FILE* stream, const char *format, va_list ap);
+int vprintf(const char* format, va_list ap);
+int vsprintf(char* str, const char *format, va_list ap);
+int vsnprintf(char* str, size_t size, const char *format, va_list ap);
+
+int vfscanf(FILE* stream, const char* format, va_list ap);
+int vscanf(const char* format, va_list ap);
+int vsscanf(const char* str, const char* format, va_list ap);

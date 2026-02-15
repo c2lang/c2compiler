@@ -155,6 +155,18 @@ public fn void TypeRefHolder.addArray(TypeRefHolder* h, Expr* array) {
     r.flags.num_arrays++;
 }
 
+public fn void TypeRefHolder.rotateArrays(TypeRefHolder* h, u32 r) {
+    if (!r) return;
+    u32 n = h.getNumArrays();
+    if (!n) return;
+    while (r--) {
+        Expr* e = h.arrays[0];
+        for (u32 i = 1; i < n; i++)
+            h.arrays[i - 1] = h.arrays[i];
+        h.arrays[n - 1] = e;
+    }
+}
+
 public fn void TypeRefHolder.setBuiltin(TypeRefHolder* h, BuiltinKind kind, SrcLoc loc) {
     TypeRef* r = (TypeRef*)&h.ref;
     r.flags.builtin_kind = kind;

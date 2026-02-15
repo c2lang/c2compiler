@@ -1,0 +1,72 @@
+module string extern "C";
+
+// TODO restrict
+// TODO use builtin functions
+
+/* 7.26 String handling <string.h> */
+
+/* 7.26.1 String function conventions */
+
+/* 7.26.2 Copying functions */
+void* memcpy(void* dest, const void* src, size_t n);
+void* memccpy(void* dest, const void* src, int c, size_t n);
+void* memmove(void* dest, const void* src, size_t n);
+char* strcpy(char* dest, const char* src);
+char* strncpy(char* dest, const char* src, size_t n) @(deprecated="function has misleading semantics");
+char* strdup(const char* s);
+char* strndup(const char* s, size_t n);
+
+/* 7.26.3 Concatenation functions */
+char* strcat(char* dest, const char* src);
+char* strncat(char* dest, const char* src, size_t n) @(deprecated="function has misleading semantics");
+
+/* 7.26.4 Comparison functions */
+int memcmp(const void* s1, const void* s2, size_t n);
+int strcmp(const char* s1, const char* s2);
+int strcoll(const char* s1, const char* s2);
+int strncmp(const char* s1, const char* s2, size_t n);
+size_t strxfrm(char* s1, const char* s2, size_t n);
+
+/* 7.26.5 Search functions */
+void* memchr(const void* s, int c, size_t n);
+char* strchr(const char* s, int c);
+size_t strcspn(const char* s1, const char* s2);
+char* strpbrk(const char* s1, const char* s2);
+char* strrchr(const char* s, int c);
+size_t strspn(const char* s1, const char* s2);
+char* strstr(const char* s1, const char* s2);
+char* strtok(char* s1, const char* s2);
+
+/* 7.26.6 Miscellaneous functions */
+void* memset(void* s, int c, size_t n);
+void* memset_explicit(void* s, int c, size_t n);
+char* strerror(int errnum);
+size_t strlen(const char* s);
+
+/* POSIX.1-1995 functions */
+char* strtok_r(char* s, const char* delim, char** save_ptr);
+
+/* POSIX.1-2001 functions */
+int strerror_r(int errnum, char* dest, size_t n);
+
+/* POSIX.1-2008 functions */
+char* stpcpy(char* dest, const char* src);
+char* stpncpy(char* dest, const char* src, size_t n);
+size_t strnlen(const char* s, size_t n);
+char* strsignal(int sig);
+
+/* BSD and GNU extensions */
+void* memmem(const void* s1, size_t size1, const void* s2, size_t size2);
+int strcasecmp(const char* s1, const char* s2);
+int strncasecmp(const char* s1, const char* s2, size_t n);
+char* strcasestr(const char* s1, const char* s2);
+char* strsep(char** stringp, const char* delim);
+void* mempcpy(void* dest, const void* src, size_t n);
+void* memrchr(const void* s, int c, size_t n);
+char* strchrnul(const char* s, int c);
+
+#if SYSTEM_DARWIN || SYSTEM_FREEBSD || SYSTEM_OPENBSD
+char* strnstr(const char* s1, const char* s2, size_t n);
+size_t strlcpy(char* dest, const char* src, size_t n);
+size_t strlcat(char* dest, const char* src, size_t n);
+#endif

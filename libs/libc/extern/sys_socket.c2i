@@ -1,0 +1,178 @@
+module sys_socket extern "C";
+
+import unistd local;
+import libc_fcntl local;
+
+const int PF_UNIX     =  1;
+
+const int AF_UNIX    =  PF_UNIX;
+const int AF_INET    =  2;
+const int AF_NETLINK = 16;
+const int AF_PACKET  = 17;
+
+const int IPPROTO_IP  =  0;
+const int IPPROTO_TCP =  6;
+const int IPPROTO_UDP = 22;
+
+const u32 IP_MULTICAST_IF         = 32;
+const u32 IP_MULTICAST_TTL        = 33;
+const u32 IP_MULTICAST_LOOP       = 34;
+const u32 IP_ADD_MEMBERSHIP       = 35;
+const u32 IP_DROP_MEMBERSHIP      = 36;
+const u32 IP_UNBLOCK_SOURCE       = 37;
+const u32 IP_BLOCK_SOURCE         = 38;
+const u32 IP_ADD_SOURCE_MEMBERSHIP  = 39;
+const u32 IP_DROP_SOURCE_MEMBERSHIP = 40;
+const u32 IP_MSFILTER             = 41;
+const u32 MCAST_JOIN_GROUP        = 42;
+const u32 MCAST_BLOCK_SOURCE      = 43;
+const u32 MCAST_UNBLOCK_SOURCE    = 44;
+const u32 MCAST_LEAVE_GROUP       = 45;
+const u32 MCAST_JOIN_SOURCE_GROUP = 46;
+const u32 MCAST_LEAVE_SOURCE_GROUP = 47;
+const u32 MCAST_MSFILTER          = 48;
+const u32 IP_MULTICAST_ALL        = 49;
+const u32 IP_UNICAST_IF           = 50;
+const u32 IP_LOCAL_PORT_RANGE     = 51;
+const u32 IP_PROTOCOL             = 52;
+
+enum SocketType : u32 @(cname="__socket_type") {
+  SOCK_STREAM    = 1,   /* Sequenced, reliable, connection-based byte streams.  */
+  SOCK_DGRAM     = 2,   /* Connectionless, unreliable datagrams of fixed maximum length.  */
+  SOCK_RAW       = 3,   /* Raw protocol interface.  */
+  SOCK_RDM       = 4,   /* Reliably-delivered messages.  */
+  SOCK_SEQPACKET = 5,   /* Sequenced, reliable, connection-based, datagrams of fixed maximum length.  */
+  SOCK_DCCP      = 6,   /* Datagram Congestion Control Protocol.  */
+  SOCK_PACKET    = 10,  /* Linux specific way of getting packets at the dev level.  For writing rarp and other similar things on the user level. */
+}
+/* Flags to be ORed into the type parameter of socket and socketpair and
+   used for the flags parameter of paccept.  */
+const u32 SOCK_NONBLOCK  = 00004000;  /* Atomically mark descriptor(s) as non-blocking.  */
+const u32 SOCK_CLOEXEC   = 02000000;  /* Atomically set close-on-exec flag for the new descriptor(s).  */
+
+int socket(int domain, int type_, int protocol);
+
+const int SOL_SOCKET = 1;
+
+const int SO_DEBUG     = 1;
+const int SO_REUSEADDR = 2;
+const int SO_ERROR     = 4;
+const int SO_DONTROUTE = 5;
+const int SO_BROADCAST = 6;
+const int SO_SNDBUF    = 7;
+const int SO_RCVBUF    = 8;
+const int SO_KEEPALIVE = 9;
+const int SO_OOBINLINE = 10;
+const int SO_NO_CHECK  = 11;
+const int SO_PRIORITY  = 12;
+const int SO_LINGER    = 13;
+const int SO_BSDCOMPAT = 14;
+const int SO_REUSEPORT = 15;
+
+typedef u16 SaFamily @(cname="sa_family_t");
+
+struct Sockaddr @(cname="sockaddr") {
+    SaFamily sa_family;
+    char[14] sa_data;
+}
+
+typedef u16 InPort @(cname="in_port_t");
+typedef u32 InAddr @(cname="in_addr_t");
+struct In_addr @(cname="in_addr") {
+    InAddr s_addr;
+}
+
+struct Sockaddr_in @(cname="sockaddr_in") {
+    SaFamily sin_family;
+    InPort sin_port;
+    In_addr sin_addr;
+
+    u8[8] sin_zero; // on 64-bit Ubuntu
+}
+
+struct Ip_Mreq @(cname="ip_mreq") {
+    In_addr imr_multiaddr;
+    In_addr imr_interface;
+}
+
+const u32 INADDR_ANY       = 0x00000000;
+const u32 INADDR_BROADCAST = 0xffffffff;
+const u32 INADDR_NONE      = 0xffffffff;
+
+int getsockopt(int sockfd, int level, int optname, void* optval, u32* optlen);
+int setsockopt(int sockfd, int level, int optname, const void* optval, u32 optlen);
+int bind(int sockfd, const Sockaddr* addr, u32 addrlen);
+int connect(int sockfd, const Sockaddr* addr, u32 addrlen);
+int listen(int sockfd, int backlog);
+int accept(int sockfd, Sockaddr *addr, u32 *addrlen);
+
+#if SYSTEM_LINUX
+
+int accept4(int sockfd, Sockaddr* addr, u32* addrlen, int flags);
+
+#else
+
+int accept4(int sockfd, Sockaddr *addr, u32 *addrlen, int flags) {
+    int new_sockfd = accept(sockfd, addr, addrlen);
+    if (new_sockfd < 0) {
+        return -1;
+    }
+    if (flags & SOCK_CLOEXEC) {
+        if (fcntl(new_sockfd, F_SETFD, FD_CLOEXEC) == -1) {
+            close(new_sockfd);
+            return -1;
+        }
+    }
+    if (flags & SOCK_NONBLOCK) {
+        if (fcntl(new_sockfd, F_SETFL, O_NONBLOCK) == -1) {
+            close(new_sockfd);
+            return -1;
+        }
+    }
+    return new_sockfd;
+}
+
+#endif
+
+// NOTE: some c-prototypes need to be converted
+//int inet_aton(const char *cp, struct in_addr *inp);
+InAddr inet_addr(const char* cp);
+char* inet_ntoa(In_addr in);
+//struct in_addr inet_makeaddr(in_addr_t net, in_addr_t host);
+//in_addr_t inet_lnaof(struct in_addr in);
+//in_addr_t inet_netof(struct in_addr in);
+
+// should be in arpa/inet.h
+u32 htonl(u32 hostlong);
+u16 htons(u16 hostshort);
+u32 ntohl(u32 netlong);
+u16 ntohs(u16 netshort);
+
+// From linux/if_packet.h
+struct Sockaddr_ll @(cname="sockaddr_ll") {
+    unsigned short sll_family;
+    unsigned short sll_protocol;   // Big-Endian!
+    int sll_ifindex;
+    unsigned short sll_hatype;
+    unsigned char sll_pkttype;
+    unsigned char sll_halen;
+    unsigned char[8] sll_addr;
+}
+
+const u32 UNIX_PATH_MAX = 108;
+
+struct Sockaddr_un @(cname="sockaddr_un") {
+    SaFamily sun_family;
+    char[UNIX_PATH_MAX] sun_path;
+}
+
+ssize_t send(int fd, const void* buf, size_t n, int flags);
+ssize_t sendto(int fd, const void* buf, size_t n, int flags, const Sockaddr* addr, u32 addr_len);
+
+// TODO sendmsg
+
+ssize_t recv(int fd, void* buf, size_t n, int flags);
+ssize_t recvfrom(int fd, void* buf, size_t n, int flags, Sockaddr* addr, u32* addrlen);
+
+// TODO recvmsg
+
