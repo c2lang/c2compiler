@@ -340,7 +340,7 @@ fn void Parser.parseTopLevel(Parser* p) {
             p.error("assert can only be used inside a function");
             break;
         case KW_fn:
-            p.parseFuncDecl(is_public);
+            p.parseFuncDecl(is_public, false);
             break;
         case KW_import:
             p.error("no imports allowed after declarations");
@@ -448,43 +448,98 @@ fn void Parser.applyAttributes(Parser* p, Decl* d, u32 count) {
     if (count) p.builder.applyAttributes(d, count);
 }
 
-fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
+fn u32 Parser.createLocalName(Parser* p, u32 name, SrcLoc loc, u32* plen) {
+    char[128] buf;
+    *plen = (u32)snprintf(buf, sizeof(buf), "%s__%d", p.pool.idx2str(name), loc);
+    return p.pool.addStr(buf, true);
+}
+
+fn Expr* Parser.parseLocalFuncExpr(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    FunctionDecl* f = p.parseFuncDecl(false, true);
+    Decl* d = f.asDecl();
+    u32 name = d.getNameIdx();
+    u32 len;
+    u32 local_name = p.createLocalName(name, loc, &len);
+    d.setNameIdx(local_name);
+    p.builder.addSymbol(local_name, d);
+    return p.builder.actOnIdentifier(loc, local_name, len);
+}
+
+fn Stmt* Parser.parseLocalFuncStmt(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    FunctionDecl* f = p.parseFuncDecl(false, true);
+    Decl* d = f.asDecl();
+    u32 name = d.getNameIdx();
+    u32 len;
+    u32 local_name = p.createLocalName(name, loc, &len);
+    d.setNameIdx(local_name);
+    p.builder.addSymbol(local_name, d);
+    Expr* fexpr = p.builder.actOnIdentifier(loc, local_name, len);
+    // TODO: use auto typing
+    TypeRefHolder ref.init();
+    ref.setVoid(loc);
+    ref.addPointer();
+    VarDecl* decl = p.builder.actOnVarDecl(name, loc, &ref, loc, fexpr, false, false);
+    return p.builder.actOnDeclStmt(&decl, 1);
+}
+
+fn FunctionDecl* Parser.parseFuncDecl(Parser* p, bool is_public, bool is_local) {
+    u32 func_name = 0;
+    SrcLoc func_loc = p.tok.loc;
+    Ref prefix_ref;
+    Ref* prefix = nil;
+
     p.consumeToken();
 
     TypeRefHolder rtype.init();
     // Note: dont check arrays in this phase, but in Analyser
     p.parseTypeSpecifier(&rtype);
 
-    p.expectIdentifier();
-    u32 func_name = p.tok.name_idx;
-    SrcLoc func_loc = p.tok.loc;
-    p.consumeToken();
-
-    Ref prefix_ref;
-    Ref* prefix = nil;
-    if (p.tok.kind == Dot) {
-        p.consumeToken();
+    if (p.tok.kind == Identifier || !is_local) {
         p.expectIdentifier();
-
-        prefix_ref.loc = func_loc;
-        prefix_ref.name_idx = func_name;
-        prefix_ref.decl = nil;
-        prefix = &prefix_ref;
         func_name = p.tok.name_idx;
         func_loc = p.tok.loc;
         p.consumeToken();
-    }
 
-    if (!p.checkName(func_name, p.is_interface)) {
-        p.errorAt(func_loc, "a function name must start with a lower case character");
+        if (p.tok.kind == Dot) {
+            if (is_local) {
+                p.error("local functions cannot be type functions");
+            }
+            p.consumeToken();
+            p.expectIdentifier();
+
+            prefix_ref.loc = func_loc;
+            prefix_ref.name_idx = func_name;
+            prefix_ref.decl = nil;
+            prefix = &prefix_ref;
+            func_name = p.tok.name_idx;
+            func_loc = p.tok.loc;
+            p.consumeToken();
+        }
+
+        if (!p.checkName(func_name, p.is_interface)) {
+            p.errorAt(func_loc, "a function name must start with a lower case character");
+        }
     }
 
     DeclList params.init();
 
     bool is_variadic = p.parseFunctionParams(&params, is_public, true);
 
+    if (p.tok.kind == LSquare && is_local) {
+        // TODO: parse capture specification
+        while (!p.tok.done && p.tok.kind != RSquare) {
+            p.consumeToken();
+        }
+        p.expectAndConsume(RSquare);
+    }
+
     FunctionDecl* f;
     if (p.tok.kind == KW_template) {
+        if (is_local) {
+            p.error("local functions cannot be template functions");
+        }
         p.consumeToken();
         p.expectIdentifier();
 
@@ -510,28 +565,31 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
                                         prefix,
                                         (VarDecl**)params.getDecls(),
                                         params.size(),
-                                        is_variadic);
+                                        is_variadic, is_local);
     }
 
     params.free();
 
-    u32 num_attr = p.parseOptionalAttributes();
-    p.applyAttributes((Decl*)f, num_attr);
+    if (!is_local) {
+        u32 num_attr = p.parseOptionalAttributes();
+        p.applyAttributes((Decl*)f, num_attr);
+    }
 
     if (p.is_interface) {
         if (p.tok.kind == Semicolon) {
             // function without body (eg. i32 printf(..); ) is allowed
             p.consumeToken();
-            return;
+            return f;
         }
 
         // mark functions with bodies in interface files as 'inline'
         f.setAttrInline();
     }
 
-    p.stmt_list_count = 0;
+    if (!is_local) p.stmt_list_count = 0;
     CompoundStmt* body = p.parseCompoundStmt();
     p.builder.actOnFunctionBody(f, body);
+    return f;
 }
 
 fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public, bool accept_default) {

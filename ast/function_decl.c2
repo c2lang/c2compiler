@@ -41,6 +41,7 @@ public type DefKind enum u8 {
     Type,           // type A fn ..
     StructMember,   // (in struct) fn void(..) member;
     Param,          // fn void a( fn void(..) cb)
+    Local,          // local function
     Template,       // ..
 }
 
@@ -49,6 +50,7 @@ const char*[DefKind] defKind_names = {
     "type",
     "struct-member",
     "param",
+    "local",
     "template",
 }
 
@@ -270,6 +272,8 @@ public fn bool FunctionDecl.canBeNil(const FunctionDecl* d) {
         return true;
     case Template:
         break;
+    case Local:
+        return false;
     }
     return d.hasAttrWeak();
 }

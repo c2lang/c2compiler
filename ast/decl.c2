@@ -206,6 +206,10 @@ public fn u32 Decl.getNameIdx(const Decl* d) {
     return d.name_idx;
 }
 
+public fn void Decl.setNameIdx(Decl* d, u32 name_idx) {
+    d.name_idx = name_idx;
+}
+
 // convenience function
 public fn const char* Decl.getModuleName(const Decl* d) {
     const AST* a = d.getAST();
