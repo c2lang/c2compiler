@@ -28,7 +28,7 @@ struct test_Type_ {
 
 int32_t main(void)
 {
-  test_Type t;
+  test_Type t = { 0 };
   t.init(1);
   return 0;
 }

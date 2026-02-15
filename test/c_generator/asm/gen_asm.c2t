@@ -48,16 +48,16 @@ static void test_basic_asm(void);
 
 static int32_t test_add(int32_t x, int32_t y)
 {
-  int32_t result;
+    int32_t result = { 0 };
   __asm__ volatile ("add %[Rd], %[Rm], %[Rn]" : [Rd] "=r" (result) : [Rm] "r" (x), [Rn] "r" (y));
   return result;
 }
 
 static void test_clobbers(void)
 {
-  int32_t from;
-  int32_t to;
-  int32_t count;
+  int32_t from = { 0 };
+  int32_t to = { 0 };
+  int32_t count = { 0 };
   __asm__ volatile ("movc3 %0, %1, %2"
             :
             : "g" (from), "g" (to), "g" (count)
@@ -67,8 +67,8 @@ static void test_clobbers(void)
 static inline
 uint64_t test_rdtsc(void)
 {
-  uint32_t lo;
-  uint32_t hi;
+  uint32_t lo = { 0 };
+  uint32_t hi = { 0 };
   __asm__ volatile ("rdtsc" : "=a" (lo), "=d" (hi));
   uint64_t res = hi;
   res <<= 32;

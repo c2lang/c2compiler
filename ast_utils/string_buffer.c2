@@ -169,7 +169,7 @@ public fn void Buf.stripTrailingSpaces(Buf* buf) {
 }
 
 public fn void Buf.print(Buf* buf, const char* format @(printf_format), ...) {
-    char[4096] tmp;
+    char[4096] tmp /*@(noinit)*/;
     // NOTE: no growing
     va_list args;
     va_start(args, format);
@@ -180,7 +180,7 @@ public fn void Buf.print(Buf* buf, const char* format @(printf_format), ...) {
 }
 
 public fn void Buf.vprintf(Buf* buf, const char* format, va_list args) {
-    char[4096] tmp;
+    char[4096] tmp /*@(noinit)*/;
     // NOTE: no growing
     i32 len = vsnprintf(tmp, sizeof(tmp), format, args);
     assert(len < sizeof(tmp));

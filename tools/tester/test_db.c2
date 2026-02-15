@@ -391,7 +391,7 @@ fn bool Db.parseExpect(Db* db) {
     }
     db.skipLine(); // skip rest of the line
 
-    db.currentExpect = expect_file.create(filename, em);
+    db.currentExpect = expect_file.create(filename, em, db.filename);
     // TODO check for name duplicates
     db.addExpected(db.currentExpect);
     while (*db.cur != 0 && !strstart(db.cur, "// @", nil)) {
@@ -582,7 +582,7 @@ fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
             char[128] name;
             if (!db.readUntil(name, elemsof(name), cp, '}', "filename"))
                 return;
-            db.currentExpect = expect_file.create(name, ATLEAST);
+            db.currentExpect = expect_file.create(name, ATLEAST, db.filename);
             // TODO check for name duplicates
             db.addExpected(db.currentExpect);
             db.mode = InExpectFile;

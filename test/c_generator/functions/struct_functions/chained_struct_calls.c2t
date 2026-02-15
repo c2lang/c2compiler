@@ -73,7 +73,7 @@ static test_B* test_C_getB(test_C* c)
 
 static void test_test1(void)
 {
-  test_C c;
+  test_C c = { 0 };
   uint32_t n = test_A_run(test_B_getA(test_C_getB(&c)));
 }
 
