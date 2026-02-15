@@ -23,7 +23,7 @@ import source_mgr;
 import src_loc local;
 import string_list;
 import string_pool;
-import warning_flags;
+import warning_flags local;
 
 import csetjmp local;
 import stdarg local;
@@ -410,7 +410,7 @@ fn void Parser.lex_option(Parser* p, Token* result) {
     case "warnings":
         result.kind = Warnings;
         break;
-    case  "backend":
+    case "backend":
         result.kind = Backend;
         break;
     case "disable-asserts":
@@ -526,70 +526,13 @@ fn void Parser.parsePlugin(Parser* p, bool is_global) {
 fn void Parser.parseWarnings(Parser* p) {
     p.consumeToken();
     p.expect(Text, "expect options");
-    warning_flags.Flags* warnings = p.target.getWarnings2();
+    WarningFlags* warnings = p.target.getWarnings2();
     // TODO no need to store in string pool
     while (p.is(Text)) {
         const char* option = p.pool.idx2str(p.token.value);
-        bool disable = false;
-        if (!string.strncmp(option, "no-", 3)) {
-            disable = true;
-            option += 3;
-        }
-        switch (option) {
-        case "unused":
-            warnings.no_unused = disable;
-            warnings.no_unused_variable = disable;
-            warnings.no_unused_function = disable;
-            warnings.no_unused_parameter = disable;
-            warnings.no_unused_type = disable;
-            warnings.no_unused_module = disable;
-            warnings.no_unused_import = disable;
-            warnings.no_unused_public = disable;
-            warnings.no_unused_label = disable;
-            warnings.no_unused_enum_constant = disable;
-            break;
-        case "unused-variable":
-            warnings.no_unused_variable = disable;
-            break;
-        case "unused-function":
-            warnings.no_unused_function = disable;
-            break;
-        case "unused-parameter":
-            warnings.no_unused_parameter = disable;
-            break;
-        case "unused-type":
-            warnings.no_unused_type = disable;
-            break;
-        case "unused-module":
-            warnings.no_unused_module = disable;
-            break;
-        case "unused-import":
-            warnings.no_unused_import = disable;
-            break;
-        case "unused-public":
-            warnings.no_unused_public = disable;
-            break;
-        case "unused-label":
-            warnings.no_unused_label = disable;
-            break;
-        case "unused-enum-constant":
-            warnings.no_unused_enum_constant = disable;
-            break;
-        case "unreachable-code":
-            warnings.no_unreachable_code = disable;
-            break;
-        case "unknown-attribute":
-            warnings.no_unknown_attribute = disable;
-            break;
-        case "deprecated":
-            warnings.no_deprecated = disable;
-            break;
-        case "promote-to-error":
-            warnings.are_errors = !disable;
-            break;
-        default:
-            p.warning("unknown warning '%s'", option);
-            break;
+        if (!warnings.parseOption(option)) {
+            if (warnings.test(W_unknown_warning))
+                p.warning("unknown warning '%s'", option);
         }
         p.consumeToken();
     }

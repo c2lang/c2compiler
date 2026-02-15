@@ -23,7 +23,7 @@ import module_sorter;
 import string_list;
 import unused_checker;
 import utils;
-import warning_flags;
+import warning_flags local;
 
 fn bool Compiler.analyse(Compiler* c) {
     u64 analysis_start = utils.now();
@@ -64,8 +64,8 @@ fn bool Compiler.analyse(Compiler* c) {
     c.checkMain();
 
     // check unused
-    const warning_flags.Flags* warnings = c.target.getWarnings();
-    if (!warnings.no_unused) {
+    const WarningFlags* warnings = c.target.getWarnings();
+    if (warnings.test(W_unused)) {
         c.mainComp.visitModules(Compiler.checkUnused, c);
     }
 

@@ -15,12 +15,12 @@
 
 module unused_checker;
 
-import warning_flags;
 import ast local;
 import diagnostics;
+import warning_flags local;
 
 public fn void check(diagnostics.Diags* diags,
-                       const warning_flags.Flags* warnings,
+                       const WarningFlags* warnings,
                        Module* mod)
 {
     Checker c = {
@@ -37,54 +37,57 @@ public fn void check(diagnostics.Diags* diags,
 
 type Checker struct {
     diagnostics.Diags* diags;
-    const warning_flags.Flags* warnings;
+    const WarningFlags* warnings;
 }
 
 fn void Checker.unused_module(void* arg, AST* a) {
     Checker* c = arg;
-    c.diags.warn(a.getLoc(), "unused module '%s'", a.getName());
+    c.diags.warn(W_unused_module, a.getLoc(), "unused module '%s'", a.getName());
 }
 
 fn void Checker.check(void* arg, Decl* d) {
     Checker* c = arg;
     bool used = d.isUsed();
-    if (used && d.isPublic() && !d.isUsedPublic() && !c.warnings.no_unused_public && !d.hasAttrUnused()) {
-        c.diags.warn(d.getLoc(), "%s '%s' is not used public", d.getKindName(), d.getFullName());
+    if (used && d.isPublic() && !d.isUsedPublic() && !d.hasAttrUnused()) {
+        c.diags.warn(W_unused_public, d.getLoc(), "%s '%s' is not used public", d.getKindName(), d.getFullName());
     }
 
+    WarningKind wk = W_unknown;
     switch (d.getKind()) {
     case Function:
-        if (c.warnings.no_unused_function) return;
         if (d.hasAttrUnused()) return;
+        wk = W_unused_function;
         break;
     case Import:
-        if (c.warnings.no_unused_import) return;
+        wk = W_unused_import;
         break;
     case StructType:
         if (used) {
             c.checkStructMembers(d);
         }
-        if (c.warnings.no_unused_type) return;
+        wk = W_unused_type;
         break;
     case EnumType:
-        if (used && !c.warnings.no_unused_enum_constant) {
-            c.checkEnum((EnumTypeDecl*)d);
+        if (used && c.warnings.test(W_unused_enum_constant)) {
+            c.checkEnum((EnumTypeDecl*)(d));
         }
+        wk = W_unused_enum_constant;
         break;
     case EnumConstant:
+        wk = W_unused_enum_constant;
         break;
     case FunctionType:
-        if (c.warnings.no_unused_type) return;
+        wk = W_unused_type;
         break;
     case AliasType:
-        if (c.warnings.no_unused_type) return;
+        wk = W_unused_type;
         break;
     case Variable:
-        if (c.warnings.no_unused_variable) return;
+        wk = W_unused_variable;
         break;
     }
     if (!used && !d.hasAttrUnused() && !d.isExported()) {
-        c.diags.warn(d.getLoc(), "unused %s '%s'", d.getKindName(), d.getFullName());
+        c.diags.warn(wk, d.getLoc(), "unused %s '%s'", d.getKindName(), d.getFullName());
         return;
     }
 }
@@ -96,7 +99,7 @@ fn void Checker.checkEnum(Checker* c, EnumTypeDecl* d) {
         EnumConstantDecl* ecd = constants[i];
         Decl* dd = (Decl*)ecd;
         if (!dd.isUsed()) {
-            c.diags.warn(dd.getLoc(), "unused %s '%s'", dd.getKindName(), dd.getName());
+            c.diags.warn(W_unused_enum_constant, dd.getLoc(), "unused %s '%s'", dd.getKindName(), dd.getName());
         }
     }
 }
@@ -110,8 +113,8 @@ fn void Checker.checkStructMembers(Checker* c, Decl* d) {
         if (member.isStructType()) {
             c.checkStructMembers(member);
         } else {
-            if (!member.isUsed() && !c.warnings.no_unused_variable) {
-                c.diags.warn(member.getLoc(), "unused %s member '%s'", std.isStruct() ? "struct" : "union", member.getName());
+            if (!member.isUsed()) {
+                c.diags.warn(W_unused_variable, member.getLoc(), "unused %s member '%s'", std.isStruct() ? "struct" : "union", member.getName());
             }
         }
     }

@@ -15,20 +15,137 @@
 
 module warning_flags;
 
-public type Flags struct {
-    bool no_unused;
-    bool no_unused_variable;
-    bool no_unused_function;
-    bool no_unused_parameter;
-    bool no_unused_type;
-    bool no_unused_module;
-    bool no_unused_import;
-    bool no_unused_public;
-    bool no_unused_label;
-    bool no_unused_enum_constant;
-    bool no_unreachable_code;
-    bool no_unknown_attribute;
-    bool no_deprecated;
-    bool are_errors;
+import string local;
+
+public type WarningKind enum u8 {
+    W_unknown,
+    W_unused,
+    W_unused_variable,
+    W_unused_function,
+    W_unused_parameter,
+    W_unused_type,
+    W_unused_module,
+    W_unused_import,
+    W_unused_public,
+    W_unused_label,
+    W_unused_enum_constant,
+    W_unreachable_code,
+    W_unknown_attribute,
+    W_unknown_warning,
+    W_deprecated,
+    W_const_return_type,
+    W_idiomatic_parentheses,
 }
 
+const char*[] warningName = {
+    "unknown",
+    "unused",
+    "unused-variable",
+    "unused-function",
+    "unused-parameter",
+    "unused-type",
+    "unused-module",
+    "unused-import",
+    "unused-public",
+    "unused-label",
+    "unused-enum-constant",
+    "unreachable-code",
+    "unknown-attribute",
+    "unknown-warning",
+    "deprecated",
+    "const-return-type",
+    "idiomatic-parentheses",
+}
+
+fn WarningKind WarningKind.find(const char* name) {
+    for (u32 i = 1; i < elemsof(WarningKind); i++) {
+        if (!strcmp(warningName[i], name)) return (WarningKind)i;
+    }
+    return W_unknown;
+}
+
+fn u64 WarningKind.getMask(const char* name) {
+    switch (name) {
+    case "all":
+        return (u64)-1;
+    case "unused":
+        return (((u64)1 << WarningKind.W_unused) |
+                ((u64)1 << WarningKind.W_unused_variable) |
+                ((u64)1 << WarningKind.W_unused_function) |
+                ((u64)1 << WarningKind.W_unused_parameter) |
+                ((u64)1 << WarningKind.W_unused_type) |
+                ((u64)1 << WarningKind.W_unused_module) |
+                ((u64)1 << WarningKind.W_unused_import) |
+                ((u64)1 << WarningKind.W_unused_public) |
+                ((u64)1 << WarningKind.W_unused_label) |
+                ((u64)1 << WarningKind.W_unused_enum_constant));
+    default:
+        WarningKind wk = WarningKind.find(name);
+        if (wk) return (u64)1 << wk;
+        return 0;
+    }
+}
+
+public type WarningFlags struct {
+    u64 flags;
+    u64 err_flags;
+}
+
+public fn bool WarningFlags.test(const WarningFlags *wf, WarningKind k) {
+    return (wf.flags >> k) & 1;
+}
+
+#if 0
+public fn void WarningFlags.set(WarningFlags *wf, WarningKind k) {
+    wf.flags |= (u64)1 << k;
+}
+
+public fn void WarningFlags.clear(WarningFlags *wf, WarningKind k) {
+    wf.flags &= ~((u64)1 << k);
+}
+
+public fn void WarningFlags.setError(WarningFlags *wf, WarningKind k) {
+    wf.err_flags |= (u64)1 << k;
+}
+
+public fn void WarningFlags.clearError(WarningFlags *wf, WarningKind k) {
+    wf.err_flags &= ~((u64)1 << k);
+}
+
+public fn void WarningFlags.setAllError(WarningFlags *wf) { wf.err_flags = (u64)-1; }
+public fn void WarningFlags.clearAllError(WarningFlags *wf) { wf.err_flags = 0; }
+#endif
+
+public fn void WarningFlags.setAll(WarningFlags *wf) { wf.flags = (u64)-1; }
+public fn void WarningFlags.clearAll(WarningFlags *wf) { wf.flags = 0; }
+
+public fn bool WarningFlags.isError(const WarningFlags *wf, WarningKind k) {
+    return (wf.err_flags >> k) & 1;
+}
+
+public fn bool WarningFlags.parseOption(WarningFlags *warnings, const char* option) {
+    bool enable = true;
+    if (!string.strncmp(option, "no-", 3)) {
+        enable = false;
+        option += 3;
+    }
+    if (!string.strncmp(option, "error=", 6)) {
+        u64 mask = WarningKind.getMask(option + 6);
+        if (!mask) return false;
+        if (enable) warnings.err_flags |= mask;
+        else warnings.err_flags &= ~mask;
+        return true;
+    }
+    if (!string.strcmp(option, "error")
+    ||  !string.strcmp(option, "promote-to-error")) {
+        if (enable) warnings.err_flags = (u64)-1;
+        else warnings.err_flags = 0;
+        return true;
+    } else {
+        u64 mask = WarningKind.getMask(option);
+        if (!mask) return false;
+        if (enable) warnings.flags |= mask;
+        else warnings.flags &= ~mask;
+        return true;
+    }
+}
