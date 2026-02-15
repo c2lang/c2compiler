@@ -70,7 +70,18 @@ public fn IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc l
     return e;
 }
 
+fn const TypeRef* IdentifierExpr.matchesTemplate(IdentifierExpr* e, Instantiator* inst) {
+    if (e.name_idx == inst.template_type_name)
+        return (TypeRef*)&inst.template_type_ref;
+    // TODO: support multiple arguments
+    if (e.name_idx == inst.template_vars[0].name) return inst.ref;
+    return nil;
+}
+
 fn Expr* IdentifierExpr.instantiate(IdentifierExpr* e, Instantiator* inst) {
+    if (const TypeRef* r2 = e.matchesTemplate(inst)) {
+        return (Expr*)TypeExpr.createFromTypeRef(inst.c, e.base.base.loc, e.base.base.identifierExprBits.name_len, r2);
+    }
     return (Expr*)IdentifierExpr.create(inst.c, e.base.base.loc, e.name_idx, e.base.base.identifierExprBits.name_len);
 }
 
@@ -129,7 +140,7 @@ fn void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, u3
     out.space();
     if (e.base.base.identifierExprBits.has_decl) {
         out.color(col_Value);
-        out.add(e.decl.getName());
+        out.add(e.decl.getFullName());
     } else {
         out.color(col_Value);
         out.add(idx2name(e.name_idx));

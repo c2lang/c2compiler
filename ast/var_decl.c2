@@ -150,12 +150,10 @@ public fn VarDecl* VarDecl.createStructMember(ast_context.Context* c,
 
 fn VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
 {
-    bool matches = vd.typeRef.matchesTemplate(inst.template_name);
-    u32 extra = matches ? inst.ref.getExtraSize() : vd.typeRef.getExtraSize();
+    u32 size = sizeof(VarDecl) + vd.typeRef.instantiateExtraSize(inst);
     //TODO handle embed
-    if (vd.base.varDeclBits.has_init) extra += sizeof(VarDeclInit);
-    if (vd.base.varDeclBits.is_bitfield) extra += sizeof(BitFieldInfo);
-    u32 size = sizeof(VarDecl) + extra;
+    if (vd.base.varDeclBits.has_init) size += sizeof(VarDeclInit);
+    if (vd.base.varDeclBits.is_bitfield) size += sizeof(BitFieldInfo);
 
     VarDecl* vd2 = inst.c.alloc(size);
     vd2.base = vd.base;

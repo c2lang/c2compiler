@@ -298,6 +298,12 @@ fn void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent
     out.print(" refs=%d/2 ", e.base.base.memberExprBits.num_decls);
     out.color(col_Value);
     e.printLiteral(out);
+    if (kind == Function || kind == Type || kind == Var) {
+        if (Decl* d = e.getDecl(1)) {
+            out.space();
+            out.add(d.getFullName());
+        }
+    }
     out.newline();
     if (e.hasExpr()) e.refs[0].expr.print(out, indent + 1);
 }

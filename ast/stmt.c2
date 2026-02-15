@@ -77,6 +77,7 @@ public type Stmt struct @(opaque) {
         BitOffsetExprBits bitOffsetBits;
         BooleanLiteralBits booleanLiteralBits;
         BuiltinExprBits builtinExprBits;
+        TemplateExprBits templateExprBits;
         CallExprBits callExprBits;
         CharLiteralBits charLiteralBits;
         ExplicitCastExprBits explicitCastExprBits;

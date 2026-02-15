@@ -24,23 +24,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
     bool is_tf = call.isTypeFunc();
 
     Decl* dest;
-    if (call.isTemplateCall()) {
-        Expr* func = call.getFunc();
-        QualType qt = func.getType();
-        FunctionType* ft = qt.getFunctionTypeOrNil();
-        FunctionDecl* template_fd = ft.getDecl();
-        u32 idx = call.getTemplateIdx();
-        FunctionDecl* instance = gen.mod.getInstance(template_fd, idx);
-        assert(instance);
-
-        dest = instance.asDecl();
-        if (!dest.isGenerated()) {
-            gen.emitFunction(instance);
-            instance.asDecl().setGenerated();
-        }
-        gen.emitDeclName(out, dest);
-        out.lparen();
-    } else {
+    {
         Expr* func = call.getFunc();
         if (func.isImplicitCast()) {
             ImplicitCastExpr* ic = (ImplicitCastExpr*)func;
@@ -78,8 +62,12 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
         } else {
             bool no_trace = gen.no_trace;
             // can be Member or Identifier
-            if (func.isIdentifier()) {
+            if (func.isTemplate()) {
+                TemplateExpr* tp = (TemplateExpr*)func;
+                dest = tp.getDecl();
+            } else if (func.isIdentifier()) {
                 IdentifierExpr* i = (IdentifierExpr*)func;
+                // TODO should have @(notrace) attribute
                 // do not trace calls to va_start, va_arg, va_end...
                 const char *name = i.getName();
                 if (name && name[0] == 'v' && name[1] == 'a' && name[2] == '_')

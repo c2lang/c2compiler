@@ -67,6 +67,9 @@ public type Parser struct @(opaque) {
 
     AttrRegistry attr_registry;
 
+    bool is_public;
+    TemplateSpec* template_spec;
+
     stmt_list.List* stmt_lists;
     u32 stmt_list_count;
 
@@ -273,14 +276,25 @@ fn void Parser.errorAt(Parser* p, SrcLoc loc, const char* format @(printf_format
     longjmp(&p.jmpbuf, 1);
 }
 
+fn bool Parser.isLowerName(Parser* p, u32 name_idx) {
+    if (!name_idx) return false;
+    const char* name = p.pool.idx2str(name_idx);
+    return islower(*name);
+}
+
+fn bool Parser.isUpperName(Parser* p, u32 name_idx) {
+    if (!name_idx) return false;
+    const char* name = p.pool.idx2str(name_idx);
+    return isupper(*name);
+}
+
 fn void Parser.parseModule(Parser* p, bool is_interface, bool is_generated) {
     p.expectAndConsume(KW_module);
     // accept builtin types as module names
     if (!p.tok.kind.isBuiltinTypeOrVoid())
         p.expectIdentifier();
 
-    const char*modname = p.pool.idx2str(p.tok.name_idx);
-    if (!ctype.islower(modname[0])) {
+    if (!p.isLowerName(p.tok.name_idx)) {
         p.error("a module name must start with a lower case character");
     }
     p.builder.actOnModule(p.tok.name_idx,
@@ -331,6 +345,56 @@ fn void Parser.parseImports(Parser* p) {
     }
 }
 
+fn void Parser.parseTemplate(Parser* p, bool is_public) {
+    if (p.template_spec) p.error("nested template specification not allowed");
+
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+
+    bool was_public = p.is_public;
+    p.is_public = is_public;
+
+    u32 num_vars = 0;
+    TemplateVar[MaxTemplateArg] vars;
+
+    // TODO: decide on syntax. We currently accept () and <>
+    Kind sep = p.tok.kind;
+    if (sep == Less) p.consumeToken();
+    else p.expectAndConsume(LParen);
+
+    for (;;) {
+        if (num_vars >= MaxTemplateArg) {
+            p.error("too many template arguments");
+        }
+        p.expectIdentifier();
+        vars[num_vars] = { .name = p.tok.name_idx, .loc = p.tok.loc }
+        p.consumeToken();
+        if (p.tok.kind == Equal) {
+            p.consumeToken();
+            vars[num_vars].def = p.parseTypeOrExpr(true);
+        }
+        num_vars++;
+        if (p.tok.kind != Comma) break;
+        p.consumeToken();
+    }
+
+    if (sep == Less) p.expectAndConsume(Greater);
+    else p.expectAndConsume(RParen);
+
+    p.template_spec = p.builder.actOnTemplateSpec(p.tok.loc, is_public, vars, num_vars);
+    if (p.tok.kind == LBrace) {
+        p.consumeToken();
+        while (!p.tok.done && p.tok.kind != RBrace) {
+            p.parseTopLevel();
+        }
+        p.expectAndConsume(RBrace);
+    } else {
+        p.parseTopLevel();
+    }
+    p.is_public = was_public;
+    p.template_spec = nil;
+}
+
 fn void Parser.parseTopLevel(Parser* p) {
     p.builder.clearAttributes();
 
@@ -348,6 +412,9 @@ fn void Parser.parseTopLevel(Parser* p) {
         case KW_static_assert:
             if (is_public) p.error("static_assert cannot be public");
             p.parseStaticAssert();
+            break;
+        case KW_template:
+            p.parseTemplate(is_public);
             break;
         case KW_type:
             p.parseTypeDecl(is_public);
@@ -483,35 +550,33 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
 
     bool is_variadic = p.parseFunctionParams(&params, is_public, true);
 
-    FunctionDecl* f;
-    if (p.tok.kind == KW_template) {
-        p.consumeToken();
-        p.expectIdentifier();
+    TemplateSpec* template_spec = prefix ? nil : p.template_spec;
 
-        u32 template_name = p.tok.name_idx;
+    if (p.tok.kind == KW_template) {
+        if (template_spec) {
+            p.error("redundant template specification");
+        }
+        if (prefix) {
+            // TODO: support this
+            p.error("template type functions not supported");
+        }
         SrcLoc template_loc = p.tok.loc;
         p.consumeToken();
-        // TODO parse multiple template args
-
-        f = p.builder.actOnTemplateFunctionDecl(func_name,
-                                                func_loc,
-                                                is_public,
-                                                &rtype,
-                                                template_name,
-                                                template_loc,
-                                                (VarDecl**)params.getDecls(),
-                                                params.size(),
-                                                is_variadic);
-    } else {
-        f = p.builder.actOnFunctionDecl(func_name,
-                                        func_loc,
-                                        is_public,
-                                        &rtype,
-                                        prefix,
-                                        (VarDecl**)params.getDecls(),
-                                        params.size(),
-                                        is_variadic);
+        p.expectIdentifier();
+        TemplateVar template_var = { .name = p.tok.name_idx, .loc = p.tok.loc }
+        p.consumeToken();
+        template_spec = p.builder.actOnTemplateSpec(template_loc, false, &template_var, 1);
     }
+
+    FunctionDecl* f = p.builder.actOnFunctionDecl(func_name,
+                                                  func_loc,
+                                                  is_public,
+                                                  &rtype,
+                                                  prefix,
+                                                  (VarDecl**)params.getDecls(),
+                                                  params.size(),
+                                                  is_variadic,
+                                                  template_spec);
 
     params.free();
 
@@ -521,6 +586,9 @@ fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
     if (p.is_interface) {
         if (p.tok.kind == Semicolon) {
             // function without body (eg. i32 printf(..); ) is allowed
+            if (template_spec) {
+                p.diags.error(func_loc, "template functions are not allowed in interfaces");
+            }
             p.consumeToken();
             return;
         }
@@ -749,7 +817,7 @@ fn bool Parser.parseOptionalAccessSpecifier(Parser* p) {
         p.consumeToken();
         return true;
     }
-    return false;
+    return p.is_public;
 }
 
 fn u32 Parser.parseOptionalTypeQualifier(Parser* p) {
@@ -809,6 +877,18 @@ fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref) {
         p.parseFullTypeIdentifier(ref);
         if (ref.user.name_idx == p.va_list_idx)
             p.addImplicitImport(p.varargs_idx, true);
+        if (p.tok.kind == Less) {
+            p.consumeToken();
+            for (;;) {
+                Expr* arg = p.parseTypeOrExpr(true);
+                if (!ref.addArg(arg)) {
+                    p.errorAt(arg.getStartLoc(), "too many template arguments");
+                }
+                if (p.tok.kind != Comma) break;
+                p.consumeToken();
+            }
+            p.expectAndConsume(Greater);
+        }
     } else {
         p.error("expected type specifier");
     }

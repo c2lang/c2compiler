@@ -19,6 +19,8 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
+import string local;
+
 type TypeExprBits struct {
     u32 : NumExprBits;
     u32 src_len : 32 - NumExprBits;
@@ -45,9 +47,25 @@ public fn TypeExpr* TypeExpr.create(ast_context.Context* c,
     return e;
 }
 
+fn TypeExpr* TypeExpr.createFromTypeRef(ast_context.Context* c,
+                                        SrcLoc loc,
+                                        u32 src_len,
+                                        const TypeRef* ref)
+{
+    u32 extra = ref.getExtraSize();
+    u32 size = sizeof(TypeExpr) + extra;
+    TypeExpr* e = c.alloc(size);
+    e.base.init(ExprKind.Type, loc, 0, 0, 0, ValType.NValue);
+    e.base.base.typeExprBits.src_len = src_len;
+    memcpy(&e.typeRef, ref, sizeof(TypeRef) + extra);
+#if AstStatistics
+    Stats.addExpr(ExprKind.Type, size);
+#endif
+    return e;
+}
+
 fn Expr* TypeExpr.instantiate(TypeExpr* e, Instantiator* inst) {
-    bool matches = e.typeRef.matchesTemplate(inst.template_name);
-    u32 extra = matches ? inst.ref.getExtraSize() : e.typeRef.getExtraSize();
+    u32 extra = e.typeRef.instantiateExtraSize(inst);
     u32 size = sizeof(TypeExpr) + extra;
     TypeExpr* e2 = inst.c.alloc(size);
     e2.base = e.base;

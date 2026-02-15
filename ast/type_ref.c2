@@ -40,6 +40,7 @@ fn const char* TypeRefKind.str(TypeRefKind k) {
 type TypeRefBits struct {
     u32 is_const : 1;
     u32 is_volatile : 1;
+    u32 num_args : 3; // limit to 7 template arguments
     u32 num_ptrs : 2;   // 0 = Foo, 1 = Foo*, 2 = Foo**
     u32 num_arrays : 2; // limit to 3-dimensional arrays
     u32 incr_array : 1;
@@ -71,6 +72,7 @@ public type TypeRef struct @(opaque, aligned=8) {
     }
     Ref[0] refs;    // tail-allocated. [1] if is_user/struct_member_fn, [2] if also has_prefix
     //Expr*[0] arrays; // tail-allocated. [1] if Foo[..], [2] if Foo[..][..], etc
+    //Expr*[0] args; // tail-allocated. for template arguments
 }
 
 // just a TypeRef with all possible tail-allocated fields
@@ -79,6 +81,7 @@ public type TypeRefHolder struct {
     Ref user;
     Ref prefix;
     Expr*[3] arrays;    // Note: in order of parsing: so [4][20] -> [4] [20]
+    Expr*[MaxTemplateArg] args;
 }
 
 public fn void TypeRefHolder.init(TypeRefHolder* h) {
@@ -155,6 +158,14 @@ public fn void TypeRefHolder.addArray(TypeRefHolder* h, Expr* array) {
     r.flags.num_arrays++;
 }
 
+public fn bool TypeRefHolder.addArg(TypeRefHolder* h, Expr* arg) {
+    TypeRef* r = (TypeRef*)&h.ref;
+    if (r.flags.num_args >= MaxTemplateArg) return false;
+    h.args[r.flags.num_args] = arg;
+    r.flags.num_args++;
+    return true;
+}
+
 public fn void TypeRefHolder.setBuiltin(TypeRefHolder* h, BuiltinKind kind, SrcLoc loc) {
     TypeRef* r = (TypeRef*)&h.ref;
     r.flags.builtin_kind = kind;
@@ -227,42 +238,94 @@ fn void TypeRef.init(TypeRef* dest, const TypeRefHolder* h) {
     }
 
     for (u32 i=0; i<r.flags.num_arrays; i++) {
-        Expr** a = dest.getArray2(i);
-        *a = h.arrays[i];
+        dest.setArray(i, h.arrays[i]);
+    }
+    for (u32 i = 0; i < r.flags.num_args; i++) {
+        dest.setArg(i, h.args[i]);
     }
 }
 
-fn bool TypeRef.matchesTemplate(const TypeRef* r, u32 template_arg) {
-    if (r.flags.kind != TypeRefKind.User || r.flags.has_prefix) return false;
-    return r.refs[0].name_idx == template_arg;
+fn const TypeRef* TypeRef.matchesTemplate(const TypeRef* r1, Instantiator* inst) {
+    if (r1.flags.kind != TypeRefKind.User || r1.flags.has_prefix) return nil;
+    if (r1.refs[0].name_idx == inst.template_type_name) {
+        if (!r1.flags.num_args) return (TypeRef*)&inst.template_type_ref;
+        //return nil;  // will be expanded later
+    }
+    // TODO: support multiple arguments
+    if (r1.refs[0].name_idx == inst.template_vars[0].name) return inst.ref;
+    return nil;
+}
+
+fn bool TypeRef.instantiateCheck(const TypeRef* r1, const TypeRef* r2, Instantiator* inst) {
+    if (!r2) return false;
+    // Check for overflow:
+    // r1 cannot have arguments but can have pointers and arrays
+    // r2 can have arguments, pointers and arrays
+    // TODO issue error messages using inst.on_error
+    if (r1.flags.num_arrays + r2.flags.num_arrays > 3) return false;
+    if (r1.flags.num_ptrs + r2.flags.num_ptrs > 3) return false;
+    if (r1.flags.num_ptrs && r2.flags.num_arrays) return false;
+    return true;
+}
+
+fn u32 TypeRef.instantiateExtraSize(const TypeRef* r1, Instantiator* inst) {
+    if (const TypeRef* r2 = r1.matchesTemplate(inst)) {
+        if (r1.instantiateCheck(r2, inst))
+            return r2.getExtraSize() + r1.flags.num_arrays * sizeof(Expr*);
+    }
+    return r1.getExtraSize();
 }
 
 fn void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, Instantiator* inst) {
-    const TypeRef* r2 = inst.ref;
-    if (r1.matchesTemplate(inst.template_name)) {
+    // TODO: instantiate template arguments and array dimension expressions
+    if (const TypeRef* r2 = r1.matchesTemplate(inst)) {
         // Note: keep the srcloc intact
         // TODO enforce no prefix in template functions
         r.flagBits = r2.flagBits;
-        r.dest = r2.dest;
-        if (r2.flags.kind == TypeRefKind.User) {
-            r.refs[0].name_idx = r2.refs[0].name_idx;
-            r.refs[0].loc = r1.refs[0].loc;     // location from instance?
-            r.refs[0].decl = r2.refs[0].decl;
-            if (r2.flags.has_prefix) {
-                r.refs[1].name_idx = r2.refs[1].name_idx;
-                r.refs[1].loc = r2.refs[1].loc;
-                r.refs[1].decl = r2.refs[1].decl;
-            }
-        }
         r.flags.is_const |= r1.flags.is_const;
         r.flags.is_volatile |= r1.flags.is_volatile;
         r.flags.num_ptrs += r1.flags.num_ptrs;
-
+        r.flags.num_arrays += r1.flags.num_arrays;
+        r.dest = r2.dest; // ???
+        u8* ptr = (u8*)&r.refs[0];
+        // r1 is TypeRefKind.Builtin without prefix
+        const u8* ptr1 = (const u8*)&r1.refs[0] + sizeof(Ref);
+        const u8* ptr2 = (const u8*)&r2.refs[0];
+        u32 ref_size = ((r2.flags.kind >= TypeRefKind.User) + r2.flags.has_prefix) * sizeof(Ref);
+        if (ref_size) string.memcpy(ptr, ptr2, ref_size);
+        ptr += ref_size;
+        ptr2 += ref_size;
+        if (r2.flags.kind == TypeRefKind.User) {
+            r.refs[0].loc = r1.refs[0].loc;     // location from instance?
+        }
+        if (u32 array_size = r1.flags.num_arrays * sizeof(Expr*)) {
+            string.memcpy(ptr, ptr1, array_size);
+            ptr += array_size;
+            ptr1 += array_size;
+            // instantiate array expressions
+            for (u32 i = 0; i < r1.flags.num_arrays; i++) {
+                r.setArray(i, r.getArray(i).instantiate(inst));
+            }
+        }
+        if (u32 array_size = r2.flags.num_arrays * sizeof(Expr*)) {
+            string.memcpy(ptr, ptr2, array_size);
+            ptr += array_size;
+            ptr2 += array_size;
+        }
+        if (u32 array_size = r2.flags.num_args * sizeof(Expr*)) {
+            string.memcpy(ptr, ptr2, array_size);
+            ptr += array_size;
+            ptr2 += array_size;
+        }
         if (inst.used_opaque && r.flags.num_ptrs == 0) {
             inst.on_opaque(r.refs[0].loc, r.refs[0].decl);
         }
     } else {
         string.memcpy(r, r1, sizeof(TypeRef) + r1.getExtraSize());
+        // instantiate template arguments
+        for (u32 i = 0; i < r1.flags.num_args; i++) {
+            r.setArg(i, r1.getArg(i).instantiate(inst));
+        }
     }
 }
 
@@ -273,9 +336,9 @@ public fn void TypeRef.setDest(TypeRef* r, u32 dest) {
 
 fn u32 TypeRef.getExtraSize(const TypeRef* r) {
     // User, StructMemberType use Ref
-    u32 numrefs = (r.flags.kind != TypeRefKind.Builtin) + r.flags.has_prefix;
+    u32 numrefs = (r.flags.kind >= TypeRefKind.User) + r.flags.has_prefix;
     u32 extra = numrefs * sizeof(Ref);
-    extra += r.flags.num_arrays * sizeof(Expr*);
+    extra += (r.flags.num_arrays + r.flags.num_args) * sizeof(Expr*);
     return extra;
 }
 
@@ -322,7 +385,7 @@ public fn bool TypeRef.isU32(const TypeRef* r) {
     return r.isBuiltin() && r.flags.num_ptrs == 0 && r.flags.num_arrays == 0 && r.getBuiltinKind() == UInt32;
 }
 
-fn bool TypeRef.hasPrefix(const TypeRef* r) {
+public fn bool TypeRef.hasPrefix(const TypeRef* r) @(unused) {
     return r.flags.has_prefix;
 }
 
@@ -330,10 +393,12 @@ public fn bool TypeRef.isIncrArray(const TypeRef* r) {
     return r.flags.incr_array;
 }
 
+#if 0
 public fn bool TypeRef.isPointerTo(const TypeRef* r, u32 ptr_idx) {
     if (r.dest != ptr_idx || ptr_idx == 0) return false;
     return (r.flags.num_ptrs == 1 && r.flags.num_arrays == 0 && r.isUser());
 }
+#endif
 
 public fn BuiltinKind TypeRef.getBuiltinKind(const TypeRef* r) {
     return (BuiltinKind)r.flags.builtin_kind;
@@ -417,7 +482,42 @@ public fn Expr** TypeRef.getArray2(TypeRef* r, u32 idx) {
     return &arrays[idx];
 }
 
-fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool print_prefix) {
+fn void TypeRef.setArray(TypeRef* r, u32 idx, Expr* d) {
+    const u32 numrefs = r.isUser() + r.flags.has_prefix;
+    const u8* ptr = (u8*)r.refs + numrefs * sizeof(Ref);
+    Expr** arrays = (Expr**)ptr;
+    arrays[idx] = d;
+}
+
+public fn bool TypeRef.isTemplate(const TypeRef* r) {
+    return r.flags.num_args != 0;
+}
+
+public fn u32 TypeRef.getNumArgs(const TypeRef* r) {
+    return r.flags.num_args;
+}
+
+public fn Expr** TypeRef.getArgs(TypeRef* r) {
+    const u32 numrefs = r.isUser() + r.flags.has_prefix;
+    const u8* ptr = (u8*)r.refs + numrefs * sizeof(Ref);
+    return (Expr**)ptr + r.flags.num_arrays;
+}
+
+public fn Expr* TypeRef.getArg(const TypeRef* r, u32 idx) {
+    const u32 numrefs = r.isUser() + r.flags.has_prefix;
+    const u8* ptr = (u8*)r.refs + numrefs * sizeof(Ref);
+    Expr** args = (Expr**)ptr + r.flags.num_arrays;
+    return args[idx];
+}
+
+fn void TypeRef.setArg(TypeRef* r, u32 idx, Expr* d) {
+    const u32 numrefs = r.isUser() + r.flags.has_prefix;
+    const u8* ptr = (u8*)r.refs + numrefs * sizeof(Ref);
+    Expr** args = (Expr**)ptr + r.flags.num_arrays;
+    args[idx] = d;
+}
+
+public fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool print_prefix) {
     if (r.isConst()) out.add("const ");
     if (r.isVolatile()) out.add("volatile ");
 
@@ -435,6 +535,14 @@ fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool prin
             out.add(d.getFullName());
         } else {
             out.add(d.getName());
+        }
+        if (u32 num_args = r.getNumArgs()) {
+            out.add1('<');
+            for (u32 i = 0; i < num_args; i++) {
+                if (i) out.add(", ");
+                r.getArg(i).printLiteral(out);
+            }
+            out.add1('>');
         }
         break;
     case Function:
@@ -476,6 +584,14 @@ fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
             out.add1('.');
         }
         out.add(idx2name(r.refs[0].name_idx));
+        if (u32 num_args = r.getNumArgs()) {
+            out.add1('<');
+            for (u32 i = 0; i < num_args; i++) {
+                if (i) out.add(", ");
+                r.getArg(i).printLiteral(out);
+            }
+            out.add1('>');
+        }
         break;
     case Function:
         out.add("fn ");
@@ -517,6 +633,7 @@ public fn void TypeRef.dump_full(const TypeRef* r) @(unused) {
     out.indent(1);
     out.add("flags:");
     if (r.flags.is_const) out.add(" const");
+    out.print(" args=%d", r.flags.num_args);
     out.print(" ptrs=%d", r.flags.num_ptrs);
     out.print(" kind=%s", TypeRefKind.str((TypeRefKind)r.flags.kind));
     out.print(" has_prefix=%d", r.flags.has_prefix);

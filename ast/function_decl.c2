@@ -60,6 +60,7 @@ type FunctionDeclBits struct {
     u32 has_return : 1;     // if it returns something, set during analysis
     u32 def_kind : 3;
     u32 has_body : 1;    // if function is defined in C2
+    u32 is_template_type_function : 1;
 }
 
 type FunctionDeclFlags struct {
@@ -85,12 +86,13 @@ public type FunctionDecl struct @(opaque) {
     QualType rt;          // return type after analysis
     u8 num_params;
     u8 attr_format_arg;
-    u16 instance_idx;     // template functions only
-    u32 template_name;    // index into string pool
-    SrcLoc template_loc;
     union {
         FunctionDeclFlags flags;
         u32 flagBits;
+    }
+    union {
+        const TemplateSpec* template_spec;
+        const FunctionDecl* template_decl;
     }
     Ref prefix;
     TypeRef rtype;        // return type as in code. note: variable size!
@@ -107,7 +109,8 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
                                             VarDecl** params,
                                             u32 num_params,
                                             bool is_variadic,
-                                            DefKind def_kind)
+                                            DefKind def_kind,
+                                            const TemplateSpec* template_spec = nil)
 {
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + rtype.getExtraSize();
     FunctionDecl* d = c.alloc(size);
@@ -121,10 +124,8 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     d.rt = QualType_Invalid;
     d.num_params = (u8)num_params;
     d.attr_format_arg = 0;
-    d.instance_idx = 0;
-    d.template_name = 0;
-    d.template_loc = 0;
     d.flagBits = 0;
+    d.template_spec = template_spec;
     d.prefix = {}
     d.rtype.init(rtype);
     if (prefix) {
@@ -142,62 +143,20 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     return d;
 }
 
-public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
-                                                    u32 name,
-                                                    SrcLoc loc,
-                                                    bool is_public,
-                                                    u32 ast_idx,
-                                                    const TypeRefHolder* rtype,
-                                                    u32 template_name,
-                                                    SrcLoc template_loc,
-                                                    VarDecl** params,
-                                                    u32 num_params,
-                                                    bool is_variadic)
-{
-    u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + rtype.getExtraSize();
-    FunctionDecl* d = c.alloc(size);
-    FunctionType* ftype = FunctionType.create(c, d);
-    QualType qt = QualType.create(ftype.asType());
-    d.base.init(Function, name, loc, is_public, qt, ast_idx);
-    d.base.functionDeclBits.is_variadic = is_variadic;
-    d.base.functionDeclBits.call_kind = CallKind.Normal;
-    d.base.functionDeclBits.def_kind = DefKind.Template;
-    d.body = nil;
-    d.rt = QualType_Invalid;
-    d.num_params = (u8)num_params;
-    d.attr_format_arg = 0;
-    d.instance_idx = 0;
-    d.template_name = template_name;
-    d.template_loc = template_loc;
-    d.flagBits = 0;
-    d.prefix = {}
-    d.rtype.init(rtype);
-    if (num_params) {
-        VarDecl** tail = d.rtype.getPointerAfter();
-        string.memcpy(tail, params, num_params * sizeof(VarDecl*));
-    }
-
-#if AstStatistics
-    Stats.addDecl(Function, size);
-#endif
-    return d;
-}
-
 public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instantiator* inst)
 {
-    // ref is the template arg (eg myfunc<Foo*)..) -> Foo*)
     // Note: the rtype could change, so this could make the size larger or smaller:
     // X could be replaced by mod.Foo, then bigger
     // X could be replaced by i32, then smaller
-
-    bool rtype_matches = fd.rtype.matchesTemplate(fd.template_name);
-    u32 extra = rtype_matches ? inst.ref.getExtraSize() : fd.rtype.getExtraSize();
+    u32 extra = fd.rtype.instantiateExtraSize(inst);
     u32 num_params = fd.num_params;
     u32 size = sizeof(FunctionDecl) + num_params * sizeof(VarDecl*) + extra;
     FunctionDecl* fd2 = inst.c.alloc(size);
     // copy members
     fd2.base = fd.base;
+    fd2.base.declBits.check_state = DeclCheckState.Unchecked;
     // note: the instantiation is no longer a template function (otherwise ignored by analyseFunctionProto)
+    fd2.base.functionDeclBits.is_template_type_function = false;
     fd2.base.functionDeclBits.def_kind = DefKind.Global;
     FunctionType* ftype = FunctionType.create(inst.c, fd2);
     fd2.base.qt = QualType.create(ftype.asType());
@@ -208,12 +167,14 @@ public fn FunctionDecl* FunctionDecl.instantiate(const FunctionDecl* fd, Instant
     fd2.rt = QualType_Invalid;
     fd2.num_params = fd.num_params;
     fd2.attr_format_arg = fd.attr_format_arg;
-    fd2.instance_idx = 0;
-    fd2.template_name = 0;
-    fd2.template_loc = fd.template_loc;
     fd2.flagBits = fd.flagBits;
-    fd2.flags.instance_ast_idx = (u16)inst.instance_ast_idx;
+    fd2.flags.instance_ast_idx = inst.instance_ast_idx;
+    fd2.template_decl = fd;
+    // Perform prefix substitution
     fd2.prefix = fd.prefix;
+    if (fd.hasPrefix() && fd.prefix.name_idx == inst.template_type_name) {
+        fd2.prefix.name_idx = inst.template_type_ref.user.name_idx;
+    }
     fd2.rtype.instantiate(&fd.rtype, inst);
 
     VarDecl** src = fd.rtype.getPointerAfter();
@@ -308,6 +269,15 @@ public fn bool FunctionDecl.isTemplate(const FunctionDecl* d) {
     return d.getDefKind() == Template;
 }
 
+public fn bool FunctionDecl.isTemplateTypeFunction(const FunctionDecl* d) {
+    return d.base.functionDeclBits.is_template_type_function;
+}
+
+fn void FunctionDecl.setTemplateTypeFunction(FunctionDecl* d) {
+    d.base.functionDeclBits.is_template_type_function = true;
+    d.base.functionDeclBits.def_kind = DefKind.Template;
+}
+
 public fn bool FunctionDecl.isMemberType(const FunctionDecl* d) {
     return d.getDefKind() == StructMember;
 }
@@ -320,24 +290,9 @@ fn DefKind FunctionDecl.getDefKind(const FunctionDecl* d) {
     return (DefKind)d.base.functionDeclBits.def_kind;
 }
 
-public fn u32 FunctionDecl.getTemplateNameIdx(const FunctionDecl* d) {
-    return d.template_name;
-}
-
-public fn SrcLoc FunctionDecl.getTemplateLoc(const FunctionDecl* d) {
-    return d.template_loc;
-}
-
-public fn void FunctionDecl.setTemplateInstanceIdx(FunctionDecl* d, u16 idx) {
-    d.instance_idx = idx;
-}
-
-public fn u16 FunctionDecl.getTemplateInstanceIdx(const FunctionDecl* d) {
-    return d.instance_idx;
-}
-
-public fn void FunctionDecl.setInstanceName(FunctionDecl* d, u32 name_idx) {
-    d.base.name_idx = name_idx;
+public fn const TemplateSpec* FunctionDecl.getTemplateSpec(const FunctionDecl* d) {
+    if (d.isTemplate()) return d.template_spec;
+    return nil;
 }
 
 public fn Module* FunctionDecl.getInstanceModule(FunctionDecl* d) {
@@ -497,6 +452,7 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
     out.space();
     out.color(col_Attr);
     out.add(callKind_names[d.getCallKind()]);
+    if (d.isTemplateTypeFunction()) out.add(" TTF");
     d.base.printAttrs(out);
     out.add(" def:");
     out.add(defKind_names[d.getDefKind()]);
@@ -534,10 +490,8 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
     else out.add("<unnamed>");
     out.newline();
 
-    if (d.getDefKind() == Template) {
-        out.indent(indent + 1);
-        out.color(col_Template);
-        out.print("template %s\n", idx2name(d.template_name));
+    if (const TemplateSpec* template_spec = d.getTemplateSpec()) {
+        template_spec.print(out, indent);
     }
 
     //d.rtype.print(out, true,);

@@ -59,6 +59,15 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
         gen.emitTypePre(out, e.getType());
         gen.emitTypePost(out, e.getType());
         break;
+    case Template:
+        TemplateExpr* tp = (TemplateExpr*)e;
+        Decl* d = tp.getDecl();
+        if (!d.isGenerated()) {
+            gen.emitFunction((FunctionDecl*)d);
+            d.setGenerated();
+        }
+        gen.emitDeclName(out, d);
+        break;
     case Call:
         if (gen.need_const_expr)
             gen.emitExprValue(out, e);

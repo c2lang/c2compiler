@@ -67,6 +67,8 @@ fn QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
         return d.getType();
     case Type:
         break;
+    case Template:
+        return ma.analyseTemplateExpr(e_ptr);
     case Call:
         return ma.analyseCallExpr(e_ptr);
     case InitList:

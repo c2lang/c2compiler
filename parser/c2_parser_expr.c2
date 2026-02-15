@@ -22,7 +22,6 @@ import constants;
 import token local;
 import src_loc local;
 
-import ctype local;
 import string;
 
 fn Expr* Parser.parseExpr(Parser* p) {
@@ -245,7 +244,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
 
     Kind savedKind = p.tok.kind;
     Expr* res = nil;
-    bool couldBeTemplateCall = false;
+    bool couldBeTemplateExpr = false;
 
     switch (CastExprTokenLookup[savedKind]) {
     case 0: // other
@@ -254,7 +253,8 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
     case 1: // Identifier
         // parse all members in a single shot
         res = p.parsePureMemberExpr();
-        couldBeTemplateCall = true;
+        // TODO: set couldBeTemplateExor only if last name is not uppercase (use last_tok?)
+        couldBeTemplateExpr = true;
 /*
         // Make sure to pass down the right value for isAddressOfOperand.
         if (isAddressOfOperand && isPostfixExpressionSuffixStart())
@@ -331,16 +331,15 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         }
         break;
     }
-    return p.parsePostfixExprSuffix(res, couldBeTemplateCall);
+    return p.parsePostfixExprSuffix(res, couldBeTemplateExpr);
 }
 
-fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplateCall) {
+fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplateExpr) {
     while (1) {
         switch (p.tok.kind) {
         case Identifier:
             return lhs;
         case LParen:
-            // C2: can only be call expr?
             lhs = p.parseCallExpr(lhs);
             break;
         case LSquare:
@@ -370,23 +369,29 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
             p.consumeToken();
             break;
         case Less:
-            if (couldBeTemplateCall && p.isTemplateFunctionCall()) {
+            if (couldBeTemplateExpr && p.isTemplateExpr()) {
+                SrcLoc loc = p.tok.loc;
                 p.consumeToken();
-
-                TypeRefHolder ref.init();
-                p.parseTypeSpecifier(&ref);
-
-                p.expectAndConsume(Greater);
-                if (p.tok.kind != LParen) {
-                    p.error("missing argument list for template function call");
+                u32 num_args = 0;
+                Expr*[MaxTemplateArg] args;
+                for (;;) {
+                    if (num_args >= MaxTemplateArg) {
+                        p.error("too many template arguments");
+                    }
+                    args[num_args++] = p.parseTypeOrExpr(true);
+                    if (p.tok.kind != Comma) break;
+                    p.consumeToken();
                 }
-                lhs = p.parseTemplateCallExpr(lhs, &ref);
+                SrcLoc endLoc = p.tok.loc + 1;
+                p.expectAndConsume(Greater);
+                lhs = p.builder.actOnTemplateExpr(loc, endLoc, lhs, args, num_args);
                 break;
             }
             return lhs;
         default:
             return lhs;
         }
+        couldBeTemplateExpr = false;
     }
 }
 
@@ -418,26 +423,6 @@ fn Expr* Parser.parseCallExpr(Parser* p, Expr* func) {
     SrcLoc endLoc = p.tok.loc + 1;
     p.expectAndConsume(RParen);
     Expr* res = p.builder.actOnCallExpr(loc, endLoc, func, args.getExprs(), args.size());
-    args.free();
-    return res;
-}
-
-fn Expr* Parser.parseTemplateCallExpr(Parser* p, Expr* func, const TypeRefHolder* ref) {
-    SrcLoc loc = p.tok.loc;
-    p.consumeToken(); // '('
-
-    ExprList args.init();
-
-    while (p.tok.kind != RParen) {
-
-        args.add(p.parseExpr());
-
-        if (p.tok.kind != Comma) break;
-        p.consumeToken();
-    }
-    SrcLoc endLoc = p.tok.loc + 1;
-    p.expectAndConsume(RParen);
-    Expr* res = p.builder.actOnTemplateCallExpr(loc, endLoc, func, args.getExprs(), args.size(), ref);
     args.free();
     return res;
 }
@@ -526,7 +511,7 @@ fn Expr* Parser.parseParenExpr(Parser* p) {
     return p.builder.actOnParenExpr(loc, src_len, res);
 }
 
-fn bool Parser.isTemplateFunctionCall(Parser* p) {
+fn bool Parser.isTemplateExpr(Parser* p) {
     assert(p.tok.kind == Less);
     // check if tokens after < could be type, followed by >(
     // longest token line could be mod.type**
@@ -562,25 +547,32 @@ fn bool Parser.isTemplateFunctionCall(Parser* p) {
     return false;
 }
 
-fn Expr* Parser.parseSizeof(Parser* p) {
-    SrcLoc loc = p.tok.loc;
-    p.consumeToken();
-
-    p.expectAndConsume(LParen);
-
-    Expr* res = nil;
+fn Expr* Parser.parseTypeOrExpr(Parser* p, bool is_template) {
     if (p.parseAsType()) {
         // argument is unambiguously a type
         SrcLoc type_loc = p.tok.loc;
         TypeRefHolder ref.init();
         p.parseTypeSpecifier(&ref);
         u32 src_len = p.prev_loc - type_loc;
-        res = p.builder.actOnTypeExpr(type_loc, src_len, &ref);
+        return p.builder.actOnTypeExpr(type_loc, src_len, &ref);
     } else {
         // argument is an expression or an ambiguous name, parse as expression
-        res = p.parseExpr();
+        if (is_template) {
+            Expr* lhs = p.parseCastExpr(false, false);
+            // TODO: pass is_template to only disable > and >>
+            return p.parseRHSOfBinaryExpression(lhs, Prec.Additive);
+        }
+        return p.parseExpr();
     }
+}
 
+fn Expr* Parser.parseSizeof(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+
+    p.expectAndConsume(LParen);
+
+    Expr* res = p.parseTypeOrExpr(false);
     u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(RParen);
 
@@ -800,13 +792,15 @@ fn bool Parser.parseAsType(Parser* p) {
     for (;; ahead++) {
         switch (p.peekToken(ahead)) {
         case RParen:
+        case Greater:
+        case Comma:
             if (stars) return true;
             // ambiguous: could be a global constant or a type name
             return false;   // resolve in analyser
         case LSquare:
             if (stars) return true;  // sizeof(MyType*[...])
             // if identifier is not uppercase, argument is not a type
-            if (!isupper(*p.pool.idx2str(t2.name_idx))) return false;
+            if (!p.isUpperName(t2.name_idx)) return false;
             // ambiguous: could be a global constant element or an array type
             return true;    // assume array type
         case Star:
@@ -815,7 +809,7 @@ fn bool Parser.parseAsType(Parser* p) {
             break;
         case Less:
             // if identifier is not uppercase, argument is not a type
-            if (!isupper(*p.pool.idx2str(t2.name_idx))) return false;
+            if (!p.isUpperName(t2.name_idx)) return false;
             // ambiguous: could be a parametric type or a comparison with a global constant
             return true;   // assume parametric type
         case KW_const:
@@ -908,8 +902,7 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
             case Star:       // ambiguous: (func)*b
                 // for ambiguous combinations, rely on identifier case
                 // (A)(...) is a cast, (a)(...) is a function call
-                if (!isupper(p.pool.idx2str(t2.name_idx)[0]))
-                    return 0;
+                if (!p.isUpperName(t2.name_idx)) return 0;
                 return ahead;
             default:
                 break;

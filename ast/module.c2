@@ -210,16 +210,26 @@ public fn ast.Decl* Module.findPrivateSymbol(const Module* m, u32 name_idx) {
     return m.symbols.findPrivate(name_idx);
 }
 
-public fn ast.FunctionDecl* Module.findInstance(const Module* m, ast.FunctionDecl* fd, QualType qt) {
+public fn ast.Decl* Module.findInstance(const Module* m, ast.Decl* fd, QualType qt) {
     return m.instances.find(fd, qt);
 }
 
-public fn u16 Module.addInstance(Module* m, ast.FunctionDecl* fd, QualType qt, ast.FunctionDecl* instance) {
+public fn u16 Module.addInstance(Module* m, ast.Decl* fd, QualType qt, ast.Decl* instance) {
     return m.instances.add(fd, qt, instance);
 }
 
-public fn ast.FunctionDecl* Module.getInstance(const Module* m, ast.FunctionDecl* fd, u32 idx) {
+public fn ast.Decl* Module.getInstance(const Module* m, ast.Decl* fd, u32 idx) @(unused) {
     return m.instances.get(fd, idx);
+}
+
+public fn void Module.addTypeDecl(Module* m, ast.Decl* d, u16 instance_ast_idx) {
+    AST* ast_ = idx2ast(instance_ast_idx);
+    ast_.addTypeDecl(d);
+}
+
+public fn void Module.addFunc(Module* m, ast.FunctionDecl* d, u16 instance_ast_idx) {
+    AST* ast_ = idx2ast(instance_ast_idx);
+    ast_.addFunc(d);
 }
 
 public fn void Module.print(const Module* m, string_buffer.Buf* out, bool show_funcs) {
