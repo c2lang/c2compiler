@@ -29,6 +29,7 @@ public type Flags struct {
     bool no_unreachable_code;
     bool no_unknown_attribute;
     bool no_deprecated;
+    bool no_max_identifier_length;
     bool are_errors;
 }
 

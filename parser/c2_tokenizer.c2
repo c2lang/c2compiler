@@ -24,6 +24,7 @@ import string_list;
 import string_pool;
 import token local;
 import utf8;
+import warning_flags;
 
 import string;
 import stdlib;
@@ -266,6 +267,8 @@ public type Tokenizer struct {
 
     string_pool.Pool* pool; // no ownership
     string_buffer.Buf* buf; // no ownership, used for strings and character constants
+    const warning_flags.Flags* warnings;
+
     ErrorFn on_error;
     void* on_error_arg;
 
@@ -278,7 +281,7 @@ public type Tokenizer struct {
 
     char[256] error_msg;
 }
-static_assert(408, sizeof(Tokenizer));
+static_assert(416, sizeof(Tokenizer));
 
 public fn void Tokenizer.init(Tokenizer* t,
                               string_pool.Pool* pool,
@@ -287,6 +290,7 @@ public fn void Tokenizer.init(Tokenizer* t,
                               SrcLoc loc_start,
                               const keywords.Info* kwinfo,
                               const string_list.List* features,
+                              const warning_flags.Flags* warnings,
                               ErrorFn on_error,
                               void* on_error_arg,
                               bool raw_mode)
@@ -300,6 +304,7 @@ public fn void Tokenizer.init(Tokenizer* t,
     t.line_start = input;
     t.pool = pool;
     t.buf = buf;
+    t.warnings = warnings;
     t.on_error = on_error;
     t.on_error_arg = on_error_arg;
 
@@ -685,6 +690,15 @@ fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf
     if (t.on_error) t.on_error(t.on_error_arg, FatalError, result.loc, t.error_msg);
 }
 
+fn void Tokenizer.warning(Tokenizer* t, SrcLoc loc, const char* format @(printf_format), ...) {
+    va_list args;
+    va_start(args, format);
+    vsnprintf(t.error_msg, sizeof(t.error_msg), format, args);
+    va_end(args);
+
+    if (t.on_error) t.on_error(t.on_error_arg, Warning, loc, t.error_msg);
+}
+
 // generate an error but keep parsing
 fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const char* format @(printf_format), ...) {
     va_list args;
@@ -720,9 +734,8 @@ fn void Tokenizer.lex_identifier(Tokenizer* t, Token* result) {
     while (Identifier_char[(u8)(*end)]) end++;
 
     usize len = (usize)(end - start);
-    if (len > constants.MaxIdentifierLen && !t.raw_mode) {
-        t.error(result, "identifier too long (max %d chars)", constants.MaxIdentifierLen);
-        return;
+    if (len > constants.MaxIdentifierLen && !t.raw_mode && t.warnings && !t.warnings.no_max_identifier_length) {
+        t.warning(result.loc, "identifier too long (max %d chars)", constants.MaxIdentifierLen);
     }
     t.cur += len;
     result.name_idx = t.pool.add(start, len, true);

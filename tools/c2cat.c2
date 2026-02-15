@@ -262,7 +262,7 @@ public fn i32 c2cat(const char* filename, bool use_color)
     keywords.Info kwinfo;
     kwinfo.init(ctx.pool);
     c2_tokenizer.Tokenizer tokenizer;
-    tokenizer.init(ctx.pool, buf, ctx.input, 0, &kwinfo, &features, nil, nil, true);
+    tokenizer.init(ctx.pool, buf, ctx.input, 0, &kwinfo, &features, nil, nil, nil, true);
     ctx.tokenizer = &tokenizer;
     ctx.attr_registry.init(ctx.pool);
 
