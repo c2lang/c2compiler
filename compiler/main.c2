@@ -57,17 +57,20 @@ type Options struct {
     const char* output_name;
     string_list.List targets;
     string_list.List files;
+    string_list.List features;
 }
 
 fn void Options.init(Options* opts, string_pool.Pool* pool) {
     memset(opts, 0, sizeof(Options));
     opts.targets.init(pool);
     opts.files.init(pool);
+    opts.features.init(pool);
 }
 
 fn void Options.free(Options *opts) {
     opts.targets.free();
     opts.files.free();
+    opts.features.free();
 }
 
 fn void write_file_or_die(const char* filename, string_buffer.Buf* buf) {
@@ -177,6 +180,7 @@ const char[] Usage_help =
     "  -A                print Library ASTs\n"
     "  -b [file]         use specified build file\n"
     "  -d [dir]          change to [dir] first\n"
+    "  -Dfeature         define global feature\n"
     "  -h                print this help\n"
     "  -i                use IR backend\n"
     "  -I                use IR backend and print generated IR\n"
@@ -313,13 +317,21 @@ fn void parse_arguments(ArgumentParser *ap, compiler.Options* comp_opts, Options
             if (arg[1] == '-') {
                 parse_long_opt(ap, arg, comp_opts, opts);
             } else {
-                if (strlen(arg) != 2) ap.unknownOption(arg);
+                const char *argarg = nil;
+                if (memchr("Ddbo", arg[1], 4)) { // needs argument
+                    argarg = arg[2] ? &arg[2] : ap.getOptionArgument(arg);
+                } else if (strlen(arg) != 2) {
+                    ap.unknownOption(arg);
+                }
                 switch (arg[1]) {
                 case '0':    // 'hidden' feature, print AST early after parsing, then quit
                     comp_opts.print_ast_early = true;
                     break;
                 case 'A':
                     comp_opts.print_lib_ast = true;
+                    break;
+                case 'D':
+                    opts.features.addStr(argarg);
                     break;
                 case 'I':
                     opts.use_ir_backend = true;
@@ -335,10 +347,10 @@ fn void parse_arguments(ArgumentParser *ap, compiler.Options* comp_opts, Options
                     comp_opts.print_ast = true;
                     break;
                 case 'b':
-                    opts.build_file = ap.getOptionArgument(arg);
+                    opts.build_file = argarg;
                     break;
                 case 'd':
-                    opts.other_dir = ap.getOptionArgument(arg);
+                    opts.other_dir = argarg;
                     break;
                 case '?':
                 case 'h':
@@ -351,7 +363,7 @@ fn void parse_arguments(ArgumentParser *ap, compiler.Options* comp_opts, Options
                     comp_opts.print_modules = true;
                     break;
                 case 'o':
-                    opts.output_name = ap.getOptionArgument(arg);
+                    opts.output_name = argarg;
                     break;
                 case 'r':
                     comp_opts.print_reports += 1;
@@ -614,7 +626,7 @@ fn bool Context.build_target(Context* c,
         }
     }
 
-    compiler.build(c.auxPool, c.sm, c.diags, c.build_info, target, &c.comp_opts, &c.pluginHandler);
+    compiler.build(c.auxPool, c.sm, c.diags, c.build_info, target, &c.comp_opts, &c.opts.features, &c.pluginHandler);
 
     // TODO unload target-specific plugins?
     // TODO fix build_file
