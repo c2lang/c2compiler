@@ -74,6 +74,7 @@ type Generator struct {
     const build_file.Info* build_info;
     const target_info.Info* targetInfo;
     bool enable_asserts;
+    bool force_initializers;
     bool fast_build;
     bool asan;
     bool msan;
@@ -612,13 +613,16 @@ fn bool Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, Decl
         // generate definition to c file
         if (!d.isExported() && !emit_header) out.add("static ");
         gen.emitGlobalVarDeclCommon(out, d);
-        out.add(" = ");
         Expr* ie = vd.getInit();
         if (ie) {
+            out.add(" = ");
             gen.emitConstExpr(out, ie, Assignment);
         } else {
             // auto-initialize (only required for embedded targets)
-            gen.emitAutoInit(out, d.getType());
+            if (gen.force_initializers) {
+                out.add(" = ");
+                gen.emitAutoInit(out, d.getType());
+            }
         }
         out.add(";\n");
     }
@@ -1285,6 +1289,7 @@ public fn void generate(string_pool.Pool* astPool,
                         Decl* mainFunc,
                         string_list.List* asm_files,
                         bool enable_asserts,
+                        bool force_initializers,
                         bool fast_build, bool asan, bool msan, bool ubsan,
                         bool test_mode, bool trace_calls)
 {
@@ -1299,6 +1304,7 @@ public fn void generate(string_pool.Pool* astPool,
     gen.init(astPool, target, kind, output_dir, dir, diags, sm, build_info, mainFunc);
     gen.auxPool = auxPool;
     gen.enable_asserts = enable_asserts;
+    gen.force_initializers = force_initializers;
     gen.fast_build = fast_build;
     gen.asan = asan;
     gen.msan = msan;

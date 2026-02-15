@@ -74,6 +74,7 @@ fn void Compiler.generate(Compiler* c, const char* target_name, const char* outp
                              c.mainFunc,
                              &asm_files,
                              c.target.hasAsserts(),
+                             c.target.hasForceInitializers(),
                              c.target.getFastBuild() | c.opts.fast_build,
                              c.opts.asan, c.opts.msan, c.opts.ubsan,
                              c.opts.test_mode, c.opts.trace_calls);
