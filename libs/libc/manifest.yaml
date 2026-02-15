@@ -40,4 +40,4 @@ modules:
     - sys_utsname
     - uio
     - unistd
-
+    - c2_assert

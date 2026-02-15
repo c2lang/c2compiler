@@ -1449,17 +1449,6 @@ const char[] C_defines =
     #define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))
     ```;
 
-const char[] C2_assert =
-    ```c
-    int dprintf(int fd, const char *format, ...);
-    void abort(void);
-    static int c2_assert(const char* filename, int line, const char* funcname, const char* condstr) {
-        dprintf(2, "%s:%d: function %s: Assertion failed: %s\n", filename, line, funcname, condstr);
-        abort();
-        return 0;
-    }
-    ```;
-
 const char[] C2_strswitch =
     ```c
     static int c2_strswitch(const char* s1, const char* s2) {
@@ -1525,10 +1514,6 @@ fn void Generator.emit_external_header(Generator* gen, bool enable_asserts, cons
     out.add("#define offsetof(type, member) ((size_t) &((type*)0)->member)\n");
 #endif
     out.add("#define to_container(type, member, ptr) ((type*)((char*)(ptr) - offsetof(type, member)))\n\n");
-
-    if (enable_asserts) {
-        out.add(C2_assert);
-    }
 
     // for switch(str):
     // String format: strings are prefixed by a length byte and concatenated as a single character array.

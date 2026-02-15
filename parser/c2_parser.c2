@@ -61,9 +61,12 @@ public type Parser struct @(opaque) {
     const string_list.List* features;
     const keywords.Info* kwinfo;
     bool is_interface;
+    bool has_asserts;
     u32 va_list_idx;
     u32 varargs_idx;
     u32 stdarg_idx;
+    u32 c2_assert_idx;
+    u32 c2_assert_fail_idx;
 
     AttrRegistry attr_registry;
 
@@ -79,7 +82,8 @@ public fn Parser* create(SourceMgr* sm,
                            string_pool.Pool* pool,
                            ast_builder.Builder* builder,
                            const keywords.Info* kwinfo,
-                           const string_list.List* features)
+                           const string_list.List* features,
+                           bool has_asserts)
 {
     Parser* p = calloc(1, sizeof(Parser));
     p.sm = sm;
@@ -88,9 +92,12 @@ public fn Parser* create(SourceMgr* sm,
     p.builder = builder;
     p.features = features;
     p.kwinfo = kwinfo;
+    p.has_asserts = has_asserts;
     p.va_list_idx = pool.addStr("va_list", true);
     p.varargs_idx = pool.addStr("varargs", true);
     p.stdarg_idx = pool.addStr("stdarg", true);
+    p.c2_assert_idx = p.pool.addStr("c2_assert", true);
+    p.c2_assert_fail_idx = p.pool.addStr("c2_assert_fail", true);
     p.attr_registry.init(pool);
 
     // create a stack of stmt_lists to re-use (resize stack if needed)

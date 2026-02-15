@@ -436,6 +436,11 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
 
     Expr* inner = a.getInner();
     ma.checker.check(getBuiltinQT(Bool), qt, a.getInner2(), inner.getLoc());
+
+    if (a.getCall()) {
+        qt = ma.analyseExpr(a.getCall2(), true, RHS);
+        if (qt.isInvalid()) return;
+    }
 }
 
 fn void Analyser.analyseReturnStmt(Analyser* ma, Stmt* s) {
