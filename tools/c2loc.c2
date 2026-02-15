@@ -17,6 +17,7 @@ module c2loc_main;
 
 import build_target;
 import c2recipe;
+import console;
 import constants;
 import file_list;
 import source_mgr;
@@ -106,6 +107,7 @@ fn void handle_target(build_target.Target* t, const char* name) {
 
 public fn i32 main(i32 argc, const char** argv)
 {
+    console.init();
     parse_opts(argc, argv);
 
     if (other_dir) {
