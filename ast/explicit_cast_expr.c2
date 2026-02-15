@@ -39,6 +39,7 @@ public fn ExplicitCastExpr* ExplicitCastExpr.create(ast_context.Context* c,
 {
     u32 size = sizeof(ExplicitCastExpr) + ref.getExtraSize();
     ExplicitCastExpr* e = c.alloc(size);
+    // TODO ValType.LValue for compound
     e.base.init(ExplicitCast, loc, 0, 0, 0, NValue);
     e.base.base.explicitCastExprBits.c_style = c_style;
     e.base.base.explicitCastExprBits.src_len = src_len;
