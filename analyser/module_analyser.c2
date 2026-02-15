@@ -354,7 +354,7 @@ fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
     } else {
         // search data structure
         bool found = false;
-        found = ma.prefixes.find(prefix_name_idx, &index);
+        found = ma.prefixes.findIndex(prefix_name_idx, &index);
 
         if (!found) {
             const char* msg = "a type-function type must be a struct/union/enum";
@@ -376,7 +376,7 @@ fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
                 ma.error(prefix.loc, "public type-functions need a public type");
                 return;
             }
-            index = ma.prefixes.add(prefix_name_idx);
+            index = ma.prefixes.add({ prefix_name_idx });
             ma.type_fn_decls.addDecl(decl);
         }
         ma.prefix_cache_name = prefix_name_idx;
