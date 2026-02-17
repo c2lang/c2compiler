@@ -347,6 +347,7 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
             ma.error(e.getLoc(), "ternary operands are pointers of different types ('%s' and '%s')", lhs.diagName(), rhs.diagName());
             return QualType_Invalid;
         }
+        // TODO: select the non void pointer if any
         // TODO: combine other qualifiers
         // if one of the pointers is a const pointer, return that.
         return t1.isConst() ? lhs : rhs;
@@ -665,8 +666,7 @@ fn QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
         The 2nd case is ok here, but set const explicitly in first case
     */
 
-    if (q.isConst()) elem.setConst(); // see comments above
-    QualType res = builder.actOnPointerType(elem);
-    return res;
+    elem.setQuals(q.getQuals()); // see comments above
+    return builder.actOnPointerType(elem);
 }
 

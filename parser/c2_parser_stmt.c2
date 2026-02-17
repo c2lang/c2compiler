@@ -130,6 +130,9 @@ fn bool Parser.isTypeSpec(Parser* p) {
         case Comma:
         //case RParen:
             return state == 4;
+        case KW_const:
+        case KW_volatile:
+            return true;
         default:
             return false;
         }

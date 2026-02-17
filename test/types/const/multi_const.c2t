@@ -1,0 +1,70 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+const char* const A_c_c = nil;
+const char* const volatile A_c_cv = nil;
+const volatile char* const volatile A_cv_cv = nil;
+const char* const* const A_c_c_c = nil;
+const char* const* const volatile A_c_c_cv = nil;
+const char* const volatile* const A_c_cv_c = nil;
+const char* const volatile* const volatile A_c_cv_cv = nil;
+const char* volatile* const volatile A_c_v_cv = nil;
+const char* volatile* volatile a_c_v_v = nil;
+char* volatile* volatile a_x_v_v = nil;
+
+type A char;
+
+A* const CC = nil;
+
+public fn i32 main() {
+    const char* const s = "a";
+    const char* const[1][1][1] a = {{{ s }}}
+    const char* const* p = a[0][0];
+    const void *q = (const char* const*)p;
+    A* const cc = nil;
+    q = (A* const*)&cc;
+    A[1] aa;
+    if (A* const b = aa) return 0;
+    return ****a;
+}
+
+// @expect{atleast, cgen/build.c}
+
+typedef char test_A;
+static const char* const test_A_c_c = NULL;
+static const char* const volatile test_A_c_cv = NULL;
+static const volatile char* const volatile test_A_cv_cv = NULL;
+static const char* const* const test_A_c_c_c = NULL;
+static const char* const* const volatile test_A_c_c_cv = NULL;
+static const char* const volatile* const test_A_c_cv_c = NULL;
+static const char* const volatile* const volatile test_A_c_cv_cv = NULL;
+static const char* volatile* const volatile test_A_c_v_cv = NULL;
+static const char* volatile* volatile test_a_c_v_v = NULL;
+static char* volatile* volatile test_a_x_v_v = NULL;
+static test_A* const test_CC = NULL;
+int main(void);
+
+int main(void)
+{
+    const char* const s = "a";
+    const char* const a[1][1][1] = {
+       {
+           { s }
+       }
+    };
+    const char* const* p = a[0][0];
+    const void* q = (const char* const*)p;
+    test_A* const cc = NULL;
+    q = (test_A* const*)&cc;
+    test_A aa[1];
+    {
+        test_A* const b = aa;
+        if (b) return 0;
+    }
+    return ****a;
+}
+
