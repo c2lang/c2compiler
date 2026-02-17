@@ -875,8 +875,8 @@ fn BuiltinKind tokKindToBuiltinKind(Kind kind) {
 }
 
 fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref) {
-    u32 type_qualifier = p.parseOptionalTypeQualifier();
-    ref.setQualifiers(type_qualifier);
+    u32 type_qualifiers = p.parseOptionalTypeQualifier();
+    ref.setQuals(type_qualifiers);
 
     Kind kind = p.tok.kind;
     SrcLoc loc = p.tok.loc;
@@ -901,7 +901,10 @@ fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref) {
 
     // TODO: handle qualified pointers
     u32 depth = 0;
-    while (p.tok.kind == Star) {
+    for (;;) {
+        type_qualifiers = p.parseOptionalTypeQualifier();
+        ref.setQuals(type_qualifiers);
+        if (p.tok.kind != Star) break;
         depth++;
         if (depth > 3) p.error("pointers have a maximum nesting of 3");
         ref.addPointer();

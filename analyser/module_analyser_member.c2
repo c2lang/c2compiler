@@ -72,24 +72,22 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
             TypeKind kind = ma.analyseBaseType(canon);
 
             bool is_ptr = canon.isPointer();
-            bool inner_const = false;
-            bool inner_volatile = false;
+            u32 inner_qualifiers = 0;
 
             // Deref pointer here for casting to real types
             const Type* t = canon.getTypeOrNil();
             if (is_ptr) {
                 PointerType* pt = (PointerType*)t;
                 QualType inner = pt.getInner();
-                inner_const = inner.isConst();
-                inner_volatile = inner.isVolatile();
+                inner_qualifiers = inner.getQuals();
                 t = inner.getTypeOrNil();
             }
 
             switch (kind) {
             // TODO put others in default / fallthrough
             case Struct:
-                //stdio.printf("STRUCT BASE (ptr %d, const %d, inner const %d, volatile %d, inner volatile %d)\n",
-                //             is_ptr, baseType.isConst(), inner_const, baseType.isVolatile(), inner_volatile);
+                //stdio.printf("STRUCT BASE (ptr %d, quals %d, inner_quals %d)\n",
+                //             is_ptr, baseType.getQuals(), inner_qualifiers);
                 // TODO use valType (if ValType.NValue then Foo.x)
                 StructType* st = (StructType*)t;
                 StructTypeDecl* std = st.getDecl();
@@ -111,23 +109,15 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                     break;
                 }
                 // simulate 'dereference' pointers and adding LValueToRValue (possibly strips const)
-                bool is_const = baseType.isConst();
-                bool is_volatile = baseType.isVolatile();
+                u32 qualifiers = baseType.getQuals();
                 baseType = d.getType();
                 is_substruct = d.isStructType();
-                if (is_ptr) {
-                    is_const = inner_const;
-                    is_volatile = inner_volatile;
-                }
+                if (is_ptr) qualifiers = inner_qualifiers;
                 // NOTE: for struct function calls, the base does not get an LValueToRValue cast,
                 // so dont set base-const here
-                if (is_ptr && ck != Invalid) is_const = is_volatile = false;
-                m.setConstBase(is_const);
-                m.setVolatileBase(is_volatile);
-                if (ck == Invalid) {
-                    if (is_const) baseType.setConst();
-                    if (is_volatile) baseType.setVolatile();
-                }
+                if (is_ptr && ck != Invalid) qualifiers = 0;
+                m.setBaseQuals(qualifiers);
+                if (ck == Invalid) baseType.setQuals(qualifiers);
                 // TODO set ck same was as Enum below
 
                 // no need to update valtype
