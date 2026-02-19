@@ -1,6 +1,6 @@
 module lua;
 
-import c2 local;
+import c_types local;
 
 // from luaconf
 const c_uint LUAI_MAXSTACK = 1000000;

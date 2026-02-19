@@ -1,6 +1,6 @@
 module pthread;
 
-import c2 local;
+import c_types local;
 
 // NOTE: depends on architecture
 #if SYSTEM_LINUX

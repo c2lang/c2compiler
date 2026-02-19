@@ -1,6 +1,6 @@
 module mbedtls;
 
-import c2 local;
+import c_types local;
 
 // ------ ssl_msg.h ------
 

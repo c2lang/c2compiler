@@ -1,6 +1,6 @@
 module sdl_mixer;
 
-import c2 local;
+import c_types local;
 import sdl;
 
 // TODO make nice function names (with Mix_)

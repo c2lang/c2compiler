@@ -1,6 +1,6 @@
 module lua_lib;
 
-import c2 local;
+import c_types local;
 import lua local;
 
 fn i32 luaopen_base(State *L);

@@ -1,6 +1,6 @@
 module io_uring;
 
-import c2 local;
+import c_types local;
 import uio;
 
 import csignal;

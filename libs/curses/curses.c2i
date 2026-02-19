@@ -1,6 +1,6 @@
 module curses;
 
-import c2 local;
+import c_types local;
 
 // Window* (void)
 fn void initscr();

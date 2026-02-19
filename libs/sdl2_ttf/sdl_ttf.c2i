@@ -1,6 +1,6 @@
 module sdl_ttf;
 
-import c2 local;
+import c_types local;
 import sdl;
 
 fn c_int init() @(cname="TTF_Init");

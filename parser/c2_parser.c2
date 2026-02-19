@@ -874,117 +874,27 @@ fn BuiltinKind tokKindToBuiltinKind(Kind kind) {
     return Tok2builtin[kind - Kind.KW_bool];
 }
 
-fn Kind Parser.convertCType(Parser* p) {
-    Kind kind = KW_i32;
-    u8 has_long = 0;
-    u8 has_short = 0;
-    u8 has_signed = 0;
-    u8 has_unsigned = 0;
-    u32 skip = 0;
-    for (;; skip++) {
-        Kind tok_kind = p.tok.kind;
-        if (skip) tok_kind = p.peekToken(skip);
-        switch (tok_kind) {
-        case KW_char:
-            if (has_signed == 1) {
-                has_signed = 0;
-                kind = KW_i8;
-            } else
-            if (has_unsigned == 1) {
-                has_unsigned = 0;
-                kind = KW_u8;
-            } else {
-                kind = KW_char;
-            }
-            break;
-        case KW_int:
-            break;
-        case KW_ssize_t:
-            kind = KW_isize;
-            break;
-        case KW_size_t:
-            kind = KW_usize;
-            break;
-        case KW_float:
-            kind = KW_f32;
-            break;
-        case KW_double:
-            if (has_long == 1) {
-                // long double -> double
-                has_long = 0;
-            }
-            kind = KW_f64;
-            break;
-        case KW_short:
-            has_short++;
-            continue;
-        case KW_long:
-            has_long++;
-            continue;
-        case KW_signed:
-            has_signed++;
-            continue;
-        case KW_unsigned:
-            has_unsigned++;
-            continue;
-        default:
-            skip--;  // no C type, keep last qualifier
-            break;
-        }
-        if (kind == KW_i32) {
-            if (has_short == 1) {
-                kind = KW_i16;
-                has_short = 0;
-            } else
-            if (has_long == 2) {
-                kind = KW_i64;
-                has_long = 0;
-            } else
-            if (has_long == 1) {
-                if (getWordSize() == 8)
-                    kind = KW_i64;
-                has_long = 0;
-            }
-            if (has_signed == 1) {
-                has_signed = 0;
-            } else
-            if (has_unsigned == 1) {
-                kind += Kind.KW_u32 - Kind.KW_i32;
-                has_unsigned = 0;
-            }
-        }
-        if (has_short + has_long + has_signed + has_unsigned)
-            p.error("invalid combination of type qualifiers");
-        while (skip-- > 0)
-            p.consumeToken();
-        break;
-    }
-    return p.tok.kind = kind;
-}
-
 fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref) {
     u32 type_qualifier = p.parseOptionalTypeQualifier();
     ref.setQualifiers(type_qualifier);
 
     Kind kind = p.tok.kind;
-    if (kind.isCType()) {
-        if (p.tokenizer.c_mode)
-            kind = p.convertCType();
-        else
-            p.error("invalid keyword");
-    }
-
+    SrcLoc loc = p.tok.loc;
     if (kind.isBuiltinType()) {
-        ref.setBuiltin(tokKindToBuiltinKind(p.tok.kind), p.tok.loc);
+        ref.setBuiltin(tokKindToBuiltinKind(kind), loc);
         if (kind >= KW_reg8 && kind <= KW_reg64) ref.setVolatile();
         p.consumeToken();
     } else if (kind == KW_void) {
-        ref.setVoid(p.tok.loc);
+        ref.setVoid(loc);
         p.consumeToken();
     } else if (kind == Identifier) {
         p.parseFullTypeIdentifier(ref);
         if (ref.user.name_idx == p.va_list_idx)
             p.addImplicitImport(p.varargs_idx, true);
+    } else if (kind.isCType()) {
+        if (!p.tokenizer.c_mode) p.error("invalid keyword");
+        CTypeKind c_kind = p.convertCType();
+        ref.setBuiltin(cTypeToBuiltinKind(c_kind), loc);
     } else {
         p.error("expected type specifier");
     }
@@ -1150,5 +1060,131 @@ fn void Parser.parseExternDecl(Parser* p) {
     }
     p.is_interface = was_interface;
     p.builder.setExternal(was_external);
+}
+
+type CTypeKind enum u8 {
+    None,
+    Char,
+    SignedChar,
+    UnsignedChar,
+    Short,
+    SignedShort,
+    UnsignedShort,
+    Int,
+    SignedInt,
+    UnsignedInt,
+    Long,
+    SignedLong,
+    UnsignedLong,
+    LongLong,
+    SignedLongLong,
+    UnsignedLongLong,
+    Size_t,
+    SSize_t,
+    Float,
+    Double,
+    LongDouble,
+}
+
+const BuiltinKind[CTypeKind] CType2builtin = {
+    [None] = Int32,
+    [Char] = Char,
+    [SignedChar] = Int8,
+    [UnsignedChar] = UInt8,
+    [Short] = Int16,
+    [SignedShort] = Int16,
+    [UnsignedShort] = UInt16,
+    [Int] = Int32,
+    [SignedInt] = Int32,
+    [UnsignedInt] = UInt32,
+    [Long] = Int64,             // should depend target arch
+    [SignedLong] = Int64,       // should depend target arch
+    [UnsignedLong] = UInt64,    // should depend target arch
+    [LongLong] = Int64,
+    [SignedLongLong] = Int64,
+    [UnsignedLongLong] = UInt64,
+    [SSize_t] = ISize,
+    [Size_t] = USize,
+    [Float] = Float32,
+    [Double] = Float64,
+    [LongDouble] = Float64,
+}
+
+fn BuiltinKind cTypeToBuiltinKind(CTypeKind kind) {
+    return CType2builtin[kind];
+}
+
+fn CTypeKind Parser.convertCType(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    CTypeKind kind = Int;
+    CTypeKind size = None;
+    u8 sign = 0;  // 0:None, 1:Signed, 2:Unsigned, 3:invalid
+    bool skip_last = true;
+    for (;; p.consumeToken()) {
+        switch (p.tok.kind) {
+        case KW_char:
+            kind = Char;
+            break;
+        case KW_int:
+            kind = Int;
+            break;
+        case KW_ssize_t:
+            kind = SSize_t;
+            break;
+        case KW_size_t:
+            kind = Size_t;
+            break;
+        case KW_float:
+            kind = Float;
+            break;
+        case KW_double:
+            kind = Double;
+            break;
+        case KW_short:
+            if (!size) size = Short;
+            else sign = 3;
+            continue;
+        case KW_long:
+            if (size == Long) size = LongLong;
+            else if (!size) size = Long;
+            else sign = 3;
+            continue;
+        case KW_signed:
+            if (!sign) sign = 1;
+            else sign = 3;
+            continue;
+        case KW_unsigned:
+            if (!sign) sign = 2;
+            else sign = 3;
+            continue;
+        default:
+            skip_last = false;
+            break;
+        }
+        if (skip_last) p.consumeToken();
+        switch (kind) {
+        case Int:
+            if (size) kind = size;
+            if (sign == 3) break;
+            kind += sign;
+            return kind;
+        case Char:
+            if (size) break;
+            if (sign == 3) break;
+            kind += sign;
+            return kind;
+        case Double:
+            if (size == Long) {
+                kind = LongDouble;
+                size = None;
+            }
+            fallthrough;
+        default:
+            if (size || sign) break;
+            return kind;
+        }
+        p.diags.error(loc, "invalid combination of type qualifiers");
+        return kind;
+    }
 }
 

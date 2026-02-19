@@ -1,6 +1,6 @@
 module lua_auxlib;
 
-import c2 local;
+import c_types local;
 import lua local;
 
 fn State* luaL_newstate();

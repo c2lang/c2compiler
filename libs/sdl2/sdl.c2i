@@ -1,6 +1,6 @@
 module sdl;
 
-import c2 local;
+import c_types local;
 
 // ------ From SDL.h ------
 

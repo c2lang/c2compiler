@@ -1,0 +1,72 @@
+module test extern "C";
+
+static_assert(sizeof(char), 1);
+static_assert(sizeof(signed char), 1);
+static_assert(sizeof(unsigned char), 1);
+static_assert(sizeof(short), 2);
+static_assert(sizeof(signed short), 2);
+static_assert(sizeof(unsigned short), 2);
+static_assert(sizeof(short int), 2);
+static_assert(sizeof(signed short int), 2);
+static_assert(sizeof(unsigned short int), 2);
+static_assert(sizeof(int), 4);
+static_assert(sizeof(signed), 4);
+static_assert(sizeof(signed int), 4);
+static_assert(sizeof(unsigned), 4);
+static_assert(sizeof(unsigned int), 4);
+static_assert(sizeof(long), 8);
+static_assert(sizeof(signed long), 8);
+static_assert(sizeof(unsigned long), 8);
+static_assert(sizeof(long int), 8);
+static_assert(sizeof(signed long int), 8);
+static_assert(sizeof(unsigned long int), 8);
+static_assert(sizeof(long long), 8);
+static_assert(sizeof(signed long long), 8);
+static_assert(sizeof(unsigned long long), 8);
+static_assert(sizeof(long long int), 8);
+static_assert(sizeof(signed long long int), 8);
+static_assert(sizeof(unsigned long long int), 8);
+#if ARCH_32BIT
+static_assert(sizeof(size_t), 4);
+static_assert(sizeof(ssize_t), 4);
+#else
+static_assert(sizeof(size_t), 8);
+static_assert(sizeof(ssize_t), 8);
+#endif
+static_assert(sizeof(float), 4);
+static_assert(sizeof(double), 8);
+static_assert(sizeof(long double), 8);
+
+usize[] s = {
+    sizeof(signed signed char),            // @error{invalid combination of type qualifiers}
+    sizeof(unsigned unsigned char),        // @error{invalid combination of type qualifiers}
+    sizeof(signed unsigned int),           // @error{invalid combination of type qualifiers}
+    sizeof(signed signed int),             // @error{invalid combination of type qualifiers}
+    sizeof(unsigned unsigned int),         // @error{invalid combination of type qualifiers}
+    sizeof(short short),                   // @error{invalid combination of type qualifiers}
+    sizeof(signed signed short),           // @error{invalid combination of type qualifiers}
+    sizeof(unsigned unsigned short),       // @error{invalid combination of type qualifiers}
+    sizeof(short short int),               // @error{invalid combination of type qualifiers}
+    sizeof(signed short signed int),       // @error{invalid combination of type qualifiers}
+    sizeof(unsigned signed short long),    // @error{invalid combination of type qualifiers}
+    sizeof(long short),                    // @error{invalid combination of type qualifiers}
+    sizeof(signed unsigned long),          // @error{invalid combination of type qualifiers}
+    sizeof(unsigned signed long),          // @error{invalid combination of type qualifiers}
+    sizeof(signed short long),             // @error{invalid combination of type qualifiers}
+    sizeof(long long long),                // @error{invalid combination of type qualifiers}
+    sizeof(signed long short long),        // @error{invalid combination of type qualifiers}
+    sizeof(unsigned long unsigned long),   // @error{invalid combination of type qualifiers}
+    sizeof(long long long int),            // @error{invalid combination of type qualifiers}
+    sizeof(signed long long long int),     // @error{invalid combination of type qualifiers}
+    sizeof(unsigned short long long int),  // @error{invalid combination of type qualifiers}
+    sizeof(signed size_t),                 // @error{invalid combination of type qualifiers}
+    sizeof(unsigned size_t),               // @error{invalid combination of type qualifiers}
+    sizeof(long size_t),                   // @error{invalid combination of type qualifiers}
+    sizeof(unsigned ssize_t),              // @error{invalid combination of type qualifiers}
+    sizeof(signed short ssize_t),          // @error{invalid combination of type qualifiers}
+    sizeof(long float),                    // @error{invalid combination of type qualifiers}
+    sizeof(signed double),                 // @error{invalid combination of type qualifiers}
+    sizeof(short float),                   // @error{invalid combination of type qualifiers}
+    sizeof(unsigned double),               // @error{invalid combination of type qualifiers}
+    sizeof(long long double),              // @error{invalid combination of type qualifiers}
+}

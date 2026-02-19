@@ -1,6 +1,6 @@
 module dlfcn;
 
-import c2 local;
+import c_types local;
 
 /* special values for the module handle */
 #if SYSTEM_LINUX
