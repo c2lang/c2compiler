@@ -15,7 +15,6 @@
 
 module usage_counter;
 
-import c2;
 import stdlib local;
 import string local;
 import stdio; // only for dump
@@ -63,8 +62,7 @@ public fn void Counter.clear(Counter* c, u32 cap) {
 }
 
 public fn void Counter.incr(Counter* c, u32 idx) {
-    //assert(c.counts[idx] != u8.max);  // u8
-    assert(c.counts[idx] != c2.max_u8);
+    assert(c.counts[idx] != u8.max);
     c.counts[idx]++;
     if (idx > c.max_idx) c.max_idx = idx;
 }
@@ -90,7 +88,7 @@ public fn bool Counter.hasWork(const Counter* c) {
 
 public fn void Counter.fillQueue(Counter* c) {
     u32 i = c.max_idx;
-    while (i != c2.max_u32) {
+    while (i != u32.max) {
         if (c.counts[i] == 1) {
             assert(c.queue_count != elemsof(c.work_queue));
             // fill linearly since it starts empty

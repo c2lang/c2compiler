@@ -27,7 +27,6 @@ import utf8;
 
 import string;
 import stdlib;
-import c2 local;
 import ctype local;
 import stdarg local;
 import stdio local;
@@ -773,8 +772,8 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
             p += 2;
             if (isxdigit(*p)) {
                 while (isxdigit(*p)) {
-                    if (value > max_u64 >> 4) {
-                        value = max_u64;
+                    if (value > u64.max >> 4) {
+                        value = u64.max;
                         overflow = true;
                     } else {
                         value = (value << 4) + hex2val(*p);
@@ -803,8 +802,8 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
             result.radix = Radix.Binary;
             p += 2;
             while (is_binary(*p)) {
-                if (value > max_u64 >> 1) {
-                    value = max_u64;
+                if (value > u64.max >> 1) {
+                    value = u64.max;
                     overflow = true;
                 } else {
                     value = (value << 1) + (*p - '0');
@@ -822,8 +821,8 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
         // FIXME: should support 0o1234
 
         while (is_octal(*p)) {
-            if (value > max_u64 >> 3) {
-                value = max_u64;
+            if (value > u64.max >> 3) {
+                value = u64.max;
                 overflow = true;
             } else {
                 value = (value << 3) + (*p - '0');
@@ -859,8 +858,8 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
     while (isdigit(*p)) {
         // ugly cast because u8 digit = *p++ - '0'; generates an error
         u32 digit = (u32)(*p++ - '0');
-        if (value >= max_u64 / 10 && (value > max_u64 / 10 || digit > max_u64 % 10)) {
-            value = max_u64;
+        if (value >= u64.max / 10 && (value > u64.max / 10 || digit > u64.max % 10)) {
+            value = u64.max;
             overflow = true;
         } else {
             value = value * 10 + digit;
@@ -1037,7 +1036,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype
         // C consumes all hex digits after \x (at least one)
         // C2 requires 2 hex digits, but rejects extra digits to simplify C generation
         result.radix = Radix.Hex;
-        nc = hexconv(p + 1, max_i32, &cc);
+        nc = hexconv(p + 1, i32.max, &cc);
         if (nc == 0) {
             t.error(result, "expect hexadecimal number after '\\x'");
             return 0;
@@ -1693,7 +1692,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
                 if (val) val = sp.val / val; /* XXX: potential overflow */
                 continue;
             case Percent:
-                if (val && !(sp.val == c2.min_i64 && val == -1))
+                if (val && !(sp.val == i64.min && val == -1))
                     val = sp.val % val; /* XXX: potential overflow */
                 continue;
             case Plus:

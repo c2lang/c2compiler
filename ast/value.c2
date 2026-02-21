@@ -15,7 +15,6 @@
 
 module ast;
 
-import c2 local;
 import stdio;
 import stdlib;
 
@@ -286,7 +285,7 @@ fn Value Value.add(const Value* v1, const Value* v2) {
                     result.negative = v2.negative && result.uvalue;
                 }
             } else {
-                if (result.uvalue > max_u64 - v2.uvalue) {
+                if (result.uvalue > u64.max - v2.uvalue) {
                     result.overflow = true;
                 }
                 result.uvalue += v2.uvalue;
@@ -322,7 +321,7 @@ fn Value Value.multiply(const Value* v1, const Value* v2) {
                     result.negative = false;
                 else
                     result.negative ^= v2.negative;
-                if (max_u64 / result.uvalue > v2.uvalue)
+                if ((u64.max / result.uvalue) > v2.uvalue)
                     result.overflow = true;
                 result.uvalue *= v2.uvalue;
             }
@@ -354,7 +353,7 @@ fn Value Value.divide(const Value* v1, const Value* v2) {
         case Integer:
             if (v2.uvalue == 0) {
                 result.overflow = true;
-                result.uvalue = max_u64;
+                result.uvalue = u64.max;
             } else {
                 result.uvalue /= v2.uvalue;
                 result.negative = result.uvalue && result.negative != v2.negative;
@@ -691,7 +690,7 @@ public fn void Value.incr(Value* v) {
                 v.negative = false;
             v.uvalue--;
         } else {
-            if (v.uvalue == max_u64)
+            if (v.uvalue == u64.max)
                 v.overflow = true;
             v.uvalue++;
         }
@@ -708,7 +707,7 @@ public fn void Value.decr(Value* v) {
     switch (v.kind) {
     case Integer:
         if (v.negative) {
-            if (v.uvalue == max_u64)
+            if (v.uvalue == u64.max)
                 v.overflow = true;
             v.uvalue++;
         } else {

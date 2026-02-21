@@ -842,7 +842,7 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
         if (ahead) p.peekToken2(ahead, &t2);
         ahead++;
         Kind kind = t2.kind;
-        if (kind.isTypeKeyword()) {
+        if (kind.isTypeKeyword() && (p.peekToken(ahead) != Dot)) {
             // builtin type, non ambiguous
             ambiguous = false;
             break;

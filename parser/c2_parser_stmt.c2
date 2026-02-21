@@ -619,7 +619,7 @@ fn Stmt* Parser.parseGotoStmt(Parser* p) {
 fn bool Parser.isDeclaration(Parser* p) {
     const Kind kind = p.tok.kind;
     if (kind == Identifier) return p.isTypeSpec();
-    if (kind.isTypeKeyword()) return true;
+    if (kind.isTypeKeyword() && (p.peekToken(1) != Dot)) return true;
     if (kind == KW_local) return true;
     if (kind.isQualifier()) return true;
     return false;

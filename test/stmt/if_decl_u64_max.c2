@@ -1,0 +1,22 @@
+// @warnings{no-unused}
+module test;
+
+import c2 local;
+
+fn u64 foo() {
+    // Test decl/expression ambiguity
+    if (u64.max > 1) {
+        return 1;
+    }
+    // Test decl/expression ambiguity
+    while (u64.max < 0) {
+        return 2;
+    }
+    // Test decl/expression ambiguity
+    switch (u64.max >> 63) {
+    case 1:
+        return 3;
+    }
+    // Test cast ambiguity
+    return (u64.max);
+}
