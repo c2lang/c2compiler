@@ -17,8 +17,8 @@ module string_buffer;
 
 import color local;
 
-import stdio local;
 import stdarg local;
+import stdio local;
 import stdlib local;
 import string local;
 
@@ -173,17 +173,17 @@ public fn void Buf.print(Buf* buf, const char* format @(printf_format), ...) {
     // NOTE: no growing
     va_list args;
     va_start(args, format);
-    i32 len = vsnprintf(tmp, sizeof(tmp), format, args);
+    i32 len = vsnprintf(tmp, elemsof(tmp), format, args);
     va_end(args);
-    assert(len < sizeof(tmp));
+    assert(len < elemsof(tmp));
     buf.add2(tmp, (u32)len);
 }
 
 public fn void Buf.vprintf(Buf* buf, const char* format, va_list args) {
     char[4096] tmp;
     // NOTE: no growing
-    i32 len = vsnprintf(tmp, sizeof(tmp), format, args);
-    assert(len < sizeof(tmp));
+    i32 len = vsnprintf(tmp, elemsof(tmp), format, args);
+    assert(len < elemsof(tmp));
     buf.add2(tmp, (u32)len);
 }
 

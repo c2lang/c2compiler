@@ -152,10 +152,10 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         i32 len;
         switch (tok.getRadix()) {
         case Hex:
-            len = sprintf(tmp, "0x%x", tok.int_value);
+            len = snprintf(tmp, elemsof(tmp), "0x%x", tok.int_value);
             break;
         default:
-            len = sprintf(tmp, "%d", tok.int_value);
+            len = snprintf(tmp, elemsof(tmp), "%d", tok.int_value);
             break;
         }
         out.add(tmp);
@@ -167,10 +167,10 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         i32 len;
         switch (tok.getRadix()) {
         case Hex:
-            len = sprintf(tmp, "%a", tok.float_value);
+            len = snprintf(tmp, elemsof(tmp), "%a", tok.float_value);
             break;
         default:
-            len = sprintf(tmp, "%#.16g", tok.float_value);
+            len = snprintf(tmp, elemsof(tmp), "%#.16g", tok.float_value);
             break;
         }
         out.add(tmp);
@@ -183,14 +183,14 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         i32 len = 0;
         switch (tok.getRadix()) {
         case Hex:
-            len = sprintf(tmp, "'\\x%02x'", tok.char_value);
+            len = snprintf(tmp, elemsof(tmp), "'\\x%02x'", tok.char_value);
             break;
         case Octal:
-            len = sprintf(tmp, "'\\%o'", tok.char_value);
+            len = snprintf(tmp, elemsof(tmp), "'\\%o'", tok.char_value);
             break;
         default:
             if (ctype.isprint(tok.char_value)) {
-                len = sprintf(tmp, "'%c'", tok.char_value);
+                len = snprintf(tmp, elemsof(tmp), "'%c'", tok.char_value);
             } else {
                 tmp[0] = 0;
                 // TODO print nicely (eg \n etc)

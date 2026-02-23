@@ -36,9 +36,9 @@ import string_utils;
 import target_info;
 
 import c_errno local;
-import string;
+import stdio local;
 import stdlib;
-import stdio;
+import string;
 
 type Fragment struct {
     string_buffer.Buf* buf;
@@ -894,7 +894,7 @@ fn void Generator.emitFuncParams(Generator* gen, FunctionDecl* fd, string_buffer
                 const char* name = argx.getName();
                 char[8] temp;
                 if (!name) {
-                    stdio.sprintf(temp, "_arg%d", i);
+                    snprintf(temp, elemsof(temp), "_arg%d", i);
                     name = temp;
                 }
                 gen.gen_member_type_func(fd2, out, name);
@@ -1207,11 +1207,11 @@ fn void Generator.write_files(Generator* gen) {
 
     char[64] outfile;
     if (!gen.cur_external) {
-        stdio.sprintf(outfile, "%s.c", gen.mod_name);
+        snprintf(outfile, elemsof(outfile), "%s.c", gen.mod_name);
         gen.write(gen.cgen_dir, outfile, gen.out);
     }
 
-    stdio.sprintf(outfile, "%s.h", gen.mod_name);
+    snprintf(outfile, elemsof(outfile), "%s.h", gen.mod_name);
     gen.write(gen.cgen_dir, outfile, gen.header);
 
     gen.out.clear();

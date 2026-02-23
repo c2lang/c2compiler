@@ -24,9 +24,9 @@ import string_buffer;
 import string_list;
 import string_pool;
 
-import string local;
-import stdlib local;
 import stdio local;
+import stdlib local;
+import string local;
 
 type Dir struct {
     u32 name_idx;
@@ -141,7 +141,7 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
             Decl* ecd = (Decl*)constants[i];
             // NOTE: we add the symbol here, since we have the EnumDecl here
             char[64] fullname;
-            sprintf(fullname, "%s.%s", d.getName(), ecd.getName());
+            snprintf(fullname, elemsof(fullname), "%s.%s", d.getName(), ecd.getName());
             //gen.refs.add_symbol(fullname, &dest);
 
             Generator.on_decl(arg, ecd, false);

@@ -24,11 +24,11 @@ import string_pool;
 import token local;
 import utf8;
 
-import string;
-import stdlib;
 import ctype local;
 import stdarg local;
 import stdio local;
+import stdlib;
+import string;
 
 type Action enum u8 {
     INVALID = 0,  // ensure the default Action in Char_lookup is INVALID
@@ -674,7 +674,7 @@ invalid_char:
 fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf_format), ...) {
     va_list args;
     va_start(args, format);
-    vsnprintf(t.error_msg, sizeof(t.error_msg), format, args);
+    vsnprintf(t.error_msg, elemsof(t.error_msg), format, args);
     va_end(args);
 
     result.loc = t.loc_start + (SrcLoc)(t.cur - t.input_start);
@@ -688,7 +688,7 @@ fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf
 fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const char* format @(printf_format), ...) {
     va_list args;
     va_start(args, format);
-    vsnprintf(t.error_msg, sizeof(t.error_msg), format, args);
+    vsnprintf(t.error_msg, elemsof(t.error_msg), format, args);
     va_end(args);
 
     SrcLoc err_loc = t.loc_start + (SrcLoc)(p - t.input_start);

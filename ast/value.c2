@@ -828,13 +828,13 @@ public fn char *ftoa(char *dest, usize size, f64 d) {
     }
     if (d < 0.0001 || d > 1000000) {
         for (i32 prec = 14; prec < 17; prec++) {
-            stdio.snprintf(buf, sizeof(buf), "%.*e", prec, d);
+            stdio.snprintf(buf, elemsof(buf), "%.*e", prec, d);
             if (stdlib.atof(buf) == d)
                 break;
         }
     } else {
         for (i32 prec = 17 - 4; prec < 17 + 4; prec++) {
-            stdio.snprintf(buf, sizeof(buf), "%.*f", prec, d);
+            stdio.snprintf(buf, elemsof(buf), "%.*f", prec, d);
             if (stdlib.atof(buf) == d)
                 break;
         }
@@ -865,12 +865,13 @@ public fn const char* Value.str(const Value* v) {
     local char[4][64] text;
     local u8 index = 0;
     char* out = text[index];
+    u32 out_size = elemsof(text[0]);
     index = (index+1) % 4;
 
     switch (v.kind) {
     case Integer:
         *out = '-';
-        stdio.snprintf(out + v.negative, 64 - 1, "%d", v.uvalue);
+        stdio.snprintf(out + v.negative, out_size - 1, "%d", v.uvalue);
         break;
     case Float:
         ftoa(out, 64, v.fvalue);

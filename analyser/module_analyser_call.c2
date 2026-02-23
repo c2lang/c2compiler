@@ -614,8 +614,8 @@ fn bool Analyser.checkFormatArgs(Analyser* ma, Expr** format_ptr, u32 num_args, 
     return true;
 }
 
-fn void create_template_name(char* name, const char* orig, u16 idx) {
-    stdio.sprintf(name, "%s_%d_", orig, idx);
+fn void create_template_name(char* name, u32 size, const char* orig, u16 idx) {
+    stdio.snprintf(name, size, "%s_%d_", orig, idx);
 }
 
 fn void Analyser.opaque_callback(void* arg, SrcLoc loc, Decl* d) {
@@ -673,7 +673,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
         u16 instance_idx = ma.mod.addInstance(fd, templateType, instance);
         instance.setTemplateInstanceIdx(instance_idx);
         char[64] name;
-        create_template_name(name, d.getName(), instance_idx);
+        create_template_name(name, elemsof(name), d.getName(), instance_idx);
         instance.setInstanceName(ma.astPool.addStr(name, true));
     }
     call.setTemplateIdx(instance.getTemplateInstanceIdx());

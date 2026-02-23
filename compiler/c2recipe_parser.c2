@@ -28,8 +28,8 @@ import warning_flags;
 import csetjmp local;
 import stdarg local;
 import stdio local;
-import string;
 import stdlib;
+import string;
 
 type Kind enum u8 {
     // global
@@ -177,7 +177,7 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
     char[128] msg;
     va_list args;
     va_start(args, format);
-    vsnprintf(msg, sizeof(msg), format, args);
+    vsnprintf(msg, elemsof(msg), format, args);
     va_end(args);
 
     char[256] locstr;
@@ -195,7 +195,7 @@ fn void Parser.warning(Parser* p, const char* format @(printf_format), ...) {
     char[128] msg;
     va_list args;
     va_start(args, format);
-    vsnprintf(msg, sizeof(msg), format, args);
+    vsnprintf(msg, elemsof(msg), format, args);
     va_end(args);
 
     char[256] locstr;

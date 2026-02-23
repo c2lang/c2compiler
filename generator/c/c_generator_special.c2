@@ -25,8 +25,8 @@ import module_list;
 import string_buffer;
 import string_list;
 
+import stdio local;
 import string;
-import stdio;
 
 fn void Generator.createMakefile(Generator* gen,
                                  const char* output_dir,
@@ -188,7 +188,7 @@ fn void Generator.createMakefile(Generator* gen,
         out.newline();
         break;
     case StaticLibrary:
-        stdio.sprintf(target_name, "lib%s.a", gen.target);
+        snprintf(target_name, elemsof(target_name), "lib%s.a", gen.target);
         out.print("all: ../%s\n\n", target_name);
 
         out.print("../%s: $(objects) $(headers)\n", target_name);
@@ -197,9 +197,9 @@ fn void Generator.createMakefile(Generator* gen,
     case DynamicLibrary:
         out.add("CFLAGS+=-fPIC\n");
         if (gen.targetInfo.sys == Darwin) {
-            stdio.sprintf(target_name, "lib%s.dylib", gen.target);
+            snprintf(target_name, elemsof(target_name), "lib%s.dylib", gen.target);
         } else {
-            stdio.sprintf(target_name, "lib%s.so", gen.target);
+            snprintf(target_name, elemsof(target_name), "lib%s.so", gen.target);
         }
         out.print("all: ../%s\n\n", target_name);
 

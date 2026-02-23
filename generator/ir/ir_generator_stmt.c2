@@ -283,8 +283,8 @@ fn void Generator.emitAssertStmt(Generator* gen, const Stmt* s) {
 
     char[32] body_blk;
     char[32] join_blk;
-    sprintf(body_blk, "@assert_body.%d", gen.getNewBlockIndex());
-    sprintf(join_blk, "@assert_join.%d", gen.getNewBlockIndex());
+    snprintf(body_blk, elemsof(body_blk), "@assert_body.%d", gen.getNewBlockIndex());
+    snprintf(join_blk, elemsof(join_blk), "@assert_join.%d", gen.getNewBlockIndex());
 
     // TODO check if CtvCondition, then skip rest
     ExprRef check;
@@ -301,7 +301,7 @@ fn void Generator.emitAssertStmt(Generator* gen, const Stmt* s) {
     source_mgr.Location loc = gen.sm.getLocation(a.getLoc());
     const char* funcname = gen.cur_function.asDecl().getFullName();
     char[512] location;
-    stdio.sprintf(location, "%s:%d: %s", loc.filename, loc.line, funcname);
+    stdio.snprintf(location, elemsof(location), "%s:%d: %s", loc.filename, loc.line, funcname);
     ExprRef loc_str;
     gen.createString(&loc_str, location);
 

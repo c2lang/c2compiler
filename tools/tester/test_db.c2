@@ -476,7 +476,7 @@ fn void Db.error(Db* db, const char* format @(printf_format), ...) {
     char[1024] msg;
     va_list args;
     va_start(args, format);
-    vsnprintf(msg, sizeof(msg), format, args);
+    vsnprintf(msg, elemsof(msg), format, args);
     va_end(args);
     color_print2(db.output, colError, "%s:%d: %s", db.filename, db.line_nr, msg);
     db.hasErrors = true;

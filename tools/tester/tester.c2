@@ -15,15 +15,15 @@
 
 module tester_main;
 
+import c_errno local;
+import libc_dirent local;
+import pthread;
 import stdio local;
 import stdlib local;
 import string local;
 import sys_stat local;
 import sys_time;
-import libc_dirent local;
-import c_errno local;
 import unistd;
-import pthread;
 
 import color;
 import test_utils local;
@@ -207,7 +207,7 @@ fn Tester* Tester.create(u32 idx, TestQueue* q, const char* cwd, bool sync) {
     t.queue = q;
     t.cwd = cwd;
     t.thread = 0;
-    snprintf(t.tmp_dir, sizeof(t.tmp_dir), "/tmp/tester%d", idx);
+    snprintf(t.tmp_dir, elemsof(t.tmp_dir), "/tmp/tester%d", idx);
     if (sync)
         tester_thread_main(t);
     else
@@ -236,7 +236,7 @@ fn void Tester.run_test(Tester* t, Test* test) {
     // setup dir
     // temp, just delete this way
     char[64] cmd;
-    snprintf(cmd, sizeof(cmd), "rm -rf %s", t.tmp_dir);
+    snprintf(cmd, elemsof(cmd), "rm -rf %s", t.tmp_dir);
     i32 err = system(cmd);
     if (err != 0 && errno != ECHILD) {
         i32 saved = errno;

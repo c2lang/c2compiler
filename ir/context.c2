@@ -91,7 +91,7 @@ public fn Context* create(bool print, const target_info.Info* info, const BuildI
         char[8] slot_name;
         // Result: starts at 4, then +4 each
         // Note: just 4,8,12,
-        stdio.sprintf(slot_name, "s%d", slot);
+        stdio.snprintf(slot_name, elemsof(slot_name), "s%d", slot);
         u32 idx = c.pool.addStr(slot_name, false);
     }
 

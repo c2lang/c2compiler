@@ -138,7 +138,7 @@ public fn i32 run_tests() {
 
   const char* color = stats.failed ? Red : Green;
   char[80] results;
-  sprintf(results, "RESULT: %d tests (%d ok, %d failed, %d skipped) ran in %d ms",
+  snprintf(results, elemsof(results), "RESULT: %d tests (%d ok, %d failed, %d skipped) ran in %d ms",
     stats.total, stats.ok, stats.failed, stats.skipped, (t2 - t1) / 1000);
   color_print(color, results);
   return 0;
