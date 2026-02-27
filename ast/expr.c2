@@ -489,7 +489,7 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
     return e.base.loc;
 }
 
-public fn SrcLoc Expr.getEndLoc(const Expr* e) {
+fn SrcLoc Expr.getEndLoc(const Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
         return ((IntegerLiteral*)e).getEndLoc();

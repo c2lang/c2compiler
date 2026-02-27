@@ -187,6 +187,10 @@ public fn Decl* VarDecl.asDecl(VarDecl* d) {
     return &d.base;
 }
 
+fn QualType VarDecl.getType(const VarDecl* d) {
+    return d.base.qt;
+}
+
 fn u32 VarDecl.getOffset(const VarDecl* d) {
     return d.base.offset;
 }

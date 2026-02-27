@@ -73,7 +73,7 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
         Expr* initval = c.getInit();
         if (initval) {
             // NOTE: associated values are analysed in a separate phase
-            QualType res = ma.analyseExpr(c.getInit2(), true, RHS);
+            QualType res = ma.analyseConstExpr(c.getInit2(), true);
             if (res.isInvalid()) return;
             initval = c.getInit();  // re-read in case of ImplicitCast has been inserted
             if (!initval.isCtv()) {
@@ -250,7 +250,7 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
         bool is_enum = false;
         QualType qt = QualType_Invalid;
         if (sizeExpr) {
-            qt = ma.analyseExpr(sizeExpr_p, false, RHS);
+            qt = ma.analyseConstExpr(sizeExpr_p, false);
             if (qt.isInvalid()) return qt;
             sizeExpr = *sizeExpr_p;
             if (sizeExpr.isNValue()) {

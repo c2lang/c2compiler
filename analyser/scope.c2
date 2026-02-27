@@ -50,6 +50,8 @@ public type Scope struct @(opaque) {
     bool warn_on_unused;
 
     // stack scope
+    u32 stack_base;
+    u32 stack_max;
     u32 stack_count;
     u32 stack_capacity;
     u32* stack_symbols;
@@ -100,7 +102,7 @@ public fn void Scope.free(Scope* s) {
 public fn void Scope.reset(Scope* s) {
     s.lvl = 0;
     u32 first_index = s.imports.size();
-    s.stack_count = first_index;
+    s.stack_max = s.stack_base = s.stack_count = first_index;
 }
 
 fn void Scope.addImports(Scope* s) {
@@ -155,7 +157,8 @@ public fn void Scope.exit(Scope* s, bool has_error) {
     assert(s.lvl != 0);
     s.lvl--;
     u32 first = s.levels[s.lvl].first_index;
-
+    if (s.stack_max < s.stack_count)
+        s.stack_max = s.stack_count;
     if (s.warn_on_unused && !has_error) {
         u32 last = s.stack_count;
         for (u32 i=first; i<last; i++) {
@@ -254,7 +257,7 @@ public fn bool Scope.inFunction(const Scope* s) {
 }
 
 // return true if already found
-public fn bool Scope.add(Scope* s, ast.Decl* d) {
+public fn bool Scope.add(Scope* s, ast.Decl* d, bool set_offset = false) {
     assert(s.lvl);
     const u32 name_idx = d.getNameIdx();
 
@@ -273,6 +276,7 @@ public fn bool Scope.add(Scope* s, ast.Decl* d) {
         return true;
     }
 
+    if (set_offset && d.isVarDecl()) d.setOffset(s.stack_count - s.stack_base);
     s.stack_add(name_idx, d);
     return false;
 }
@@ -515,3 +519,8 @@ public fn bool Scope.checkAccess(Scope* s, ast.Decl* d, SrcLoc loc) {
     }
     return true;
 }
+
+public fn u32 Scope.getStackMax(Scope* s) {
+    return s.stack_max;
+}
+

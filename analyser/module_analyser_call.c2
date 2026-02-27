@@ -56,7 +56,31 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     */
 
     FunctionDecl* fd = ft.getDecl();
-    if (fd != ma.curFunction) fd.asDecl().setUsed();
+    if (fd != ma.curFunction) {
+        Decl* d = (Decl*)fd;
+        d.setUsed();
+        if (!d.isChecked()) {
+            // needed for pure function calls in type definitions and static asserts
+            if (!ma.analyseGlobalDecl(d)) return QualType_Invalid;
+        }
+    }
+
+    if (ma.globalScope() || ma.need_const_expr) {
+        if (fd.hasAttrPure()) {
+            if (ma.globalScope()) {
+                ma.analyseFunctionBody(fd, fd.asDecl().getAST().getPtr());
+            } else {
+                // if not at global scope, need explicit recursion as for template instantiation
+                ma.analyseFunctionBody2(fd, fd.asDecl().getModule());
+            }
+        } else
+        if (ma.global_initializer) {
+            ma.error(e.getLoc(), "only pure functions can be called in global initializers");
+            ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
+            return QualType_Invalid;
+        }
+    }
+
     if (fd.hasAttrNoReturn()) call.setNoreturn();
 
     if (fd.isTemplate()) {
@@ -80,6 +104,8 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         //return QualType_Invalid;
     }
 
+    bool isCtv = fd.hasAttrPure();
+    bool isCtc = isCtv;
     u32 func_num_args = fd.getNumParams();
     u32 call_num_args = call.getNumArgs();
 
@@ -170,6 +196,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         if (!ok) return QualType_Invalid;
 
         func_arg_index++;
+        isCtv = isCtc = false;
     }
 
     //stdio.printf("CALL (%d | %d)\n", func_num_args, call_num_args);
@@ -184,7 +211,6 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             func_arg_index++;
             continue;
         }
-
         if (call_arg_index >= call_num_args) break;
 
         Expr* arg = call_args[call_arg_index];
@@ -221,6 +247,8 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         if (!ma.analyseInitExpr(&call_args[call_arg_index], d.getType(), arg.getLoc(), false, false))
             return QualType_Invalid;
 
+        isCtv &= call_args[call_arg_index].isCtv();
+        isCtc &= call_args[call_arg_index].isCtc();
         func_arg_index++;
         call_arg_index++;
     }
@@ -253,12 +281,14 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
 
         while (call_arg_index < call_num_args) {
             QualType callType = ma.analyseExpr(&call_args[call_arg_index], true, RHS);
+            Expr* call_arg = call_args[call_arg_index];
             if (callType.isInvalid()) return QualType_Invalid;
             if (callType.isVoid()) {
-                Expr* call_arg = call_args[call_arg_index];
                 ma.error(call_arg.getLoc(), "passing 'void' as variadic argument is invalid");
                 return QualType_Invalid;
             }
+            isCtv &= call_arg.isCtv();
+            isCtc &= call_arg.isCtc();
             call_arg_index++;
         }
     }
@@ -273,6 +303,8 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
 
     if (rewrite && !ma.check_only) ma.rewriteCall(e_ptr, fd, new_format_arg);
 
+    if (isCtv) e.setCtv();
+    if (isCtc) e.setCtc();
     return fd.getRType();
 }
 
@@ -682,58 +714,5 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
     call.setTemplateIdx(instance.getTemplateInstanceIdx());
 
     return instance;
-}
-
-fn QualType Analyser.analysePureCallExpr(Analyser* ma, Expr* e) {
-    CallExpr* call = (CallExpr*)e;
-    Expr** func = call.getFunc2();
-    Expr* origFn = call.getFunc();  // store here to avoid the likely inserted FunctionPointerDecay cast
-    QualType qt = ma.analyseExpr(func, true, RHS);
-    if (qt.isInvalid()) return QualType_Invalid;
-
-    if (origFn.isNValue()) {
-        ma.errorRange(origFn.getLoc(), origFn.getRange(), "called object is not a function or function pointer");
-        return QualType_Invalid;
-    }
-
-    FunctionType* ft = qt.getFunctionTypeOrNil();
-    if (!ft) {
-        Expr* fn2 = call.getFunc();
-        ma.errorRange(fn2.getLoc(), fn2.getRange(), "called object type %s is not a function or function pointer", qt.diagName());
-
-        return QualType_Invalid;
-    }
-
-    FunctionDecl* fd = ft.getDecl();
-    if (fd != ma.curFunction) fd.asDecl().setUsed();
-
-    if (!fd.hasAttrPure()) {
-        ma.error(e.getLoc(), "only pure functions can be called in global initializers");
-        ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
-        return QualType_Invalid;
-    }
-
-    // TODO: handle default and named arguments
-    u32 func_num_args = fd.getNumParams();
-    u32 call_num_args = call.getNumArgs();
-    //VarDecl** func_args = fd.getParams();
-    Expr** call_args = call.getArgs();
-
-    if (func_num_args != call_num_args) {
-        if (call_num_args > func_num_args) {
-            // error loc is the comma after last valid argument or closing parenthesis of no arguments
-            SrcLoc loc = func_num_args ? call_args[func_num_args - 1].getEndLoc() : call.getEndLoc() - 1;
-            ma.error(loc, DiagTooManyArgs, fd.getDiagKind(), func_num_args, call_num_args);
-            ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
-        } else {
-            // error loc is closing parenthesis
-            ma.error(call.getEndLoc() - 1, DiagTooFewArgs, fd.getDiagKind(), func_num_args, call_num_args);
-            ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
-        }
-        return QualType_Invalid;
-    }
-
-    // TODO
-    return QualType_Invalid;
 }
 

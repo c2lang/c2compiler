@@ -120,8 +120,8 @@ type StdlibCompareFn fn i32(const void*, const void*) @(cname="__compar_fn_t");
 void* bsearch(const void* __key, const void* __base, size_t __nmemb, size_t __size, StdlibCompareFn __compar);
 void qsort(void* __base, size_t __nmemb, size_t __size, StdlibCompareFn __compar);
 
-int abs(int __x);
-long labs(long __x);
+int abs(int __x) @(pure);
+long labs(long __x) @(pure);
 Div_t div(int __numer, int __denom);
 Ldiv_t ldiv(long __numer, long __denom);
 

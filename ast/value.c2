@@ -139,6 +139,16 @@ fn f64 Value.toFloat(const Value* v) {
     }
 }
 
+fn f32 Value.toFloat32(const Value* v) {
+    if (v.kind == Integer) {
+        // TODO: warn about loss of precision
+        f32 f = (f32)v.uvalue;
+        return (v.negative) ? -f : f;
+    } else {
+        return (f32)v.fvalue;
+    }
+}
+
 public fn u8 Value.as_u8(const Value* v) {
     assert (v.kind == Integer);
     u64 res = v.uvalue;
@@ -160,6 +170,15 @@ public fn i32 Value.as_i32(const Value* v) @(unused) {
         if (v.negative) res = ~res + 1;
     }
     return (i32)res;
+}
+
+public fn i64 Value.as_i64(const Value* v) @(unused) {
+    u64 res = 0;
+    if (v.kind == Integer) {
+        res = v.uvalue;
+        if (v.negative) res = ~res + 1;
+    }
+    return (i64)res;
 }
 
 public fn u32 Value.as_u32(const Value* v) {
@@ -862,7 +881,7 @@ public fn char *ftoa(char *dest, usize size, f64 d) {
 
 public fn const char* Value.str(const Value* v) {
     // TODO: not thread safe
-    local char[4][64] text;
+    local char[4][32] text;
     local u8 index = 0;
     char* out = text[index];
     u32 out_size = elemsof(text[0]);
@@ -872,13 +891,12 @@ public fn const char* Value.str(const Value* v) {
     case Integer:
         *out = '-';
         stdio.snprintf(out + v.negative, out_size - 1, "%d", v.uvalue);
-        break;
+        return out;
     case Float:
-        ftoa(out, 64, v.fvalue);
-        break;
-    default:
-        return "<<invalid>>";
+        return ftoa(out, out_size, v.fvalue);
+    case Error:
+        return v.error_msg;
     }
-    return out;
+    return "<<invalid>>";
 }
 

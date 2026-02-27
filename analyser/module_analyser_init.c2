@@ -76,13 +76,6 @@ fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedTy
         }
     }
 
-    if (e.isCall() && ma.globalScope()) {
-        //CallExpr* c = (CallExpr*)e);
-        QualType qt = ma.analysePureCallExpr(e);
-        // TODO check if compatible
-        return true;
-    }
-
     // special case for enum init without prefix (eg Color c = Green)
     if (ma.checkEnumArg(e_ptr, expectedType)) return true;
 
@@ -178,7 +171,7 @@ fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expe
     if (isEnumIndex && ma.checkEnumArg(ad.getDesignator2(), indexType)) {
         qt = indexType;
     } else {
-        qt = ma.analyseExpr(ad.getDesignator2(), false, RHS);
+        qt = ma.analyseConstExpr(ad.getDesignator2(), true);
     }
     if (qt.isInvalid()) return false;
 

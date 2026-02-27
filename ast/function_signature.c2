@@ -1,0 +1,100 @@
+/* Copyright 2022-2026 Bas van den Berg, Charlie Gordon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+type FunII fn i32 (i32 a);
+type FunIF fn i32 (f32 a);
+type FunID fn i32 (f64 a);
+type FunLL fn i64 (i64 a);
+type FunLF fn i64 (f32 a);
+type FunLD fn i64 (f64 a);
+type FunFF fn f32 (f32 a);
+type FunDD fn f64 (f64 a);
+type FunFFF fn f32 (f32 a, f32 b);
+type FunDDD fn f64 (f64 a, f64 b);
+type FunFFFF fn f32 (f32 a, f32 b, f32 c);
+type FunDDDD fn f64 (f64 a, f64 b, f64 c);
+
+type FunctionDispatcher union @(unused) {
+    void* address;
+    FunII funII;
+    FunIF funIF;
+    FunID funID;
+    FunLL funLL;
+    FunLF funLF;
+    FunLD funLD;
+    FunFF funFF;
+    FunDD funDD;
+    FunFFF funFFF;
+    FunDDD funDDD;
+    FunFFFF funFFFF;
+    FunDDDD funDDDD;
+}
+
+type FunctionSignature enum u8 {
+    None,
+    Other,
+    FunII,
+    FunIF,
+    FunID,
+    FunLL,
+    FunLF,
+    FunLD,
+    FunFF,
+    FunDD,
+    FunFFF,
+    FunDDD,
+    FunFFFF,
+    FunDDDD,
+}
+
+fn FunctionSignature FunctionDecl.computeSignature(FunctionDecl* fd) {
+    u32 sig = 0;
+    VarDecl** params = fd.getParams();
+    QualType qt = fd.getRType();
+    u32 num_params = fd.getNumParams();
+    u32 i = 0;
+    for (;;) {
+        qt = qt.getCanonicalType();
+        if (!qt.isBuiltin()) return Other;
+        switch (qt.getBuiltinKind()) {
+        case Int32:   sig |= 1; break;
+        case Int64:   sig |= 2; break;
+        case Float32: sig |= 3; break;
+        case Float64: sig |= 4; break;
+        default: return Other;
+        }
+        if (i == num_params) break;
+        qt = ((Decl*)params[i++]).getType();
+        sig <<= 4;
+    }
+    switch (sig) {
+    case 0x11: return FunII;
+    case 0x13: return FunIF;
+    case 0x14: return FunID;
+    case 0x22: return FunLL;
+    case 0x23: return FunLF;
+    case 0x24: return FunLD;
+    case 0x33: return FunFF;
+    case 0x44: return FunDD;
+    case 0x333: return FunFFF;
+    case 0x444: return FunDDD;
+    case 0x3333: return FunFFFF;
+    case 0x4444: return FunDDDD;
+    default: return Other;
+    }
+}
+

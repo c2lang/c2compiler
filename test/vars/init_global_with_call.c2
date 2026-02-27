@@ -1,0 +1,18 @@
+// @warnings{no-unused}
+module test;
+
+fn i32 foo() { return 1; } // @note{'test.foo' is defined here}
+
+i32 a = foo();  // @error{only pure functions can be called in global initializers}
+
+fn i32 foo1() { return 1; } // @note{'test.foo1' is defined here}
+
+i32 b = 3 + foo1(); // @error{only pure functions can be called in global initializers}
+
+fn i32 foo2() { return 1; } // @note{'test.foo2' is defined here}
+
+i32 c = foo2() + foo2();  // @error{only pure functions can be called in global initializers}
+
+fn i32 foo3() { return 1; } // @note{'test.foo3' is defined here}
+
+i32[] d = { 1, foo3(), 3 } // @error{only pure functions can be called in global initializers}

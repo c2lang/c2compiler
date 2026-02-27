@@ -60,11 +60,12 @@ type FunctionDeclBits struct {
     u32 has_return : 1;     // if it returns something, set during analysis
     DefKind def_kind : 3;
     u32 has_body : 1;    // if function is defined in C2
+    FunctionSignature signature : 4;
 }
 
 type FunctionDeclFlags struct {
     u16 instance_ast_idx : 16;  // template function instances only
-    u32 num_auto_args : 4;
+    u32 num_auto_args : 3;      // TODO: 2 should suffice
     u32 attr_unused_params : 1;
     u32 attr_noreturn : 1;
     u32 attr_inline : 1;
@@ -242,14 +243,19 @@ public fn CompoundStmt* FunctionDecl.getBody(const FunctionDecl* d) {
     return nil;
 }
 
-fn void FunctionDecl.setAddress(FunctionDecl* d, void* address) {
+fn void FunctionDecl.setAddress(FunctionDecl* d, void* address, FunctionSignature signature) {
     d.base.functionDeclBits.has_body = 0;
+    d.base.functionDeclBits.signature = signature;
     d.address = address;
 }
 
-fn CompoundStmt* FunctionDecl.getAddress(const FunctionDecl* d) {
+fn void* FunctionDecl.getAddress(const FunctionDecl* d) {
     if (d.base.functionDeclBits.has_body) return nil;
     return d.address;
+}
+
+fn FunctionSignature FunctionDecl.getSignature(const FunctionDecl* d) {
+    return d.base.functionDeclBits.signature;
 }
 
 public fn bool FunctionDecl.isInline(const FunctionDecl* d) {
@@ -395,12 +401,20 @@ public fn VarDecl** FunctionDecl.getParams(const FunctionDecl* d) {
     return d.rtype.getPointerAfter();
 }
 
+public fn u32 FunctionDecl.getNumLocals(FunctionDecl* d) @(unused) {
+    return d.num_locals;
+}
+
+public fn void FunctionDecl.setNumLocals(FunctionDecl* d, u32 num_locals) {
+    d.num_locals = (u8)num_locals;
+}
+
 public fn u32 FunctionDecl.getNumAutoArgs(const FunctionDecl* d) {
     return d.flags.num_auto_args;
 }
 
 public fn void FunctionDecl.setNumAutoArgs(FunctionDecl* d, u32 num) {
-    assert(num < 16);
+    assert(num < 8);
     d.flags.num_auto_args = num;
 }
 

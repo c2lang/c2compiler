@@ -78,6 +78,9 @@ public type Analyser struct @(opaque) {
     init_checker.Checker[4] init_checkers;
     u32 min_idx;
     u32 max_idx;
+
+    u32 global_initializer;
+    u32 need_const_expr;
 }
 
 public fn Analyser* create(diagnostics.Diags* diags,
@@ -488,8 +491,8 @@ fn void Analyser.handleStaticAssert(void* arg, StaticAssert* sa) {
 
     // push a dummy declaration so ma.popCheck() does not set ma.scope to nil
     if (!ma.pushCheck(nil, sa.getAST().getPtr(), nil)) return;
-    QualType t1 = ma.analyseExpr(&lhs, false, RHS);
-    QualType t2 = ma.analyseExpr(&rhs, false, RHS);
+    QualType t1 = ma.analyseConstExpr(&lhs, true);
+    QualType t2 = t1.isInvalid() ? t1 : ma.analyseConstExpr(&rhs, true);
     ma.popCheck();
     if (t1.isInvalid() || t2.isInvalid()) return;
 
@@ -621,7 +624,9 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
             ma.checkStack[ma.checkIndex-1].usedPublic = false;
             ma.usedPublic = false;
         }
+        ma.global_initializer++;
         ma.analyseInitExpr(v.getInit2(), res, v.getAssignLoc(), false, false);
+        ma.global_initializer--;
     } else {
         if (res.isConstant() && !embed) {
             ma.error(d.getLoc(), "constant variable '%s' must be initialized", d.getFullName());

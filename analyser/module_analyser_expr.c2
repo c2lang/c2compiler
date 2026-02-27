@@ -20,6 +20,17 @@ import ast_builder;
 import conversion_checker;
 import src_loc local;
 
+fn QualType Analyser.analyseConstExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue) {
+    assert(e_ptr);
+    ma.need_const_expr++;
+    QualType result = ma.analyseExprInner(e_ptr, RHS);
+    ma.need_const_expr--;
+    if (result.isInvalid()) return result;
+    (*e_ptr).setType(result);
+    if (need_rvalue) return ma.convertRvalue(e_ptr, result);
+    return result;
+}
+
 fn QualType Analyser.analyseExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue, u32 side) {
     assert(e_ptr);
     QualType result = ma.analyseExprInner(e_ptr, side);

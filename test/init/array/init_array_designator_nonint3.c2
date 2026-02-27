@@ -1,7 +1,10 @@
 // @warnings{no-unused}
 module test;
 
+type Enum enum u8 { Foo, Bar }
+
 i32[] array = {
-    [test] = 3, // @error{array index is not a compile-time value}
+    [test] = 3, // @error{lvalue/rvalue required}
+    [Enum] = 3, // @error{lvalue/rvalue required}
 }
 

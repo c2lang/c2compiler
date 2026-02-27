@@ -224,6 +224,10 @@ public fn AST* Decl.getAST(const Decl* d) { return idx2ast(d.ast_idx); }
 
 fn u32 Decl.getASTIdx(const Decl* d) { return d.ast_idx; }
 
+fn u32 Decl.getOffset(const Decl* d) @(unused) { return d.offset; }
+
+public fn void Decl.setOffset(Decl* d, u32 offset) { d.offset = (u16)offset; }
+
 public fn Module* Decl.getModule(const Decl* d) {
     const AST* a = d.getAST();
     if (!a) return nil;

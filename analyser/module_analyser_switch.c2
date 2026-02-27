@@ -299,8 +299,7 @@ fn bool Analyser.analyseCaseExpr(Analyser* ma,
         if (!ma.checkEnumConstantCase(id, checker, etd, loc, &index, name_idxp)) return false;
     } else {
         Expr* orig = cond;
-        QualType qt = ma.analyseExpr(&cond, true, RHS);
-
+        QualType qt = ma.analyseConstExpr(&cond, true);
         if (qt.isInvalid()) return false;
         cond.setType(qt);
 

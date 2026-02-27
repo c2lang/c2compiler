@@ -1,4 +1,4 @@
-/* Copyright 2022-2026 Bas van den Berg
+/* Copyright 2022-2026 Bas van den Berg, Charlie Gordon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@ const u32 Max_depth = 100;
 const u32 Max_complexity = 1000000;
 
 type Evaluator struct {
+    Value result;
     Evaluator* prev;
     FunctionDecl* fd;
-    u32 depth;
+    u16 depth;
+    u16 num_args;
     u32 complexity;
-    u32 num_args;
-    Value result;
     // TODO: tail allocate if more than 16 arguments?
     Value[16] args;
 }
@@ -47,23 +47,23 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
         const CharLiteral* c = (CharLiteral*)e;
         return c.getValue();
     case StringLiteral:
-        assert(0);
-        break;
+        return Value.error("string literals not supported");
     case Nil:
-        break;
+        return Value.error("nil not supported");
     case Identifier:
         const IdentifierExpr* i = (IdentifierExpr*)e;
         return eval.get_decl_value(i.getDecl());
     case Type:
-        // should not happen
+        assert(0); // should not happen
         break;
     case Call:
         const CallExpr* c = (CallExpr*)e;
         return eval.eval_call(c);
     case InitList:
+        return Value.error("init lists not supported");
     case FieldDesignatedInit:
     case ArrayDesignatedInit:
-        // should not happen
+        assert(0);// should not happen
         break;
     case BinaryOperator:
         return eval.get_binaryop_value((BinaryOperator*)e);
@@ -86,7 +86,7 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
 
         Value result = eval.get_value(a.getBase());
         // Dont allow negative/float
-        assert(result.isDecimal() && !result.isNegative());
+        if (!result.isDecimal() || result.isNegative()) return Value.error("invalid bitoffset");
         BitOffsetExpr* bo = (BitOffsetExpr*)index;
         Value high = eval.get_value(bo.getLHS());
         Value low = eval.get_value(bo.getRHS());
@@ -103,7 +103,7 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
         const ParenExpr* p = (ParenExpr*)e;
         return eval.get_value(p.getInner());
     case BitOffset:
-        assert(0); // TODO
+        assert(0); // Handled in ArraySubscript
         break;
     case ExplicitCast:
         const ExplicitCastExpr* i = (ExplicitCastExpr*)e;
@@ -120,14 +120,15 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
         return eval.get_value(n.getInner());
     case Alternate:
         const AlternateExpr* n = (AlternateExpr*)e;
-        return eval.get_value(n.getOriginal());
+        return eval.get_value(n.getGenerated());
     }
     return Value.error("expression is not constant");
 }
 
 fn Value Evaluator.get_binaryop_value(Evaluator* eval, const BinaryOperator* e) {
     // TODO: Do not evaluate left for Assign
-    Value left = eval.get_value(e.getLHS());
+    Expr* lhs = e.getLHS();
+    Value left = eval.get_value(lhs);
     if (left.isError())
         return left;
 
@@ -183,20 +184,40 @@ fn Value Evaluator.get_binaryop_value(Evaluator* eval, const BinaryOperator* e) 
         right = eval.get_value(e.getRHS());
         return right.toBool();
     case Assign:
+        left = eval.get_value(e.getRHS());
+        break;
     case MulAssign:
+        left = left.multiply(&right);
+        break;
     case DivAssign:
+        left = left.divide(&right);
+        break;
     case RemAssign:
+        left = left.remainder(&right);
+        break;
     case AddAssign:
+        left = left.add(&right);
+        break;
     case SubAssign:
+        left = left.minus(&right);
+        break;
     case ShlAssign:
+        left = left.left_shift(&right);
+        break;
     case ShrAssign:
+        left = left.right_shift(&right);
+        break;
     case AndAssign:
+        left = left.and(&right);
+        break;
     case XorAssign:
+        left = left.xor(&right);
+        break;
     case OrAssign:
-        assert(0);
+        left = left.or(&right);
         break;
     }
-    return Value.error("unsupported operator");
+    return eval.store_value(lhs, left);
 }
 
 fn Value Evaluator.get_unaryop_value(Evaluator* eval, const UnaryOperator* e) {
@@ -205,11 +226,21 @@ fn Value Evaluator.get_unaryop_value(Evaluator* eval, const UnaryOperator* e) {
 
     switch (e.getOpcode()) {
     case PostInc:
+        res2.incr();
+        eval.store_value(inner, res2);
+        res2.decr();
+        return res2;
     case PostDec:
+        res2.decr();
+        eval.store_value(inner, res2);
+        res2.incr();
+        return res2;
     case PreInc:
+        res2.incr();
+        return eval.store_value(inner, res2);
     case PreDec:
-        // should not happen
-        break;
+        res2.decr();
+        return eval.store_value(inner, res2);
     case AddrOf:
     case Deref:
         // Allowed?
@@ -227,7 +258,7 @@ fn Value Evaluator.get_unaryop_value(Evaluator* eval, const UnaryOperator* e) {
 }
 
 fn Value Evaluator.get_decl_value(Evaluator* eval, const Decl* d) {
-    assert(d);
+    if (!d) goto fail;
     switch (d.getKind()) {
     case EnumConstant:
         const EnumConstantDecl* ecd = (EnumConstantDecl*)d;
@@ -235,16 +266,20 @@ fn Value Evaluator.get_decl_value(Evaluator* eval, const Decl* d) {
     case Variable:
         const VarDecl* vd = (VarDecl*)d;
         switch (vd.getKind()) {
-        case GlobalVar:
-        case LocalVar:
+        case GlobalVar: // accept global const variables
+            if (!vd.getType().isConst()) break;
+        eval_init:
             const Expr* initval = vd.getInit();
-            if (!initval)
-                break;
+            if (!initval) break;
             return eval.get_value(initval);
+        case LocalVar:  // accept const static local variables
+            if (vd.getType().isConst()) goto eval_init;
+            if (vd.hasLocalQualifier()) break;
+            fallthrough;
         case FunctionParam:
             u32 off = vd.getOffset();
-            assert(off < eval.num_args);
-            return eval.args[off];
+            if (off < elemsof(eval.args)) return eval.args[off];
+            break;
         case StructMember:
             break;
         }
@@ -253,19 +288,56 @@ fn Value Evaluator.get_decl_value(Evaluator* eval, const Decl* d) {
         assert(0);
         break;
     }
+fail:
     return Value.error("not a constant value");
 }
 
-type FunII fn i32 (i32 a);
-type FunDD fn i64 (f64 a);
+fn Decl* Evaluator.get_decl(Evaluator* eval, const Expr* e) {
+    switch (e.getKind()) {
+    case Identifier:
+        const IdentifierExpr* i = (IdentifierExpr*)e;
+        return i.getDecl();
+    case Member:
+        const MemberExpr* m = (MemberExpr*)e;
+        return m.getFullDecl();
+    default:
+        return nil;
+    }
+}
 
-type Fun union {
-    void* address;
-    FunII funII;
-    FunDD funDD;
+fn Value Evaluator.store_value(Evaluator* eval, const Expr* e, Value v) {
+    return eval.set_decl_value(eval.get_decl(e), v);
+}
+
+fn Value Evaluator.set_decl_value(Evaluator* eval, const Decl* d, Value v) {
+    if (!d) goto fail;
+    switch (d.getKind()) {
+    case Variable:
+        const VarDecl* vd = (VarDecl*)d;
+        switch (vd.getKind()) {
+        case GlobalVar:
+            break;
+        case LocalVar:
+            if (vd.hasLocalQualifier()) break;
+            fallthrough;
+        case FunctionParam:
+            u32 off = vd.getOffset();
+            if (off < elemsof(eval.args)) return eval.args[off] = v;
+            break;
+        case StructMember:
+            break;
+        }
+        break;
+    default:
+        break;
+    }
+fail:
+    return Value.error("unsupported assignment");
 }
 
 fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
+    // evaluate the function call as a value
+
     if (caller.depth > Max_depth) {
         return Value.error("recursion too deep");
     }
@@ -273,17 +345,14 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
         return Value.error("expression too complex");
     }
 
-    // evaluate the function call as a number
-    u32 num_args = c.getNumArgs();
-    // Should be Expr* const* args = c.getArgs();
-    Expr** args = ((CallExpr*)c).getArgs();
-
-    //Expr* func = c.getFunc();
     FunctionDecl* fd = expr2function(c.getFunc());
+    if (!fd) return Value.error("function expressions no supported");
+
     // Note: numParams will be the same as num_args because pure functions are not vararg
+    u32 num_args = c.getNumArgs();
 
     // Create a new stack frame and link it to the caller's
-    // TODO: handle Stack frames as separate allocated objects
+    // TODO: handle Stack frames as separate allocated objects or fragments of a stack area
     Evaluator eval;
 
     if (num_args > elemsof(eval.args)) {
@@ -291,15 +360,13 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
     }
     eval.prev = caller;
     eval.fd = fd;
-    eval.num_args = num_args;
+    eval.num_args = (u16)num_args;
     eval.depth = caller.depth + 1;
     eval.complexity = caller.complexity + 1;
 
-    //VarDecl** params = fd.getParams();
-
     for (u32 i = 0; i < num_args; i++) {
         // TODO: pass actual parameter type
-        Value v = caller.get_value(args[i]);
+        Value v = caller.get_value(c.getArg(i));
         if (v.isError())
             return v;
         eval.args[i] = v;
@@ -323,46 +390,53 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
         case Error:
             return eval.result;
         }
-    } else {
-        // Support external functions such as ctype.isalpha, math.sin...
-        // cache symbol address using dlsym(RTLD_DEFAULT, fd.getCName())
-        // dispatch function call depending on function prototype
-        Fun fun = { .address = fd.getAddress() }
-        if (!fun.address) {
-            const char* cname = fd.getCName();
-            if (!cname) return Value.error("no function name");
-            fun.address = dlsym(RTLD_DEFAULT, cname);
-            if (fun.address) {
-                //fprintf(stderr, "address of %s is %p\n", cname, fun.address);
-                fd.setAddress(fun.address);
-            } else {
-                return Value.error("function not found");
-            }
-        }
-        if (fun.address) {
-            VarDecl** params = fd.getParams();
-            if (num_args == 1) {
-                Decl* d = (Decl*)params[0];
-                QualType qt1 = d.getType();
-                QualType rt = fd.getRType();
-                qt1 = qt1.getCanonicalType();
-                rt = rt.getCanonicalType();
-                if (rt.isInteger() && qt1.isInteger()) {
-                    //fprintf(stderr, "calling funII at %p\n", cname, fun.address);
-                    return Value.createSigned(fun.funII(eval.args[0].as_i32()));
-                }
-                if (rt.isFloat() && qt1.isFloat()) {
-                    //fprintf(stderr, "calling funDD at %p\n", cname, fun.address);
-                    return Value.createFloat(fun.funDD(eval.args[0].toFloat()));
-                }
-                fprintf(stderr, "function prototype not supported: %s\n", fd.getCName());
-                qt1.dump_full();
-                rt.dump_full();
-                return Value.error("function prototype not supported");
-            }
-        }
+        return Value.error("pure function evaluation error");
     }
-    return Value.error("pure function evaluation error");
+    // Support external functions such as ctype.isalpha, math.sin...
+    // cache symbol address using dlsym(RTLD_DEFAULT, fd.getCName())
+    // dispatch function call depending on function signature
+    FunctionDispatcher fun = { .address = fd.getAddress() }
+    if (!fun.address) {
+        const char* cname = fd.getCName();
+        if (!cname) return Value.error("no function name");
+        fun.address = dlsym(RTLD_DEFAULT, cname);
+        if (!fun.address) {
+            return Value.error("function not found");
+        }
+        FunctionSignature signature = fd.computeSignature();
+        //fprintf(stderr, "address of %s is %p, signature is %x\n", cname, fun.address, signature);
+        fd.setAddress(fun.address, signature);
+    }
+    Value* args = eval.args;
+    switch (fd.getSignature()) {
+    case FunII:
+        return Value.createSigned(fun.funII(args[0].as_i32()));
+    case FunIF:
+        return Value.createSigned(fun.funIF(args[0].toFloat32()));
+    case FunID:
+        return Value.createSigned(fun.funID(args[0].toFloat()));
+    case FunLL:
+        return Value.createSigned(fun.funLL(args[0].as_i64()));
+    case FunLF:
+        return Value.createSigned(fun.funLF(args[0].toFloat32()));
+    case FunLD:
+        return Value.createSigned(fun.funLD(args[0].toFloat()));
+    case FunFF:
+        return Value.createFloat(fun.funFF(args[0].toFloat32()));
+    case FunDD:
+        return Value.createFloat(fun.funDD(args[0].toFloat()));
+    case FunFFF:
+        return Value.createFloat(fun.funFFF(args[0].toFloat32(), args[1].toFloat32()));
+    case FunDDD:
+        return Value.createFloat(fun.funDDD(args[0].toFloat(), args[1].toFloat()));
+    case FunFFFF:
+        return Value.createFloat(fun.funFFFF(args[0].toFloat32(), args[1].toFloat32(), args[2].toFloat32()));
+    case FunDDDD:
+        return Value.createFloat(fun.funDDDD(args[0].toFloat(), args[1].toFloat(), args[2].toFloat()));
+    default:
+        fprintf(stderr, "unsupported function prototype: %s\n", fd.getCName());
+        return Value.error("unsupported function prototype");
+    }
 }
 
 fn FunctionDecl* expr2function(Expr* e) {
@@ -377,10 +451,8 @@ fn FunctionDecl* expr2function(Expr* e) {
         ImplicitCastExpr* ic = (ImplicitCastExpr*)e;
         return expr2function(ic.getInner());
     default:
-        assert(0);
-        break;
+        return nil;
     }
-    return nil;
 }
 
 public fn Value evalExpr(const Expr* e) {
@@ -449,20 +521,8 @@ fn Cont Expr.eval(Expr* e, Evaluator* sf) {
 }
 
 fn Cont IfStmt.eval(IfStmt* s, Evaluator* sf) {
-    Stmt* cond = s.getCond();
-    Expr* e = nil;
-    if (cond.isExpr()) {
-        e = (Expr*)cond;
-    } else
-    if (cond.isDecl()) {
-        e = ((DeclStmt*)cond).getDecl(0).getInit();
-        // TODO initialisation must assign value
-    }
-    if (!e)
-        return Abort;
-    sf.result = sf.get_value(e);
-    if (sf.result.isError())
-        return Error;
+    Cont cont = s.getCond().eval(sf);
+    if (cont != Normal) return cont;
     if (!sf.result.isZero()) {
         return s.getThen().eval(sf);
     } else {
@@ -474,23 +534,11 @@ fn Cont IfStmt.eval(IfStmt* s, Evaluator* sf) {
 
 fn Cont WhileStmt.eval(WhileStmt* s, Evaluator* sf) {
     for (;;) {
-        Stmt* cond = s.getCond();
-        Expr* e = nil;
-        if (cond.isExpr()) {
-            e = (Expr*)cond;
-        } else
-        if (cond.isDecl()) {
-            e = ((DeclStmt*)cond).getDecl(0).getInit();
-            // TODO initialisation must assign value
-        }
-        if (!e)
-            return Abort;
-        sf.result = sf.get_value(e);
-        if (sf.result.isError())
-            return Error;
+        Cont cont = s.getCond().eval(sf);
+        if (cont != Normal) return cont;
         if (sf.result.isZero())
             return Normal;
-        Cont cont = s.getBody().eval(sf);
+        cont = s.getBody().eval(sf);
         switch (cont) {
         case Normal:
         case Continue:
@@ -546,9 +594,55 @@ fn Cont ForStmt.eval(ForStmt* s, Evaluator* sf) {
     }
 }
 
+fn bool SwitchCase.match(SwitchCase* c, Evaluator* sf, Value* v) {
+    if (c.isDefault()) return true;
+    u32 num_conds = c.getNumConds();
+    for (u32 i = 0; i < num_conds; i++) {
+        Expr* e = c.getCond(i);
+        if (e.isRange()) {
+            RangeExpr* r = (RangeExpr*)e;
+            Value lo = sf.get_value(r.getLHS());
+            Value hi = sf.get_value(r.getRHS());
+            if (v.is_greater_equal(&lo) && v.is_less_equal(&hi)) return true;
+        } else {
+            Value val = sf.get_value(e);
+            if (v.is_equal(&val)) return true;
+        }
+    }
+    return false;
+}
+
 fn Cont SwitchStmt.eval(SwitchStmt* s, Evaluator* sf) {
-    // TODO support numerical switch statements
-    return sf.error("switch not supported");
+    if (s.isString()) return sf.error("string switch not supported");
+    Cont cont = s.getCond().eval(sf);
+    if (cont != Normal) return cont;
+    u32 num_cases = s.getNumCases();
+    SwitchCase** cases = s.getCases();
+    bool has_match = false;
+    for (u32 i = 0; i < num_cases; i++) {
+        SwitchCase* c = cases[i];
+        if (has_match || (has_match = c.match(sf, &sf.result))) {
+            u32 count = c.getNumStmts();
+            if (!count) continue;  // empty case has implicit fallthrough
+            Stmt** stmts = c.getStmts();
+            for (u32 j = 0; j < count; j++) {
+                cont = stmts[j].eval(sf);
+                switch (cont) {
+                case Normal:
+                    break;
+                case Break:
+                    return Normal;
+                case Continue:
+                case Return:
+                case Goto:
+                case Abort:
+                case Error:
+                    return cont;
+                }
+            }
+        }
+    }
+    return Normal;
 }
 
 fn Cont BreakStmt.eval(BreakStmt* s, Evaluator* sf) { return Break; }
@@ -577,7 +671,14 @@ fn Cont CompoundStmt.eval(CompoundStmt* body, Evaluator* sf) {
 }
 
 fn Cont DeclStmt.eval(DeclStmt* s, Evaluator* sf) {
-    return sf.error("declarations not supported");
+    for (u32 i = 0; i < s.getDeclCount(); i++) {
+        VarDecl* vd = s.getDecl(i);
+        sf.result = Value.createSigned(0);
+        if (vd.hasInit())
+            sf.result = sf.get_value(vd.getInit());
+        sf.set_decl_value(vd.asDecl(), sf.result);
+    }
+    return Normal;
 }
 
 fn Cont AsmStmt.eval(AsmStmt* s, Evaluator* sf) {

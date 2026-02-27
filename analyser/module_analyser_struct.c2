@@ -78,7 +78,7 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
                     return;
                 }
 
-                QualType qt2 = ma.analyseExpr(&bitfield, false, RHS);
+                QualType qt2 = ma.analyseConstExpr(&bitfield, true);
                 if (qt2.isInvalid()) return;
 
                 if (!bitfield.isCtv()) {
