@@ -249,7 +249,7 @@ fn IdentifierKind getInnerExprAddressOf(const Expr* e) {
         break;
     case Member:
         MemberExpr* m = (MemberExpr*)e;
-        return m.getKind();
+        return m.getIdentifierKind();
     case Paren:
         ParenExpr* p = (ParenExpr*)e;
         return getInnerExprAddressOf(p.getInner());

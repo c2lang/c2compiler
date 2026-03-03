@@ -67,8 +67,6 @@ fn SrcLoc AlternateExpr.getEndLoc(const AlternateExpr* e) {
 }
 
 fn void AlternateExpr.printLiteral(const AlternateExpr* e, string_buffer.Buf* out) {
-    out.lparen();
     e.original.printLiteral(out);
-    out.rparen();
 }
 

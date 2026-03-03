@@ -1,0 +1,188 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module module_analyser;
+
+import ast local;
+import source_mgr;
+
+import string local;
+
+fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd) {
+    Expr* e = *e_ptr;
+    CallExpr* call = (CallExpr*)e;
+    Expr** func = call.getFunc2();
+    Expr* origFn = call.getFunc();  // store here to avoid the likely inserted FunctionPointerDecay cast
+    Expr** call_args = call.getArgs();
+    u32 call_num_args = call.getNumArgs();
+    // args
+    ExprList args.init();
+    u32 call_arg_index = 0;
+    u32 func_arg_index = 0;
+
+    // 1. insert self arg for non-static type functions
+    // 2. loop over function args
+    //       - if auto-arg, insert
+    //       - if call-arg, insert (already checked)
+    //       - otherwise should have default arg, insert that
+    // 3. loop over remaining call args (are varargs), insert those
+
+    MemberExpr* m = nil;
+    if (call.isTypeFunc()) {
+        assert(origFn.isMember());
+        m = (MemberExpr*)origFn;
+        Expr* base = m.getBaseExpr();
+        Expr* arg;
+        if (base) {
+            arg = base;
+        } else {
+            // create IdentifierExpr
+            Expr* ee = ma.builder.actOnIdentifier(0, 0, 0);
+            IdentifierExpr* ie = (IdentifierExpr*)ee;
+            //ee.copyFlags(origFn);
+            Decl* base_decl = m.getDecl(0);
+            ee.setType(base_decl.getType());
+            ie.setDecl(base_decl);
+            IdentifierKind kind = ma.setExprFlags(&ee, base_decl);
+            ie.setKind(kind);
+            arg = ee;
+        }
+
+        switch (m.getConversion()) {
+        case None:
+            break;
+        case Addr:
+            Expr* orig = arg;
+            QualType canon = arg.getType();
+            canon = canon.getCanonicalType();
+            arg = ma.builder.actOnUnaryOperator(0, AddrOf, arg);
+            arg.setType(ma.builder.actOnPointerType(canon));
+            arg.copyCtcFlags(orig);
+            break;
+        case Deref:
+            Expr* orig = arg;
+            QualType canon = arg.getType();
+            canon = canon.getCanonicalType();
+            assert(canon.isPointer());
+            const PointerType* p = canon.getPointerType();
+            canon = p.getInner();
+            arg = ma.builder.actOnUnaryOperator(0, Deref, arg);
+            arg.setType(canon);
+            arg.copyCtcFlags(orig);
+            break;
+        }
+        args.add(arg);
+        func_arg_index = 1;
+    }
+
+    u32 func_num_args = fd.getNumParams();
+    //stdio.printf("CALL %d/%d  FUNC %d/%d\n", call_arg_index, call_num_args, func_arg_index, func_num_args);
+    source_mgr.Location loc;
+    if (call.hasAutoArgs()) loc = ma.diags.locate(e.getLoc());
+    VarDecl** func_args = fd.getParams();
+    while (func_arg_index < func_num_args) {
+        VarDecl* vd = func_args[func_arg_index];
+        if (vd.hasAutoAttr()) {
+            if (vd.hasAttrAutoFile()) {
+                u32 len = (u32)strlen(loc.filename);
+                u32 value =  ma.astPool.add(loc.filename, len, true);
+                Expr* arg = ma.builder.actOnStringLiteral(0, 0, value, len);
+                args.add(arg);
+            }
+            if (vd.hasAttrAutoLine()) {
+                Expr* arg = ma.builder.actOnIntegerLiteral(0, 0, loc.line, Default, Int32);
+                args.add(arg);
+            }
+            if (vd.hasAttrAutoFunc()) {
+                const char* func_name = ma.curFunction.asDecl().getFullName();
+                u32 len = (u32)strlen(func_name);
+                u32 value =  ma.astPool.add(func_name, len, true);
+                Expr* arg = ma.builder.actOnStringLiteral(0, 0, value, len);
+                args.add(arg);
+            }
+            func_arg_index++;
+            continue;
+        }
+
+        if (call_arg_index < call_num_args) {
+            Expr* arg = call_args[call_arg_index];
+
+            if (arg.isNamedArgument()) {
+                NamedArgument* n = (NamedArgument*)arg;
+                u32 arg_name_idx = n.getNameIdx();
+                if (((Decl*)vd).getNameIdx() == arg_name_idx) {
+                    arg = n.getInner();
+                    args.add(arg);
+                    func_arg_index++;
+                    call_arg_index++;
+                    continue;
+                }
+            } else {
+                args.add(arg);
+                func_arg_index++;
+                call_arg_index++;
+                continue;
+            }
+        }
+
+        // default args
+        Expr* init = vd.getInit();
+        assert(init);
+        args.add(init);
+        func_arg_index++;
+    }
+
+    // varargs
+    while (call_arg_index < call_num_args) {
+        Expr* arg = call_args[call_arg_index];
+        args.add(arg);
+        call_arg_index++;
+    }
+    // TODO re-write printf/scanf formats
+
+    // func
+    Expr* func2;
+    if (m) {
+        Expr* ee = ma.builder.actOnIdentifier(0, 0, 0);
+        IdentifierExpr* ie = (IdentifierExpr*)ee;
+        ee.copyFlags(origFn);
+        ee.setType(origFn.getType());
+        ie.setDecl(m.getFullDecl());
+        ie.setKind(Function);
+        func2 = ee;
+    } else {
+        // just re-use existing call's func expr
+        func2 = origFn;
+    }
+
+    Expr* call2;
+    if (call.isTemplateCall()) {
+        TypeRefHolder ref = call.getTemplateArg().getHolder();
+        // TODO is builder.ast_idx correct?
+        call2 = ma.builder.actOnTemplateCallExpr(0, 0, func2, args.getExprs(), args.size(), &ref);
+    } else {
+        call2 = ma.builder.actOnCallExpr(0, 0, func2, args.getExprs(), args.size());
+    }
+    // Note: the type is only set on AlternateExpr by analyseExpr()
+    e.setType(fd.getRType());
+    call2.copyFlags(e);
+    call2.setType(e.getType());
+    Expr* alt = ma.builder.actOnAlternate(e, call2);
+    alt.copyFlags(call2);   // TODO should be done inside AlternateExpr.create()
+    //alt.dump();
+    *e_ptr = alt;
+    args.free();
+}
+

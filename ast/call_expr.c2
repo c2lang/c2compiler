@@ -122,10 +122,6 @@ public fn void CallExpr.setCallsStaticTypeFunc(CallExpr* e) {
     e.base.base.callExprBits.calls_static_sf = 1;
 }
 
-public fn bool CallExpr.isStaticTypeFunc(const CallExpr* e) {
-    return e.base.base.callExprBits.calls_static_sf;
-}
-
 public fn bool CallExpr.isTemplateCall(const CallExpr* e) {
     return e.base.base.callExprBits.is_template_call;
 }

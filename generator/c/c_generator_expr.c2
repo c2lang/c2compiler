@@ -251,8 +251,8 @@ fn void emitDotOrArrow(string_buffer.Buf* out, QualType qt) {
 
 type MemberContext struct {
     bool need_dot;
-    QualType baseType;
     bool is_local;
+    QualType baseType;
 }
 
 fn void Generator.emitMemberDecl(Generator* gen, string_buffer.Buf* out, Decl* d, MemberContext* mc = nil) {

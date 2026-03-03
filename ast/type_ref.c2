@@ -244,6 +244,16 @@ fn void TypeRef.init(TypeRef* dest, const TypeRefHolder* h) {
     }
 }
 
+public fn TypeRefHolder TypeRef.getHolder(const TypeRef* r) {
+    TypeRefHolder h.init();
+    h.ref = *(u64*)r;
+    if (r.isUser()) h.user = r.refs[0];
+    if (r.hasPrefix()) h.prefix = r.refs[1];
+
+    for (u32 i = 0; i < r.getNumArrays(); i++) h.arrays[i] = r.getArray(i);
+    return  h;
+}
+
 fn bool TypeRef.matchesTemplate(const TypeRef* r, u32 template_arg) {
     if (r.flags.kind != User || r.flags.has_prefix) return false;
     return r.refs[0].name_idx == template_arg;

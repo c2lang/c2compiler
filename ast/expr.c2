@@ -299,6 +299,15 @@ public fn void Expr.copyConstantFlags(Expr* e, const Expr* other) {
     e.base.exprBits.is_ctv = other.base.exprBits.is_ctv;
 }
 
+public fn void Expr.copyFlags(Expr* e, const Expr* other) {
+    ExprBits* lhs = &e.base.exprBits;
+    const ExprBits* rhs = &other.base.exprBits;
+    lhs.is_ctc = rhs.is_ctc;
+    lhs.is_ctv = rhs.is_ctv;
+    lhs.has_effect = rhs.has_effect;
+    lhs.valtype = rhs.valtype;
+}
+
 public fn void Expr.combineConstantFlags(Expr* e, const Expr* lhs, const Expr* rhs) {
     e.base.exprBits.is_ctc = lhs.base.exprBits.is_ctc & rhs.base.exprBits.is_ctc;
     e.base.exprBits.is_ctv = lhs.base.exprBits.is_ctv & rhs.base.exprBits.is_ctv;

@@ -295,7 +295,8 @@ fn void Compiler.build(Compiler* c,
                                         c.astPool,
                                         c.builder,
                                         &c.allmodules,
-                                        c.target.getWarnings());
+                                        c.target.getWarnings(),
+                                        c.opts.check_only);
 
     if (opts.show_libs) {
         c.showAllLibs();

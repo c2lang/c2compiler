@@ -93,6 +93,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         // TODO check that call matches function (static or not)
         // Note: use origFn to avoid the added FunctionPointerDecay cast
         m = (MemberExpr*)origFn;
+
         // if MemberExpr is SSF (Foo.next), but dest fn is SF or vice versa, give error
         Decl* fdd = (Decl*)fd;
         switch (fd.getCallKind()) {
@@ -121,8 +122,12 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         }
     }
 
+    bool rewrite = false;
     u32 num_auto_args = fd.getNumAutoArgs();
-    if (num_auto_args) call.setHasAutoArgs();
+    if (num_auto_args) {
+        call.setHasAutoArgs();
+        rewrite = true;
+    }
 
     VarDecl** func_args = fd.getParams();
     Expr** call_args = call.getArgs();
@@ -190,6 +195,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         Expr* arg = call_args[call_arg_index];
         if (arg.isNamedArgument()) {
             NamedArgument* n = (NamedArgument*)arg;
+            rewrite = true;
             u32 arg_name_idx = n.getNameIdx();
             u32 param_name_idx;
             bool found = false;
@@ -228,6 +234,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     if (func_arg_index < func_num_args) {
         u32 missing_args = 0;
         for (u32 i = func_arg_index; i < func_num_args; i++) {
+            rewrite = true;
             if (!func_args[i].hasInit()) missing_args++;
         }
         if (missing_args) {
@@ -261,10 +268,14 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             format_arg_idx -= num_auto_args + isTypeFuncCall;
             u32 num_args = call_num_args - format_arg_idx - 1;
             call.setFormatAttr(format_attr);
+            rewrite = true;
             if (!ma.checkFormatArgs(&call_args[format_arg_idx], num_args, &call_args[format_arg_idx+1], format_attr))
                 return QualType_Invalid;
         }
     }
+
+    if (rewrite && !ma.check_only) ma.rewriteCall(e_ptr, fd);
+
     return fd.getRType();
 }
 
@@ -655,7 +666,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
 
         // Note: we need a separate scope for the body
         Module* template_mod = fd.asDecl().getModule();
-        Analyser* analyser = create(ma.diags, ma.context, ma.astPool, ma.builder, ma.allmodules, ma.warnings);
+        Analyser* analyser = create(ma.diags, ma.context, ma.astPool, ma.builder, ma.allmodules, ma.warnings, ma.check_only);
         analyser.setMod(template_mod);
         scope.Scope* tmpScope = scope.create(ma.allmodules,
                                              ma.diags,

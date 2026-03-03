@@ -27,13 +27,32 @@ public type MemberConversion enum u8 {
     Deref,      // Foo* -> Foo (ie *f)
 }
 
+public type MemberKind enum u8 {
+    Unresolved,
+    Module,
+    StructMember,          // struct-var.member
+    TypeFunc,
+    StaticTypeFunc,
+    EnumConstant,
+}
+
+fn const char* MemberKind.str(MemberKind k) {
+    switch (k) {
+    case Unresolved:   return "Unresolved";
+    case Module:       return "Module";
+    case StructMember: return "StructMember";
+    case TypeFunc:     return "TypeFunc";
+    case StaticTypeFunc: return "StaticTypeFunc";
+    case EnumConstant: return "EnumConstant";
+    }
+    return "";
+}
+
 type MemberExprBits struct {
     u32 : NumExprBits;
+    MemberKind kind : 3;
     u32 num_decls : 2;  // how many refs have a decl (from the bottom up), set during analysis
-    IdentifierKind kind : 3;
     u32 has_expr : 1;
-    u32 is_struct_func : 1; // not only a function with prefix, but also used that way
-    u32 is_static_sf : 1;
     u32 is_const_base : 1;
     u32 is_volatile_base : 1;
     MemberConversion conversion : 2;
@@ -96,6 +115,11 @@ public fn bool MemberExpr.hasExpr(const MemberExpr* e) {
 
 public fn Expr* MemberExpr.getBaseExpr(const MemberExpr* e) {
     if (e.hasExpr()) return e.refs[0].expr;
+    return nil;
+}
+
+public fn Expr** MemberExpr.getBaseExpr2(MemberExpr* e) {
+    if (e.hasExpr()) return &e.refs[0].expr;
     return nil;
 }
 
@@ -176,26 +200,41 @@ public fn Ref MemberExpr.getRef(const MemberExpr* e) {
     return ref;
 }
 
-public fn IdentifierKind MemberExpr.getKind(const MemberExpr* e) {
+public fn MemberKind MemberExpr.getKind(const MemberExpr* e) {
     return e.base.base.memberExprBits.kind;
 }
 
-public fn void MemberExpr.setKind(MemberExpr* e, IdentifierKind kind) {
+public fn IdentifierKind MemberExpr.getIdentifierKind(const MemberExpr* e) {
+    switch (e.getKind()) {
+    case Unresolved:     return Unresolved;
+    case Module:         break;
+    case StructMember:   return StructMember;
+    case TypeFunc:       return Function;
+    case StaticTypeFunc: return Function;
+    case EnumConstant:   return EnumConstant;
+    }
+
+    Decl* d = e.getFullDecl();
+    switch (d.getKind()) {
+    case Function:      return Function;
+    case Import:        break;
+    case StructType:    return Type;
+    case EnumType:      return Type;
+    case EnumConstant:  return EnumConstant;
+    case FunctionType:  return Type;
+    case AliasType:     return Type;
+    case Variable:      return Var;
+    }
+
+    return Unresolved;
+}
+
+public fn void MemberExpr.setKind(MemberExpr* e, MemberKind kind) {
     e.base.base.memberExprBits.kind = kind;
 }
 
-/*
-public fn bool MemberExpr.isVarKind(const MemberExpr* e) {
-    return e.getKind() == Var;
-}
-*/
-
-public fn void MemberExpr.setIsTypeFunc(MemberExpr* e) {
-    e.base.base.memberExprBits.is_struct_func = 1;
-}
-
-public fn bool MemberExpr.isTypeFunc(const MemberExpr* e) {
-    return e.base.base.memberExprBits.is_struct_func;
+fn bool MemberExpr.isTypeFunc(const MemberExpr* e) {
+    return e.getKind() == TypeFunc;
 }
 
 public fn void MemberExpr.setBitfield(MemberExpr* e) {
@@ -206,12 +245,8 @@ fn bool MemberExpr.isBitfield(const MemberExpr* e) {
     return e.base.base.memberExprBits.is_bitfield;
 }
 
-public fn void MemberExpr.setIsStaticTypeFunc(MemberExpr* e) {
-    e.base.base.memberExprBits.is_static_sf = 1;
-}
-
 public fn bool MemberExpr.isStaticTypeFunc(const MemberExpr* e) {
-    return e.base.base.memberExprBits.is_static_sf;
+    return e.getKind() == StaticTypeFunc;
 }
 
 public fn void MemberExpr.setConstBase(MemberExpr* e, bool b) {
@@ -230,7 +265,7 @@ fn bool MemberExpr.isVolatileBase(const MemberExpr* e) {
     return e.base.base.memberExprBits.is_volatile_base;
 }
 
-// returns the final base decl (eg: a.b.c.d <- returns c). Must be fully analysed
+// returns the final base decl (eg: a.b <- returns a). Must be fully analysed
 public fn Decl* MemberExpr.getBaseDecl(const MemberExpr* e) {
     if (e.hasExpr()) {
         Expr* base = e.getBaseExpr();
@@ -242,7 +277,7 @@ public fn Decl* MemberExpr.getBaseDecl(const MemberExpr* e) {
     return e.refs[0].decl;
 }
 
-// returns the final decl after a.b.c.d <-, must be fully analysed
+// returns the final decl. must be fully analysed
 public fn Decl* MemberExpr.getFullDecl(const MemberExpr* e) {
     if (e.base.base.memberExprBits.num_decls < 2) return nil;
     return e.refs[1].decl;
@@ -260,7 +295,6 @@ public fn void MemberExpr.setDecl(MemberExpr* e, Decl* d, u32 ref_idx) {
 
 public fn QualType MemberExpr.getBaseType(const MemberExpr* m) {
     if (m.hasExpr()) return m.refs[0].expr.getType();
-    // TODO: check num_decls?
     QualType qt = m.refs[0].decl.getType();
     if (m.isConstBase()) qt.setConst();
     if (m.isVolatileBase()) qt.setVolatile();
@@ -275,7 +309,7 @@ fn void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.space();
-    IdentifierKind kind = e.getKind();
+    MemberKind kind = e.getKind();
     if (kind == Unresolved) out.color(col_Error);
     else out.color(col_Attr);
     out.add(kind.str());
@@ -318,9 +352,9 @@ public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
     out.print("MemberExpr loc %d expr %d decl %d/2\n",
               m.base.getLoc(), m.hasExpr(), m.base.base.memberExprBits.num_decls);
     const MemberExprBits* bits = &m.base.base.memberExprBits;
-    out.print("  bits: kind %s, sf %d, ssf %d, conv %d, bitf %d\n",
-              bits.kind.str(), bits.is_struct_func, bits.is_static_sf,
-              bits.conversion, bits.is_bitfield);
+    MemberKind k = bits.kind;
+    out.print("  bits: kind %s, conv %d, bitf %d\n",
+              k.str(), bits.conversion, bits.is_bitfield);
     u32 start = 0;
     if (m.hasExpr()) {
         out.indent(1);

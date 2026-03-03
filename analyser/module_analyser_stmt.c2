@@ -401,8 +401,7 @@ fn QualType Analyser.analyseDecl(Analyser* ma, VarDecl* vd) {
     d.setChecked();
     ma.has_error = ma.has_error | ma.scope.add(d);
     if (has_init_call) {
-        Expr* e = *initExpr;
-        ma.analyseExpr(&e, false, 0);
+        ma.analyseExpr(initExpr, false, 0);
     }
     return res;
 }

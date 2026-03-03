@@ -26,27 +26,31 @@ fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const MemberExp
 
     u32 tail = 0;
 
-    IdentifierKind kind = m.getKind();
-    if (kind == Var || kind == Function) {
-        // TODO handle struct function (Analyser will have checked that it's followed by call)
-        if (m.isTypeFunc()) {
-            // only emit base part, not last
-            tail = 1;
-            goto next;
-        }
-
+    MemberKind mk = m.getKind();
+    switch (m.getKind()) {
+    case Unresolved:
+        assert(0);
+        break;
+    case Module:
+        Decl* d = m.getFullDecl();
+        gen.emitSymbol(result, d);
+        return;
+    case StructMember:
+        goto next;
+    case TypeFunc:
+    case StaticTypeFunc:
+        assert(0);
+        break;
+    case EnumConstant:
         if (m.hasExpr()) {
             // TODO can be <expr>.<type_func> or <expr>.a.<type_func>
             //e.dump();
             goto next;
         }
-        assert(!m.hasExpr());
         Decl* d = m.getFullDecl();
         gen.emitSymbol(result, d);
         return;
     }
-
-    assert(kind == StructMember);
 next:
     // base
     ir.Ref base_ref;

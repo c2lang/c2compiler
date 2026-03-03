@@ -245,7 +245,6 @@ fn Decl* Analyser.findMemberOffsetAux(Analyser* ma, FindMemberOffsetContext* ctx
             d.setUsed();
             m.setDecl(d, i);
         }
-        m.setKind(StructMember);
     }
     member.setType(d.getType());
     return d;

@@ -224,6 +224,7 @@ executable c2c
     analyser/module_analyser_function.c2
     analyser/module_analyser_init.c2
     analyser/module_analyser_member.c2
+    analyser/module_analyser_rewrite.c2
     analyser/module_analyser_stmt.c2
     analyser/module_analyser_struct.c2
     analyser/module_analyser_switch.c2

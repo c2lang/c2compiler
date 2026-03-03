@@ -136,6 +136,10 @@ public fn void Diags.errorRange2(Diags* diags,
     diags.internal(Error, loc, range, format, args);
 }
 
+public fn source_mgr.Location Diags.locate(Diags* diags, SrcLoc sloc) {
+    return diags.sm.locate(sloc);
+}
+
 fn void Diags.internal(Diags* diags,
                        Category category,
                        SrcLoc sloc,

@@ -53,6 +53,7 @@ public type Analyser struct @(opaque) {
     // variables below differs per run
     Module* mod;
     bool usedPublic;    // set to false during function body analysis or during non-public analysis
+    bool check_only;
 
     // collect type-functions
     u32 prefix_cache_name;
@@ -84,7 +85,8 @@ public fn Analyser* create(diagnostics.Diags* diags,
                              string_pool.Pool* astPool,
                              ast_builder.Builder* builder,
                              module_list.List* allmodules,
-                             const warning_flags.Flags* warnings)
+                             const warning_flags.Flags* warnings,
+                             bool check_only)
 {
     Analyser* ma = stdlib.calloc(1, sizeof(Analyser));
     ma.diags = diags;
@@ -94,6 +96,7 @@ public fn Analyser* create(diagnostics.Diags* diags,
     ma.builder = builder;
     ma.allmodules = allmodules;
     ma.warnings = warnings;
+    ma.check_only = check_only;
     /* zero initialization is OK for ma.labels and ma.init_checkers */
     ma.min_idx = astPool.addStr("min", true);
     ma.max_idx = astPool.addStr("max", true);

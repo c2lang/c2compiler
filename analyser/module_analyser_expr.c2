@@ -394,22 +394,19 @@ fn bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft, c
                 assert(0);
                 break;
             case Module:
-                assert(0);
-                break;
-            case Function:
-                break;
-            case Type:
-                break;
-            case Var:
-                ma.error(loc, "cannot assign to read-only variable '%s'", m.getMemberName());
-                return false;
-            case EnumConstant:
                 break;
             case StructMember:
                 ma.error(loc, "assignment of member '%s' in read-only object", m.getMemberName());
                 return false;
-            case Label:
+            case TypeFunc:
+            case StaticTypeFunc:
+            case EnumConstant:
                 break;
+            }
+            const Decl* d = m.getFullDecl();
+            if (d.isVariable()) {
+                ma.error(loc, "cannot assign to read-only variable '%s'", m.getMemberName());
+                return false;
             }
         }
         ma.error(loc, "cannot assign to variable with const-qualified type '%s'", tleft.diagName());
