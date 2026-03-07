@@ -848,8 +848,7 @@ fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer
     if (fd.hasAttrDestructor()) out.add("__attribute__((destructor)) ");
     if (fd.hasAttrNoReturn()) out.add("__attribute__((noreturn)) ");
 
-    u8 format_arg;
-    if (FormatAttr format_attr = fd.getFormatAttr(&format_arg)) {
+    if (FormatAttr format_attr = fd.getFormatAttr()) {
         out.print("__attribute__((__format__(%s, %d, %d))) ",
                   format_attr == Printf ? "printf" :
                   format_attr == Scanf ? "scanf" :

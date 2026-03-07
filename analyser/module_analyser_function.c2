@@ -116,7 +116,7 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
 
         if (FormatAttr format_attr = vd.getFormatAttr()) {
             ma.checkFormatArgument(vd, res, i, fd, format_attr);
-            fd.setFormatAttr(format_attr, (u8)i);
+            fd.setFormatAttr(format_attr);
         }
 
         // Note: we dont check the arg name for clash here, but when checking body

@@ -122,12 +122,8 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         }
     }
 
-    bool rewrite = false;
     u32 num_auto_args = fd.getNumAutoArgs();
-    if (num_auto_args) {
-        call.setHasAutoArgs();
-        rewrite = true;
-    }
+    bool rewrite = num_auto_args != 0;
 
     VarDecl** func_args = fd.getParams();
     Expr** call_args = call.getArgs();
@@ -177,8 +173,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     }
 
     //stdio.printf("CALL (%d | %d)\n", func_num_args, call_num_args);
-    u8 format_arg_idx = 0;
-    FormatAttr format_attr = fd.getFormatAttr(&format_arg_idx);
+    FormatAttr format_attr = fd.getFormatAttr();
     while (1) {
         //stdio.printf("ARG [%d | %d]\n", func_arg_index, call_arg_index);
         if (func_arg_index >= func_num_args) break;
@@ -195,7 +190,6 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         Expr* arg = call_args[call_arg_index];
         if (arg.isNamedArgument()) {
             NamedArgument* n = (NamedArgument*)arg;
-            rewrite = true;
             u32 arg_name_idx = n.getNameIdx();
             u32 param_name_idx;
             bool found = false;
@@ -208,6 +202,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
                     break;
                 if (!vd.hasInit())
                     break;
+                rewrite = true;
                 func_arg_index++;
             }
             if (!found) {
@@ -231,10 +226,11 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     }
 
     u32 expected_args = func_num_args - num_auto_args - isTypeFuncCall;
+    u32 extra_args_count = call_num_args - call_arg_index;
     if (func_arg_index < func_num_args) {
+        rewrite = true;
         u32 missing_args = 0;
         for (u32 i = func_arg_index; i < func_num_args; i++) {
-            rewrite = true;
             if (!func_args[i].hasInit()) missing_args++;
         }
         if (missing_args) {
@@ -245,7 +241,9 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         }
     }
 
-    if (call_arg_index != call_num_args || fd.isVariadic()) {
+    Expr* new_format_arg = nil;
+
+    if (extra_args_count) {
         if (!fd.isVariadic()) {
             Expr* call_arg = call_args[call_arg_index];
             ma.error(call_arg.getLoc(), DiagTooManyArgs, fd.getDiagKind(), expected_args, call_num_args);
@@ -253,7 +251,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             return QualType_Invalid;
         }
 
-        while (call_arg_index != call_num_args) {
+        while (call_arg_index < call_num_args) {
             QualType callType = ma.analyseExpr(&call_args[call_arg_index], true, RHS);
             if (callType.isInvalid()) return QualType_Invalid;
             if (callType.isVoid()) {
@@ -263,18 +261,17 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             }
             call_arg_index++;
         }
-
-        if (format_attr) {
-            format_arg_idx -= num_auto_args + isTypeFuncCall;
-            u32 num_args = call_num_args - format_arg_idx - 1;
-            call.setFormatAttr(format_attr);
-            rewrite = true;
-            if (!ma.checkFormatArgs(&call_args[format_arg_idx], num_args, &call_args[format_arg_idx+1], format_attr))
-                return QualType_Invalid;
-        }
     }
 
-    if (rewrite && !ma.check_only) ma.rewriteCall(e_ptr, fd);
+    if (format_attr) {
+        u32 num_args = extra_args_count;
+        u32 format_arg_idx = call_num_args - extra_args_count - 1;
+        if (!ma.checkFormatArgs(call_args[format_arg_idx], &call_args[format_arg_idx+1], num_args, format_attr, &new_format_arg))
+            return QualType_Invalid;
+        if (new_format_arg) rewrite = true;
+    }
+
+    if (rewrite && !ma.check_only) ma.rewriteCall(e_ptr, fd, new_format_arg);
 
     return fd.getRType();
 }
@@ -574,8 +571,7 @@ fn const char* get_format(Expr* format, SrcLoc* format_loc) {
     }
 }
 
-fn bool Analyser.checkFormatArgs(Analyser* ma, Expr** format_ptr, u32 num_args, Expr** args, FormatAttr format_attr) {
-    Expr* format = *format_ptr;
+fn bool Analyser.checkFormatArgs(Analyser* ma, Expr* format, Expr** args, u32 num_args, FormatAttr format_attr, Expr** new_format_ptr) {
     SrcLoc format_loc = format.getLoc();
     const char* format_text = get_format(format, &format_loc);
     if (!format_text) {
@@ -614,11 +610,8 @@ fn bool Analyser.checkFormatArgs(Analyser* ma, Expr** format_ptr, u32 num_args, 
     const char* new_format_text = out.data();
     if (string.strcmp(format_text, new_format_text)) {
         u32 len = out.size();
-        Expr* new_format = ma.builder.actOnStringLiteral(0, len, ma.astPool.add(new_format_text, len, true), len);
-        ImplicitCastExpr* ic = (ImplicitCastExpr*)*format_ptr;
-        Expr* orig = ic.getInner();
-        ic.setInner(new_format);
-        *format_ptr = ma.builder.actOnAlternate(orig, *format_ptr);
+        *new_format_ptr = ma.builder.actOnStringLiteral(0, len, ma.astPool.add(new_format_text, len, true), len);
+        ma.builder.insertImplicitCast(ArrayToPointerDecay, new_format_ptr, format.getType());
     }
     out.free();
     return true;

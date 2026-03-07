@@ -20,7 +20,7 @@ import source_mgr;
 
 import string local;
 
-fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd) {
+fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd, Expr* new_format_arg) {
     Expr* e = *e_ptr;
     CallExpr* call = (CallExpr*)e;
     Expr** func = call.getFunc2();
@@ -90,14 +90,14 @@ fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd) {
     u32 func_num_args = fd.getNumParams();
     //stdio.printf("CALL %d/%d  FUNC %d/%d\n", call_arg_index, call_num_args, func_arg_index, func_num_args);
     source_mgr.Location loc;
-    if (call.hasAutoArgs()) loc = ma.diags.locate(e.getLoc());
+    if (fd.getNumAutoArgs()) loc = ma.diags.locate(e.getLoc());
     VarDecl** func_args = fd.getParams();
     while (func_arg_index < func_num_args) {
         VarDecl* vd = func_args[func_arg_index];
         if (vd.hasAutoAttr()) {
             if (vd.hasAttrAutoFile()) {
                 u32 len = (u32)strlen(loc.filename);
-                u32 value =  ma.astPool.add(loc.filename, len, true);
+                u32 value = ma.astPool.add(loc.filename, len, true);
                 Expr* arg = ma.builder.actOnStringLiteral(0, 0, value, len);
                 args.add(arg);
             }
@@ -108,7 +108,7 @@ fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd) {
             if (vd.hasAttrAutoFunc()) {
                 const char* func_name = ma.curFunction.asDecl().getFullName();
                 u32 len = (u32)strlen(func_name);
-                u32 value =  ma.astPool.add(func_name, len, true);
+                u32 value = ma.astPool.add(func_name, len, true);
                 Expr* arg = ma.builder.actOnStringLiteral(0, 0, value, len);
                 args.add(arg);
             }
@@ -116,31 +116,29 @@ fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd) {
             continue;
         }
 
+        Expr* arg;
         if (call_arg_index < call_num_args) {
-            Expr* arg = call_args[call_arg_index];
-
+            arg = call_args[call_arg_index];
             if (arg.isNamedArgument()) {
                 NamedArgument* n = (NamedArgument*)arg;
                 u32 arg_name_idx = n.getNameIdx();
                 if (((Decl*)vd).getNameIdx() == arg_name_idx) {
                     arg = n.getInner();
-                    args.add(arg);
-                    func_arg_index++;
                     call_arg_index++;
-                    continue;
+                } else {
+                    arg = vd.getInit();
+                    assert(arg);
                 }
             } else {
-                args.add(arg);
-                func_arg_index++;
                 call_arg_index++;
-                continue;
             }
+        } else {
+            // default args
+            arg = vd.getInit();
+            assert(arg);
         }
-
-        // default args
-        Expr* init = vd.getInit();
-        assert(init);
-        args.add(init);
+        if (vd.getFormatAttr() && new_format_arg) arg = new_format_arg;
+        args.add(arg);
         func_arg_index++;
     }
 
@@ -150,7 +148,6 @@ fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd) {
         args.add(arg);
         call_arg_index++;
     }
-    // TODO re-write printf/scanf formats
 
     // func
     Expr* func2;
