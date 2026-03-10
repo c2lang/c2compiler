@@ -17,6 +17,7 @@ module scope;
 
 import ast;
 import diagnostics;
+import levenshtein;
 import module_list;
 import constants;
 import src_loc local;
@@ -281,6 +282,64 @@ public fn bool Scope.add(Scope* s, ast.Decl* d, bool set_offset = false) {
     return false;
 }
 
+fn const char* Scope.findBestMatch(const Scope* s, u32 name_idx, const char* name1, usize len1) {
+    if (len1 == 1) return nil;
+
+    u32 max_dist = (u32)len1 / 2;
+    if (max_dist > 2) max_dist = 2;
+
+    // search stack first
+    usize best_dist = usize.max;
+    const char* hint = nil;
+            // TODO make suggestion based on symbols in all modules
+    for (u32 i=0; i<s.stack_count; i++) {
+        const char* name2 = ast.idx2name(s.stack_symbols[i]);
+        usize len2 = string.strlen(name2);
+        usize dist = levenshtein.dist(name1, len1, name2, len2);
+        if (dist < best_dist) {
+            best_dist = dist;
+            hint = name2;
+            if (dist <= 1) break;
+        }
+    }
+
+    if (best_dist <= max_dist) return hint;
+
+    // search perfect match (u32) in modules that are not imported locally (printf -> stdio.printf)
+    u32 num_imports = s.imports.size();
+    ast.ImportDecl** imports = s.imports.getDecls();
+    for (u32 i=0; i<num_imports; i++) {
+        ast.ImportDecl* id = imports[i];
+        if (id.isLocal()) continue;
+        const ast.Module* m = id.getDest();
+        ast.Decl* d = m.findSymbol(name_idx);
+        if (d) return d.getFullName();
+    }
+
+    // search global namespace
+    for (u32 i=0; i<num_imports; i++) {
+        ast.ImportDecl* id = imports[i];
+        if (!id.isLocal()) continue;
+        const ast.Module* m = id.getDest();
+        const ast.SymbolTable* st = m.getSymbols();
+        u32 num_syms = st.num_public + st.num_private;
+        for (u32 j=0; j<num_syms; j++) {
+            const char* name2 = ast.idx2name(st.symbols[j]);
+            usize len2 = string.strlen(name2);
+            usize dist = levenshtein.dist(name1, len1, name2, len2);
+            if (dist < best_dist) {
+                best_dist = dist;
+                hint = name2;
+                if (dist <= 1) break;
+            }
+        }
+    }
+
+    if (best_dist <= max_dist) return hint;
+
+    return nil;
+}
+
 // will give error on duplicates, ambiguous or not found
 public fn ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc, bool usedPublic) {
     ast.Decl* decl = s.stack_find(name_idx);
@@ -296,15 +355,19 @@ public fn ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc, bool usedPubl
     decl = s.findGlobalSymbol(name_idx, loc, &other_error, usedPublic, true);
 
     if (!decl && !other_error) {
-        const char* name = ast.idx2name(name_idx);
 
         ast.ImportDecl* id  = s.imports.findAny(name_idx);
         if (id) {
             s.diags.error(loc, "module '%s' is imported with alias '%s'", id.asDecl().getName(), id.getAliasName());
         } else {
-            s.diags.error(loc, "use of undeclared identifier '%s'", name);
+            const char* name = ast.idx2name(name_idx);
+            const char* hint = s.findBestMatch(name_idx, name, string.strlen(name));
+            if (hint) {
+                s.diags.error(loc, "use of undeclared identifier '%s'; did you mean '%s'?", name, hint);
+            } else {
+                s.diags.error(loc, "use of undeclared identifier '%s'", name);
+            }
         }
-        // TODO make suggestion based on symbols in all modules
         return nil;
     }
     return decl;

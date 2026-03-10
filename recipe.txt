@@ -218,6 +218,7 @@ executable c2c
     analyser/ctv_analyser.c2
     analyser/incr_array_list.c2
     analyser/init_checker.c2
+    analyser/levenshtein.c2
     analyser/module_analyser.c2
     analyser/module_analyser_binop.c2
     analyser/module_analyser_builtin.c2

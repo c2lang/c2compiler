@@ -1,0 +1,12 @@
+// @warnings{no-unused}
+module test;
+
+fn void test11() { }
+
+fn void test22() {
+}
+
+fn void test3() {
+    test111();    // @error{use of undeclared identifier 'test111'; did you mean 'test11'?}
+}
+

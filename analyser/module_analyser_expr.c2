@@ -18,8 +18,11 @@ module module_analyser;
 import ast local;
 import ast_builder;
 import conversion_checker;
+import levenshtein;
 import src_loc local;
 import value_type local;
+
+import string;
 
 fn QualType Analyser.analyseConstExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue) {
     assert(e_ptr);
@@ -622,11 +625,50 @@ fn bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType base
     return true;
 }
 
+fn void get_best_match(const char* name1, usize len1, StructTypeDecl* s, usize* best_dist, const char** result) {
+    Decl** members = s.getMembers();
+    u32 num_members = s.getNumMembers();
+    for (u32 i = 0; i < num_members; i++) {
+        Decl* m = members[i];
+        const char* name2 = m.getName();
+        if (name2 == nil) {
+            get_best_match(name1, len1, (StructTypeDecl*)m, best_dist, result);
+        } else {
+            usize len2 = string.strlen(name2);
+            usize dist = levenshtein.dist(name1, len1, name2, len2);
+            if (dist < *best_dist) {
+                *result = name2;
+                *best_dist = dist;
+            }
+        }
+        if (*best_dist <= 1) return;
+    }
+}
+
 fn void Analyser.memberError(Analyser* ma, u32 name_idx, SrcLoc loc, StructTypeDecl* s) {
-    ma.error(loc, "no member named '%s' in %s '%s'",
-        idx2name(name_idx),
-        s.isStruct() ? "struct" : "union",
-        s.asDecl().getFullName());
+    const char* name1 = idx2name(name_idx);
+    usize len1 = string.strlen(name1);
+
+    const char* result = nil;
+    usize dist = usize.max;
+    get_best_match(name1, len1, s, &dist, &result);
+
+    u32 max_dist = (u32)len1 / 2;
+    if (max_dist > 2) max_dist = 2;
+
+    if (dist <= max_dist) {
+        ma.error(loc, "no member named '%s' in %s '%s'; did you mean '%s'?",
+            idx2name(name_idx),
+            s.isStruct() ? "struct" : "union",
+            s.asDecl().getFullName(),
+            result);
+
+    } else {
+        ma.error(loc, "no member named '%s' in %s '%s'",
+            idx2name(name_idx),
+            s.isStruct() ? "struct" : "union",
+            s.asDecl().getFullName());
+    }
 }
 
 // TODO move to AnalyserUtils

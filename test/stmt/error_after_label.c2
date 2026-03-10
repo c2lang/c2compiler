@@ -3,6 +3,6 @@ module test;
 
 fn void test3() {
 label:
-    test2();    // @error{use of undeclared identifier 'test2'}
+    test2();    // @error{use of undeclared identifier 'test2'; did you mean 'test'?}
 }
 

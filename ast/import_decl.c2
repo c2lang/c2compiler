@@ -68,8 +68,6 @@ public fn SrcLoc ImportDecl.getLoc(const ImportDecl* d) {
     return d.base.getLoc();
 }
 
-//public func SrcLoc ImportDecl.getAliasLoc(const ImportDecl* d) { return d.alias_loc; }
-
 public fn void ImportDecl.setDest(ImportDecl* d, Module* mod) { d.dest = mod; }
 
 public fn Module* ImportDecl.getDest(const ImportDecl* d) { return d.dest; }

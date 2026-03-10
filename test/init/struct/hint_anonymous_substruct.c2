@@ -1,0 +1,26 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    char a;
+    struct {
+        i16 b;
+        i32 c;
+    }
+    union {
+        char d;
+        i32 e;
+    }
+    i8 f;
+}
+static_assert(20, sizeof(Foo));
+
+Foo[] ff = {
+    { .bb = 1 },    // @error{no member named 'bb' in struct 'test.Foo'; did you mean 'b'?}
+    { .cc = 1 },    // @error{no member named 'cc' in struct 'test.Foo'; did you mean 'c'?}
+    { .dd = 1 },    // @error{no member named 'dd' in struct 'test.Foo'; did you mean 'd'?}
+    { .ee = 1 },    // @error{no member named 'ee' in struct 'test.Foo'; did you mean 'e'?}
+}
+
+
+

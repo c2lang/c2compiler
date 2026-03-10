@@ -10,3 +10,8 @@ fn void myfunc() {
     s.b = 10;       // @error{no member named 'b' in struct 'test.Struct'}
 }
 
+fn void myfunc2() {
+    Struct s;
+    s.bbb = 10;       // @error{no member named 'bbb' in struct 'test.Struct'}
+}
+
