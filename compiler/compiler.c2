@@ -195,7 +195,8 @@ fn void Compiler.build(Compiler* c,
         c.target.setNoBuild();
     }
 
-    diags.setWarningAsError(target.getWarnings().are_errors);
+    //diags.setWarningAsError(target.getWarnings().are_errors);
+    c.diags.setWarnings(target.getWarnings());
     c.diags.clear();
 
     c.context = ast_context.create(16*1024);
