@@ -57,25 +57,7 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         gen.emitCall(out, (CallExpr*)e);
         break;
     case InitList:
-        InitListExpr* ile = (InitListExpr*)e;
-        out.add1('{');
-        u32 num_values = ile.getNumValues();
-        Expr** values = ile.getValues();
-        bool newlines = false;
-        if (num_values > 6) newlines = true;
-        if (num_values && values[0].isInitList()) {
-            newlines = true;
-        }
-        if (newlines) out.newline();
-        else out.space();
-        for (u32 i=0; i<num_values; i++) {
-            if (newlines) out.indent(1);
-            gen.emitExpr(out, values[i]);
-            if (i+1 != num_values) out.add1(',');
-            if (newlines) out.newline();
-            else out.space();
-        }
-        out.add1('}');
+        gen.emitInitListExpr(out, (InitListExpr*)e);
         break;
     case FieldDesignatedInit:
         gen.emitFieldDesigExpr(out, (FieldDesignatedInitExpr*)e);
@@ -256,4 +238,83 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, const CallExp
     }
 
     out.rparen();
+}
+
+// output initializers as compact lines with aligned columns if possible
+fn void Generator.emitInitListExpr(Generator* gen, string_buffer.Buf* out, InitListExpr* ile) {
+    Expr** values = ile.getValues();
+    u32 num_values = ile.getNumValues();
+    out.add1('{');
+    if (!num_values) {
+        out.add1('}');
+        return;
+    }
+    gen.indent++;
+    u32 total_len = 0;
+    u32 max_len = 0;
+    u32 start_offset = out.size();
+    u32 start_column = out.getColumn();
+    u32 num_cols = 1;
+    for (u32 i = 0;;) {
+        out.space();
+        Expr* v = values[i++];
+        ExprKind k = v.getKind();
+        if (k == InitList || k == FieldDesignatedInit || k == ArrayDesignatedInit) break;
+        u32 pos = out.size();
+        gen.emitExpr(out, v);
+        u32 len = out.size() - pos;
+        total_len += len + 2;
+        if (len > max_len) max_len = len;
+        if (i == num_values) {
+            if (start_column + total_len <= 110) {
+                out.space();
+                gen.indent--;
+                out.add1('}');
+                return;
+            }
+            num_cols = num_values;
+            break;
+        }
+        out.add1(',');
+        if (len > 32) break;
+    }
+    // restart output on multiple lines
+    bool align_columns = false;
+    local u32[] cols = { 32, 30, 20, 16, 10, 8, 5, 4, 2, 1 }
+    u32 j = 0;
+    start_column = gen.indent * out.indent_step;
+    while (num_cols > 1 && start_column + num_cols * (max_len + 2) > 110) {
+        while (num_cols <= cols[j] || ((cols[j] & (cols[j] - 1)) && !(num_values & (num_values - 1)))) j++;
+        num_cols = cols[j];
+        align_columns = true;
+    }
+    out.trim(out.size() - start_offset);
+    out.newline();
+    out.indent(gen.indent);
+    u32 line_offset = out.size();
+    u32 col = 0;
+    for (u32 i = 0;;) {
+        gen.emitExpr(out, values[i++]);
+        if (i == num_values) break;
+        out.add1(',');
+        col++;
+        if (col == num_cols) {
+            out.newline();
+            out.indent(gen.indent);
+            line_offset = out.size();
+            col = 0;
+        } else {
+            u32 spaces = 1;
+            if (align_columns) {
+                u32 pos = out.size() - line_offset;
+                u32 min_pos = col * (max_len + 2);
+                if (pos < min_pos) spaces = min_pos - pos;
+            }
+            while (spaces--) out.space();
+        }
+    }
+    gen.indent--;
+    out.newline();
+    out.indent(gen.indent);
+    out.add1('}');
 }
