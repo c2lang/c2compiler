@@ -364,7 +364,7 @@ fn void Parser.parseTopLevel(Parser* p) {
         break;
     case KW_fn:
         if (p.tokenizer.c_mode) goto invalid_c;
-        p.parseFuncDecl(is_public);
+        p.parseFuncDecl(is_public, false);
         break;
     case KW_import:
         p.error("no imports allowed after declarations");
@@ -496,27 +496,73 @@ fn void Parser.applyAttributes(Parser* p, Decl* d, u32 count) {
     if (count) p.builder.applyAttributes(d, count);
 }
 
-fn void Parser.parseFuncDecl(Parser* p, bool is_public) {
-    p.consumeToken();
+fn u32 Parser.createLocalName(Parser* p, u32 name, SrcLoc loc, u32* plen) {
+    char[128] buf;
+    *plen = (u32)snprintf(buf, sizeof(buf), "%s__%d", p.pool.idx2str(name), loc);
+    return p.pool.addStr(buf, true);
+}
+
+fn Expr* Parser.parseLocalFuncExpr(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    FunctionDecl* f = p.parseFuncDecl(false, true);
+    Decl* d = f.asDecl();
+    u32 name = d.getNameIdx();
+    u32 len;
+    u32 local_name = p.createLocalName(name, loc, &len);
+    d.setNameIdx(local_name);
+    p.builder.addSymbol(local_name, d);
+    return p.builder.actOnIdentifier(loc, local_name, len);
+}
+
+fn Stmt* Parser.parseLocalFuncStmt(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    FunctionDecl* f = p.parseFuncDecl(false, true);
+    Decl* d = f.asDecl();
+    u32 name = d.getNameIdx();
+    u32 len;
+    u32 local_name = p.createLocalName(name, loc, &len);
+    d.setNameIdx(local_name);
+    p.builder.addSymbol(local_name, d);
+    Expr* fexpr = p.builder.actOnIdentifier(loc, local_name, len);
+    // TODO: use auto typing
+    TypeRefHolder ref.init();
+    ref.setVoid(loc);
+    ref.addPointer();
+    VarDecl* decl = p.builder.actOnVarDecl(name, loc, &ref, loc, fexpr, false, false);
+    return p.builder.actOnDeclStmt(&decl, 1);
+}
+
+fn FunctionDecl* Parser.parseFuncDecl(Parser* p, bool is_public, bool is_local) {
+    u32 func_name = 0;
+    SrcLoc func_loc = p.tok.loc;
+    Ref prefix_ref;
+    Ref* prefix = nil;
+
+    p.consumeToken();  // fn
 
     TypeRefHolder rtype.init();
     // Note: dont check arrays in this phase, but in Analyser
     p.parseTypeSpecifier(&rtype);
 
-    p.expectIdentifier();
-    u32 func_name = p.tok.name_idx;
-    SrcLoc func_loc = p.tok.loc;
-    p.consumeToken();
-
-    p.parseFunctionDecl2(func_name, func_loc, is_public, &rtype);
+    if (p.tok.kind == Identifier || !is_local) {
+        p.expectIdentifier();
+        func_name = p.tok.name_idx;
+        func_loc = p.tok.loc;
+        p.consumeToken();
+    }
+    return p.parseFunctionDecl2(func_name, func_loc, is_public, is_local, &rtype);
 }
 
-fn void Parser.parseFunctionDecl2(Parser* p, u32 func_name, SrcLoc func_loc,
-                                  bool is_public, TypeRefHolder* rtype)
+fn FunctionDecl* Parser.parseFunctionDecl2(Parser* p, u32 func_name, SrcLoc func_loc,
+                                           bool is_public, bool is_local, TypeRefHolder* rtype)
 {
     Ref prefix_ref;
     Ref* prefix = nil;
+
     if (p.tok.kind == Dot) {
+        if (is_local) {
+            p.error("local functions cannot be type functions");
+        }
         p.consumeToken();
         p.expectIdentifier();
 
@@ -529,7 +575,7 @@ fn void Parser.parseFunctionDecl2(Parser* p, u32 func_name, SrcLoc func_loc,
         p.consumeToken();
     }
 
-    if (!p.checkName(func_name, p.is_interface)) {
+    if (func_name && !p.checkName(func_name, p.is_interface)) {
         p.errorAt(func_loc, "a function name must start with a lower case character");
     }
 
@@ -537,8 +583,19 @@ fn void Parser.parseFunctionDecl2(Parser* p, u32 func_name, SrcLoc func_loc,
 
     bool is_variadic = p.parseFunctionParams(&params, is_public, true);
 
+    if (p.tok.kind == LSquare && is_local) {
+        // TODO: parse capture specification
+        while (!p.tok.done && p.tok.kind != RSquare) {
+            p.consumeToken();
+        }
+        p.expectAndConsume(RSquare);
+    }
+
     FunctionDecl* f;
     if (p.tok.kind == KW_template) {
+        if (is_local) {
+            p.error("local functions cannot be template functions");
+        }
         p.consumeToken();
         p.expectIdentifier();
 
@@ -564,19 +621,21 @@ fn void Parser.parseFunctionDecl2(Parser* p, u32 func_name, SrcLoc func_loc,
                                         prefix,
                                         (VarDecl**)params.getDecls(),
                                         params.size(),
-                                        is_variadic);
+                                        is_variadic, is_local);
     }
 
     params.free();
 
-    u32 num_attr = p.parseOptionalAttributes();
-    p.applyAttributes((Decl*)f, num_attr);
+    if (!is_local) {
+        u32 num_attr = p.parseOptionalAttributes();
+        p.applyAttributes((Decl*)f, num_attr);
+    }
 
     if (p.is_interface) {
         if (p.tok.kind == Semicolon) {
             // function without body (eg. i32 printf(..); ) is allowed
             p.consumeToken();
-            return;
+            return f;
         }
 
         if (func_name != p.main_idx) {
@@ -585,9 +644,10 @@ fn void Parser.parseFunctionDecl2(Parser* p, u32 func_name, SrcLoc func_loc,
         }
     }
 
-    p.stmt_list_count = 0;
+    if (!is_local) p.stmt_list_count = 0;
     CompoundStmt* body = p.parseCompoundStmt();
     p.builder.actOnFunctionBody(f, body);
+    return f;
 }
 
 fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public, bool accept_default) {
@@ -762,7 +822,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
             if (!p.tokenizer.c_mode) {
                 p.error("function definitions require the 'fn' keyword");
             }
-            p.parseFunctionDecl2(name, loc, is_public, &ref);
+            p.parseFunctionDecl2(name, loc, is_public, false, &ref);
             return;
         }
 
@@ -772,7 +832,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
                     // Either a function definition or an init call
                     if (!p.tokenizer.c_mode)
                         p.error("global variables cannot have an init call");
-                    p.parseFunctionDecl2(name, loc, is_public, &ref);
+                    p.parseFunctionDecl2(name, loc, is_public, false, &ref);
                     return;
                 }
                 p.error("global type variables not supported");
