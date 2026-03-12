@@ -23,24 +23,7 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
 
     Decl* dest = nil;
     Expr* func = call.getFunc();
-    if (call.isTemplateCall()) {
-        QualType qt = func.getType();
-        FunctionType* ft = qt.getFunctionTypeOrNil();
-        FunctionDecl* template_fd = ft.getDecl();
-        u32 idx = call.getTemplateIdx();
-        FunctionDecl* instance = gen.mod.getInstance(template_fd, idx);
-        assert(instance);
-
-        assert(!call.isTypeFunc()); // TODO
-
-        dest = instance.asDecl();
-        if (!dest.isGenerated()) {
-            gen.emitFunction(instance);
-            instance.asDecl().setGenerated();
-        }
-        gen.emitDeclName(out, dest);
-        out.lparen();
-    } else {
+    {
         if (func.isImplicitCast()) {
             ImplicitCastExpr* ic = (ImplicitCastExpr*)func;
             func = ic.getInner();
@@ -109,6 +92,7 @@ fn Decl* getFuncDecl(Expr* func, bool* no_trace) {
     switch (func.getKind()) {
     case Identifier:
         IdentifierExpr* i = (IdentifierExpr*)func;
+        // TODO should have @(notrace) attribute
         // do not trace calls to va_start, va_arg, va_end...
         const char *name = i.getName();
         if (name && name[0] == 'v' && name[1] == 'a' && name[2] == '_')
@@ -117,6 +101,9 @@ fn Decl* getFuncDecl(Expr* func, bool* no_trace) {
     case Member:
         MemberExpr* m = (MemberExpr*)func;
         return m.getFullDecl();
+    case Template:
+        TemplateExpr* tp = (TemplateExpr*)func;
+        return tp.getDecl();
     case Alternate:
         AlternateExpr* a = (AlternateExpr*)func;
         Expr* g = a.getGenerated();

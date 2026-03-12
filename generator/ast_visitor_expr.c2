@@ -37,6 +37,9 @@ fn void Visitor.handleExpr(Visitor* v, Expr* e) {
         TypeExpr* t = (TypeExpr*)e;
         v.handleTypeRef(t.getTypeRef());
         break;
+    case Template:
+        v.handleTemplateExpr((TemplateExpr*)e);
+        break;
     case Call:
         v.handleCallExpr((CallExpr*)e);
         break;
@@ -119,6 +122,12 @@ fn void Visitor.handleExpr(Visitor* v, Expr* e) {
         v.handleExpr(n.getOriginal());
         break;
     }
+}
+
+fn void Visitor.handleTemplateExpr(Visitor* v, TemplateExpr* c) {
+    v.handleExpr(c.getFunc());
+    u32 num_args = c.getNumArgs();
+    for (u32 i=0; i<num_args; i++) v.handleExpr(c.getArg(i));
 }
 
 fn void Visitor.handleCallExpr(Visitor* v, CallExpr* c) {

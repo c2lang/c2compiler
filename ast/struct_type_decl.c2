@@ -98,6 +98,10 @@ public type StructTypeDecl struct @(opaque) {
     u32 num_struct_functions;
     FunctionDecl** struct_functions;
     FieldInitInfo* field_info;  // set lazily on Field-Designated inits
+    union {
+        TemplateSpec* template_spec;
+        const StructTypeDecl* template_decl;
+    }
     Decl*[0] members;   // tail-allocated
     //StructLayout layout[0]; // tail-allocated
 }
@@ -110,7 +114,8 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
                                                   bool is_struct,
                                                   bool is_global,
                                                   Decl** members,
-                                                  u32 num_members)
+                                                  u32 num_members,
+                                                  TemplateSpec* template_spec)
 {
     u32 size = sizeof(StructTypeDecl) + num_members * sizeof(Decl*);
     size += sizeof(StructLayout);
@@ -129,6 +134,7 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     d.num_struct_functions = 0;
     d.struct_functions = nil;
     d.field_info = nil;
+    d.template_spec = template_spec;
 
     StructLayout* layout = d.getLayout();
     layout.size = 0;
@@ -143,6 +149,57 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     Stats.addDecl(StructType, size);
 #endif
     return d;
+}
+
+public fn StructTypeDecl* StructTypeDecl.instantiate(const StructTypeDecl* d, Instantiator* inst)
+{
+    u32 num_members = d.num_members;
+    u32 size = sizeof(StructTypeDecl) + num_members * sizeof(Decl*);
+    size += sizeof(StructLayout);
+    size += num_members * sizeof(StructMemberLayout); // to store StructMemberLayouts
+    size = (size + 7) & ~0x7; // round to 8-byte (temp)
+    StructTypeDecl* d2 = inst.c.alloc(size);
+    StructType* stype = StructType.create(inst.c, d2);
+    QualType qt = QualType.create(stype.asType());
+    stype.asType().setCanonicalType(qt);
+    // copy members
+    d2.base = d.base;
+    d2.base.declBits.check_state = DeclCheckState.Unchecked;
+    d2.base.qt = qt;
+
+    d2.num_members = num_members;
+    d2.num_struct_functions = 0;
+    d2.struct_functions = nil;
+    d2.field_info = nil;
+    d2.template_spec = nil;
+    //d2.template_decl = d;
+
+    // TODO: use init function
+    StructLayout* layout = d2.getLayout();
+    layout.size = 0;
+    layout.alignment = 0;
+    layout.attr_alignment = 1;
+    string.memset(layout.members, 0, num_members * sizeof(StructMemberLayout));
+
+    for (u32 i = 0; i < num_members; i++) {
+        d2.members[i] = d.members[i].instantiate(inst);
+    }
+#if AstStatistics
+    Stats.addDecl(DeclKind.StructType, size);
+#endif
+    return d2;
+}
+
+public fn void StructTypeDecl.instantiateTypeFunctions(StructTypeDecl* d2, Instantiator* inst, StructTypeDecl* d)
+{
+    u32 num_sf = d.num_struct_functions;
+    d2.struct_functions = inst.c.alloc(num_sf * sizeof(FunctionDecl*));
+    for (u32 i = 0; i < num_sf; i++) {
+        FunctionDecl* fd = d.struct_functions[i].instantiate(inst);
+        fd.asDecl().setAttrUnused();
+        d2.struct_functions[i] = fd;
+    }
+    d2.num_struct_functions = num_sf;
 }
 
 public fn Decl* StructTypeDecl.asDecl(StructTypeDecl* d) {
@@ -166,13 +223,20 @@ public fn bool StructTypeDecl.isUnion(const StructTypeDecl* d) {
     return !d.base.structTypeDeclBits.is_struct;
 }
 
-fn const FunctionDecl** StructTypeDecl.getStructFunctions(const StructTypeDecl* d) {
-    // TEMP const-cast until ptr-ptr -> const ptr-ptr is fixed in analyser
-    return (const FunctionDecl**)d.struct_functions;
+public fn TemplateSpec* StructTypeDecl.getTemplateSpec(const StructTypeDecl* d) {
+    return d.template_spec;
 }
 
-fn u32 StructTypeDecl.getNumStructFunctions(const StructTypeDecl* d) {
+public fn bool StructTypeDecl.isTemplate(const StructTypeDecl* d) {
+    return d.template_spec != nil;
+}
+
+public fn u32 StructTypeDecl.getNumStructFunctions(const StructTypeDecl* d) {
     return d.num_struct_functions;
+}
+
+public fn FunctionDecl* StructTypeDecl.getStructFunction(const StructTypeDecl* d, u32 i) {
+    return d.struct_functions[i];
 }
 
 public fn StructLayout* StructTypeDecl.getLayout(const StructTypeDecl* d) {
@@ -233,6 +297,11 @@ public fn void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.
     string.memcpy(dest, funcs, size);
     d.struct_functions = dest;
     d.num_struct_functions = count;
+    if (d.isTemplate()) {
+        for (u32 i = 0; i < count; i++) {
+            dest[i].setTemplateTypeFunction();
+        }
+    }
 }
 
 public fn Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx) {
@@ -355,17 +424,23 @@ fn void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u3
     out.color(col_Value);
     if (d.base.getName()) out.add(d.base.getName());
     else out.add("<anonymous>");
-    out.newline();
+    if (const TemplateSpec* template_spec = d.getTemplateSpec()) {
+        template_spec.print(out, indent);
+    } else {
+        out.newline();
+    }
 
     for (u32 i=0; i<d.num_members; i++) {
-        out.indent(indent + 1);
-        out.color(col_Calc);
-        const StructMemberLayout* ml = &layout.members[i];
-        out.print("offset=%d size=%d", ml.offset, ml.size);
-        if (ml.is_bitfield) {
-            out.print(" bitfield(%d, %d, %d)", ml.bitfield_offset, ml.bitfield_width, ml.bitfield_signed);
+        if (layout.size != 0) {
+            out.indent(indent + 1);
+            out.color(col_Calc);
+            const StructMemberLayout* ml = &layout.members[i];
+            out.print("offset=%d size=%d", ml.offset, ml.size);
+            if (ml.is_bitfield) {
+                out.print(" bitfield(%d, %d, %d)", ml.bitfield_offset, ml.bitfield_width, ml.bitfield_signed);
+            }
+            out.newline();
         }
-        out.newline();
         d.members[i].print(out, indent + 1);
     }
 

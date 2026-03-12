@@ -18,6 +18,7 @@ module module_analyser;
 import ast local;
 import ctv_analyser;
 import src_loc local;
+import string_buffer;
 
 fn void Analyser.analyseFunctionType(Analyser* ma, Decl* d) {
     FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;
@@ -160,7 +161,7 @@ fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
         return QualType_Invalid;
     }
 
-    ref.setUser(d);
+    //ref.setUser(d);
 
     if (!d.isTypeDecl()) {
         ma.error(user.loc, "'%s' is not a type", ref.diagName());
@@ -170,6 +171,20 @@ fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     //TODO already checked in findSymbolInModule
     //if (!ma.scope.checkAccess(d, user.loc)) return QualType_Invalid;
 
+    if (ref.isTemplate()) {
+        // instantiate template type
+        if (!d.isStructType()) {
+            ma.error(ref.getLoc(), "template %s is not a struct or union type", ref.diagName());
+            return QualType_Invalid;
+        }
+        StructTypeDecl* sd = (StructTypeDecl*)d;
+        // TODO should use instantiation AST instead of template definition AST
+        StructTypeDecl* sd2 = ma.instantiateStructTemplate(sd, d.getASTIdx(), ref.getArgs(), ref.getNumArgs());
+        if (!sd2) return QualType_Invalid;
+        //tp.setDecl(fd2.asDecl());
+        d = sd2.asDecl();
+    }
+
     bool full = !ref.isPointer();
     DeclCheckState state = d.getCheckState();
 
@@ -177,6 +192,8 @@ fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
         ma.error(user.loc, "circular declaration");
         return QualType_Invalid;
     }
+
+    ref.setUser(d);
 
     if (full && state != Checked) {
         ma.analyseGlobalDecl(d);
@@ -202,6 +219,7 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
         assert(base.isValid());
         break;
     case User:
+        // Performs template instantiation
         base = ma.analyseUserTypeRef(ref);
         if (base.isInvalid()) return base;
         if (!base.hasCanonicalType()) return QualType_Invalid;
@@ -357,3 +375,292 @@ fn bool Analyser.checkOpaque(Analyser* ma, const StructTypeDecl* std, SrcLoc loc
     return true;
 }
 
+#if 0
+fn TypeRef* Analyser.evalType(Analyser* ma, Expr* e) {
+    if (e.isType()) {
+        return ((TypeExpr*)e).getTypeRef();
+    }
+    // Check if expr is a type
+    Value v = evalExpr(e);
+    if (!v.isError()) return nil;
+
+    if (e.getKind() == Identifier) {
+        TypeRefHolder ref.init();
+        IdentifierExpr* i = (IdentifierExpr*)e;
+        ref.setUser(arg.getLoc(), i.getNameIdx());
+        TypeExpr* te = TypeExpr.create(ma.context, e.getLoc(), 0, &ref);
+        return ((TypeExpr*)te).getTypeRef();
+    }
+    if (e.getKind() == Member && !((MemberExpr*)e).hasExpr() && ((MemberExpr*)e).getNumRefs() == 2) {
+        TypeRefHolder ref.init();
+        MemberExpr* m = (MemberExpr*)e;
+        ref.setUser(m.getLoc(0), m.getNameIdx(0));
+        ref.setPrefix(m.getLoc(1), m.getNameIdx(1));
+        TypeExpr* te = TypeExpr.create(ma.context, e.getLoc(), 0, &ref);
+        return ((TypeExpr*)te).getTypeRef();
+    }
+    return nil;
+}
+#endif
+
+fn TypeRef* Analyser.getTemplateArg(Analyser* ma, Expr* arg) {
+    if (arg.getKind() == Identifier) {
+        TypeRefHolder ref.init();
+        IdentifierExpr* i = (IdentifierExpr*)arg;
+        ref.setUser(arg.getLoc(), i.getNameIdx());
+        arg = (Expr*)TypeExpr.create(ma.context, arg.getLoc(), 0, &ref);
+    } else
+    if (arg.getKind() == Member && !((MemberExpr*)arg).hasExpr()) {
+        TypeRefHolder ref.init();
+        MemberExpr* m = (MemberExpr*)arg;
+        ref.setUser(m.getLoc(0), m.getNameIdx(0));
+        ref.setPrefix(m.getLoc(1), m.getNameIdx(1));
+        arg = (Expr*)TypeExpr.create(ma.context, arg.getLoc(), 0, &ref);
+    }
+
+    if (arg.isType()) return ((TypeExpr*)arg).getTypeRef();
+
+    // argument is not Identifier or MemberExpr
+    ma.errorRange(arg.getLoc(), arg.getRange(), "template argument is not a type");
+    return nil;
+}
+
+fn void Analyser.mangleTypeRef(Analyser* ma, const TypeRef* r, string_buffer.Buf* out, bool print_prefix) {
+    out.add1('$');
+    if (r.isConst()) out.add("c");
+    if (r.isVolatile()) out.add("v");
+
+    switch (r.getKind()) {
+    case Builtin:
+        out.add(r.getBuiltinKind().str());
+        break;
+    case Void:
+        out.add("void");
+        break;
+    case User:
+        const Decl* d = r.getUserDecl();
+        assert(d);
+        //if (r.getNumArgs()) out.add1('I');
+        if (print_prefix) {
+            out.addMangledName(d.getFullName(), false);
+        } else {
+            out.addMangledName(d.getName(), false);
+        }
+        if (u32 num_args = r.getNumArgs()) {
+            for (u32 i = 0; i < num_args; i++) {
+                Expr* e = r.getArg(i);
+                if (e.isType()) {
+                    TypeRef* type_ref = ((TypeExpr*)e).getTypeRef();
+                    ma.mangleTypeRef(type_ref, out, print_prefix);
+                } else {
+                    Value v = evalExpr(e);
+                    if (!v.isError()) {
+                        out.addMangledName(v.str(), true);
+                    } else
+                    if (e.getKind() == Identifier) {
+                        TypeRefHolder ref.init();
+                        IdentifierExpr* ie = (IdentifierExpr*)e;
+                        out.addMangledName(ie.getName(), true);
+                    } else
+                    if (e.getKind() == Member && !((MemberExpr*)e).hasExpr()) {
+                        TypeRefHolder ref.init();
+                        MemberExpr* m = (MemberExpr*)e;
+                        out.addMangledName(m.getName(0), true);
+                        out.addMangledName(m.getName(1), true);
+                    } else {
+                        // report error?
+                    }
+                }
+            }
+            //out.add1('E');
+        }
+        break;
+    case Function:
+        out.add("FN TODO");
+        // TODO
+        break;
+    }
+
+    for (u32 i = 0; i < r.getNumPointers(); i++) out.add1('P');
+
+    if (r.isIncrArray()) out.add("ai");
+
+    for (u32 i = 0; i < r.getNumArrays(); i++) {
+        const Expr* a = r.getArray(i);
+        // note: a can be nil, when[]
+        if (a) {
+            Value v = evalExpr(a);
+            out.addMangledName(v.str(), true);
+        }
+    }
+}
+
+fn u32 Analyser.makeInstanceMangledName(Analyser* ma, Decl* d, Expr** args, u32 num_args, bool full) {
+    const char* template_name = d.getName();
+    if (!template_name) return 0;
+    string_buffer.Buf* out = string_buffer.create(128, false, 0);
+    if (full) out.print("%s_", ma.mod.getName());
+    //out.add("_I");
+    out.addMangledName(template_name, false);
+    for (u32 i = 0; i < num_args; i++) {
+        Expr* e = args[i];
+        if (e.isType()) {
+            TypeRef* type_ref = ((TypeExpr*)e).getTypeRef();
+            //type_ref.mangle(out, false);
+            ma.mangleTypeRef(type_ref, out, false);
+        } else {
+            Value v = evalExpr(e);
+            if (!v.isError()) {
+                out.addMangledName(v.str(), true);
+            } else
+            if (e.getKind() == Identifier) {
+                TypeRefHolder ref.init();
+                IdentifierExpr* ie = (IdentifierExpr*)e;
+                out.addMangledName(ie.getName(), true);
+            } else
+            if (e.getKind() == Member && !((MemberExpr*)e).hasExpr()) {
+                TypeRefHolder ref.init();
+                MemberExpr* m = (MemberExpr*)e;
+                out.addMangledName(m.getName(0), true);
+                out.addMangledName(m.getName(1), true);
+            } else {
+                ma.error(e.getLoc(), "invalid template argument");
+            }
+        }
+    }
+    u32 name_idx = ma.astPool.addStr(out.data(), true);
+    out.free();
+    return name_idx;
+}
+
+fn u32 Analyser.makeInstanceTypeName(Analyser* ma, Decl* d, Expr** args, u32 num_args) {
+    const char* template_name = d.getName();
+    string_buffer.Buf* out = string_buffer.create(128, false, 0);
+    out.print("%s<", template_name);
+    for (u32 i = 0; i < num_args; i++) {
+        if (i > 0) out.add1(',');
+        Expr* e = args[i];
+        if (e.isType()) {
+            TypeRef* type_ref = ((TypeExpr*)e).getTypeRef();
+            type_ref.printLiteral(out, false);
+        } else {
+            Value v = evalExpr(e);
+            if (!v.isError()) {
+                out.add(v.str());
+            } else
+            if (e.getKind() == Identifier) {
+                TypeRefHolder ref.init();
+                IdentifierExpr* ie = (IdentifierExpr*)e;
+                out.add(ie.getName());
+            } else
+            if (e.getKind() == Member && !((MemberExpr*)e).hasExpr()) {
+                TypeRefHolder ref.init();
+                MemberExpr* m = (MemberExpr*)e;
+                out.add(m.getName(0));
+                out.add1('.');
+                out.add(m.getName(1));
+            } else {
+                ma.error(e.getLoc(), "invalid template argument");
+                return 0;
+            }
+        }
+    }
+    out.add1('>');
+    u32 name_idx = ma.astPool.addStr(out.data(), true);
+    out.free();
+    return name_idx;
+}
+
+fn StructTypeDecl* Analyser.instantiateStructTemplate(Analyser* ma, StructTypeDecl* std, u16 instance_ast_idx, Expr** args, u32 num_args) {
+    // Only handle first argument for now, convert to type
+    TypeRef* template_arg = ma.getTemplateArg(*args);
+    if (!template_arg) return nil;
+    QualType templateType = ma.analyseTypeRef(template_arg);
+    if (templateType.isInvalid()) return nil;
+
+    u32 instance_name_idx = ma.makeInstanceTypeName(std.asDecl(), args, num_args);
+    if (!instance_name_idx) return nil;
+    u32 instance_cname_idx = ma.makeInstanceMangledName(std.asDecl(), args, num_args, true);
+    if (!instance_cname_idx) return nil;
+    instance_name_idx = ma.makeInstanceMangledName(std.asDecl(), args, num_args, false);
+    if (!instance_name_idx) return nil;
+
+    StructTypeDecl* instance = (StructTypeDecl*)ma.mod.findInstance(std.asDecl(), templateType);
+    if (!instance) {
+        // note: template_arg decl is set here
+        bool used_opaque = false;
+        StructType* st = templateType.getStructTypeOrNil();
+        if (st) {
+            StructTypeDecl* std2 = st.getDecl();
+            Decl* d2 = (Decl*)std2;
+            used_opaque = (std2.isOpaque() && d2.getModule() != ma.mod);
+        }
+        // TODO: use TemplateSpec in Instantiator
+        const TemplateSpec* spec = std.getTemplateSpec();
+        Instantiator inst = {
+            .c = ma.context,
+            .ref = template_arg,
+            .template_vars = spec.getTemplateVars(),
+            .template_len = spec.getTemplateLen(),
+            .instance_ast_idx = instance_ast_idx,
+            .used_opaque = used_opaque,
+            .arg = ma,
+            .on_error = Analyser.opaque_callback,
+        }
+
+        instance = std.instantiate(&inst);
+        Decl* d = (Decl*)instance;
+
+        u16 instance_idx = ma.mod.addInstance(std.asDecl(), templateType, instance.asDecl());
+#if 0
+        char[64] instance_name;
+        // TODO: use a more readable name, eg: max$i32
+        create_template_name(instance_name, std.asDecl().getName(), instance_idx);
+        u32 instance_name_idx = ma.astPool.addStr(instance_name, true);
+#endif
+        d.setCName(instance_cname_idx);
+        d.setNameIdx(instance_name_idx);
+
+        // TODO check for duplicate name
+        // TODO use which AST and module?
+        ma.mod.addTypeDecl(d, instance_ast_idx);
+        ma.mod.addSymbol(instance_name_idx, d);
+
+        ma.analyseGlobalDecl(d);
+        if (ma.has_error) return nil;
+
+        d.setChecked();
+
+        // Add the struct type itself as a template var
+        inst.template_type_name = std.asDecl().getNameIdx();
+        inst.template_type_ref.setUser(d.getLoc(), instance_name_idx);
+        instance.instantiateTypeFunctions(&inst, std);
+        u32 num_sf = instance.getNumStructFunctions();
+        for (u32 i = 0; i < num_sf; i++) {
+            FunctionDecl* fd = instance.getStructFunction(i);
+            ma.mod.addFunc(fd, instance_ast_idx);
+            ma.analyseFunction(fd);
+        }
+#if 0
+        // Template function instance body will be analysed in outer loop
+        // Note: we need a separate scope for the body
+        Module* template_mod = std.asDecl().getModule();
+        Analyser* analyser = create(ma.diags, ma.context, ma.astPool, ma.builder, ma.allmodules, ma.warnings);
+        analyser.setMod(template_mod);
+        scope.Scope* tmpScope = scope.create(ma.allmodules,
+                                             ma.diags,
+                                             d.getAST().getImports(),
+                                             template_mod,
+                                             template_mod.getSymbols(),
+                                             !ma.warnings.no_unused_variable);
+        for (u32 i = 0; i < num_sf; i++) {
+            FunctionDecl* fd = instance.getStructFunction(i);
+            analyser.analyseFunctionBody(fd, tmpScope);
+        }
+        tmpScope.free();
+        analyser.free();
+#endif
+        if (ma.has_error) return nil;
+    }
+    return instance;
+}

@@ -164,14 +164,7 @@ fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd, Expr*
         func2 = origFn;
     }
 
-    Expr* call2;
-    if (call.isTemplateCall()) {
-        TypeRefHolder ref = call.getTemplateArg().getHolder();
-        // TODO is builder.ast_idx correct?
-        call2 = ma.builder.actOnTemplateCallExpr(0, 0, func2, args.getExprs(), args.size(), &ref);
-    } else {
-        call2 = ma.builder.actOnCallExpr(0, 0, func2, args.getExprs(), args.size());
-    }
+    Expr* call2 = ma.builder.actOnCallExpr(0, 0, func2, args.getExprs(), args.size());
     // Note: the type is only set on AlternateExpr by analyseExpr()
     e.setType(fd.getRType());
     call2.copyFlags(e);

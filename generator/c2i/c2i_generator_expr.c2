@@ -53,6 +53,9 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         gen.emitTypePre(out, e.getType());
         gen.emitTypePost(out, e.getType());
         break;
+    case Template:
+        gen.emitTemplate(out, (TemplateExpr*)e);
+        break;
     case Call:
         gen.emitCall(out, (CallExpr*)e);
         break;
@@ -235,9 +238,6 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, const CallExp
     // - regular (prefix.)name(..)                  -> if external, prefix
     // - struct function a.foo(..)  A.foo(..)       -> if external, prefix
     // - via pointer -> <expr>(..)                  -> ..
-    // - template -> not implemented yet
-
-    assert(!call.isTemplateCall()); // TODO
 
     Expr* func = call.getFunc();
     assert(func.isImplicitCast());
@@ -248,12 +248,26 @@ fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, const CallExp
     out.lparen();
 
     // arguments
-    u32 num_args = call.getNumArgs();
-    Expr** args = ((CallExpr*)call).getArgs();
-    for (u32 i=0; i<num_args; i++) {
+    for (u32 i = 0; i < call.getNumArgs(); i++) {
         if (i != 0) out.add(", ");
-        gen.emitExpr(out, args[i]);
+        gen.emitExpr(out, call.getArg(i));
     }
 
     out.rparen();
+}
+
+fn void Generator.emitTemplate(Generator* gen, string_buffer.Buf* out, const TemplateExpr* tp) {
+    Expr* func = tp.getFunc();
+    if (func.getKind() == ExprKind.ImplicitCast) {
+        ImplicitCastExpr* ic = (ImplicitCastExpr*)func;
+        func = ic.getInner();
+    }
+
+    gen.emitExpr(out, func);
+    out.add1('<');
+    for (u32 i = 0; i < tp.getNumArgs(); i++) {
+        if (i != 0) out.add(", ");
+        gen.emitExpr(out, tp.getArg(i));
+    }
+    out.add1('>');
 }
