@@ -16,7 +16,6 @@
 module c_generator;
 
 import ast local;
-import source_mgr;
 import string_buffer;
 
 fn void Generator.emitVarDecl(Generator* gen, VarDecl* vd, string_buffer.Buf* out, bool emit_init, bool first) {
@@ -240,19 +239,12 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         if (!gen.enable_asserts) out.print(";//assert");
         AssertStmt* a = (AssertStmt*)s;
         out.add1('(');
-        Expr* inner = a.getInner();
-        gen.emitExpr(out, inner);
+        gen.emitExpr(out, a.getInner());
         out.add1(')');
-        if (gen.enable_asserts) {
-            source_mgr.Location loc = gen.sm.locate(s.getLoc());
-            const char* funcname = gen.cur_function.asDecl().getFullName();
-            out.print(" || c2_assert(\"%s\", %d, \"%s\", \"", loc.filename, loc.line, funcname);
-            // encode expression as a string
-            string_buffer.Buf* str = string_buffer.create(128, false, 0);
-            inner.printLiteral(str);
-            out.encodeBytes(str.data(), str.size(), '"');
-            str.free();
-            out.add("\")");
+        Expr* call = a.getCall();
+        if (call) {
+            out.add(" || ");
+            gen.emitExpr(out, call);
         }
         out.add(";\n");
         break;
