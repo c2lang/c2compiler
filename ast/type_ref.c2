@@ -38,8 +38,7 @@ fn const char* TypeRefKind.str(TypeRefKind k) {
 }
 
 type TypeRefBits struct {
-    u32 is_const : 1;
-    u32 is_volatile : 1;
+    u32 qualifiers : (3 + 1) * 2;
     u32 num_ptrs : 2;   // 0 = Foo, 1 = Foo*, 2 = Foo**
     u32 num_arrays : 2; // limit to 3-dimensional arrays
     u32 incr_array : 1;
@@ -94,20 +93,19 @@ fn u32 TypeRefHolder.getExtraSize(const TypeRefHolder* h) {
     return r.getExtraSize();
 }
 
-public fn void TypeRefHolder.setQualifiers(TypeRefHolder* h, u32 qualifiers) {
+public fn void TypeRefHolder.setQuals(TypeRefHolder* h, u32 qualifiers) {
     TypeRef* r = (TypeRef*)&h.ref;
-    if (qualifiers & QualType_Volatile) r.flags.is_volatile = 1;
-    if (qualifiers & QualType_Const) r.flags.is_const = 1;
+    r.flags.qualifiers |= qualifiers;
 }
 
 public fn void TypeRefHolder.setConst(TypeRefHolder* h) @(unused) {
     TypeRef* r = (TypeRef*)&h.ref;
-    r.flags.is_const = 1;
+    r.flags.qualifiers |= QualType_Const;
 }
 
 public fn void TypeRefHolder.setVolatile(TypeRefHolder* h) {
     TypeRef* r = (TypeRef*)&h.ref;
-    r.flags.is_volatile = 1;
+    r.flags.qualifiers |= QualType_Volatile;
 }
 
 public fn bool TypeRefHolder.isPointer(const TypeRefHolder* h) {
@@ -119,6 +117,7 @@ public fn void TypeRefHolder.addPointer(TypeRefHolder* h) {
     TypeRef* r = (TypeRef*)&h.ref;
     assert(r.flags.num_ptrs != 3);
     r.flags.num_ptrs++;
+    r.flags.qualifiers <<= 2;
 }
 
 public fn bool TypeRefHolder.isIncrArray(const TypeRefHolder* h) {
@@ -276,8 +275,7 @@ fn void TypeRef.instantiate(TypeRef* r, const TypeRef* r1, Instantiator* inst) {
                 r.refs[1].decl = r2.refs[1].decl;
             }
         }
-        r.flags.is_const |= r1.flags.is_const;
-        r.flags.is_volatile |= r1.flags.is_volatile;
+        r.flags.qualifiers |= r1.flags.qualifiers;
         r.flags.num_ptrs += r1.flags.num_ptrs;
 
         if (inst.used_opaque && r.flags.num_ptrs == 0) {
@@ -311,12 +309,16 @@ fn void* TypeRef.getPointerAfter(const TypeRef* r) {
     return (u8*)r + sizeof(TypeRef) + r.getExtraSize();
 }
 
-public fn bool TypeRef.isConst(const TypeRef* r) {
-    return r.flags.is_const;
+fn bool TypeRef.isConst(const TypeRef* r, u32 level) {
+    return (r.flags.qualifiers >> (2 * level)) & QualType_Const;
 }
 
-public fn bool TypeRef.isVolatile(const TypeRef* r) {
-    return r.flags.is_volatile;
+fn bool TypeRef.isVolatile(const TypeRef* r, u32 level) {
+    return (r.flags.qualifiers >> (2 * level)) & QualType_Volatile;
+}
+
+public fn u32 TypeRef.getQuals(const TypeRef* r, u32 level) {
+    return (r.flags.qualifiers >> (2 * level)) & QualType_Mask;
 }
 
 public fn bool TypeRef.isUser(const TypeRef* r) {
@@ -336,7 +338,7 @@ public fn bool TypeRef.isVoid(const TypeRef* r) {
 }
 
 public fn bool TypeRef.isConstCharPtr(const TypeRef* r) {
-    return r.flags.is_const && r.isBuiltin() && r.flags.num_ptrs == 1 &&
+    return r.isConst(1) && r.isBuiltin() && r.flags.num_ptrs == 1 &&
            r.flags.num_arrays == 0 && r.getBuiltinKind() == Char;
 }
 
@@ -440,8 +442,10 @@ public fn Expr** TypeRef.getArray2(TypeRef* r, u32 idx) {
 }
 
 fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool print_prefix) {
-    if (r.isConst()) out.add("const ");
-    if (r.isVolatile()) out.add("volatile ");
+    u32 num_ptrs = r.flags.num_ptrs;
+
+    if (r.isConst(num_ptrs)) out.add("const ");
+    if (r.isVolatile(num_ptrs)) out.add("volatile ");
 
     switch (r.flags.kind) {
     case Builtin:
@@ -465,7 +469,11 @@ fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool prin
         break;
     }
 
-    for (u32 i=0; i<r.flags.num_ptrs; i++) out.add1('*');
+    for (u32 i = num_ptrs; i-- > 0;) {
+        out.add1('*');
+        if (r.isConst(i)) out.add(" const");
+        if (r.isVolatile(i)) out.add(" volatile");
+    }
 
     if (r.flags.incr_array) out.add("[+]");
 
@@ -480,10 +488,11 @@ fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool prin
 
 fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
     // eg. const test.Foo*[10]
+    u32 num_ptrs = r.flags.num_ptrs;
 
     out.color(col_Error);
-    if (r.isConst()) out.add("const ");
-    if (r.isVolatile()) out.add("volatile ");
+    if (r.isConst(num_ptrs)) out.add("const ");
+    if (r.isVolatile(num_ptrs)) out.add("volatile ");
 
     switch (r.flags.kind) {
     case Builtin:
@@ -507,11 +516,13 @@ fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
         break;
     }
 
-    for (u32 i=0; i<r.flags.num_ptrs; i++) out.add1('*');
-
-    if (r.flags.incr_array) {
-        out.add("[+]");
+    for (u32 i = num_ptrs; i-- > 0;) {
+        out.add1('*');
+        if (r.isConst(i)) out.add(" const");
+        if (r.isVolatile(i)) out.add(" volatile");
     }
+
+    if (r.flags.incr_array) out.add("[+]");
 
     if (filled) {
         // Note: we can iterate normal way here, since we just print
@@ -538,8 +549,8 @@ public fn void TypeRef.dump_full(const TypeRef* r) @(unused) {
     out.add("TypeRef:\n");
     out.indent(1);
     out.add("flags:");
-    if (r.flags.is_const) out.add(" const");
-    out.print(" ptrs=%d", r.flags.num_ptrs);
+    if (r.flags.qualifiers) out.print(" qualifiers=%d", r.flags.qualifiers);
+    if (r.flags.num_ptrs) out.print(" ptrs=%d", r.flags.num_ptrs);
     out.print(" kind=%s", r.flags.kind.str());
     out.print(" has_prefix=%d", r.flags.has_prefix);
     out.newline();

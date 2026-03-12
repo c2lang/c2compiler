@@ -132,8 +132,10 @@ fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, Decl* d) 
 fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType qt) {
     Decl* decl = nil;
 
-    if (qt.isConst()) out.add("const ");
-    if (qt.isVolatile()) out.add("volatile ");
+    if (qt.prefixQualifiers()) {
+        if (qt.isConst()) out.add("const ");
+        if (qt.isVolatile()) out.add("volatile ");
+    }
 
     switch (qt.getKind()) {
     case Builtin:
@@ -147,10 +149,18 @@ fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType q
         PointerType* pt = (PointerType*)qt.getType();
         gen.emitTypePre(out, pt.getInner());
         out.add1('*');
+        if (qt.postfixQualifiers()) {
+            if (qt.isConst()) out.add(" const");
+            if (qt.isVolatile()) out.add(" volatile");
+        }
         return;
     case Array:
         ArrayType* at = (ArrayType*)qt.getType();
         gen.emitTypePre(out, at.getElemType());
+        if (qt.postfixQualifiers()) {
+            if (qt.isConst()) out.add(" const");
+            if (qt.isVolatile()) out.add(" volatile");
+        }
         return;
     case Struct:
         StructType* st = (StructType*)qt.getType();

@@ -36,7 +36,7 @@ fn void QualType.set(QualType* qt, Type* t) {
     qt.ptr = (usize)t;
 }
 
-public fn void QualType.setConst(QualType* qt) {
+fn void QualType.setConst(QualType* qt) {
     qt.ptr |= QualType_Const;
 }
 
@@ -52,12 +52,12 @@ public fn bool QualType.isVolatile(const QualType qt) {
     return (qt.ptr & QualType_Volatile) != 0;
 }
 
-public fn void QualType.setVolatile(QualType* qt) {
-    qt.ptr |= QualType_Volatile;
-}
-
 public fn u32 QualType.getQuals(const QualType qt) {
     return qt.ptr & QualType_Mask;
+}
+
+public fn void QualType.setQuals(QualType *qt, u32 qualifiers) {
+    qt.ptr |= qualifiers;
 }
 
 public fn void QualType.copyQuals(QualType* qt, QualType other) {
@@ -67,6 +67,22 @@ public fn void QualType.copyQuals(QualType* qt, QualType other) {
 
 public fn void QualType.clearQuals(QualType* qt) {
     qt.ptr &= ~QualType_Mask;   // clear old flags
+}
+
+public fn bool QualType.prefixQualifiers(QualType* qt) {
+    if (!qt.getQuals()) return false;
+    if (qt.isPointer()) return false;
+    if (qt.isArray()) {
+        ArrayType* at = (ArrayType*)qt.getType();
+        QualType et = at.getElemType();
+        if (et.isPointer()) return false;
+    }
+    return true;
+}
+
+public fn bool QualType.postfixQualifiers(QualType* qt) {
+    if (!qt.getQuals()) return false;
+    return !qt.prefixQualifiers();
 }
 
 public fn bool QualType.isConstant(const QualType qt) {
@@ -530,7 +546,8 @@ fn void QualType.fullPrint(const QualType qt, string_buffer.Buf* out, u32 indent
     if (t) {
         out.newline();
         t.fullPrint(out, indent + 1);
+    } else {
+        out.add(" type=nil\n");
     }
-    else out.add(" type=nil\n");
 }
 

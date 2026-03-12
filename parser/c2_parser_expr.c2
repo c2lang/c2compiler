@@ -933,6 +933,11 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
                 return 0;
             ahead++;
             return ahead;
+        case KW_const:
+        case KW_volatile:
+            ambiguous = false;
+            ahead++;
+            break;
         default:
             return 0;
         }

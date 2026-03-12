@@ -213,13 +213,12 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
         break;
     }
 
-    if (ref.isConst()) base.setConst();
-    if (ref.isVolatile()) base.setVolatile();
-
     QualType resolved = base;
     u32 num_ptrs = ref.getNumPointers();
-    for (u32 i=0; i<num_ptrs; i++) {
-        resolved = ma.builder.actOnPointerType(resolved) ;
+    resolved.setQuals(ref.getQuals(num_ptrs));
+    for (u32 i = num_ptrs; i-- > 0;) {
+        resolved = ma.builder.actOnPointerType(resolved);
+        resolved.setQuals(ref.getQuals(i));
     }
 
     // check opaque struct usage
@@ -324,13 +323,12 @@ fn QualType Analyser.analyseIncrTypeRef(Analyser* ma, TypeRef* ref, u32 size) {
         break;
     }
 
-    if (ref.isConst()) base.setConst();
-    if (ref.isVolatile()) base.setVolatile();
-
     QualType resolved = base;
     u32 num_ptrs = ref.getNumPointers();
-    for (u32 i=0; i<num_ptrs; i++) {
+    resolved.setQuals(ref.getQuals(num_ptrs));
+    for (u32 i = num_ptrs; i-- > 0;) {
         resolved = ma.builder.actOnPointerType(resolved);
+        resolved.setQuals(ref.getQuals(i));
     }
 
     if (resolved.isVoid()) {
