@@ -8,89 +8,208 @@ const int STDOUT_FILENO = 1;
 const int STDERR_FILENO = 2;
 
 // ifdef USE_XOPEN_EXTENDED ..
-int usleep(unsigned long long __useconds);
+typedef unsigned gid_t;
+typedef long long off_t;
+typedef int pid_t;
+typedef unsigned uid_t;
+typedef unsigned useconds_t;
 
-unsigned sleep(unsigned __seconds);
-char* getcwd(char* buf, size_t size);
-int chdir(const char* path);
-int fchdir(int fd);
+/* POSIX.1-1990 */
 
-int close(int fd);
-
-long read(int fd, void* buf, unsigned long count);
-
+void _exit(int) @(noreturn);
+int access(const char *name, int flags);
 const u8 R_OK = 4;
 const u8 W_OK = 2;
 const u8 X_OK = 1;
 const u8 F_OK = 0;
-
+unsigned int alarm(unsigned int seconds);
+int chdir(const char *path);
+int chown(const char *file, uid_t owner, gid_t group);
+int close(int fd);
+int dup(int oldfd);
+int dup2(int oldfd, int newfd);
+int execl(const char *path, const char *arg, ...);
+int execle(const char *path, const char *arg, ...);
+int execlp(const char *file, const char *arg, ...);
+int execv(const char *path, char */*const*/ *argv);
+int execve(const char *path, char */*const*/ *argv, char */*const*/ *envp);
+int execvp(const char *file, char */*const*/ *argv);
+int execvpe(const char *file, char */*const*/ *argv, char */*const*/ *envp);
+pid_t fork(void);
+long fpathconf(int fd, int name);
+char *getcwd(char *buf, size_t size);
+int getgroups(int gidsetsize, gid_t *gidset);
+char *getlogin(void);
+pid_t getpgrp(void);
+pid_t getpid(void);
+pid_t getppid(void);
+uid_t getuid(void);
 int isatty(int fd);
-
-ssize_t write(int fd, const void* buf, size_t count);
-
-int pipe(int* pipefd);
-
-#if SYSTEM_LINUX
-
-//#ifdef_GNU_SOURCE             /* See feature_test_macros(7) */
-int pipe2(int* pipefd, int flags);
-
-#else
-
-int pipe2(int* pipefd, int flags) {
-    if (pipe(pipefd) < 0) {
-        return -1;
-    }
-    if (flags & O_CLOEXEC) {
-        if (fcntl(pipefd[0], F_SETFD, FD_CLOEXEC) == -1
-        ||  fcntl(pipefd[1], F_SETFD, FD_CLOEXEC) == -1) {
-            close(pipefd[0]);
-            close(pipefd[1]);
-            return -1;
-        }
-    }
-    if (flags & O_NONBLOCK) {
-        if (fcntl(pipefd[0], F_SETFD, O_NONBLOCK) == -1
-        ||  fcntl(pipefd[1], F_SETFD, O_NONBLOCK) == -1) {
-            close(pipefd[0]);
-            close(pipefd[1]);
-            return -1;
-        }
-    }
-    return 0;
-}
-
-#endif
-
-int unlink(const char* name);
+//int link(const char *from, const char *to);
+off_t lseek(int fd, off_t offset, int whence);
+long pathconf(const char *path, int name);
+int pause(void);
+int pipe(int *pipedes);
+ssize_t read(int fd, void *buf, size_t nbytes);
 int rmdir(const char* path);
-int getopt(int argc, char** argv, const char* optstring);
+int setgid(gid_t gid);
+int setpgid(pid_t pid, pid_t pgid);
+pid_t setsid(void);
+int setuid(uid_t uid);
+unsigned sleep(unsigned seconds);
+long sysconf(int name);
+pid_t tcgetpgrp(int fd);
+int tcsetpgrp(int fd, pid_t pgrp_id);
+char *ttyname(int fd);
+int ttyname_r(int fd, char *buf, size_t len);
+int unlink(const char* name);
+ssize_t write(int fd, const void *buf, size_t nbytes);
 
-char* optarg;
+/* Additional functionality provided by:
+ * POSIX.2-1992 C Language Binding Option
+ */
+
+size_t confstr(int name, char *buf, size_t len);
+int getopt(int argc, char */*const*/ *argv, const char *optstring);
+char *optarg;
 int optind;
 int opterr;
 int optopt;
 
+/* Additional functionality provided by:
+ * POSIX.1c-1995,
+ * POSIX.1i-1995,
+ * and the omnibus ISO/IEC 9945-1: 1996
+ */
+
+const int F_ULOCK = 0;      /* unlock locked section */
+const int F_LOCK  = 1;      /* lock a section for exclusive use */
+const int F_TLOCK = 2;      /* test and lock a section for exclusive use */
+const int F_TEST  = 3;      /* test a section for locks by other procs */
+
+#if 0
+/* Removed in Issue 6 */
+void *brk(const void *addr) @(deprecated);
+int chroot(const char *path) @(deprecated);
+char *crypt(const char *, const char *);
+int encrypt(char *buf /*_LIBC_COUNT(64)*/, int);
+#endif
+
+int fchdir(int fd);
+long gethostid(void);
+pid_t getpgid(pid_t pid);
+pid_t getsid(pid_t pid);
+
+#if 0
+/* Removed in Issue 6 */
+int getdtablesize(void) @(deprecated);
+int getpagesize(void) @(pure, deprecated);
+char *getpass(const char *) @(deprecated);
+
+/* Removed in Issue 7 */
+char *getwd(char *buf /*PATH_MAX*/) @(deprecated="obsoleted by getcwd()")
+#endif
+
+int lchown(const char *file, uid_t owner, gid_t group);
+int lockf(int fd, int cmd, off_t len);
+int nice(int inc);
+ssize_t pread(int fd, void *buf, size_t nbytes, off_t offset);
+ssize_t pwrite(int fd, const void *buf, size_t nbytes, off_t offset);
+
+#if 0
+/* Removed in Issue 6 */
+/* Note that Issue 5 changed the argument as intprt_t,
+ * but we keep it as int for binary compatability. */
+void *sbrk(int delta);
+#endif
+
+int setpgrp(pid_t pid, pid_t pgrp);	/* obsoleted by setpgid() */
+int setregid(gid_t gid, gid_t gid2);
+int setreuid(uid_t uid, uid_t uid2);
+//void swab(const void *, void *, ssize_t nbytes);
+void sync(void);
+int truncate(const char *path, off_t offset);
+useconds_t ualarm(useconds_t value, useconds_t interval);
+int usleep(useconds_t useconds);
+
+pid_t vfork(void) @(deprecated="Use posix_spawn or fork");
+
+/* End XSI */
+
 int fsync(int fd);
-void sync();
+int ftruncate(int fd, off_t offset);
+int getlogin_r(char *name, size_t name_len);
+
+/* Additional functionality provided by:
+ * POSIX.1-2001
+ * ISO C99
+ */
+
+int fchown(int fd, uid_t owner, gid_t group);
+int gethostname(char *name, size_t len);
+ssize_t readlink(const char *path, char *buf, size_t bufsize);
+int setegid(gid_t);
+int seteuid(uid_t);
+int symlink(const char *from, const char *to);
+
+/* linux extensions */
+int dup3(int oldfd, int newfd, int flags);
+int faccessat(int fd, const char *file, int type_, int flag);
+int fchownat(int fd, const char *file, uid_t owner, gid_t group, int flag);
+int fdatasync(int fd);
+int fexecve(int fd, char */*const*/ *argv, char */*const*/ *envp);
+int linkat(int fromfd, const char *from, int tofd, const char *to, int flags);
+ssize_t readlinkat(int fd, const char *path, char *buf, size_t len);
+int symlinkat(const char *from, int tofd, const char *to);
+int unlinkat(int fd, const char *name, int flag);
+
+char* mktemp(char* tpl);
+int mkstemp(char* tpl);
+char* mkdtemp(char* tpl);
+
+gid_t getegid(void);
+uid_t geteuid(void);
+gid_t getgid(void);
+ssize_t freadlink(int fd, char *buf, size_t bufsize);
+int setrgid(gid_t gid);
+int setruid(uid_t uid);
+
+#if SYSTEM_LINUX
+
+//#ifdef_GNU_SOURCE       /* See feature_test_macros(7) */
+int pipe2(int *pipefd, int flags);
+
+#else
+
+int pipe2(int *pipefd, int flags) {
+  if (pipe(pipefd) < 0) {
+    return -1;
+  }
+  if (flags & O_CLOEXEC) {
+    if (fcntl(pipefd[0], F_SETFD, FD_CLOEXEC) == -1
+    || fcntl(pipefd[1], F_SETFD, FD_CLOEXEC) == -1) {
+      close(pipefd[0]);
+      close(pipefd[1]);
+      return -1;
+    }
+  }
+  if (flags & O_NONBLOCK) {
+    if (fcntl(pipefd[0], F_SETFD, O_NONBLOCK) == -1
+    || fcntl(pipefd[1], F_SETFD, O_NONBLOCK) == -1) {
+      close(pipefd[0]);
+      close(pipefd[1]);
+      return -1;
+    }
+  }
+  return 0;
+}
+
+#endif
 
 typedef int Pid @(cname="pid_t");
-
-Pid fork();
 Pid wait(int* wstatus);
 Pid waitpid(Pid pid, int* wstatus, int options);
-int dup(int oldfd);
-int dup2(int oldfd, int newfd);
-int dup3(int oldfd, int newfd, int flags);
-int execl(const char *pathname, const char *arg, ...);
-int execlp(const char *file, const char *arg, ...);
-int execle(const char *pathname, const char *arg, ...);
-int execv(const char *pathname, char** argv); // actually char* const argv[]
-int execvp(const char *file, char** argv);    // actually char* const argv[]
-int execvpe(const char *file, char** argv, const char** envp); // actually char* const envp[]
-int kill(Pid pid, int signal);
-
-long sysconf(int name);
+int kill(Pid pid, int sig);
 
 #if SYSTEM_LINUX
 // sysconf names per IEEE Std 1003.1, 2008 Edition, values for Linux
@@ -466,11 +585,3 @@ const u32 _SC_TRACE_USER_EVENT_MAX = 106;
 const u32 _SC_TYPED_MEMORY_OBJECTS = 108;
 const u32 _SC_V7_ILP32_OFF32 = 113;
 #endif
-
-typedef long long off_t;
-off_t lseek(int fd, off_t offset, int whence);
-
-char* mktemp(char* tpl);
-int mkstemp(char* tpl);
-char* mkdtemp(char* tpl);
-

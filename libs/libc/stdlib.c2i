@@ -99,7 +99,7 @@ int at_quick_exit(AtExitFn __func);
 type OnExitFn fn void(i32, void*);
 int on_exit(OnExitFn __func, void* __arg);
 void exit(int __status) @(noreturn);
-void _exit(int __status) @(noreturn);
+//void _exit(int __status) @(noreturn); /* belongs in unistd.c2i */
 void quick_exit(int __status);
 void _Exit(int __status) @(noreturn);
 
