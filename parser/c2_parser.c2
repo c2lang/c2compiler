@@ -66,6 +66,7 @@ public type Parser struct @(opaque) {
     u32 varargs_idx;
     u32 stdarg_idx;
     u32 main_idx;
+    u32 c2_helper_idx;
 
     AttrRegistry attr_registry;
 
@@ -94,6 +95,7 @@ public fn Parser* create(SourceMgr* sm,
     p.varargs_idx = pool.addStr("varargs", true);
     p.stdarg_idx = pool.addStr("stdarg", true);
     p.main_idx = pool.addStr("main", true);
+    p.c2_helper_idx = p.pool.addStr("c2_helper", true);
     p.attr_registry.init(pool);
 
     // create a stack of stmt_lists to re-use (resize stack if needed)
@@ -156,6 +158,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
         p.consumeToken();
         p.parseModule();
         p.parseImports();
+        p.addImplicitImport(p.c2_helper_idx, false);
 
         while (!p.tok.done) {
             p.parseTopLevel();
@@ -313,7 +316,8 @@ fn void Parser.parseModule(Parser* p) {
 }
 
 fn void Parser.addImplicitImport(Parser* p, u32 mod_name, bool islocal) {
-    p.builder.actOnImport(mod_name, 0, 0, 0, islocal);
+    Decl* d = p.builder.actOnImport(mod_name, 0, 0, 0, islocal);
+    if (d) d.setAttrUnused();
 }
 
 fn void Parser.parseImports(Parser* p) {
@@ -342,11 +346,14 @@ fn void Parser.parseImports(Parser* p) {
             p.consumeToken();
             islocal = true;
         }
+        // TODO: accept @(unused) attribute on imports
+        //u32 num_attr = p.parseOptionalAttributes();
         p.expectAndConsume(Semicolon);
 
         if (mod_name != p.stdarg_idx) {
             // ignore import stdarg: vararg is imported implicitly from c2 library
             p.builder.actOnImport(mod_name, mod_loc, alias_name, alias_loc, islocal);
+            //if (d) p.applyAttributes(d, num_attr);
         }
     }
 }

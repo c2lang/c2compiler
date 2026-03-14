@@ -22,5 +22,6 @@ modules:
     - f32
     - f64
     - varargs
+    - c2_helper
     - c2_test
     - c2_trace_tables

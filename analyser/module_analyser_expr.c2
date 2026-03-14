@@ -64,6 +64,10 @@ fn QualType Analyser.convertRvalue(Analyser* ma, Expr** e_ptr, QualType result) 
 fn QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
     Expr* e = *e_ptr;
 
+    // prevent multiple analysis and handle literals faster
+    QualType qt0 = e.getType();
+    if (!qt0.isInvalid()) return qt0;
+
     switch (e.getKind()) {
     case IntegerLiteral:
     case FloatLiteral:
@@ -71,7 +75,8 @@ fn QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
     case CharLiteral:
     case StringLiteral:
     case Nil:
-        return e.getType(); // already set in creator
+        //return e.getType(); // already set in creator and handled above
+        break;
     case Identifier:
         Decl* d = ma.analyseIdentifier(e_ptr, side);
         if (!d) break;

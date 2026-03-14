@@ -32,6 +32,7 @@ public fn void sort(component.Component* c, diagnostics.Diags* diags) {
     if (count <= 1) return;
 
     ModuleSorter s;
+    s.diags = diags;
     s.num_mods = count;
     s.cur_mod_idx = 0;
     s.comp = c;
@@ -64,6 +65,7 @@ public fn void sort(component.Component* c, diagnostics.Diags* diags) {
 }
 
 type ModuleSorter struct {
+    diagnostics.Diags* diags;
     component.Component* comp;
     u32 num_mods;
     ast.Module** modules;

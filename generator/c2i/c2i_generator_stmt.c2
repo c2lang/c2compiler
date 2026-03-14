@@ -259,7 +259,12 @@ fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
     string_buffer.Buf* out = gen.out;
 
     out.add("switch (");
-    gen.emitStmt(sw.getCond(), 0, false);
+    Stmt* decl = sw.getDecl();
+    if (decl) {
+        gen.emitStmt(decl, 0, false);
+        if (sw.hasCond()) out.add("; ");
+    }
+    if (sw.hasCond()) gen.emitExpr(out, sw.getCond());
     out.add(") {\n");
 
     const u32 num_cases = sw.getNumCases();
