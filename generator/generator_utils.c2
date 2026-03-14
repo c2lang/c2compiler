@@ -91,7 +91,7 @@ public fn void mark_used(component.Component* mainComp, const module_list.List* 
     // mark globals as used from entry points, recursively
     // Note: need to pass pointer to visitor as arg to mark_used, use Wrapper for that
     Wrapper wrapper = {}
-    ast_visitor.Visitor* visitor = ast_visitor.create(&wrapper, mark_used_decl);
+    ast_visitor.Visitor* visitor = ast_visitor.create(&wrapper, mark_used_decl, true);
     wrapper.visitor = visitor;
     // visit all modules from main component and mark exported decls (recursively)
     mainComp.visitModules(check_module, &wrapper);

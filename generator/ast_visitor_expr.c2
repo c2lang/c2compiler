@@ -116,7 +116,11 @@ fn void Visitor.handleExpr(Visitor* v, Expr* e) {
         break;
     case Alternate:
         AlternateExpr* n = (AlternateExpr*)e;
-        v.handleExpr(n.getOriginal());
+        if (v.use_generated) {
+            v.handleExpr(n.getGenerated());
+        } else {
+            v.handleExpr(n.getOriginal());
+        }
         break;
     }
 }
