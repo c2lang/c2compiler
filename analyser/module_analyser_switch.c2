@@ -23,23 +23,19 @@ import string_buffer;
 import string;
 import value_type local;
 
-fn QualType Analyser.analyseSwitchExpr(Analyser* ma, Stmt** s_ptr) {
+fn QualType Analyser.analyseSwitchDecl(Analyser* ma, Stmt** s_ptr) {
     Stmt* s = *s_ptr;
-    if (s.isDecl()) {
-        QualType qt = ma.analyseDeclStmt(s);
-        if (qt.isValid()) {
-            DeclStmt* ds = (DeclStmt*)s;
-            VarDecl* vd = ds.getDecl(0);
-            if (!vd.getInit()) {
-                ma.error(vd.asDecl().getLoc(), "variable declaration in switch expression must have an initializer");
-                return QualType_Invalid;
-            }
+    assert(s.isDecl());
+    QualType qt = ma.analyseDeclStmt(s);
+    if (qt.isValid()) {
+        DeclStmt* ds = (DeclStmt*)s;
+        VarDecl* vd = ds.getDecl(0);
+        if (!vd.getInit()) {
+            ma.error(vd.asDecl().getLoc(), "variable declaration in switch expression must have an initializer");
+            return QualType_Invalid;
         }
-        return qt;
     }
-
-    assert(s.isExpr());
-    return ma.analyseExpr((Expr**)s_ptr, true, RHS);
+    return qt;
 }
 
 fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
@@ -52,20 +48,33 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
 
     EnumTypeDecl* etd = nil;
 
-    QualType ct = ma.analyseSwitchExpr(sw.getCond2());
+    if (sw.hasDecl()) {
+        Stmt** declp = sw.getDecl2();
+        QualType ct = ma.analyseSwitchDecl(declp);
+        if (ct.isInvalid()) {
+            ma.scope.exit(ma.has_error);
+            return FlowNext | FlowError;
+        }
+    }
+    Expr** condp = sw.getCond2();
+    if (!*condp) {
+        DeclStmt* ds = (DeclStmt*)sw.getDecl();
+        assert(ds);
+        VarDecl* vd = ds.getDecl(0);
+        *condp = ma.builder.actOnIdentifier(0, vd.asDecl().getNameIdx(), 0);
+    }
+    QualType ct = ma.analyseExpr(condp, true, RHS);
     if (ct.isInvalid()) {
         ma.scope.exit(ma.has_error);
         return FlowNext | FlowError;
     }
 
     bool isCharPtr = ct.isCharPointer();
-
-    // TODO check type (must be number-ish)
-
     if (isCharPtr) {
         is_string = true;
         sw.setString();
     } else {
+        // TODO check type (must be number-ish)
         EnumType* et = ct.getEnumTypeOrNil();
         if (et) etd = et.getDecl();
     }
@@ -146,6 +155,65 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     }
     // TODO: handle complete coverage
     if (!defaultCase) flow |= FlowNext;
+
+    if (!(flow & FlowError) && is_string) {
+        // Create alternate expression for c2_strswitch(s)
+        // create call expression `c2_helper.c2_strswitch("expression", "case string")
+        // TODO: handle declaration expressions
+        string_buffer.Buf* casestr = string_buffer.create(128, false, 0);
+
+        for (u32 i = 0; i < numCases; i++) {
+            SwitchCase* c = cases[i];
+            if (c.isDefault())
+                continue;
+            Expr* e = c.getCond(0);
+            if (e.isImplicitCast()) {
+                const ImplicitCastExpr* ic = (ImplicitCastExpr*)e;
+                e = ic.getInner();
+            }
+            if (e.isNil())
+                continue;
+            if (e.isStringLiteral()) {
+                StringLiteral* lit = (StringLiteral*)e;
+                const char *str = lit.getText();
+                u8 slen = (lit.getSize() - 1) & 0xFF;
+                if (slen) {
+                    // only encode non emty strings, empty string has index 1
+                    casestr.add1(slen);
+                    casestr.add2(str, slen);
+                }
+            } else {
+                e.dump();
+                assert(0);
+            }
+        }
+
+        u32 casestr_len = casestr.size();
+        u32 casestr_idx = ma.astPool.add(casestr.data(), casestr_len, false);
+        casestr.free();
+        Expr* casestr_expr = ma.builder.actOnStringLiteral(0, 0, casestr_idx, casestr_len);
+
+        u32 c2_strswitch_idx = ma.astPool.addStr("c2_strswitch", true);
+        u32 c2_helper_idx = ma.astPool.addStr("c2_helper", true);
+        Expr* func = ma.builder.actOnMemberExpr(nil, c2_helper_idx, 0, 0, c2_strswitch_idx);
+        Expr* cond = *condp;
+        Expr*[2] args;
+        args[0] = cond;
+        args[1] = casestr_expr;
+        Expr* call = ma.builder.actOnCallExpr(cond.getStartLoc(), cond.getEndLoc(), func, args, 2);
+        ct = ma.analyseExpr(&call, true, RHS);
+        if (ct.isInvalid()) flow |= FlowError;
+        else {
+            if (sw.hasCond()) {
+                Expr* alt = ma.builder.actOnAlternate(cond, call);
+                // set alternate type to that of generated branch
+                alt.setType(call.getType());
+                alt.copyFlags(call);
+                call = alt;
+            }
+            *condp = call;
+        }
+    }
 
     ma.putInitChecker(checker);
     return flow;

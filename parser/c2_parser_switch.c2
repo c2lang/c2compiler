@@ -27,13 +27,17 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
 
     p.expectAndConsume(LParen);
 
-    Stmt* cond;
+    Stmt* decl = nil;
+    Expr* cond = nil;
     if (p.isDeclaration()) {
         // !checkSemi, !allowLocal, isCondition
-        cond = p.parseDeclStmt(false, false, true);
+        decl = p.parseDeclStmt(false, false, true);
+        if (p.tok.kind == Semicolon) {
+            p.consumeToken();
+            cond = p.parseExpr();
+        }
     } else {
-        Expr* e = p.parseExpr();
-        cond = e.asStmt();
+        cond = p.parseExpr();
     }
     p.expectAndConsume(RParen);
 
@@ -62,7 +66,7 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
 
     p.expectAndConsume(RBrace);
 
-    Stmt* s = p.builder.actOnSwitchStmt(loc, cond, cases.getData(), cases.size(), has_default);
+    Stmt* s = p.builder.actOnSwitchStmt(loc, decl, cond, cases.getData(), cases.size(), has_default);
     cases.free();
     return s;
 }

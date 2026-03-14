@@ -107,6 +107,7 @@ static_assert(12, sizeof(Text11));
 
 // @expect{atleast, cgen/foo.c}
 #include "foo.h"
+#include "c2_helper.h"
 static const char foo_Basic[5] = "abcd";
 static const char foo_Esc[6] = "foo\\n";
 static const char foo_Backtick1[4] = "a`b";
