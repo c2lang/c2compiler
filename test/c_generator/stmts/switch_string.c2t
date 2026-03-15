@@ -47,7 +47,7 @@ static void test_test2(char* str);
 
 static int test_test1(char* str)
 {
-   switch (c2_strswitch(str, "\001a" "\002aa" "\003aaa" "\003bbb")) {
+   switch (c2_strswitch(str, "\001a\002aa\003aaa\003bbb")) {
    case 2: // "a"
       return 1;
    case 3: // "aa"

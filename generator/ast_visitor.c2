@@ -24,12 +24,14 @@ public type OnRef fn void (void* arg, const Ref* ref);
 public type Visitor struct @(opaque) {
     void* arg;
     OnRef on_ref;
+    bool use_generated; // use generated branch in AlternateExpr nodes
 }
 
-public fn Visitor* create(void* arg, OnRef on_ref) {
+public fn Visitor* create(void* arg, OnRef on_ref, bool use_generated = false) {
     Visitor* v = stdlib.calloc(1, sizeof(Visitor));
     v.arg = arg;
     v.on_ref = on_ref;
+    v.use_generated = use_generated;
     return v;
 }
 
@@ -172,7 +174,10 @@ fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
         break;
     case Switch:
         SwitchStmt* sw = (SwitchStmt*)s;
-        v.handleStmt(sw.getCond());
+        Stmt* decl = sw.getDecl();
+        if (decl) v.handleStmt(decl);
+        Expr* cond = sw.getCond();
+        if (cond) v.handleExpr(cond);
         const u32 numcases = sw.getNumCases();
         SwitchCase** cases = sw.getCases();
         for (u32 i=0; i<numcases; i++) {

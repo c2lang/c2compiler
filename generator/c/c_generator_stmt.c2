@@ -335,84 +335,28 @@ fn void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
 fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
     string_buffer.Buf* out = gen.out;
 
-    const u32 num_cases = sw.getNumCases();
-    SwitchCase** cases = sw.getCases();
-
-    Stmt* cond = sw.getCond();
-    bool is_decl = cond.isDecl();
+    bool is_decl = sw.hasDecl();
     if (is_decl) {
         out.add("{\n");
         indent++;
-        gen.emitStmt(cond, indent, true);
+        gen.emitStmt(sw.getDecl(), indent, true);
         out.indent(indent);
     }
-    if (sw.isString()) {
-        // TODO move this transformation to analyser
-        out.add("switch (c2_strswitch(");
-        if (is_decl) {
-            DeclStmt* ds = (DeclStmt*)cond;
-            VarDecl* vd = ds.getDecl(0);
-            out.add(vd.asDecl().getName());
-        } else {
-            assert(cond.isExpr());
-            gen.emitExpr(out, (Expr*)cond);
-        }
-        out.add1(',');
-        bool has_s2 = false;
-        for (u32 i = 0; i < num_cases; i++) {
-            SwitchCase* c = cases[i];
-            if (c.isDefault())
-                continue;
-            Expr* e = c.getCond(0);
-            if (e.isImplicitCast()) {
-                const ImplicitCastExpr* ic = (ImplicitCastExpr*)e;
-                e = ic.getInner();
-            }
-            if (e.isNil())
-                continue;
-            if (e.isStringLiteral()) {
-                StringLiteral* lit = (StringLiteral*)e;
-                const char *str = lit.getText();
-                u32 slen = (lit.getSize() - 1) & 0xFF;
-                if (slen) {
-                    // only encode non emty strings, empty string has index 1
-                    out.print(" \"\\%03o", slen);
-                    out.encodeBytes(str, slen, '"');
-                    out.add1('"');
-                    has_s2 = true;
-                }
-            } else {
-                e.dump();
-                assert(0);
-            }
-        }
-        if (!has_s2) out.add(" \"\"");
-        out.add(")) {\n");
+    out.add("switch (");
+    Expr* cond = sw.getCond();
+    assert(cond);
+    gen.emitExpr(out, cond);
+    out.add(") {\n");
 
-        u32 lab = 2;
-        for (u32 i = 0; i < num_cases; i++) {
-            gen.emitCase(cases[i], indent, &lab);
-        }
-        out.indent(indent);
-        out.add("}\n");
-    } else {
-        out.add("switch (");
-        if (is_decl) {
-            DeclStmt* ds = (DeclStmt*)cond;
-            VarDecl* vd = ds.getDecl(0);
-            out.add(vd.asDecl().getName());
-        } else {
-            assert(cond.isExpr());
-            gen.emitExpr(out, (Expr*)cond);
-        }
-        out.add(") {\n");
-
-        for (u32 i = 0; i < num_cases; i++) {
-            gen.emitCase(cases[i], indent, nil);
-        }
-        out.indent(indent);
-        out.add("}\n");
+    const u32 num_cases = sw.getNumCases();
+    SwitchCase** cases = sw.getCases();
+    u32 lab = 2;
+    u32* lab_p = sw.isString() ? &lab : nil;
+    for (u32 i = 0; i < num_cases; i++) {
+        gen.emitCase(cases[i], indent, lab_p);
     }
+    out.indent(indent);
+    out.add("}\n");
     if (is_decl) {
         indent--;
         out.indent(indent);
