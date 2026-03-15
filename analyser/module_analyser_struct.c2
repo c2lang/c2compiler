@@ -18,6 +18,7 @@ module module_analyser;
 import ast local;
 import name_vector local;
 import size_analyser;
+import value_type local;
 
 fn void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
     if (d.isOpaque()) {

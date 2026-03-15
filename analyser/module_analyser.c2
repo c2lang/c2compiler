@@ -32,6 +32,7 @@ import string_pool;
 import warning_flags;
 import struct_func_list as sf_list;
 import incr_array_list as ia_list;
+import value_type local;
 
 import ctype;
 import stdarg local;

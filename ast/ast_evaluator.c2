@@ -15,6 +15,8 @@
 
 module ast;
 
+import value_type local;
+
 import dlfcn local;
 import stdio local;
 
@@ -80,22 +82,20 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
     case ArraySubscript:  // a[high:low], both included
         // note: can be CTV if BitOffsetExpr
         ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
-
         Expr* index = a.getIndex();
         if (!index.isBitOffset()) break;
-
-        Value result = eval.get_value(a.getBase());
+        Value base = eval.get_value(a.getBase());
         // Dont allow negative/float
-        if (!result.isDecimal() || result.isNegative()) return Value.error("invalid bitoffset");
+        if (!base.isInteger() || base.isNegative()) return Value.error("invalid bitoffset");
         BitOffsetExpr* bo = (BitOffsetExpr*)index;
         Value high = eval.get_value(bo.getLHS());
         Value low = eval.get_value(bo.getRHS());
         Value width = high.minus(&low);
         width.incr();
-        // calculate result = (base >> low) & bitmask(width))
-        result = result.right_shift(&low);
-        result.mask(width.as_u32());
-        return result;
+        // calculate base = (base >> low) & bitmask(width))
+        base = base.right_shift(&low);
+        base.mask(width.as_u32());
+        return base;
     case Member:
         const MemberExpr* m = (MemberExpr*)e;
         return eval.get_decl_value(m.getFullDecl());
@@ -107,9 +107,10 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
         break;
     case ExplicitCast:
         const ExplicitCastExpr* i = (ExplicitCastExpr*)e;
-        Value result = eval.get_value(i.getInner());
-        return result.castAs(e.getType());
+        Value inner = eval.get_value(i.getInner());
+        return eval.castAs(&inner, e.getType());
     case ImplicitCast:
+        // TODO: perform implicit conversions
         const ImplicitCastExpr* i = (ImplicitCastExpr*)e;
         return eval.get_value(i.getInner());
     case Range:
@@ -123,6 +124,57 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
         return eval.get_value(n.getGenerated());
     }
     return Value.error("expression is not constant");
+}
+
+fn Value Evaluator.castAs(Evaluator* eval, const Value* v, QualType qt) {
+    Value result = *v;
+
+    if (result.kind == Error)
+        return result;
+    qt = qt.getCanonicalType();
+    if (qt.isEnum())
+        qt = qt.getEnum().getImplType();
+    if (qt.isPointer())
+        return result;
+    assert(qt.isBuiltin());
+    BuiltinType* bi = qt.getBuiltin();
+    u32 width = bi.getWidth();
+    switch (result.kind) {  // @@@
+    case Integer:
+        if (qt.isFloat()) {
+            result.setFloat(result.toFloat());
+            if (width == 32) {
+                result.fvalue = (f32)result.fvalue;
+            }
+        } else
+        if (qt.isBool()) {
+            result.setUnsigned(!result.isZero());
+        } else {
+            result.truncate(width, bi.isSigned());
+        }
+        break;
+    case Float:
+        if (qt.isFloat()) {
+            if (width == 32) {
+                result.fvalue = (f32)result.fvalue;
+            }
+        } else
+        if (qt.isBool()) {
+            result.setUnsigned(!result.isZero());
+        } else {
+            // TODO: check for overflow
+            if (bi.isSigned()) {
+                result.setSigned((i64)result.fvalue);
+            } else {
+                result.setUnsigned((u64)result.fvalue);
+            }
+            result.truncate(width, bi.isSigned());
+        }
+        break;
+    default:
+        break;
+    }
+    return result;
 }
 
 fn Value Evaluator.get_binaryop_value(Evaluator* eval, const BinaryOperator* e) {

@@ -19,6 +19,7 @@ import ast local;
 import ir local;
 import ir_context local;
 import ir_gen_locals local;
+import value_type local;
 
 fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     if (e.isCtv()) {
