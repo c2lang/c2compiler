@@ -1,28 +1,14 @@
-module curses;
+module curses extern "C";
 
-import c_types local;
+typedef unsigned int chtype;
+struct SCREEN @(opaque, cname="screen") {}
+struct WINDOW @(opaque, cname="_win_st") {}
 
-// Window* (void)
-fn void initscr();
-
-// int (void)
-fn void getch();
-
-// int (void)
-fn void cbreak();
-
-// int (void)
-fn void noecho();
-
-// int (void)
-fn void clear();
-
-// int (void)
-fn void endwin();
-
-// int (void)
-fn void refresh();
-
-// int (int, int, const uint32_t/unsigned
-fn c_int mvaddch(c_int y, c_int x, const c_char ch);
-
+WINDOW *initscr(void);
+int getch(void);
+int cbreak(void);
+int noecho(void);
+int clear(void);
+int endwin(void);
+int refresh(void);
+int mvaddch(int y, int x, chtype ch);

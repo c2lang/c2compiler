@@ -142,17 +142,18 @@ const u32 S_ISUID  = 0004000;
 const u32 S_ISGID  = 0002000;
 const u32 S_ISVTX  = 0001000;
 
-typedef unsigned int Mode;
+typedef unsigned int mode_t;
 
-int chmod(const char* file, Mode mode);
-//fn int lchmod(const char* file, Mode mode);
-int fchmod(int fd, Mode mode);
-int fchmodat(int dirfd, const char* pathname, Mode mode, int flag);
+int chmod(const char* file, mode_t mode);
+int lchmod(const char* file, mode_t mode);
+int fchmod(int fd, mode_t mode);
+int fchmodat(int dirfd, const char* pathname, mode_t mode, int flag);
 
-Mode umask(Mode mask);
-Mode getumask();
+mode_t umask(mode_t mask);
+mode_t getumask(void);
 
-int mkdir(const char* __file, unsigned int mode);
+int mkdir(const char *path, mode_t mode);
+int mkdirat(int fd, const char *path, mode_t mode);
 
 // TODO other functions
 
