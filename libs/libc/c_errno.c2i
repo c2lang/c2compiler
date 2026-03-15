@@ -5,23 +5,23 @@ module c_errno extern "C";
 // TODO: define variables with functional getter/setter/getlvalue
 
 #if SYSTEM_LINUX
-int* __errno_location();
-int* errno2() @(cname="__errno_location");
+int* __errno_location(void);
+int* errno2(void) @(cname="__errno_location");
 int errno @(cname="(*__errno_location())", cdef="int* __errno_location(void)");
 #endif
 #if SYSTEM_DARWIN
-int* __error();
-int* errno2() @(cname="__error");
+int* __error(void);
+int* errno2(void) @(cname="__error");
 int errno @(cname="(*__error())", cdef="int* __error(void)");
 #endif
 #if SYSTEM_FREEBSD
-int* __error();
-int* errno2() @(cname="__error");
+int* __error(void);
+int* errno2(void) @(cname="__error");
 int errno @(cname="(*__error())", cdef="int* __error(void)");
 #endif
 #if SYSTEM_OPENBSD
-int* __errno();
-int* errno2() @(cname="__errno");
+int* __errno(void);
+int* errno2(void) @(cname="__errno");
 int errno @(cname="(*__errno())", cdef="int* __errno(void)");
 #endif
 
