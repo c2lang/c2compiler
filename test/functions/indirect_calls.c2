@@ -1,0 +1,85 @@
+// @warnings{no-unused}
+module test;
+
+import ctype local;
+import stdio local;
+import stdlib local;
+
+type Num i64;
+
+type Operator enum u8 { Error, Add, Sub, Mul, Div, Mod, Show }
+const u8[Operator] Operator_arity = { 0, 2, 2, 2, 2, 2, 1 }
+const Evaluator[Operator] Operator_func = { error, add, sub, mul, pdiv, pmod, output }
+
+fn Operator getop(char c) {
+    switch (c) {
+    case '+': return Add;
+    case '-': return Sub;
+    case '*': return Mul;
+    case '/': return Div;
+    case '%': return Mod;
+    case ',': return Show;
+    default:  return Error;
+    }
+}
+
+type Evaluator fn u32 (Num *sp);
+
+fn u32 error(Num*) { printf("invalid operator\n"); return 0; }
+fn u32 add(Num* sp) { *sp += sp[1]; return 1; }
+fn u32 sub(Num* sp) { *sp -= sp[1]; return 1; }
+fn u32 mul(Num* sp) { *sp *= sp[1]; return 1; }
+fn u32 pdiv(Num* sp) { *sp /= sp[1]; return 1; }
+fn u32 pmod(Num* sp) { *sp %= sp[1]; return 1; }
+fn u32 output(Num* sp) { printf(" %d", *sp); return 1; }
+
+fn u32 dispatch(Evaluator f, Num* sp) {
+    // this works: return f(sp); but gets traced as a call to function f
+    // this used to trigger an assert in c_generator.getFuncDecl();
+    return (f)(sp);
+}
+
+public fn i32 main() {
+    char[256] buf;
+
+    for (;;) {
+        printf("calc > ");
+        fflush(stdout);
+        if (!getsn(buf, elemsof(buf))) break;
+
+        Num[32] stack;
+        Num* sp = stack;
+        char *p = buf;
+        while (*p) {
+            if (isspace(*p)) {
+                p++;
+                continue;
+            }
+            if (isdigit(*p)) {
+                if (sp >= stack + elemsof(stack)) {
+                    printf("stack overflow\n");
+                    break;
+                }
+                *sp++ = strtol(p, &p, 0);
+                continue;
+            }
+            Operator op = getop(*p++);
+            u32 arity = Operator_arity[op];
+            if (sp < stack + arity) {
+                printf("stack underflow\n");
+                break;
+            }
+            sp -= arity;
+            // this used to trigger an assert in c_generator.getFuncDecl();
+            sp += Operator_func[op](sp);
+        }
+        if (sp > stack) {
+            printf(" ->");
+            for (Num* np = stack; np < sp; np++) dispatch(output, np);
+            printf("\n");
+        }
+    }
+    printf("\n");
+    return 0;
+}
+
