@@ -93,13 +93,10 @@ int posix_memalign(void** __memptr, size_t __alignment, size_t __size);
 void* aligned_alloc(int __alignment, size_t __size);
 
 void abort(void) @(noreturn);
-type AtExitFn fn void();
-int atexit(AtExitFn __func);
-int at_quick_exit(AtExitFn __func);
-type OnExitFn fn void(i32, void*);
-int on_exit(OnExitFn __func, void* __arg);
+int atexit(fn void());
+int at_quick_exit(fn void());
+int on_exit(fn void(i32, void*), void*);
 void exit(int __status) @(noreturn);
-//void _exit(int __status) @(noreturn); /* belongs in unistd.c2i */
 void quick_exit(int __status);
 void _Exit(int __status) @(noreturn);
 
@@ -116,9 +113,8 @@ int system(const char* __command);
 char* realpath(const char* __name, char* __resolved);
 char* mktemp(char* __template);
 
-type StdlibCompareFn fn i32(const void*, const void*) @(cname="__compar_fn_t");
-void* bsearch(const void* __key, const void* __base, size_t __nmemb, size_t __size, StdlibCompareFn __compar);
-void qsort(void* __base, size_t __nmemb, size_t __size, StdlibCompareFn __compar);
+void* bsearch(const void* __key, const void* __base, size_t __nmemb, size_t __size, fn i32(const void*, const void*) __compare);
+void qsort(void* __base, size_t __nmemb, size_t __size, fn i32(const void*, const void*) __compar);
 
 int abs(int __x) @(pure);
 long labs(long __x) @(pure);

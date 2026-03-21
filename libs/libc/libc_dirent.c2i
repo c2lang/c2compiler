@@ -17,11 +17,8 @@ Dirent *readdir(DIR *dirp);
 Dirent* readdir(DIR* dirp);
 #endif
 
-type FilterFn fn i32(const Dirent*);
-type DirentCompareFn fn i32(const Dirent**, const Dirent**);
-
 int scandir(const char* dirp, Dirent*** namelist,
-            FilterFn filter, DirentCompareFn compar);
+            fn i32(const Dirent*) filter, fn i32(const Dirent**, const Dirent**) compar);
 
 int alphasort(const Dirent**, const Dirent**);
 int versionsort(const Dirent**, const Dirent**);
