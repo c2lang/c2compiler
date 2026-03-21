@@ -917,7 +917,18 @@ public fn Expr* Builder.actOnIdentifier(Builder* b, SrcLoc loc, u32 name, u32 na
     return (Expr*)IdentifierExpr.create(b.context, loc, name, name_len);
 }
 
-public fn Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, u32 src_len, u64 value, Radix radix, BuiltinKind kind) {
+public fn Expr* Builder.actOnIntegerLiteral(Builder* b, SrcLoc loc, u32 src_len, u64 value, Radix radix) {
+    BuiltinKind kind;
+    if (value <= i32.max)
+        kind = Int32;
+    else
+    if (value <= u32.max && radix != Default)
+        kind = UInt32;
+    else
+    if (value <= i64.max)
+        kind = Int64;
+    else
+        kind = UInt64;
     return (Expr*)IntegerLiteral.create(b.context, loc, src_len, value, radix, kind);
 }
 

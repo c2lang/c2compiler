@@ -78,7 +78,7 @@ fn void ArrayDesignatedInitExpr.print(const ArrayDesignatedInitExpr* e, string_b
 
 fn void ArrayDesignatedInitExpr.printLiteral(const ArrayDesignatedInitExpr* e, string_buffer.Buf* out) {
     out.add1('[');
-    e.getDesignator().printLiteral(out);
+    e.designator.printLiteral(out);
     out.add("] = ");
-    e.getInit().printLiteral(out);
+    e.initValue.printLiteral(out);
 }

@@ -37,21 +37,27 @@ public fn RangeExpr* RangeExpr.create(ast_context.Context* c, SrcLoc loc, Expr* 
 }
 
 fn Expr* RangeExpr.instantiate(RangeExpr* e, Instantiator* inst) {
-    return (Expr*)RangeExpr.create(inst.c, e.base.base.loc, e.lhs.instantiate(inst), e.rhs.instantiate(inst));
+    Expr* lhs = e.lhs ? e.lhs.instantiate(inst) : nil;
+    Expr* rhs = e.rhs ? e.rhs.instantiate(inst) : nil;
+    return (Expr*)RangeExpr.create(inst.c, e.base.base.loc, lhs, rhs);
 }
 
 public fn Expr* RangeExpr.getLHS(const RangeExpr* e) { return e.lhs; }
-//public fn Expr** RangeExpr.getLHS2(RangeExpr* e) { return &e.lhs; }
+public fn Expr** RangeExpr.getLHS2(RangeExpr* e) { return &e.lhs; }
+public fn void RangeExpr.setLHS(RangeExpr* e, Expr* lhs) { e.lhs = lhs; }
 
 public fn Expr* RangeExpr.getRHS(const RangeExpr* e) { return e.rhs; }
-//public fn Expr** RangeExpr.getRHS2(RangeExpr* e) { return &e.rhs; }
+public fn Expr** RangeExpr.getRHS2(RangeExpr* e) { return &e.rhs; }
+public fn void RangeExpr.setRHS(RangeExpr* e, Expr* rhs) { e.rhs = rhs; }
 
 fn SrcLoc RangeExpr.getStartLoc(const RangeExpr* e) {
-    return e.getLHS().getStartLoc();
+    if (e.lhs) return e.lhs.getStartLoc();
+    return e.base.base.loc;
 }
 
 fn SrcLoc RangeExpr.getEndLoc(const RangeExpr* e) {
-    return e.getRHS().getEndLoc();
+    if (e.rhs) return e.rhs.getEndLoc();
+    return e.base.base.loc + 3;
 }
 
 fn void RangeExpr.print(const RangeExpr* e, string_buffer.Buf* out, u32 indent) {
@@ -59,13 +65,19 @@ fn void RangeExpr.print(const RangeExpr* e, string_buffer.Buf* out, u32 indent) 
     e.base.printTypeBits(out);
     out.newline();
 
-    e.lhs.print(out, indent + 1);
-    e.rhs.print(out, indent + 1);
+    if (e.lhs) e.lhs.print(out, indent + 1);
+    if (e.rhs) e.rhs.print(out, indent + 1);
 }
 
 fn void RangeExpr.printLiteral(const RangeExpr* e, string_buffer.Buf* out) {
-    e.lhs.printLiteral(out);
-    out.add(" ... ");
-    e.rhs.printLiteral(out);
+    if (e.lhs && e.lhs.getLoc()) {
+        e.lhs.printLiteral(out);
+        out.space();
+    }
+    out.add("...");
+    if (e.rhs && e.rhs.getLoc()) {
+        out.space();
+        e.rhs.printLiteral(out);
+    }
 }
 
