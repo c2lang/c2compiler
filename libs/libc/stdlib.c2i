@@ -93,10 +93,15 @@ int posix_memalign(void** __memptr, size_t __alignment, size_t __size);
 void* aligned_alloc(int __alignment, size_t __size);
 
 void abort(void) @(noreturn);
+#if EXPERIMENTAL
+typedef void (*AtExitFn)(void);
+typedef void (*OnExitFn)(int, void*);
+#else
 type AtExitFn fn void();
+type OnExitFn fn void(i32, void*);
+#endif
 int atexit(AtExitFn __func);
 int at_quick_exit(AtExitFn __func);
-type OnExitFn fn void(i32, void*);
 int on_exit(OnExitFn __func, void* __arg);
 void exit(int __status) @(noreturn);
 //void _exit(int __status) @(noreturn); /* belongs in unistd.c2i */
@@ -116,7 +121,11 @@ int system(const char* __command);
 char* realpath(const char* __name, char* __resolved);
 char* mktemp(char* __template);
 
+#if EXPERIMENTAL
+typedef int (*StdlibCompareFn)(const void*, const void*) @(cname="__compar_fn_t");
+#else
 type StdlibCompareFn fn i32(const void*, const void*) @(cname="__compar_fn_t");
+#endif
 void* bsearch(const void* __key, const void* __base, size_t __nmemb, size_t __size, StdlibCompareFn __compar);
 void qsort(void* __base, size_t __nmemb, size_t __size, StdlibCompareFn __compar);
 
@@ -139,12 +148,12 @@ int qfcvt_r(double __value, int __ndigit, int* __decpt, int* __sign, char* __buf
 int mblen(const char* __s, size_t __n);
 int mbtowc(int* __pwc, const char* __s, size_t __n);
 // needs wchar_t
-//fn int wctomb(char* __s, int __wchar);
+//int wctomb(char* __s, int __wchar);
 int mbstowcs(int* __pwcs, const char* __s, size_t __n);
 int wcstombs(char* __s, const int* __pwcs, size_t __n);
 int rpmatch(const char* __response);
 // TODO need to parse char* const*
-//fn int getsubopt(char** __optionp, char*const* __tokens, char** __valuep);
+//int getsubopt(char** __optionp, char* const* __tokens, char** __valuep);
 int getsubopt(char** __optionp, char** __tokens, char** __valuep);
 int getloadavg(double* __loadavg, int __nelem);
 
