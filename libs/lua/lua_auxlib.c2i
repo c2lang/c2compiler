@@ -1,11 +1,7 @@
-module lua_auxlib;
+module lua_auxlib extern "C";
 
-import c_types local;
 import lua local;
 
-fn State* luaL_newstate();
-
-fn void luaL_requiref(State *L, const c_char* modname,
-                        CFunction openf, c_int glb);
-
-fn c_int luaL_loadfilex(State *L, const c_char* filename, const c_char* mode);
+State *luaL_newstate(void);
+void luaL_requiref(State *L, const char *modname, CFunction openf, int glb);
+int luaL_loadfilex(State *L, const char *filename, const char *mode);
