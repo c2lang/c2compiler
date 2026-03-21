@@ -1,0 +1,45 @@
+module test;
+
+u32[100] a1 = {
+    [1 ... 0] = 0, // @error{array range designator start '1' is greater than end '0'}
+}
+
+u32[] q2 = {
+    [1 ...] = 0, // @error{cannot have an empty range upper bound in unsized array}
+}
+
+u32[] a3 = {
+    [-1 ... 1] = 0, // @error{array designator value '-1' is negative}
+}
+
+u32[10] a4 = {
+    [10 ... 11] = 0, // @error{array designator index '10' exceeds array upper bound '9'}
+}
+
+u32[10] a5 = {
+    [9 ... 10] = 0, // @error{array designator index '10' exceeds array upper bound '9'}
+}
+
+u32[10] a6 = {
+    [1.0 ... ] = 0, // @error{array designator expression must have integer type}
+}
+
+u32[10] a7 = {
+    [1.5 ... ] = 0, // @error{array designator expression must have integer type}
+}
+
+u32[10] a8 = {
+    [0 ... 5] = 0, // @note{previous initialization is here}
+    [5 ... 9] = 1, // @error{duplicate initialization of array index 5}
+}
+
+u32[10] a9 = {
+    [0 ... 5] = 0, // @note{previous initialization is here}
+    [3 ... 9] = 1, // @error{duplicate initialization of array range 3 ... 5}
+}
+
+u32[10] a10 = {
+    [0 ... 5] = 0, // @note{previous initialization is here}
+    [3 ... 4] = 1, // @error{duplicate initialization of array range 3 ... 4}
+}
+

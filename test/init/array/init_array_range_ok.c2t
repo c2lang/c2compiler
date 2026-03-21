@@ -1,0 +1,40 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+u32[100] a = {
+    [... 0] = 0,
+    1, 2, 3,
+    [4] = 4,
+    [5 ... 5] = 5,
+    [6 ... 10] = 6,
+    [10+1 ...] = 11,
+}
+
+u32[100] b = { [...] = 1 }
+
+public fn i32 main() { return elemsof(a) + elemsof(b); }
+// @expect{atleast, cgen/build.c}
+static u32 test_a[100] = {
+   [0 ... 0] = 0,
+   1,
+   2,
+   3,
+   [4] = 4,
+   [5 ... 5] = 5,
+   [6 ... 10] = 6,
+   [10 + 1 ... 99] = 11
+};
+static u32 test_b[100] = {
+   [0 ... 99] = 1
+};
+int main(void);
+
+int main(void)
+{
+   return 100 + 100;
+}
+

@@ -13,6 +13,6 @@ i32[] array = {
     [Types.Foo] = 2,
     3,
     4,
-    5,  // @error{duplicate initialization of array index}
+    5,  // @error{duplicate initialization of array index 5}
 }
 

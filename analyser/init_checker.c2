@@ -88,15 +88,29 @@ public fn SrcLoc Checker.find(Checker* c, u32 index) {
     return 0;
 }
 
-public fn SrcLoc Checker.find2(Checker* c, u32 index1, u32 index2) {
+public fn SrcLoc Checker.find2(Checker* c, u32 index1, u32 index2, u32* found1p, u32* found2p) {
     if (index1 > c.max) return 0;
     for (u32 i = 0; i < c.count; i++) {
+        u32 index = c.entries[i].index;
         if (c.entries[i].loc == 0) { // range
-            if (c.entries[i-1].index <= index2 && c.entries[i].index >= index1)
+            u32 last_index = c.entries[i-1].index;
+            if (last_index <= index2 && index >= index1) {
+                *found1p = index1 >= last_index ? index1 : last_index;
+                *found2p = index2 <= index ? index2 : index;
                 return c.entries[i-1].loc;
+            }
         } else {
-            if (c.entries[i].index >= index1 && c.entries[i].index <= index2)
+            if (index >= index1 && index <= index2) {
+                // index inside range
+                *found1p = index;
+                *found2p = index;
+                // compute potential range intersection
+                if (i + 1 < c.count && c.entries[i+1].loc == 0) {
+                    index = c.entries[i+1].index;
+                    *found2p = index2 <= index ? index2 : index;
+                }
                 return c.entries[i].loc;
+            }
         }
     }
     return 0;

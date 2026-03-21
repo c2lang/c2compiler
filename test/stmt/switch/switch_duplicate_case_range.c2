@@ -1,0 +1,52 @@
+// @warnings{no-unused}
+module test;
+
+type Foo enum i8 {
+    A,
+}
+
+public fn void foo(i32 bar) {
+    switch (bar) {
+    case 10 ... 20:   // @note{previous case is here}
+        break;
+    case 1 ... 100:   // @error{duplicate case range 10 ... 20}
+        break;
+    }
+}
+
+public fn void foo1(i32 bar) {
+    switch (bar) {
+    case 10 ... 20:   // @note{previous case is here}
+        break;
+    case 15 ... 30:   // @error{duplicate case range 15 ... 20}
+        break;
+    }
+}
+
+public fn void foo2(i32 bar) {
+    switch (bar) {
+    case 10 ... 20:   // @note{previous case is here}
+        break;
+    case 5 ... 15:   // @error{duplicate case range 10 ... 15}
+        break;
+    }
+}
+
+public fn void foo3(i32 bar) {
+    switch (bar) {
+    case 10 ... 20:   // @note{previous case is here}
+        break;
+    case 15:          // @error{duplicate case value 15}
+        break;
+    }
+}
+
+public fn void foo4(i32 bar) {
+    switch (bar) {
+    case 15:         // @note{previous case is here}
+        break;
+    case 10 ... 20:  // @error{duplicate case value 15 in range}
+        break;
+    }
+}
+

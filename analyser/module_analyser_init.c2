@@ -164,33 +164,48 @@ fn bool Analyser.analyseInitListExpr(Analyser* ma, InitListExpr* ile, QualType e
     return false;
 }
 
-// Note: this function should only be called from analyseInitListArray directly!
-fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expectedType, bool isEnumIndex, QualType indexType) {
-    ArrayDesignatedInitExpr* ad = (ArrayDesignatedInitExpr*)e;
+fn bool Analyser.analyseArrayDesignatorIndex(Analyser* ma, Expr** ep, bool isEnumIndex, QualType indexType) {
     QualType qt;
 
-    if (isEnumIndex && ma.checkEnumArg(ad.getDesignator2(), indexType)) {
+    if (!*ep) return true;
+    if (isEnumIndex && ma.checkEnumArg(ep, indexType)) {
         qt = indexType;
     } else {
-        qt = ma.analyseConstExpr(ad.getDesignator2(), true);
+        qt = ma.analyseConstExpr(ep, true);
     }
     if (qt.isInvalid()) return false;
-
-    Expr* de = ad.getDesignator();
+    Expr* de = *ep;
     if (!de.isCtv()) {
         ma.errorRange(de.getLoc(), de.getRange(), "array index is not a compile-time value");
         return false;
     }
+    QualType canon = qt.getImplType();
+    if (!canon.isInteger() && !canon.isBool()) {
+        ma.errorRange(de.getLoc(), de.getRange(), "array designator expression must have integer type");
+        return false;
+    }
+    return true;
 
-    // TODO: compute index value, check if designator is integer and < array length if specified
+    // TODO: compute index value, check if designator < array length if specified
+}
+
+// Note: this function should only be called from analyseInitListArray directly!
+fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expectedType, bool isEnumIndex, QualType indexType) {
+    ArrayDesignatedInitExpr* ad = (ArrayDesignatedInitExpr*)e;
+    Expr* desig = ad.getDesignator();
+    if (desig.isRange()) {
+        RangeExpr* r = (RangeExpr*)desig;
+        if (!ma.analyseArrayDesignatorIndex(r.getLHS2(), isEnumIndex, indexType)) return false;
+        if (!ma.analyseArrayDesignatorIndex(r.getRHS2(), isEnumIndex, indexType)) return false;
+    } else {
+        if (!ma.analyseArrayDesignatorIndex(ad.getDesignator2(), isEnumIndex, indexType)) return false;
+    }
 
     Expr* val = ad.getInit();
-
     if (val.isInitList()) {
         return ma.analyseInitListExpr((InitListExpr*)val, expectedType);
     }
-    bool ok = ma.analyseInitExpr(ad.getInit2(), expectedType, val.getLoc(), false, false);
-    if (!ok) return false;
+    if (!ma.analyseInitExpr(ad.getInit2(), expectedType, val.getLoc(), false, false)) return false;
 
     val = ad.getInit(); // re-read because of ImplicitCasts
     e.copyConstantFlags(val);
@@ -211,7 +226,6 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
     bool ok = true;
     bool ctc = true;
     bool have_designators = false;
-    u32 current_index = 0;
 
     for (u32 i=0; i<numValues; i++) {
         Expr* value = values[i];
@@ -229,17 +243,16 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
         }
         ctc &= values[i].isCtc();
     }
-    current_index = numValues;   // TODO also keep track of ArrayDesignatedInit
 
     if (ctc) e.setCtc();
     if (!ok) return false;
 
+    bool has_size = at.hasSize();
+    u32 array_size = at.getSize();
+
     if (have_designators) {
         // Check for out of bound array designators or compute implied array length
         ile.setHasDesignators();
-
-        bool has_size = at.hasSize();
-        u32 array_size = at.getSize();
 
         init_checker.Checker* checker = ma.getInitChecker();
         ok = ma.checkArrayDesignators(ile, has_size, &array_size, checker);
@@ -248,10 +261,9 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
         if (!has_size) at.setSize(array_size);
 
     } else {
-        if (at.hasSize()) {
-            u32 arraySize = at.getSize();
-            if (current_index > arraySize) {
-                ma.error(values[arraySize].getLoc(), "excess elements in array initializer");
+        if (has_size) {
+            if (numValues > array_size) {
+                ma.error(values[array_size].getLoc(), "excess elements in array initializer");
                 return false;
             }
         } else {
@@ -263,59 +275,93 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
     return ok;
 }
 
+fn bool Analyser.checkArrayDesignatorIndex(Analyser* ma, Expr* e, u64 *valp, bool has_size, u64 size) {
+    SrcLoc loc = e.getStartLoc();
+    Value idx = ast.evalExpr(e);
+    if (!idx.isInteger()) {
+        ma.error(loc, "array designator expression must have integer type");
+        return false;
+    }
+    if (idx.isNegative()) {
+        ma.error(loc, "array designator value '%s' is negative", idx.str());
+        return false;
+    }
+    *valp = idx.as_u64();
+    if (has_size && *valp >= size) {
+        ma.error(loc, "array designator index '%d' exceeds array upper bound '%d'", *valp, size - 1);
+        return false;
+    }
+    return true;
+}
+
 fn bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, bool has_size, u32 *size, init_checker.Checker* checker) {
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
 
     bool ok = true;
     u32 max_index = 0;
-    u64 index64 = u64.max;
+    u64 index_hi = u64.max;
     for (u32 i=0; i<numValues; i++) {
         SrcLoc loc;
         Expr* value = values[i];
+        u64 index_lo = index_hi += 1;
         if (value.isArrayDesignatedInit()) {
             ArrayDesignatedInitExpr* ad = (ArrayDesignatedInitExpr*)value;
             Expr* desig = ad.getDesignator();
             loc = desig.getLoc();
-            Value idx = ast.evalExpr(desig);
-            if (!idx.isInteger()) {
-                ma.error(loc, "array designator expression must have integer type");
-                return false;
-            }
-            if (idx.isNegative()) {
-                ma.error(loc, "array designator value '%s' is negative", idx.str());
-                return false;
-            }
-            index64 = idx.as_u64();
-            if (has_size && index64 >= *size) {
-                ma.error(loc, "array designator index (%d) exceeds array bounds (%d)", index64, *size);
-                return false;
+            if (desig.isRange()) {
+                RangeExpr* r = (RangeExpr*)desig;
+                if (Expr* lhs = r.getLHS()) {
+                    if (!ma.checkArrayDesignatorIndex(lhs, &index_lo, has_size, *size))
+                        return false;
+                } else {
+                    r.setLHS(ma.builder.actOnIntegerLiteral(0, 0, index_lo, Default));
+                }
+                if (Expr* rhs = r.getRHS()) {
+                    if (!ma.checkArrayDesignatorIndex(rhs, &index_hi, has_size, *size))
+                        return false;
+                } else {
+                    if (!has_size) {
+                        ma.error(loc, "cannot have an empty range upper bound in unsized array");
+                        return false;
+                    }
+                    index_hi = *size - 1;
+                    r.setRHS(ma.builder.actOnIntegerLiteral(0, 0, index_hi, Default));
+                }
+                if (index_lo > index_hi) {
+                    ma.error(loc, "array range designator start '%d' is greater than end '%d'", index_lo, index_hi);
+                    return false;
+                }
+            } else {
+                if (!ma.checkArrayDesignatorIndex(desig, &index_lo, has_size, *size))
+                    return false;
+                index_hi = index_lo;
             }
         } else {
             loc = value.getLoc();
-            index64++;
-            if (has_size && index64 >= *size) {
-                ma.error(value.getLoc(), "excess elements in array initializer");
+            if (has_size && index_lo >= *size) {
+                ma.error(loc, "excess elements in array initializer");
                 return false;
             }
         }
-        if (index64 >= u32.max) {
-            ma.error(loc, "array index %d is too large", index64);
+        if (index_hi >= u32.max) {
+            ma.error(loc, "array index %d is too large", index_hi);
             return false;
         }
-
-        u32 current_index = (u32)index64;
-
         // check for duplicate entries
-        SrcLoc duplicate = checker.find(current_index);
+        u32 index1, index2;
+        SrcLoc duplicate = checker.find2((u32)index_lo, (u32)index_hi, &index1, &index2);
         if (duplicate) {
-            ma.error(loc, "duplicate initialization of array index");
+            if (index1 == index2)
+                ma.error(loc, "duplicate initialization of array index %d", index1);
+            else
+                ma.error(loc, "duplicate initialization of array range %d ... %d", index1, index2);
             ma.note(duplicate, "previous initialization is here");
             ok = false;
         } else {
-            checker.add(current_index, loc);
+            checker.add2((u32)index_lo, (u32)index_hi, loc);
         }
-        if (current_index > max_index) max_index = current_index;
+        if (index_hi > max_index) max_index = (u32)index_hi;
     }
     if (!has_size) *size = max_index + 1;
     return ok;

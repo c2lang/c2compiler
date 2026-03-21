@@ -126,9 +126,20 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         break;
     case Range:
         const RangeExpr* b = (RangeExpr*)e;
-        gen.emitExpr(out, b.getLHS());
-        out.add(" ... ");
-        gen.emitExpr(out, b.getRHS());
+        // Output range boundary expressions if present in source code
+        if (Expr* lhs = b.getLHS()) {
+            if (lhs.getLoc()) {
+                gen.emitExpr(out, lhs);
+                out.space();
+            }
+        }
+        out.add("...");
+        if (Expr* rhs = b.getRHS()) {
+            if (rhs.getLoc()) {
+                out.space();
+                gen.emitExpr(out, rhs);
+            }
+        }
         break;
     case NamedArgument:
         const NamedArgument* ne = (const NamedArgument*)e;

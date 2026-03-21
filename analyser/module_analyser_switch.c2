@@ -330,9 +330,14 @@ fn bool Analyser.analyseCaseCondition(Analyser* ma,
                         res = false;
                         continue;
                     }
-                    SrcLoc duplicate = checker.find2(lhs_index, rhs_index);
+                    u32 index1, index2;
+                    SrcLoc duplicate = checker.find2(lhs_index, rhs_index, &index1, &index2);
                     if (duplicate) {
-                        ma.error(loc, "duplicate case value in range");
+                        if (index1 == index2) {
+                            ma.error(loc, "duplicate case value %d in range", index1);
+                        } else {
+                            ma.error(loc, "duplicate case range %d ... %d", index1, index2);
+                        }
                         ma.note(duplicate, "previous case is here");
                         res = false;
                     }
