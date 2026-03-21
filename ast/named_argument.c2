@@ -64,7 +64,7 @@ fn void NamedArgument.print(const NamedArgument* e, string_buffer.Buf* out, u32 
     e.inner.print(out, indent + 1);
 }
 
-public fn void NamedArgument.printLiteral(const NamedArgument* e, string_buffer.Buf* out) {
+fn void NamedArgument.printLiteral(const NamedArgument* e, string_buffer.Buf* out) {
     out.add(idx2name(e.name));
     out.add(": ");
     e.inner.printLiteral(out);

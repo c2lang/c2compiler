@@ -108,7 +108,7 @@ fn void IntegerLiteral.print(const IntegerLiteral* e, string_buffer.Buf* out, u3
     out.newline();
 }
 
-public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffer.Buf* out, bool c_style) {
+public fn void IntegerLiteral.printLiteral(const IntegerLiteral* e, string_buffer.Buf* out, bool c_style = false) {
     // Attempt to generate the same number of digits. Output may be smaller if source has digit separators
     switch (e.base.base.integerLiteralBits.radix) {
     case Default:

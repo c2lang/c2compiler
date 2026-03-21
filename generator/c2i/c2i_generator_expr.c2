@@ -22,7 +22,7 @@ import value_type local;
 fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
-        IntegerLiteral.printLiteral((IntegerLiteral*)e, out, false);
+        IntegerLiteral.printLiteral((IntegerLiteral*)e, out);
         break;
     case FloatLiteral:
         FloatLiteral.printLiteral((FloatLiteral*)e, out);
@@ -34,7 +34,7 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         CharLiteral.printLiteral((CharLiteral*)e, out);
         break;
     case StringLiteral:
-        StringLiteral.printLiteral((StringLiteral*)e, out);
+        gen.emitStringLiteral(out, (StringLiteral*)e);
         break;
     case Nil:
         out.add("nil");
@@ -131,13 +131,20 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         gen.emitExpr(out, b.getRHS());
         break;
     case NamedArgument:
-        NamedArgument.printLiteral((NamedArgument*)e, out);
+        const NamedArgument* ne = (const NamedArgument*)e;
+        out.add(gen.astPool.idx2str(ne.getNameIdx()));
+        out.add(": ");
+        gen.emitExpr(out, ne.getInner());
         break;
     case Alternate:
         const AlternateExpr* n = (AlternateExpr*)e;
         gen.emitExpr(out, n.getOriginal());
         break;
     }
+}
+
+fn void Generator.emitStringLiteral(Generator* gen, string_buffer.Buf* out, const StringLiteral* s) {
+    s.printLiteral(out);
 }
 
 fn void Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, const BinaryOperator* b) {

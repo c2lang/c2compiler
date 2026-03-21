@@ -44,8 +44,7 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
         c.printLiteral(out);
         break;
     case StringLiteral:
-        StringLiteral* s = (StringLiteral*)e;
-        s.printLiteral(out);
+        gen.emitStringLiteral(out, (StringLiteral*)e);
         break;
     case Nil:
         out.add("NULL");
@@ -166,6 +165,10 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
         gen.emitExpr(out, n.getGenerated());
         break;
     }
+}
+
+fn void Generator.emitStringLiteral(Generator* gen, string_buffer.Buf* out, const StringLiteral* s) {
+    s.printLiteral(out);
 }
 
 fn void Generator.emitBitOffset(Generator* gen, string_buffer.Buf* out, Expr* base, Expr* index, C_Prec prec) {
@@ -305,7 +308,6 @@ fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, MemberE
 }
 
 fn void Generator.emitFieldDesigExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
-    // Cannot use printLiteral because expressions need C conversion
     FieldDesignatedInitExpr* fdi = (FieldDesignatedInitExpr*)e;
     out.add1('.');
     out.add(fdi.getFieldName());
@@ -314,7 +316,6 @@ fn void Generator.emitFieldDesigExpr(Generator* gen, string_buffer.Buf* out, Exp
 }
 
 fn void Generator.emitArrayDesigExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
-    // Cannot use printLiteral because expressions need C conversion
     ArrayDesignatedInitExpr* ad = (ArrayDesignatedInitExpr*)e;
     out.add1('[');
     gen.emitExpr(out, ad.getDesignator());

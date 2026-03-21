@@ -198,8 +198,7 @@ fn void Generator.emitAsmOperand(Generator* gen, u32 name, const Expr* c, Expr* 
     if (name) {
         out.print("[%s] ", gen.astPool.idx2str(name));
     }
-    const StringLiteral* cs = (StringLiteral*)c;
-    cs.printLiteral(out);
+    gen.emitStringLiteral(out, (StringLiteral*)c);
     out.add(" (");
     gen.emitExpr(out, e);
     out.rparen();
@@ -212,8 +211,7 @@ fn void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
     if (a.isVolatile()) out.add("volatile ");
 
     out.lparen();
-    StringLiteral* str = a.getString();
-    str.printLiteral(out);
+    gen.emitStringLiteral(out, a.getString());
 
     u32 num_outputs = a.getNumOutputs();
     u32 num_inputs = a.getNumInputs();
@@ -246,8 +244,7 @@ fn void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
             emitAsmPart(out, multi_line, indent);
             for (u32 i=0; i<num_clobbers; i++) {
                 if (i!=0) out.add(", ");
-                StringLiteral* l = (StringLiteral*)clobbers[i];
-                l.printLiteral(out);
+                gen.emitStringLiteral(out, (StringLiteral*)clobbers[i]);
             }
         }
     }
