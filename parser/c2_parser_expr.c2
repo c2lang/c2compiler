@@ -262,19 +262,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
 */
         break;
     case 2: // IntegerLiteral
-        u64 val = p.tok.int_value;
-        BuiltinKind kind;
-        if (val <= i32.max)
-            kind = Int32;
-        else
-        if (val <= u32.max && p.tok.getRadix() != Default)
-            kind = UInt32;
-        else
-        if (val <= i64.max)
-            kind = Int64;
-        else
-            kind = UInt64;
-        res = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.len, p.tok.int_value, p.tok.getRadix(), kind);
+        res = p.builder.actOnIntegerLiteral(p.tok.loc, p.tok.len, p.tok.int_value, p.tok.getRadix());
         p.consumeToken();
         break;
     case 3: // FloatLiteral
@@ -661,7 +649,21 @@ fn Expr* Parser.parseArrayDesignator(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();   // '['
 
-    Expr* designator = p.parseAssignmentExpression();
+    Expr* designator = nil;
+    if (p.tok.kind != Ellipsis) {
+        // TODO: should be constant-expression
+        designator = p.parseAssignmentExpression();
+    }
+    if (p.tok.kind == Ellipsis) {
+        SrcLoc range_loc = p.tok.loc;
+        p.consumeToken();
+        Expr* e1 = nil;
+        if (p.tok.kind != RSquare) {
+            // TODO: should be constant-expression
+            e1 = p.parseExpr();
+        }
+        designator = p.builder.actOnRange(range_loc, designator, e1);
+    }
     p.expectAndConsume(RSquare);
     p.expectAndConsume(Equal);
 

@@ -102,7 +102,7 @@ fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd, Expr*
                 args.add(arg);
             }
             if (vd.hasAttrAutoLine()) {
-                Expr* arg = ma.builder.actOnIntegerLiteral(0, 0, loc.line, Default, Int32);
+                Expr* arg = ma.builder.actOnIntegerLiteral(0, 0, loc.line, Default);
                 args.add(arg);
             }
             if (vd.hasAttrAutoFunc()) {

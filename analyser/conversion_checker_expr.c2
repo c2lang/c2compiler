@@ -97,10 +97,7 @@ fn ExprWidth getExprWidth(const Expr* e) {
         const ImplicitCastExpr* c = (ImplicitCastExpr*)e;
         return getExprWidth(c.getInner());
     case Range:
-        RangeExpr* b = (RangeExpr*)e;
-        ExprWidth lhs = getExprWidth(b.getLHS());
-        ExprWidth rhs = getExprWidth(b.getRHS());
-        return ExprWidth.mergeWider(lhs, rhs);
+        break;
     case NamedArgument:
         const NamedArgument* n = (NamedArgument*)e;
         return getExprWidth(n.getInner());
