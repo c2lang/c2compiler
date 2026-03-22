@@ -17,8 +17,13 @@ Dirent *readdir(DIR *dirp);
 Dirent* readdir(DIR* dirp);
 #endif
 
+#if EXPERIMENTAL
+typedef int (*FilterFn)(const Dirent*);
+typedef int (*DirentCompareFn)(const Dirent**, const Dirent**);
+#else
 type FilterFn fn i32(const Dirent*);
 type DirentCompareFn fn i32(const Dirent**, const Dirent**);
+#endif
 
 int scandir(const char* dirp, Dirent*** namelist,
             FilterFn filter, DirentCompareFn compar);

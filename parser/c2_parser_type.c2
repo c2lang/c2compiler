@@ -360,22 +360,50 @@ fn void Parser.parseTypedef(Parser* p, bool is_public) {
     // TODO: reject struct, union, enum
     TypeRefHolder ref.init();
     p.parseTypeSpecifier(&ref);
-    p.expectIdentifier();
-    u32 type_name = p.tok.name_idx;
-    SrcLoc loc = p.tok.loc;
-    const char* name = p.pool.idx2str(type_name);
-    if (!isupper(name[0]) && !p.is_interface) p.error("a type name must start with an upper case character");
-    if (p.tok.reserved) {
-        p.diags.error(loc, "reserved word '%s' cannot be used as local variable name",
-                      p.pool.idx2str(type_name));
+
+    u32 type_name = 0;
+    SrcLoc loc = 0;
+    Decl* d = nil;
+
+    if (p.tok.kind == LParen
+    &&  p.peekToken(1) == Star
+    &&  p.peekToken(2) == Identifier
+    &&  p.peekToken(3) == RParen
+    &&  p.peekToken(4) == LParen) {
+        // function pointer
+        p.consumeToken();   // '('
+        p.consumeToken();   // '*'
+        type_name = p.tok.name_idx;
+        loc = p.tok.loc;
+        p.consumeToken();   // name
+        p.consumeToken();   // ')'
+    } else {
+        p.expectIdentifier();
+        type_name = p.tok.name_idx;
+        loc = p.tok.loc;
+        p.consumeToken();
     }
-    p.consumeToken();
-    if (p.tok.kind == LSquare) {
-        u32 num_arrays = ref.getNumArrays();
-        p.parseOptionalArray(&ref);
-        ref.rotateArrays(num_arrays);
+    if (p.tok.kind == LParen) {
+        DeclList params.init();
+        bool is_variadic = p.parseFunctionParams(&params, is_public, false);
+        d = p.builder.actOnFunctionTypeDecl(type_name, loc, is_public,
+                                            &ref, (VarDecl**)params.getDecls(),
+                                            params.size(), is_variadic);
+        params.free();
+    } else {
+        if (p.tok.kind == LSquare) {
+            u32 num_arrays = ref.getNumArrays();
+            p.parseOptionalArray(&ref);
+            ref.rotateArrays(num_arrays);
+        }
+        const char* name = p.pool.idx2str(type_name);
+        if (!isupper(name[0]) && !p.is_interface) p.diags.error(loc, "a type name must start with an upper case character");
+        if (p.tok.reserved) {
+            p.diags.error(loc, "reserved word '%s' cannot be used as local variable name",
+                          p.pool.idx2str(type_name));
+        }
+        d = p.builder.actOnAliasType(type_name, loc, is_public, &ref);
     }
-    Decl* d = p.builder.actOnAliasType(type_name, loc, is_public, &ref);
     u32 num_attr = p.parseOptionalAttributes();
     p.expectAndConsume(Semicolon);
     p.applyAttributes(d, num_attr);
