@@ -8,5 +8,5 @@ module test;
 i32[3][2] a;
 
 // @expect{atleast, cgen/build.c}
-static int test_a[3][2] = { };
+static int test_a[3][2];
 
