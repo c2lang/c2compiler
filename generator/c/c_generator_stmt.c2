@@ -198,6 +198,27 @@ fn void Generator.emitStmt(Generator* gen, string_buffer.Buf* out, Stmt* s, u32 
         }
         out.add(";\n");
         break;
+    case When:
+        WhenStmt* w = (WhenStmt*)s;
+        Stmt* s1 = w.isTrue() ? w.getThen() : w.getElse();
+        if (s1) {
+            out.unindent(indent);
+            // do not create a block
+            if (s1.isCompound()) {
+                CompoundStmt* c = (CompoundStmt*)s1;
+                u32 count = c.getCount();
+                Stmt** stmts = c.getStmts();
+                for (u32 i = 0; i < count; i++) {
+                    gen.emitStmt(out, stmts[i], indent, true);
+                }
+            } else {
+                gen.emitStmt(out, s1, indent, true);
+            }
+        } else {
+            // no need for an empty statement because 'when' cannot appear as
+            // single statements in an `if`, `else`, `for` or `while` statement.
+        }
+        break;
     }
 }
 

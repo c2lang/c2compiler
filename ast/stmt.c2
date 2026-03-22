@@ -34,6 +34,7 @@ public type StmtKind enum u8 (const char* const name) {
     Decl         : { "DeclStmt" },
     Asm          : { "Asm" },
     Assert       : { "AssertStmt" },
+    When         : { "When" },
 }
 
 type StmtBits struct {
@@ -54,6 +55,7 @@ public type Stmt struct @(opaque) {
         LabelStmtBits labelStmtBits;
         ReturnStmtBits returnStmtBits;
         SwitchStmtBits switchStmtBits;
+        WhenStmtBits whenStmtBits;
 
         ExprBits exprBits;
         ArrayDesignatedInitExprBits arrayDesignatedInitExprBits;
@@ -116,6 +118,8 @@ fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
         return AsmStmt.instantiate((AsmStmt*)s, inst);
     case Assert:
         return AssertStmt.instantiate((AssertStmt*)s, inst);
+    case When:
+        return WhenStmt.instantiate((WhenStmt*)s, inst);
     }
     s.dump();
     assert(0);
@@ -143,6 +147,10 @@ public fn bool Stmt.isDecl(const Stmt* s) {
 
 public fn bool Stmt.isLabel(const Stmt* s) {
     return s.getKind() == Label;
+}
+
+public fn bool Stmt.isWhen(const Stmt* s) {
+    return s.getKind() == When;
 }
 
 public fn SrcLoc Stmt.getLoc(const Stmt* s) {
@@ -201,6 +209,9 @@ fn void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
         break;
     case Assert:
         AssertStmt.print((AssertStmt*)s, out, indent);
+        break;
+    case When:
+        WhenStmt.print((WhenStmt*)s, out, indent);
         break;
     }
 }

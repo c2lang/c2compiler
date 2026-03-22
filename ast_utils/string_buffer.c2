@@ -187,9 +187,9 @@ public fn void Buf.vprintf(Buf* buf, const char* format, va_list args) {
     buf.add2(tmp, (u32)len);
 }
 
-public fn void Buf.unindent(Buf* buf) {
-    u32 i = buf.indent_step;
-    while (i-- > 0 && buf.size_ && buf.data_[buf.size_ - 1] == ' ') buf.size_--;
+public fn void Buf.unindent(Buf* buf, u32 indent = 1) {
+    indent *= buf.indent_step;
+    while (indent-- > 0 && buf.size_ && buf.data_[buf.size_ - 1] == ' ') buf.size_--;
 }
 
 public fn void Buf.indent(Buf* buf, u32 indent) {

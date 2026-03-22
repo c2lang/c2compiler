@@ -166,6 +166,46 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         gen.emitExpr(out, a.getInner());
         out.add(");\n");
         break;
+    case When:
+        WhenStmt* w = (WhenStmt*)s;
+#if 0
+        Stmt* s1 = w.isTrue() ? w.getThen() : w.getElse();
+        if (s1) {
+            out.unindent(indent);
+            // do not create a block
+            if (s1.isCompound()) {
+                CompoundStmt* c = (CompoundStmt*)s1;
+                u32 count = c.getCount();
+                Stmt** stmts = c.getStmts();
+                for (u32 i = 0; i < count; i++) {
+                    gen.emitStmt(stmts[i], indent, true);
+                }
+            } else {
+                gen.emitStmt(s1, indent, true);
+            }
+        } else {
+            // no need for an empty statement because 'when' cannot appear as
+            // single statements in an `if`, `else`, `for` or `while` statement.
+        }
+#else
+        out.add("when (");
+        gen.emitExpr(out, w.getCond());
+        out.add(") ");
+        Stmt* thenStmt = w.getThen();
+        gen.emitStmt(thenStmt, indent, true);
+        Stmt* elseStmt = w.getElse();
+        if (elseStmt) {
+            if (thenStmt.isCompound()) {
+                out.trim(1);
+                out.space();
+            } else {
+                out.indent(indent);
+            }
+            out.add("else ");
+            gen.emitStmt(elseStmt, indent, true);
+        }
+#endif
+        break;
     }
 }
 

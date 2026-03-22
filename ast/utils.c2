@@ -53,6 +53,7 @@ static_assert(8, sizeof(CompoundStmt));
 static_assert(8, sizeof(ContinueStmt));
 static_assert(8, sizeof(FallthroughStmt));
 static_assert(8, sizeof(ReturnStmt));
+static_assert(24, sizeof(WhenStmt));
 
 static_assert(16, sizeof(Expr));
 static_assert(16, sizeof(BooleanLiteral));

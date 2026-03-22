@@ -109,6 +109,15 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
     case Assert:
         //if (gen.enable_asserts) gen.emitAssertStmt(s);
         return true;
+    case When:
+        WhenStmt* w = (WhenStmt*)s;
+        if (w.isTrue()) {
+            gen.emitStmt(w.getThen());
+        } else
+        if (w.hasElse()) {
+            gen.emitStmt(w.getElse());
+        }
+        return true;
     }
     s.dump();
     assert(0); // TODO
