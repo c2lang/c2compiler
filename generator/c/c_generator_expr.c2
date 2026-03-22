@@ -93,17 +93,20 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
     case Builtin:
         gen.emitBuiltinExpr(out, e);
         break;
+    case BitSelection:
+        BitSelectionExpr* bs = (BitSelectionExpr*)e;
+        gen.emitBitSelection(out, bs, prec);
+        break;
+    case ArraySelection:
+        // TODO: should only generate in vector operation
+        assert(0);
+        break;
     case ArraySubscript:
         ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
-        Expr* index = a.getIndex();
-        if (index.isBitOffset()) {
-            gen.emitBitOffset(out, a.getBase(), index, prec);
-        } else {
-            gen.emitExpr2(out, a.getBase(), Postfix);
-            out.add1('[');
-            gen.emitExpr2(out, index, Comma);
-            out.add1(']');
-        }
+        gen.emitExpr2(out, a.getBase(), Postfix);
+        out.add1('[');
+        gen.emitExpr2(out, a.getIndex(), Comma);
+        out.add1(']');
         break;
     case Member:
         MemberContext mc = {}
@@ -114,10 +117,6 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
         out.lparen();
         gen.emitExpr2(out, p.getInner(), Comma);
         out.rparen();
-        break;
-    case BitOffset:
-        // Already handled in ArraySubscript
-        assert(0);
         break;
     case ExplicitCast:
         ExplicitCastExpr* c = (ExplicitCastExpr*)e;
@@ -171,21 +170,31 @@ fn void Generator.emitStringLiteral(Generator* gen, string_buffer.Buf* out, cons
     s.printLiteral(out);
 }
 
-fn void Generator.emitBitOffset(Generator* gen, string_buffer.Buf* out, Expr* base, Expr* index, C_Prec prec) {
+fn void Generator.emitBitSelection(Generator* gen, string_buffer.Buf* out, BitSelectionExpr* bs, C_Prec prec) {
     // example: a[15:8] -> ((a>>8) & 0xFF)
-    BitOffsetExpr* bo = (BitOffsetExpr*)index;
+    // TODO add cast to ensure proper type?
     // TODO use prec to remove these parentheses
+    Expr* base = bs.getBase();
+    QualType q = base.getType();
+    u32 size = q.getSize(false);
+
     out.lparen();
     out.lparen();  // useless
     gen.emitExpr2(out, base, Shift);
     out.add(">>");
-    gen.emitExpr2(out, bo.getRHS(), Additive);
+    // TODO: handle shift >= width gracefully
+    gen.emitExpr2(out, bs.getLow(), Additive);
     out.rparen();  // useless
-    out.add(" & ");
-    u64 mask = 1;
-    mask <<= bo.getWidth();
-    mask--;
-    out.print("0x%x", mask);
+    i32 w = bs.getWidth();
+    if (w >= 0) {
+        if ((u32)w < size * 8) out.print(" & 0x%x", ((u64)1 << w) - 1);
+    } else {
+        out.print(" & (1U%s << ((", size >= 4 ? "LL" : "");
+        gen.emitExpr2(out, bs.getHigh(), Additive);
+        out.add(" - ");
+        gen.emitExpr2(out, bs.getLow(), Additive);
+        out.print(" - 1) & %d))", size * 8 - 1);
+    }
     out.rparen();
 }
 

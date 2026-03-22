@@ -75,6 +75,10 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     case Builtin:
         gen.emitBuiltin(result, e);
         break;
+    case BitSelection:
+    case ArraySelection:
+        assert(0);
+        break;
     case ArraySubscript:
         gen.emitArraySubscript(result, e);
         break;
@@ -84,9 +88,6 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     case Paren:
         ParenExpr* p = (ParenExpr*)e;
         gen.emitExpr(result, p.getInner());
-        break;
-    case BitOffset:
-        assert(0); // TODO
         break;
     case ExplicitCast:
         ExplicitCastExpr* ec = (ExplicitCastExpr*)e;
@@ -362,6 +363,11 @@ fn void Generator.emitCond(Generator* gen, const Expr* e, BlockId true_blk, Bloc
     case Builtin:
         assert(0);  // CTV
         break;
+    case BitSelection:
+        break;
+    case ArraySelection:
+        assert(0);
+        break;
     case ArraySubscript:
     case Member:
         break;
@@ -369,7 +375,6 @@ fn void Generator.emitCond(Generator* gen, const Expr* e, BlockId true_blk, Bloc
         ParenExpr* p = (ParenExpr*)e;
         gen.emitCond(p.getInner(), true_blk, false_blk, start_blk);
         return;
-    case BitOffset:
     case ExplicitCast:
     case ImplicitCast:
         break;

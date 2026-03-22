@@ -239,22 +239,21 @@ fn IdentifierKind getInnerExprAddressOf(const Expr* e) {
         break;
     case Builtin:
         break;
-    case ArraySubscript:
-        ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
-        // a[b] is an LValue if not an array itself and if b is not a BitOffset
-        // TODO: reject if a[b] is itself an array
-        Expr* index = a.getIndex();
-        if (index.getKind() != BitOffset)
-            return Var;
+    case BitSelection:
+    case ArraySelection:
+        // TODO: taking the address of a selection is rejected
         break;
+    case ArraySubscript:
+        // a[b] is an LValue if not an array itself
+        // TODO: reject if a[b] is itself an array
+        //ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
+        return Var;
     case Member:
         MemberExpr* m = (MemberExpr*)e;
         return m.getIdentifierKind();
     case Paren:
         ParenExpr* p = (ParenExpr*)e;
         return getInnerExprAddressOf(p.getInner());
-    case BitOffset:
-        return Unresolved;
     case ExplicitCast:
         ExplicitCastExpr* c = (ExplicitCastExpr*)e;
         // TODO: this seems incorrect, casts should not produce LValues

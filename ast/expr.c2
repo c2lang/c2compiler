@@ -35,10 +35,11 @@ public type ExprKind enum u8 {
     UnaryOperator,
     ConditionalOperator,
     Builtin,
+    BitSelection,
+    ArraySelection,
     ArraySubscript,
     Member,
     Paren,
-    BitOffset,
     ExplicitCast,
     ImplicitCast,
     Range,
@@ -63,10 +64,11 @@ const char*[ExprKind] exprKind_names = {
     "UnaryOperator",
     "ConditionalOp",
     "Builtin",
+    "BitSelection",
+    "ArraySelection",
     "ArraySubscript",
     "Member",
     "Paren",
-    "BitOffset",
     "ExplicitCast",
     "ImplicitCast",
     "RangeExpr",
@@ -168,14 +170,16 @@ fn Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
         return ConditionalOperator.instantiate((ConditionalOperator*)e, inst);
     case Builtin:
         return BuiltinExpr.instantiate((BuiltinExpr*)e, inst);
+    case BitSelection:
+        return BitSelectionExpr.instantiate((BitSelectionExpr*)e, inst);
+    case ArraySelection:
+        return ArraySelectionExpr.instantiate((ArraySelectionExpr*)e, inst);
     case ArraySubscript:
         return ArraySubscriptExpr.instantiate((ArraySubscriptExpr*)e, inst);
     case Member:
         return MemberExpr.instantiate((MemberExpr*)e, inst);
     case Paren:
         return ParenExpr.instantiate((ParenExpr*)e, inst);
-    case BitOffset:
-        return BitOffsetExpr.instantiate((BitOffsetExpr*)e, inst);
     case ExplicitCast:
         return ExplicitCastExpr.instantiate((ExplicitCastExpr*)e, inst);
     case ImplicitCast:
@@ -256,10 +260,6 @@ public fn bool Expr.isFieldDesignatedInit(const Expr* e) {
 
 public fn bool Expr.isArrayDesignatedInit(const Expr* e) {
     return e.getKind() == ArrayDesignatedInit;
-}
-
-public fn bool Expr.isBitOffset(const Expr* e) {
-    return e.getKind() == BitOffset;
 }
 
 fn bool Expr.isParen(const Expr* e) {
@@ -421,13 +421,13 @@ public fn bool Expr.isPositiveOrUB(const Expr* e) {
         return c.getLHS().isPositiveOrUB() && c.getRHS().isPositiveOrUB();
     case Builtin:
         return true;
+    case BitSelection:
+    case ArraySelection:
     case ArraySubscript:
     case Member:
         break;
     case Paren:
         return ((ParenExpr*)e).getInner().isPositiveOrUB();
-    case BitOffset:
-        break;
     case ExplicitCast:
     case ImplicitCast:
         return ((ImplicitCastExpr*)e).getInner().isPositiveOrUB();
@@ -467,14 +467,16 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
         return ((ConditionalOperator*)e).getStartLoc();
     case Builtin:
         break;
+    case BitSelection:
+        return ((BitSelectionExpr*)e).getStartLoc();
+    case ArraySelection:
+        return ((ArraySelectionExpr*)e).getStartLoc();
     case ArraySubscript:
         return ((ArraySubscriptExpr*)e).getStartLoc();
     case Member:
         return ((MemberExpr*)e).getStartLoc();
     case Paren:
         break;
-    case BitOffset:
-        return ((BitOffsetExpr*)e).getStartLoc();
     case ExplicitCast:
         break;
     case ImplicitCast:
@@ -523,14 +525,16 @@ public fn SrcLoc Expr.getEndLoc(const Expr* e) {
         return ((ConditionalOperator*)e).getEndLoc();
     case Builtin:
         return ((BuiltinExpr*)e).getEndLoc();
+    case BitSelection:
+        return ((BitSelectionExpr*)e).getEndLoc();
+    case ArraySelection:
+        return ((ArraySelectionExpr*)e).getEndLoc();
     case ArraySubscript:
         return ((ArraySubscriptExpr*)e).getEndLoc();
     case Member:
         return ((MemberExpr*)e).getEndLoc();
     case Paren:
         return ((ParenExpr*)e).getEndLoc();
-    case BitOffset:
-        return ((BitOffsetExpr*)e).getEndLoc();
     case ExplicitCast:
         return ((ExplicitCastExpr*)e).getEndLoc();
     case ImplicitCast:
@@ -579,10 +583,11 @@ public fn bool Expr.needsSemi(const Expr* e) {
     case UnaryOperator:
     case ConditionalOperator:
     case Builtin:
+    case BitSelection:
+    case ArraySelection:
     case ArraySubscript:
     case Member:
     case Paren:
-    case BitOffset:
     case ExplicitCast:
     case ImplicitCast:
     case Range:
@@ -653,6 +658,12 @@ fn void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
     case Builtin:
         BuiltinExpr.print((BuiltinExpr*)e, out, indent);
         break;
+    case BitSelection:
+        BitSelectionExpr.print((BitSelectionExpr*)e, out, indent);
+        break;
+    case ArraySelection:
+        ArraySelectionExpr.print((ArraySelectionExpr*)e, out, indent);
+        break;
     case ArraySubscript:
         ArraySubscriptExpr.print((ArraySubscriptExpr*)e, out, indent);
         break;
@@ -661,9 +672,6 @@ fn void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
         break;
     case Paren:
         ParenExpr.print((ParenExpr*)e, out, indent);
-        break;
-    case BitOffset:
-        BitOffsetExpr.print((BitOffsetExpr*)e, out, indent);
         break;
     case ExplicitCast:
         ExplicitCastExpr.print((ExplicitCastExpr*)e, out, indent);
@@ -734,6 +742,12 @@ public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     case Builtin:
         BuiltinExpr.printLiteral((BuiltinExpr*)e, out);
         return;
+    case BitSelection:
+        BitSelectionExpr.printLiteral((BitSelectionExpr*)e, out);
+        return;
+    case ArraySelection:
+        ArraySelectionExpr.printLiteral((ArraySelectionExpr*)e, out);
+        return;
     case ArraySubscript:
         ArraySubscriptExpr.printLiteral((ArraySubscriptExpr*)e, out);
         return;
@@ -742,9 +756,6 @@ public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
         return;
     case Paren:
         ParenExpr.printLiteral((ParenExpr*)e, out);
-        return;
-    case BitOffset:
-        BitOffsetExpr.printLiteral((BitOffsetExpr*)e, out);
         return;
     case ExplicitCast:
         ExplicitCastExpr.printLiteral((ExplicitCastExpr*)e, out);

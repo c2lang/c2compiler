@@ -76,8 +76,9 @@ set ast
     ast/alternate_expr.c2
     ast/array_designated_init_expr.c2
     ast/array_subscript_expr.c2
+    ast/array_selection_expr.c2
     ast/binary_operator.c2
-    ast/bitoffset_expr.c2
+    ast/bit_selection_expr.c2
     ast/boolean_literal.c2
     ast/builtin_expr.c2
     ast/call_expr.c2

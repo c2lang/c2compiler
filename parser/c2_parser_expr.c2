@@ -346,17 +346,28 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
         case LSquare:
             SrcLoc loc = p.tok.loc;
             p.consumeToken();
-            Expr* idx = p.parseExpr();
+            Expr* idx = nil;
+            if (p.tok.kind != Colon) idx = p.parseExpr();
             if (p.tok.kind == Colon) {
-                // BitOffset <expr> : <expr>
+                // BitSelection <expr> : <expr>
+                // ArraySelection <expr>? : <expr>? : <expr>?
                 SrcLoc colon_loc = p.tok.loc;
                 p.consumeToken();
-                Expr* rhs = p.parseExpr();
-                idx = p.builder.actOnBitOffsetExpr(colon_loc, idx, rhs);
+                Expr* count = nil;
+                Expr* step = nil;
+                if (p.tok.kind != Colon && p.tok.kind != RSquare) count = p.parseExpr();
+                if (p.tok.kind == Colon) {
+                    p.consumeToken();
+                    step = p.parseExpr();
+                }
+                u32 src_len = p.tok.loc + 1 - loc;
+                p.expectAndConsume(RSquare);
+                lhs = p.builder.actOnArraySelectionExpr(loc, src_len, lhs, idx, count, step);
+            } else {
+                u32 src_len = p.tok.loc + 1 - loc;
+                p.expectAndConsume(RSquare);
+                lhs = p.builder.actOnArraySubscriptExpr(loc, src_len, lhs, idx);
             }
-            u32 src_len = p.tok.loc + 1 - loc;
-            p.expectAndConsume(RSquare);
-            lhs = p.builder.actOnArraySubscriptExpr(loc, src_len, lhs, idx);
             break;
         case Dot:
             lhs = p.parseImpureMemberExpr(lhs);
@@ -661,7 +672,21 @@ fn Expr* Parser.parseArrayDesignator(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();   // '['
 
-    Expr* designator = p.parseAssignmentExpression();
+    Expr* designator = nil;
+    if (p.tok.kind != Ellipsis) {
+        // TODO: should be constant-expression
+        designator = p.parseAssignmentExpression();
+    }
+    if (p.tok.kind == Ellipsis) {
+        SrcLoc range_loc = p.tok.loc;
+        p.consumeToken();
+        Expr* e1 = nil;
+        if (p.tok.kind != RSquare) {
+            // TODO: should be constant-expression
+            e1 = p.parseExpr();
+        }
+        designator = p.builder.actOnRange(range_loc, designator, e1);
+    }
     p.expectAndConsume(RSquare);
     p.expectAndConsume(Equal);
 
