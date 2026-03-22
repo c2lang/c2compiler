@@ -202,6 +202,28 @@ public fn bool Expr.isStringLiteral(const Expr* e) {
     return e.getKind() == StringLiteral;
 }
 
+public fn bool Expr.isLiteral(const Expr* e) {
+    switch (e.getKind()) {
+    case IntegerLiteral:
+    case FloatLiteral:
+    case BooleanLiteral:
+    case CharLiteral:
+    case StringLiteral:
+    case Nil:
+        return true;
+    default:
+        break;
+    }
+    return false;
+}
+
+public fn bool Expr.isComparison(const Expr* e) {
+    if (e.getKind() != BinaryOperator) return false;
+    BinaryOperator* binop = (BinaryOperator*)e;
+    BinaryOpcode opcode = binop.getOpcode();
+    return opcode.isComparison();
+}
+
 public fn bool Expr.isNil(const Expr* e) {
     return e.getKind() == Nil;
 }
