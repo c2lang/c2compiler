@@ -82,7 +82,7 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
                 return;
             }
             Value ctv = ast.evalExpr(initval);
-            if (value.kind == Error) {
+            if (ctv.kind == Error) {
                 ma.errorRange(initval.getLoc(), initval.getRange(), "%s", ctv.error_msg);
                 return;
             }
