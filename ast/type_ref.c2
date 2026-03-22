@@ -211,7 +211,7 @@ public fn void TypeRefHolder.dump(const TypeRefHolder* h) @(unused) {
     for (u32 i=0; i<r.getNumArrays(); i++) {
         out.add1('[');
         Expr* size = h.arrays[i];
-        if (size) h.arrays[i].printLiteral(out);
+        if (size) size.printLiteral(out);
         out.add1(']');
     }
     ast.flushDumpBuf(out);
