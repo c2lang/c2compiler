@@ -44,6 +44,7 @@ public type AttrKind enum u8 {
     AutoFunc,       //               Var, function param only
     Embed,          //               Var, globals only
     Deprecated,     //        Func
+    NoInit,         //               Var
 }
 
 const char*[AttrKind] attrKind_names = {
@@ -71,6 +72,7 @@ const char*[AttrKind] attrKind_names = {
     "auto_func",
     "embed",
     "deprecated",
+    "noinit",
 }
 
 public type AttrValueKind enum u8 {
@@ -148,6 +150,7 @@ const AttrReq[AttrKind] Required_arg = {
     [AutoFunc]     = NoArg,
     [Embed]        = String,
     [Deprecated]   = String,
+    [NoInit]       = NoArg,
 }
 
 public type AttrReq enum u8 {
