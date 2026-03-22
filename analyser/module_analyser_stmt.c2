@@ -127,6 +127,9 @@ fn FlowBits Analyser.analyseStmt(Analyser* ma, Stmt** s_ptr, bool checkEffect) {
     case Assert:
         ma.analyseAssertStmt(s);
         return FlowNext;
+    case When:
+        flow = ma.analyseWhenStmt(s);
+        break;
     }
     if (!(flow & FlowNext)) ma.scope.setUnreachable();
     return flow;
@@ -228,6 +231,14 @@ fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_ass
     return qt;
 }
 
+fn bool Analyser.checkWhen(Analyser* ma, Stmt* s) {
+    if (s.isWhen()) {
+        ma.error(s.getLoc(), "'when' statement must be braced in this context");
+        return false;
+    }
+    return true;
+}
+
 fn FlowBits Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     FlowBits flow = FlowNext;
     IfStmt* i = (IfStmt*)s;
@@ -237,15 +248,17 @@ fn FlowBits Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     if (ma.has_error) goto done;
     // TODO: handle constant conditions
 
+    ma.checkWhen(i.getThen());
     ma.scope.enter(scope.Decl);
     flow = ma.analyseStmt(i.getThen2(), true);
     ma.scope.exit(ma.has_error);
 
     FlowBits flow2 = FlowNext;
-    Stmt** else_ = i.getElse2();
-    if (else_) {
+    Stmt** elsep = i.getElse2();
+    if (elsep) {
+        ma.checkWhen(*elsep);
         ma.scope.enter(scope.Decl);
-        flow2 = ma.analyseStmt(else_, true);
+        flow2 = ma.analyseStmt(elsep, true);
         ma.scope.exit(ma.has_error);
     }
     flow |= flow2;
@@ -288,6 +301,7 @@ fn FlowBits Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
         if (qt.isInvalid()) goto done;
     }
 
+    ma.checkWhen(f.getBody());
     FlowBits flow2 = ma.analyseStmt(f.getBody2(), true);
     flow |= flow2 & (FlowReturn | FlowGoto | FlowNoReturn | FlowError);
     if (flow2 & FlowBreak) flow |= FlowNext;
@@ -315,6 +329,7 @@ fn FlowBits Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
     }
 
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl | scope.Control);
+    ma.checkWhen(w.getBody());
     FlowBits flow2 = ma.analyseStmt(w.getBody2(), true);
     ma.scope.exit(ma.has_error);
     flow |= flow2 & (FlowReturn | FlowGoto | FlowNoReturn | FlowError);
@@ -509,3 +524,38 @@ fn void Analyser.checkReturnAddrOfLocal(Analyser* ma, Expr* arg) {
     }
 }
 
+// when statement modelled after Odin and Nim
+fn FlowBits Analyser.analyseWhenStmt(Analyser* ma, Stmt* s) {
+    WhenStmt* w = (WhenStmt*)s;
+
+    QualType qt = ma.analyseConstExpr(w.getCond2(), true);
+    if (qt.isInvalid()) return FlowError;
+
+    Expr* cond = w.getCond();
+    if (!cond.isCtv()) {
+        ma.errorRange(cond.getLoc(), cond.getRange(), "'when' condition is not a compile-time value");
+        return FlowError;
+    }
+
+    Value v = ast.evalExpr(cond);
+    if (v.kind == Error) {
+        ma.errorRange(cond.getLoc(), cond.getRange(), "%s", v.error_msg);
+        return FlowError;
+    }
+    if (!v.isZero()) {
+        w.setTrue();
+        Stmt* thenStmt = w.getThen();
+        if (thenStmt.isCompound())
+            return ma.analyseCompoundStmt((CompoundStmt*)thenStmt);
+        else
+            return ma.analyseStmt(w.getThen2(), true);
+    } else
+    if (w.hasElse()) {
+        Stmt* elseStmt = w.getElse();
+        if (elseStmt.isCompound())
+            return ma.analyseCompoundStmt((CompoundStmt*)elseStmt);
+        else
+            return ma.analyseStmt(w.getElse2(), true);
+    }
+    return FlowNext;
+}

@@ -1,0 +1,33 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+const i32 C = 10;
+
+public fn i32 main() {
+    // using compound statements
+    when (C == 10) {
+        i32 i = 10;
+    } else {
+        const char* p = nil;
+        const char* p = nil;    // duplicate definition not analysed
+    }
+    // using single statements
+    when (sizeof(i) == 4)
+        return 0;
+    else
+        return p * p;    // invalid operands not analysed
+}
+
+// @expect{atleast, cgen/build.c}
+int main(void);
+
+int main(void)
+{
+    int i = 10;
+    return 0;
+}
+

@@ -180,6 +180,36 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         gen.emitExpr(out, a.getInner());
         out.add(");\n");
         break;
+    case When:
+        WhenStmt* w = (WhenStmt*)s;
+        out.add("when (");
+        gen.emitExpr(out, w.getCond());
+        out.add(") ");
+        Stmt* thenStmt = w.getThen();
+        gen.emitStmt(thenStmt, indent, false);
+        if (!thenStmt.isCompound()) {
+            if (!out.endsWith('\n')) {
+                if (!out.endsWith('}')) out.add1(';');
+            }
+        }
+        Stmt* elseStmt = w.getElse();
+        if (elseStmt) {
+            if (thenStmt.isCompound()) {
+                out.space();
+            } else {
+                if (!out.endsWith('\n')) out.newline();
+                out.indent(indent);
+            }
+            out.add("else ");
+            gen.emitStmt(elseStmt, indent, false);
+            if (!elseStmt.isCompound()) {
+                if (!out.endsWith('\n')) {
+                    if (!out.endsWith('}')) out.add1(';');
+                }
+            }
+        }
+        if (!out.endsWith('\n')) out.newline();
+        break;
     }
 }
 

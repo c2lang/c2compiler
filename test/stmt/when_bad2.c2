@@ -1,0 +1,9 @@
+module test;
+
+public fn i32 main() {
+    if (true)
+        when (true)    // @error{'when' statement must be braced in this context}
+            i32 j = 10;
+
+    return 0;
+}
