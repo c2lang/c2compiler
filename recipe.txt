@@ -55,6 +55,7 @@ set ast
     ast/struct_type_decl.c2
     ast/var_decl.c2
     ast/var_decl_list.c2
+    ast/when_decl.c2
 
     # ast statements
     ast/stmt.c2

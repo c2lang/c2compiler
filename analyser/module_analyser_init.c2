@@ -410,6 +410,7 @@ fn void fillFieldInfo(StructTypeDecl* std, FillInfo* fi, u32 base_offset) {
 
     for (u32 i=0; i<num_members; i++) {
         Decl* d = members[i];
+        if (d.isDisabled()) continue;
         FieldInitField* f = &fi.fii.fields[fi.idx];
         f.member_idx = fi.member_idx;
         const StructMemberLayout* ml = &layout.members[i];
@@ -559,6 +560,7 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
     const StructLayout* layout = std.getLayout();
     u32 member_idx = 0;
     for (u32 i=0; i<numValues; i++) {
+        if (members[i].isDisabled()) continue;
         Expr* value = values[i];
 
         const StructMemberLayout* ml = &layout.members[member_idx];

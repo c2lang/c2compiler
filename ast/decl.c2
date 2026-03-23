@@ -31,6 +31,7 @@ public type DeclKind enum u8 (const char* const name) {
     FunctionType  : { "FunctionType" },
     AliasType     : { "AliasTypeDecl" },
     Variable      : { "VarDecl" },
+    When          : { "When" },
 }
 
 public type DeclCheckState enum u8 (const char* const name) {
@@ -51,9 +52,9 @@ type DeclBits struct {
     u32 is_external : 1;    // in external lib
     u32 is_generated : 1;   // for globals, can be used by generators
     u32 has_gen_idx : 1;
+    u32 is_disabled : 1;    // potentially merge with check_state
 }
-
-const u32 NumDeclBits = 15;  // should match bitfields above
+const u32 NumDeclBits = 16;  // should match bitfields above
 
 public type Decl struct @(opaque) {
     union {
@@ -64,6 +65,7 @@ public type Decl struct @(opaque) {
         EnumTypeDeclBits enumTypeDeclBits;
         EnumConstantDeclBits enumConstantDeclBits;
         VarDeclBits varDeclBits;
+        WhenDeclBits whenDeclBits;
         u32 bits;
     }
     union {
@@ -118,6 +120,9 @@ public fn bool Decl.isCheckInProgress(const Decl* d) {
 
 public fn void Decl.setChecked(Decl* d) { d.declBits.check_state = Checked; }
 public fn void Decl.setCheckInProgress(Decl* d) { d.declBits.check_state = InProgress; }
+
+public fn void Decl.setDisabled(Decl* d) { d.declBits.is_disabled = true; }
+public fn bool Decl.isDisabled(const Decl* d) { return d.declBits.is_disabled; }
 
 public fn void Decl.setHasAttr(Decl* d) { d.declBits.has_attr = 1; }
 public fn bool Decl.hasAttr(const Decl* d) { return d.declBits.has_attr; }
@@ -175,6 +180,10 @@ public fn bool Decl.isFunctionType(const Decl* d) {
 
 public fn bool Decl.isVariable(const Decl* d) {
     return d.getKind() == Variable;
+}
+
+public fn bool Decl.isWhenDecl(const Decl* d) {
+    return d.getKind() == When;
 }
 
 fn const char* Decl.getName(const Decl* d) {
@@ -255,6 +264,7 @@ public fn bool Decl.isTypeDecl(const Decl* d) {
     case FunctionType: return true;
     case AliasType:    return true;
     case Variable:     break;
+    case When:         break;
     }
     return false;
 }
@@ -273,6 +283,7 @@ public fn const char* Decl.getKindName(const Decl* d) {
     case FunctionType: return "type";
     case AliasType:    return "type";
     case Variable:     return "variable";
+    case When:         return "when";
     }
     return "";
 }
@@ -360,6 +371,9 @@ fn void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
         break;
     case Variable:
         VarDecl.print((VarDecl*)d, out, indent);
+        break;
+    case When:
+        WhenDecl.print((WhenDecl*)d, out, indent);
         break;
     }
 }

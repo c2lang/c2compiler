@@ -246,6 +246,7 @@ public fn StructTypeDecl* Builder.actOnStructType(Builder* b,
                                                     bool is_public,
                                                     bool is_struct,
                                                     bool is_global,
+                                                    bool has_when,
                                                     Decl** members,
                                                     u32 num_members)
 {
@@ -257,6 +258,7 @@ public fn StructTypeDecl* Builder.actOnStructType(Builder* b,
                                               b.ast_idx,
                                               is_struct,
                                               is_global,
+                                              has_when,
                                               members,
                                               num_members);
     if (is_global) {
@@ -1259,4 +1261,8 @@ public fn Expr* Builder.actOnAlternate(Builder* b, Expr* original, Expr* generat
 
 public fn Stmt* Builder.actOnWhenStmt(Builder* b, SrcLoc loc, Expr* cond, Stmt* then, Stmt* else_stmt) {
     return (Stmt*)WhenStmt.create(b.context, loc, cond, then, else_stmt);
+}
+
+public fn WhenDecl* Builder.actOnWhenDecl(Builder* b, SrcLoc loc, Expr* cond, u32 then_count, u32 else_count) {
+    return WhenDecl.create(b.context, loc, b.ast_idx, cond, then_count, else_count);
 }

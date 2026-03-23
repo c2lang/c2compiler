@@ -28,6 +28,7 @@ type StructTypeDeclBits struct {
     u32 attr_packed : 1;
     u32 attr_opaque : 1;
     u32 attr_notypedef : 1;
+    u32 has_when : 1;
 }
 
 public type FieldInitInfo struct {
@@ -109,6 +110,7 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
                                                   u32 ast_idx,
                                                   bool is_struct,
                                                   bool is_global,
+                                                  bool has_when,
                                                   Decl** members,
                                                   u32 num_members)
 {
@@ -122,6 +124,7 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     d.base.init(StructType, name, loc, is_public, qt, ast_idx);
     d.base.structTypeDeclBits.is_struct = is_struct;
     d.base.structTypeDeclBits.is_global = is_global;
+    d.base.structTypeDeclBits.has_when = has_when;
 
     if (!is_global) d.base.setUsed(); // set sub-structs to used
 
@@ -154,8 +157,12 @@ public fn u32 StructTypeDecl.getNumMembers(const StructTypeDecl* d) {
 }
 
 public fn Decl** StructTypeDecl.getMembers(StructTypeDecl* d) {
-    // NOTE: doesn't check if present!
     return d.members;
+}
+
+public fn Decl* StructTypeDecl.getMember(const StructTypeDecl* d, u32 i) {
+    // NOTE: doesn't check if present!
+    return d.members[i];
 }
 
 public fn bool StructTypeDecl.isStruct(const StructTypeDecl* d) {
@@ -164,6 +171,10 @@ public fn bool StructTypeDecl.isStruct(const StructTypeDecl* d) {
 
 public fn bool StructTypeDecl.isUnion(const StructTypeDecl* d) {
     return !d.base.structTypeDeclBits.is_struct;
+}
+
+public fn bool StructTypeDecl.hasWhen(const StructTypeDecl* d) {
+    return d.base.structTypeDeclBits.has_when;
 }
 
 fn FunctionDecl* StructTypeDecl.getStructFunction(const StructTypeDecl* d, u32 i) {
@@ -239,6 +250,7 @@ public fn Decl* StructTypeDecl.findAny(const StructTypeDecl* s, u32 name_idx) {
     u32 count = num_members;
     for (u32 i=0; i<num_members; i++) {
         Decl* d = s.members[i];
+        if (d.isDisabled()) continue;
         u32 member_name = d.getNameIdx();
 
         if (member_name == name_idx) {
@@ -268,6 +280,7 @@ public fn Decl* StructTypeDecl.findMember(const StructTypeDecl* s, u32 name_idx,
     u32 count = s.getNumMembers();
     for (u32 i=0; i<count; i++) {
         Decl* d = s.members[i];
+        if (d.isDisabled()) continue;
         u32 member_name = d.getNameIdx();
 
         if (member_name == name_idx) {
@@ -314,6 +327,7 @@ public fn u32 StructTypeDecl.getDesigMemberCount(const StructTypeDecl* d) {
 
     for (u32 i=0; i<d.num_members; i++) {
         Decl* m = d.members[i];
+        if (m.isDisabled()) continue;
         u32 member_name = m.getNameIdx();
         if (member_name == 0) {
             count--;
@@ -357,15 +371,20 @@ fn void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u3
     out.newline();
 
     for (u32 i=0; i<d.num_members; i++) {
+        Decl* m = d.members[i];
         out.indent(indent + 1);
         out.color(col_Calc);
-        const StructMemberLayout* ml = &layout.members[i];
-        out.print("offset=%d size=%d", ml.offset, ml.size);
-        if (ml.is_bitfield) {
-            out.print(" bitfield(%d, %d, %d)", ml.bitfield_offset, ml.bitfield_width, ml.bitfield_signed);
+        if (m.isDisabled()) {
+            out.add("disabled");
+        } else {
+            const StructMemberLayout* ml = &layout.members[i];
+            out.print("offset=%d size=%d", ml.offset, ml.size);
+            if (ml.is_bitfield) {
+                out.print(" bitfield(%d, %d, %d)", ml.bitfield_offset, ml.bitfield_width, ml.bitfield_signed);
+            }
         }
         out.newline();
-        d.members[i].print(out, indent + 1);
+        m.print(out, indent + 1);
     }
 
 #if 1

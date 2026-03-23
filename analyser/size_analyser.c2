@@ -37,6 +37,7 @@ fn void sizeOfUnion(StructTypeDecl* s) {
     Decl** members = s.getMembers();
     for (u32 i = 0; i < num_members; i++) {
         Decl* d = members[i];
+        if (d.isDisabled()) continue;
         TypeSize member = sizeOfType(d.getType());
         // TODO handle un-packed sub-structs
         u32 size = member.size;     // byte size of the current member
@@ -83,6 +84,7 @@ public fn void sizeOfStruct(StructTypeDecl* s) {
 
     for (u32 i = 0; i < num_members; i++) {
         Decl* d = members[i];
+        if (d.isDisabled()) continue;
         // Note: doesn't analyze the bit-field
         TypeSize member = sizeOfType(d.getType());
         StructMemberLayout* ml = &layout.members[i];

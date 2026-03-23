@@ -256,6 +256,8 @@ fn IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
             break;
         }
         break;
+    case When:
+        break;
     }
     return kind;
 }
@@ -650,6 +652,7 @@ fn void Analyser.get_best_match(Analyser* ma, const char* name1, usize len1, Str
     u32 num_members = s.getNumMembers();
     for (u32 i = 0; i < num_members; i++) {
         Decl* m = members[i];
+        if (m.isDisabled()) continue;
         u32 name_idx = m.getNameIdx();
         if (!name_idx) {
             // anonymous sub structure

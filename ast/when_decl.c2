@@ -1,0 +1,68 @@
+/* Copyright 2022-2026 Bas van den Berg, Charlie Gordon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import ast_context;
+import src_loc local;
+import string_buffer;
+
+type WhenDeclBits struct {
+    u32 : NumDeclBits;
+    u32 is_true : 1;
+}
+
+public type WhenDecl struct @(opaque) {
+    Decl base;
+    Expr* cond;
+    u32 then_count;
+    u32 else_count;
+}
+
+public fn WhenDecl* WhenDecl.create(ast_context.Context* c, SrcLoc loc, u32 ast_idx, Expr* cond, u32 then_count, u32 else_count)
+{
+    u32 size = sizeof(WhenDecl);
+    WhenDecl* d = c.alloc(size);
+    d.base.init(When, 0, loc, false, {}, ast_idx);
+    d.cond = cond;
+    d.then_count = then_count;
+    d.else_count = else_count;
+
+    //if (!is_global) d.base.setUsed(); // set sub-structs to used
+#if AstStatistics
+    Stats.addDecl(StructType, size);
+#endif
+    return d;
+}
+
+public fn Decl* WhenDecl.asDecl(WhenDecl* d) {
+    return &d.base;
+}
+
+public fn void WhenDecl.setTrue(WhenDecl* d) { d.base.whenDeclBits.is_true = true; }
+public fn bool WhenDecl.isTrue(const WhenDecl* d) { return d.base.whenDeclBits.is_true; }
+
+public fn Expr* WhenDecl.getCond(const WhenDecl* d) { return d.cond; }
+public fn Expr** WhenDecl.getCond2(WhenDecl* d) { return &d.cond; }
+public fn u32 WhenDecl.getThenCount(const WhenDecl* d) { return d.then_count; }
+public fn u32 WhenDecl.getElseCount(const WhenDecl* d) { return d.else_count; }
+
+fn void WhenDecl.print(const WhenDecl* d, string_buffer.Buf* out, u32 indent) {
+    d.base.printKind(out, indent, false);
+    d.base.printBits(out);
+    out.color(col_Calc);
+    out.print("true: %d, then: %d, else: %d\n", d.isTrue(), d.then_count, d.else_count);
+}
+

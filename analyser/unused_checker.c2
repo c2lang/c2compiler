@@ -108,6 +108,8 @@ fn void Checker.check(void* arg, Decl* d) {
     case Variable:
         if (c.warnings.no_unused_variable) return;
         break;
+    case When:
+        return;
     }
     if (!used && !d.hasAttrUnused() && !d.isExported()) {
         c.diags.warn(d.getLoc(), "unused %s '%s'", d.getKindName(), c.getFullName(d));
@@ -156,6 +158,7 @@ fn void Checker.checkStructMembers(Checker* c, Decl* d) {
     Decl** members = std.getMembers();
     for (u32 i=0; i<num_members; i++) {
         Decl* member = members[i];
+        if (member.isDisabled()) continue;
         if (member.isStructType()) {
             c.checkStructMembers(member);
         } else {

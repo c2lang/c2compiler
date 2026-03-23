@@ -511,6 +511,10 @@ fn bool Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
     case Variable:
         ma.analyseGlobalVarDecl((VarDecl*)d);
         break;
+    case When:
+        // TODO: support this: dispatch to other lists
+        ma.error(d.getLoc(), "'when' blocks not supported at global scope");
+        break;
     }
 
     d.setChecked();

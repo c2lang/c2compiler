@@ -594,6 +594,7 @@ fn void Generator.emitStructInitExpr(Generator* gen, const StackVar* var, const 
     u32 offset = 0;
     ir.Ref dest_ref = var.ref;
     for (i = 0; i < num_values; i++) {
+        if (std.getMember(i).isDisabled()) continue;
         const StructMemberLayout* ml = &layout.members[i];
         ir.Ref value_ref;
         gen.emitExpr(&value_ref, values[i]);
@@ -603,11 +604,11 @@ fn void Generator.emitStructInitExpr(Generator* gen, const StackVar* var, const 
             dest_ref = gen.ctx.addBinaryInstr(InstrKind.Add, dest_ref, offset_ref);
         }
         gen.ctx.addStoreInstr(size2type(ml.size), value_ref, dest_ref);
-
     }
 
     ir.Ref value_ref = gen.ctx.addIntegerConstant(0);
-    while (i < num_members) {
+    for (; i < num_members; i++) {
+        if (std.getMember(i).isDisabled()) continue;
         const StructMemberLayout* ml = &layout.members[i];
         if (ml.offset != 0) {
             ir.Ref offset_ref = gen.ctx.addIntegerConstant(ml.offset - offset);
@@ -615,7 +616,6 @@ fn void Generator.emitStructInitExpr(Generator* gen, const StackVar* var, const 
             dest_ref = gen.ctx.addBinaryInstr(InstrKind.Add, dest_ref, offset_ref);
         }
         gen.ctx.addStoreInstr(size2type(ml.size), value_ref, dest_ref);
-        i++;
     }
 }
 

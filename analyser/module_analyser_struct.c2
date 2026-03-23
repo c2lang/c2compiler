@@ -27,10 +27,12 @@ fn void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
         ma.checkStack[ma.checkIndex-1].usedPublic = false;
         ma.usedPublic = false;
     }
+
+    // Handle 'when' blocks: disable unselected members
+    if (d.hasWhen() && !ma.analyseStructTypeWhenBlocks(d)) return;
+
     NameMap names.init(d.getNumMembers());
-
     ma.analyseStructNames(d, &names);
-
     names.free();
 
     ma.analyseStructMembers(d);
@@ -59,6 +61,7 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
 
     for (u32 i=0; i<count; i++) {
         Decl* member = members[i];
+        if (member.isDisabled()) continue;
         if (member.isVariable()) {
             VarDecl* vd = (VarDecl*)member;
             // Note: dont push to stack, because can self-ref to StructType
@@ -170,21 +173,19 @@ fn void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
 }
 
 fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameMap* names) {
-    // note: already checked that struct doesn't have 0 members
     u32 count = d.getNumMembers();
     Decl** members = d.getMembers();
 
     for (u32 i=0; i<count; i++) {
         // there can more members in anonymous sub-structs
         Decl* member = members[i];
+        if (member.isDisabled()) continue;
         u32 name_idx = member.getNameIdx();
-
-        StructTypeDecl* sub = nil;
-        if (member.isStructType()) sub = (StructTypeDecl*)member;
 
         if (name_idx == 0) {
             // can be anonymous sub-struct/union or anonymous bit-field
             if (member.isStructType()) {
+                StructTypeDecl* sub = (StructTypeDecl*)member;
                 ma.analyseStructNames(sub, names);
             }
         } else {
@@ -197,6 +198,7 @@ fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameMap* na
             names.add(name_idx, member.getLoc());
 
             if (member.isStructType()) {
+                StructTypeDecl* sub = (StructTypeDecl*)member;
                 NameMap sub_names.init(sub.getNumMembers());
                 ma.analyseStructNames(sub, &sub_names);
                 sub_names.free();
@@ -205,3 +207,51 @@ fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameMap* na
     }
 }
 
+fn bool Analyser.resolveWhenDecl(Analyser* ma, WhenDecl* wd) {
+    QualType qt = ma.analyseConstExpr(wd.getCond2(), true);
+    if (qt.isInvalid()) return false;
+    Expr* cond = wd.getCond();
+    if (!cond.isCtv()) {
+        ma.errorRange(cond.getLoc(), cond.getRange(), "'when' condition is not a compile-time value");
+        return false;
+    }
+    Value v = ast.evalExpr(cond);
+    if (v.kind == Error) {
+        ma.errorRange(cond.getLoc(), cond.getRange(), "%s", v.error_msg);
+        return false;
+    }
+    if (!v.isZero()) wd.setTrue();
+    return true;
+}
+
+fn bool Analyser.analyseStructTypeWhenBlocks(Analyser* ma, StructTypeDecl* d) {
+    bool ok = true;
+    u32 count = d.getNumMembers();
+    Decl** members = d.getMembers();
+
+    for (u32 i = 0; i < count; i++) {
+        Decl* member = members[i];
+        if (member.isDisabled()) continue;
+        if (member.isStructType()) {
+            StructTypeDecl* sub = (StructTypeDecl*)member;
+            if (!ma.analyseStructTypeWhenBlocks(sub)) return false;
+        }
+        if (member.isWhenDecl()) {
+            WhenDecl* wd = (WhenDecl*)member;
+            if (!ma.resolveWhenDecl(wd)) return false;
+            member.setDisabled();
+            u32 then_count = wd.getThenCount();
+            u32 else_count = wd.getElseCount();
+            u32 from = i + 1;
+            u32 end1 = from + then_count;
+            if (wd.isTrue()) {
+                from += then_count;
+                end1 += else_count;
+            }
+            for (u32 j = from; j < end1; j++) {
+                members[j].setDisabled();
+            }
+        }
+    }
+    return ok;
+}

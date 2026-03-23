@@ -302,6 +302,9 @@ fn void Generator.emitMemberDecl(Generator* gen, string_buffer.Buf* out, Decl* d
         mc.need_dot = true;
         mc.is_local = true;
         break;
+    case When:
+        assert(0);
+        break;
     }
 }
 

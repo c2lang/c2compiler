@@ -142,6 +142,7 @@ fn const char* Generator.getPrefixedName(const Generator* gen, const Decl* d) {
     case FunctionType:
     case AliasType:
     case Variable:
+    case When:
         break;
     }
     return gen.getName(d);
@@ -162,6 +163,7 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
         u32 num_members = s.getNumMembers();
         Decl** members = s.getMembers();
         for (u32 i=0; i<num_members; i++) {
+            if (members[i].isDisabled()) continue;
             Generator.on_decl(arg, members[i], false);
         }
         break;
@@ -188,6 +190,8 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
         VarDecl* v = (VarDecl*)d;
         gen.handleTypeRef(v.getTypeRef());
         break;
+    case When:
+        break;
     }
 
     gen.visitor.handle(d);
@@ -209,6 +213,7 @@ fn bool isGlobal(const Decl* d) {
     case FunctionType:
     case AliasType:
         return true;
+    case When:
     case Import:
         break;
     case StructType:

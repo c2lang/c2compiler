@@ -166,6 +166,8 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
         break;
     case Variable:
         break;
+    case When:
+        break;
     }
 
     gen.visitor.handle(d);

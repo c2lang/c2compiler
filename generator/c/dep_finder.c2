@@ -64,6 +64,8 @@ public fn void Finder.check(Finder* s, Decl* d) {
     case Variable:
         s.handleVarDecl((VarDecl*)d);
         break;
+    case When:
+        break;
     }
 }
 
@@ -99,6 +101,7 @@ fn void Finder.handleStruct(Finder* s, StructTypeDecl* d) {
     Decl** members = d.getMembers();
     for (u32 i=0; i<num_members; i++) {
         Decl* m = members[i];
+        if (m.isDisabled()) continue;
         if (m.isStructType()) {
             s.handleStruct((StructTypeDecl*)m);
         } else {

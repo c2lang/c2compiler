@@ -181,6 +181,7 @@ fn void FieldStructLayouter.finalizeExpr(FieldStructLayouter* l, const ast.Struc
     Ref dest_ref = base_ref;
 
     for (u32 i = 0; i < num_members; i++) {
+        if (std.getMember(i).isDisabled()) continue;
         const ast.StructMemberLayout* ml = &layout.members[i];
         //printf(" [%d|%d] offset %d  size %d\n", i, init_idx, ml.offset, ml.size);
 

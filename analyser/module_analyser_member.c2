@@ -357,6 +357,7 @@ fn ValType decl2valtype(const Decl* d) {
     case EnumConstant:
     case FunctionType:
     case AliasType:
+    case When:
         break;
     case Variable:
         return LValue;
