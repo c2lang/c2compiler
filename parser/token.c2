@@ -144,6 +144,7 @@ public type Kind enum u8 {
     KW_type,
     KW_union,
     KW_volatile,
+    KW_when,
     KW_while,
     // only in raw mode
     Feat_if,
@@ -303,6 +304,7 @@ const char*[Kind] token_names = {
     [KW_type]          = "type",
     [KW_union]         = "union",
     [KW_volatile]      = "volatile",
+    [KW_when]          = "when",
     [KW_while]         = "while",
     [Feat_if]          = "#if",
     [Feat_ifdef]       = "#ifdef",

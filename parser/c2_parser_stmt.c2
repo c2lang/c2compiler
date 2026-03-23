@@ -61,6 +61,8 @@ fn Stmt* Parser.parseStmt(Parser* p) {
     case KW_void:
         // checkSemi, allowLocal, !isCondition
         return p.parseDeclStmt(true, true, false);
+    case KW_when:
+        return p.parseWhenStmt();
     case KW_while:
         return p.parseWhileStmt();
     default:
@@ -629,3 +631,20 @@ fn bool Parser.isDeclaration(Parser* p) {
     return false;
 }
 
+fn Stmt* Parser.parseWhenStmt(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+
+    p.expectAndConsume(LParen);
+    Expr* cond = p.parseExpr(); // p.parseConstantExpr()
+    p.expectAndConsume(RParen);
+    Stmt* then = p.parseStmt();
+
+    Stmt* else_stmt = nil;
+    if (p.tok.kind == KW_else) {
+        p.consumeToken();
+        else_stmt = p.parseStmt();
+    }
+
+    return p.builder.actOnWhenStmt(loc, cond, then, else_stmt);
+}

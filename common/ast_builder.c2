@@ -1097,3 +1097,6 @@ public fn Expr* Builder.actOnAlternate(Builder* b, Expr* original, Expr* generat
     return (Expr*)AlternateExpr.create(b.context, original, generated);
 }
 
+public fn Stmt* Builder.actOnWhenStmt(Builder* b, SrcLoc loc, Expr* cond, Stmt* then, Stmt* else_stmt) {
+    return (Stmt*)WhenStmt.create(b.context, loc, cond, then, else_stmt);
+}

@@ -69,6 +69,7 @@ set ast
     ast/return_stmt.c2
     ast/switch_case.c2
     ast/switch_stmt.c2
+    ast/when_stmt.c2
     ast/while_stmt.c2
 
     # ast expressions
