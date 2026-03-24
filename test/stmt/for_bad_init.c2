@@ -1,0 +1,34 @@
+// @warnings{no-unused}
+module test;
+
+// void function with an effect
+fn void foo() { static u32 i; i++; }
+
+fn void bar1() {
+    // init clause: calling a void function is OK
+    for (foo();;) {}
+}
+
+fn void bar2() {
+    // init clause: using an assignment is OK
+    i32 i;
+    for (i = 0;;) {}
+}
+
+fn void bar3() {
+    // init clause: expression without an effect is not OK
+    i32 i = 0;
+    for (i;;) {}
+}
+
+fn void bar4() {
+    // init clause: defining an uninitialized object is not OK
+    for (i32 i;;) {} // @error{variable declaration in 'for' init clause must have an initializer}
+}
+
+type S struct { i32 x; }
+
+public fn i32 main() {
+    // init clause: defining an uninitialized object is not OK
+    for (S s;;) {} // @error{variable declaration in 'for' init clause must have an initializer}
+}

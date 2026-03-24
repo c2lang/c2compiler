@@ -655,7 +655,8 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
     switch (s.getKind()) {
     case If:
         const IfStmt* if_stmt = (IfStmt*)s;
-        gen.collectLocalVars(if_stmt.getCond());
+        Stmt* decl_stmt = if_stmt.getDecl();
+        if (decl_stmt) gen.collectLocalVars(decl_stmt);
         Stmt* then_stmt = if_stmt.getThen();
         if (then_stmt) gen.collectLocalVars(then_stmt);
         Stmt* else_stmt = if_stmt.getElse();

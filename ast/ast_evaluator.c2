@@ -575,6 +575,10 @@ fn Cont Expr.eval(Expr* e, Evaluator* sf) {
 }
 
 fn Cont IfStmt.eval(IfStmt* s, Evaluator* sf) {
+    if (s.hasDecl()) {
+        Cont cont = s.getDecl().eval(sf);
+        if (cont != Normal) return cont;
+    }
     Cont cont = s.getCond().eval(sf);
     if (cont != Normal) return cont;
     if (!sf.result.isZero()) {

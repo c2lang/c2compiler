@@ -25,7 +25,7 @@ type SwitchStmtBits struct {
     u32 is_string : 1;
     u32 has_default : 1;
     u32 has_decl : 1;
-    u32 has_cond : 1;
+    u32 has_source_cond : 1;
     u32 num_cases : 32 - NumStmtBits - 4;
 }
 
@@ -51,7 +51,7 @@ public fn SwitchStmt* SwitchStmt.create(ast_context.Context* c,
     s.base.switchStmtBits.has_default = has_default;
     s.base.switchStmtBits.num_cases = numCases;
     s.base.switchStmtBits.has_decl = has_decl;
-    s.base.switchStmtBits.has_cond = cond != nil;
+    s.base.switchStmtBits.has_source_cond = cond != nil;
     s.cond = cond;
     if (has_decl) s.decl[0] = decl;
     SwitchCase** cases_dest = (void*)(s.decl + has_decl);
@@ -95,9 +95,8 @@ public fn Stmt** SwitchStmt.getDecl2(SwitchStmt* s) {
     return s.decl;
 }
 
-// does the original code have a condition expression
-public fn bool SwitchStmt.hasCond(const SwitchStmt* s) {
-    return s.base.switchStmtBits.has_cond;
+public fn bool SwitchStmt.hasSourceCond(const SwitchStmt* s) {
+    return s.base.switchStmtBits.has_source_cond;
 }
 
 public fn Expr* SwitchStmt.getCond(const SwitchStmt* s) {

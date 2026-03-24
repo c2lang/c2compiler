@@ -46,7 +46,13 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
     case If:
         IfStmt* i = (IfStmt*)s;
         out.add("if (");
-        gen.emitStmt(i.getCond(), 0, false);
+        if (i.hasDecl()) {
+            gen.emitStmt(i.getDecl(), 0, false);
+        }
+        if (i.hasSourceCond()) {
+            if (i.hasDecl()) out.add("; ");
+            gen.emitExpr(out, i.getCond());
+        }
         out.add(") ");
         Stmt* thenStmt = i.getThen();
         gen.emitStmt(thenStmt, indent, true);
@@ -237,12 +243,13 @@ fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
     string_buffer.Buf* out = gen.out;
 
     out.add("switch (");
-    Stmt* decl = sw.getDecl();
-    if (decl) {
-        gen.emitStmt(decl, 0, false);
-        if (sw.hasCond()) out.add("; ");
+    if (sw.hasDecl()) {
+        gen.emitStmt(sw.getDecl(), 0, false);
     }
-    if (sw.hasCond()) gen.emitExpr(out, sw.getCond());
+    if (sw.hasSourceCond()) {
+        if (sw.hasDecl()) out.add("; ");
+        gen.emitExpr(out, sw.getCond());
+    }
     out.add(") {\n");
 
     const u32 num_cases = sw.getNumCases();

@@ -23,21 +23,6 @@ import string_buffer;
 import string;
 import value_type local;
 
-fn QualType Analyser.analyseSwitchDecl(Analyser* ma, Stmt** s_ptr) {
-    Stmt* s = *s_ptr;
-    assert(s.isDecl());
-    QualType qt = ma.analyseDeclStmt(s);
-    if (qt.isValid()) {
-        DeclStmt* ds = (DeclStmt*)s;
-        VarDecl* vd = ds.getDecl(0);
-        if (!vd.getInit()) {
-            ma.error(vd.asDecl().getLoc(), "variable declaration in 'switch' expression must have an initializer");
-            return QualType_Invalid;
-        }
-    }
-    return qt;
-}
-
 fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     FlowBits flow = 0;
     SwitchStmt* sw = (SwitchStmt*)s;
@@ -50,7 +35,7 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
 
     if (sw.hasDecl()) {
         Stmt** declp = sw.getDecl2();
-        QualType ct = ma.analyseSwitchDecl(declp);
+        QualType ct = ma.analyseConditionDecl(declp, "'switch' expression");
         if (ct.isInvalid()) {
             ma.scope.exit(ma.has_error);
             return FlowNext | FlowError;
@@ -216,7 +201,8 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
         ct = ma.analyseExpr(&call, true, RHS);
         if (ct.isInvalid()) flow |= FlowError;
         else {
-            if (sw.hasCond()) {
+            if (sw.hasSourceCond()) {
+                // create alternate node for c2i generator
                 Expr* alt = ma.builder.actOnAlternate(cond, call);
                 // set alternate type to that of generated branch
                 alt.setType(call.getType());

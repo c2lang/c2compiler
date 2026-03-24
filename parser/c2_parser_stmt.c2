@@ -434,7 +434,22 @@ fn Stmt* Parser.parseIfStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
-    Stmt* cond = p.parseCondition();
+    p.expectAndConsume(LParen);
+
+    Stmt* decl = nil;
+    Expr* cond = nil;
+    if (p.isDeclaration()) {
+        // !checkSemi, !allowLocal, isCondition
+        decl = p.parseDeclStmt(false, false, true);
+        if (p.tok.kind == Semicolon) {
+            p.consumeToken();
+            cond = p.parseExpr();
+        }
+    } else {
+        cond = p.parseExpr();
+    }
+    p.expectAndConsume(RParen);
+
     Stmt* then = p.parseStmt();
 
     Stmt* else_stmt = nil;
@@ -443,7 +458,7 @@ fn Stmt* Parser.parseIfStmt(Parser* p) {
         else_stmt = p.parseStmt();
     }
 
-    return p.builder.actOnIfStmt(loc, cond, then, else_stmt);
+    return p.builder.actOnIfStmt(loc, decl, cond, then, else_stmt);
 }
 
 fn Stmt* Parser.parseReturnStmt(Parser* p) {

@@ -251,27 +251,37 @@ fn FlowBits Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {
     return flow | flow2; // return FlowNext if last statement has FlowNext or empty block
 }
 
-fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, bool check_assign) {
+fn QualType Analyser.analyseConditionDecl(Analyser* ma, Stmt** s_ptr, const char* context) {
+    Stmt* s = *s_ptr;
+    assert(s.isDecl());
+    QualType qt = ma.analyseDeclStmt(s);
+    if (qt.isValid()) {
+        DeclStmt* ds = (DeclStmt*)s;
+        VarDecl* vd = ds.getDecl(0);
+        if (vd.hasInitCall()) {
+            ma.error(vd.asDecl().getLoc(), "variable declaration in %s cannot have an init call", context);
+            return QualType_Invalid;
+        }
+        if (!vd.hasInit()) {
+            ma.error(vd.asDecl().getLoc(), "variable declaration in %s must have an initializer", context);
+            return QualType_Invalid;
+        }
+    }
+    return qt;
+}
+
+fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, const char* context, bool check_assign, bool check_bool) {
     Stmt* s = *s_ptr;
     if (s.isDecl()) {
-        QualType qt = ma.analyseDeclStmt(s);
-        if (qt.isValid()) {
-            DeclStmt* ds = (DeclStmt*)s;
-            VarDecl* vd = ds.getDecl(0);
-            if (!vd.getInit()) {
-                ma.error(vd.asDecl().getLoc(), "variable declaration in condition must have an initializer");
-                return QualType_Invalid;
-            }
-        }
-        return qt;
+        return ma.analyseConditionDecl(s_ptr, context);
     }
-
     assert(s.isExpr());
     QualType qt = ma.analyseExpr((Expr**)s_ptr, true, RHS);
     Expr* e = (Expr*)*s_ptr;
-    if (qt.isValid()) ma.checker.check(getBuiltinQT(Bool), qt, (Expr**)s_ptr, e.getLoc());
-    e = (Expr*)*s_ptr;    // re-read in case of ImplicitCast insertions
-
+    if (check_bool) {
+        if (qt.isValid()) ma.checker.check(getBuiltinQT(Bool), qt, (Expr**)s_ptr, e.getLoc());
+        e = (Expr*)*s_ptr;    // re-read in case of ImplicitCast insertions
+    }
     if (check_assign && e.isAssignment()) {
         ma.warn(e.getLoc(), "using the result of an assignment as a condition without parentheses");
     }
@@ -284,8 +294,34 @@ fn FlowBits Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     IfStmt* i = (IfStmt*)s;
     ma.scope.enter(scope.Decl);
 
-    ma.analyseCondition(i.getCond2(), true);
-    if (ma.has_error) goto done;
+    if (i.hasDecl()) {
+        QualType ct = ma.analyseConditionDecl(i.getDecl2(), "'if' condition");
+        if (ct.isInvalid()) {
+            ma.scope.exit(ma.has_error);
+            return FlowNext | FlowError;
+        }
+    }
+    VarDecl* vd = nil;
+    Expr** condp = i.getCond2();
+    if (!*condp) {
+        // Use declared variable as condition
+        DeclStmt* ds = (DeclStmt*)i.getDecl();
+        assert(ds);
+        vd = ds.getDecl(0);
+        *condp = ma.builder.actOnIdentifier(0, vd.asDecl().getNameIdx(), 0);
+    }
+    QualType qt = ma.analyseExpr(condp, true, RHS);
+    if (qt.isInvalid()) goto done;
+    // reset the used bit so warning is emitted if variable is not used in the 'if' scope
+    if (vd) vd.asDecl().clearUsed();
+
+    Expr* e = *condp;
+    bool ok = ma.checker.check(getBuiltinQT(Bool), qt, condp, e.getLoc());
+    e = *condp;    // re-read in case of ImplicitCast insertions
+    if (e.isAssignment()) {
+        ma.warn(e.getLoc(), "using the result of an assignment as a condition without parentheses");
+    }
+    if (!ok) goto done;
     // TODO: handle constant conditions
 
     ma.scope.enter(scope.Decl);
@@ -293,10 +329,10 @@ fn FlowBits Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     ma.scope.exit(ma.has_error);
 
     FlowBits flow2 = FlowNext;
-    Stmt** else_ = i.getElse2();
-    if (else_) {
+    Stmt** else_stmt = i.getElse2();
+    if (else_stmt) {
         ma.scope.enter(scope.Decl);
-        flow2 = ma.analyseStmt(else_, true);
+        flow2 = ma.analyseStmt(else_stmt, true);
         ma.scope.exit(ma.has_error);
     }
     flow |= flow2;
@@ -312,7 +348,7 @@ fn FlowBits Analyser.analyseForStmt(Analyser* ma, Stmt* s) {
     ma.scope.enter(scope.Break | scope.Continue | scope.Decl | scope.Control);
     Stmt** init = f.getInit2();
     if (init) {
-        QualType ct = ma.analyseCondition(init, false);
+        QualType ct = ma.analyseCondition(init, "'for' init clause", false, false);
         if (ct.isInvalid()) goto done;
     }
 
@@ -352,8 +388,8 @@ fn FlowBits Analyser.analyseWhileStmt(Analyser* ma, Stmt* s) {
     WhileStmt* w = (WhileStmt*)s;
 
     ma.scope.enter(scope.Decl);
-    ma.analyseCondition(w.getCond2(), true);
-    if (ma.has_error) goto done;
+    QualType ct = ma.analyseCondition(w.getCond2(), "'while' condition", true, true);
+    if (ct.isInvalid()) goto done;
 
     Expr* cond = getCondExpr(w.getCond());
     if (cond.isCtv()) {

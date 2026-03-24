@@ -18,6 +18,7 @@ module ir_generator;
 import ast local;
 import ir local;
 import ir_context;
+import value_type local;
 
 // returns true if more stmts can follow
 fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
@@ -118,15 +119,13 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
     ir_context.Context* c = gen.ctx;
 
     const IfStmt* if_stmt = (IfStmt*)s;
-    const Stmt* cond = if_stmt.getCond();
+    const Stmt* decl = if_stmt.getDecl();
+    const Expr* cond = if_stmt.getCond();
     const Stmt* then_stmt = if_stmt.getThen();
     const Stmt* else_stmt = if_stmt.getElse();
 
-#if 0
-    assert(cond.isExpr()); // TODO handle if (Decl* d = ..) ..
-    Expr* e = (Expr*)cond;
-    if (e.isCtv()) {
-        Value v = ast.evalExpr(e);
+    if (!decl && cond.isCtv()) {
+        Value v = ast.evalExpr(cond);
         if (v.isZero()) {
             if (else_stmt) gen.emitStmt(else_stmt);
         } else {
@@ -134,7 +133,6 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
         }
         return;
     }
-#endif
 
     BlockId then_blk = c.createBlock(BlockKind.IfTrue);
     BlockId else_blk = 0;
@@ -145,8 +143,8 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
     if (else_stmt) false_blk = else_blk;
 
     // cond
-    if (cond.isDecl()) {
-        DeclStmt* ds = (DeclStmt*)cond;
+    if (decl && !if_stmt.hasSourceCond()) {
+        DeclStmt* ds = (DeclStmt*)decl;
         VarDecl* vd = ds.getDecl(0);
         Decl* d = (Decl*)vd;
 
@@ -158,9 +156,9 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
         ir.Type t = ir.Type.I32; // TODO get type
         gen.emitAssignCond(t, lhs, rhs, then_blk, join_blk, then_blk);
     } else {
-        assert(cond.isExpr());
-        Expr* e = (Expr*)cond;
-        gen.emitCond(e, then_blk, false_blk, then_blk);
+        if (decl) gen.emitStmt(decl);
+        // TODO should check for CTV values
+        gen.emitCond(cond, then_blk, false_blk, then_blk);
     }
 
     // then-block

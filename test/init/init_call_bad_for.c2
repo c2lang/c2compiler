@@ -8,7 +8,8 @@ type Foo struct {
 fn void Foo.init(Foo* f, i32 v) { f.v = v; }
 
 fn void test4() {
-    // Init call accepted in init part of for statement (not a condition)
-    for (Foo foo.init(1); false;)
+    // Init call should be accepted in init part of for statement (not a condition)
+    //   but the Code generator does not support this yet
+    for (Foo foo.init(1); false;) // @error{variable declaration in 'for' init clause cannot have an init call}
         return;
 }

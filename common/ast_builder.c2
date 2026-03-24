@@ -995,8 +995,8 @@ public fn Stmt* Builder.actOnReturnStmt(Builder* b, SrcLoc loc, Expr* ret) {
     return (Stmt*)ReturnStmt.create(b.context, loc, ret);
 }
 
-public fn Stmt* Builder.actOnIfStmt(Builder* b, SrcLoc loc, Stmt* cond, Stmt* then, Stmt* else_stmt) {
-    return (Stmt*)IfStmt.create(b.context, loc, cond, then, else_stmt);
+public fn Stmt* Builder.actOnIfStmt(Builder* b, SrcLoc loc, Stmt* decl, Expr* cond, Stmt* then, Stmt* else_stmt) {
+    return (Stmt*)IfStmt.create(b.context, loc, decl, cond, then, else_stmt);
 }
 
 public fn Stmt* Builder.actOnWhileStmt(Builder* b, SrcLoc loc, Stmt* cond, Stmt* then) {

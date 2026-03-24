@@ -1,7 +1,15 @@
 module test;
 
+public fn void foo() {
+    while (i32 a) {}     // @error{variable declaration in 'while' condition must have an initializer}
+}
+
+public fn void bar() {
+    for (i32 i; i < 10; i++) {}     // @error{variable declaration in 'for' init clause must have an initializer}
+}
+
 public fn i32 main() {
-    if (i32 a) {}     // @error{variable declaration in condition must have an initializer}
+    if (i32 a) {}     // @error{variable declaration in 'if' condition must have an initializer}
     return 0;
 }
 

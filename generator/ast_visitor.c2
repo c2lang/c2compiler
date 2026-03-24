@@ -151,10 +151,10 @@ fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
         break;
     case If:
         IfStmt* i = (IfStmt*)s;
-        v.handleStmt(i.getCond());
+        if (i.hasDecl()) v.handleStmt(i.getDecl());
+        if (i.getCond()) v.handleExpr(i.getCond());
         v.handleStmt(i.getThen());
-        Stmt* e = i.getElse();
-        if (e) v.handleStmt(e);
+        if (i.hasElse()) v.handleStmt(i.getElse());
         break;
     case While:
         WhileStmt* w = (WhileStmt*)s;

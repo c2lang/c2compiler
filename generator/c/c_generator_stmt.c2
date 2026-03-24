@@ -67,22 +67,15 @@ fn void Generator.emitStmt(Generator* gen, string_buffer.Buf* out, Stmt* s, u32 
         break;
     case If:
         IfStmt* i = (IfStmt*)s;
-        Stmt* cond = i.getCond();
-        bool is_decl = cond.isDecl();
+        bool is_decl = i.hasDecl();
         if (is_decl) {
             out.add("{\n");
             indent++;
-            gen.emitStmt(out, cond, indent, true);
+            gen.emitStmt(out, i.getDecl(), indent, true);
             out.indent(indent);
-            out.add("if (");
-            DeclStmt* ds = (DeclStmt*)cond;
-            VarDecl* vd = ds.getDecl(0);
-            gen.emitName(out, vd.asDecl());
-        } else {
-            assert(cond.isExpr());
-            out.add("if (");
-            gen.emitExpr(out, (Expr*)cond);
         }
+        out.add("if (");
+        gen.emitExpr(out, i.getCond());
         out.add(") ");
         Stmt* thenStmt = i.getThen();
         gen.emitStmt(out, thenStmt, indent, true);
