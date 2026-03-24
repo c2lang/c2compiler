@@ -11,7 +11,7 @@ fn const char* test1() {
 }
 
 fn const char* test2() {
-    switch (const char* str) { // @error{variable declaration in switch expression must have an initializer}
+    switch (const char* str) { // @error{variable declaration in 'switch' expression must have an initializer}
     case "pear":
         return "";
     default:

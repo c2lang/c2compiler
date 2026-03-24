@@ -1,0 +1,10 @@
+module test;
+
+public fn i32 main() {
+    switch (i32 a = 12) {        // @warning{unused variable 'a'}
+    default: break;
+    }
+    return 0;
+}
+
+

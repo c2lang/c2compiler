@@ -11,7 +11,7 @@ fn i32 test1() {
 }
 
 fn i32 test2() {
-    switch (i32 a) { // @error{variable declaration in switch expression must have an initializer}
+    switch (i32 a) { // @error{variable declaration in 'switch' expression must have an initializer}
     case 1:
         return 0;
     default:

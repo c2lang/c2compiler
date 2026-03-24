@@ -31,7 +31,7 @@ fn QualType Analyser.analyseSwitchDecl(Analyser* ma, Stmt** s_ptr) {
         DeclStmt* ds = (DeclStmt*)s;
         VarDecl* vd = ds.getDecl(0);
         if (!vd.getInit()) {
-            ma.error(vd.asDecl().getLoc(), "variable declaration in switch expression must have an initializer");
+            ma.error(vd.asDecl().getLoc(), "variable declaration in 'switch' expression must have an initializer");
             return QualType_Invalid;
         }
     }
@@ -56,11 +56,12 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
             return FlowNext | FlowError;
         }
     }
+    VarDecl* vd = nil;
     Expr** condp = sw.getCond2();
     if (!*condp) {
         DeclStmt* ds = (DeclStmt*)sw.getDecl();
         assert(ds);
-        VarDecl* vd = ds.getDecl(0);
+        vd = ds.getDecl(0);
         *condp = ma.builder.actOnIdentifier(0, vd.asDecl().getNameIdx(), 0);
     }
     QualType ct = ma.analyseExpr(condp, true, RHS);
@@ -68,6 +69,8 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
         ma.scope.exit(ma.has_error);
         return FlowNext | FlowError;
     }
+    // reset the used bit so warning is emitted if variable is not used in the 'switch' scope
+    if (vd) vd.asDecl().clearUsed();
 
     bool isCharPtr = ct.isCharPointer();
     if (isCharPtr) {
