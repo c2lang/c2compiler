@@ -1,0 +1,6 @@
+module test;
+
+fn u32 foo(u32 x) {     // parameter was flagged as unused because of another error
+    if (xxx) return 1;  // @error{use of undeclared identifier 'xxx'}
+    return x;
+}

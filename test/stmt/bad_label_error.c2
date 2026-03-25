@@ -1,0 +1,7 @@
+module test;
+
+fn u32 foo() {
+again:
+    if (xxx) return 1; // @error{use of undeclared identifier 'xxx'}
+    goto again;
+}
