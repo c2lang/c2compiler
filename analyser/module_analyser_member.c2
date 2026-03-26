@@ -31,7 +31,8 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
     QualType baseType = QualType_Invalid;
 
     CallKind ck = Invalid;
-    u32 start = 0;
+
+    Decl* d = nil;
 
     if (m.hasExpr()) {
         Expr** base_ptr = m.getBaseExpr2();
@@ -39,35 +40,33 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
         baseLoc = exprBase.getLoc();
         baseType = ma.analyseExpr(base_ptr, false, side);
         if (baseType.isInvalid()) return QualType_Invalid;
-
         exprBase = *base_ptr; // re-read
         valtype = exprBase.getValType();
-        start = 1;
+    } else {
+        u32 name_idx = m.getNameIdx(0);
+        SrcLoc loc = m.getLoc(0);
+        // first member
+        d = ma.scope.find(name_idx, loc, ma.usedPublic);
+        if (!d) {
+            ma.has_error = true;
+            return QualType_Invalid;
+        }
+        // Note: this can happen in arraysizeExpr: var[test.number] a; (as global/struct-member)
+        if (!d.isChecked()) {
+            if (!ma.analyseGlobalDecl(d)) return QualType_Invalid;
+        }
+        baseType = d.getType();
+        valtype = decl2valtype(d);
+        baseLoc = loc;
+        d.setUsed();
+        m.setDecl(d, 0);
     }
 
-    Decl* d = nil;
     bool is_substruct = false;
-    for (u32 i = start; i < 2; i++) {
-        is_substruct = false;
-        u32 name_idx = m.getNameIdx(i);
-        SrcLoc loc = m.getLoc(i);
-
-        //stdio.printf("  [%d/%d] %s\n", i, refcount, ma.idx2name(name_idx));
-
-        if (baseType.isInvalid()) {
-            // first member
-            d = ma.scope.find(name_idx, loc, ma.usedPublic);
-            if (!d) {
-                ma.has_error = true;
-                return QualType_Invalid;
-            }
-            // Note: this can happen in arraysizeExpr: var[test.number] a; (as global/struct-member)
-            if (!d.isChecked()) {
-                if (!ma.analyseGlobalDecl(d)) return QualType_Invalid;
-            }
-            baseType = d.getType();
-            valtype = decl2valtype(d);
-        } else {
+    {
+        u32 name_idx = m.getNameIdx(1);
+        SrcLoc loc = m.getLoc(1);
+        {
             QualType canon = baseType.getCanonicalType();
             TypeKind kind = ma.analyseBaseType(canon);
 
@@ -162,12 +161,11 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                     Decl* ef = etd.findFunction(name_idx);
                     if (ef) {
                         // Note: not always CallExpr here, but use CallKind enum since same meaning
-                        ck = (valtype == NValue) ? StaticTypeFunc : TypeFunc;
                         if (valtype == NValue) {
-                            ck = CallKind.StaticTypeFunc;
+                            ck = StaticTypeFunc;
                             m.setKind(StaticTypeFunc);
                         } else {
-                            ck = CallKind.TypeFunc;
+                            ck = TypeFunc;
                             m.setKind(TypeFunc);
                         }
                         d = ef;
@@ -207,12 +205,12 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                             vdd = (Decl*)etd.getAssocDecl(idx);
                             qt = vdd.getType(); // will be X[Enum]
                         }
-                        m.setDecl(vdd, i);  // always point to AssocValue
+                        m.setDecl(vdd, 1);  // always point to AssocValue
                     } else { // e.a -> decl[e]
                         // Return type: X
                         // TODO if e is CTV, e.a is also CTV
                         m.setKind(EnumConstantValue);
-                        m.setDecl(vdd, i);  // always point to AssocValue
+                        m.setDecl(vdd, 1);  // always point to AssocValue
                         if (ma.check_only) {
                             // nothing to do
                         } else {
@@ -252,12 +250,8 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
         baseLoc = loc;
 
         // Note: a.b.c  = 1; -> b is always used, c only if in RHS
-        if (i == 1) {
-            if (side & RHS) d.setUsed();
-        } else {
-            d.setUsed();
-        }
-        m.setDecl(d, i);
+        if (side & RHS) d.setUsed();
+        m.setDecl(d, 1);
     }
 
     if (is_substruct) {
