@@ -20,7 +20,7 @@ fn void test3(char *s) {
         break;
     case "\u0000":     // @error{case string value has embedded null byte}
         break;
-    case "\U00000000":     // @error{case string value has embedded null byte}
+    case "\u{0}":     // @error{case string value has embedded null byte}
         break;
     }
 }

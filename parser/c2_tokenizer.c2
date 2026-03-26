@@ -1068,32 +1068,28 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype
         break;
     case 'u':
         result.radix = Hex;
-        nc = hexconv(p + 1, 4, &cc);
-        if (nc != 4) {
-            t.error(result, "expect 4 hexadecimal digits after '\\u'");
-            return 0;
+        if (p[1] == '{') {
+            nc = hexconv(p + 2, i32.max, &cc);
+            if (nc == 0 || p[nc + 2] != '}') {
+                t.error(result, "invalid unicode escape sequence");
+                return 0;
+            }
+            nc += 3;
+        } else {
+            nc = hexconv(p + 1, 4, &cc);
+            if (nc != 4) {
+                t.error(result, "expect 4 hexadecimal digits after '\\u'");
+                return 0;
+            }
+            nc++;
         }
-        nc++;
-        goto add_utf8;
-    case 'U':
-        result.radix = Hex;
-        nc = hexconv(p + 1, 8, &cc);
-        if (nc != 8) {
-            t.error(result, "expect 8 hexadecimal digits after '\\U'");
-            return 0;
-        }
-        nc++;
         if (cc > 0x10FFFF) {
             t.error(result, "code point value out of range: %08x", cc);
             return 0;
-            //cc = 0xFFFD;
         }
-    add_utf8:
-        {
-            char[4] tab;
-            u32 clen = utf8.encode(tab, elemsof(tab), cc);
-            t.buf.add2(tab, clen);
-        }
+        char[4] tab;
+        u32 clen = utf8.encode(tab, elemsof(tab), cc);
+        t.buf.add2(tab, clen);
         break;
     default:
         if (c < ' ' || c == 0x7F) {
