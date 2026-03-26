@@ -1,0 +1,5 @@
+module test;
+
+fn void foo() {
+    S s.init;  // @error{missing argument list for init call}
+}

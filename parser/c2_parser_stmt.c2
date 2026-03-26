@@ -560,6 +560,10 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
                 has_init_call = true;
                 break;
             }
+            if (p.peekToken(1) == Identifier) {
+                p.consumeToken();
+                p.errorAt(p.tok.loc + p.tok.len, "missing argument list for init call");
+            }
             break;
         case LSquare:
             p.error("array indices should go after type");
