@@ -318,7 +318,13 @@ fn void Generator.emitFieldDesigExpr(Generator* gen, string_buffer.Buf* out, Exp
 fn void Generator.emitArrayDesigExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
     ArrayDesignatedInitExpr* ad = (ArrayDesignatedInitExpr*)e;
     out.add1('[');
-    gen.emitExpr(out, ad.getDesignator());
+    if (ad.hasExpr1()) gen.emitExpr(out, ad.getExpr1());
+    else out.print("%d", ad.getStart());
+    if (ad.getKind() != Single) {
+        out.add(" ... ");
+        if (ad.getKind() == Range && ad.hasExpr2()) gen.emitExpr(out, ad.getExpr2());
+        else out.print("%d", ad.getEnd());
+    }
     out.add("] = ");
     gen.emitExpr(out, ad.getInit());
 }

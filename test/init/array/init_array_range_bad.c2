@@ -5,7 +5,7 @@ u32[100] a1 = {
 }
 
 u32[] q2 = {
-    [1 ...] = 0, // @error{cannot have an empty range upper bound in unsized array}
+    [1 ...] = 0, // @error{cannot have an empty range upper bound in an unsized array}
 }
 
 u32[] a3 = {

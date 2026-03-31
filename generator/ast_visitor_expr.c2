@@ -58,7 +58,8 @@ fn void Visitor.handleExpr(Visitor* v, Expr* e) {
         break;
     case ArrayDesignatedInit:
         ArrayDesignatedInitExpr* a = (ArrayDesignatedInitExpr*)e;
-        v.handleExpr(a.getDesignator());
+        if (a.hasExpr1()) v.handleExpr(a.getExpr1());
+        if (a.hasExpr2()) v.handleExpr(a.getExpr2());
         v.handleExpr(a.getInit());
         break;
     case BinaryOperator:

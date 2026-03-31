@@ -32,9 +32,10 @@ $(C2C): output/bootstrap/bootstrap $(C2C_DEPS)
 	@mv -f output/c2c/* output/bootstrap
 	@echo "---- running c2c (no plugins$(C2FLAGS)) ----"
 	@output/bootstrap/c2c $(C2FLAGS) --noplugins --fast c2c $(PLUGINS)
+	@mv -f output/c2c/c2c output/c2c/c2c_fast
 	@./install_plugins.sh
 	@echo "---- running c2c (optimized with plugins$(C2FLAGS)) ----"
-	@output/c2c/c2c $(C2FLAGS)
+	@output/c2c/c2c_fast $(C2FLAGS)
 	@./install_plugins.sh
 
 output/bootstrap/bootstrap:

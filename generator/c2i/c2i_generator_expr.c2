@@ -199,7 +199,19 @@ fn void Generator.emitFieldDesigExpr(Generator* gen, string_buffer.Buf* out, con
 
 fn void Generator.emitArrayDesigExpr(Generator* gen, string_buffer.Buf* out, const ArrayDesignatedInitExpr* ad) {
     out.add1('[');
-    gen.emitExpr(out, ad.getDesignator());
+    if (ad.hasExpr1()) {
+        gen.emitExpr(out, ad.getExpr1());
+        if (ad.getKind() != Single) out.space();
+    }
+    switch (ad.getKind()) {
+    case Single:                break;
+    case Range: out.add("..."); break;
+    case Slice: out.add(":");   break;
+    }
+    if (ad.hasExpr2()) {
+        out.space();
+        gen.emitExpr(out, ad.getExpr2());
+    }
     out.add("] = ");
     gen.emitExpr(out, ad.getInit());
 }

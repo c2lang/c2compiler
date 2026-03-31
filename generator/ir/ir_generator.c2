@@ -421,9 +421,8 @@ fn void Generator.emitArrayInit(Generator* gen, const Expr* e) {
             const Expr* ie = values[i];
             if (ie.isArrayDesignatedInit()) {
                 const ArrayDesignatedInitExpr* ad = (ArrayDesignatedInitExpr*)ie;
-                const Expr* desig = ad.getDesignator();
-                Value v = ast.evalExpr(desig);
-                sorter.addAt(v.as_u32(), ad.getInit());
+                sorter.addAt(ad.getStart(), ad.getInit());
+                // TODO: handle ranges and slices
             } else {
                 sorter.add(ie);
             }

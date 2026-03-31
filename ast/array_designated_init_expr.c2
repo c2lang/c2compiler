@@ -19,41 +19,86 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
+public type ArrayDesignatedInitExprKind enum u8 {
+    Single, Range, Slice
+}
+
+type ArrayDesignatedInitExprBits struct {
+    u32 : NumExprBits;
+    bool has_expr1 : 1;
+    bool has_expr2 : 1;
+    ArrayDesignatedInitExprKind kind : 2;
+}
+
 public type ArrayDesignatedInitExpr struct @(opaque) {
     Expr base;
-    Expr* designator;
+    u32 start, end;
     Expr* initValue;
-    // TODO value during analysis
+    Expr*[0] expr;
 }
 
 public fn ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.Context* c,
-                                                                    SrcLoc loc,
-                                                                    Expr* designator,
-                                                                    Expr* initValue)
+                                                                  SrcLoc loc,
+                                                                  Expr* expr1,
+                                                                  Expr* expr2,
+                                                                  Expr* initValue,
+                                                                  ArrayDesignatedInitExprKind kind)
 {
-    ArrayDesignatedInitExpr* e = c.alloc(sizeof(ArrayDesignatedInitExpr));
+    bool has_expr1 = expr1 != nil;
+    bool has_expr2 = expr2 != nil;
+    u32 size = sizeof(ArrayDesignatedInitExpr) + (has_expr1 + has_expr2) * sizeof(Expr*);
+    ArrayDesignatedInitExpr* e = c.alloc(size);
     e.base.init(ArrayDesignatedInit, loc, 0, 0, 0, RValue);
-    e.designator = designator;
+    e.base.base.arrayDesignatedInitExprBits.has_expr1 = has_expr1;
+    e.base.base.arrayDesignatedInitExprBits.has_expr2 = has_expr2;
+    e.base.base.arrayDesignatedInitExprBits.kind = kind;
+    e.start = e.end = 0;
     e.initValue = initValue;
+    if (has_expr1) e.expr[0] = expr1;
+    if (has_expr2) e.expr[+has_expr1] = expr2;
 #if AstStatistics
-    Stats.addExpr(ArrayDesignatedInit, sizeof(ArrayDesignatedInitExpr));
+    Stats.addExpr(ArrayDesignatedInit, size);
 #endif
     return e;
 }
 
 fn Expr* ArrayDesignatedInitExpr.instantiate(ArrayDesignatedInitExpr* e, Instantiator* inst) {
-    return (Expr*)ArrayDesignatedInitExpr.create(inst.c,
-                                                 e.base.base.loc,
-                                                 e.designator.instantiate(inst),
-                                                 e.initValue.instantiate(inst));
+    Expr* expr1 = e.hasExpr1() ? e.getExpr1().instantiate(inst) : nil;
+    Expr* expr2 = e.hasExpr2() ? e.getExpr2().instantiate(inst) : nil;
+    return (Expr*)ArrayDesignatedInitExpr.create(inst.c, e.base.base.loc, expr1, expr2, e.initValue.instantiate(inst), e.getKind());
 }
 
-public fn Expr* ArrayDesignatedInitExpr.getDesignator(const ArrayDesignatedInitExpr* e) {
-    return e.designator;
+public fn bool ArrayDesignatedInitExpr.hasExpr1(const ArrayDesignatedInitExpr* e) {
+    return e.base.base.arrayDesignatedInitExprBits.has_expr1;
 }
 
-public fn Expr** ArrayDesignatedInitExpr.getDesignator2(ArrayDesignatedInitExpr* e) {
-    return &e.designator;
+public fn bool ArrayDesignatedInitExpr.hasExpr2(const ArrayDesignatedInitExpr* e) {
+    return e.base.base.arrayDesignatedInitExprBits.has_expr2;
+}
+
+public fn ArrayDesignatedInitExprKind ArrayDesignatedInitExpr.getKind(const ArrayDesignatedInitExpr* e) {
+    return e.base.base.arrayDesignatedInitExprBits.kind;
+}
+
+public fn u32 ArrayDesignatedInitExpr.getStart(const ArrayDesignatedInitExpr* e) { return e.start; }
+public fn void ArrayDesignatedInitExpr.setStart(ArrayDesignatedInitExpr* e, u32 start) { e.start = start; }
+public fn u32 ArrayDesignatedInitExpr.getEnd(const ArrayDesignatedInitExpr* e) { return e.end; }
+public fn void ArrayDesignatedInitExpr.setEnd(ArrayDesignatedInitExpr* e, u32 end) { e.end = end; }
+
+public fn Expr* ArrayDesignatedInitExpr.getExpr1(const ArrayDesignatedInitExpr* e) {
+    return e.hasExpr1() ? e.expr[0] : nil;
+}
+
+public fn Expr** ArrayDesignatedInitExpr.getExpr1Ptr(ArrayDesignatedInitExpr* e) {
+    return e.hasExpr1() ? &e.expr[0] : nil;
+}
+
+public fn Expr* ArrayDesignatedInitExpr.getExpr2(const ArrayDesignatedInitExpr* e) {
+    return e.hasExpr2() ? e.expr[+e.hasExpr1()] : nil;
+}
+
+public fn Expr** ArrayDesignatedInitExpr.getExpr2Ptr(ArrayDesignatedInitExpr* e) {
+    return e.hasExpr2() ? &e.expr[+e.hasExpr1()] : nil;
 }
 
 public fn Expr* ArrayDesignatedInitExpr.getInit(const ArrayDesignatedInitExpr* e) {
@@ -71,14 +116,37 @@ fn SrcLoc ArrayDesignatedInitExpr.getEndLoc(const ArrayDesignatedInitExpr* e) {
 fn void ArrayDesignatedInitExpr.print(const ArrayDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
+    switch (e.getKind()) {
+    case Single:
+        out.print(" %d", e.start);
+        break;
+    case Range:
+        out.print(" %d ... %d", e.start, e.end);
+        break;
+    case Slice:
+        out.print(" %d : %d", e.start, e.end - e.start + 1);
+        break;
+    }
     out.newline();
-    e.designator.print(out, indent + 1);
-    e.initValue.print(out, indent + 1);
+    if (e.hasExpr1()) e.getExpr1().print(out, indent + 1);
+    if (e.hasExpr2()) e.getExpr2().print(out, indent + 1);
 }
 
 fn void ArrayDesignatedInitExpr.printLiteral(const ArrayDesignatedInitExpr* e, string_buffer.Buf* out) {
     out.add1('[');
-    e.designator.printLiteral(out);
+    if (e.hasExpr1()) {
+        e.getExpr1().printLiteral(out);
+        if (e.getKind() != Single) out.space();
+    }
+    switch (e.getKind()) {
+    case Single: break;
+    case Range: out.add("..."); break;
+    case Slice: out.add(":"); break;
+    }
+    if (e.hasExpr2()) {
+        out.space();
+        e.getExpr2().printLiteral(out);
+    }
     out.add("] = ");
     e.initValue.printLiteral(out);
 }

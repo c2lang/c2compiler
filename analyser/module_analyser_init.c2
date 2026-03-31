@@ -192,13 +192,15 @@ fn bool Analyser.analyseArrayDesignatorIndex(Analyser* ma, Expr** ep, bool isEnu
 // Note: this function should only be called from analyseInitListArray directly!
 fn bool Analyser.analyseArrayDesignatedInit(Analyser* ma, Expr* e, QualType expectedType, bool isEnumIndex, QualType indexType) {
     ArrayDesignatedInitExpr* ad = (ArrayDesignatedInitExpr*)e;
-    Expr* desig = ad.getDesignator();
-    if (desig.isRange()) {
-        RangeExpr* r = (RangeExpr*)desig;
-        if (!ma.analyseArrayDesignatorIndex(r.getLHS2(), isEnumIndex, indexType)) return false;
-        if (!ma.analyseArrayDesignatorIndex(r.getRHS2(), isEnumIndex, indexType)) return false;
-    } else {
-        if (!ma.analyseArrayDesignatorIndex(ad.getDesignator2(), isEnumIndex, indexType)) return false;
+    if (ad.hasExpr1()) {
+        if (!ma.analyseArrayDesignatorIndex(ad.getExpr1Ptr(), isEnumIndex, indexType)) return false;
+    }
+    if (ad.hasExpr2()) {
+        if (ad.getKind() == Slice) {
+            if (!ma.analyseArrayDesignatorIndex(ad.getExpr2Ptr(), false, getBuiltinQT(UInt32))) return false;
+        } else {
+            if (!ma.analyseArrayDesignatorIndex(ad.getExpr2Ptr(), isEnumIndex, indexType)) return false;
+        }
     }
 
     Expr* val = ad.getInit();
@@ -275,7 +277,8 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
     return ok;
 }
 
-fn bool Analyser.checkArrayDesignatorIndex(Analyser* ma, Expr* e, u64 *valp, bool has_size, u64 size) {
+fn bool Analyser.checkArrayDesignatorIndex(Analyser* ma, Expr* e, u64 *valp, bool has_size, u64 size)
+{
     SrcLoc loc = e.getStartLoc();
     Value idx = ast.evalExpr(e);
     if (!idx.isInteger()) {
@@ -294,6 +297,28 @@ fn bool Analyser.checkArrayDesignatorIndex(Analyser* ma, Expr* e, u64 *valp, boo
     return true;
 }
 
+fn bool Analyser.checkArrayDesignatorLength(Analyser* ma, Expr* e, u64 *valp, bool has_size, u64 size, u64 start_index)
+{
+    SrcLoc loc = e.getStartLoc();
+    Value idx = ast.evalExpr(e);
+    if (!idx.isInteger()) {
+        ma.error(loc, "array slice length expression must have integer type");
+        return false;
+    }
+    // TODO: should check magnitude?
+    if (idx.isNegative() || idx.isZero()) {
+        ma.error(loc, "array slice length must be strictly positive");
+        return false;
+    }
+    u64 len = idx.as_u64();
+    *valp = start_index + len - 1;
+    if (has_size && *valp >= size) {
+        ma.error(loc, "array slice length '%d' exceeds remaining length '%d'", len, size - start_index);
+        return false;
+    }
+    return true;
+}
+
 fn bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, bool has_size, u32 *size, init_checker.Checker* checker) {
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
@@ -302,43 +327,47 @@ fn bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, bool has
     u32 max_index = 0;
     u64 index_hi = u64.max;
     for (u32 i=0; i<numValues; i++) {
-        SrcLoc loc;
         Expr* value = values[i];
+        SrcLoc loc = value.getLoc();
         u64 index_lo = index_hi += 1;
         if (value.isArrayDesignatedInit()) {
             ArrayDesignatedInitExpr* ad = (ArrayDesignatedInitExpr*)value;
-            Expr* desig = ad.getDesignator();
-            loc = desig.getLoc();
-            if (desig.isRange()) {
-                RangeExpr* r = (RangeExpr*)desig;
-                if (Expr* lhs = r.getLHS()) {
-                    if (!ma.checkArrayDesignatorIndex(lhs, &index_lo, has_size, *size))
-                        return false;
-                } else {
-                    r.setLHS(ma.builder.actOnIntegerLiteral(0, 0, index_lo, Default));
-                }
-                if (Expr* rhs = r.getRHS()) {
-                    if (!ma.checkArrayDesignatorIndex(rhs, &index_hi, has_size, *size))
+            if (ad.hasExpr1()) {
+                if (!ma.checkArrayDesignatorIndex(ad.getExpr1(), &index_lo, has_size, *size))
+                    return false;
+            }
+            index_hi = index_lo;
+            if (ad.getKind() == Slice) {
+                if (ad.hasExpr2()) {
+                    if (!ma.checkArrayDesignatorLength(ad.getExpr2(), &index_hi, has_size, *size, index_lo))
                         return false;
                 } else {
                     if (!has_size) {
-                        ma.error(loc, "cannot have an empty range upper bound in unsized array");
+                        ma.error(loc, "cannot have an empty slice length in an unsized array");
                         return false;
                     }
                     index_hi = *size - 1;
-                    r.setRHS(ma.builder.actOnIntegerLiteral(0, 0, index_hi, Default));
                 }
-                if (index_lo > index_hi) {
-                    ma.error(loc, "array range designator start '%d' is greater than end '%d'", index_lo, index_hi);
-                    return false;
+            } else
+            if (ad.getKind() == Range) {
+                if (ad.hasExpr2()) {
+                    if (!ma.checkArrayDesignatorIndex(ad.getExpr2(), &index_hi, has_size, *size))
+                        return false;
+                } else {
+                    if (!has_size) {
+                        ma.error(loc, "cannot have an empty range upper bound in an unsized array");
+                        return false;
+                    }
+                    index_hi = *size - 1;
                 }
-            } else {
-                if (!ma.checkArrayDesignatorIndex(desig, &index_lo, has_size, *size))
-                    return false;
-                index_hi = index_lo;
             }
+            if (index_lo > index_hi) {
+                ma.error(loc, "array range designator start '%d' is greater than end '%d'", index_lo, index_hi);
+                return false;
+            }
+            ad.setStart((u32)index_lo);
+            ad.setEnd((u32)index_hi);
         } else {
-            loc = value.getLoc();
             if (has_size && index_lo >= *size) {
                 ma.error(loc, "excess elements in array initializer");
                 return false;

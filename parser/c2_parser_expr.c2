@@ -649,26 +649,26 @@ fn Expr* Parser.parseArrayDesignator(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();   // '['
 
-    Expr* designator = nil;
-    if (p.tok.kind != Ellipsis) {
+    ArrayDesignatedInitExprKind kind = Single;
+    Expr* expr1 = nil;
+    Expr* expr2 = nil;
+    if (p.tok.kind != Ellipsis && p.tok.kind != Colon) {
         // TODO: should be constant-expression
-        designator = p.parseAssignmentExpression();
+        expr1 = p.parseAssignmentExpression();
     }
-    if (p.tok.kind == Ellipsis) {
-        SrcLoc range_loc = p.tok.loc;
+    if (p.tok.kind == Ellipsis || p.tok.kind == Colon) {
+        kind = p.tok.kind == Colon ? Slice : Range;
         p.consumeToken();
-        Expr* e1 = nil;
         if (p.tok.kind != RSquare) {
             // TODO: should be constant-expression
-            e1 = p.parseExpr();
+            expr2 = p.parseExpr();
         }
-        designator = p.builder.actOnRange(range_loc, designator, e1);
     }
     p.expectAndConsume(RSquare);
     p.expectAndConsume(Equal);
 
     Expr* initValue = p.parseInitValue(false);
-    return p.builder.actOnArrayDesignatedInit(loc, designator, initValue);
+    return p.builder.actOnArrayDesignatedInit(loc, expr1, expr2, initValue, kind);
 }
 
 fn Expr* Parser.parseExplicitCastExpr(Parser* p) {

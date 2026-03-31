@@ -43,12 +43,10 @@ fn Expr* RangeExpr.instantiate(RangeExpr* e, Instantiator* inst) {
 }
 
 public fn Expr* RangeExpr.getLHS(const RangeExpr* e) { return e.lhs; }
-public fn Expr** RangeExpr.getLHS2(RangeExpr* e) { return &e.lhs; }
-public fn void RangeExpr.setLHS(RangeExpr* e, Expr* lhs) { e.lhs = lhs; }
+//public fn Expr** RangeExpr.getLHS2(RangeExpr* e) { return &e.lhs; }
 
 public fn Expr* RangeExpr.getRHS(const RangeExpr* e) { return e.rhs; }
-public fn Expr** RangeExpr.getRHS2(RangeExpr* e) { return &e.rhs; }
-public fn void RangeExpr.setRHS(RangeExpr* e, Expr* rhs) { e.rhs = rhs; }
+//public fn Expr** RangeExpr.getRHS2(RangeExpr* e) { return &e.rhs; }
 
 fn SrcLoc RangeExpr.getStartLoc(const RangeExpr* e) {
     if (e.lhs) return e.lhs.getStartLoc();

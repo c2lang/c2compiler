@@ -173,7 +173,8 @@ fn void Finder.handleExpr(Finder* s, Expr* e) {
         break;
     case ArrayDesignatedInit:
         ArrayDesignatedInitExpr* a = (ArrayDesignatedInitExpr*)e;
-        s.handleExpr(a.getDesignator());
+        if (a.hasExpr1()) s.handleExpr(a.getExpr1());
+        if (a.hasExpr2()) s.handleExpr(a.getExpr2());
         s.handleExpr(a.getInit());
         break;
     case BinaryOperator:

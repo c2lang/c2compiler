@@ -1217,9 +1217,11 @@ public fn Expr* Builder.actOnFieldDesignatedInit(Builder* b,
 
 public fn Expr* Builder.actOnArrayDesignatedInit(Builder* b,
                                                  SrcLoc loc,
-                                                 Expr* designator,
-                                                 Expr* initValue) {
-    return (Expr*)ArrayDesignatedInitExpr.create(b.context, loc, designator, initValue);
+                                                 Expr* expr1,
+                                                 Expr* expr2,
+                                                 Expr* initValue,
+                                                 ArrayDesignatedInitExprKind kind) {
+    return (Expr*)ArrayDesignatedInitExpr.create(b.context, loc, expr1, expr2, initValue, kind);
 }
 
 public fn void Builder.actOnStaticAssert(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
