@@ -121,8 +121,14 @@ static const char foo_Text4a[8] = "abc\nhgi";
 static const char foo_Text4b[4] = "hgi";
 static const char foo_Text5[8] = "abc\nhgi";
 static const char foo_Text6[9] = "abc\nhgi\n";
-static const char foo_Text7[43] = "if (abc)\n    return `x'\"'`;\n\nreturn \"`'\";\n";
-static const char foo_Text8[55] = "    if (abc)\n        return `x'\"'`;\n\n    return \"`'\";\n";
-static const char foo_Text9[15] = "    \n    \n    ";
+static const char foo_Text7[43] = "if (abc)\n"
+                                  "    return `x'\"'`;\n\n"
+                                  "return \"`'\";\n";
+static const char foo_Text8[55] = "    if (abc)\n"
+                                  "        return `x'\"'`;\n\n"
+                                  "    return \"`'\";\n";
+static const char foo_Text9[15] = "    \n"
+                                  "    \n"
+                                  "    ";
 static const char foo_Text10[6] = "    \n";
 static const char foo_Text11[12] = "\treturn 1;\n";

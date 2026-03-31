@@ -168,7 +168,28 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
 }
 
 fn void Generator.emitStringLiteral(Generator* gen, string_buffer.Buf* out, const StringLiteral* s) {
-    s.printLiteral(out);
+    const char* p = idx2name(s.getTextIndex());
+    u32 len = s.getSize() - 1;
+    if (len > 10) {
+        // break long string with embedded newlines on multiple lines
+        for (;;) {
+            u32 i = 0;
+            while (i < len && p[i++] != '\n') continue;
+            while (i < len && p[i] == '\n') i++;
+            if (i == len) break;
+            u32 col = out.getColumn();
+            out.add1('"');
+            out.encodeBytes(p, i, '"');
+            out.add1('"');
+            out.newline();
+            while (col-- > 0) out.add1(' ');
+            p += i;
+            len -= i;
+        }
+    }
+    out.add1('"');
+    out.encodeBytes(p, len, '"');
+    out.add1('"');
 }
 
 fn void Generator.emitBitOffset(Generator* gen, string_buffer.Buf* out, Expr* base, Expr* index, C_Prec prec) {

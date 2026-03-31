@@ -22,5 +22,6 @@ public fn i32 main(i32 argc, const i8** argv)
 
 // @expect{atleast, cgen/build.c}
 
-static const char test_File1[40] = "module file2;\n\n// The quick brown fox\n\n";
+static const char test_File1[40] = "module file2;\n\n"
+                                   "// The quick brown fox\n\n";
 
