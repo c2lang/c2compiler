@@ -237,7 +237,7 @@ fn IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
         break;
     case Variable:
         VarDecl* vd = (VarDecl*)d;
-        if (vd.isGlobal() || vd.hasLocalQualifier()) e.setCtc();
+        if (vd.isGlobal() || vd.isStatic()) e.setCtc();
         e.setLValue();
         const Expr* init = vd.getInit();
         QualType t = d.getType();

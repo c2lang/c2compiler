@@ -375,7 +375,7 @@ fn QualType Analyser.analyseDecl(Analyser* ma, VarDecl* vd) {
     bool has_init_call = vd.hasInitCall();
     if (!has_init_call && initExpr) {
         ma.analyseInitExpr(initExpr, res, vd.getAssignLoc(), false, false);
-        if (vd.hasLocalQualifier()) {
+        if (vd.isStatic()) {
             Expr* e = vd.getInit();
             if (!e.isCtc()) {
                 ma.errorRange(e.getLoc(), e.getRange(), "initializer element is not a compile-time constant");
@@ -550,7 +550,7 @@ fn void Analyser.checkReturnAddrOfLocal(Analyser* ma, Expr* arg) {
     if (!d.isVarDecl()) return;
     VarDecl* vd = (VarDecl*)d;
 
-    if ((vd.isLocal() && !vd.hasLocalQualifier()) || vd.isParameter()) {
+    if ((vd.isLocal() && !vd.isStatic()) || vd.isParameter()) {
         ma.error(arg.getLoc(), "function returns address of local variable");
     }
 }

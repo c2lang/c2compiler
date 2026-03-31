@@ -8,7 +8,7 @@ type A struct {
 
 // TODO: why not public `fn X* increment<X>() {`
 public fn X* increment() template X {
-    local X x2;
+    static X x2;
     return &x2;
 }
 

@@ -174,7 +174,7 @@ fn void Generator.emitVarDecl(Generator* gen, ir.Ref* result, Decl* d) {
     const VarDecl* vd = (VarDecl*)d;
     if (vd.isGlobal()) {
         gen.emitSymbol(result, d);
-    } else if (vd.hasLocalQualifier()) {
+    } else if (vd.isStatic()) {
         u32 gen_idx = d.getGenIdx();
         if (!gen_idx) {
             QualType qt = d.getType();

@@ -95,7 +95,7 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
         for (u32 i = 0; i < count; i++) {
             VarDecl* vd = ds.getDecl(i);
 
-            if (vd.hasLocalQualifier()) return true; // already done
+            if (vd.isStatic()) return true; // already done
 
             const Expr* ie = vd.getInit();
             if (ie) {

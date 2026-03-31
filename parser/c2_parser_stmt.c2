@@ -57,6 +57,8 @@ fn Stmt* Parser.parseStmt(Parser* p) {
     case KW_int ... KW_unsigned:    // C type keywords
     case KW_const:
     case KW_local:
+    case KW_static:
+    case KW_tlocal:
     case KW_volatile:
     case KW_void:
         // checkSemi, allowLocal, !isCondition
@@ -506,10 +508,10 @@ fn Stmt* Parser.parseWhileStmt(Parser* p) {
 fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool isCondition) {
     VarDecl*[MaxMultiDecl] decls;
     u32 num_decls = 0;
-    bool has_local = false;
-    if (p.tok.kind == KW_local) {
-        has_local = true;
-        if (!allowLocal) p.error("keyword 'local' is not allowed here");
+    bool is_static = (p.tok.kind == KW_local || p.tok.kind == KW_static);
+    bool has_tlocal = (p.tok.kind == KW_tlocal);
+    if (is_static | has_tlocal) {
+        if (!allowLocal) p.error("keyword '%s' is not allowed here", p.tok.kind.str());
         p.consumeToken();
     }
 
@@ -548,8 +550,8 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
         case Dot:
             if (p.peekToken(1) == Identifier
             &&  p.peekToken(2) == LParen) {
-                if (has_local)
-                    p.error("local qualified variables cannot have an init call");
+                if (is_static | has_tlocal)
+                    p.error("static local variables cannot have an init call");
                 if (isCondition)
                     p.error("cannot use an init call inside a condition");
                 u32 name_len = p.tok.len;
@@ -571,7 +573,9 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
         default:
             break;
         }
-        decls[num_decls++] = p.builder.actOnVarDecl(name, loc, &ref, assignLoc, initValue, has_local, has_init_call);
+        VarDecl* vd = p.builder.actOnVarDecl(name, loc, &ref, assignLoc, initValue, is_static, has_init_call);
+        if (has_tlocal) vd.setTLocal();
+        decls[num_decls++] = vd;
         if (p.tok.kind != Comma)
             break;
         p.consumeToken();
@@ -628,7 +632,7 @@ fn bool Parser.isDeclaration(Parser* p) {
     const Kind kind = p.tok.kind;
     if (kind == Identifier) return p.isTypeSpec();
     if (kind.isTypeKeyword() && (p.peekToken(1) != Dot)) return true;
-    if (kind == KW_local) return true;
+    if (kind == KW_local || kind == KW_static || kind == KW_tlocal) return true;
     if (kind.isQualifier()) return true;
     return false;
 }

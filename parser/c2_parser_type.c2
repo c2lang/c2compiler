@@ -361,7 +361,8 @@ fn void Parser.parseEnumAssocAttributes(Parser* p, DeclList* params) {
 }
 
 fn VarDecl* Parser.parseEnumAttribute(Parser* p) {
-    if (p.tok.kind == KW_local) p.error("keyword 'local' is not allowed here");
+    if (p.tok.kind == KW_local || p.tok.kind == KW_static)
+        p.error("keyword '%s' is not allowed here", p.tok.kind.str());
 
     bool is_public = false;
     if (p.tok.kind == KW_public) {

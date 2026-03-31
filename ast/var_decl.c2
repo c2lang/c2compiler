@@ -55,12 +55,13 @@ type VarDeclBits struct {
     VarDeclKind kind : 3;
     u32 is_bitfield : 1;   // bitfield is struct-member
     u32 has_init : 1;      // global and local variables
-    u32 has_local : 1; // local variables only
+    u32 is_static : 1;     // local variables only
     u32 has_init_call : 1; // local variables only
     u32 attr_weak : 1; // globals only
     u32 addr_used : 1;
     AutoAttr auto_attr : 2;  // for parameters only
     FormatAttr format_attr : 2; // for parameters only
+    u32 is_tlocal : 1;  // local or global variables with thread local storage
 }
 
 public type BitFieldLayout struct {
@@ -312,12 +313,21 @@ public fn BitFieldLayout* VarDecl.getBitfieldLayout(const VarDecl* d) {
     return nil;
 }
 
-public fn bool VarDecl.hasLocalQualifier(const VarDecl* d) {
-    return d.base.varDeclBits.has_local;
+public fn bool VarDecl.isStatic(const VarDecl* d) {
+    return d.base.varDeclBits.is_static;
 }
 
-public fn void VarDecl.setLocal(VarDecl* d, bool has_local) {
-    d.base.varDeclBits.has_local = has_local;
+public fn void VarDecl.setStatic(VarDecl* d, bool is_static) {
+    d.base.varDeclBits.is_static = is_static;
+}
+
+public fn bool VarDecl.isTLocal(const VarDecl* d) {
+    return d.base.varDeclBits.is_tlocal;
+}
+
+public fn void VarDecl.setTLocal(VarDecl* d) {
+    d.base.varDeclBits.is_static = true;
+    d.base.varDeclBits.is_tlocal = true;
 }
 
 public fn void VarDecl.setInitCall(VarDecl* d, bool has_init_call) {
@@ -390,7 +400,7 @@ fn void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
         BitFieldLayout* layout = d.getBitfieldLayout();
         out.print(" bitfield(%d, %d)", layout.bit_offset, layout.bit_width);
     }
-    if (d.hasLocalQualifier()) out.add(" (local)");
+    if (d.isStatic()) out.add(" (static)");
     if (d.base.varDeclBits.attr_weak) out.add(" weak");
     if (d.base.varDeclBits.addr_used) out.add(" addr_used");
     switch (d.base.varDeclBits.auto_attr) {

@@ -326,7 +326,7 @@ fn Value Evaluator.get_decl_value(Evaluator* eval, const Decl* d) {
             return eval.get_value(initval);
         case LocalVar:  // accept const static local variables
             if (vd.getType().isConst()) goto eval_init;
-            if (vd.hasLocalQualifier()) break;
+            if (vd.isStatic()) break;
             fallthrough;
         case FunctionParam:
             u32 off = vd.getOffset();
@@ -371,7 +371,7 @@ fn Value Evaluator.set_decl_value(Evaluator* eval, const Decl* d, Value v) {
         case GlobalVar:
             break;
         case LocalVar:
-            if (vd.hasLocalQualifier()) break;
+            if (vd.isStatic()) break;
             fallthrough;
         case FunctionParam:
             u32 off = vd.getOffset();

@@ -702,7 +702,7 @@ fn void Generator.collectLocalVars(Generator* gen, Stmt* s) {
         u32 count = ds.getDeclCount();
         for (u32 i = 0; i < count; i++) {
             VarDecl* vd = ds.getDecl(i);
-            if (vd.hasLocalQualifier()) {
+            if (vd.isStatic()) {
                 // TODO move to collectLocals?
                 Decl* d = (Decl*)vd;
                 ir.Ref ref;

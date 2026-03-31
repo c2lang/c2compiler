@@ -17,7 +17,6 @@ type Foo struct {
     u32 restrict;   // @error{reserved word 'restrict' cannot be used as struct/union member name}
     u32 short;      // @error{reserved word 'short' cannot be used as struct/union member name}
     u32 signed;     // @error{reserved word 'signed' cannot be used as struct/union member name}
-    u32 static;     // @error{reserved word 'static' cannot be used as struct/union member name}
     u32 thread_local;   // @error{reserved word 'thread_local' cannot be used as struct/union member name}
     u32 typedef;    // @error{reserved word 'typedef' cannot be used as struct/union member name}
     u32 typeof;     // @error{reserved word 'typeof' cannot be used as struct/union member name}
@@ -43,7 +42,6 @@ fn void foo(
     u32 restrict,   // @error{reserved word 'restrict' cannot be used as parameter name}
     u32 short,      // @error{reserved word 'short' cannot be used as parameter name}
     u32 signed,     // @error{reserved word 'signed' cannot be used as parameter name}
-    u32 static,     // @error{reserved word 'static' cannot be used as parameter name}
     u32 thread_local,   // @error{reserved word 'thread_local' cannot be used as parameter name}
     u32 typedef,    // @error{reserved word 'typedef' cannot be used as parameter name}
     u32 typeof,     // @error{reserved word 'typeof' cannot be used as parameter name}
@@ -69,7 +67,6 @@ fn void bar() {
     u32 restrict;   // @error{reserved word 'restrict' cannot be used as variable name}
     u32 short;      // @error{reserved word 'short' cannot be used as variable name}
     u32 signed;     // @error{reserved word 'signed' cannot be used as variable name}
-    u32 static;     // @error{reserved word 'static' cannot be used as variable name}
     u32 thread_local;   // @error{reserved word 'thread_local' cannot be used as variable name}
     u32 typedef;    // @error{reserved word 'typedef' cannot be used as variable name}
     u32 typeof;     // @error{reserved word 'typeof' cannot be used as variable name}
@@ -94,7 +91,6 @@ u32 register;   // @error{reserved word 'register' cannot be used as variable na
 u32 restrict;   // @error{reserved word 'restrict' cannot be used as variable name}
 u32 short;      // @error{reserved word 'short' cannot be used as variable name}
 u32 signed;     // @error{reserved word 'signed' cannot be used as variable name}
-u32 static;     // @error{reserved word 'static' cannot be used as variable name}
 u32 thread_local;   // @error{reserved word 'thread_local' cannot be used as variable name}
 u32 typedef;    // @error{reserved word 'typedef' cannot be used as variable name}
 u32 typeof;     // @error{reserved word 'typeof' cannot be used as variable name}

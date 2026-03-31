@@ -6,13 +6,13 @@
 module test;
 
 fn void test1() {
-    static i32 a = 10;
+    tlocal i32 a = 10;
 }
 
 // @expect{atleast, cgen/build.c}
 
 static void test_test1(void)
 {
-    static int a = 10;
+    tlocal int a = 10;
 }
 

@@ -472,7 +472,7 @@ public fn VarDecl* Builder.actOnVarDecl(Builder* b,
                                         const TypeRefHolder* ref,
                                         SrcLoc assignLoc,
                                         Expr* initValue,
-                                        bool has_local,
+                                        bool is_static,
                                         bool has_init_call)
 {
     VarDecl* d = VarDecl.create(b.context,
@@ -485,7 +485,7 @@ public fn VarDecl* Builder.actOnVarDecl(Builder* b,
                                 assignLoc,
                                 false,
                                 initValue);
-    d.setLocal(has_local);
+    d.setStatic(is_static);
     d.setInitCall(has_init_call);
     return d;
 }

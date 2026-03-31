@@ -21,8 +21,8 @@ import token local;
 import string;
 
 public type Info struct {
-    // Note: should be big enough to hold all keywords (4+436+216 with alignment)
-    Kind[656] indexes;
+    // Note: should be big enough to hold all keywords (4+436+220 with alignment)
+    Kind[660] indexes;
     u32 max_index;
 }
 

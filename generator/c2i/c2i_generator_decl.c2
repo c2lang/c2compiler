@@ -42,7 +42,7 @@ fn void Generator.emitVarDecl(Generator* gen, string_buffer.Buf* out, const VarD
     Decl* d = (Decl*)vd;
 
     if (first) {
-        if (vd.hasLocalQualifier()) out.add("local ");
+        if (vd.isStatic()) out.add(vd.isTLocal() ? "tlocal" : "local ");
         gen.emitType(out, d.getType());
     } else {
         out.add1(',');

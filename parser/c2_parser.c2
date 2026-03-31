@@ -647,7 +647,8 @@ fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public, 
     param_default ::= EQUALS constant_expression.
 */
 fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool accept_default) {
-    if (p.tok.kind == KW_local) p.error("keyword 'local' is not allowed here");
+    if (p.tok.kind == KW_local || p.tok.kind == KW_static || p.tok.kind == KW_tlocal)
+        p.error("keyword '%s' is not allowed here", p.tok.kind.str());
 
     TypeRefHolder ref.init();
     // Note: dont check arrays in this phase, but in Analyser
@@ -754,7 +755,11 @@ fn void Parser.parseArrayEntry(Parser* p) {
 }
 
 fn void Parser.parseVarDecl(Parser* p, bool is_public) {
-    if (p.tok.kind == KW_local) p.error("keyword 'local' cannot be used at file scope");
+    if (p.tok.kind == KW_local || p.tok.kind == KW_static)
+        p.error("keyword '%s' cannot be used at file scope", p.tok.kind.str());
+
+    bool has_tlocal = (p.tok.kind == KW_tlocal);
+    if (has_tlocal) p.consumeToken();
 
     bool need_semi = true;
     TypeRefHolder ref.init();
@@ -814,8 +819,9 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
         }
 
         bool has_embed = p.builder.hasEmbedAttr();
-        Decl* d = (Decl*)p.builder.actOnGlobalVarDecl(name, loc, is_public, &ref, assignLoc, has_embed, initValue);
-        p.applyAttributes(d, num_attr);
+        VarDecl* vd = p.builder.actOnGlobalVarDecl(name, loc, is_public, &ref, assignLoc, has_embed, initValue);
+        if (has_tlocal) vd.setTLocal();
+        p.applyAttributes((Decl*)vd, num_attr);
 
         if (p.tok.kind != Comma)
             break;

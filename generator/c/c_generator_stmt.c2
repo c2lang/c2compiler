@@ -21,7 +21,7 @@ import string_buffer;
 fn void Generator.emitVarDecl(Generator* gen, VarDecl* vd, string_buffer.Buf* out, bool emit_init, bool first) {
     Decl* d = (Decl*)vd;
     if (first) {
-        if (vd.hasLocalQualifier()) out.add("static ");
+        if (vd.isStatic()) out.add(vd.isTLocal() ? "tlocal " : "static ");
         gen.emitTypePre(out, d.getType());
     } else {
         out.add1(',');

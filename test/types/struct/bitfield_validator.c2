@@ -584,7 +584,7 @@ fn bool match_name(const char *name, const char *end, const char *pattern) {
 }
 
 fn void check(const char* s, usize a, u8* p1, u8* p2) {
-    local bool header;
+    static bool header;
     usize b = (usize)(p2 - p1);
 
     if (!filter_name(s)) return;
