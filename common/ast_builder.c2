@@ -1034,12 +1034,12 @@ public fn Stmt* Builder.actOnAssertStmt(Builder* b, SrcLoc loc, Expr* inner, Exp
     return (Stmt*)AssertStmt.create(b.context, loc, inner, call);
 }
 
-public fn Stmt* Builder.actOnBreakStmt(Builder* b, SrcLoc loc) {
-    return (Stmt*)BreakStmt.create(b.context, loc);
+public fn Stmt* Builder.actOnBreakStmt(Builder* b, SrcLoc loc, u32 name_idx) {
+    return (Stmt*)BreakStmt.create(b.context, loc, name_idx);
 }
 
-public fn Stmt* Builder.actOnContinueStmt(Builder* b, SrcLoc loc) {
-    return (Stmt*)ContinueStmt.create(b.context, loc);
+public fn Stmt* Builder.actOnContinueStmt(Builder* b, SrcLoc loc, u32 name_idx) {
+    return (Stmt*)ContinueStmt.create(b.context, loc, name_idx);
 }
 
 public fn Stmt* Builder.actOnFallthroughStmt(Builder* b, SrcLoc loc) {

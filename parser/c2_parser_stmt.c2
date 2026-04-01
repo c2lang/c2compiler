@@ -386,17 +386,25 @@ fn Stmt* Parser.parseAssertStmt(Parser* p) {
 fn Stmt* Parser.parseBreakStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
-
+    u32 name_idx = 0;
+    if (p.tok.kind == Identifier) {
+        name_idx = p.tok.name_idx;
+        p.consumeToken();
+    }
     p.expectAndConsume(Semicolon);
-    return p.builder.actOnBreakStmt(loc);
+    return p.builder.actOnBreakStmt(loc, name_idx);
 }
 
 fn Stmt* Parser.parseContinueStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
-
+    u32 name_idx = 0;
+    if (p.tok.kind == Identifier) {
+        name_idx = p.tok.name_idx;
+        p.consumeToken();
+    }
     p.expectAndConsume(Semicolon);
-    return p.builder.actOnContinueStmt(loc);
+    return p.builder.actOnContinueStmt(loc, name_idx);
 }
 
 fn Stmt* Parser.parseFallthroughStmt(Parser* p) {

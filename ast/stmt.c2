@@ -46,7 +46,9 @@ public type Stmt struct @(opaque) {
     union {
         StmtBits stmtBits;
         AsmStmtBits asmStmtBits;
+        BreakStmtBits breakStmtBits;
         CompoundStmtBits compoundStmtBits;
+        ContinueStmtBits continueStmtBits;
         DeclStmtBits declStmtBits;
         IfStmtBits ifStmtBits;
         LabelStmtBits labelStmtBits;

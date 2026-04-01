@@ -1,0 +1,64 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+fn void foo(i32 x) {
+top:
+    for (;;) {
+        for (;;) {
+            if (x) continue top;
+            break top;
+        }
+    }
+second:
+    while (1) {
+    third:
+        switch (x) {
+        case 0:
+        fourth:
+            for (;;) {
+                if (x) continue second;
+                break third;
+            }
+        }
+    }
+}
+
+// @expect{atleast, cgen/build.c}
+
+static void test_foo(int x);
+
+static void test_foo(int x)
+{
+top:
+   {
+      for (;;) {
+         for (;;) {
+            if (x) goto continue__top;
+            goto break__top;
+         }
+      continue__top:;
+      }
+   break__top:;
+   }
+second:
+   while (1) {
+   third:
+      {
+         switch (x) {
+         case 0:
+         fourth:
+            for (;;) {
+               if (x) goto continue__second;
+               goto break__third;
+            }
+         }
+      break__third:;
+      }
+   continue__second:;
+   }
+}
+

@@ -96,13 +96,11 @@ fn FlowBits Analyser.analyseStmt(Analyser* ma, Stmt** s_ptr, bool checkEffect) {
         flow = ma.analyseSwitchStmt(s);
         break;
     case Break:
-        ma.analyseBreakStmt(s);
-        ma.scope.setUnreachable();
-        return FlowBreak;
+        flow = ma.analyseBreakStmt(s);
+        break;
     case Continue:
-        ma.analyseContinueStmt(s);
-        ma.scope.setUnreachable();
-        return FlowContinue;
+        flow = ma.analyseContinueStmt(s);
+        break;
     case Fallthrough:
         ma.analyseFallthroughStmt(s);
         return FlowNext;
@@ -110,9 +108,8 @@ fn FlowBits Analyser.analyseStmt(Analyser* ma, Stmt** s_ptr, bool checkEffect) {
         flow = ma.analyseLabelStmt(s);
         break;
     case Goto:
-        ma.analyseGotoStmt(s);
-        ma.scope.setUnreachable();
-        return FlowGoto;
+        flow = ma.analyseGotoStmt(s);
+        break;
     case Compound:
         ma.scope.enter(scope.Decl);
         flow = ma.analyseCompoundStmt((CompoundStmt*)s);
@@ -132,16 +129,41 @@ fn FlowBits Analyser.analyseStmt(Analyser* ma, Stmt** s_ptr, bool checkEffect) {
     return flow;
 }
 
-fn void Analyser.analyseBreakStmt(Analyser* ma, Stmt* s) {
+fn FlowBits Analyser.analyseBreakStmt(Analyser* ma, Stmt* s) {
     if (!ma.scope.allowBreak()) {
         ma.error(s.getLoc(), "'break' statement not in loop or switch statement");
+        return FlowError;
     }
+    BreakStmt* bs = (BreakStmt*)s;
+    if (bs.hasName()) {
+        Label* label = ma.labels.find(bs.getName());
+        if (label && label.can_break) {
+            label.has_break = true;
+            label.used = true;
+            return FlowGoto;
+        }
+        ma.error(s.getLoc(), "'break' label does match an enclosing loop or switch statement");
+        return FlowError;
+    }
+    return FlowBreak;
 }
 
-fn void Analyser.analyseContinueStmt(Analyser* ma, Stmt* s) {
+fn FlowBits Analyser.analyseContinueStmt(Analyser* ma, Stmt* s) {
     if (!ma.scope.allowContinue()) {
         ma.error(s.getLoc(), "'continue' statement not in loop statement");
+        return FlowError;
     }
+    ContinueStmt* cs = (ContinueStmt*)s;
+    if (cs.hasName()) {
+        Label* label = ma.labels.find(cs.getName());
+        if (label && label.can_continue) {
+            label.has_continue = true;
+            label.used = true;
+            return FlowGoto;
+        }
+        ma.error(s.getLoc(), "'continue' label does match an enclosing loop statement");
+    }
+    return FlowContinue;
 }
 
 fn void Analyser.analyseFallthroughStmt(Analyser* ma, Stmt* s) {
@@ -165,15 +187,42 @@ fn FlowBits Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
         }
     } else {
         Label lab = { .name_idx = name, .loc = s.getLoc(), .is_label = true, .used = false, .stmt = ls }
+        if (Stmt* st = ls.getStmt()) {
+            switch (st.getKind()) {
+            case For:
+            case While:
+                lab.can_continue = true;
+                fallthrough;
+            case Switch:
+                lab.can_break = true;
+                break;
+            default:
+                break;
+            }
+        }
         ma.labels.add(lab);
     }
 
     Stmt** lss = ls.getStmt2();
     if (!lss) return FlowNext;
-    return ma.analyseStmt(lss, true);
+    FlowBits flow = ma.analyseStmt(lss, true);
+    // search again because label vector may have been reallocated
+    label = ma.labels.find(name);
+    if (label.has_break) {
+        ls.setUsed();
+        ls.setBreak();
+        flow |= FlowNext;
+    }
+    if (label.has_continue) {
+        ls.setUsed();
+        ls.setContinue();
+    }
+    label.can_break = false;
+    label.can_continue = false;
+    return flow;
 }
 
-fn void Analyser.analyseGotoStmt(Analyser* ma, Stmt* s) {
+fn FlowBits Analyser.analyseGotoStmt(Analyser* ma, Stmt* s) {
     GotoStmt* gs = (GotoStmt*)s;
     u32 name = gs.getNameIdx();
 
@@ -185,6 +234,7 @@ fn void Analyser.analyseGotoStmt(Analyser* ma, Stmt* s) {
         Label lab = { .name_idx = name, .loc = s.getLoc(), .is_label = false, .used = true, .stmt = nil }
         ma.labels.add(lab);
     }
+    return FlowGoto;
 }
 
 fn FlowBits Analyser.analyseCompoundStmt(Analyser* ma, CompoundStmt* c) {

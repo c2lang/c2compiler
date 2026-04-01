@@ -1,0 +1,51 @@
+module test;
+
+fn void foo(i32 x) {
+top:
+    for (;;) {
+        for (;;) {
+            if (x) continue top2; // @error{'continue' label does match an enclosing loop statement}
+            break second;
+        }
+    }
+second:
+    while (1) {
+    third:
+        switch (x) {
+        case 0:
+        fourth:
+            for (;;) {
+                if (x) continue third;
+                break top;
+            }
+        }
+    }
+}
+
+fn void foo2(i32 x) {
+top:
+    while (x) {
+        for (;;) {
+            goto top;
+        }
+    }
+second: // unused label error not fagged because of other errors
+    for (;;) {
+        for (;;) {
+            break top; // @error{'break' label does match an enclosing loop or switch statement}
+        }
+    }
+}
+
+fn void foo3(i32 x) {
+    while (1) {
+    third:
+        switch (x) {
+        case 0:
+            for (;;) {
+                continue third; // @error{'continue' label does match an enclosing loop statement}
+            }
+            break;
+        }
+    }
+}

@@ -19,21 +19,43 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type BreakStmt struct @(opaque) {
-    Stmt base;
+type BreakStmtBits struct {
+    u32 : NumStmtBits;
+    u32 has_name: 1;
 }
 
-public fn BreakStmt* BreakStmt.create(ast_context.Context* c, SrcLoc loc) {
-    BreakStmt* s = c.alloc(sizeof(BreakStmt));
+public type BreakStmt struct @(opaque) {
+    Stmt base;
+    u32[0] name_idx;
+}
+
+public fn BreakStmt* BreakStmt.create(ast_context.Context* c, SrcLoc loc, u32 name_idx) {
+    u32 size = sizeof(BreakStmt);
+    if (name_idx) size += sizeof(u32);
+    BreakStmt* s = c.alloc(size);
     s.base.init(Break, loc);
+    if (name_idx) {
+        s.base.breakStmtBits.has_name = true;
+        s.name_idx[0] = name_idx;
+    }
 #if AstStatistics
-    Stats.addStmt(Break, sizeof(BreakStmt));
+    Stats.addStmt(Break, size);
 #endif
     return s;
 }
 
+public fn bool BreakStmt.hasName(const BreakStmt* s) {
+    return s.base.breakStmtBits.has_name;
+}
+
+public fn u32 BreakStmt.getName(const BreakStmt* s) {
+    if (s.base.breakStmtBits.has_name) return s.name_idx[0];
+    return 0;
+}
+
 fn void BreakStmt.print(const BreakStmt* s, string_buffer.Buf* out, u32 indent) {
     s.base.printKind(out, indent);
+    if (s.hasName()) out.print(" %s", ast.idx2name(s.name_idx[0]));
     out.newline();
 }
 

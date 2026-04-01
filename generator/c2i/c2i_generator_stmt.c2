@@ -94,10 +94,18 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         gen.emitSwitchStmt((SwitchStmt*)s, indent);
         break;
     case Break:
-        out.add("break;\n");
+        BreakStmt* bs = (BreakStmt*)s;
+        if (bs.hasName())
+            out.print("break %s;\n", gen.astPool.idx2str(bs.getName()));
+        else
+            out.add("break;\n");
         break;
     case Continue:
-        out.add("continue;\n");
+        ContinueStmt* cs = (ContinueStmt*)s;
+        if (cs.hasName())
+            out.print("continue %s;\n", gen.astPool.idx2str(cs.getName()));
+        else
+            out.add("continue;\n");
         break;
     case Fallthrough:
         out.add("fallthrough;\n");

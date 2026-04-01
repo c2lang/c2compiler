@@ -22,6 +22,8 @@ import src_loc local;
 type LabelStmtBits struct {
     u32 : NumStmtBits;
     u32 is_used : 1;
+    u32 has_break : 1;
+    u32 has_continue : 1;
 }
 
 public type LabelStmt struct @(opaque) {
@@ -56,6 +58,22 @@ public fn bool LabelStmt.isUsed(const LabelStmt* s) {
     return s.base.labelStmtBits.is_used;
 }
 
+public fn bool LabelStmt.hasBreak(const LabelStmt* s) {
+    return s.base.labelStmtBits.has_break;
+}
+
+public fn void LabelStmt.setBreak(LabelStmt* s) {
+    s.base.labelStmtBits.has_break = true;
+}
+
+public fn bool LabelStmt.hasContinue(const LabelStmt* s) {
+    return s.base.labelStmtBits.has_continue;
+}
+
+public fn void LabelStmt.setContinue(LabelStmt* s) {
+    s.base.labelStmtBits.has_continue = true;
+}
+
 public fn const char* LabelStmt.getName(const LabelStmt* s) {
     return idx2name(s.name);
 }
@@ -78,11 +96,10 @@ fn void LabelStmt.print(const LabelStmt* s, string_buffer.Buf* out, u32 indent) 
     out.color(col_Value);
     out.space();
     out.add(idx2name(s.name));
-    if (!s.isUsed()) {
-        out.space();
-        out.color(col_Attr);
-        out.add("unused");
-    }
+    out.color(col_Attr);
+    if (!s.isUsed()) out.add(" unused");
+    if (s.hasBreak()) out.add(" has_break");
+    if (s.hasContinue()) out.add(" has_continue");
 
     out.newline();
     if (s.stmt)

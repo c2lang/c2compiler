@@ -19,21 +19,43 @@ import ast_context;
 import string_buffer;
 import src_loc local;
 
-public type ContinueStmt struct @(opaque) {
-    Stmt base;
+type ContinueStmtBits struct {
+    u32 : NumStmtBits;
+    u32 has_name: 1;
 }
 
-public fn ContinueStmt* ContinueStmt.create(ast_context.Context* c, SrcLoc loc) {
-    ContinueStmt* s = c.alloc(sizeof(ContinueStmt));
+public type ContinueStmt struct @(opaque) {
+    Stmt base;
+    u32[0] name_idx;
+}
+
+public fn ContinueStmt* ContinueStmt.create(ast_context.Context* c, SrcLoc loc, u32 name_idx) {
+    u32 size = sizeof(ContinueStmt);
+    if (name_idx) size += sizeof(u32);
+    ContinueStmt* s = c.alloc(size);
     s.base.init(Continue, loc);
+    if (name_idx) {
+        s.base.breakStmtBits.has_name = true;
+        s.name_idx[0] = name_idx;
+    }
 #if AstStatistics
-    Stats.addStmt(Continue, sizeof(ContinueStmt));
+    Stats.addStmt(Continue, size);
 #endif
     return s;
 }
 
+public fn bool ContinueStmt.hasName(const ContinueStmt* s) {
+    return s.base.continueStmtBits.has_name;
+}
+
+public fn u32 ContinueStmt.getName(const ContinueStmt* s) {
+    if (s.base.continueStmtBits.has_name) return s.name_idx[0];
+    return 0;
+}
+
 fn void ContinueStmt.print(const ContinueStmt* s, string_buffer.Buf* out, u32 indent) {
     s.base.printKind(out, indent);
+    if (s.hasName()) out.print(" %s", ast.idx2name(s.name_idx[0]));
     out.newline();
 }
 

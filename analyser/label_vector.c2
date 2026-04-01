@@ -26,6 +26,10 @@ public type Label struct {
     SrcLoc loc;
     bool used;
     bool is_label; // otherwise goto
+    bool can_break;
+    bool can_continue;
+    bool has_break;
+    bool has_continue;
     ast.LabelStmt* stmt;
 }
 
