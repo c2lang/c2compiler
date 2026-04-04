@@ -20,33 +20,55 @@ import color local;
 import stdarg local;
 import stdio local;
 
-bool use_color = false;
-bool show_debug = false;
-bool show_timing = false;
+public type Config struct @(opaque) {
+    // TODO: add color customisation
+    bool use_color;
+    bool quiet_mode;
+    bool show_debug;
+    bool show_timing;
+}
+
+Config config;
 
 const u32 BUF_SIZE = 4096;
 
-public fn void init() {
-    use_color = color.useColor();
+public fn void init(const Config *c = nil) {
+    if (c) {
+        setConfig(c);
+    } else {
+        config.use_color = color.useColor();
+    }
+}
+
+public fn void setQuiet(bool enable) {
+    config.quiet_mode = enable;
 }
 
 public fn void setDebug(bool enable) {
-    show_debug = enable;
+    config.show_debug = enable;
 }
 
 public fn void setTiming(bool enable) {
-    show_timing = enable;
+    config.show_timing = enable;
+}
+
+public fn Config* getConfig() {
+    return &config;
+}
+
+public fn void setConfig(const Config* c) @(unused) {
+    config = *c;
 }
 
 public fn void debug(const char* format @(printf_format), ...) {
-    if (!show_debug) return;
+    if (!config.show_debug) return;
 
     char[BUF_SIZE] buf;
     va_list args;
     va_start(args, format);
     vsnprintf(buf, elemsof(buf), format, args);
     va_end(args);
-    if (use_color) {
+    if (config.use_color) {
         printf("%s%s%s\n", color.Blue.str(), buf, color.Normal.str());
     } else {
         printf("%s\n", buf);
@@ -54,6 +76,8 @@ public fn void debug(const char* format @(printf_format), ...) {
 }
 
 public fn void log(const char* format @(printf_format), ...) {
+    if (config.quiet_mode) return;
+
     char[BUF_SIZE] buf;
     va_list args;
     va_start(args, format);
@@ -68,7 +92,7 @@ public fn void warn(const char* format @(printf_format), ...) {
     va_start(args, format);
     vsnprintf(buf, elemsof(buf), format, args);
     va_end(args);
-    if (use_color) {
+    if (config.use_color) {
         fprintf(stderr, "%swarning: %s%s\n", color.Yellow.str(), buf, color.Normal.str());
     } else {
         fprintf(stderr, "warning: %s\n", buf);
@@ -81,7 +105,7 @@ public fn void error(const char* format @(printf_format), ...) {
     va_start(args, format);
     vsnprintf(buf, elemsof(buf), format, args);
     va_end(args);
-    if (use_color) {
+    if (config.use_color) {
         fprintf(stderr, "%serror: %s%s\n", color.Red.str(), buf, color.Normal.str());
     } else {
         fprintf(stderr, "error: %s\n", buf);
@@ -94,7 +118,7 @@ public fn void error_diag(const char* loc, const char* format @(printf_format), 
     va_start(args, format);
     vsnprintf(buf, elemsof(buf), format, args);
     va_end(args);
-    if (use_color) {
+    if (config.use_color) {
         fprintf(stderr, "%s%s: error: %s%s\n", color.Red.str(), loc, buf, color.Normal.str());
     } else {
         fprintf(stderr, "%s: error: %s\n", loc, buf);
@@ -102,8 +126,9 @@ public fn void error_diag(const char* loc, const char* format @(printf_format), 
 }
 
 public fn void log_time(const char* item, u64 duration) {
-    if (!show_timing) return;
-    if (use_color) {
+    if (!config.show_timing) return;
+
+    if (config.use_color) {
         printf("%s%s took %d usec%s\n", color.Blue.str(), item, duration, color.Normal.str());
     } else {
         printf("%s took %d usec\n", item, duration);

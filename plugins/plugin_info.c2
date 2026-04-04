@@ -20,6 +20,7 @@ import ast_builder;
 import ast_context;
 import build_target;
 import component;
+import console;
 import diagnostics;
 import file_utils;
 import source_mgr;
@@ -67,7 +68,7 @@ public fn bool Info.registerAttr(Info* info,
     post analysis   generate files outside project (refs, deps)
 */
 public type Plugin struct @(unused) {
-    fn void*(const char* options, bool console_timing, bool console_debug) load;
+    fn void*(const char* options, console.Config* config) load;
     fn void(void* arg) unload;
     fn void(void* arg, plugin_info.Info* info) init;
     fn void(void* arg) post_parse;

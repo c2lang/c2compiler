@@ -288,8 +288,8 @@ fn void usage(const char* name) {
     printf("Usage: %s <options> target ...\n", name);
     printf("    -j[#] use multi-threading (optional # of threads)\n");
     printf("    -n    no multi-threading\n");
+    printf("    -q    quiet mode, only errors shown\n");
     printf("    -s    only run skipped tests\n");
-    printf("    -t    terse output, only errors shown\n");
     printf("    -v    verbose output\n");
     printf("    targets can be single files or full directories\n");
     exit(EXIT_FAILURE);
@@ -320,7 +320,7 @@ public fn i32 main(i32 argc, char** argv) {
             case "-s":
                 runSkipped = true;
                 break;
-            case "-t":
+            case "-q":
                 verboseLevel -= 1;
                 break;
             case "-v":
