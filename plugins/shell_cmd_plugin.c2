@@ -50,11 +50,9 @@ type Plugin struct {
     const char* config_file; // no ownership
 }
 
-fn void* load(const char* options, bool show_timing, bool show_debug) {
+fn void* load(const char* options, console.Config* config) {
     Plugin* p = calloc(1, sizeof(Plugin));
-    console.init();
-    console.setTiming(show_timing);
-    console.setDebug(show_debug);
+    console.init(config);
 
     assert(options);
     p.config_file = options; // options should point to a YAML file

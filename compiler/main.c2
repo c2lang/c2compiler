@@ -48,6 +48,7 @@ type Options struct {
     bool print_timing;
     bool show_targets;
     bool show_plugins;
+    bool quiet_mode;
     bool no_plugins;
     bool use_ir_backend;
     bool trace_calls;
@@ -213,6 +214,7 @@ const char[] Usage_help =
     "  --showplugins     print available plugins\n"
     "  --target [triple] cross compile for a specified architecture\n"
     "  --targets         show available targets in recipe\n"
+    "  -q  --quiet       prevent compiler logging messages\n"
     "  --test            test mode (do not check for main() function)\n"
     "  --trace-calls     generate code that traces function calls\n"
     "  --version         print version\n";
@@ -287,6 +289,9 @@ fn void parse_long_opt(ArgumentParser *ap, const char* arg, compiler.Options* co
         exit(EXIT_SUCCESS);
     case "noplugins":
         opts.no_plugins = true;
+        break;
+    case "quiet":
+        opts.quiet_mode = true;
         break;
     case "showlibs":
         comp_opts.show_libs = true;
@@ -385,6 +390,9 @@ fn void parse_arguments(ArgumentParser *ap, compiler.Options* comp_opts, Options
                     break;
                 case 'o':
                     opts.output_name = argarg;
+                    break;
+                case 'q':
+                    opts.quiet_mode = true;
                     break;
                 case 'r':
                     comp_opts.print_reports += 1;
@@ -485,6 +493,7 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
 
     console.setTiming(c.opts.print_timing);
     console.setDebug(c.opts.log_verbose);
+    console.setQuiet(c.opts.quiet_mode);
 
     const char[] notFound = "c2c: error: cannot find project root directory\n"
                             "     c2c requires a %s file in the project root,\n"
@@ -547,7 +556,7 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
         auto_found_buildfile = true;
     }
 
-    c.plugins = plugin_mgr.create(c.auxPool, c.opts.print_timing, c.opts.log_verbose, c.opts.no_plugins);
+    c.plugins = plugin_mgr.create(c.auxPool, console.getConfig(), c.opts.no_plugins);
 
     bool have_plugin_dir = false;
     if (c.opts.build_file) {
