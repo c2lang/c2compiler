@@ -37,7 +37,7 @@ public fn void Builder.finalize(Builder* b) {
     b.buffer.putc('\n');
 }
 
-public fn const char* Builder.getData(const Builder* b) {
+public fn const char* Builder.getData(Builder* b) {
     return b.buffer.data();
 }
 

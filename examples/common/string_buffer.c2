@@ -72,7 +72,8 @@ public fn u32 StringBuffer.size(const StringBuffer* buf) @(unused) {
     return buf.len;
 }
 
-public fn const char* StringBuffer.data(const StringBuffer* buf) {
+public fn const char* StringBuffer.data(StringBuffer* buf) {
+    if (buf.len < buf.capacity) buf.data_ptr[buf.len] = '\0';
     return buf.data_ptr;
 }
 
@@ -81,17 +82,38 @@ public fn void StringBuffer.clear(StringBuffer* buf) @(unused) {
     buf.truncated = false;
 }
 
-public fn void StringBuffer.add(StringBuffer* buf, const char* text) @(unused) {
-    u32 len = (u32)strlen(text);
-    buf.add2(text, len);
-}
-
 public fn void StringBuffer.putc(StringBuffer* buf, char c) @(unused) {
     if (buf.len + 2 > buf.capacity) {
         if (!buf.extend(1)) return;
     }
     buf.data_ptr[buf.len++] = c;
-    buf.data_ptr[buf.len] = 0;
+}
+
+public fn void StringBuffer.putwc(StringBuffer* buf, i32 c) @(unused) {
+    if (c < 0x80) {
+        buf.putc((char)c);
+    } else {
+        char[4] arr;
+        u32 len = 0;
+        if (c < 0x800) {
+            arr[len++] = (char)((c >> 6) | 0xc0);
+        } else {
+            if (c < 0x10000) {
+                arr[len++] = (char)((c >> 12) | 0xe0);
+            } else {
+                arr[len++] = (char)((c >> 18) | 0xf0);
+                arr[len++] = (char)(((c >> 12) & 0x3f) | 0x80);
+            }
+            arr[len++] = (char)(((c >> 6) & 0x3f) | 0x80);
+        }
+        arr[len++] = (char)((c & 0x3f) | 0x80);
+        buf.add2(arr, len);
+    }
+}
+
+public fn void StringBuffer.add(StringBuffer* buf, const char* text) @(unused) {
+    u32 len = (u32)strlen(text);
+    buf.add2(text, len);
 }
 
 public fn void StringBuffer.add2(StringBuffer* buf, const char* text, u32 len) @(unused) {
@@ -105,7 +127,6 @@ public fn void StringBuffer.add2(StringBuffer* buf, const char* text, u32 len) @
     }
     memcpy(&buf.data_ptr[buf.len], text, len);
     buf.len += len;
-    buf.data_ptr[buf.len] = 0;
 }
 
 public fn void StringBuffer.printf(StringBuffer* buf, const char* format @(printf_format), ...) @(unused) {
@@ -147,14 +168,24 @@ fn bool StringBuffer.extend(StringBuffer* buf, u32 len) @(unused) {
         buf.truncated = true;
         return false;
     }
-    u32 newcap = buf.capacity * 2;
-    if ((len + 1) >= (newcap - buf.len)) newcap += buf.len + len + 1;
-    buf.capacity = newcap;
-    char* data2 = malloc(newcap);
-    memcpy(data2, buf.data_ptr, buf.len + 1);
+    u32 new_cap = buf.capacity ? buf.capacity * 2 : 256;
+    while (buf.len + len >= new_cap) {
+        new_cap *= 2;
+        if (new_cap <= buf.capacity) {
+            buf.error = true;
+            return false;
+        }
+    }
+    char* data2 = malloc(new_cap);
+    if (!data2) {
+        buf.error = true;
+        return false;
+    }
+    buf.capacity = new_cap;
+    memcpy(data2, buf.data_ptr, buf.len);
     if (buf.own) free(buf.data_ptr);
-    buf.own = true;
     buf.data_ptr = data2;
+    buf.own = true;
     return true;
 }
 
@@ -167,8 +198,7 @@ public fn void StringBuffer.indent(StringBuffer* buf, u32 indent) @(unused) {
             indent = size - 1;
         }
     }
-    for (u32 i = 0; i < indent; i++) {
-        buf.data_ptr[buf.len++] = ' ';
-    }
-    buf.data_ptr[buf.len] = 0;
+    char* cur = buf.data_ptr + buf.len;
+    for (u32 i = 0; i < indent; i++) cur[i] = ' ';
+    buf.len += indent;
 }

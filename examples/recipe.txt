@@ -131,6 +131,7 @@ end
 executable sudoku
     $backend c
     common/color.c2
+    common/string_buffer.c2
     sudoku/sudoku.c2
     sudoku/boards.c2
 end

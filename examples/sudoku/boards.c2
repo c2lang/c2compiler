@@ -15,6 +15,13 @@
 
 module sukodu;
 
+const Puzzle[] Puzzles = {
+    { "h4", Hard_pg4,  elemsof(Hard_pg4) },
+    { "h5", Hard_pg5,  elemsof(Hard_pg5) },
+    { "u3", Ultra_pg3, elemsof(Ultra_pg3) },
+    { "u5", Ultra_pg5, elemsof(Ultra_pg5) },
+}
+
 const Setup[] Hard_pg4 = {
     { 0, 5, 6 }, { 0, 8, 3 },
     { 1, 0, 2 }, { 1, 2, 5 }, { 1, 5, 8 },

@@ -24,7 +24,7 @@ function run() {
     export status="$?"
     echo "    exit: $status, expected: $code" >> $session
     if [ $status != $code ] ; then
-        echo "$cmd -> $status, expected $code"
+        echo "$cmd $* -> $status, expected $code"
     fi
     echo "}"            >> $session
     echo "output {"     >> $session
@@ -47,7 +47,7 @@ function expect() {
     fi
     diff -q $stream $actual
     if [ $? != 0 ] ; then
-        echo "$cmd $stream output differs:"
+        echo "$cmd $* -> $stream differs:"
         diff -u $stream $actual
     fi
 }
@@ -58,7 +58,7 @@ function expect_sorted() {
     sort -u - > $sorted_out
     diff -q $sorted_in $sorted_out
     if [ $? != 0 ] ; then
-        echo "$cmd $stream sorted output differs: {"
+        echo "$cmd $* -> $stream sorted output differs: {"
         cat $stream
         echo "}"
     fi
@@ -256,15 +256,40 @@ size = 28
 data = 'hello this is a test!  xy123'
 EOF
 
-run 0 sudoku
-expect $stderr $empty
-expect $stdout <<EOF
-usage: sudoku [puzzle]
-  h4
-  h5
-  u3
-  u5
+run 2 sudoku
+expect $stdout $empty
+expect $stderr <<EOF
+usage: sudoku [OPTIONS] [PUZZLE]
+options:
+  -A, --ascii        generate ASCII output
+  -a, --all          generate all solutions
+  -c, --compact      use compact output format
+  -b, --brute-force  use brute force algorithm
+  -h, --help         print this help screen
+  -v, --verbose      print all intermediary steps
+  -t, --times        print timings
+available puzzles: h4 h5 u3 u5
 EOF
+
+run 1 sudoku xxx
+expect $stdout $empty
+expect $stderr == "sudoku: unknown puzzle 'xxx'"
+
+run 0 sudoku h4
+expect $stdout sudoku/h4.output
+expect $stderr $empty
+
+run 0 sudoku h5
+expect $stdout sudoku/h5.output
+expect $stderr $empty
+
+run 0 sudoku u3
+expect $stdout sudoku/u3.output
+expect $stderr $empty
+
+run 0 sudoku u5
+expect $stdout sudoku/u5.output
+expect $stderr $empty
 
 #run 0 output/terminal/terminal
 

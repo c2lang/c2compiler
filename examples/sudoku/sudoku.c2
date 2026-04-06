@@ -1,4 +1,4 @@
-/* Copyright 2022-2026 Bas van den Berg
+/* Copyright 2022-2026 Bas van den Berg, Charlie Gordon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ module sukodu;
 import stdio local;
 import color;
 import string local;
+import sys_time;
+import utils local; // StringBuffer
 
 /*
     2 extra algorithms:
@@ -25,334 +27,469 @@ import string local;
     - a col/row must have all numbers, so we sometimes know that a certain number must be in that square col/row
 */
 
-type Field struct {
-    u8 value;       // !0 if known
-    u16 options;    // bitbise if still valid TODO 0 is option, 1 is crossed out
-}
-
 type Board struct {
-    Field[9*9] fields;
-    bool inSetup;
-    u32 todo;
+    u8[9][9] value;       // !0 if known
+    u16[9][9] options;    // bitbise if still valid TODO 0 is option, 1 is crossed out
+    u8 todo;
+    Options opt;
 }
 
-const i8[] SquareOffsets = {
-       1,   2,   9,  10,  11, 18, 19, 20, // top left
-      -1,   1,   8,   9,  10, 17, 18, 19, // top middle
-      -2,  -1,   7,   8,   9, 16, 17, 18, // top right
-      -9,  -8,  -7,   1,   2,  9, 10, 11, // middle left
-     -10,  -9,  -8,  -1,   1,  8,  9, 10, // middle
-     -11, -10,  -9,  -2,  -1,  7,  8,  9, // middle right
-     -18, -17, -16,  -9,  -8, -7,  1,  2, // bottom left
-     -19, -18, -17, -10,  -9, -8, -1,  1, // bottom middle
-     -20, -19, -18, -11, -10, -9, -2, -1, // bottom right
+fn void Board.init(Board* board, Options opt) {
+    memset(board, 0, sizeof(Board));
+    for (u32 y=0; y<9; y++) {
+        for (u32 x=0; x<9; x++) {
+            board.options[y][x] = 0x3FE;  // set bits 1-9
+        }
+    }
+    board.todo = 9*9;
+    board.opt = opt;
 }
 
-const i8[] RowOffsets = { // from top row element in Square
-    27, 36, 45, 54, 63, 70,      // top square row
-    -27, -18, -9, 27, 36, 45,    // middle square row
-    -54, -45, -36, -27, -18, -9, // bottom square row
-}
+const i8[] Sq1 = { 1, 0, 0, 4, 3, 3, 7, 6, 6 }
+const i8[] Sq2 = { 2, 2, 1, 5, 5, 4, 8, 8, 7 }
 
-const i8[] ColOffsets = { // from left column element in Square
-    3, 4, 5, 6, 7, 8,       // left square column
-    -3, -2, -1, 3, 4, 5,    // middle square column
-    -6, -5, -4, -3, -2, -1, // right square column
-}
+fn bool Board.set(Board* board, u8 x, u8 y, u8 value, bool verbose = false) {
+    if (verbose) printf("set %d,%d -> %d\n", y, x, value);
+    if (!(board.options[y][x] & (1 << value)))
+        return false;
 
-fn void Board.set(Board* board, u8 x, u8 y, u8 value) {
-    if (!board.inSetup) printf("set %d,%d -> %d\n", y, x, value);
-    u32 idx = 9*y + x;
-    board.fields[idx].value = value;
-    board.fields[idx].options = 0;
+    board.value[y][x] = value;
+    board.options[y][x] = 0;
     board.todo--;
 
     u32 clear = ~(1<<value);
     // clear row
     for (u32 i=0; i<9; ++i) {
-        if (i==x) continue;
-        board.fields[9*y + i].options &= clear;
+        board.options[y][i] &= clear;
     }
     // clear column
     for (u32 i=0; i<9; ++i) {
-        if (i==y) continue;
-        board.fields[9*i + x].options &= clear;
+        board.options[i][x] &= clear;
     }
-    // clear square
-    i32 offs = x%3 + (y%3)*3;
-    for (u32 i=0; i<8; i++) {
-        board.fields[idx + SquareOffsets[offs*8 + i]].options &= clear;
-    }
-    if (!board.inSetup) board.print(false, x, y);
+    // clear square (only 4 cells on different rows or columns)
+    board.options[Sq1[y]][Sq1[x]] &= clear;
+    board.options[Sq1[y]][Sq2[x]] &= clear;
+    board.options[Sq2[y]][Sq1[x]] &= clear;
+    board.options[Sq2[y]][Sq2[x]] &= clear;
+    if (verbose) board.print(x, y);
+    return true;
 }
 
-fn void Board.init(Board* board) {
-    memset(board, 0, sizeof(Board));
-    for (u32 y=0; y<9; y++) {
-        for (u32 x=0; x<9; x++) {
-            u32 idx = 9*y + x;
-            board.fields[idx].options = 0x3FE;  // set bits 1-9
-        }
-    }
-    board.todo = 9*9;
+const i32 N = 1 << 0;
+const i32 E = 1 << 1;
+const i32 S = 1 << 2;
+const i32 W = 1 << 3;
+const i32 H2 = 1 << 4;
+const i32 V2 = 1 << 5;
+
+const u16[] Box_chars = {
+    [0]             = ' ',    //
+    [N]             = 0x2575, // ╵
+    [S]             = 0x2577, // ╷
+    [W]             = 0x2574, // ╴
+    [E]             = 0x2576, // ╶
+    [N+S]           = 0x2502, // │
+    [W+E]           = 0x2500, // ─
+    [N+W]           = 0x2518, // ┘
+    [N+E]           = 0x2514, // └
+    [S+W]           = 0x2510, // ┐
+    [S+E]           = 0x250C, // ┌
+    [N+S+W]         = 0x2524, // ┤
+    [N+S+E]         = 0x251C, // ├
+    [N+W+E]         = 0x2534, // ┴
+    [S+W+E]         = 0x252C, // ┬
+    [N+S+W+E]       = 0x253C, // ┼
+    [W+E+H2]        = 0x2550, // ═
+    [N+S+V2]        = 0x2551, // ║
+    [E+S+H2]        = 0x2552, // ╒
+    [E+S+V2]        = 0x2553, // ╓
+    [E+S+H2+V2]     = 0x2554, // ╔
+    [W+S+H2]        = 0x2555, // ╕
+    [W+S+V2]        = 0x2556, // ╖
+    [W+S+H2+V2]     = 0x2557, // ╗
+    [N+E+H2]        = 0x2558, // ╘
+    [N+E+V2]        = 0x2559, // ╙
+    [N+E+H2+V2]     = 0x255A, // ╚
+    [N+W+H2]        = 0x255B, // ╛
+    [N+W+V2]        = 0x255C, // ╜
+    [N+W+H2+V2]     = 0x255D, // ╝
+    [N+S+E+H2]      = 0x255E, // ╞
+    [N+S+E+V2]      = 0x255F, // ╟
+    [N+S+E+H2+V2]   = 0x2560, // ╠
+    [N+S+W+H2]      = 0x2561, // ╡
+    [N+S+W+V2]      = 0x2562, // ╢
+    [N+S+W+H2+V2]   = 0x2563, // ╣
+    [E+W+S+H2]      = 0x2564, // ╤
+    [E+W+S+V2]      = 0x2565, // ╥
+    [E+W+S+H2+V2]   = 0x2566, // ╦
+    [E+W+N+H2]      = 0x2567, // ╧
+    [E+W+N+V2]      = 0x2568, // ╨
+    [E+W+N+H2+V2]   = 0x2569, // ╩
+    [E+W+N+S+H2]    = 0x256A, // ╪
+    [E+W+N+S+V2]    = 0x256B, // ╫
+    [E+W+N+S+H2+V2] = 0x256C, // ╬
 }
 
-fn void Board.print(const Board* board, bool showOptions, u8 xx, u8 yy) {
-    printf("-------------------------\n");
-    for (u32 y = 0; y < 9; y++) {
-        putchar('|');
-        for (u32 x = 0; x < 9; x++) {
-            u32 idx = 9 * y + x;
-            const Field* f = &board.fields[idx];
-            if (f.value) {
-                const char* col = color.Green;
-                if (x == xx && y == yy) col = color.Byellow;
-                printf(" %s%d%s", col, f.value, color.Normal);
-            } else {
-                printf("  ");
+const u16[elemsof(Box_chars)] Ascii_chars = {
+    [0]             = ' ',    //
+    [N]             = '|',    // ╵
+    [S]             = '|',    // ╷
+    [W]             = '-',    // ╴
+    [E]             = '-',    // ╶
+    [N+S]           = '|',    // │
+    [W+E]           = '-',    // ─
+    [N+W]           = '-',    // ┘
+    [N+E]           = '-',    // └
+    [S+W]           = '-',    // ┐
+    [S+E]           = '-',    // ┌
+    [N+S+W]         = '-',    // ┤
+    [N+S+E]         = '-',    // ├
+    [N+W+E]         = '-',    // ┴
+    [S+W+E]         = '-',    // ┬
+    [N+S+W+E]       = '-',    // ┼
+    [W+E+H2]        = '=',    // ═
+    [N+S+V2]        = '|',    // ║
+    [E+S+H2]        = '=',    // ╒
+    [E+S+V2]        = '-',    // ╓
+    [E+S+H2+V2]     = '=',    // ╔
+    [W+S+H2]        = '=',    // ╕
+    [W+S+V2]        = '-',    // ╖
+    [W+S+H2+V2]     = '=',    // ╗
+    [N+E+H2]        = '=',    // ╘
+    [N+E+V2]        = '-',    // ╙
+    [N+E+H2+V2]     = '=',    // ╚
+    [N+W+H2]        = '=',    // ╛
+    [N+W+V2]        = '-',    // ╜
+    [N+W+H2+V2]     = '=',    // ╝
+    [N+S+E+H2]      = '=',    // ╞
+    [N+S+E+V2]      = '-',    // ╟
+    [N+S+E+H2+V2]   = '=',    // ╠
+    [N+S+W+H2]      = '=',    // ╡
+    [N+S+W+V2]      = '-',    // ╢
+    [N+S+W+H2+V2]   = '=',    // ╣
+    [E+W+S+H2]      = '=',    // ╤
+    [E+W+S+V2]      = '-',    // ╥
+    [E+W+S+H2+V2]   = '=',    // ╦
+    [E+W+N+H2]      = '=',    // ╧
+    [E+W+N+V2]      = '-',    // ╨
+    [E+W+N+H2+V2]   = '=',    // ╩
+    [E+W+N+S+H2]    = '=',    // ╪
+    [E+W+N+S+V2]    = '-',    // ╫
+    [E+W+N+S+H2+V2] = '=',    // ╬
+}
+
+fn void Board.print(const Board* board, u8 xx = 10, u8 yy = 10, bool showOptions = false) {
+    StringBuffer* out = StringBuffer.create(4096);
+    if (board.opt.compact) {
+        for (u32 y = 0; y < 9; y++) {
+            for (u32 x = 0; x < 9; x++) {
+                out.putc(".123456789"[board.value[y][x]]);
             }
-            if (x % 3 == 2) {
-                putchar(' ');
-                putchar('|');
+            out.putc('\n');
+        }
+    } else {
+        const u16* bc = board.opt.ascii ? Ascii_chars : Box_chars;
+        out.putwc(bc[S+E]);
+        for (u32 x = 0; x < 3; x++) {
+            for (u32 dx = 0; dx < 7; dx++) out.putwc(bc[W+E]);
+            out.putwc(x < 2 ? bc[W+E+S] : bc[W+S]);
+        }
+        out.putc('\n');
+        for (u32 y = 0; y < 9; y++) {
+            out.putwc(bc[N+S]);
+            for (u32 x = 0; x < 9; x++) {
+                u8 value = board.value[y][x];
+                if (value) {
+                    const char* col = color.Green;
+                    if (x == xx && y == yy) col = color.Byellow;
+                    out.printf(" %s%d%s", col, value, color.Normal);
+                } else {
+                    out.add("  ");
+                }
+                if (x % 3 == 2) {
+                    out.putc(' ');
+                    out.putwc(bc[N+S]);
+                }
+            }
+            out.putc('\n');
+            if (y % 3 == 2) {
+                out.putwc(y < 8 ? bc[N+S+E] : bc[N+E]);
+                for (u32 x = 0; x < 3; x++) {
+                    for (u32 dx = 0; dx < 7; dx++) out.putwc(bc[W+E]);
+                    out.putwc(y < 8
+                              ? (x < 2 ? bc[N+S+E+W] : bc[N+S+W])
+                              : (x < 2 ? bc[N+W+E] : bc[N+W]));
+                }
+                out.putc('\n');
             }
         }
-        putchar('\n');
-        if (y % 3 == 2) printf("-------------------------\n");
     }
-    putchar('\n');
+    fwrite(out.data(), 1, out.size(), stdout);
+    out.destroy();
     if (showOptions && board.todo != 0) board.printOptions();
 }
 
-fn void Board.printOptions(const Board* board) {
-    const u32 height = 9 * 4 + 1;
-    const u32 width =  9 * 8 + 2;
-    char[width * height + 1] buffer;
-    memset(buffer, ' ', sizeof(buffer));
-    buffer[width * height] = 0;
-    // horizontal + vertical lines
-    for (u32 y=0; y<height; y++) {
-        char* line = &buffer[y*width];
-        if (y % 12 == 0) for (u32 x=0; x<width-1; x++) line[x] = '=';
-        else if (y % 4 == 0) for (u32 x=0; x<width-1; x++) line[x] = '-';
-        else {
-            for (u32 x=0; x<width-1; x++) {
-                if (x % 8 == 0) line[x] = '|';
-            }
-        }
-        line[width-1] = '\n';
-    }
+fn void printOptionsLine(StringBuffer* out, u16 c0, u16 c1, u16 c2, u16 c3, u16 c4) {
+    const u32 width = 9 * 8;
+    out.putwc(c0);
+    for (u32 x = 1; x < width; x++) out.putwc(x % 8 ? c1 : x % 24 ? c2 : c3);
+    out.putwc(c4);
+    out.putc('\n');
+}
 
-    // option values
+fn void Board.printOptions(const Board* board) {
+    StringBuffer* out = StringBuffer.create(4096);
+    const u16* bc = board.opt.ascii ? Ascii_chars : Box_chars;
+    const u32 height = 9 * 4 + 1;
+    for (u32 line = 0; line < height; line++) {
+        if (line == 0) {
+            printOptionsLine(out, bc[S+E+H2+V2], bc[W+E+H2], bc[S+W+E+H2], bc[S+W+E+H2+V2], bc[S+W+H2+V2]);
+        } else
+        if (line == height-1) {
+            printOptionsLine(out, bc[N+E+H2+V2], bc[W+E+H2], bc[N+W+E+H2], bc[N+W+E+H2+V2], bc[N+W+H2+V2]);
+        } else
+        if (line % 12 == 0) {
+            printOptionsLine(out, bc[N+S+E+H2+V2], bc[W+E+H2], bc[N+S+W+E+H2], bc[N+S+W+E+H2+V2], bc[N+S+W+H2+V2]);
+        } else
+        if (line % 4 == 0) {
+            printOptionsLine(out, bc[N+S+E+V2], bc[W+E], bc[N+S+W+E], bc[N+S+W+E+V2], bc[N+S+W+V2]);
+        } else {
+            u32 y = (line - 1) / 4;
+            u32 by = (line - 1) % 4;
+            for (u8 x = 0; x < 9; x++) {
+                out.putwc(x % 3 ? bc[N+S] : bc[N+S+V2]);
+                out.putc(' ');
+                u16 options = board.options[y][x];
+                for (u8 bx = 0; bx < 3; bx++) {
+                    u8 o = (u8)(3 * by + bx + 1);
+                    out.putc((options & (1 << o)) ? o + '0' : ' ');
+                    out.putc(' ');
+                }
+            }
+            out.putwc(bc[N+S+V2]);
+            out.putc('\n');
+        }
+    }
+    fwrite(out.data(), 1, out.size(), stdout);
+    out.destroy();
+}
+
+fn bool Board.setup(Board* board, const Setup* setup, u32 size) {
+    const Setup* s = setup;
+    for (u32 i=0; i<size; i++) {
+        if (!board.set(s.x, s.y, s.value))
+            return false;
+        s++;
+    }
+    return true;
+}
+
+fn bool Board.setupFromString(Board* board, const char* p) {
+    u8 i = 0;
+    for (; *p; p++) {
+        switch (*p) {
+        case '1'...'9':
+            if (!board.set(i % 9, i / 9, *p - '0'))
+                return false;
+            fallthrough;
+        case '.':
+            i++;
+            break;
+        default:
+            break;
+        }
+    }
+    return true;
+}
+
+fn void Board.checkFields(Board* board, bool verbose) {
     for (u8 y=0; y<9; y++) {
         for (u8 x=0; x<9; x++) {
-            const Field* f = &board.fields[y*9 + x];
-            u32 offset = (1 + 4 * y) * width + (1 + 8 * x);
-            char* square = &buffer[offset];
-            for (u8 o=1; o<10; o++) {
-                if (f.options & (1<<o)) {
-                    u32 h = (o-1) % 3;
-                    u32 w = (o-1) / 3;
-                    square[(width * w) + (2 * h) + 1] = o + '0';
+            u16 options = board.options[y][x];
+            if (options && (options & (options - 1)) == 0) {
+                for (u8 n = 1; n <= 9; n++) {
+                    if (options == (1 << n)) {
+                        board.set(x, y, n, verbose);
+                        break;
+                    }
                 }
             }
         }
     }
-
-    puts(buffer);
 }
 
-fn void Board.setup(Board* board, const Setup* setup, u32 size) {
-    board.init();
-    board.inSetup = true;
-    for (u32 i=0; i<size; i++) {
-        const Setup* s = &setup[i];
-        board.set(s.x, s.y, s.value);
-    }
-    board.inSetup = false;
-    printf("setup (%d given)\n", size);
-    board.print(false, 10, 0);
-}
-
-fn void Board.checkFields(Board* board) {
-    for (u8 y=0; y<9; y++) {
-        for (u8 x=0; x<9; x++) {
-            Field* f = &board.fields[y*9 + x];
-            u16 options = f.options;
-            switch (options) {
-            case 2:
-                board.set(x, y, 1);
-                break;
-            case 4:
-                board.set(x, y, 2);
-                break;
-            case 8:
-                board.set(x, y, 3);
-                break;
-            case 16:
-                board.set(x, y, 4);
-                break;
-            case 32:
-                board.set(x, y, 5);
-                break;
-            case 64:
-                board.set(x, y, 6);
-                break;
-            case 128:
-                board.set(x, y, 7);
-                break;
-            case 256:
-                board.set(x, y, 8);
-                break;
-            case 512:
-                board.set(x, y, 9);
-                break;
-            default:
-                break;
-            }
-        }
-    }
-}
-
-fn void Board.checkRow(Board* board, u8 row) {
+fn void Board.checkRow(Board* board, u8 row, bool verbose) {
     u8[10] count = { 0 }
     u8[10] pos = { 0 }
     for (u8 x=0; x<9; x++) {
-        u32 idx = 9*row + x;
-        const Field* f = &board.fields[idx];
+        u16 options = board.options[row][x];
         for (u32 o=1; o<10; o++) {
-            if ((f.options >> o) & 1) {
+            if ((options >> o) & 1) {
                 count[o]++;
                 pos[o] = x;
             }
         }
     }
     for (u8 o=1; o<10; o++) {
-        if (count[o] == 1) {
-            board.set(pos[o], row, o);
-        }
+        if (count[o] == 1) board.set(pos[o], row, o, verbose);
     }
 }
 
-fn void Board.checkColumn(Board* board, u8 col) {
+fn void Board.checkColumn(Board* board, u8 col, bool verbose) {
     u8[10] count = { 0 }
     u8[10] pos = { 0 }
     for (u8 y=0; y<9; y++) {
-        u32 idx = 9*y + col;
-        const Field* f = &board.fields[idx];
+        u16 options = board.options[y][col];
         for (u32 o=1; o<10; o++) {
-            if ((f.options >> o) & 1) {
+            if ((options >> o) & 1) {
                 count[o]++;
                 pos[o] = y;
             }
         }
     }
     for (u8 o=1; o<10; o++) {
-        if (count[o] == 1) board.set(col, pos[o], o);
+        if (count[o] == 1) board.set(col, pos[o], o, verbose);
     }
 }
 
-fn bool Board.checkSquares(Board* board, bool extra) {
+fn bool Board.checkSquares(Board* board, bool extra, bool verbose) {
     u32 cleared = 0;
     for (u8 y=0; y<3; y++) {
         for (u8 x=0; x<3; x++) {
             // check square
-            u8 topleft = (y*9 + x) *3;
+            u8 row = y * 3;
+            u8 col = x * 3;
             u8[10] count = { 0 }
-            u8[10] pos = { 0 }
+            u8[10] pos_x = { 0 }
+            u8[10] pos_y = { 0 }
             u8[10] localRows = { 0 }
             u8[10] localCols = { 0 }
-            const Field* f = &board.fields[topleft + 0];
-            for (u32 o=1; o<10; o++) {
-                // TODO refactor with block below
-                if ((f.options >> o) & 1) {
-                    count[o]++;
-                    pos[o] = topleft;
-                    // NOTE: lcol,lrow should be 0,0
-                    u8 lcol = (topleft % 9) % 3;    // TODO simplify
-                    u8 lrow = (topleft / 9) % 3;    // TODO simplify
-                    localRows[o] |= (1 << lrow);
-                    localCols[o] |= (1 << lcol);
-                }
-            }
-            for (u8 i=0; i<8; i++) {
-                // TODO use i+1 as index into count/pos
-                u8 off = (u8)(topleft + SquareOffsets[i]);
-                f = &board.fields[off];
+            for (u8 i=0; i<9; i++) {
+                u8 dx = i % 3;
+                u8 dy = i / 3;
+                u16 options = board.options[row + dy][col + dx];
                 for (u32 o=1; o<10; o++) {
-                    if ((f.options >> o) & 1) {
+                    if ((options >> o) & 1) {
                         count[o]++;
-                        pos[o] = off;
-
-                        u8 lcol = (off % 9) % 3;    // TODO simplify
-                        u8 lrow = (off / 9) % 3;    // TODO simplify
-                        localRows[o] |= (1 << lrow);
-                        localCols[o] |= (1 << lcol);
+                        pos_x[o] = col + dx;
+                        pos_y[o] = row + dy;
+                        localRows[o] |= (1 << dy);
+                        localCols[o] |= (1 << dx);
                     }
                 }
             }
             for (u8 o=1; o<10; o++) {
+                if (count[o] == 0) continue;
                 if (count[o] == 1) {
-                    board.set(pos[o] % 9, pos[o] / 9, o);
-                    //printf("  FOUND %d   count %d  pos %d -> %d,%d\n", o, count[o], pos[o], pos[o] % 9, pos[o] / 9);
+                    board.set(pos_x[o], pos_y[o], o, verbose);
+                    //printf("  FOUND %d   count %d  pos %d,%d\n", o, count[o], pos_x[o], pos_y[o]);
                     continue;
                 }
                 if (extra) {
-                    // NOTE: HAS ISSUES
-                    u32 clear = ~(1<<o);
+                    u32 bit = 1<<o;
                     if (localRows[o] == 1 || localRows[o] == 2 || localRows[o] == 4) {
-                        printf("  FOUND  %d,%d  num %d  ROW %d\n", y, x, o, localRows[o] >> 1);
-                        u8 leftCol = topleft + (localRows[o] >> 1) * 9; // NOTE: rshift 1 does 1-> 0, 2 -> 1, 4 -> 2
-                        // clear row outside current square
-                        for (i8 i=0; i<6; i++) {
-                            i8 idx = (i8)(leftCol + ColOffsets[x*6 + i]);
-                            u16 before = board.fields[idx].options;
-                            board.fields[idx].options &= clear;
-                            u16 after = board.fields[idx].options;
-                            if (before != after) cleared++;
+                        // if the digit can only be on a single row of a square
+                        // clear the same row of the adjacent squares
+                        //printf("  FOUND  %d,%d  num %d  ROW %d\n", y, x, o, localRows[o] >> 1);
+                        u32 r1 = pos_y[o];
+                        for (u32 i = 0; i < 9; i += 3) {
+                            if (i != col) {
+                                for (u32 j = 0; j < 3; j++) {
+                                    u16* op = &board.options[r1][i+j];
+                                    if (*op & bit) {
+                                        *op &= ~bit;
+                                        cleared++;
+                                    }
+                                }
+                            }
                         }
                     }
                     if (localCols[o] == 1 || localCols[o] == 2 || localCols[o] == 4) {
-                        printf("  FOUND  %d,%d  num %d  COL %d\n", y, x, o, localCols[o] >> 1);
-                        u8 topRow = topleft + (localCols[o] >> 1); // NOTE: rshift 1 does 1 -> 0, 2 -> 1, 4 -> 2
-                        // clear column outside current square
-                        for (i8 i=0; i<6; i++) {
-                            i8 idx = (i8)(topRow + RowOffsets[y*6 + i]);
-                            u16 before = board.fields[idx].options;
-                            board.fields[idx].options &= clear;
-                            u16 after = board.fields[idx].options;
-                            if (before != after) cleared++;
+                        // if the digit can only be on a single col of a square
+                        // clear the same col of the adjacent squares
+                        //printf("  FOUND  %d,%d  num %d  COL %d\n", y, x, o, localCols[o] >> 1);
+                        u32 c1 = pos_x[o];
+                        for (u32 i = 0; i < 9; i += 3) {
+                            if (i != row) {
+                                for (u32 j = 0; j < 3; j++) {
+                                    u16* op = &board.options[i+j][c1];
+                                    if (*op & bit) {
+                                        *op &= ~bit;
+                                        cleared++;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
     }
+    if (verbose && cleared) printf("cleared %d extra options\n", cleared);
     return (cleared != 0);
 }
 
 fn void Board.solve(Board* board) {
-    printf("solving Sudoku\n");
+    bool verbose = board.opt.verbose;
     u32 loops = 0;
+
+    if (verbose) printf("solving Sudoku\n");
     while (1) {
         u32 before = board.todo;
 
-        printf("checking rows (%d todo)\n", board.todo);
-        for (u8 i=0; i<9; i++) board.checkRow(i);
+        if (verbose) printf("checking rows (%d todo)\n", board.todo);
+        for (u8 i=0; i<9; i++) board.checkRow(i, verbose);
 
-        printf("checking columns (%d todo)\n", board.todo);
-        for (u8 i=0; i<9; i++) board.checkColumn(i);
+        if (verbose) printf("checking columns (%d todo)\n", board.todo);
+        for (u8 i=0; i<9; i++) board.checkColumn(i, verbose);
 
-        printf("checking fields (%d todo)\n", board.todo);
-        board.checkFields();
+        if (verbose) printf("checking fields (%d todo)\n", board.todo);
+        board.checkFields(verbose);
 
-        printf("checking squares (%d todo)\n", board.todo);
-        bool cleared = board.checkSquares(false);
+        if (verbose) printf("checking squares (%d todo)\n", board.todo);
+        board.checkSquares(false, verbose);
 
         loops++;
         if (board.todo == 0) break;
-        if (!cleared && board.todo == before) break;
+        if (board.todo == before) {
+            if (verbose) printf("checking extra squares (%d todo)\n", board.todo);
+            if (!board.checkSquares(true, verbose)) break;
+        }
     }
-    printf("%d loops\n", loops);
+    if (verbose) printf("%d loops\n", loops);
+}
+
+fn bool Board.solve2(Board* board, Stats* stats) {
+    if (!board.todo) {
+        stats.count++;
+        if (!(stats.count & 0xffffff)) {
+            printf("%d solutions\n", stats.count);
+            board.print();
+        }
+        return true;
+    }
+    for (u8 y = 0; y < 9; y++) {
+        for (u8 x = 0; x < 9; x++) {
+            if (board.value[y][x]) continue;
+            u16 options = board.options[y][x];
+            if (!options) return false;
+            for (u8 o=1; o<10; o++) {
+                if (options & (1<<o)) {
+                    Board new_board = *board;
+                    stats.tests++;
+                    new_board.set(x, y, o);
+                    if (new_board.solve2(stats)) {
+                        if (!board.opt.all) {
+                            *board = new_board;
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+    }
+    return false;
 }
 
 type Setup struct @(packed) {
@@ -362,7 +499,7 @@ type Setup struct @(packed) {
 }
 
 type Puzzle struct {
-     const char* name;
+    const char* name;
     const Setup* setup;
     u32 setup_count;
 }
@@ -376,33 +513,140 @@ fn const Puzzle* find(const Puzzle* puzzles, u32 count, const char* name) {
     return nil;
 }
 
-const Puzzle[] Puzzles = {
-    { "h4", Hard_pg4,  elemsof(Hard_pg4) },
-    { "h5", Hard_pg5,  elemsof(Hard_pg5) },
-    { "u3", Ultra_pg3, elemsof(Ultra_pg3) },
-    { "u5", Ultra_pg5, elemsof(Ultra_pg5) },
+type Options struct {
+    bool all;
+    bool brute_force;
+    bool compact;
+    bool verbose;
+    bool show_times;
+    bool ascii;
 }
 
-public fn i32 main(i32 argc, char** argv) {
-    if (argc != 2) {
-        printf("usage: sudoku [puzzle]\n");
-        for (u32 i=0; i<elemsof(Puzzles); i++) {
-            printf("  %s\n", Puzzles[i].name);
-        }
-        return 0;
-    }
+type Stats struct {
+    u64 tests;
+    u64 count;
+}
 
-    const Puzzle* p = find(Puzzles, elemsof(Puzzles), argv[1]);
-    if (!p) {
-        printf("Unknown puzzle\n");
+const char[] Usage =
+    ```
+    usage: sudoku [OPTIONS] [PUZZLE]
+    options:
+      -A, --ascii        generate ASCII output
+      -a, --all          generate all solutions
+      -c, --compact      use compact output format
+      -b, --brute-force  use brute force algorithm
+      -h, --help         print this help screen
+      -v, --verbose      print all intermediary steps
+      -t, --times        print timings
+    ```;
+
+fn void sudoku_usage() {
+    fputs(Usage, stderr);
+    fprintf(stderr, "available puzzles:");
+    for (u32 i = 0; i < elemsof(Puzzles); i++) {
+        fprintf(stderr, " %s", Puzzles[i].name);
+    }
+    fprintf(stderr, "\n");
+}
+
+fn u64 current_time() {
+    sys_time.Timeval tv;
+    sys_time.gettimeofday(&tv, nil);
+    u64 now64 = (u64)tv.tv_sec;
+    now64 *= 1000000;
+    now64 += tv.tv_usec;
+    return now64;
+}
+
+fn i32 sudoku(const char* name, Options options) {
+    Board board.init(options);
+
+    const Puzzle* p = find(Puzzles, elemsof(Puzzles), name);
+    if (p) {
+        if (!board.setup(p.setup, p.setup_count)) {
+            fprintf(stderr, "sudoku: invalid puzzle '%s'\n", name);
+            return -1;
+        }
+    } else
+    if (name[strspn(name, "123456789. \n")] == '\0') {
+        if (!board.setupFromString(name)) {
+            fprintf(stderr, "sudoku: invalid puzzle\n");
+            return -1;
+        }
+    } else {
+        fprintf(stderr, "sudoku: unknown puzzle '%s'\n", name);
         return -1;
     }
 
-    Board board;
-    board.setup(p.setup, p.setup_count);
-    board.solve();
-    board.print(true, 10, 0);
+    if (options.verbose) {
+        printf("setup (%d given)\n", 81 - board.todo);
+        board.print();
+    }
+    if (!options.brute_force) {
+        u64 t1 = current_time();
+        board.solve();
+        u64 t2 = current_time();
+        board.print(10, 10, true);
+        if (options.show_times) printf("solve took %d usec\n", t2 - t1);
+    }
+    if (board.todo) {
+        Stats stats = {}
+        u64 t1 = current_time();
+        board.solve2(&stats);
+        u64 t2 = current_time();
+        printf("%d tests\n", stats.tests);
+        if (!stats.count) printf("no solution!\n");
+        else if (options.all) printf("%d solutions\n", stats.count);
+        else board.print();
+        if (options.show_times) printf("solve2 took %d usec\n", t2 - t1);
+    }
+    return board.todo ? 0 : 1;
+}
 
-    return 0;
+public fn i32 main(i32 argc, char** argv) {
+    u32 n = 0;
+    Options options = {}
+    i32 status = 0;
+
+    for (i32 i = 1; i < argc; i++) {
+        const char* arg = argv[i];
+        if (*arg == '-') {
+            switch (arg) {
+            case "-a", "--all":
+                options.all = true;
+                break;
+            case "-c", "--compact":
+                options.compact = true;
+                break;
+            case "-b", "--brute-force":
+                options.brute_force = true;
+                break;
+            case "-h", "-?", "--help":
+                sudoku_usage();
+                return 0;
+            case "-v", "--verbose":
+                options.verbose = true;
+                break;
+            case "-t", "--times":
+                options.show_times = true;
+                break;
+            case "-A", "--ascii":
+                options.ascii = true;
+                break;
+            default:
+                fprintf(stderr, "sudoku: unknown option '%s'\n", arg);
+                fprintf(stderr, "usage: sudoku [-abchstA] [name ...]\n");
+                return 1;
+            }
+        } else {
+            n++;
+            if (sudoku(arg, options) < 0) status = 1;
+        }
+    }
+    if (!n) {
+        sudoku_usage();
+        return 2;
+    }
+    return status;
 }
 
