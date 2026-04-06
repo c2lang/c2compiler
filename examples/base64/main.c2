@@ -1,4 +1,4 @@
-/* Copyright 2022-2026 Bas van den Berg
+/* Copyright 2022-2026 Bas van den Berg, Charlie Gordon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,25 +15,208 @@
 
 module tester;
 
+import c_errno local;
 import stdio local;
+import stdlib local;
 import string local;
 import base64;
 
-fn void test(const char* input) {
-    i8[64] encoded;
-    u8[64] decoded;
-    memset(encoded, 0, sizeof(encoded));
-    memset(decoded, 0, sizeof(decoded));
-    base64.encode((u8*)input, (u32)strlen(input), encoded);
-    base64.decode(encoded, (u32)strlen((char*)encoded), decoded);
-    printf("[%s]\n", input);
-    printf("   encoded: %s\n", (char*)encoded);
-    printf("   decoded: %s\n", (char*)decoded);
+/*
+   Usage: base64 [OPTION]... [FILE]
+   Base64 encode or decode FILE, or standard input, to standard output.
+
+   Mandatory arguments to long options are mandatory for short options too.
+   -d, --decode          decode data
+   -i, --ignore-garbage  when decoding, ignore non-alphabet characters
+   -w, --wrap=COLS       wrap encoded lines after COLS character (default 76).
+   Use 0 to disable line wrapping
+
+   --help     display this help and exit
+   --version  output version information and exit
+
+   With no FILE, or when FILE is -, read standard input.
+
+   The data are encoded as described for the base64 alphabet in RFC 3548.
+   When decoding, the input may contain newlines in addition to the bytes of
+   the formal base64 alphabet.  Use --ignore-garbage to attempt to recover
+   from any other non-alphabet bytes in the encoded stream.
+*/
+
+const char[] Help_text =
+    ```
+    usage: base64 [OPTION]... [FILE]...
+    Base64 encode or decode FILE, or standard input, to standard output
+    options:
+      -b, --break=COLS      equivalent to -w
+      -d, -D, --decode      decode data
+      -e                    handle a argument as strings instead of filenames
+      -i, --ignore-garbage  when decoding, ignore non-alphabet characters
+      -S, --strict          accept only encoding characters
+      -w, --wrap=COLS       wrap encoded lines after COLS character (default 76)
+                              use 0 to disable line wrapping
+      --test                run internal tests
+      --help, -h, -?        display this help and exit
+      --version             output version information and exit
+    ```;
+
+const char[] Version_text =
+    ```
+    base64 (C2 examples) 1.0
+    Copyright (C) 2026 Charlie Gordon
+    Apache license version 2.0 <http://www.apache.org/licenses/LICENSE-2.0>.
+    ```;
+
+public fn i32 main(i32 argc, char** argv) {
+    i32 status = 0;
+    bool has_arg = false;
+    bool as_string = false;
+    base64.Mode mode = Default;
+    bool decode = false;
+    u32 width = 76;
+
+    for (i32 i = 1; i < argc; i++) {
+        char* arg = argv[i];
+        char* opt = nil;
+        if (arg[0] == '-' && arg[1] == '-') {
+            if ((opt = strchr(arg, '=')) != nil)
+                *opt++ = '\0';
+        }
+        switch (arg) {
+        case "-b", "-break", "-w", "-wrap":
+            if (!opt && !(opt = argv[++i])) {
+                fprintf(stderr, "base64: missing width after %s\n", arg);
+                return 1;
+            }
+            width = (u32)atoi(opt);
+            continue;
+        case "-d", "-D", "--decode":
+            decode = true;
+            continue;
+        case "-e":
+            as_string = true;
+            has_arg = true;
+            continue;
+        case "-i", "--ignore-garbage":
+            mode = Relaxed;
+            continue;
+        case "-S", "--strict":
+            mode = Strict;
+            continue;
+        case "--test":
+            return run_tests();
+        case "-h", "-?", "--help":
+            printf(Help_text);
+            return 0;
+        case "--version":
+            printf(Version_text);
+            return 0;
+        default:
+            if (!strcmp(arg, "-")) {
+                fprintf(stderr, "base64: unknown option %s\n", arg);
+                return 1;
+            }
+            if (as_string) status |= handle_string(arg, decode, mode);
+            else status |= handle_file(arg, decode, mode, width);
+            has_arg = true;
+            break;
+        }
+    }
+    if (!has_arg) status |= handle_file("-", decode, mode, width);
+    return status;
 }
 
-public fn i32 main() {
-    test("pleasure.");
-    test("The quick brown fox jumped");
+fn i32 handle_string(const char* str, bool decode, base64.Mode mode) {
+    u32 len = (u32)strlen(str);
+    if (decode) {
+        u32 out_len = 0;
+        u8* out = base64.decode(str, len, mode, &out_len);
+        if (!out) {
+            fprintf(stderr, "encoding error\n");
+            return 1;
+        }
+        puts(out);
+        free(out);
+    } else {
+        char* out = base64.encode(str, len);
+        u32 out_len = (u32)strlen(out);
+        fwrite(out, 1, out_len, stdout);
+        putchar('\n');
+        free(out);
+    }
     return 0;
 }
 
+fn i32 handle_file(const char* filename, bool decode, base64.Mode mode, u32 width) {
+    FILE* fp = stdin;
+    if (filename && strcmp(filename, "-")) {
+        if ((fp = fopen(filename, "rb")) == nil) {
+            fprintf(stderr, "base64: cannot open %s: %s\n", filename, strerror(errno));
+            return 1;
+        }
+    }
+    // encode or decode streams
+    char[4 * 4094] encoded_buf;
+    char[3 * 4094] decoded_buf;
+
+    if (decode) {
+        while (usize len = fread(encoded_buf, 1, elemsof(encoded_buf), fp)) {
+            u32 decode_len = base64.decode_block(encoded_buf, (u32)len, decoded_buf, mode);
+            if (!decode_len) {
+                fprintf(stderr, "decoding error\n");
+                return 1;
+            }
+            fwrite(decoded_buf, 1, decode_len, stdout);
+        }
+    } else {
+        u32 pos = 0;
+        while (usize len = fread(decoded_buf, 1, elemsof(decoded_buf), fp)) {
+            u32 encode_len = base64.encode_block(decoded_buf, (u32)len, encoded_buf);
+            u8* p = encoded_buf;
+            u32 size = encode_len;
+            if (width) {
+                while (pos + size >= width) {
+                    fwrite(p, 1, width - pos, stdout);
+                    putchar('\n');
+                    p += width - pos;
+                    size -= width - pos;
+                    pos = 0;
+                }
+            }
+            if (size) fwrite(p, 1, size, stdout);
+            pos += size;
+        }
+        if (pos) putchar('\n');
+    }
+    if (fp != stdin) fclose(fp);
+    return 0;
+}
+
+const char*[][2] tests = {
+    { "", "" },
+    { "1", "MQ==" },
+    { "12", "MTI=" },
+    { "123", "MTIz" },
+    { "Hello world!\n", "SGVsbG8gd29ybGQhCg==" },
+    { "The quick brown fox jumped", "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQ=" },
+}
+
+fn i32 run_tests() {
+    i32 status = 0;
+    for (u32 i = 0; i < elemsof(tests); i++) {
+        const char* s = tests[i][0];
+        const char* e = tests[i][1];
+        char* encode = base64.encode(s, (u32)strlen(s));
+        if (strcmp(encode, e)) {
+            fprintf(stderr, "error: encode(\"%s\") -> \"%s\", expected \"%s\"\n", s, encode, e);
+            status |= 1;
+        }
+        char* decode = base64.decode(e, (u32)strlen(e));
+        if (strcmp(decode, s)) {
+            fprintf(stderr, "error: decode(\"%s\") -> \"%s\", expected \"%s\"\n", e, decode, s);
+            status |= 1;
+        }
+        free(decode);
+        free(encode);
+    }
+    return status;
+}

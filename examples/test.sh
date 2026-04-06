@@ -64,16 +64,17 @@ function expect_sorted() {
     fi
 }
 
-run 0 base64
+run 0 base64 -e Hello-world
 expect $stderr $empty
-expect $stdout <<EOF
-[pleasure.]
-   encoded: cGxlYXN1cmUu
-   decoded: pleasure.
-[The quick brown fox jumped]
-   encoded: VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wZWQ=
-   decoded: The quick brown fox jumped
-EOF
+expect $stdout == "SGVsbG8td29ybGQ="
+
+run 0 base64 base64/HELLO.txt
+expect $stderr $empty
+expect $stdout base64/HELLO.b64
+
+run 0 base64 -d base64/HELLO.b64
+expect $stderr $empty
+expect $stdout base64/HELLO.txt
 
 run 2 cstrip
 expect $stderr == "usage: parser [c-file]"
