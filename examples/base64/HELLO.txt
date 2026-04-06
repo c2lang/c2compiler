@@ -1,0 +1,77 @@
+
+This is a list of ways to say hello in various languages.
+Its purpose is to illustrate a number of scripts.
+
+---------------------------------------------------------
+
+Europe:
+
+  Czech (česky)			Dobrý den
+  Danish (Dansk)		Hej, Goddag
+  English			Hello
+  English (IPA ɪŋglɪʃ)		hɛləʊ
+  Esperanto			Saluton
+  Estonian			Tere, Tervist
+  Finnish (Suomi)		Hei
+  French (Français)		Bonjour, Salut
+  German (Deutsch Nord)		Guten Tag
+  German (Deutsch Süd)		Grüß Gott
+  Italiano			Ciao, Buon giorno
+  Greek (Ελληνικά)		Γειά σας
+  Maltese			Ċaw, Saħħa
+  Nederlands, Vlaams		Hallo, Dag
+  Norwegian (Norsk)		Hei, God dag
+  Polish			Dzień dobry, Hej
+  Russian (Русский)		Здравствуйте!
+  Slovak (Slovensky)		Dobrý deň
+  Spanish (Español)		¡Hola!
+  Swedish (Svenska)		Hej, Goddag
+  Turkish (Türkçe)		Merhaba
+
+America:
+
+  Cherokee (ᏣᎳᎩ)		ᎣᏏᏲ
+
+Middle Near East/Africa:
+
+  Amharic (አማርኛ)		ሠላም
+  Arabic			ﺍﻟﺴﻼﻡ ﻋﻠﻴﻜﻢ
+  Arabic (Pango)		السَّلام عليكُم
+  Arabic (اَلْعَرَبِيَّةُ)‎	اَلسَّلَامُ عَلَيْكُم
+  Georgian (ქართველი)		გამარჯობა
+  Hebrew			שלום
+  Hebrew (עִבְרִית)‎		שָׁלוֹם
+  Persian (فارسی)‎		سلام عليکم
+  Yiddish (ײַדישע)‎		דאָס הײַזעלע
+
+South/South-East Asia:
+
+  Bengali (বাঙ্লা)		ষাগতোম
+  Burmese 			မ္ရန္မာ
+  Gujarati			ગુજરાતિ
+  Hindi (हिंदी)			नमस्ते, नमस्कार ।
+  Khmer (ខ្មៃរ)			ជំរាបសួរ (ex: ក្ក្រឿ៌)
+  Lao (ພາສາລາວ)			ສະບາຍດີ, ຂໍໃຫ້ໂຊກດີ
+  Malayalam (മലയാളം)		നമസ്കാരം (ex: ന+്+ര=ന്ര)
+  Punjabi			ਪੁਂਜਾਬਿ
+  Sinhala (සිංහල)		ආයුබෝවන්
+  Tamil (தமிழ்)			வணக்கம்
+  Thai (ภาษาไทย)		สวัสดีครับ, สวัสดีค่ะ
+  Tibetan (བོད་སྐད་)		བཀྲ་ཤིས་བདེ་ལེགས༎ (ex: བསྒྲུབས, ཧཱུཾ)
+  Tigrigna (ትግርኛ)		ሰላማት
+  Vietnamese (Tiếng Việt)	Chào bạn
+
+East Asia
+
+  Chinese (中文,普通话,汉语)	你好
+  Cantonese (粵語,廣東話)	早晨, 你好
+  Japanese (日本語)		こんにちは, ｺﾝﾆﾁﾊ
+  Korean (한글)			안녕하세요, 안녕하십니까
+
+Difference among chinese characters in GB, JIS, KSC, BIG5:
+  GB   -- 元气  开发
+  JIS  -- 元気  開発
+  KSC  -- 元氣  開發
+  BIG5 -- 元氣  開發
+
+Just for a test of JISX0212: 騏驎 (the second character is of JISX0212)
