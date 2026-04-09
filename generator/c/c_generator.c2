@@ -736,10 +736,7 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
             gen.cur_function = fd;
             d.setGenerated();  // for recursive inline functions
             out.newline();
-            string_buffer.Buf* saved = gen.out;
-            gen.out = out;
-            gen.emitStmt((ast.Stmt*)fd.getBody(), 0, true);
-            gen.out = saved;
+            gen.emitStmt(out, (Stmt*)fd.getBody(), 0, true);
             out.newline();
             gen.cur_function = nil;
         } else {
@@ -835,8 +832,6 @@ fn void Generator.on_ast_decl(void* arg, AST* a) {
 
 fn void Generator.gen_member_type_func(Generator* gen, FunctionDecl* fd, string_buffer.Buf* out, const char* name) {
     // generate something like: void (*name)(void* arg)
-    Decl* d = (Decl*)fd;
-
     gen.emitTypePre(out, fd.getRType());
     out.print(" (*%s)", name);
     gen.emitFuncParams(fd, out);
@@ -900,17 +895,17 @@ fn void Generator.emitFuncParams(Generator* gen, FunctionDecl* fd, string_buffer
     for (u32 i=0; i<num_params; i++) {
         Decl* argx = (Decl*)params[i];
         if (i != 0) out.add(", ");
+        char[8] temp;
+        const char* name = argx.getName();
+        if (!name) {
+            snprintf(temp, elemsof(temp), "_arg%d", i);
+            name = temp;
+        }
         QualType qt = argx.getType();
         if (qt.isFunction()) {
             FunctionType* ft = qt.getFunctionType();
             FunctionDecl* fd2 = ft.getDecl();
             if (fd2.isParam()) {
-                const char* name = argx.getName();
-                char[8] temp;
-                if (!name) {
-                    snprintf(temp, elemsof(temp), "_arg%d", i);
-                    name = temp;
-                }
                 gen.gen_member_type_func(fd2, out, name);
                 continue;
             }
@@ -918,9 +913,7 @@ fn void Generator.emitFuncParams(Generator* gen, FunctionDecl* fd, string_buffer
 
         gen.emitTypePre(out, qt);
         out.space();
-        const char* name = argx.getName();
-        if (name) out.add(name);
-        else out.print("_arg%d", i);
+        out.add(name);
     }
     if (fd.isVariadic()) {
         if (num_params) out.add(", ");
@@ -938,15 +931,8 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     gen.indent = 0;
     gen.gen_func_proto(fd, out);
     out.newline();
-
-    // work-around Stmts using gen.out
-    string_buffer.Buf* saved = gen.out;
-    gen.out = out;
-
-    gen.emitStmt((ast.Stmt*)fd.getBody(), 0, true);
+    gen.emitStmt(out, (Stmt*)fd.getBody(), 0, true);
     out.newline();
-
-    gen.out = saved;    // restore saved gen.out
     gen.addFragment(f, false);
 }
 
@@ -1049,12 +1035,11 @@ fn void Generator.on_header_decl(void* arg, Decl* d) {
     Generator* gen = arg;
     gen.deps.check(d);  // generate dependencies first
 
-    gen.emitHeaderDecl(d);
+    gen.emitHeaderDecl(gen.header, d);
     d.setGenerated();
 }
 
-fn void Generator.emitHeaderDecl(Generator* gen, Decl* d) {
-    string_buffer.Buf* out = gen.header;
+fn void Generator.emitHeaderDecl(Generator* gen, string_buffer.Buf* out, Decl* d) {
 
     // TODO refactor to common code with normal C generation (currently uses fragments)
     switch (d.getKind()) {
@@ -1064,7 +1049,7 @@ fn void Generator.emitHeaderDecl(Generator* gen, Decl* d) {
         gen.gen_func_proto(fd, out);
         if (fd.isInline()) {
             out.newline();
-            gen.emitStmt((ast.Stmt*)fd.getBody(), 0, true);
+            gen.emitStmt(out, (Stmt*)fd.getBody(), 0, true);
             out.newline();
         } else {
             out.add(";\n");
@@ -1107,7 +1092,7 @@ fn void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
 
     string_buffer.Buf* hdr = gen.header;
     add_gen_warning(hdr);
-    char[32] upper_name;
+    char[64] upper_name;
     string_utils.toUpper(m.getName(), upper_name);
     hdr.print("#ifndef %s_H\n", upper_name);
     hdr.print("#define %s_H\n\n", upper_name);
@@ -1121,20 +1106,14 @@ fn void Generator.generateInterfaceFiles(Generator* gen, Module* m) {
     m.visitASTs(Generator.create_interface_decls, gen);
 
     gen.deps.init(m, gen, Generator.on_header_decl);
-    string_buffer.Buf* saved = gen.out;
-    gen.out = hdr;
     for (u32 i=0; i<gen.decls.size(); i++) {
         Generator.on_header_decl(gen, gen.decls.get(i));
     }
-    gen.out = saved;
 
     hdr.add("#ifdef __cplusplus\n}\n#endif\n\n");
     hdr.add("#endif\n");
 
-    file_utils.File file.init_ext(gen.results_dir, m.getName(), ".h");
-    if (!file.write(hdr.data(), hdr.size())) {
-        console.error("cannot write to %s: %s", file.path, file.getError());
-    }
+    gen.write(hdr, gen.results_dir, m.getName(), ".h");
     gen.cur_external = false;
 }
 
@@ -1142,7 +1121,6 @@ fn void Generator.on_module(void* arg, Module* m) {
     if (!m.isUsed()) return;
 
     Generator* gen = arg;
-    string_buffer.Buf* out = gen.out;
 
     gen.mod_name = m.getName();
     gen.mod = m;
@@ -1151,23 +1129,22 @@ fn void Generator.on_module(void* arg, Module* m) {
     gen.no_trace = !string.strcmp(gen.mod_name, "c2_trace");
 
     if (gen.fast_build) {
-        out.clear();
         gen.header.clear();
         add_gen_warning(gen.header);
-        char[32] upper_name;
+        char[64] upper_name;
         string_utils.toUpper(gen.mod_name, upper_name);
         gen.header.print("#ifndef %s_H\n", upper_name);
         gen.header.print("#define %s_H\n\n", upper_name);
         gen.header.add("#include \"_external.h\"\n\n");
 
-        add_gen_warning(out);
+        gen.out.clear();
+        add_gen_warning(gen.out);
     } else {
-        out.print("\n// --- module %s ---\n", gen.mod_name);
+        gen.out.print("\n// --- module %s ---\n", gen.mod_name);
     }
 
     // Note: special case for stdarg.h va_list
     if (m.getNameIdx() == gen.varargsName) {
-        if (gen.fast_build) out = gen.header;
         const char[] builtin_defs =
         ```c
         // Note: this module is a special case and is custom generated
@@ -1176,7 +1153,9 @@ fn void Generator.on_module(void* arg, Module* m) {
         #define va_end __builtin_va_end
 
         ```;
-        out.add(builtin_defs);
+
+        if (gen.fast_build) gen.header.add(builtin_defs);
+        else gen.out.add(builtin_defs);
 
         // set all decls to generated
         m.visitASTs(Generator.ast_mark_generated, arg);
@@ -1187,7 +1166,7 @@ fn void Generator.on_module(void* arg, Module* m) {
 
     if (gen.fast_build) {
         // generate self include
-        out.print("#include \"%s.h\"\n", gen.mod_name);
+        gen.out.print("#include \"%s.h\"\n", gen.mod_name);
         // For now just iterate twice, possibly generating same include twice
         // if used public and non-public by other ASTs
 
@@ -1220,14 +1199,11 @@ fn void Generator.write_files(Generator* gen) {
     assert(gen.fast_build);
     gen.header.add("\n#endif\n\n");
 
-    char[64] outfile;
     if (!gen.cur_external) {
-        snprintf(outfile, elemsof(outfile), "%s.c", gen.mod_name);
-        gen.write(gen.cgen_dir, outfile, gen.out);
+        gen.write(gen.out, gen.cgen_dir, gen.mod_name, ".c");
     }
 
-    snprintf(outfile, elemsof(outfile), "%s.h", gen.mod_name);
-    gen.write(gen.cgen_dir, outfile, gen.header);
+    gen.write(gen.header, gen.cgen_dir, gen.mod_name, ".h");
 
     gen.out.clear();
     gen.header.clear();
@@ -1280,8 +1256,8 @@ fn void Generator.free(Generator* gen) {
     gen.funcnames.free();
 }
 
-fn void Generator.write(Generator* gen, const char* output_dir, const char* filename, const string_buffer.Buf* buf) {
-    file_utils.File file.init(output_dir, filename);
+fn void Generator.write(Generator* gen, const string_buffer.Buf* buf, const char* output_dir, const char* filename, const char* ext = nil) {
+    file_utils.File file.init(output_dir, filename, ext);
     if (!file.write(buf.data(), buf.size())) {
         console.error("cannot write to %s: %s", file.path, file.getError());
     }
@@ -1310,8 +1286,7 @@ public fn void generate(string_pool.Pool* astPool,
         return;
     }
 
-    Generator gen;
-    gen.init(astPool, target, kind, output_dir, dir, diags, sm, build_info, mainFunc);
+    Generator gen.init(astPool, target, kind, output_dir, dir, diags, sm, build_info, mainFunc);
     gen.auxPool = auxPool;
     gen.enable_asserts = enable_asserts;
     gen.fast_build = fast_build;
@@ -1321,18 +1296,17 @@ public fn void generate(string_pool.Pool* astPool,
     gen.trace_calls = trace_calls;
     gen.targetInfo = targetInfo;
     gen.cgen_dir = dir;
-    string_buffer.Buf* out = gen.out;
 
     if (!fast_build) {
-        add_gen_warning(out);
+        add_gen_warning(gen.out);
     }
 
     // generate C2-internal and external lib stuff in external.h, the main component in build.c
-    gen.emit_external_header(target);
+    gen.emit_external_header(gen.out);
 
     if (fast_build) {
-        gen.write(gen.cgen_dir, "_external.h", gen.out);
-        out.clear();
+        gen.write(gen.out, gen.cgen_dir, "_external.h");
+        gen.out.clear();
 
         gen.cur_external = true;
     }
@@ -1361,13 +1335,13 @@ public fn void generate(string_pool.Pool* astPool,
             gen.out.clear();
             gen.out.add("#include \"c2_trace_tables.h\"\n\n");
             gen.writeCalls(gen.out);
-            gen.write(dir, "c2_trace_tables.c", gen.out);
+            gen.write(gen.out, dir, "c2_trace_tables.c");
         }
     } else {
         if (gen.trace_calls) {
             gen.writeCalls(gen.out);
         }
-        gen.write(dir, "build.c", gen.out);
+        gen.write(gen.out, dir, "build.c");
     }
 
     u32 libc_name = auxPool.addStr("libc", true);
@@ -1389,7 +1363,7 @@ public fn void build(const char* output_dir)
 #endif
 
     char[file_utils.Max_path] dir;
-    if (!file_utils.make_path_ext(dir, elemsof(dir), output_dir, Dir, "/")) {
+    if (!file_utils.make_path(dir, elemsof(dir), output_dir, Dir, "/")) {
         console.error("cannot launch C compilation: %s", string.strerror(errno));
         return;
     }
@@ -1464,9 +1438,7 @@ const char[] C_defines =
     #define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))
     ```;
 
-fn void Generator.emit_external_header(Generator* gen, const char* target) {
-    string_buffer.Buf* out = gen.out;
-
+fn void Generator.emit_external_header(Generator* gen, string_buffer.Buf* out) {
     out.add(Include_guard1);
     out.add(Warning_control);
     out.add(C_types);

@@ -19,7 +19,6 @@ import ast;
 import build_file;
 import build_target;
 import component;
-import console;
 import file_utils;
 import module_list;
 import string_buffer;
@@ -145,8 +144,8 @@ fn void Generator.createMakefile(Generator* gen,
         const char* triplet = gen.targetInfo.str();
 
         // interate Components in reverse order
-        for (u32 i=comps.size(); i != 0; i--) {
-            component.Component* c = comps.get(i-1);
+        for (u32 i = comps.size(); i-- > 0;) {
+            component.Component* c = comps.get(i);
             if (!c.isExternal()) continue;
             const char* linkname = c.getLinkName();
 
@@ -225,7 +224,7 @@ fn void Generator.createMakefile(Generator* gen,
     out.add("clean:\n");
     out.print("\t\trm -f *.o *.a ../%s\n\n", target_name);
 
-    gen.write(output_dir, "Makefile", gen.out);
+    gen.write(gen.out, output_dir, "Makefile");
 }
 
 fn void Generator.createExportsFile(Generator* gen, const char* output_dir, component.Component* mainComp) {
@@ -255,7 +254,7 @@ fn void Generator.createExportsFile(Generator* gen, const char* output_dir, comp
     out.add("\tlocal:\n\t\t*;\n");
     out.add("};\n");
 
-    gen.write(output_dir, "exports.version", gen.out);
+    gen.write(gen.out, output_dir, "exports.version");
 }
 
 const char[] C2_types_header =
@@ -306,11 +305,7 @@ fn void Generator.generateC2TypesHeader(Generator* gen) {
     string_buffer.Buf* out = gen.header;
     out.clear();
     out.add(C2_types_header);
-
-    file_utils.File file.init(gen.results_dir, "c2types.h");
-    if (!file.write(out.data(), out.size())) {
-        console.error("cannot write to %s: %s", file.path, file.getError());
-    }
+    gen.write(out, gen.results_dir, "c2types.h");
     out.clear();
 }
 

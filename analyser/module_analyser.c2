@@ -714,7 +714,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
 
         // open file, copy contents to StringPool and close
         const char* filename = ma.astPool.idx2str(embed.value.text);
-        file_utils.File reader.init("", filename);
+        file_utils.File reader.init(filename);
         if (!reader.load()) {
             ma.error(embed.loc, "error opening embedded file '%s': %s", filename, reader.getError());
             return;

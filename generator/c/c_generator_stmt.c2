@@ -42,8 +42,7 @@ fn void Generator.emitVarDecl(Generator* gen, VarDecl* vd, string_buffer.Buf* ou
     }
 }
 
-fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
-    string_buffer.Buf* out = gen.out;
+fn void Generator.emitStmt(Generator* gen, string_buffer.Buf* out, Stmt* s, u32 indent, bool newline) {
 
     if (out.endsWith('\n')) out.indent(indent);
 
@@ -73,7 +72,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         if (is_decl) {
             out.add("{\n");
             indent++;
-            gen.emitStmt(cond, indent, true);
+            gen.emitStmt(out, cond, indent, true);
             out.indent(indent);
             out.add("if (");
             DeclStmt* ds = (DeclStmt*)cond;
@@ -86,7 +85,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         }
         out.add(") ");
         Stmt* thenStmt = i.getThen();
-        gen.emitStmt(thenStmt, indent, true);
+        gen.emitStmt(out, thenStmt, indent, true);
         Stmt* elseStmt = i.getElse();
         if (elseStmt) {
             if (thenStmt.isCompound()) {
@@ -96,7 +95,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
                 out.indent(indent);
             }
             out.add("else ");
-            gen.emitStmt(elseStmt, indent, true);
+            gen.emitStmt(out, elseStmt, indent, true);
         }
         if (is_decl) {
             indent--;
@@ -131,7 +130,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
             gen.emitExpr(out, (Expr*)cond);
             out.add(") ");
         }
-        gen.emitStmt(w.getBody(), indent, true);
+        gen.emitStmt(out, w.getBody(), indent, true);
         if (is_decl) {
             indent--;
             out.indent(indent);
@@ -143,7 +142,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         out.add("for (");
         Stmt* initStmt = f.getInit();
         if (initStmt) {
-            gen.emitStmt(initStmt, 0, false);
+            gen.emitStmt(out, initStmt, 0, false);
         }
         out.add1(';');
         if (f.getCond()) {
@@ -157,10 +156,10 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
             gen.emitExpr(out, cont);
         }
         out.add(") ");
-        gen.emitStmt(f.getBody(), indent, true);
+        gen.emitStmt(out, f.getBody(), indent, true);
         break;
     case Switch:
-        gen.emitSwitchStmt((SwitchStmt*)s, indent);
+        gen.emitSwitchStmt(out, (SwitchStmt*)s, indent);
         break;
     case Break:
         out.add("break;\n");
@@ -181,7 +180,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
             out.add1(';');
         }
         out.newline();
-        if (stmt) gen.emitStmt(stmt, indent, true);
+        if (stmt) gen.emitStmt(out, stmt, indent, true);
         break;
     case Goto:
         GotoStmt* g = (GotoStmt*)s;
@@ -195,7 +194,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         u32 count = c.getCount();
         Stmt** stmts = c.getStmts();
         for (u32 i=0; i<count; i++) {
-            gen.emitStmt(stmts[i], indent+1, true);
+            gen.emitStmt(out, stmts[i], indent+1, true);
         }
 
         out.indent(indent);
@@ -213,7 +212,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         if (newline) out.add(";\n");
         break;
     case Asm:
-        gen.emitAsmStmt((AsmStmt*)s, indent);
+        gen.emitAsmStmt(out, (AsmStmt*)s, indent);
         break;
     case Assert:
         if (!gen.enable_asserts) out.print(";//assert");
@@ -241,8 +240,7 @@ fn void emitAsmPart(string_buffer.Buf* out, bool multi_line, u32 indent) {
     out.add(": ");
 }
 
-fn void Generator.emitAsmOperand(Generator* gen, u32 name, const Expr* c, Expr* e) {
-    string_buffer.Buf* out = gen.out;
+fn void Generator.emitAsmOperand(Generator* gen, string_buffer.Buf* out, u32 name, const Expr* c, Expr* e) {
     if (name) {
         out.print("[%s] ", ast.idx2name(name));
     }
@@ -252,9 +250,7 @@ fn void Generator.emitAsmOperand(Generator* gen, u32 name, const Expr* c, Expr* 
     out.rparen();
 }
 
-fn void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
-    string_buffer.Buf* out = gen.out;
-
+fn void Generator.emitAsmStmt(Generator* gen, string_buffer.Buf* out, AsmStmt* a, u32 indent) {
     out.add("__asm__ ");
     if (a.isVolatile()) out.add("volatile ");
 
@@ -275,7 +271,7 @@ fn void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
         emitAsmPart(out, multi_line, indent);
         for (u32 i=0; i<num_outputs; i++) {
             if (i!=0) out.add(", ");
-            gen.emitAsmOperand(names[i], constraints[i], exprs[i]);
+            gen.emitAsmOperand(out, names[i], constraints[i], exprs[i]);
         }
         // inputs
         if (num_inputs | num_clobbers) {
@@ -283,7 +279,7 @@ fn void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
             for (u32 i=0; i<num_inputs; i++) {
                 if (i!=0) out.add(", ");
                 u32 idx = i + num_outputs;
-                gen.emitAsmOperand(names[idx], constraints[idx], exprs[idx]);
+                gen.emitAsmOperand(out, names[idx], constraints[idx], exprs[idx]);
             }
         }
         // clobbers
@@ -301,14 +297,12 @@ fn void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
     out.add(";\n");
 }
 
-fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
-    string_buffer.Buf* out = gen.out;
-
+fn void Generator.emitSwitchStmt(Generator* gen, string_buffer.Buf* out, SwitchStmt* sw, u32 indent) {
     bool is_decl = sw.hasDecl();
     if (is_decl) {
         out.add("{\n");
         indent++;
-        gen.emitStmt(sw.getDecl(), indent, true);
+        gen.emitStmt(out, sw.getDecl(), indent, true);
         out.indent(indent);
     }
     out.add("switch (");
@@ -322,7 +316,7 @@ fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
     u32 lab = 2;
     u32* lab_p = sw.isString() ? &lab : nil;
     for (u32 i = 0; i < num_cases; i++) {
-        gen.emitCase(cases[i], indent, lab_p);
+        gen.emitCase(out, cases[i], indent, lab_p);
     }
     out.indent(indent);
     out.add("}\n");
@@ -333,8 +327,7 @@ fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
     }
 }
 
-fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) {
-    string_buffer.Buf* out = gen.out;
+fn void Generator.emitCase(Generator* gen, string_buffer.Buf* out, SwitchCase* c, u32 indent, u32 *lab) {
     const char* brace = c.hasDecls() ? " {" : "";
 
     out.indent(indent);
@@ -387,7 +380,7 @@ fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent, u32 *lab) 
     if (num_stmts > 0) {
         Stmt** stmts = c.getStmts();
         for (u32 i=0; i<num_stmts; i++) {
-            gen.emitStmt(stmts[i], indent+1, true);
+            gen.emitStmt(out, stmts[i], indent+1, true);
         }
     }
 

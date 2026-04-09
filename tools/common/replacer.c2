@@ -123,7 +123,7 @@ fn void Replacer.flushFragments(Replacer* r, const char* filename) {
     r.dest[dest_idx] = 0;
 
     // write
-    file_utils.File outfile.init("", filename);
+    file_utils.File outfile.init(filename);
     if (!outfile.write(r.dest, new_size)) {
         fprintf(stderr, "cannot write to %s: %s\n", filename, outfile.getError());
     }
@@ -202,7 +202,7 @@ public fn i32 Replacer.replace(Replacer* r, u16 old_len) {
                 prev_offset = 0;
             }
             cur_file = filename;
-            r.file.init("", filename);
+            r.file.init(filename);
             if (!r.file.load()) {
                 fprintf(stderr, "error opening %s: %s\n", filename, r.file.getError());
                 return -1;

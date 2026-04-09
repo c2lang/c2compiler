@@ -65,50 +65,35 @@ fn usize copy_dirname(char *buf, usize size, const char* dir) {
     return pos;
 }
 
-// construct a path in a buffer from a directory name and a filename
+// construct a path in a buffer from a pathname, a filename and an extension
 // if the path fits in the destination array, a pointer to it is returned.
 // otherwise the path is truncated, errno is set to ENAMETOOLONG and nil is returned
-public fn const char* make_path(char *buf, usize size, const char* dir, const char* filename) {
+// both the filename and the extension can be nil or omitted
+public fn const char* make_path(char *buf, usize size, const char* path, const char* filename = nil, const char* ext = nil) {
     usize pos = 0;
-    if (*filename != '/') pos = copy_dirname(buf, size, dir);
-    if (pos < size) {
+    if (filename) {
+        if (*filename != '/') pos = copy_dirname(buf, size, path);
         pos += pstrcpy(buf + pos, size - pos, filename);
-        if (pos < size) return buf;
+        if (ext) pos += pstrcpy(buf + pos, size - pos, ext);
+    } else {
+        pos = pstrcpy(buf, size, path);
     }
+    if (pos < size) return buf;
     errno = ENAMETOOLONG;
     return nil;
 }
 
-// construct a path in a buffer from a directory name, a filename and an extension
-// if the path fits in the destination array, a pointer to it is returned.
-// otherwise the path is truncated, errno is set to ENAMETOOLONG and nil is returned
-public fn const char* make_path_ext(char *buf, usize size, const char* dir, const char* filename, const char* ext) {
-    usize pos = 0;
-    if (*filename != '/') pos = copy_dirname(buf, size, dir);
-    if (pos < size) {
-        pos += pstrcpy(buf + pos, size - pos, filename);
-        if (pos < size) {
-            pos += pstrcpy(buf + pos, size - pos, ext);
-            if (pos < size) return buf;
-        }
-    }
-    errno = ENAMETOOLONG;
-    return nil;
-}
-
-// construct a path in a buffer from a directory name, a subdirectory name and an extension
+// construct a path in a buffer from a directory name, a subdirectory name and a filename
 // if the path fits in the destination array, a pointer to it is returned.
 // otherwise the path is truncated, errno is set to ENAMETOOLONG and nil is returned
 public fn const char* make_path3(char *buf, usize size, const char* dir, const char* subdir, const char* filename) {
     usize pos = 0;
     if (*filename != '/') {
         if (*subdir != '/') pos = copy_dirname(buf, size, dir);
-        if (pos < size) pos += copy_dirname(buf + pos, size - pos, subdir);
+        pos += copy_dirname(buf + pos, size - pos, subdir);
     }
-    if (pos < size) {
-        pos += pstrcpy(buf + pos, size - pos, filename);
-        if (pos < size) return buf;
-    }
+    pos += pstrcpy(buf + pos, size - pos, filename);
+    if (pos < size) return buf;
     errno = ENAMETOOLONG;
     return nil;
 }
@@ -162,23 +147,12 @@ public type File struct @(unused) {
     void* contents;
 }
 
-public fn bool File.init(File* file, const char* dir, const char* filename) {
+public fn bool File.init(File* file, const char* dir, const char* filename = nil, const char* ext = nil) {
     file.handle = 0;
     file.error = 0;
     file.contents_size = 0;
     file.contents = nil;
-    if (!make_path(file.path, elemsof(file.path), dir, filename)) {
-        file.error = ENAMETOOLONG;
-        return false;
-    }
-    return true;
-}
-
-public fn bool File.init_ext(File* file, const char* dir, const char* filename, const char* ext) @(unused) {
-    if (!file.init(dir, filename)) return false;
-    u32 len = (u32)strlen(file.path);
-    len += pstrcpy(file.path + len, elemsof(file.path) - len, ext);
-    if (len >= elemsof(file.path)) {
+    if (!make_path(file.path, elemsof(file.path), dir, filename, ext)) {
         file.error = ENAMETOOLONG;
         return false;
     }

@@ -255,7 +255,7 @@ fn void Tester.run_test(Tester* t, Test* test) {
     string_buffer.Buf* buf = string_buffer.create(4096, color_output, 2);
     buf.print("%s\n", test.filename);
 
-    file_utils.File file.init("", test.filename);
+    file_utils.File file.init(test.filename);
     if (!file.load()) {
         print_error("error opening %s: %s", test.filename, file.getError());
         exit(EXIT_FAILURE);

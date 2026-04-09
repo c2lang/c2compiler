@@ -173,7 +173,7 @@ public fn i32 SourceMgr.addResource(SourceMgr* sm, const char* name, const void*
 }
 
 public fn i32 SourceMgr.loadFile(SourceMgr* sm, const char* filename, SrcLoc sloc) {
-    file_utils.File file.init("", filename);
+    file_utils.File file.init(filename);
     if (!file.load()) {
         char[256] tmp;
         *tmp = '\0';

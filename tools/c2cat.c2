@@ -242,7 +242,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
 
 public fn i32 c2cat(const char* filename, bool use_color)
 {
-    file_utils.File file.init("", filename);
+    file_utils.File file.init(filename);
     if (!file.load()) {
         fprintf(stderr, "error opening %s: %s\n", filename, file.getError());
         return -1;

@@ -30,12 +30,12 @@ public fn i32 copy_file(const char* source, const char* dest) {
     }
 
     // copy file
-    File src.init("", source);
+    File src.init(source);
 
     // TODO just open both and copy page-by-page (dont use reader/writer)
     if (!src.load()) return -1;
 
-    File dst.init("", dest);
+    File dst.init(dest);
     bool ok = dst.write(src.contents, src.contents_size);
 
     dst.close();
