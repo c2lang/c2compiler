@@ -324,7 +324,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
     result.clear();
     while (1) {
         switch (t.current[0]) {
-        case 0:
+        case '\0':
             result.setLocation(t.loc);
             result.setKind(TokenKind.Eof);
             return;
@@ -405,14 +405,14 @@ fn void Tokenizer.parseText(Tokenizer* t, Token* result) {
     char* out = t.msg;
     while (1) {
         switch (t.current[0]) {
-        case 0:
+        case '\0':
             sprintf(t.msg, "expected '\"' %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             return;
         case '\\':
             switch (t.current[1]) {
-            case 0:
+            case '\0':
                 sprintf(t.msg, "invalid escape sequence '\\0 %s", t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);

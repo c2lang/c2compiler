@@ -124,7 +124,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
         }
 
         switch (*t.cur) {
-        case 0:
+        case '\0':
             result.loc = t.loc;
             result.kind = TokenKind.Eof;
             return;
@@ -246,7 +246,7 @@ fn void Tokenizer.lex_comment(Tokenizer* t) {
     t.cur++;
     while (1) {
         switch (*t.cur) {
-        case 0:
+        case '\0':
         case '\r':
         case '\n':
             t.loc.column += (t.cur - start);
@@ -264,7 +264,7 @@ fn void Tokenizer.lex_directive(Tokenizer* t, Token* result) {
     u32 count;
     while (1) {
         switch (*t.cur) {
-        case 0:
+        case '\0':
         case '\r':
         case '\n':
             goto out;
@@ -288,7 +288,7 @@ fn void Tokenizer.lex_quoted_string(Tokenizer* t, Token* result, char delim) {
     u32 count;
     while (1) {
         switch (*t.cur) {
-        case 0:
+        case '\0':
         case '\r':
         case '\n':
             t.loc.column += (t.cur - start);

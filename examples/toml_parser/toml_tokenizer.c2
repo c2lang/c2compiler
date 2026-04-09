@@ -138,7 +138,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
     result.clear();
     while (1) {
         switch (t.current[0]) {
-        case 0:
+        case '\0':
             result.loc = t.loc;
             result.kind = TokenKind.Eof;
             return;
@@ -246,7 +246,7 @@ fn void Tokenizer.advance(Tokenizer* t, u32 amount) {
 fn void Tokenizer.parseComment(Tokenizer* t) {
     while (1) {
         switch (t.current[0]) {
-        case 0:
+        case '\0':
             return;
         case '\n':
             t.current++;

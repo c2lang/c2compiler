@@ -1011,7 +1011,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype
     char c;
 
     switch (c = *p) {
-    case 0:
+    case '\0':
     case '\r':
     case '\n':
         t.error(result, "unterminated %s", stype);
@@ -1112,7 +1112,7 @@ fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
 
     t.cur++; // skip single quote
     switch (*t.cur) {
-    case 0:
+    case '\0':
     case '\r':
     case '\n':
         t.error(result, "unterminated %s", "character constant");
@@ -1295,7 +1295,7 @@ fn void Tokenizer.lex_string_literal(Tokenizer* t, Token* result) {
         t.buf.add2(t.cur, (u32)(p - t.cur));
         t.cur = p;
         switch (*p) {
-        case 0:
+        case '\0':
         case '\r':
         case '\n':
             t.error(result, "unterminated %s", "string");
@@ -1362,7 +1362,7 @@ fn bool Tokenizer.lex_block_comment(Tokenizer* t, Token* result) {
     const char* start = t.cur;
     while (1) {
         switch (*t.cur) {
-        case 0:
+        case '\0':
             t.error(result, "un-terminated block comment");
             return true;
         case '/':

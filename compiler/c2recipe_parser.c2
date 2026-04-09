@@ -239,7 +239,7 @@ fn void Parser.lex(Parser* p, Token* result) {
     while (1) {
         //printf("%c\n", *p.cur);
         switch (*p.cur) {
-        case 0:
+        case '\0':
             p.cur--;
             result.loc = p.loc_start + (SrcLoc)(p.cur - p.input_start);
             result.kind = Eof;

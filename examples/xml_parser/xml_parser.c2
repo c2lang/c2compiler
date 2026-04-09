@@ -342,7 +342,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
         bool done = false;
         while (!done) {
             switch (t.current[0]) {
-            case 0:
+            case '\0':
                 result.setLocation(t.loc);
                 result.setKind(TokenKind.Eof);
                 return;
@@ -389,7 +389,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
 
     while (1) {
         switch (t.current[0]) {
-        case 0:
+        case '\0':
             sprintf(t.msg, "unexpected eof %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
@@ -489,7 +489,7 @@ fn bool Tokenizer.readLtToken(Tokenizer* t, Token* result) {
     }
     if (t.current[1] == '!') {  // can be <![CDATA[, <!-- or <!
         switch (t.current[2]) {
-        case 0:
+        case '\0':
             sprintf(t.msg, "unexpected eof %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
@@ -548,7 +548,7 @@ fn bool Tokenizer.readComments(Tokenizer* t, Token* result) {
     // TODO escaped chars
     while (1) {
         switch (t.current[0]) {
-        case 0:
+        case '\0':
             sprintf(t.msg, "unexpected eof %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);

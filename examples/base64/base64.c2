@@ -47,7 +47,7 @@ public fn void encode(const u8* in, u32 len, i8* out) {
 
 	for (; i< len; ++i) {
         switch (i % 3) {
-        case 0:
+        case '\0':
             out[j++] = Lut_enc[(in[i] >> 2) & 0x3F];
             continue;
         case 1:
@@ -62,7 +62,7 @@ public fn void encode(const u8* in, u32 len, i8* out) {
     i -= 1;    // move back
     // check the last and add padding
     switch (i % 3) {
-    case 0:
+    case '\0':
         out[j++] = Lut_enc[(in[i] & 0x3) << 4];
         out[j++] = PAD;
         out[j++] = PAD;
@@ -85,7 +85,7 @@ public fn i32 decode(const i8* in, u32 len, u8* out) {
 
         i8 cc;
         switch (i % 4) {
-        case 0:
+        case '\0':
             cc = (i8)(c << 2);
             out[j] = cast<u8>(cc);
             //out[j] = cast<u8>((c << 2) & 0xFF);       // TODO c2c assert fails on cast
