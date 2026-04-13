@@ -165,7 +165,7 @@ fn void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
 
     v.asDecl().setType(res);
 
-    if (ma.usedPublic) setTypePublicUsed(res);
+    if (ma.usedPublic) res.setTypeUsedPublic();
 
     // TODO check attributes
 

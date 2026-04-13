@@ -444,6 +444,44 @@ public fn bool QualType.needsCtvInit(const QualType qt) {
     return false;
 }
 
+// Note: qt must be valid
+public fn void QualType.setTypeUsedPublic(QualType qt) {
+    const Type* t = qt.getType();
+    Decl* d = nil;
+    switch (t.getKind()) {
+    case Builtin:
+    case Void:
+        return;
+    case Pointer:
+        PointerType* pt = (PointerType*)t;
+        pt.inner.setTypeUsedPublic();
+        return;
+    case Array:
+        ArrayType* at = (ArrayType*)t;
+        at.elem.setTypeUsedPublic();
+        return;
+    case Struct:
+        StructType* st = (StructType*)t;
+        d = (Decl*)st.decl;
+        break;
+    case Enum:
+        EnumType* et = (EnumType*)t;
+        d = (Decl*)et.decl;
+        break;
+    case Function:
+        //FunctionType* ft = (FunctionType*)t);
+        // TODO how to get from FunctionType to FunctionTypeDecl?
+        return;
+    case Alias:
+        AliasType* at = (AliasType*)t;
+        d = (Decl*)at.decl;
+        break;
+    case Module:
+        return;
+    }
+    if (d) d.setUsedPublic();
+}
+
 public fn const char* QualType.diagName(const QualType qt) {
     static char[4][128] msgs;
     static u32 msg_id = 0;

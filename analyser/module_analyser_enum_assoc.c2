@@ -49,7 +49,7 @@ fn void Analyser.analyseEnumAssocValues(Analyser* ma, EnumTypeDecl* etd) {
             continue;
         }
         if (d.isPublic()) {
-            setTypePublicUsed(res);
+            res.setTypeUsedPublic();
 
             if (!enum_public) {
                 ma.error(ref.getLoc(), "public enum-associated value' with non-public enum type");
