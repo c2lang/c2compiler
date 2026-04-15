@@ -168,7 +168,7 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
 }
 
 fn void Generator.emitStringLiteral(Generator* gen, string_buffer.Buf* out, const StringLiteral* s, bool raw = false) {
-    const char* p = gen.idx2name(s.getTextIndex());
+    const char* p = gen.idx2name(s.getText());
     u32 len = s.getSize() - 1;
     if (!raw && len > 10) {
         // break long string with embedded newlines on multiple lines
@@ -279,7 +279,7 @@ fn void Generator.emitMemberDecl(Generator* gen, string_buffer.Buf* out, Decl* d
         // Dont generate anything for Type, will be in prefix
         if (!std.isGlobal()) {
             mc.baseType = d.getType();
-            out.add(d.getName());
+            gen.emitName(out, d);
             mc.need_dot = true;
         }
         break;
@@ -300,7 +300,7 @@ fn void Generator.emitMemberDecl(Generator* gen, string_buffer.Buf* out, Decl* d
         if (mc.need_dot) emitDotOrArrow(out, mc.baseType);
         mc.baseType = d.getType();
         if (mc.is_local) {
-            out.add(d.getName());
+            gen.emitName(out, d);
         } else {
             gen.emitDeclName(out, d);
         }

@@ -39,7 +39,7 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     case StringLiteral:
         StringLiteral* s = (StringLiteral*)e;
 
-        SymbolId id = gen.ctx.addStringLiteral(gen.createStringVar(), s.getText(), s.getSize());
+        SymbolId id = gen.ctx.addStringLiteral(gen.createStringVar(), gen.idx2name(s.getText()), s.getSize());
         ir.Ref ref;
         ref.init(RefKind.Symbol, id);
         *result = ref;

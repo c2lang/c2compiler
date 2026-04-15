@@ -52,7 +52,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
         u32 name_idx = m.getNameIdx(i);
         SrcLoc loc = m.getLoc(i);
 
-        //stdio.printf("  [%d/%d] %s\n", i, refcount, m.getName(i));
+        //stdio.printf("  [%d/%d] %s\n", i, refcount, ma.idx2name(name_idx));
 
         if (baseType.isInvalid()) {
             // first member
@@ -147,13 +147,13 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                     } else {
                         ecd = etd.findConstant(name_idx);
                         if (!ecd) {
-                            ma.error(loc, "enum '%s' has no constant '%s'", d.getFullName(), name);
+                            ma.error(loc, "enum '%s' has no constant '%s'", ma.getFullName(d), name);
                             return QualType_Invalid;
                         }
                     }
                     d = (Decl*)ecd;
                     if (!d.isChecked()) {
-                        ma.error(loc, "circular definition using enum constant '%s'", d.getName());
+                        ma.error(loc, "circular definition using enum constant '%s'", ma.getName(d));
                         return QualType_Invalid;
                     }
                     m.setKind(EnumConstant);
@@ -180,7 +180,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                     // check for associated value
                     u32 idx = etd.findAssocValue(name_idx);
                     if (idx == u32.max) {
-                        ma.error(loc, "enum '%s' has no function or associated value '%s'", d.getFullName(), name);
+                        ma.error(loc, "enum '%s' has no function or associated value '%s'", ma.getFullName(d), name);
                         return QualType_Invalid;
                     }
 

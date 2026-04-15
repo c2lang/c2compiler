@@ -43,11 +43,7 @@ public fn StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc
     return e;
 }
 
-public fn const char* StringLiteral.getText(const StringLiteral* e) {
-    return idx2name(e.value);
-}
-
-public fn u32 StringLiteral.getTextIndex(const StringLiteral* e) {
+public fn u32 StringLiteral.getText(const StringLiteral* e) {
     return e.value;
 }
 

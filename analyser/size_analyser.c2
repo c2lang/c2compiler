@@ -99,8 +99,7 @@ public fn void sizeOfStruct(StructTypeDecl* s) {
             bit_layout = vd.getBitfieldLayout();
         }
         //if (trace) {
-        //    name = d.getName();
-        //    printf("    FIELD[%d]  name=%s size=%d pos=%d bit_pos=%d", i, name ? name : "", size, pos, bit_pos);
+        //    printf("    FIELD[%d]  name=%s size=%d pos=%d bit_pos=%d", i, ma.getName(d), size, pos, bit_pos);
         //}
         if (bit_layout) {
             /* A bit-field: layout is more complicated.  there are two options:

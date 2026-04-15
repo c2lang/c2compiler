@@ -17,7 +17,6 @@ module deps_generator;
 
 import ast local;
 import ast_visitor;
-import deps_generator_utils;
 import component;
 import file_utils;
 import string_buffer;
@@ -98,6 +97,7 @@ type Generator struct {
 
     ast_visitor.Visitor* visitor; // non-basic mode only
     string_list.List imports; // basic mode only
+    string_pool.Pool* astPool;
 
     Decl** deps;
     u32 deps_count;
@@ -114,6 +114,37 @@ type Generator struct {
     bool basic_mode;
     bool show_files;
     bool show_externals;
+}
+
+fn const char* Generator.idx2name(const Generator* gen, u32 index) {
+    return gen.astPool.idx2str(index);
+}
+
+fn const char* Generator.getName(const Generator* gen, const Decl* d) {
+    return gen.idx2name(d.getNameIdx());
+}
+
+fn const char* Generator.getPrefixedName(const Generator* gen, const Decl* d) {
+    switch (d.getKind()) {
+    case Function:
+        const FunctionDecl* fd = (FunctionDecl*)d;
+        if (fd.hasPrefix()) {
+            static char[64] fullname;
+            const char* prefix_name = gen.idx2name(fd.getPrefixNameIdx());
+            snprintf(fullname, elemsof(fullname), "%s.%s", prefix_name, gen.getName(d));
+            return fullname;
+        }
+        break;
+    case Import:
+    case StructType:
+    case EnumType:
+    case EnumConstant: // TODO
+    case FunctionType:
+    case AliasType:
+    case Variable:
+        break;
+    }
+    return gen.getName(d);
 }
 
 fn void Generator.on_decl(void* arg, Decl* d, bool global) {
@@ -141,7 +172,7 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
             Decl* ecd = (Decl*)constants[i];
             // NOTE: we add the symbol here, since we have the EnumDecl here
             char[64] fullname;
-            snprintf(fullname, elemsof(fullname), "%s.%s", d.getName(), ecd.getName());
+            snprintf(fullname, elemsof(fullname), "%s.%s", gen.getName(d), gen.getName(ecd));
             //gen.refs.add_symbol(fullname, &dest);
 
             Generator.on_decl(arg, ecd, false);
@@ -170,6 +201,26 @@ fn void Generator.handleTypeRef(Generator* gen, const TypeRef* ref) {
     if (user) gen.handleRef(user);
 }
 
+fn bool isGlobal(const Decl* d) {
+    switch (d.getKind()) {
+    case Function:
+    case EnumType:
+    case EnumConstant:
+    case FunctionType:
+    case AliasType:
+        return true;
+    case Import:
+        break;
+    case StructType:
+        const StructTypeDecl* std = (StructTypeDecl*)d;
+        return std.isGlobal();
+    case Variable:
+        const VarDecl* vd = (VarDecl*)d;
+        return vd.isGlobal();
+    }
+    return false;
+}
+
 fn void Generator.handleRef(Generator* gen, const Ref* ref) {
     Decl* d = ref.decl;
 
@@ -178,7 +229,8 @@ fn void Generator.handleRef(Generator* gen, const Ref* ref) {
         return;
     }
 
-    if (!deps_generator_utils.isGlobal(d)) return;
+    // TODO: use d.isGlobal()
+    if (!isGlobal(d)) return;
     if (d.isEnumConstant()) return;
     if (!gen.show_externals && d.isExternal()) return;
 
@@ -192,7 +244,7 @@ fn void Generator.on_global_decl(void* arg, Decl* d) {
     if (d.isImport()) return;
 
     gen.out.indent(gen.indent);
-    gen.out.print("<atom name='%s' full='%s'>\n", deps_generator_utils.getPrefixedName(d), d.getFullName());
+    gen.out.print("<atom name='%s' full='%s'>\n", gen.getPrefixedName(d), d.getFullName());
 
     gen.indent++;
     gen.deps_count = 0;
@@ -371,6 +423,7 @@ public fn void generate(const char* title, const char* output_dir, component.Lis
     if (!basic_mode) {
         gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
     }
+    gen.astPool = astPool;
     gen.imports.init(astPool);
     gen.root.init(0, 3);
     gen.deps_resize(64);

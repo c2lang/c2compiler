@@ -22,6 +22,7 @@ import component;
 import console;
 import file_utils;
 import source_mgr;
+import string_pool;
 import string_utils local;
 
 import string;
@@ -107,6 +108,7 @@ fn void LineCounter.handle(LineCounter* l, u32 size, const char* content) {
 
 
 type Generator struct {
+    string_pool.Pool* astPool;
     source_mgr.SourceMgr* sm;
     refs.Refs* refs;
     const char* curfile;
@@ -114,12 +116,20 @@ type Generator struct {
     LineCounter lines;
 }
 
+fn const char* Generator.idx2name(const Generator* gen, u32 index) {
+    return gen.astPool.idx2str(index);
+}
+
+fn const char* Generator.getName(const Generator* gen, const Decl* d) {
+    return gen.astPool.idx2str(d.getNameIdx());
+}
+
 fn void Generator.on_decl(void* arg, Decl* d, bool global) {
     Generator* gen = arg;
 
     if (d.isImport()) return;
 
-    const char* name = d.getName();
+    const char* name = gen.getName(d);
     if (name && global) {
         gen.refs.add_symbol(d.getFullName(), d.getLoc());
     }
@@ -174,7 +184,7 @@ fn void Generator.handleRef(Generator* gen, const Ref* ref) {
         console.warn("refs: Type Decl not set!");
         return;
     }
-    u16 len = (u16)string.strlen(idx2name(ref.name_idx));
+    u16 len = (u16)string.strlen(gen.idx2name(ref.name_idx));
     assert(len <= 32);
     gen.refs.add_link(ref.loc, ref.decl.getLoc(), len);
 }
@@ -228,7 +238,8 @@ fn void Generator.on_file(void* arg, u32 start, u32 size, const char* filename, 
     gen.refs.add_file(start, size, filename, len_start, len_count);
 }
 
-fn void Generator.init(Generator* gen, source_mgr.SourceMgr* sm) {
+fn void Generator.init(Generator* gen, source_mgr.SourceMgr* sm, string_pool.Pool* astPool) {
+    gen.astPool = astPool;
     gen.sm = sm;
     gen.refs = refs.Refs.create(sm.getNumFiles());
     gen.lines.init();
@@ -242,8 +253,8 @@ fn void Generator.free(Generator* gen) {
     gen.refs.free();
 }
 
-public fn void generate(source_mgr.SourceMgr* sm, const char* output_dir, component.List* comps, const char* filename) {
-    Generator gen.init(sm);
+public fn void generate(source_mgr.SourceMgr* sm, string_pool.Pool* astPool, const char* output_dir, component.List* comps, const char* filename) {
+    Generator gen.init(sm, astPool);
 
     // for each file, store:  start, size, filename. Store line lengths
     sm.visitFiles(&gen, Generator.on_file);

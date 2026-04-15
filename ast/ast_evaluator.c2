@@ -452,14 +452,13 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
     // dispatch function call depending on function signature
     FunctionDispatcher fun = { .address = fd.getAddress() }
     if (!fun.address) {
-        const char* cname = fd.getCName();
+        u32 cname = fd.getCName();
         if (!cname) return Value.error("no function name");
-        fun.address = dlsym(RTLD_DEFAULT, cname);
+        fun.address = dlsym(RTLD_DEFAULT, ast.idx2name(cname));
         if (!fun.address) {
             return Value.error("function not found");
         }
         FunctionSignature signature = fd.computeSignature();
-        //fprintf(stderr, "address of %s is %p, signature is %x\n", cname, fun.address, signature);
         fd.setAddress(fun.address, signature);
     }
     Value* args = eval.args;
@@ -489,7 +488,7 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
     case FunDDDD:
         return Value.createFloat(fun.funDDDD(args[0].toFloat(), args[1].toFloat(), args[2].toFloat()));
     default:
-        fprintf(stderr, "unsupported function prototype: %s\n", fd.getCName());
+        fprintf(stderr, "unsupported function prototype: %s\n", ast.idx2name(fd.getCName()));
         return Value.error("unsupported function prototype");
     }
 }

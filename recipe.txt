@@ -472,7 +472,6 @@ lib deps_generator dynamic
     generator/ast_visitor_expr.c2
 
     plugins/plugin_info.c2
-    plugins/deps_generator_utils.c2
     plugins/deps_generator.c2
     plugins/deps_generator_plugin.c2
 end

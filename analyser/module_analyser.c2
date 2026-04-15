@@ -145,6 +145,15 @@ fn const char* Analyser.idx2name(const Analyser* ma, u32 name_idx) {
     return ma.astPool.idx2str(name_idx);
 }
 
+fn const char* Analyser.getName(const Analyser* ma, const Decl* d) {
+    return ma.astPool.idx2str(d.getNameIdx());
+}
+
+fn const char* Analyser.getFullName(const Analyser* ma, const Decl* d) {
+    // TODO pass astPool and buffer to d.getFullName()
+    return d.getFullName();
+}
+
 public fn void Analyser.check(Analyser* ma, Module* mod) {
     ma.mod = mod;
     ma.prefix_cache_name = 0;
@@ -403,7 +412,7 @@ fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
                 if (decl) {
                     ma.error(prefix.loc, "%s", msg);
                 } else {
-                    ma.error(prefix.loc, "module '%s' has no symbol '%s'", ma.mod.getName(), prefix.getName());
+                    ma.error(prefix.loc, "module '%s' has no symbol '%s'", ma.mod.getName(), ma.idx2name(prefix.getNameIdx()));
                 }
                 return;
             }
@@ -425,7 +434,7 @@ fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
     // check for duplicate struct functions
     FunctionDecl* other = ma.type_fn_decls.findFunc(index, d.getNameIdx());
     if (other) {
-        ma.error(d.getLoc(), "redefinition of '%s'", d.getFullName());
+        ma.error(d.getLoc(), "redefinition of '%s'", ma.getFullName(d));
         ma.note(other.asDecl().getLoc(), "previous definition is here");
         return;
     }
@@ -437,7 +446,7 @@ fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
         StructTypeDecl* std = (StructTypeDecl*)prefix.decl;
         Decl* match = std.findMember(d.getNameIdx(), nil);
         if (match) {
-            ma.error(match.getLoc(), "member '%s' conflicts with type-function '%s'", match.getName(), d.getFullName());
+            ma.error(match.getLoc(), "member '%s' conflicts with type-function '%s'", ma.getName(match), ma.getFullName(d));
             ma.note(d.getLoc(), "previous declaration is here");
             return;
         }
@@ -561,7 +570,7 @@ fn void Analyser.handleStaticAssert(void* arg, StaticAssert* sa) {
     const char* msg = "static_assert failed";
     if (rhs && rhs.isStringLiteral()) {
         StringLiteral* s = (StringLiteral*)rhs;
-        msg = ma.astPool.idx2str(s.getTextIndex());
+        msg = ma.idx2name(s.getText());
         rhs = nil;
     }
 
@@ -645,7 +654,7 @@ fn void Analyser.handleVarDecl(void* arg, VarDecl* v) {
 }
 
 fn void Analyser.checkName(Analyser* ma, Decl* d, bool is_constant) {
-    const char* name = d.getName();
+    const char* name = ma.getName(d);
     if (is_constant) {
         if (ctype.islower(name[0])) {
             ma.error(d.getLoc(), "a global constant name must start with an upper case character");
@@ -695,7 +704,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
             }
         } else {
             if (!init_expr && !d.isExternal() && !embed) {
-                ma.error(d.getLoc(), "array-type variable '%s' needs an explicit size or an initializer", d.getFullName());
+                ma.error(d.getLoc(), "array-type variable '%s' needs an explicit size or an initializer", ma.getFullName(d));
                 return;
             }
         }
@@ -716,7 +725,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         }
 
         // open file, copy contents to StringPool and close
-        const char* filename = ma.astPool.idx2str(embed.value.text);
+        const char* filename = ma.idx2name(embed.value.text);
         file_utils.File reader.init(filename);
         if (!reader.load()) {
             ma.error(embed.loc, "error opening embedded file '%s': %s", filename, reader.getError());
@@ -752,7 +761,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         ma.global_initializer--;
     } else {
         if (res.isConstant() && !embed) {
-            ma.error(d.getLoc(), "constant variable '%s' must be initialized", d.getFullName());
+            ma.error(d.getLoc(), "constant variable '%s' must be initialized", ma.getFullName(d));
         }
     }
 
@@ -788,7 +797,7 @@ fn bool Analyser.pushCheck(Analyser* ma, Decl* d, scope.Scope* s, FunctionDecl* 
                 for (u32 j=i; j<ma.checkIndex; j++) {
                     const Decl* other = ma.checkStack[j].decl;
                     if (other) {
-                        ma.error(other.getLoc(), "circular declaration dependency '%s'", other.getName());
+                        ma.error(other.getLoc(), "circular declaration dependency '%s'", ma.getName(other));
                     }
                 }
                 // TODO use longjmp here?

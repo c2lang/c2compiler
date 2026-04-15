@@ -74,10 +74,6 @@ public fn void LabelStmt.setContinue(LabelStmt* s) {
     s.base.labelStmtBits.has_continue = true;
 }
 
-public fn const char* LabelStmt.getName(const LabelStmt* s) {
-    return idx2name(s.name);
-}
-
 public fn u32 LabelStmt.getNameIdx(const LabelStmt* s) {
     return s.name;
 }

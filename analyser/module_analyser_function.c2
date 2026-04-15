@@ -199,7 +199,7 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
     }
 
     Decl* d = (Decl*)fd;
-    //printf("FUNC %s  cname %d  foreign %d  type_func %d\n", d.getName(), d.hasCName(), ma.mod.isForeign(), fd.isTypeFunc());
+    //printf("FUNC %s  cname %d  foreign %d  type_func %d\n", ma.getName(d), d.hasCName(), ma.mod.isForeign(), fd.isTypeFunc());
     if (d.hasCName()) {
         if (!ma.mod.isForeign()) {
             ma.error(d.getLoc(), "the cname attribute is only allowed for foreign functions");
@@ -287,7 +287,7 @@ fn void Analyser.analyseFunctionBody(Analyser* ma, FunctionDecl* fd, scope.Scope
             Decl* p = (Decl*)params[i];
             if (!p.isUsed() && p.getNameIdx()) {
                 // TODO check attribute?
-                ma.warn(p.getLoc(), "unused parameter '%s'", ma.idx2name(p.getNameIdx()));
+                ma.warn(p.getLoc(), "unused parameter '%s'", ma.getName(p));
             }
         }
     }

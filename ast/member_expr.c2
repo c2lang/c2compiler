@@ -120,8 +120,8 @@ public fn MemberConversion MemberExpr.getConversion(const MemberExpr* e) {
     return e.base.base.memberExprBits.conversion;
 }
 
-public fn const char* MemberExpr.getName(const MemberExpr* e, u32 ref_idx) {
-    if (u32 name_idx = e.getNameIdx(ref_idx)) return idx2name(name_idx);
+fn const char* MemberExpr.getName(const MemberExpr* e, u32 ref_idx) {
+    if (u32 name_idx = e.getNameIdx(ref_idx)) return ast.idx2name(name_idx);
     return nil;
 }
 
@@ -356,7 +356,7 @@ public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
             out.print("[%d]\n", i);
             ref.decl.print(out, 1);
         } else {
-            out.print("[%d] %s\n", i, idx2name(ref.name_idx));
+            out.print("[%d] %s\n", i, ast.idx2name(ref.name_idx));
         }
     }
     ast.flushDumpBuf(out);

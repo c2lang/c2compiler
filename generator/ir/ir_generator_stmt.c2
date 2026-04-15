@@ -73,7 +73,7 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
             c.startBlock(label_blk);
 
             gen.name_buf.clear();
-            gen.name_buf.add(l.getName());
+            gen.name_buf.add(gen.idx2name(l.getNameIdx()));
             c.addComment(gen.name_buf.data());
         }
         const Stmt* ls = l.getStmt();

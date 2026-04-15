@@ -173,7 +173,7 @@ public fn Decl* Module.findType(const Module* m, u32 name_idx) {
     return result;
 }
 
-public fn const char* Module.getName(const Module* m) { return idx2name(m.name_idx); }
+public fn const char* Module.getName(const Module* m) { return ast.idx2name(m.name_idx); }
 
 public fn u32 Module.getNameIdx(const Module* m) { return m.name_idx; }
 
@@ -228,7 +228,8 @@ public fn ast.FunctionDecl* Module.getInstance(const Module* m, ast.FunctionDecl
 
 public fn void Module.print(const Module* m, string_buffer.Buf* out, bool show_funcs) {
     out.color(color.Normal);
-    out.print("------ module %s (used %d, exported %d, private %d) ------\n", idx2name(m.name_idx), m.is_used, m.is_exported, m.is_private);
+    out.print("------ module %s (used %d, exported %d, private %d) ------\n",
+              ast.idx2name(m.name_idx), m.is_used, m.is_exported, m.is_private);
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].print(out, show_funcs);
     }

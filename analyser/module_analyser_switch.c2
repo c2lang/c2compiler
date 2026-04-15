@@ -144,7 +144,7 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
                             break;
                         }
                         missing++;
-                        out.add(ecd[i].asDecl().getName());
+                        out.add(ma.getName(ecd[i].asDecl()));
                     }
                 }
 
@@ -181,7 +181,7 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
                 u32 index = 0;  // nil string has index 0
                 if (e.isStringLiteral()) {
                     StringLiteral* lit = (StringLiteral*)e;
-                    const char *str = lit.getText();
+                    const char *str = ma.idx2name(lit.getText());
                     index = 1;  // empty string has index 1
                     u8 slen = (lit.getSize() - 1) & 0xFF;
                     if (slen) {
@@ -326,7 +326,7 @@ fn bool Analyser.analyseCaseCondition(Analyser* ma,
                             SrcLoc duplicate = checker.find(index);
                             if (duplicate && res) {
                                 Decl* d = (Decl*)ecd;
-                                ma.error(loc, "duplicate case value '%s'", d.getName());
+                                ma.error(loc, "duplicate case value '%s'", ma.getName(d));
                                 ma.note(duplicate, "previous case is here");
                                 res = false;
                             }
@@ -377,7 +377,7 @@ fn bool Analyser.analyseCaseExpr(Analyser* ma,
                 ma.error(cond.getLoc(), "enum constant may not be prefixed in case statement");
             } else {
                 ma.error(cond.getLoc(), "condition is not a constant of enum type '%s'",
-                         etd.asDecl().getFullName());
+                         ma.getFullName(etd.asDecl()));
             }
             return false;
         }
@@ -410,11 +410,11 @@ fn bool Analyser.analyseCaseExpr(Analyser* ma,
                     ma.error(cond.getLoc(), "string switch case string is loo long (max 255 bytes)");
                     return false;
                 }
-                if (string.memchr(lit.getText(), 0, len)) {
+                index = lit.getText();
+                if (string.memchr(ma.idx2name(index), 0, len)) {
                     ma.error(cond.getLoc(), "case string value has embedded null byte");
                     return false;
                 }
-                index = lit.getTextIndex();
                 *name_idxp = 0;
                 if (loc) {
                     SrcLoc duplicate = checker.find(index);
@@ -460,10 +460,11 @@ fn bool Analyser.checkEnumConstantCase(Analyser* ma,
                                        u32* ip,
                                        u32* name_idxp) {
     Expr* e = (Expr*)id;
-    *name_idxp = id.getNameIdx();
-    EnumConstantDecl* ecd = etd.findConstant(*name_idxp);
+    u32 name_idx = id.getNameIdx();
+    *name_idxp = name_idx;
+    EnumConstantDecl* ecd = etd.findConstant(name_idx);
     if (!ecd) {
-        ma.error(e.getLoc(), "enum '%s' has no constant '%s'", etd.asDecl().getFullName(), id.getName());
+        ma.error(e.getLoc(), "enum '%s' has no constant '%s'", ma.getFullName(etd.asDecl()), ma.idx2name(name_idx));
         return false;
     }
     Decl* d = (Decl*)ecd;
@@ -483,7 +484,7 @@ fn bool Analyser.checkEnumConstantCase(Analyser* ma,
     if (loc) {
         SrcLoc duplicate = checker.find(index);
         if (duplicate) {
-            ma.error(e.getLoc(), "duplicate case value '%s'", id.getName());
+            ma.error(e.getLoc(), "duplicate case value '%s'", ma.idx2name(name_idx));
             ma.note(duplicate, "previous case is here");
             return false;
         }

@@ -51,7 +51,7 @@ public fn u32 FieldDesignatedInitExpr.getField(const FieldDesignatedInitExpr* e)
 }
 
 public fn const char* FieldDesignatedInitExpr.getFieldName(const FieldDesignatedInitExpr* e) {
-    return idx2name(e.field_name);
+    return ast.idx2name(e.field_name);
 }
 
 public fn Expr* FieldDesignatedInitExpr.getInit(const FieldDesignatedInitExpr* e) {

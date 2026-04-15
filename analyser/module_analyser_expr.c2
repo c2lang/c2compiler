@@ -193,9 +193,9 @@ fn Decl* Analyser.analyseIdentifier(Analyser* ma, Expr** e_ptr, u32 side) {
         // Note: can also be a function or type for inline function bodies
         const char* kind_str = type2str(qt);
         if (ma.scope.inFunction()) {
-            ma.error(e.getLoc(), "public inline function using non-public %s '%s'", kind_str, d.getFullName());
+            ma.error(e.getLoc(), "public inline function using non-public %s '%s'", kind_str, ma.getFullName(d));
         } else {
-            ma.error(e.getLoc(), "public declaration using non-public %s '%s'", kind_str, d.getFullName());
+            ma.error(e.getLoc(), "public declaration using non-public %s '%s'", kind_str, ma.getFullName(d));
         }
         return nil;
     }
@@ -411,7 +411,7 @@ fn bool Analyser.checkAssignment(Analyser* ma, Expr* assignee, QualType tleft, c
         //assignee.dump();
         if (assignee.isIdentifier()) {
             IdentifierExpr* i = (IdentifierExpr*)assignee;
-            ma.error(loc, "cannot assign to read-only variable '%s'", i.getDecl().getFullName());
+            ma.error(loc, "cannot assign to read-only variable '%s'", ma.getFullName(i.getDecl()));
             return false;
         }
         if (assignee.isMember()) {
@@ -680,11 +680,11 @@ fn void Analyser.memberError(Analyser* ma, u32 name_idx, SrcLoc loc, StructTypeD
 
     if (dist <= max_dist) {
         ma.error(loc, "no member named '%s' in %s '%s'; did you mean '%s'?",
-                 name1, s.isStruct() ? "struct" : "union", s.asDecl().getFullName(), result);
+                 name1, s.isStruct() ? "struct" : "union", ma.getFullName(s.asDecl()), result);
 
     } else {
         ma.error(loc, "no member named '%s' in %s '%s'",
-                 name1, s.isStruct() ? "struct" : "union", s.asDecl().getFullName());
+                 name1, s.isStruct() ? "struct" : "union", ma.getFullName(s.asDecl()));
     }
 }
 

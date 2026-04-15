@@ -42,11 +42,6 @@ public fn QualType EnumType.getImplType(const EnumType* t) {
     return t.decl.getImplType();
 }
 
-// convenience function
-public fn const char* EnumType.getName(const EnumType* t) {
-    return t.decl.base.getName();
-}
-
 fn void EnumType.print(const EnumType* t, string_buffer.Buf* out) {
     out.add(t.decl.base.getModuleName());
     out.add1('.');

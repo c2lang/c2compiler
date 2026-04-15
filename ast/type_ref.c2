@@ -44,8 +44,8 @@ public type Ref struct {
 }
 static_assert(16, sizeof(Ref));
 
-public fn const char* Ref.getName(const Ref* r) {
-    return idx2name(r.name_idx);
+public fn u32 Ref.getNameIdx(const Ref* r) {
+    return r.name_idx;
 }
 
 // Member of VarDecl,Sizeof and ExplicitCast; is NOT a Type!

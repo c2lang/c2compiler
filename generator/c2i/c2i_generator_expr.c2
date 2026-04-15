@@ -46,7 +46,7 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         if (d.getModule() != gen.mod) {
             out.add(d.getFullName());
         } else {
-            out.add(d.getName());
+            gen.emitName(out, d);
         }
         break;
     case Type:
@@ -143,7 +143,7 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         break;
     case NamedArgument:
         const NamedArgument* ne = (const NamedArgument*)e;
-        out.add(gen.astPool.idx2str(ne.getNameIdx()));
+        out.add(gen.idx2name(ne.getNameIdx()));
         out.add(": ");
         gen.emitExpr(out, ne.getInner());
         break;
@@ -183,11 +183,11 @@ fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, const M
         if (d.getModule() != gen.mod) {
             out.add(d.getFullName());
         } else {
-            out.add(d.getName());
+            gen.emitName(out, d);
         }
     }
     out.add1('.');
-    out.add(m.getName(1));
+    out.add(gen.idx2name(m.getNameIdx(1)));
 }
 
 fn void Generator.emitFieldDesigExpr(Generator* gen, string_buffer.Buf* out, const FieldDesignatedInitExpr* fdi) {

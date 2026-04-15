@@ -23,7 +23,7 @@ fn void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, cons
 
     gen.emitType(out, d.getType());
     out.space();
-    if (d.getName()) out.add(d.getName());
+    gen.emitName(out, d);
 
     QualType qt = d.getType();
     bool semi = true;
@@ -57,8 +57,8 @@ fn void Generator.emitVarDecl(Generator* gen, string_buffer.Buf* out, const VarD
     if (vd.hasInitCall()) {
         gen.emitExpr(out, ie);
     } else {
-        if (d.getName()) {
-            out.add(d.getName());
+        if (d.getNameIdx()) {
+            gen.emitName(out, d);
             if (ie) {
                 out.add(" = ");
                 gen.emitExpr(out, ie);
@@ -117,18 +117,19 @@ fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, Decl* d) 
             FunctionDecl* fd = (FunctionDecl*)d;
             Ref* prefix = fd.getPrefix();
             if (prefix) {
-                out.add(gen.astPool.idx2str(prefix.name_idx));
+                out.add(gen.idx2name(prefix.name_idx));
                 out.add1('.');
             }
         }
         if (d.isEnumConstant()) {
             QualType qt = d.getType();
             EnumType* et = (EnumType*)qt.getType();
-            out.add(et.getName());
+            EnumTypeDecl* etd = et.getDecl();
+            gen.emitName(out, etd.asDecl());
             out.add1('.');
         }
     }
-    out.add(d.getName());
+    gen.emitName(out, d);
 }
 
 fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType qt) {
@@ -209,7 +210,7 @@ fn void Generator.emitType(Generator* gen, string_buffer.Buf* out, QualType qt) 
 fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, const Decl* d) {
     EnumTypeDecl* etd = (EnumTypeDecl*)d;
 
-    out.print("type %s enum ", d.getName());
+    out.print("type %s enum ", gen.idx2name(d.getNameIdx()));
     QualType implType = etd.getImplType();
     implType.print(out);
     out.add(" {\n");
@@ -219,7 +220,7 @@ fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, const Dec
     for (u32 i = 0; i < num_constants; i++) {
         EnumConstantDecl* ecd = constants[i];
         out.indent(1);
-        out.add(ecd.asDecl().getName());
+        gen.emitName(out, ecd.asDecl());
         Expr* initExpr = ecd.getInit();
         if (initExpr) {
             out.add(" = ");
@@ -238,12 +239,12 @@ fn void Generator.emitFunctionDecl(Generator* gen, string_buffer.Buf* out, const
     gen.emitType(out, fd.getRType());
     if (!as_type) {
         out.space();
-        const char* prefix = fd.getPrefixName();
+        u32 prefix = fd.getPrefixNameIdx();
         if (prefix) {
-            out.add(prefix);
+            out.add(gen.idx2name(prefix));
             out.add1('.');
         }
-        out.add(d.getName());
+        gen.emitName(out, d);
     }
     out.lparen();
 
@@ -272,13 +273,13 @@ fn void Generator.emitFunctionDecl(Generator* gen, string_buffer.Buf* out, const
 
 fn void Generator.emitFunctionTypeDecl(Generator* gen, string_buffer.Buf* out, const Decl* d) {
     const FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;
-    out.print("type %s fn ", d.getName());
+    out.print("type %s fn ", gen.idx2name(d.getNameIdx()));
     gen.emitFunctionDecl(out, (Decl*)ftd.getDecl(), true);
 }
 
 fn void Generator.emitAliasTypeDecl(Generator* gen, string_buffer.Buf* out, const Decl* d) {
     AliasTypeDecl* a = (AliasTypeDecl*)d;
-    out.print("type %s ", d.getName());
+    out.print("type %s ", gen.idx2name(d.getNameIdx()));
     QualType qt = a.asDecl().getType();
     gen.emitType(out, qt.getCanonicalType());
     out.add(";\n");
@@ -300,13 +301,13 @@ fn void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, const Decl*
     StructTypeDecl* std = (StructTypeDecl*)d;
     const char* stype = std.isStruct() ? "struct" : "union";
     if (indent == 0) {
-        out.print("type %s %s", d.getName(), stype);
+        out.print("type %s %s", gen.idx2name(d.getNameIdx()), stype);
     } else {
         out.indent(indent);
         out.add(stype);
         if (d.getNameIdx()) {
             out.space();
-            out.add(d.getName());
+            gen.emitName(out, d);
         }
     }
     if (std.isOpaque()) {

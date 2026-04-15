@@ -114,6 +114,15 @@ fn const char* Scope.idx2name(const Scope* s, u32 name_idx) {
     return s.astPool.idx2str(name_idx);
 }
 
+fn const char* Scope.getName(const Scope* s, const ast.Decl* d) {
+    return s.astPool.idx2str(d.getNameIdx());
+}
+
+fn const char* Scope.getFullName(const Scope* s, const ast.Decl* d) {
+    // TODO: pass astPool and buffer to d.getFullName()
+    return d.getFullName();
+}
+
 fn void Scope.addImports(Scope* s) {
     // Note: this also adds the module itself (import[0])
 
@@ -173,7 +182,7 @@ public fn void Scope.exit(Scope* s, bool has_error) {
             if (!d.isUsed()) {
                 ast.VarDecl* vd = (ast.VarDecl*)d;
                 // Note: params are handled by function
-                if (vd.isLocal()) s.diags.warn(d.getLoc(), "unused variable '%s'", d.getName());
+                if (vd.isLocal()) s.diags.warn(d.getLoc(), "unused variable '%s'", s.getName(d));
             }
         }
     }
@@ -317,7 +326,7 @@ fn const char* Scope.findBestMatch(const Scope* s, u32 name_idx, const char* nam
         if (id.isLocal()) continue;
         const ast.Module* m = id.getDest();
         ast.Decl* d = m.findSymbol(name_idx);
-        if (d) return d.getFullName();
+        if (d) return s.getFullName(d);
     }
 
     // search global namespace
@@ -362,7 +371,8 @@ public fn ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc, bool usedPubl
         const char* name = s.idx2name(name_idx);
         ast.ImportDecl* id = s.imports.findAny(name_idx);
         if (id) {
-            s.diags.error(loc, "module '%s' is imported with alias '%s'", name, id.getAliasName());
+            const char* alias_name = s.idx2name(id.getAliasNameIdx());
+            s.diags.error(loc, "module '%s' is imported with alias '%s'", name, alias_name);
         } else {
             const char* hint = s.findBestMatch(name_idx, name, string.strlen(name));
             if (hint) {
@@ -414,7 +424,8 @@ public fn ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, SrcLoc loc) {
 
     d = s.imports.findAny(name_idx);
     if (d) {
-        s.diags.error(loc, "module '%s' is imported with alias '%s'", s.idx2name(name_idx), d.getAliasName());
+        const char* alias_name = s.idx2name(d.getAliasNameIdx());
+        s.diags.error(loc, "module '%s' is imported with alias '%s'", s.idx2name(name_idx), alias_name);
         return nil;
     }
 
@@ -437,7 +448,7 @@ public fn ast.Decl* Scope.findSymbolInModule(Scope* s, ast.Module* mod, u32 name
 
     if (mod != s.mod) {
         if (!d.isPublic()) {
-            s.diags.error(loc, "symbol '%s' is not public", d.getFullName());
+            s.diags.error(loc, "symbol '%s' is not public", s.getFullName(d));
             s.diags.note(d.getLoc(), "symbol definition is here");
             return nil;
         }
@@ -504,12 +515,12 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
             const char* name = s.idx2name(name_idx);
             if (!ambiguous) {
                 s.diags.error(loc, "symbol '%s' is ambiguous", name);
-                s.diags.note(decl.getLoc(), "did you mean '%s'?", decl.getFullName());
-                s.diags.note(d.getLoc(), "did you mean '%s'?", d.getFullName());
+                s.diags.note(decl.getLoc(), "did you mean '%s'?", s.getFullName(decl));
+                s.diags.note(d.getLoc(), "did you mean '%s'?", s.getFullName(d));
                 ambiguous = true;
                 *other_error = true;
             } else {
-                s.diags.note(d.getLoc(), "did you mean '%s'?", d.getFullName());
+                s.diags.note(d.getLoc(), "did you mean '%s'?", s.getFullName(d));
             }
             continue;
         } else {
@@ -549,7 +560,7 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
                 ast.Module* dest = id.getDest();
                 ast.Decl* d = dest.findPrivateSymbol(name_idx);
                 if (d) {
-                    s.diags.error(loc, "symbol '%s' is not public", d.getFullName());
+                    s.diags.error(loc, "symbol '%s' is not public", s.getFullName(d));
                     *other_error = true;
                     return nil;
                 }
@@ -579,11 +590,11 @@ public fn bool Scope.checkAccess(Scope* s, ast.Decl* d, SrcLoc loc) {
             if (d.isVariable()) {
                 ast.VarDecl* vd = (ast.VarDecl*)d;
                 if (vd.isEnumValue()) {
-                    s.diags.error(loc, "enum-associated value '%s' is not public", d.getName());
+                    s.diags.error(loc, "enum-associated value '%s' is not public", s.getName(d));
                     return false;
                 }
             }
-            s.diags.error(loc, "symbol '%s' is not public", d.getFullName());
+            s.diags.error(loc, "symbol '%s' is not public", s.getFullName(d));
             return false;
         }
     }

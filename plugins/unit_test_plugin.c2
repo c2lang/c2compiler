@@ -81,6 +81,14 @@ fn void plugin_init(void* arg, plugin_info.Info* info) {
     generate_types(p);
 }
 
+fn const char* Plugin.idx2name(Plugin* p, u32 index) {
+    return p.info.astPool.idx2str(index);
+}
+
+fn const char* Plugin.getName(Plugin* p, Decl* d) {
+    return p.info.astPool.idx2str(d.getNameIdx());
+}
+
 const char[] Content1 @(embed="plugins/unit_test1.c2");
 const char[] Content2 @(embed="plugins/unit_test2.c2");
 
@@ -123,7 +131,7 @@ fn void Plugin.handleTypeFunc(void* arg, FunctionDecl* fd) {
         return;
     }
 
-    const char* name = d.getName();
+    const char* name = p.getName(d);
     if (string.strncmp("test", name, 4) != 0) return;
 
     p.tests.add(fd);
@@ -153,23 +161,23 @@ fn void generate_tests(void* arg) {
         for (u32 j=0; j<p.tests.size(); j++) {
             Decl* func = (Decl*)p.tests.get(j);
             // TODO dont use fullName since we dont need the module prefix
-            out.print("   { \"%s\", (ct.TestFn)(%s) },\n", func.getName(), func.getFullName());
+            out.print("   { \"%s\", (ct.TestFn)(%s) },\n", p.getName(func), func.getFullName());
         }
         out.add("}\n\n");
 
         out.add("public const ct.Group TestGroup = {\n");
         out.print("  .name = \"%s\",\n", m.getName());
-        out.print("  .fixture_size = sizeof(%s),\n", d.getName());
+        out.print("  .fixture_size = sizeof(%s),\n", p.getName(d));
         out.add("  .setup = ");
         if (p.setup) {
-            out.print("(ct.TestFn)(%s.setup),\n", d.getName());
+            out.print("(ct.TestFn)(%s.setup),\n", p.getName(d));
         } else {
             out.add("nil,\n");
         }
 
         out.add("  .teardown = ");
         if (p.teardown) {
-            out.print("(ct.TestFn)(%s.teardown),\n", d.getName());
+            out.print("(ct.TestFn)(%s.teardown),\n", p.getName(d));
         } else {
             out.add("nil,\n");
         }

@@ -81,10 +81,6 @@ public fn const char* AST.getFilename(const AST* a) @(unused) {
 
 public fn u32 AST.getIdx(const AST* a) { return a.idx; }
 
-public fn const char* AST.getName(const AST* a) {
-    return a.mod.getName();
-}
-
 public fn u32 AST.getNameIdx(const AST* a) {
     return a.mod.getNameIdx();
 }

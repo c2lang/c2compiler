@@ -154,16 +154,20 @@ fn void Generator.emitCtv(Generator* /*gen*/, string_buffer.Buf* out, const Expr
     out.print("%s", val.str());
 }
 
+fn void Generator.emitName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
+    out.add(gen.idx2name(d.getNameIdx()));
+}
+
 fn void Generator.emitCName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
     gen.emitCNameMod(out, d, gen.mod);
 }
 
 fn void Generator.emitCNameMod(Generator* gen, string_buffer.Buf* out, const Decl* d, Module* mod) {
-    if (!d.getName()) return;
+    if (!d.getNameIdx()) return;
     if (d.isExternal() && d.getModule().isForeign()) {
-        const char* cname = d.getCName();
+        u32 cname = d.getCName();
         if (cname) {
-            out.add(cname);
+            out.add(gen.idx2name(cname));
             return;
         }
         if (d.isFunction()) {
@@ -172,7 +176,7 @@ fn void Generator.emitCNameMod(Generator* gen, string_buffer.Buf* out, const Dec
         }
         QualType qt = d.getType();
         if (!qt.isConst()) {
-            out.add(d.getName());
+            gen.emitName(out, d);
             return;
         }
     }
@@ -190,17 +194,18 @@ c2_style:
     if (d.isEnumConstant()) {
         QualType qt = d.getType();
         EnumType* et = (EnumType*)qt.getType();
-        out.add(et.getName());
+        EnumTypeDecl* etd = et.getDecl();
+        gen.emitName(out, etd.asDecl());
         out.add1('_');
     }
-    out.add(d.getName());
+    gen.emitName(out, d);
 }
 
 fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
     if (d.isVariable()) {
         VarDecl* vd = (VarDecl*)d;
         if (!vd.isGlobal()) {
-            out.add(d.getName());
+            gen.emitName(out, d);
             return;
         }
     }
@@ -229,9 +234,9 @@ fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, Decl* d) 
         out.indent(1);
         out.add(gen.mod_name);
         out.add1('_');
-        out.add(d.getName());
+        gen.emitName(out, d);
         out.add1('_');
-        out.add(ecd.asDecl().getName());
+        gen.emitName(out, ecd.asDecl());
         ecd.asDecl().setGenerated();
         Expr* ie = ecd.getInit();
         if (ie && !has_assoc) {
@@ -394,7 +399,7 @@ fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl*
             FunctionType* ft = qt.getFunctionType();
             FunctionDecl* fd = ft.getDecl();
             if (fd.isMemberType()) {
-                gen.gen_member_type_func(fd, out, d.getName());
+                gen.gen_member_type_func(fd, out, gen.idx2name(d.getNameIdx()));
                 out.add(";\n");
                 return;
             }
@@ -406,7 +411,7 @@ fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl*
 
         gen.emitTypePre(out, qt, bitfield != nil);
         out.space();
-        if (d.getNameIdx()) out.add(d.getName());
+        gen.emitName(out, d);
         gen.emitTypePost(out, qt);
 
         if (bitfield) {
@@ -450,7 +455,7 @@ fn void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, Decl* d, u3
         out.add1('}');
         if (d.getNameIdx()) {
             out.space();
-            out.add(d.getName());
+            gen.emitName(out, d);
         }
         out.add(";\n");
     }
@@ -472,10 +477,12 @@ fn void Generator.emitFunctionType(Generator* gen, string_buffer.Buf* out, Decl*
         Decl* arg = (Decl*)params[i];
         if (i != 0) out.add(", ");
         gen.emitTypePre(out, arg.getType());
-        const char* name = arg.getName();
         out.space();
-        if (name) out.add(name);
-        else out.print("_arg%d", i);
+        if (arg.getNameIdx()) {
+            gen.emitName(out, arg);
+        } else {
+            out.print("_arg%d", i);
+        }
     }
     if (fd.isVariadic()) {
         if (num_params) out.add(", ");
@@ -517,8 +524,8 @@ fn bool is_c_type(const char* s) {
 }
 
 fn void Generator.emitAliasType(Generator* gen, string_buffer.Buf* out, Decl* d) {
-    const char* cname = d.getCName();
-    if (cname && is_c_type(cname))
+    u32 cname = d.getCName();
+    if (cname && is_c_type(gen.idx2name(cname)))
         return;
     // For now, just generate canonicalType as RHS
     QualType qt = d.getType();
@@ -562,9 +569,9 @@ fn void Generator.emitConstExpr(Generator* gen, string_buffer.Buf* out, Expr* e,
 }
 
 fn void Generator.emitGlobalVarDeclCommon(Generator* gen, string_buffer.Buf* out, Decl* d) {
-    const char* cdef = d.getCDef();
+    u32 cdef = d.getCDef();
     if (cdef) {
-        out.add(cdef);
+        out.add(gen.idx2name(cdef));
     } else {
         QualType qt = d.getType();
         gen.emitTypePre(out, qt);
@@ -575,7 +582,7 @@ fn void Generator.emitGlobalVarDeclCommon(Generator* gen, string_buffer.Buf* out
     VarDecl* vd = (VarDecl*)d;
     if (vd.hasAttrWeak()) out.add(" __attribute__((weak))");
 
-    const char* section = d.getSection();
+    u32 section = d.getSection();
     if (section) {
         out.space();
         gen.emitSectionAttr(out, section);
@@ -652,8 +659,8 @@ fn bool Generator.emitExprValue(Generator* gen, string_buffer.Buf* out, Expr* e)
     return true;
 }
 
-fn void Generator.emitSectionAttr(Generator* gen, string_buffer.Buf* out, const char* name) {
-    out.print("__attribute__((section(\"%s\")))", name);
+fn void Generator.emitSectionAttr(Generator* gen, string_buffer.Buf* out, u32 name_idx) {
+    out.print("__attribute__((section(\"%s\")))", gen.idx2name(name_idx));
 }
 
 fn void Generator.emitAutoInit(Generator* gen, string_buffer.Buf* out, QualType qt) {
@@ -677,7 +684,7 @@ fn void Generator.on_public_import_decl(void* arg, ImportDecl* i) {
     if (gen.imports.contains_idx(name_idx)) return;
 
     gen.imports.add(name_idx);
-    gen.header.print("#include \"%s.h\"\n", d.getName());
+    gen.header.print("#include \"%s.h\"\n", gen.idx2name(name_idx));
 }
 
 fn void Generator.on_private_import_decl(void* arg, ImportDecl* i) {
@@ -690,7 +697,7 @@ fn void Generator.on_private_import_decl(void* arg, ImportDecl* i) {
     if (gen.imports.contains_idx(name_idx)) return;
 
     gen.imports.add(name_idx);
-    gen.out.print("#include \"%s.h\"\n", d.getName());
+    gen.out.print("#include \"%s.h\"\n", gen.idx2name(name_idx));
 }
 
 fn void Generator.on_forward_structs(void* arg, Decl* d) {
@@ -848,7 +855,7 @@ fn void Generator.gen_func_proto(Generator* gen, FunctionDecl* fd, string_buffer
     // template are generated as late as possible, since the Type might not be known yet
     if (fd.isTemplate()) return;
 
-    const char* section = d.getSection();
+    u32 section = d.getSection();
     if (section) {
         gen.emitSectionAttr(out, section);
         out.space();
@@ -899,8 +906,11 @@ fn void Generator.emitFuncParams(Generator* gen, FunctionDecl* fd, string_buffer
         Decl* argx = (Decl*)params[i];
         if (i != 0) out.add(", ");
         char[8] temp;
-        const char* name = argx.getName();
-        if (!name) {
+        const char* name;
+        u32 name_idx = argx.getNameIdx();
+        if (name_idx) {
+            name = gen.idx2name(name_idx);
+        } else {
             snprintf(temp, elemsof(temp), "_arg%d", i);
             name = temp;
         }
@@ -974,7 +984,7 @@ fn void Generator.on_interface_import(void* arg, ImportDecl* i) {
     if (gen.imports.contains_idx(name_idx)) return;
     gen.imports.add(name_idx);
 
-    gen.header.print("#include \"%s.h\"\n", d.getName());
+    gen.header.print("#include \"%s.h\"\n", gen.idx2name(name_idx));
 }
 
 fn void Generator.create_interface_imports(void* arg, AST* a) {

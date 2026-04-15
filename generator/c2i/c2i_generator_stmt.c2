@@ -96,14 +96,14 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
     case Break:
         BreakStmt* bs = (BreakStmt*)s;
         if (bs.hasName())
-            out.print("break %s;\n", gen.astPool.idx2str(bs.getName()));
+            out.print("break %s;\n", gen.idx2name(bs.getName()));
         else
             out.add("break;\n");
         break;
     case Continue:
         ContinueStmt* cs = (ContinueStmt*)s;
         if (cs.hasName())
-            out.print("continue %s;\n", gen.astPool.idx2str(cs.getName()));
+            out.print("continue %s;\n", gen.idx2name(cs.getName()));
         else
             out.add("continue;\n");
         break;
@@ -113,7 +113,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
     case Label:
         out.unindent();
         LabelStmt* ls = (LabelStmt*)s;
-        out.add(ls.getName());
+        out.add(gen.idx2name(ls.getNameIdx()));
         out.add1(':');
         out.newline();
         Stmt* stmt = ls.getStmt();
@@ -122,7 +122,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
     case Goto:
         GotoStmt* g = (GotoStmt*)s;
         out.add("goto ");
-        out.add(g.getName());
+        out.add(gen.idx2name(g.getNameIdx()));
         out.add(";\n");
         break;
     case Compound:
@@ -176,7 +176,7 @@ fn void emitAsmPart(string_buffer.Buf* out, bool multi_line, u32 indent) {
 fn void Generator.emitAsmOperand(Generator* gen, u32 name, const Expr* c, Expr* e) {
     string_buffer.Buf* out = gen.out;
     if (name) {
-        out.print("[%s] ", gen.astPool.idx2str(name));
+        out.print("[%s] ", gen.idx2name(name));
     }
     gen.emitStringLiteral(out, (StringLiteral*)c);
     out.add(" (");

@@ -106,7 +106,7 @@ fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd, Expr*
                 args.add(arg);
             }
             if (vd.hasAttrAutoFunc()) {
-                const char* func_name = ma.curFunction.asDecl().getFullName();
+                const char* func_name = ma.getFullName(ma.curFunction.asDecl());
                 u32 len = (u32)strlen(func_name);
                 u32 value = ma.astPool.add(func_name, len, true);
                 Expr* arg = ma.builder.actOnStringLiteral(0, 0, value, len);

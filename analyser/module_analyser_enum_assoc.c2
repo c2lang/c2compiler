@@ -90,7 +90,7 @@ fn void Analyser.analyseEnumAssocValues(Analyser* ma, EnumTypeDecl* etd) {
         Decl* fn_decl = etd.findFunction(name_idx);
         if (fn_decl) {
             has_error = true;
-            ma.error(fn_decl.getLoc(), "redefinition of '%s'", fn_decl.getFullName());
+            ma.error(fn_decl.getLoc(), "redefinition of '%s'", ma.getFullName(fn_decl));
             ma.note(vd.asDecl().getLoc(), "previous definition is here");
         }
 
@@ -176,7 +176,7 @@ fn bool Analyser.analyseEnumConstantAssocValues(Analyser* ma,
     }
     if (num_values < num_assocs) {
         Decl* col_decl = (Decl*)columns[num_values];
-        ma.error(ile.getEndLoc(), "missing initializer for enum-associated value '%s'", ma.idx2name(col_decl.getNameIdx()));
+        ma.error(ile.getEndLoc(), "missing initializer for enum-associated value '%s'", ma.getName(col_decl));
         return false;
     }
     return is_ok;

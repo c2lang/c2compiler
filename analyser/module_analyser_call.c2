@@ -76,7 +76,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         } else
         if (ma.global_initializer) {
             ma.error(e.getLoc(), "only pure functions can be called in global initializers");
-            ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
+            ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, ma.getFullName(fd.asDecl()));
             return QualType_Invalid;
         }
     }
@@ -85,22 +85,22 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
 
     if (fd.isTemplate()) {
         if (!call.getTemplateArg()) {
-            ma.errorRange(e.getLoc(), e.getRange(), "function %s requires a template argument", fd.asDecl().getFullName());
+            ma.errorRange(e.getLoc(), e.getRange(), "function %s requires a template argument", ma.getFullName(fd.asDecl()));
             return QualType_Invalid;
         }
         fd = ma.instantiateTemplateFunction(call, fd);
         if (!fd) return QualType_Invalid;
     } else {
         if (call.getTemplateArg()) {
-            ma.errorRange(e.getLoc(), e.getRange(), "function %s is not a template function", fd.asDecl().getFullName());
+            ma.errorRange(e.getLoc(), e.getRange(), "function %s is not a template function", ma.getFullName(fd.asDecl()));
             return QualType_Invalid;
         }
     }
 
     if (fd.hasAttrDeprecated() && !ma.warnings.no_deprecated) {
         const Attr* deprecated = ((Decl*)fd).getAttr(Deprecated);
-        const char* msg = ma.astPool.idx2str(deprecated.value.text);
-        ma.warn(origFn.getLoc(), "function %s is deprecated: %s", fd.asDecl().getFullName(), msg);
+        const char* msg = ma.idx2name(deprecated.value.text);
+        ma.warn(origFn.getLoc(), "function %s is deprecated: %s", ma.getFullName(fd.asDecl()), msg);
         //return QualType_Invalid;
     }
 
@@ -139,8 +139,9 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
             break;
         case StaticTypeFunc:
             if (!m.isStaticTypeFunc()) {
-                ma.errorRange(e.getLoc(), e.getRange(), "'%s' is a static type-function; use '%s()'", fdd.getFullName(), fdd.getFullName());
-                ma.note(fdd.getLoc(), "'%s' is defined here", fdd.getFullName());
+                const char* full_name = ma.getFullName(fdd);
+                ma.errorRange(e.getLoc(), e.getRange(), "'%s' is a static type-function; use '%s()'", full_name, full_name);
+                ma.note(fdd.getLoc(), "'%s' is defined here", full_name);
                 return QualType_Invalid;
             }
             call.setCallsStaticTypeFunc();
@@ -234,10 +235,10 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
                 func_arg_index++;
             }
             if (!found) {
-                ma.error(arg.getLoc(), "unexpected named argument '%s'", ma.astPool.idx2str(arg_name_idx));
+                ma.error(arg.getLoc(), "unexpected named argument '%s'", ma.idx2name(arg_name_idx));
                 if (func_arg_index < func_num_args) {
                     if (param_name_idx) {
-                        ma.note(d.getLoc(), "expected argument '%s' instead", ma.astPool.idx2str(param_name_idx));
+                        ma.note(d.getLoc(), "expected argument '%s' instead", ma.idx2name(param_name_idx));
                     } else {
                         ma.note(d.getLoc(), "expected unnamed argument");
                     }
@@ -266,7 +267,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         if (missing_args) {
             // error loc is closing parenthesis
             ma.error(call.getEndLoc() - 1, DiagTooFewArgs, fd.getDiagKind(), expected_args, call_num_args);
-            ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
+            ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, ma.getFullName(fd.asDecl()));
             return QualType_Invalid;
         }
     }
@@ -277,7 +278,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         if (!fd.isVariadic()) {
             Expr* call_arg = call_args[call_arg_index];
             ma.error(call_arg.getLoc(), DiagTooManyArgs, fd.getDiagKind(), expected_args, call_num_args);
-            ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, fd.asDecl().getFullName());
+            ma.note(fd.asDecl().getLoc(), NoteDeclaredHere, ma.getFullName(fd.asDecl()));
             return QualType_Invalid;
         }
 
@@ -550,7 +551,7 @@ fn bool on_scanf_specifier(void* context, u32 offset, ScanfSpecifier specifier, 
     return true;
 }
 
-fn const char* get_format(Expr* format, SrcLoc* format_loc) {
+fn const char* Analyser.get_format(Analyser* ma, Expr* format, SrcLoc* format_loc) {
     // if format is StringLiteral or vardecl of type char[], it will wrapped in ArrayToPointerDecay
     // otherwise it's a VarDecl of type (const) char* we cannot check and report this as an error
 
@@ -569,7 +570,7 @@ fn const char* get_format(Expr* format, SrcLoc* format_loc) {
             // format specifier errors.
             *format_loc = format.getLoc() + 1;
             StringLiteral* s = (StringLiteral*)format;
-            return s.getText();
+            return ma.idx2name(s.getText());
         case Identifier:
             QualType qt = format.getType();
             assert(qt.isArray());
@@ -607,7 +608,7 @@ fn const char* get_format(Expr* format, SrcLoc* format_loc) {
 
 fn bool Analyser.checkFormatArgs(Analyser* ma, Expr* format, Expr** args, u32 num_args, FormatAttr format_attr, Expr** new_format_ptr) {
     SrcLoc format_loc = format.getLoc();
-    const char* format_text = get_format(format, &format_loc);
+    const char* format_text = ma.get_format(format, &format_loc);
     if (!format_text) {
         ma.error(format_loc, "format argument is not a constant string");
         return false;

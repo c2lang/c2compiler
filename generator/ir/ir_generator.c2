@@ -131,9 +131,9 @@ fn const char* Generator.createLocalName(Generator* gen, const Decl* d) {
     out.clear();
     out.add(d.getModuleName());
     out.add1('_');
-    out.add(gen.cur_function.asDecl().getName());
+    out.add(gen.idx2name(gen.cur_function.asDecl().getNameIdx()));
     out.add1('.');
-    out.add(d.getName());
+    out.add(gen.idx2name(d.getNameIdx()));
     return out.data();
 }
 
@@ -142,12 +142,9 @@ fn const char* Generator.createSymbolName(Generator* gen, const Decl* d) {
     out.clear();
 
     if (d.isExternal() && d.getModule().isForeign()) {
-        const char* cname = d.getCName();
-        if (cname) {
-            out.add(cname);
-        } else {
-            out.add(d.getName());
-        }
+        u32 cname = d.getCName();
+        if (!cname) cname = d.getNameIdx();
+        out.add(gen.idx2name(cname));
     } else {
         if (d.isGlobal()) {
             out.add(d.getModuleName());
@@ -162,11 +159,12 @@ fn const char* Generator.createSymbolName(Generator* gen, const Decl* d) {
             } else if (d.isEnumConstant()) {
                 QualType qt = d.getType();
                 EnumType* et = (EnumType*)qt.getType();
-                out.add(et.getName());
+                EnumTypeDecl* etd = et.getDecl();
+                out.add(gen.idx2name(etd.asDecl().getNameIdx()));
                 out.add1('_');
             }
         }
-        out.add(d.getName());
+        out.add(gen.idx2name(d.getNameIdx()));
     }
     return out.data();
 }
@@ -289,7 +287,7 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         break;
     case StringLiteral:
         const StringLiteral* s = (StringLiteral*)e;
-        gen.ctx.addInitString(s.getText(), s.strlen());
+        gen.ctx.addInitString(gen.idx2name(s.getText()), s.strlen());
         break;
     case Nil:
         assert(0);  // should be CTV
@@ -505,10 +503,10 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
         // NOTE: not cleanup up during unused removal pass
         // only if debugging
         // params may be unnamed
-        const char* name = v.asDecl().getName();
+        u32 name_idx = v.asDecl().getNameIdx();
         string_buffer.Buf* out = gen.name_buf;
         out.clear();
-        if (name) out.add(name);
+        if (name_idx) out.add(gen.idx2name(name_idx));
         else out.add("(unnamed)");
         gen.ctx.addComment(out.data());
 #endif
@@ -640,11 +638,11 @@ fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
 #if 1
     // only if debugging
     // params may be unnamed
-    const char* name = vd.asDecl().getName();
+    u32 name_idx = vd.asDecl().getNameIdx();
     string_buffer.Buf* out = gen.name_buf;
     out.clear();
     out.print("s%d ", slot.value);
-    if (name) out.add(name);
+    if (name_idx) out.add(gen.idx2name(name_idx));
     else out.add("(unnamed)");
     gen.ctx.addComment(out.data());
 #endif

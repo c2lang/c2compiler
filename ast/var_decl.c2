@@ -19,8 +19,6 @@ import ast_context;
 import src_loc local;
 import string_buffer;
 
-import stdio;
-
 public type VarDeclKind enum u8 (const char* const name) {
     GlobalVar       : { "global" },
     LocalVar        : { "local" },
@@ -174,19 +172,6 @@ fn VarDecl* VarDecl.instantiate(const VarDecl* vd, Instantiator* inst)
     Stats.addDecl(Variable, size);
 #endif
     return vd2;
-}
-
-public fn const char* VarDecl.getEnumAssocValueName(const VarDecl* d, const char* enum_name) {
-    static char[2][128] tmp_buf;
-    static u32 tmp_id = 0;
-    u32 tmp_size = elemsof(tmp_buf[0]);
-    char* tmp = tmp_buf[tmp_id++ & 1];
-    stdio.snprintf(tmp, tmp_size, "%s.%s", enum_name, d.getName());
-    return tmp;
-}
-
-public fn const char* VarDecl.getName(const VarDecl* d) {
-    return idx2name(d.base.name_idx);
 }
 
 public fn u32 VarDecl.getNameIdx(const VarDecl* d) {

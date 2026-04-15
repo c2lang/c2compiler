@@ -60,7 +60,7 @@ fn void post_analysis(void* arg) {
     Plugin* p = arg;
     console.debug("generating refs");
     u64 t1 = utils.now();
-    refs_generator.generate(p.info.sm, p.info.output_dir, p.info.components, constants.refs_filename);
+    refs_generator.generate(p.info.sm, p.info.astPool, p.info.output_dir, p.info.components, constants.refs_filename);
     u64 t2 = utils.now();
     console.log_time("refs generation", t2 - t1);
 }

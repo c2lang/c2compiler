@@ -261,6 +261,6 @@ fn void Compiler.checkMain(Compiler* c) {
 
 fn void Compiler.checkUnused(void* arg, ast.Module* m) {
     Compiler* c = arg;
-    unused_checker.check(c.diags, c.target.getWarnings(), m);
+    unused_checker.check(c.diags, c.astPool, c.target.getWarnings(), m);
 }
 

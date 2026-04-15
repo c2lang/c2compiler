@@ -177,8 +177,8 @@ public fn bool Decl.isVariable(const Decl* d) {
     return d.getKind() == Variable;
 }
 
-public fn const char* Decl.getName(const Decl* d) {
-    return idx2name(d.name_idx);
+fn const char* Decl.getName(const Decl* d) {
+    return ast.idx2name(d.name_idx);
 }
 
 public fn u32 Decl.getNameIdx(const Decl* d) {
@@ -279,26 +279,26 @@ public fn const char* Decl.getKindName(const Decl* d) {
     return "";
 }
 
-public fn const char* Decl.getCName(const Decl* d) {
+public fn u32 Decl.getCName(const Decl* d) {
     const Attr* cname = d.getAttr(CName);
-    if (cname) return idx2name(cname.value.text);
-    return nil;
+    if (cname) return cname.value.text;
+    return 0;
 }
 
 public fn bool Decl.hasCName(const Decl* d) {
     return d.getAttr(CName);
 }
 
-public fn const char* Decl.getCDef(const Decl* d) {
+public fn u32 Decl.getCDef(const Decl* d) {
     const Attr* cdef = d.getAttr(CDef);
-    if (cdef) return idx2name(cdef.value.text);
-    return nil;
+    if (cdef) return cdef.value.text;
+    return 0;
 }
 
-public fn const char* Decl.getSection(const Decl* d) {
+public fn u32 Decl.getSection(const Decl* d) {
     const Attr* section = d.getAttr(Section);
-    if (section) return idx2name(section.value.text);
-    return nil;
+    if (section) return section.value.text;
+    return 0;
 }
 
 public fn const char* Decl.getFullName(const Decl* d) {
@@ -313,7 +313,8 @@ public fn const char* Decl.getFullName(const Decl* d) {
     case Function:
         const FunctionDecl* fd = (FunctionDecl*)d;
         if (fd.hasPrefix()) {
-            stdio.snprintf(tmp, tmp_size, "%s.%s.%s", modname, fd.getPrefixName(), d.getName());
+            const char* prefix_name = ast.idx2name(fd.getPrefixNameIdx());
+            stdio.snprintf(tmp, tmp_size, "%s.%s.%s", modname, prefix_name, d.getName());
         } else {
             stdio.snprintf(tmp, tmp_size, "%s.%s", modname, d.getName());
         }
@@ -413,22 +414,22 @@ fn void Decl.printAttrs(const Decl* d, string_buffer.Buf* out) {
     const Attr* cname = d.getAttr(CName);
     if (cname) {
         out.color(col_Attr);
-        out.print(" cname='%s'", idx2name(cname.value.text));
+        out.print(" cname='%s'", ast.idx2name(cname.value.text));
     }
     const Attr* cdef = d.getAttr(CDef);
     if (cdef) {
         out.color(col_Attr);
-        out.print(" cdef='%s'", idx2name(cdef.value.text));
+        out.print(" cdef='%s'", ast.idx2name(cdef.value.text));
     }
     const Attr* section = d.getAttr(Section);
     if (section) {
         out.color(col_Attr);
-        out.print(" section='%s'", idx2name(section.value.text));
+        out.print(" section='%s'", ast.idx2name(section.value.text));
     }
     const Attr* embed = d.getAttr(Embed);
     if (embed) {
         out.color(col_Attr);
-        out.print(" embed='%s'", idx2name(embed.value.text));
+        out.print(" embed='%s'", ast.idx2name(embed.value.text));
     }
 }
 

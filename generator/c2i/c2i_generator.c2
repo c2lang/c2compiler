@@ -34,6 +34,10 @@ type Generator struct {
     u32 indent;
 }
 
+fn const char* Generator.idx2name(const Generator* gen, u32 name_idx) {
+    return gen.astPool.idx2str(name_idx);
+}
+
 public fn void generate(string_pool.Pool* astPool, const char* output_dir, component.List* comps)
 {
     Generator gen = {}
@@ -92,7 +96,7 @@ fn void on_import(void* arg, ImportDecl* i) {
     if (gen.imports.contains_idx(name_idx)) return;
     gen.imports.add(name_idx);
 
-    gen.out.print("import %s;\n", d.getName());
+    gen.out.print("import %s;\n", gen.idx2name(d.getNameIdx()));
 }
 
 fn void on_decl(void* arg, Decl* d) {
@@ -102,4 +106,8 @@ fn void on_decl(void* arg, Decl* d) {
     if (d.isImport()) return;
 
     gen.emitGlobalDecl(d);
+}
+
+fn void Generator.emitName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
+    out.add(gen.idx2name(d.getNameIdx()));
 }

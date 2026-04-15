@@ -455,7 +455,7 @@ fn const FieldInitInfo* Analyser.getFieldInfo(Analyser* ma, StructTypeDecl* std)
     printf("FIELDS (%d / %d)\n", fii.num_fields, fii.num_indexes);
     for (u32 i=0; i<fii.num_fields; i++) {
         const FieldInitField* fif = &fii.fields[i];
-        printf("  [%2d] %8s  %2d  %2d\n", i, ma.astPool.idx2str(fif.name_idx), fif.offset, fif.member_idx);
+        printf("  [%2d] %8s  %2d  %2d\n", i, ma.idx2name(fif.name_idx), fif.offset, fif.member_idx);
     }
 #endif
     return fii;
