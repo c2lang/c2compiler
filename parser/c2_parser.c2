@@ -677,7 +677,7 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool accept_default
         if (p.tok.kind == LSquare) {
             p.error("array types are not allowed here");
         }
-    }  else {
+    } else {
         p.parseTypeSpecifier(&ref);
     }
 

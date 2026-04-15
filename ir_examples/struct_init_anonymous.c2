@@ -16,14 +16,14 @@ type Foo struct {
 }
 static_assert(20, sizeof(Foo));
 
-Foo f1  = { 1, { 2, 3 }, { .d=4 }, 5 }
-Foo f2  = { }
-Foo f3  = { 1, { }, { }, 4 }
+Foo f1 = { 1, { 2, 3 }, { .d=4 }, 5 }
+Foo f2 = { }
+Foo f3 = { 1, { }, { }, 4 }
 
-Foo f4  = { .a=1, .b=2, .c=3, .d=4, .f=5 }
-Foo f5  = { .f=5, .d=4, .c=3, .b=2, .a=1 }
+Foo f4 = { .a=1, .b=2, .c=3, .d=4, .f=5 }
+Foo f5 = { .f=5, .d=4, .c=3, .b=2, .a=1 }
 
-Foo f6  = { .a=1, .b=2, .c=3, .e=4, .f=5 }
+Foo f6 = { .a=1, .b=2, .c=3, .e=4, .f=5 }
 
 public fn i32 main() {
     return 0;

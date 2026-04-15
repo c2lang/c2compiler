@@ -96,7 +96,7 @@ fn void* section_load(MapFile* f, u32 minSize) {
 #endif
 
 #if C2TagsGenerate
-fn  bool section_write(i32 fd, void* section) {
+fn bool section_write(i32 fd, void* section) {
     const u32 size = section_size(section);
     isize written = write(fd, section, size);
     if (size != written) {

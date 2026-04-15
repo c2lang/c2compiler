@@ -11,18 +11,18 @@ struct Stat @(cname="stat", no_typedef) {
     unsigned int  st_uid;
     unsigned int  st_gid;
     unsigned long st_rdev;
-    long  st_size;
-    long  st_blksize;
-    long  st_blocks;
+    long st_size;
+    long st_blksize;
+    long st_blocks;
     //Timespec st_atim;
     //Timespec st_mtim;
     //Timespec st_ctim;
-    long  st_atime;
-    long  st_atime_nsec;
-    long  st_mtime;
-    long  st_mtime_nsec;
-    long  st_ctime;
-    long  st_ctime_nsec;
+    long st_atime;
+    long st_atime_nsec;
+    long st_mtime;
+    long st_mtime_nsec;
+    long st_ctime;
+    long st_ctime_nsec;
     long[3] reserved;
 }
 static_assert(144, sizeof(Stat));

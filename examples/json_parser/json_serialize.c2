@@ -35,7 +35,7 @@ type Header struct @(packed) {
     u8[0] data;
 }
 
-fn bool Data.write(const Data* d,  i32 fd) {
+fn bool Data.write(const Data* d, i32 fd) {
     // NOTE: copy to internal buffer first, do single write()
     u32 size = sizeof(Header);
     size += roundup(d.names.cur);

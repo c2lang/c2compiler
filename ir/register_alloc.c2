@@ -23,7 +23,7 @@ import ir_live_map;
 import stdio local;
 import stdlib;
 
-type LiveVector struct  {
+type LiveVector struct {
     u32 count;
     u32 cap;
     u32 num_instr;

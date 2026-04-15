@@ -339,7 +339,7 @@ fn u32 Parser.addTable(Parser* p, const char* name, u32 depth, bool isTop, NodeK
         Node* node = &blocks.nodes[off];
         p.parents[depth] = node;
 
-        if  (p.lastChild[depth]) {
+        if (p.lastChild[depth]) {
             p.lastChild[depth].nextNode = off;
         } else {
             if (depth > 0) p.parents[depth-1].child = off;

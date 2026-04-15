@@ -21,7 +21,7 @@ import string;
 
 const u32 NumArenas = 11;
 // Note: caps need to be double of previous (except first two)
-const u16[NumArenas] Caps   = { 0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 }
+const u16[NumArenas] Caps = { 0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 }
 
 const u16 NULL = u16.max;
 
@@ -152,10 +152,10 @@ fn u16 InterferenceGraph.removeVariableFromArena(InterferenceGraph* g, Arena* a,
 
     u16 last_idx = a.last_var;
 
-    // [XL]  or  [_XL], no need for fixup: (X=removed, L=last)
+    // [XL] or [_XL], no need for fixup: (X=removed, L=last)
     if (r.next == a.last_var) return last_idx;
 
-    // [X_L]  or [_X_L], need to move last to X to plug hole
+    // [X_L] or [_X_L], need to move last to X to plug hole
 
     // remove L
     Variable* last = &g.variables[last_idx];

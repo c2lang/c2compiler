@@ -288,7 +288,7 @@ fn QualType Analyser.checkBinopAddSubAssign(Analyser* ma, BinaryOperator* b, Qua
     case 5: // builtin - enum -> int
         return ma.checkBinopArithArgs(b, lhs, rhs, true);
     case 6: // pointer - builtin/enum
-        if (lcanon.isVoidPtr())  goto invalid_lhs;
+        if (lcanon.isVoidPtr()) goto invalid_lhs;
         if (!validIntegerType(rcanon)) goto invalid_rhs;
         return lhs;
     case 7: // enum - builtin
@@ -342,11 +342,11 @@ fn QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualType
         break;
     case 1: // invalid lhs
     invalid_lhs:
-        if (rcanon.isVoidPtr())  goto invalid;
+        if (rcanon.isVoidPtr()) goto invalid;
         return ma.invalidBinOp1(b, b.getLHS(), lhs);
     case 2: // invalid rhs
     invalid_rhs:
-        if (lcanon.isVoidPtr())  goto invalid;
+        if (lcanon.isVoidPtr()) goto invalid;
         return ma.invalidBinOp1(b, b.getRHS(), rhs);
     case 3: // invalid operands
     invalid:
@@ -377,8 +377,8 @@ fn QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualType
         if (rcanon.isVoidPtr()) goto invalid_rhs;
         return rhs;
     case 8: // ptr + builtin/enum
-        if (lcanon.isVoidPtr())  goto invalid_lhs;
-        if (!validIntegerType(rcanon))  goto invalid_rhs;
+        if (lcanon.isVoidPtr()) goto invalid_lhs;
+        if (!validIntegerType(rcanon)) goto invalid_rhs;
         return lhs;
     }
     assert(0);

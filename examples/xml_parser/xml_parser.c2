@@ -56,7 +56,7 @@ public fn bool Parser.parse(Parser* p, const char* text, bool verbose) {
 
     XmlParser parser;
     bool status = parser.parse(text, p.message, &p.blocks);
-    if (status && verbose)  p.blocks.dump(true);
+    if (status && verbose) p.blocks.dump(true);
     return status;
 }
 

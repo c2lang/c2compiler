@@ -35,13 +35,13 @@ Foo c = { 10 }
 
 // TODO substructs
 
-//Foo f1  = { .z = 2, .sub = { .u = 22, .b = 'b' }, .x = 30, .y = 40, .p = &c }
-//Foo f  = { .z = 2, .u = 22, .b = 'b', .x = 30, .y = 40, .p = &c }
+//Foo f1 = { .z = 2, .sub = { .u = 22, .b = 'b' }, .x = 30, .y = 40, .p = &c }
+//Foo f = { .z = 2, .u = 22, .b = 'b', .x = 30, .y = 40, .p = &c }
 /*
 Foo b = { .x = 30, .y = 40, .p = &c }
 
 // also out of order (before substruct)
-Foo f  = { .z = 2, .u = 22, .b2 = 'b', .x = 30, .y = 40, .p = &c }
+Foo f = { .z = 2, .u = 22, .b2 = 'b', .x = 30, .y = 40, .p = &c }
 
 Foo d = { .y = 50 }
 

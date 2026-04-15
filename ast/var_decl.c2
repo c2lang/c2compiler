@@ -276,7 +276,7 @@ public fn Expr** VarDecl.getInit2(VarDecl* d) {
 }
 
 // Note: can ONLY be done for incremental arrays / embed attr (since init is tail allocated)
-public fn  void VarDecl.setInit(VarDecl* d, Expr* initValue) {
+public fn void VarDecl.setInit(VarDecl* d, Expr* initValue) {
     d.base.varDeclBits.has_init = 1;
     VarDeclInit* init = d.typeRef.getPointerAfter();
     init.expr = initValue;

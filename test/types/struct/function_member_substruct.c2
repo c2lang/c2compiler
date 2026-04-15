@@ -7,7 +7,7 @@ type Foo struct {
     struct named {
         fn i32 (void* arg) cb1;
     }
-    struct  {
+    struct {
         fn i32 (void* arg) cb2;
     }
 }

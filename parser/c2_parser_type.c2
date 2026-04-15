@@ -397,7 +397,7 @@ fn VarDecl* Parser.parseEnumAttribute(Parser* p) {
         if (p.tok.kind == LSquare) {
             p.error("array types are not allowed here");
         }
-    }  else {
+    } else {
         p.parseTypeSpecifier(&ref);
     }
 

@@ -129,7 +129,7 @@ fn void Visitor.handleExpr(Visitor* v, Expr* e) {
 fn void Visitor.handleCallExpr(Visitor* v, CallExpr* c) {
     v.handleExpr(c.getFunc());
     u32 num_args = c.getNumArgs();
-    Expr** args  = c.getArgs();
+    Expr** args = c.getArgs();
     for (u32 i=0; i<num_args; i++) v.handleExpr(args[i]);
 }
 

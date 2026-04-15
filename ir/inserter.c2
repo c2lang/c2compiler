@@ -87,7 +87,7 @@ fn void Inserter.resize(Inserter* ins, u32 capacity) {
 }
 
 public fn u32 Inserter.addInstr(Inserter* ins, u32 loc) {
-    u32 instr_idx =  ins.new_instr_idx + ins.count;
+    u32 instr_idx = ins.new_instr_idx + ins.count;
     u32 insert_idx = ins.getAddIndex(loc);
     InstrInsertion* ii = &ins.ins[insert_idx];
     ii.location = loc;

@@ -5,7 +5,7 @@ const u32 C = 8;
 
 public type Foo struct {
     u16 a;
-    u8  b: 1;
+    u8 b: 1;
     u8 : 2;
     u8 c : 3;
     i8 d : 2;

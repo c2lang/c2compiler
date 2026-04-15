@@ -28,6 +28,6 @@ fn void test8() {
     u64 h = foo();    // @error{invalid type conversion from 'void' to 'u64'}
 }
 fn void test9() {
-    bool   i = foo();    // @error{invalid type conversion from 'void' to 'bool'}
+    bool i = foo();    // @error{invalid type conversion from 'void' to 'bool'}
 }
 

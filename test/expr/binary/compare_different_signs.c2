@@ -8,6 +8,6 @@ fn void test1(u32 u) {
 }
 
 fn void test2(u32 u, i32 i) {
-    if  (i < u) {}  // @error{comparison of integer expressions of different signedness: 'i32' and 'u32'}
+    if (i < u) {}  // @error{comparison of integer expressions of different signedness: 'i32' and 'u32'}
 }
 

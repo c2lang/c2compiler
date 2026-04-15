@@ -92,7 +92,7 @@ fn u32 section_size(const void* section) {
     return *ptr;
 }
 
-fn  bool section_write(i32 fd, void* section) {
+fn bool section_write(i32 fd, void* section) {
     const u32 size = section_size(section);
     isize written = unistd.write(fd, section, size);
     return (size == written);

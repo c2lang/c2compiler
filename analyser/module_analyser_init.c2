@@ -434,7 +434,7 @@ fn void fillFieldInfo(StructTypeDecl* std, FillInfo* fi, u32 base_offset) {
             f.bitfield_width = ml.bitfield_width;
             f.bitfield_signed = ml.bitfield_signed;
             f.decl = members[i];
-            f.bitfield_base_size  = (u8)ml.size;
+            f.bitfield_base_size = (u8)ml.size;
             if (isStruct) fi.member_idx++; // stays the same for unions
             fi.idx++;
         }

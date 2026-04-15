@@ -147,22 +147,22 @@ int rawget(State *L, int idx) @(cname="lua_rawget");
 int rawgeti(State *L, int idx, Integer n) @(cname="lua_rawgeti");
 int rawgetp(State *L, int idx, const void *p) @(cname="lua_rawgetp");
 
-void  createtable(State *L, int narr, int nrec) @(cname="lua_createtable");
+void createtable(State *L, int narr, int nrec) @(cname="lua_createtable");
 void *newuserdata(State *L, size_t sz) @(cname="lua_newuserdata");
 int getmetatable(State *L, int objindex) @(cname="lua_getmetatable");
 int getuservalue(State *L, int idx) @(cname="lua_getuservalue");
 
 
 // set functions (stack -> Lua)
-void  setglobal(State *L, const char *name) @(cname="lua_setglobal");
-void  settable(State *L, int idx) @(cname="lua_settable");
-void  setfield(State *L, int idx, const char *k) @(cname="lua_setfield");
-void  seti(State *L, int idx, Integer n) @(cname="lua_seti");
-void  rawset(State *L, int idx) @(cname="lua_rawset");
-void  rawseti(State *L, int idx, Integer n) @(cname="lua_rawseti");
-void  rawsetp(State *L, int idx, const void *p) @(cname="lua_rawsetp");
+void setglobal(State *L, const char *name) @(cname="lua_setglobal");
+void settable(State *L, int idx) @(cname="lua_settable");
+void setfield(State *L, int idx, const char *k) @(cname="lua_setfield");
+void seti(State *L, int idx, Integer n) @(cname="lua_seti");
+void rawset(State *L, int idx) @(cname="lua_rawset");
+void rawseti(State *L, int idx, Integer n) @(cname="lua_rawseti");
+void rawsetp(State *L, int idx, const void *p) @(cname="lua_rawsetp");
 int setmetatable(State *L, int objindex) @(cname="lua_setmetatable");
-void  setuservalue(State *L, int idx) @(cname="lua_setuservalue");
+void setuservalue(State *L, int idx) @(cname="lua_setuservalue");
 
 
 // 'load' and 'call' functions (load and run Lua code)

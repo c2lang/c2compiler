@@ -72,7 +72,7 @@ type Action enum u8 {
 
 const Action[256] Char_lookup = {
     // 0 - 15
-    [  0]  = EOF,
+    [0] = EOF,
     ['\t'] = TABSPACE,
     ['\n'] = NEWLINE,
     ['\r'] = CR,
