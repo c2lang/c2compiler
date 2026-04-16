@@ -1395,6 +1395,11 @@ const char[] Warning_control =
     #  pragma clang diagnostic ignored "-Wsometimes-uninitialized"
     #  pragma clang diagnostic ignored "-Wtypedef-redefinition"
     #  pragma clang diagnostic ignored "-Wstring-plus-int"
+    #  pragma clang diagnostic ignored "-Wunused"
+    #  pragma clang diagnostic ignored "-Wswitch"
+    #  pragma clang diagnostic ignored "-Wunused-parameter"
+    #  pragma clang diagnostic ignored "-Wmissing-field-initializers"
+    #  pragma clang diagnostic ignored "-Wformat-zero-length"
     #  if (__clang_major__ >= 10)
     #    define fallthrough  __attribute__((fallthrough))
     #  endif
@@ -1405,12 +1410,17 @@ const char[] Warning_control =
     #    define fallthrough  __attribute__((fallthrough))
     #  endif
     #  pragma GCC diagnostic ignored "-Wmain"
+    #  pragma GCC diagnostic ignored "-Wunused"
+    #  pragma GCC diagnostic ignored "-Wswitch"
+    #  pragma GCC diagnostic ignored "-Wunused-parameter"
+    #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
     #  if (__GNUC__ >= 10)
     #    pragma GCC diagnostic ignored "-Wzero-length-bounds"
     #  endif
     #  if (__GNUC__ >= 7)
     #    pragma GCC diagnostic ignored "-Wformat-overflow"
     #    pragma GCC diagnostic ignored "-Wstringop-overflow"
+    #    pragma GCC diagnostic ignored "-Wformat-zero-length"
     #  endif
     #endif
 
