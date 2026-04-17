@@ -134,7 +134,7 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
     g.wordsize = wordsize;
     g.use_color = use_color;
     g.names_pool = astPool;
-    g.ast_count = 1;
+    g.ast_count = 0;
     g.ast_capacity = 0;
     g.ast_list = nil;
     g.dump_buf = string_buffer.create(4096, use_color, 2);
@@ -142,6 +142,8 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
     g.stats.reset();
 #endif
     globals = g;  // must be set here because BuiltinType.create calls Stats.addType
+
+    g.addAST(nil);  // ensure idx2ast(0) is nil
 
     // create all Qualtypes for builtin-types
     for (BuiltinKind kind = BuiltinKind.min; kind <= BuiltinKind.max; kind++) {
@@ -206,37 +208,28 @@ public fn QualType getBuiltinQT(BuiltinKind kind) {
     return globals.builtins[kind];
 }
 
-fn u32 addAST(AST* ast_) {
-    Globals* g = globals;
+fn u32 Globals.addAST(Globals* g, AST* a) {
     if (g.ast_count >= g.ast_capacity) {
         if (g.ast_capacity == 0) g.ast_capacity = 16;
         else g.ast_capacity *= 2;
 
-        void* buf = stdlib.malloc(g.ast_capacity * sizeof(ast.AST*));
+        void* buf = stdlib.malloc(g.ast_capacity * sizeof(AST*));
         if (g.ast_list) {
             void* old = g.ast_list;
-            string.memcpy(buf, old, g.ast_count * sizeof(ast.AST*));
+            string.memcpy(buf, old, g.ast_count * sizeof(AST*));
             stdlib.free(old);
         }
         g.ast_list = buf;
     }
 
     u32 idx = g.ast_count;
-    g.ast_list[idx] = ast_;
+    g.ast_list[idx] = a;
     g.ast_count++;
     return idx;
 }
 
-/*
-public fn u32 ast2idx(const AST* ast_) {
-    if (ast_) return ast_.idx;
-    return 0;
-}
-*/
-
-fn AST* idx2ast(u32 idx) {
-    if (idx == 0) return nil;
-    return globals.ast_list[idx];
+fn AST* Globals.idx2ast(Globals* g, u32 idx) {
+    return g.ast_list[idx];
 }
 
 fn string_buffer.Buf* getDumpBuf() {

@@ -52,7 +52,7 @@ fn AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod, bool is_int
     a.mod = mod;
     a.auxPool = auxPool;
     a.name = name;
-    a.idx = addAST(a);
+    a.idx = globals.addAST(a);
     a.is_interface = is_interface;
     a.is_generated = is_generated;
     a.imports.init();

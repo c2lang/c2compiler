@@ -335,7 +335,7 @@ public fn void FunctionDecl.setInstanceName(FunctionDecl* d, u32 name_idx) {
 }
 
 public fn Module* FunctionDecl.getInstanceModule(FunctionDecl* d) {
-    if (d.flags.instance_ast_idx) return idx2ast(d.flags.instance_ast_idx).getMod();
+    if (d.flags.instance_ast_idx) return globals.idx2ast(d.flags.instance_ast_idx).getMod();
     return nil;
 }
 
