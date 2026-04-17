@@ -204,7 +204,7 @@ public fn Decl* Builder.actOnFunctionTypeDecl(Builder* b,
                                            is_variadic,
                                            Type);
 
-    FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fd);
+    FunctionTypeDecl* d = FunctionTypeDecl.create(b.context, fd, b.ast_idx);
     b.ast.addTypeDecl(d.asDecl());
     Decl* dd = (Decl*)d;
     if (b.is_interface) {

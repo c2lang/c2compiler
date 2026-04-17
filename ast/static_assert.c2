@@ -44,7 +44,7 @@ public fn StaticAssert* StaticAssert.create(ast_context.Context* c,
 }
 
 public fn AST* StaticAssert.getAST(const StaticAssert* d) {
-    return idx2ast(d.ast_idx);
+    return globals.idx2ast(d.ast_idx);
 }
 
 public fn Expr* StaticAssert.getLHS(const StaticAssert* d) {
