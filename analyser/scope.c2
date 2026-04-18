@@ -550,6 +550,7 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
                 ast.Decl* d = dest.findPrivateSymbol(name_idx);
                 if (d) {
                     s.diags.error(loc, "symbol '%s' is not public", d.getFullName());
+                    s.diags.note(d.getLoc(), "symbol definition is here");
                     *other_error = true;
                     return nil;
                 }
@@ -580,10 +581,12 @@ public fn bool Scope.checkAccess(Scope* s, ast.Decl* d, SrcLoc loc) {
                 ast.VarDecl* vd = (ast.VarDecl*)d;
                 if (vd.isEnumValue()) {
                     s.diags.error(loc, "enum-associated value '%s' is not public", d.getName());
+                    s.diags.note(d.getLoc(), "symbol definition is here");
                     return false;
                 }
             }
             s.diags.error(loc, "symbol '%s' is not public", d.getFullName());
+            s.diags.note(d.getLoc(), "symbol definition is here");
             return false;
         }
     }
