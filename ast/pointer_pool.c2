@@ -17,8 +17,9 @@ module ast;
 
 import ast_context;
 
-import string local;
+import stdio local;
 import stdlib local;
+import string local;
 
 /*
     This pool is used to lookup pointers to a certain type. It keeps 4 variants:
@@ -88,5 +89,10 @@ fn Type* PointerPool.getPointer(PointerPool* p, QualType qt) {
     ptr = (Type*)PointerType.create(p.context, qt);
     slot.ptrs[quals] = ptr;
     return ptr;
+}
+
+fn void PointerPool.report(const PointerPool* p) {
+    printf("pointer_pool: %d/%d, %d bytes\n",
+           p.count, p.capacity, sizeof(*p) + p.capacity * sizeof(*p.slots));
 }
 

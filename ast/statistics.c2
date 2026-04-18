@@ -81,98 +81,105 @@ fn void Stats.addSwitchCase(u32 size) {
     globals.stats.others[2].add(size);
 }
 
-fn void Stat.slack(const Stat* ss, u32* countp, u32* totalp) {
+type StatPack struct {
+    u32 count;
+    u32 size;
+    u32 total_count;
+    u32 total_size;
+}
+
+fn void Stat.slack(const Stat* ss, StatPack* sp) {
     if (BucketWidth & 0x7) {
         for (u32 cat = 0; cat < NCat; cat++) {
             if (u32 frac = (cat * BucketWidth) & 0x7) {
-                *countp += ss.count[cat];
-                *totalp += ss.count[cat] * (8 - frac);
+                sp.count += ss.count[cat];
+                sp.size += ss.count[cat] * (8 - frac);
             }
         }
     }
 }
 
-fn void Stat.dump(const Stat* ss, const char* name, u32* countp, u32* totalp) {
+fn void Stat.dump(const Stat* ss, const char* name, StatPack* sp) {
     u32 count = 0;
     u32 size = 0;
     for (u32 cat = 0; cat < NCat; cat++) {
         count += ss.count[cat];
         size += ss.size[cat];
     }
-    printf("  %20s  %6d  %7d", name, count, size);
+    char[10] buf = "";
+    if (count) {
+        u32 avg = (u32)(size * (u64)100 / count);
+        i32 len = snprintf(buf, sizeof(buf), "%3d   ", avg / 100);
+        if (avg % 100) snprintf(buf + len - 3, sizeof(buf) - (len - 3), ".%02d", avg % 100);
+    }
+    printf("  %20s  %6d  %7d  %s", name, count, size, buf);
     bool output = false;
     for (u32 cat = 0; cat < NCat; cat++) {
         if (!ss.count[cat]) continue;
-        if (count == ss.count[cat]) {
-            // no repeat if single category
-            if (NCat > 1) printf("  %d", cat * BucketWidth);
-            break;
-        }
+        // no output if single cat since average size already reported
+        if (count == ss.count[cat]) break;
         printf("  %d:%d/%d", cat * BucketWidth, ss.count[cat], ss.size[cat]);
     }
     printf("\n");
-    *countp += count;
-    *totalp += size;
+    sp.count += count;
+    sp.size += size;
 }
 
-fn void Stats.dump(const Stats* s) {
+fn void StatPack.grand_total(StatPack* sp, const char* name) {
+    sp.count = sp.total_count;
+    sp.size = sp.total_size;
+    sp.total_count = 0;
+    sp.total_size = 0;
+    sp.total(name);
+}
+
+fn void StatPack.total(StatPack* sp, const char* name = "total") {
+    printf("  %20s  %6d  %7d\n", name, sp.count, sp.size);
+    sp.total_count += sp.count;
+    sp.total_size += sp.size;
+    sp.count = 0;
+    sp.size = 0;
+}
+
+fn void Stats.report(const Stats* s) {
+    StatPack pack = {}
+
     printf("---------------------------------------\n");
 
     printf("--- Types ---\n");
-    u32 typesTotal = 0;
-    u32 typesCount = 0;
-    for (TypeKind kind = TypeKind.min; kind <= TypeKind.max; kind++) {
-        s.types[kind].dump(kind.name, &typesCount, &typesTotal);
-    }
-    printf("  %20s  %6d  %7d\n", "total", typesCount, typesTotal);
+    for (TypeKind kind = TypeKind.min; kind <= TypeKind.max; kind++)
+        s.types[kind].dump(kind.name, &pack);
+    pack.total();
 
     printf("--- Expressions ---\n");
-    u32 exprTotal = 0;
-    u32 exprCount = 0;
-    for (ExprKind i = ExprKind.min; i <= ExprKind.max; i++) {
-        s.exprs[i].dump(i.name, &exprCount, &exprTotal);
-    }
-    printf("  %20s  %6d  %7d\n", "total", exprCount, exprTotal);
+    for (ExprKind i = ExprKind.min; i <= ExprKind.max; i++)
+        s.exprs[i].dump(i.name, &pack);
+    pack.total();
 
     printf("--- Statements ---\n");
-    u32 stmtTotal = 0;
-    u32 stmtCount = 0;
-    for (StmtKind i = StmtKind.min; i <= StmtKind.max; i++) {
-        s.stmts[i].dump(i.name, &stmtCount, &stmtTotal);
-    }
-    printf("  %20s  %6d  %7d\n", "total", stmtCount, stmtTotal);
+    for (StmtKind i = StmtKind.min; i <= StmtKind.max; i++)
+        s.stmts[i].dump(i.name, &pack);
+    pack.total();
 
     printf("--- Decls ---\n");
-    u32 declTotal = 0;
-    u32 declCount = 0;
-    for (DeclKind i = DeclKind.min; i <= DeclKind.max; i++) {
-        s.decls[i].dump(i.name, &declCount, &declTotal);
-    }
-    printf("  %20s  %6d  %7d\n", "total", declCount, declTotal);
+    for (DeclKind i = DeclKind.min; i <= DeclKind.max; i++)
+        s.decls[i].dump(i.name, &pack);
+    pack.total();
 
     printf("--- Other ---\n");
-    u32 otherTotal = 0;
-    u32 otherCount = 0;
-    for (u32 i=0; i<3; i++) {
-        s.others[i].dump(other_names[i], &otherCount, &otherTotal);
-    }
-    printf("  %20s  %6d  %7d\n", "total", otherCount, otherTotal);
+    for (u32 i = 0; i < 3; i++)
+        s.others[i].dump(other_names[i], &pack);
+    pack.total();
 
     printf("--- Total ---\n");
-    u32 totalCount = typesCount + exprCount + stmtCount + declCount + otherCount;
-    u32 totalSize = typesTotal + exprTotal + stmtTotal + declTotal + otherTotal;
-    printf("  %20s  %6d  %7d\n", "objects", totalCount, totalSize);
+    pack.grand_total("objects");
+
     if (NCat > 1 && BucketWidth < 8) {
-        u32 slackCount = 0;
-        u32 slackTotal = 0;
         u32 nStats = sizeof(Stats) / sizeof(Stat);
         Stat* sp = (Stat*)s;
-        for (u32 i = 0; i < nStats; i++) {
-            sp[i].slack(&slackCount, &slackTotal);
-        }
-        if (slackCount) {
-            printf("  %20s  %6d  %7d\n", "slack", slackCount, slackTotal);
-        }
+        for (u32 i = 0; i < nStats; i++)
+            sp[i].slack(&pack);
+        if (pack.count) pack.total("slack");
     }
     printf("---------------------------------------\n");
 }

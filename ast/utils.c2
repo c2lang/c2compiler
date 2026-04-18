@@ -155,11 +155,19 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
     void_ptr.setCanonicalType(g.void_ptr_type);
 }
 
-public fn void deinit(bool print_stats) {
+public fn void report() {
     Globals* g = globals;
+    stdio.printf("ast_list: %d/%d, %d bytes\n",
+                 g.ast_count, g.ast_capacity, g.ast_capacity * sizeof(*g.ast_list));
+    g.string_types.report();
+    g.pointers.report();
 #if AstStatistics
-    if (print_stats) g.stats.dump();
+    g.stats.report();
 #endif
+}
+
+public fn void deinit() {
+    Globals* g = globals;
     g.names_pool = nil;
     g.ast_count = 0;
     g.ast_capacity = 0;

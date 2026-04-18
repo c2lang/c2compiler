@@ -17,8 +17,9 @@ module ast;
 
 import ast_context;
 
-import string local;
+import stdio local;
 import stdlib local;
+import string local;
 
 /*
     This pool is used to lookup pointers to a certain type. It keeps 4 variants:
@@ -89,3 +90,7 @@ fn QualType StringTypePool.get(StringTypePool* p, u32 len) {
     return qt;
 }
 
+fn void StringTypePool.report(const StringTypePool* p) {
+    printf("string_pool: %d/%d, %d bytes\n",
+           p.count, p.capacity, sizeof(*p) + p.capacity * sizeof(*p.slots));
+}

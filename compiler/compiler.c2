@@ -102,11 +102,15 @@ public fn void build(string_pool.Pool* auxPool,
         c.astPool.report("astPool");
         c.auxPool.report("auxPool");
     }
+    if (opts.print_ast_stats) {
+        ast.report();
+    }
 
     diags.printStatus();
 
     pluginHandler.end_target(pluginHandler.arg);
-    ast.deinit(c.opts.print_ast_stats);
+
+    ast.deinit();
     c.free();
 }
 
