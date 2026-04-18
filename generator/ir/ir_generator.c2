@@ -224,6 +224,7 @@ fn ir.Type Generator.type2irtype(Generator* gen, QualType qt) {
     case Void:
         return None;
     case Pointer:
+    case Function:
         // TODO 32-bits
         return ir.Type.I64;
     case Array:
@@ -247,9 +248,6 @@ fn ir.Type Generator.type2irtype(Generator* gen, QualType qt) {
     case Enum:
         EnumType* et = canon.getEnum();
         return gen.type2irtype(et.getImplType());
-    case Function:
-        // TODO 32-bits
-        return ir.Type.I64;
     case Alias:
         assert(0);
         break;

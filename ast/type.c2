@@ -31,8 +31,9 @@ public type TypeKind enum u8 (const char* const name) {
 
 type TypeBits struct {
     TypeKind kind : 8;
+    u32 align : 8;
 }
-const u32 NumTypeBits = 8;
+const u32 NumTypeBits = 16;
 
 public type Type struct @(opaque) {
     union {
@@ -48,6 +49,7 @@ public type Type struct @(opaque) {
 fn void Type.init(Type* t, TypeKind k) {
     t.bits = 0;
     t.typeBits.kind = k;
+    t.typeBits.align = 0;
     t.ptr_pool_idx = 0;
     t.canonicalType.ptr = 0;
 }
@@ -101,13 +103,16 @@ public fn void Type.dump(const Type* t) @(unused) {
     ast.flushDumpBuf(out);
 }
 
-fn u32 Type.getAlignment(const Type* t) {
+fn void Type.setAlignment(Type* t, u32 align) {
+    t.typeBits.align = align;
+}
+
+public fn u32 Type.getAlignment(const Type* t) {
     switch (t.getKind()) {
     case Builtin:
-        const BuiltinType* bi = (BuiltinType*)t;
-        return bi.getAlignment();
     case Pointer:
-        break;
+    case Function:
+        return t.typeBits.align;
     case Array:
         const ArrayType* at = (ArrayType*)t;
         QualType elem = at.getElemType();
@@ -121,8 +126,6 @@ fn u32 Type.getAlignment(const Type* t) {
         const EnumTypeDecl* etd = e.getDecl();
         QualType it = etd.getImplType();
         return it.getTypeOrNil().getAlignment();
-    case Function:
-        break;
     case Void:
         return 0;
     case Alias:
@@ -132,7 +135,7 @@ fn u32 Type.getAlignment(const Type* t) {
         // should not happen
         return 0;
     }
-    return getWordSize();
+    return 0;
 }
 
 fn u32 Type.getElemSize(const Type* t) {
@@ -159,7 +162,8 @@ fn u32 Type.getSize(const Type* t) {
         const BuiltinType* bi = (BuiltinType*)t;
         return bi.getAlignment();   // note: alignment is size
     case Pointer:
-        break;
+    case Function:
+        return t.getAlignment();
     case Array:
         const ArrayType* at = (ArrayType*)t;
         QualType elem = at.getElemType();
@@ -173,8 +177,6 @@ fn u32 Type.getSize(const Type* t) {
         const EnumTypeDecl* etd = e.getDecl();
         QualType it = etd.getImplType();
         return it.getSize();
-    case Function:
-        break;
     case Void:
         return 0;
     case Alias:
@@ -184,7 +186,7 @@ fn u32 Type.getSize(const Type* t) {
         // should not happen
         return 0;
     }
-    return getWordSize();
+    return 0;
 }
 
 fn void Type.print(const Type* t, string_buffer.Buf* out) {

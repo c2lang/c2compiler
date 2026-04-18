@@ -42,11 +42,12 @@ type PointerPool struct {
 }
 
 fn void PointerPool.init(PointerPool* p, ast_context.Context* c) {
+    p.context = c;
     p.count = 1;    // skip first slot
     p.capacity = 0;
     p.slots = nil;
-    p.context = c;
     p.resize(64);
+    memset(p.slots, 0, sizeof(p.slots[0]));
 }
 
 fn void PointerPool.clear(PointerPool* p) {

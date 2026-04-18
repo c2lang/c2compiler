@@ -27,6 +27,7 @@ public type PointerType struct @(opaque) {
 fn PointerType* PointerType.create(ast_context.Context* c, QualType inner) {
     PointerType* t = c.alloc(sizeof(PointerType));
     t.base.init(Pointer);
+    t.base.setAlignment(c.getWordSize());
     t.inner = inner;
 #if AstStatistics
     Stats.addType(Pointer, sizeof(PointerType));

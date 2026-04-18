@@ -128,9 +128,6 @@ fn ExprWidth getUnaryOpWidth(const UnaryOperator* u) {
         // TODO adjust for integer promotion?
         return getExprWidth(u.getInner());
     case AddrOf:
-        w.width = (u8)(ast.getWordSize() * 8);
-        w.is_signed = false;
-        break;
     case Deref:
         Expr* e = (Expr*)u;
         return getTypeWidth(e.getType());
@@ -228,7 +225,7 @@ fn ExprWidth getTypeWidth(QualType qt) {
         return result;
     }
     // pointer or something
-    ExprWidth result = { .width = (u8)(ast.getWordSize() * 8), .is_signed = false }
+    ExprWidth result = { .width = (u8)(qt.getAlignment() * 8), .is_signed = false }
     return result;
 }
 

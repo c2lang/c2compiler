@@ -1456,7 +1456,7 @@ fn void Generator.emit_external_header(Generator* gen, string_buffer.Buf* out) {
     out.add(Include_guard1);
     out.add(Warning_control);
     out.add(C_types);
-    if (ast.getWordSize() == 4) {
+    if (gen.targetInfo.intWidth == 32) {
         // ILP32 (32-bit int, long and pointers)
         out.add(```c
                 typedef signed long long i64;

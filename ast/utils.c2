@@ -105,7 +105,6 @@ public type Globals struct @(opaque) {
     string_pool.Pool* names_pool;
     PointerPool pointers;
     StringTypePool string_types;
-    u32 wordsize;       // 4 or 8 (in bytes)
     bool use_color;
     // TODO just use AST vector (also in modules, but modules has ownership)
     u32 ast_count;      // Note: first index used to indicate nil
@@ -127,11 +126,10 @@ public fn Globals* getGlobals() { return globals; }
 public fn void setGlobals(Globals* g) @(unused) { globals = g; }
 
 // wordsize in bytes, must NOT be called from Plugin!
-public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, bool use_color) {
+public fn void initialize(Context* c, string_pool.Pool* astPool, bool use_color) {
     Globals* g = stdlib.calloc(sizeof(Globals), 1);
     g.pointers.init(c);
     g.string_types.init(c);
-    g.wordsize = wordsize;
     g.use_color = use_color;
     g.names_pool = astPool;
     g.ast_count = 1;
@@ -145,7 +143,7 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, u32 wordsize, b
 
     // create all Qualtypes for builtin-types
     for (BuiltinKind kind = BuiltinKind.min; kind <= BuiltinKind.max; kind++) {
-        g.builtins[kind].set((Type*)BuiltinType.create(c, kind, wordsize));
+        g.builtins[kind].set((Type*)BuiltinType.create(c, kind));
     }
 
     // create void type and void-ptr type
@@ -178,10 +176,6 @@ public fn void deinit() {
     g.dump_buf.free();
     stdlib.free(g);
     globals = nil;
-}
-
-public fn u32 getWordSize() {
-    return globals.wordsize;
 }
 
 public fn bool useColor() @(unused) {
@@ -255,10 +249,6 @@ fn void flushDumpBuf(string_buffer.Buf* out) {
     out.color(col_Normal);
     stdio.puts(out.data());
     out.clear();
-}
-
-public fn BuiltinKind getNativeKind() {
-    return globals.wordsize == 8 ? UInt64 : UInt32;
 }
 
 Color col_Stmt = Color.Bmagenta;

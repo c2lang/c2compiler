@@ -118,7 +118,7 @@ public type Checker struct {
 public fn void Checker.init(Checker* c, diagnostics.Diags* diags, ast_builder.Builder* builder) {
     c.diags = diags;
     c.builder = builder;
-    c.native_kind = ast.getNativeKind();
+    c.native_kind = builder.getNativeKind();
     // leave other fields uninitialized
 }
 

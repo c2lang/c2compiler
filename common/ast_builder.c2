@@ -37,10 +37,11 @@ public type Builder struct @(opaque) {
     Module* mod;                // no ownership
     AST* ast;
     u32 ast_idx;
-    u32 c2_name;
-    u32 main_name;
+    u32 c2_name;        // index into astPool
+    u32 main_name;      // index into astPool
     bool is_interface;
     bool is_private;
+    BuiltinKind native_kind;
 
     Attr[8] attrs;
     u32 num_attrs;
@@ -63,6 +64,7 @@ public fn Builder* create(Context* context,
     b.auxPool = auxPool;
     b.c2_name = c2_name;
     b.main_name = main_name;
+    b.native_kind = context.getWordSize() == 8 ? UInt64 : UInt32;
     b.attr_handler = attr_handler_;
 
     return b;
@@ -93,6 +95,10 @@ public fn bool Builder.setExternal(Builder* b, bool is_interface) {
     bool was_interface = b.is_interface;
     b.is_interface = is_interface;
     return was_interface;
+}
+
+public fn BuiltinKind Builder.getNativeKind(Builder* b) {
+    return b.native_kind;
 }
 
 public fn void Builder.actOnModule(Builder* b,

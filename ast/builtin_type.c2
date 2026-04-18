@@ -24,10 +24,10 @@ public type BuiltinKind enum u8 (public const char* const name,
                                  const bool is_signed,
                                  const bool is_unsigned,
                                  const bool is_integer,
-                                 const u8 default_size,
-                                 const u8 default_width)
+                                 const u8 align,
+                                 const u8 width)
 {
-    // Note: default_size/width is adjusted for 32-bit in globals
+    // Note: align/width is adjusted for 32-bit in globals
     Char        : { "char",  true,  false, true,  true,  1,  8 },
     Int8        : { "i8",    true,  true,  false, true,  1,  8 },
     Int16       : { "i16",   true,  true,  false, true,  2, 16 },
@@ -39,17 +39,16 @@ public type BuiltinKind enum u8 (public const char* const name,
     UInt64      : { "u64",   false, false, true,  true,  8, 64 },
     Float32     : { "f32",   false, true,  false, false, 4,  0 },
     Float64     : { "f64",   false, true,  false, false, 8,  0 },
-    ISize       : { "isize", false, true,  false, true,  8, 64 },
-    USize       : { "usize", false, false, true,  true,  8, 64 },
+    ISize       : { "isize", false, true,  false, true,  0,  0 },
+    USize       : { "usize", false, false, true,  true,  0,  0 },
     Bool        : { "bool",  true,  false, false, false, 1,  1 },
 }
 
 type BuiltinTypeBits struct {
-    u32 : NumTypeBits;  // : 8
+    u32 : NumTypeBits;  // : 16
     BuiltinKind kind : 4;
     BuiltinKind base_kind : 4;
     u32 width : 8;
-    u32 size : 8;
 }
 static_assert(sizeof(BuiltinTypeBits), 4);
 
@@ -57,16 +56,16 @@ public type BuiltinType struct @(opaque) {
     Type base;
 }
 
-fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind, u32 wordsize) {
+fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
+    BuiltinKind base_kind = kind;
+    if (kind == ISize) base_kind = (c.getWordSize() == 4) ? Int32 : Int64;
+    if (kind == USize) base_kind = (c.getWordSize() == 4) ? UInt32 : UInt64;
     BuiltinType* b = c.alloc(sizeof(BuiltinType));
     b.base.init(Builtin);
-    BuiltinKind base_kind = kind;
-    if (kind == ISize) base_kind = (wordsize == 4) ? Int32 : Int64;
-    if (kind == USize) base_kind = (wordsize == 4) ? UInt32 : UInt64;
     b.base.builtinTypeBits.kind = kind;
     b.base.builtinTypeBits.base_kind = base_kind;
-    b.base.builtinTypeBits.width = base_kind.default_width;
-    b.base.builtinTypeBits.size = base_kind.default_size;
+    b.base.builtinTypeBits.width = base_kind.width;
+    b.base.setAlignment(base_kind.align);
     b.base.setCanonicalType(QualType.create(&b.base));
 #if AstStatistics
     Stats.addType(Builtin, sizeof(BuiltinType));
@@ -120,7 +119,7 @@ public fn bool BuiltinType.isUnsigned(const BuiltinType* b) {
 }
 
 public fn u32 BuiltinType.getAlignment(const BuiltinType* b) {
-    return b.base.builtinTypeBits.size;
+    return b.base.typeBits.align;
 }
 
 public fn u32 BuiltinType.getWidth(const BuiltinType* b) {

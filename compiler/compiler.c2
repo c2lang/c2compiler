@@ -206,7 +206,6 @@ fn void Compiler.build(Compiler* c,
     diags.setWarningAsError(target.getWarnings().are_errors);
     c.diags.clear();
 
-    c.context = ast_context.create(16*1024);
     c.astPool = string_pool.create(128*1024, 4096);
 
     // Note: keywords must be added first
@@ -218,15 +217,6 @@ fn void Compiler.build(Compiler* c,
     c.c2_name = c.auxPool.addStr("c2", true);
 
     c.parse_queue.init(false, 64);
-
-    c.attr_handler = attr_handler.create(diags, c.astPool, target.getWarnings());
-    c.builder = ast_builder.create(c.context,
-                                   diags,
-                                   c.astPool,
-                                   c.auxPool,
-                                   c2_idx,
-                                   c.main_idx,
-                                   c.attr_handler);
 
     c.allmodules.init(false, 128);
     c.components.init();
@@ -289,6 +279,21 @@ fn void Compiler.build(Compiler* c,
 #ifndef BOOTSTRAP
     c.addFeature("EXPERIMENTAL", "1");
 #endif
+
+    // TODO: reorganize these objects:
+    //  ast.AstContext should the global object
+    c.context = ast_context.create(16*1024, c.targetInfo.intWidth / 8);
+    ast.initialize(c.context, c.astPool, color.useColor());
+
+    c.attr_handler = attr_handler.create(diags, c.astPool, target.getWarnings());
+    c.builder = ast_builder.create(c.context,
+                                   diags,
+                                   c.astPool,
+                                   c.auxPool,
+                                   c2_idx,
+                                   c.main_idx,
+                                   c.attr_handler);
+
     c.parser = c2_parser.create(sm,
                                 diags,
                                 c.astPool,
@@ -296,8 +301,6 @@ fn void Compiler.build(Compiler* c,
                                 &c.kwinfo,
                                 c.target.getFeatures(),
                                 c.target.hasAsserts());
-
-    ast.initialize(c.context, c.astPool, c.targetInfo.intWidth / 8, color.useColor());
 
     c.analyser = module_analyser.create(c.diags,
                                         c.context,

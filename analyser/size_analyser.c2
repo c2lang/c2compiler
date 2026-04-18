@@ -185,21 +185,20 @@ public fn TypeSize sizeOfType(QualType qt) {
 
     if (qt.isInvalid()) return result;
 
-    u32 pointerSize = getWordSize();
-
     qt = qt.getCanonicalType();
     Type* t = qt.getType();
     switch (t.getKind()) {
     case Builtin:
         const BuiltinType* bi = (BuiltinType*)t;
         // NOTE: alignment is also size
-        result.size = bi.getAlignment();
-        result.align = result.size;
+        result.align = bi.getAlignment();
+        result.size = result.align;
         result.is_signed = bi.isSigned();
         break;
     case Pointer:
-        result.size = pointerSize;
-        result.align = result.size;
+    case Function:
+        result.align = t.getAlignment();
+        result.size = result.align;
         break;
     case Array:
         ArrayType* arrayType = (ArrayType*)t;
@@ -218,10 +217,6 @@ public fn TypeSize sizeOfType(QualType qt) {
         EnumType* et = (EnumType*)t;
         EnumTypeDecl* etd = et.getDecl();
         return sizeOfType(etd.getImplType());
-    case Function:
-        result.size = pointerSize;
-        result.align = pointerSize;
-        break;
     case Void:
         result.size = 0;
         result.align = 0;
