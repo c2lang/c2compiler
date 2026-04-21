@@ -1006,16 +1006,12 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
             break;
         default:
             char cc = tok.char_value;
-            out.add1('\'');
             out.encodeBytes(&cc, 1, '\'');
-            out.add1('\'');
             break;
         }
         break;
     case StringLiteral:
-        out.add1('"');
         out.encodeBytes(p.pool.idx2str(tok.text_idx), tok.text_len, '"');
-        out.add1('"');
         out.color(color.Normal);
         out.print(" (len %d)", tok.text_len);
         break;

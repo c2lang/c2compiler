@@ -216,6 +216,7 @@ public fn u32 Buf.getColumn(const Buf* buf) {
 
 public fn u32 Buf.encodeBytes(Buf* buf, const char* p, u32 len, char sep) {
     u32 size = buf.size_;
+    if (sep) buf.add1(sep);
     u32 copy = 0;
     const char* end = p + len;
     while (p < end) {
@@ -230,7 +231,7 @@ public fn u32 Buf.encodeBytes(Buf* buf, const char* p, u32 len, char sep) {
         case '\v':  c = 'v'; goto add_char;
         case '"':
         case '\'':
-            if (sep && sep != c) goto normal;
+            if (sep && c != sep) goto normal;
             fallthrough;
         case '\\':
         add_char:
@@ -261,6 +262,7 @@ public fn u32 Buf.encodeBytes(Buf* buf, const char* p, u32 len, char sep) {
         }
     }
     if (copy) buf.add2(p - copy, copy);
+    if (sep) buf.add1(sep);
     return buf.size_ - size;
 }
 

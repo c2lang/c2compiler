@@ -73,10 +73,8 @@ public fn void CharLiteral.printLiteral(const CharLiteral* e, string_buffer.Buf*
         out.print("'\\x%02x'", c);
         return;
     default:
-        out.add1('\'');
         char cc = c;
         out.encodeBytes(&cc, 1, '\'');
-        out.add1('\'');
         return;
     }
 }

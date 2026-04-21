@@ -177,18 +177,14 @@ fn void Generator.emitStringLiteral(Generator* gen, string_buffer.Buf* out, cons
             while (i < len && p[i] == '\n') i++;
             if (i == len) break;
             u32 col = out.getColumn();
-            out.add1('"');
             out.encodeBytes(p, i, '"');
-            out.add1('"');
             out.newline();
             while (col-- > 0) out.add1(' ');
             p += i;
             len -= i;
         }
     }
-    out.add1('"');
     out.encodeBytes(p, len, '"');
-    out.add1('"');
 }
 
 fn void Generator.emitBitOffset(Generator* gen, string_buffer.Buf* out, Expr* base, Expr* index, C_Prec prec) {
