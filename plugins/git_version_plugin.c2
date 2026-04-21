@@ -88,8 +88,8 @@ fn void generate_module(void* arg) {
     ref.setBuiltin(Char, 0);
 
     // create variable
-    u32 version = p.info.astPool.addStr(p.version, false);
     u32 len = (u32)strlen(p.version);
+    u32 version = p.info.astPool.add(p.version, len, false);
     ast.StringLiteral* str = ast.StringLiteral.create(p.info.context, 0, len, version, len);
     ast.Expr* initExpr = (ast.Expr*)str;
     ast.VarDecl* vd = ast.VarDecl.create(p.info.context, GlobalVar, var_name, 0, true, &ref, a.getIdx(), 0, false, initExpr);

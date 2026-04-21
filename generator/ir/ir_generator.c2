@@ -289,7 +289,7 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         break;
     case StringLiteral:
         const StringLiteral* s = (StringLiteral*)e;
-        gen.ctx.addInitString(gen.idx2name(s.getText()), s.strlen());
+        gen.ctx.addInitString(gen.idx2name(s.getText()), s.getLength());
         break;
     case Nil:
         assert(0);  // should be CTV

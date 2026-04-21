@@ -135,6 +135,7 @@ fn void print_function(const void* arg1, const void* arg2, const FunctionInfo* f
     c.print_function(arg2, fi, label);
 }
 
+// TODO: handle embedded null bytes
 public fn SymbolId Context.addStringLiteral(Context* c, const char* name, const char* text, u32 size) {
 #if DebugIr
     stdio.printf("addStringLiteral(%s)\n", text);
@@ -265,10 +266,11 @@ public fn void Context.addInitSymbol(Context* c, SymbolId id) {
     v.init(Symbol, id);
 }
 
-// size = strlen()
-public fn void Context.addInitString(Context* c, const char* text, u32 size) {
+// size is the length of the string literal
+// TODO: handle embedded null bytes
+public fn void Context.addInitString(Context* c, const char* text, u32 len) {
     InitValue* v = c.init_values.add();
-    u32 text_idx = c.pool.add(text, size, false);
+    u32 text_idx = c.pool.add(text, len, false);
     v.init(Text, text_idx);
 }
 

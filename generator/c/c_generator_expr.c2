@@ -168,7 +168,7 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
 
 fn void Generator.emitStringLiteral(Generator* gen, string_buffer.Buf* out, const StringLiteral* s, bool raw = false) {
     const char* p = gen.idx2name(s.getText());
-    u32 len = s.getSize() - 1;
+    u32 len = s.getLength();
     if (!raw && len > 10) {
         // break long string with embedded newlines on multiple lines
         for (;;) {

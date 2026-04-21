@@ -183,7 +183,7 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
                     StringLiteral* lit = (StringLiteral*)e;
                     const char *str = ma.idx2name(lit.getText());
                     index = 1;  // empty string has index 1
-                    u8 slen = (lit.getSize() - 1) & 0xFF;
+                    u8 slen = lit.getLength() & 0xFF;
                     if (slen) {
                         // encode non emty strings, increment str_index
                         index = str_index++;
@@ -405,7 +405,7 @@ fn bool Analyser.analyseCaseExpr(Analyser* ma,
             } else
             if (orig.isStringLiteral()) {
                 StringLiteral* lit = (StringLiteral*)orig;
-                u32 len = lit.getSize() - 1;
+                u32 len = lit.getLength();
                 if (len > 255) {
                     ma.error(cond.getLoc(), "string switch case string is loo long (max 255 bytes)");
                     return false;
