@@ -48,8 +48,10 @@ public fn void Finder.check(Finder* s, Decl* d) {
         s.handleEnumType((EnumTypeDecl*)d);
         break;
     case EnumConstant:
-        d.dump();
-        //assert(0); // TODO
+        QualType qt = d.getType();
+        EnumType* et = qt.getEnumTypeOrNil();
+        EnumTypeDecl* etd = et.getDecl();
+        s.handleEnumType(etd);
         break;
     case FunctionType:
         FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;

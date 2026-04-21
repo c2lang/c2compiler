@@ -1,0 +1,107 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c no-build
+
+// @file{enum_assoc_builder.c2}
+module ast;
+
+fn void foo(Stats* stats) {
+    stats.add(BuiltinType, 1);
+}
+
+// @file{enum_assoc.c2}
+module ast;
+
+import stdio local;
+
+public fn i32 main() {
+    Stats stats = {}
+    foo(&stats);        // from a different file
+    stats.report();
+    return 0;
+}
+
+type StatGroup enum u8 (const char* const name) {
+    Type : { "Types" },
+}
+
+type StatKind enum u8 (const StatGroup group, const char* const name) {
+    BuiltinType : { Type, "BuiltinType" },
+}
+
+type Stats struct {
+    u32[elemsof(StatKind)] count;
+    u32[elemsof(StatKind)] size;
+}
+
+fn void Stats.add(Stats* s, StatKind kind, u32 size) {
+    s.count[kind]++;
+    s.size[kind] += (size + 7) & ~0x7;
+}
+
+fn void Stats.report(const Stats* s) {
+    for (StatGroup group = StatGroup.min; group <= StatGroup.max; group++) {
+        printf("--- %s ---\n", group.name);
+        for (StatKind kind = StatKind.min; kind <= StatKind.max; kind++) {
+            if (kind.group == group)
+                printf("  %20s  %6d  %7d\n", kind.name, s.size[kind], s.count[kind]);
+        }
+    }
+}
+
+// @expect{atleast, cgen/build.c}
+
+typedef struct ast_Stats_ ast_Stats;
+
+static const char* const ast_StatGroup__name[1] = { "Types" };
+typedef u8 ast_StatGroup;
+enum ast_StatGroup {
+   ast_StatGroup_Type,
+};
+
+static const ast_StatGroup ast_StatKind__group[1] = { ast_StatGroup_Type };
+static const char* const ast_StatKind__name[1] = { "BuiltinType" };
+static void ast_foo(ast_Stats* stats);
+typedef u8 ast_StatKind;
+enum ast_StatKind {
+   ast_StatKind_BuiltinType,
+};
+
+struct ast_Stats_ {
+   u32 count[1];
+   u32 size[1];
+};
+
+int main(void);
+static void ast_Stats_add(ast_Stats* s, ast_StatKind kind, u32 size);
+static void ast_Stats_report(const ast_Stats* s);
+
+static void ast_foo(ast_Stats* stats)
+{
+   ast_Stats_add(stats, ast_StatKind_BuiltinType, 1);
+}
+
+int main(void)
+{
+   ast_Stats stats = {};
+   ast_foo(&stats);
+   ast_Stats_report(&stats);
+   return 0;
+}
+
+static void ast_Stats_add(ast_Stats* s, ast_StatKind kind, u32 size)
+{
+   s->count[kind]++;
+   s->size[kind] += (size + 7) & ~0x7;
+}
+
+static void ast_Stats_report(const ast_Stats* s)
+{
+   for (ast_StatGroup group = ast_StatGroup_Type; group <= ast_StatGroup_Type; group++) {
+      printf("--- %s ---\n", ast_StatGroup__name[group]);
+      for (ast_StatKind kind = ast_StatKind_BuiltinType; kind <= ast_StatKind_BuiltinType; kind++) {
+         if (ast_StatKind__group[kind] == group) printf("  %20s  %6u  %7u\n", ast_StatKind__name[kind], s->size[kind], s->count[kind]);
+      }
+   }
+}
+

@@ -767,15 +767,12 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
         gen.addFragment(f, d.isPublic());
         break;
     case EnumConstant:
-        // Can happen, we need to generate the containing enum then
-        // TODO
-        console.warn("TODO gen enum %d", d.isGenerated());
-/*
-        // Q: move this part to enum_constant_decl.c2? or ast_utils?
+        Fragment* f = gen.getFragment();
         QualType qt = d.getType();
         EnumType* et = qt.getEnumTypeOrNil();
         EnumTypeDecl* etd = et.getDecl();
-*/
+        gen.emitEnumType(f.buf, (Decl*)etd);
+        gen.addFragment(f, d.isPublic());
         break;
     case FunctionType:
         Fragment* f = gen.getFragment();
