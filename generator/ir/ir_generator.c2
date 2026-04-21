@@ -195,7 +195,7 @@ fn const char* Generator.createStringVar(Generator* gen) {
 }
 
 const ir.Type[BuiltinKind] Ast_type2ir_type = {
-    [Char]    = I8,
+    [Char]    = U8,
     [Int8]    = I8,
     [Int16]   = I16,
     [Int32]   = I32,
