@@ -84,7 +84,7 @@ trace: trace_calls
 	cat output/c2c/calls
 
 alloc_trace: $(C2C) output/c2c_trace/c2c_trace
-	C2_TRACE="min=10;min2=1;mode=3;name=stdlib.malloc,stdlib.calloc;fd=2" output/c2c_trace/c2c_trace c2c -o c2c_alloc --test 2> output/c2c/calls
+	C2_TRACE="min=10;min2=1;mode=3;name=stdlib.malloc,stdlib.calloc,stdlib.realloc;fd=2" output/c2c_trace/c2c_trace c2c -o c2c_alloc --test 2> output/c2c/calls
 	cat output/c2c/calls
 
 errors:

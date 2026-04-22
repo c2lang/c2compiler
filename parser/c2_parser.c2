@@ -546,7 +546,7 @@ fn void Parser.parseFunctionDecl2(Parser* p, u32 func_name, SrcLoc func_loc,
         p.errorAt(func_loc, "a function name must start with a lower case character");
     }
 
-    DeclList params.init();
+    VarDeclList params.init();
 
     bool is_variadic = p.parseFunctionParams(&params, is_public, true);
 
@@ -566,7 +566,7 @@ fn void Parser.parseFunctionDecl2(Parser* p, u32 func_name, SrcLoc func_loc,
                                                 rtype,
                                                 template_name,
                                                 template_loc,
-                                                (VarDecl**)params.getDecls(),
+                                                params.getData(),
                                                 params.size(),
                                                 is_variadic);
     } else {
@@ -575,7 +575,7 @@ fn void Parser.parseFunctionDecl2(Parser* p, u32 func_name, SrcLoc func_loc,
                                         is_public,
                                         rtype,
                                         prefix,
-                                        (VarDecl**)params.getDecls(),
+                                        params.getData(),
                                         params.size(),
                                         is_variadic);
     }
@@ -603,7 +603,7 @@ fn void Parser.parseFunctionDecl2(Parser* p, u32 func_name, SrcLoc func_loc,
     p.builder.actOnFunctionBody(f, body);
 }
 
-fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public, bool accept_default) {
+fn bool Parser.parseFunctionParams(Parser* p, VarDeclList* params, bool is_public, bool accept_default) {
     p.expectAndConsume(LParen);
 
     // fast path for ()
@@ -625,7 +625,7 @@ fn bool Parser.parseFunctionParams(Parser* p, DeclList* params, bool is_public, 
     while (p.tok.kind != RParen) {
         VarDecl* decl = p.parseParamDecl(is_public, accept_default);
         decl.setOffset(params.count);  // set argument number
-        params.add(decl.asDecl());
+        params.add(decl);
 
         if (p.tok.kind != Comma) break;
         p.consumeToken();
@@ -658,12 +658,12 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool accept_default
         TypeRefHolder rtype.init();
         p.parseSingleTypeSpecifier(&rtype);
 
-        DeclList params.init();
+        VarDeclList params.init();
 
         bool is_variadic = p.parseFunctionParams(&params, is_public, false);
 
         Decl* fd = p.builder.actOnFunctionType(&rtype,
-                                               (VarDecl**)params.getDecls(),
+                                               params.getData(),
                                                params.size(),
                                                is_variadic,
                                                Param);

@@ -56,14 +56,14 @@ fn void Parser.parseFunctionType(Parser* p, u32 name, SrcLoc loc, bool is_public
     TypeRefHolder rtype.init();
     p.parseSingleTypeSpecifier(&rtype);
 
-    DeclList params.init();
+    VarDeclList params.init();
 
     bool is_variadic = p.parseFunctionParams(&params, is_public, false);
     Decl* ftd = p.builder.actOnFunctionTypeDecl(name,
                                                 loc,
                                                 is_public,
                                                 &rtype,
-                                                (VarDecl**)params.getDecls(),
+                                                params.getData(),
                                                 params.size(),
                                                 is_variadic);
     u32 num_attr = p.parseOptionalAttributes();
@@ -92,7 +92,7 @@ fn void Parser.parseStructType(Parser* p, bool is_struct, u32 name, SrcLoc loc, 
                                                   is_public,
                                                   is_struct,
                                                   true,
-                                                  members.getDecls(),
+                                                  members.getData(),
                                                   members.size());
     members.free();
 
@@ -143,7 +143,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
                                                                is_public,
                                                                is_struct,
                                                                false,
-                                                               sub_members.getDecls(),
+                                                               sub_members.getData(),
                                                                sub_members.size());
             sub_members.free();
             members.add(member.asDecl());
@@ -156,12 +156,12 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             TypeRefHolder rtype.init();
             p.parseSingleTypeSpecifier(&rtype);
 
-            DeclList params.init();
+            VarDeclList params.init();
 
             bool is_variadic = p.parseFunctionParams(&params, is_public, false);
 
             Decl* fd = p.builder.actOnFunctionType(&rtype,
-                                                   (VarDecl**)params.getDecls(),
+                                                   params.getData(),
                                                    params.size(),
                                                    is_variadic,
                                                    StructMember);
@@ -264,7 +264,7 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
 
     bool has_assoc_values = false;
     // TODO BB FIX memleak on parse error (assoc_values)
-    DeclList assoc_values.init();
+    VarDeclList assoc_values.init();
     if (p.tok.kind == LParen) {
         has_assoc_values = true;
         p.parseEnumAssocAttributes(&assoc_values);
@@ -331,9 +331,9 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
                                               is_public,
                                               is_incr,
                                               implType,
-                                              (EnumConstantDecl**)constants.getDecls(),
+                                              (EnumConstantDecl**)constants.getData(),
                                               constants.size(),
-                                              (VarDecl**)assoc_values.getDecls(),
+                                              assoc_values.getData(),
                                               (u16)assoc_values.size());
     assoc_values.free();
     constants.free();
@@ -341,7 +341,7 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
     p.applyAttributes((Decl*)d, num_attr);
 }
 
-fn void Parser.parseEnumAssocAttributes(Parser* p, DeclList* params) {
+fn void Parser.parseEnumAssocAttributes(Parser* p, VarDeclList* params) {
     p.expectAndConsume(LParen);
 
     // TODO error message is obscure: list of associate values cannot be empty
@@ -351,7 +351,7 @@ fn void Parser.parseEnumAssocAttributes(Parser* p, DeclList* params) {
     while (p.tok.kind != RParen) {
         VarDecl* decl = p.parseEnumAttribute();
         decl.setOffset(params.count);  // set argument number
-        params.add(decl.asDecl());
+        params.add(decl);
 
         if (p.tok.kind != Comma) break;
         p.consumeToken();
@@ -378,12 +378,12 @@ fn VarDecl* Parser.parseEnumAttribute(Parser* p) {
         TypeRefHolder rtype.init();
         p.parseSingleTypeSpecifier(&rtype);
 
-        DeclList params.init();
+        VarDeclList params.init();
 
         bool is_variadic = p.parseFunctionParams(&params, is_public, false);
 
         Decl* fd = p.builder.actOnFunctionType(&rtype,
-                                               (VarDecl**)params.getDecls(),
+                                               params.getData(),
                                                params.size(),
                                                is_variadic,
                                                EnumValue);
@@ -495,11 +495,10 @@ fn void Parser.parseTypedef(Parser* p, bool is_public) {
         p.consumeToken();
     }
     if (p.tok.kind == LParen) {
-        DeclList params.init();
+        VarDeclList params.init();
         bool is_variadic = p.parseFunctionParams(&params, is_public, false);
-        d = p.builder.actOnFunctionTypeDecl(type_name, loc, is_public,
-                                            &ref, (VarDecl**)params.getDecls(),
-                                            params.size(), is_variadic);
+        d = p.builder.actOnFunctionTypeDecl(type_name, loc, is_public, &ref,
+                                            params.getData(), params.size(), is_variadic);
         params.free();
     } else {
         if (p.tok.kind == LSquare) {
