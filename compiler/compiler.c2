@@ -208,7 +208,7 @@ fn void Compiler.build(Compiler* c,
     diags.setWarningAsError(target.getWarnings().are_errors);
     c.diags.clear();
 
-    c.astPool = string_pool.create(128*1024, 4096);
+    c.astPool = string_pool.create(128*1024, 8192);
 
     // Note: keywords must be added first
     c.kwinfo.init(c.astPool);

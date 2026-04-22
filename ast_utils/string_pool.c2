@@ -1,4 +1,4 @@
-/* Copyright 2022-2026 Bas van den Berg
+/* Copyright 2022-2026 Bas van den Berg, Charlie Gordon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,15 +34,26 @@ const u64 INDEX_BITS = 0xffffffff;
 const u32 INDEX_SHIFT = 0;
 const u32 DATA_ALIGN = 1 << INDEX_SHIFT;
 #endif
+const u32 BLOCK_SIZE = 16384;
+
+type Block struct {
+    u32 size;
+    u32 capacity;
+    char* data;
+}
 
 public type Pool struct @(opaque) {
-    u32 data_size;      // number of bytes used
-    u32 data_capacity;
-    char* data;
+    u32 blocks_count;
+    u32 blocks_capacity;
+    Block* blocks;
 
     // statistics
-    u32 num_adds;
+    u32 num_adds;       // number of adds including filtered ones
     u32 total_size;     // total size that would have been allocated without filtering
+    u32 num_strs;       // number of strings allocated
+    u32 data_size;      // number of bytes used in all blocks
+    u32 data_capacity;  // total size allocated
+    u32 pad;
 
     // Hashtable
     u32 hash_count;
@@ -51,26 +62,33 @@ public type Pool struct @(opaque) {
     u32 entry_capacity;
     HashEntry* entries; // contain hash table followed by collision lists
 }
-static_assert(48, sizeof(Pool));
+static_assert(64, sizeof(Pool));
 
 public fn Pool* create(u32 data_capacity, u32 hash_size) {
     Pool* p = stdlib.calloc(1, sizeof(Pool));
-    p.resize_data(data_capacity);
-    p.data[0] = 0;
-    p.data_size = DATA_ALIGN; // store empty string at index 0
 
-    /* round hash_capacity to the next power of 2, at least 256 */
-    if (hash_size & (hash_size - 1)) {
-        hash_size |= hash_size >> 16;
-        hash_size |= hash_size >> 8;
-        hash_size |= hash_size >> 4;
-        hash_size |= hash_size >> 2;
-        hash_size |= hash_size >> 1;
-        hash_size += 1;
-    }
-    if (hash_size < 256)
-        hash_size = 256;
-    /* allocate empty hash table with extra space for collision lists */
+    // initialize internal block directory
+    // data_capacity is ignored because we the initial block cannot be
+    // larger than BLOCK_SIZE otherwise offsets could too large
+    data_capacity = BLOCK_SIZE;
+    Block* bp = stdlib.malloc(4 * sizeof(Block));
+    p.blocks = bp;
+    p.blocks_capacity = 4;
+    p.blocks_count = 1;
+    bp.data = stdlib.malloc(data_capacity);
+    bp.data[0] = 0; // empty string at index 0
+    bp.size = DATA_ALIGN;
+    bp.capacity = data_capacity;
+
+    // initial stats
+    p.data_size = DATA_ALIGN;
+    p.data_capacity = data_capacity;
+
+    // round hash_size to the next power of 2, at least 256
+    while (hash_size & (hash_size - 1)) hash_size = (hash_size | (hash_size - 1)) + 1;
+    if (hash_size < 256) hash_size = 256;
+
+    // allocate empty hash table with extra space for collision lists
     p.hash_mask = hash_size - 1;
     p.entry_size = hash_size;
     p.entry_capacity = hash_size * 2;
@@ -81,14 +99,15 @@ public fn Pool* create(u32 data_capacity, u32 hash_size) {
 
 public fn void Pool.free(Pool* p) {
     stdlib.free(p.entries);
-    stdlib.free(p.data);
+    while (p.blocks_count) stdlib.free(p.blocks[--p.blocks_count].data);
+    stdlib.free(p.blocks);
     stdlib.free(p);
 }
 
 const u32 HASH_INITIAL = 13;
 const u32 HASH_PRIME = 17;
 
-fn u32 hash(const char* text, usize len) {
+fn u32 Pool.hash(const char* text, usize len) {
     // FNV-1a hash
     u32 result = HASH_INITIAL;
     for (u32 i=0; i<len; i++) {
@@ -99,11 +118,11 @@ fn u32 hash(const char* text, usize len) {
 }
 
 public fn const char* Pool.idx2str(const Pool* p, u32 idx) {
-    return p.data + idx;
+    return p.blocks[idx / BLOCK_SIZE].data + idx % BLOCK_SIZE;
 }
 
 // NOTE: right might NOT be 0-terminated!
-fn bool same_string(const char* left, const char* right, usize rlen) {
+fn bool Pool.same_string(const char* left, const char* right, usize rlen) {
     // cannot use memcmp because rlen bytes might not be accessible from left
     for (u32 i = 0; i < rlen; i++) {
         if (left[i] != right[i])
@@ -114,55 +133,74 @@ fn bool same_string(const char* left, const char* right, usize rlen) {
 
 // NOTE: text is not 0-terminated!! len is strlen(text)
 public fn u32 Pool.add(Pool* p, const char* text, usize len, bool filter) {
+    // TODO compute the number of duplicates?
     p.num_adds++;
     p.total_size += len + 1;
 
+    HashEntry hh;
+    HashEntry* hp = &hh;
     if (filter) {
-        usize i = hash(text, len) & p.hash_mask;
-        HashEntry v = p.entries[i];
+        usize h = Pool.hash(text, len) & p.hash_mask;
+        HashEntry v = p.entries[h];
         if (v != 0) {
             HashEntry next;
             /* scan the list */
             for (;;) {
                 u32 index = (v & INDEX_BITS) << INDEX_SHIFT;
-                const char* word = p.data + index;
-                if (same_string(word, text, len))
+                if (Pool.same_string(p.idx2str(index), text, len))
                     return index;
                 next = v >> NEXT_SHIFT;
                 if (next == 0)
                     break;
-                i = next;
-                v = p.entries[i];
+                h = next;
+                v = p.entries[h];
             }
             next = p.entry_size;
             if (next == p.entry_capacity) {
                 p.resize_entries(p.entry_capacity * 2);
             }
-            p.entries[i] = v | (next << NEXT_SHIFT);
+            p.entries[h] = v | (next << NEXT_SHIFT);
             p.entry_size++;
-            i = next;
+            h = next;
         }
-        p.entries[i] = (p.data_size >> INDEX_SHIFT);
+        hp = &p.entries[h];
         p.hash_count++;
     }
 
-    while (p.data_size + len + 1 > p.data_capacity) {
-        if (text >= p.data && text < p.data + p.data_size) {
-            /* adding a fragment from an existing word in the array */
-            // NOTE: users should NOT keep pointers to data, because reallocating will move the array
-            isize offset = text - p.data;
-            p.resize_data(p.data_capacity * 2);
-            text = p.data + offset;
-        } else {
-            p.resize_data(p.data_capacity * 2);
-        }
+    p.num_strs++;
+    p.data_size += len + 1;
+
+    // try the current block
+    u32 b = p.blocks_count - 1;
+    Block* bp = &p.blocks[b];
+    if (bp.size + len < bp.capacity) goto has_bp;
+
+    // try and complete a previous block
+    while (b-- > 0) {
+        bp--;
+        if (bp.size + len < bp.capacity) goto has_bp;
     }
-    u32 idx = p.data_size;
-    char* dest = p.data + idx;
+    // allocate a new block
+    if (p.blocks_count == p.blocks_capacity) {
+        // extend block directory
+        p.blocks_capacity *= 2;
+        p.blocks = stdlib.realloc(p.blocks, p.blocks_capacity * sizeof(*p.blocks));
+    }
+    b = p.blocks_count++;
+    bp = &p.blocks[b];
+    u32 block_size = BLOCK_SIZE;
+    if (len >= BLOCK_SIZE) block_size = (u32)len / DATA_ALIGN * DATA_ALIGN + DATA_ALIGN;
+    p.data_capacity += block_size;
+    bp.data = stdlib.malloc(block_size);
+    bp.size = 0;
+    bp.capacity = block_size;
+has_bp:
+    u32 idx = b * BLOCK_SIZE + bp.size;
+    char* dest = bp.data + bp.size;
     string.memcpy(dest, text, len);
     dest[len] = 0;
-    p.data_size += len / DATA_ALIGN * DATA_ALIGN + DATA_ALIGN;
-    //assert(p.data_size <= p.data_capacity);
+    bp.size += (u32)len / DATA_ALIGN * DATA_ALIGN + DATA_ALIGN;
+    *hp = (idx >> INDEX_SHIFT);
     return idx;
 }
 
@@ -170,27 +208,13 @@ public fn u32 Pool.addStr(Pool* p, const char* text, bool filter) {
     return p.add(text, string.strlen(text), filter);
 }
 
-fn void Pool.resize_data(Pool* p, u32 capacity) {
-    p.data_capacity = capacity;
-    char* data2 = stdlib.malloc(capacity);
-    if (p.data_size) {
-        string.memcpy(data2, p.data, p.data_size);
-        stdlib.free(p.data);
-    }
-    p.data = data2;
-}
-
 fn void Pool.resize_entries(Pool* p, u32 capacity) {
-    HashEntry* entries = stdlib.malloc(capacity * sizeof(HashEntry));
-    if (p.entries) {
-        string.memcpy(entries, p.entries, p.entry_size * sizeof(HashEntry));
-        stdlib.free(p.entries);
-    }
+    p.entries = stdlib.realloc(p.entries, capacity * sizeof(*p.entries));
     p.entry_capacity = capacity;
-    p.entries = entries;
 }
 
 public fn void Pool.report(const Pool* p, const char* name) @(unused) {
+    // compute bucket lengths
     u32 max = 0;
     u32 min = 999;
     u32 hash_size = p.hash_mask + 1;
@@ -206,16 +230,14 @@ public fn void Pool.report(const Pool* p, const char* name) @(unused) {
             }
             count += num;
             if (num < 256) cc[num]++;
-            if (num) {
-                if (num > max) max = num;
-                if (num < min) min = num;
-                //stdio.printf("[%4d] %d\n", i, num);
-            }
+            if (num > max) max = num;
+            if (num < min) min = num;
+            //stdio.printf("[%4d] %d\n", i, num);
         }
     }
-    stdio.printf("%s: count %d, adds %d, data %d/%d\n", name,
-                 p.hash_count, p.num_adds, p.data_size, p.data_capacity);
-
+    stdio.printf("%s: count %d/%d, adds %d/%d, data %d/%d\n",
+                 name, p.hash_count, p.num_strs, p.num_adds, p.total_size,
+                 p.data_size, p.data_capacity);
     stdio.printf("  hash: entries: %d/%d/%d/%d, min %d, max %d, avg %.2f, memory %d\n",
                  hash_size, count, p.entry_size, p.entry_capacity,
                  min, max, count ? (count + 0.0) / (hash_size - cc[0]) : 0.0,
@@ -226,14 +248,13 @@ public fn void Pool.report(const Pool* p, const char* name) @(unused) {
     stdio.printf("\n");
 
 #if 0
-    const char* end = p.data + p.data_size;
-    const char* cp = p.data;
-    u32 idx = 0;
-    while (cp < end) {
-        stdio.printf("  [%5u] %s\n", idx, cp);
-        idx++;
-        while (*cp != 0) cp++;
-        cp++;
+    for (u32 b = 0; b < p.blocks_count; b++) {
+        Block* bp = p.blocks[b];
+        for (u32 idx = 0; idx < bp.size; idx = idx / DATA_ALIGN * DATA_ALIGN + DATA_ALIGN) {
+            const char* cp = bp.data + idx;
+            stdio.printf("  [%5u] %s\n", b * BLOCK_SIZE + idx, cp);
+            idx += string.strlen(cp);
+        }
     }
 #endif
 }
