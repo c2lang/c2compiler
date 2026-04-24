@@ -46,7 +46,7 @@ public fn i32 main(i32 argc, char** argv) {
 
     yaml.Parser* parser = yaml.Parser.create();
 
-    bool ok = parser.parse((char*)file.region);
+    bool ok = parser.parse(file.data());
     if (ok) {
         parser.dump(true);
         get_info(parser);

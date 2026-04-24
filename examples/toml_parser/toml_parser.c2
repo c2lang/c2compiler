@@ -120,8 +120,8 @@ fn bool Parser.parse(Parser* p, const char* input, char* diagMsg, Blocks* blocks
     p.errorMsg[0] = 0;
 
     p.blocks = blocks;
-    memset((void*)p.parents, 0, sizeof(Node*)*MaxDepth);
-    memset((void*)p.lastChild, 0, sizeof(Node*)*MaxDepth);
+    memset(p.parents, 0, sizeof(Node*) * MaxDepth);
+    memset(p.lastChild, 0, sizeof(Node*) * MaxDepth);
     p.numParents = 0;
     p.topParent = nil;
 
@@ -419,7 +419,7 @@ public fn bool Reader.parse(Reader* r, const char* filename) {
         return false;
     }
     Parser parser;
-    bool status = parser.parse((const char*)file.data(), r.message, r.blocks);
+    bool status = parser.parse(file.data(), r.message, r.blocks);
     file.close();
 
 #if DEBUG_NODES

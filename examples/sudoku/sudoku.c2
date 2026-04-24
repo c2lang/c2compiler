@@ -151,7 +151,7 @@ fn void Board.printOptions(const Board* board) {
         for (u8 x=0; x<9; x++) {
             const Field* f = &board.fields[y*9 + x];
             u32 offset = (1 + 4 * y) * width + (1 + 8 * x);
-            u8* square = (u8*)&buffer[offset];
+            char* square = &buffer[offset];
             for (u8 o=1; o<10; o++) {
                 if (f.options & (1<<o)) {
                     u32 h = (o-1) % 3;

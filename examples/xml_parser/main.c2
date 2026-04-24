@@ -37,7 +37,7 @@ public fn i32 main(i32 argc, char** argv) {
     }
 
     xml.Parser parser;
-    if (!parser.parse(file.char_data(), verbose)) {
+    if (!parser.parse(file.data(), verbose)) {
         printf("error parsing %s: %s\n", filename, parser.getDiag());
     }
 

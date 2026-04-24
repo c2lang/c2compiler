@@ -64,7 +64,7 @@ public fn i32 main(i32 argc, char** argv) {
             return 0;
         }
 
-        if (!parser.parse((const char*)file.data())) {
+        if (!parser.parse(file.data())) {
             fprintf(stderr, "error parsing %s: %s\n", filename, parser.getDiag());
             return -1;
         }

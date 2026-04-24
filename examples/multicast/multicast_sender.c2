@@ -84,7 +84,7 @@ fn void Sender.open_socket(Sender* s) {
     //printf("sending to %s, port %d\n", s.ipnr, s.port);
 }
 
-public fn void Sender.broadcast(Sender* s, const u8* data, u32 size) {
+public fn void Sender.broadcast(Sender* s, const void* data, u32 size) {
     if (send(s.fd, data, size, 0) < 0) {
         fprintf(stderr, "send: %s\n", strerror(*errno2()));
         exit(EXIT_FAILURE);

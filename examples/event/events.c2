@@ -121,7 +121,7 @@ fn void Base.writeCmd(Base* base, Cmd* cmd) {
 }
 
 fn void handlePipe(i32 fd, void* arg, u16 flags) {
-    Base* base = (Base*)arg;
+    Base* base = arg;
     Cmd cmd;
     i64 numread = read(base.read_pipe, &cmd, sizeof(Cmd));
     // TODO assert numread

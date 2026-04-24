@@ -84,7 +84,7 @@ public fn Iter Parser.getNodeChildIter(const Parser* p, const Node* n) {
 }
 
 public fn void Iter.next(Iter* iter) {
-    const Data* d = (Data*)iter.data;
+    const Data* d = iter.data;
     if (iter.node) {
         if (iter.node.next_idx) iter.node = d.idx2node(iter.node.next_idx);
         else iter.node = nil;
@@ -96,13 +96,13 @@ public fn bool Iter.done(const Iter* iter) {
 }
 
 public fn const char* Iter.getName(const Iter* iter) {
-    const Data* d = (Data*)iter.data;
+    const Data* d = iter.data;
     if (iter.node) return &d.text[iter.node.name_idx];
     return nil;
 }
 
 public fn const char* Iter.getValue(const Iter* iter) {
-    const Data* d = (Data*)iter.data;
+    const Data* d = iter.data;
     if (iter.node && iter.node.kind == NodeKind.Scalar) return &d.text[iter.node.text_idx];
     return nil;
 }
@@ -113,7 +113,7 @@ public fn Iter Iter.getChildIter(Iter* parent) {
 
     const Node* n = parent.node;
     if (n.kind != NodeKind.Scalar && n.child_idx) {
-        const Data* d = (Data*)iter.data;
+        const Data* d = iter.data;
         iter.node = d.idx2node(n.child_idx);
     }
     return iter;
@@ -123,7 +123,7 @@ public fn const char* Iter.getChildScalarValue(Iter* iter, const char* path) {
     if (!iter.node) return nil;
 
     if (iter.node.kind == NodeKind.Sequence) return nil;
-    const Data* d = (Data*)iter.data;
+    const Data* d = iter.data;
     const Node* n = d.findChildNode(path, iter.node.child_idx);
     if (n && n.isScalar()) return &d.text[n.text_idx];
     return nil;

@@ -338,7 +338,7 @@ fn bool isKeyChar(u8 c) {
 
 fn void Tokenizer.parseKey(Tokenizer* t, Token* result) {
     const char* start = t.current;
-    while (t.current[0] && isKeyChar((u8)t.current[0])) t.current++;
+    while (t.current[0] && isKeyChar(t.current[0])) t.current++;
 
     u32 len = (u32)(t.current - start);
     // assert(len < MaxText);

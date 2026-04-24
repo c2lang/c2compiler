@@ -95,13 +95,13 @@ public fn i32 main(i32 argc, char** argv) {
 
     utils.StringBuffer* buffer = utils.StringBuffer.create(infile.size);
 
-    strip_comments(infile.char_data(), buffer);
+    strip_comments(infile.data(), buffer);
     infile.close();
 
     file_utils.Writer outfile;
     const char* outname = "out.c";
     printf("written %s\n", outname);
-    if (!outfile.write(outname, (const u8*)buffer.data(), buffer.size())) {
+    if (!outfile.write(outname, buffer.data(), buffer.size())) {
         printf("error writing file: %s\n", outfile.getError());
     }
 

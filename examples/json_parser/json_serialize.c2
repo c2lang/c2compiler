@@ -41,9 +41,8 @@ fn bool Data.write(const Data* d, i32 fd) {
     size += roundup(d.names.cur);
     size += roundup(d.values.cur);
     size += roundup(d.nodes.getSize());
-    u8* buf = malloc(size);
 
-    Header* hdr = (Header*)buf;
+    Header* hdr = malloc(size);
     hdr.names_size = d.names.cur;
     hdr.values_size = d.values.cur;
     hdr.nodes_size = d.nodes.getSize();
@@ -52,17 +51,17 @@ fn bool Data.write(const Data* d, i32 fd) {
     offset += roundup(d.names.cur);
     memcpy(&hdr.data[offset], d.values.data, d.values.cur);
     offset += roundup(d.values.cur);
-    memcpy(&hdr.data[offset], (u8*)d.nodes.data, d.nodes.getSize());
+    memcpy(&hdr.data[offset], d.nodes.data, d.nodes.getSize());
 
-    i64 written = write(fd, buf, size);
-    free(buf);
+    i64 written = write(fd, hdr, size);
+    free(hdr);
     if (written != size) return false;
     return true;
 }
 
-fn Data* Data.read(const u8* data, u32 size) {
+fn Data* Data.read(const void* data, u32 size) {
     if (size < sizeof(Header)) return nil;
-    const Header* hdr = (Header*)data;
+    const Header* hdr = data;
     u32 exp_size = sizeof(Header);
     exp_size += roundup(hdr.names_size);
     exp_size += roundup(hdr.values_size);

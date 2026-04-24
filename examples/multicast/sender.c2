@@ -36,7 +36,7 @@ public fn i32 main() {
         sprintf(tmp, "%s %d", message, nr);
         nr++;
 
-        sender.broadcast((u8*)tmp, (u32)strlen(tmp));
+        sender.broadcast(tmp, (u32)strlen(tmp));
         unistd.sleep(1);
     }
 

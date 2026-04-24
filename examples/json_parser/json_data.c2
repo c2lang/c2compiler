@@ -158,10 +158,10 @@ fn u32 NodeBuffer.getSize(const NodeBuffer* b) {
 
 fn void NodeBuffer.resize(NodeBuffer* b, u32 cap2) {
     b.cap = cap2;
-    char* data2 = malloc(b.cap * sizeof(Node));
+    Node* data2 = malloc(b.cap * sizeof(Node));
     memcpy(data2, b.data, b.cur * sizeof(Node));
     free(b.data);
-    b.data = (Node*)data2;
+    b.data = data2;
 }
 
 fn u32 NodeBuffer.add(NodeBuffer* b, NodeKind kind, u32 name_idx, u32 value_idx) {
