@@ -264,12 +264,25 @@ fn void Analyser.collectIncrementalArrays(Analyser* ma) {
     ma.incr_values = nil;
 }
 
+const char[] ErrNotIncrementalArray = "'%s' is not an incremental array";
+const char[] ErrNotIncrementalArrayEnum = "'%s' is not an incremental array/enum";
+const char[] ErrModNoSymbol = "module '%s' has no symbol '%s'";
+const char[] ErrUseNonExportedModule = "exported module '%s' publicly uses non-exported module '%s'";
+const char[] ErrTypeFunc = "a type-function type must be a struct/union/enum";
+const char[] ErrRedefinition = "redefinition of '%s'";
+const char[] ErrGlobalConstantCase = "a global constant name must start with an upper case character";
+const char[] ErrVariableLowerCase = "a variable name must start with a lower case character";
+
+const char[] NoteDefinedHere = "'%s' is defined here";
+const char[] NotePreviousDef = "previous definition is here";
+const char[] NotePreviousDecl = "previous declaration is here";
+
 fn void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
     u32 name = entry.name;
     // find array Decl
     Decl* d = ma.mod.findSymbol(name);
     if (!d) {
-        ma.error(entry.loc, "module '%s' has no symbol '%s'", ma.mod.getName(), ma.idx2name(name));
+        ma.error(entry.loc, ErrModNoSymbol, ma.mod.getName(), ma.idx2name(name));
         return;
     }
     // check if incremental array/enum
@@ -278,8 +291,8 @@ fn void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
         VarDecl* vd = (VarDecl*)d;
         TypeRef* ref = vd.getTypeRef();
         if (!ref.isIncrArray()) {
-            ma.error(entry.loc, "'%s' is not an incremental array", ma.idx2name(name));
-            ma.note(d.getLoc(), "'%s' is defined here", ma.idx2name(name));
+            ma.error(entry.loc, ErrNotIncrementalArray, ma.idx2name(name));
+            ma.note(d.getLoc(), NoteDefinedHere, ma.idx2name(name));
             return;
         }
 
@@ -292,8 +305,8 @@ fn void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
         // dont analyse yet, just check if Identifier and convert to EnumConstantDecl
         EnumTypeDecl* etd = (EnumTypeDecl*)d;
         if (!etd.isIncremental()) {
-            ma.error(entry.loc, "'%s' is not an incremental enum", ma.idx2name(name));
-            ma.note(d.getLoc(), "'%s' is defined here", ma.idx2name(name));
+            ma.error(entry.loc, ErrNotIncrementalArray, ma.idx2name(name));
+            ma.note(d.getLoc(), NoteDefinedHere, ma.idx2name(name));
             return;
         }
 
@@ -308,8 +321,8 @@ fn void Analyser.handleIncrEntry(Analyser* ma, ia_list.Info* entry) {
         }
         etd.setIncrConstants(ma.context, (IdentifierExpr**)values, num_values);
     } else {
-        ma.error(entry.loc, "'%s' is not an incremental array/enum", ma.idx2name(name));
-        ma.note(d.getLoc(), "'%s' is defined here", ma.idx2name(name));
+        ma.error(entry.loc, ErrNotIncrementalArrayEnum, ma.idx2name(name));
+        ma.note(d.getLoc(), NoteDefinedHere, ma.idx2name(name));
     }
 }
 
@@ -321,7 +334,7 @@ fn void Analyser.handleImport(void* arg, ast.ImportDecl* id) {
     Module* dest = id.getDest();
     if (dest.isExternal()) return;
     if (!dest.isExported()) {
-        ma.error(d.getLoc(), "exported module '%s' publicly uses non-exported module '%s'", ma.mod.getName(), dest.getName());
+        ma.error(d.getLoc(), ErrUseNonExportedModule, ma.mod.getName(), dest.getName());
     }
 }
 
@@ -405,19 +418,18 @@ fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
         found = ma.prefixes.find(prefix_name_idx, &index);
 
         if (!found) {
-            const char* msg = "a type-function type must be a struct/union/enum";
             Decl* decl = ma.mod.findType(prefix_name_idx);
             if (!decl) {
                 decl = ma.mod.findSymbol(prefix_name_idx);
                 if (decl) {
-                    ma.error(prefix.loc, "%s", msg);
+                    ma.error(prefix.loc, ErrTypeFunc);
                 } else {
-                    ma.error(prefix.loc, "module '%s' has no symbol '%s'", ma.mod.getName(), ma.idx2name(prefix.getNameIdx()));
+                    ma.error(prefix.loc, ErrModNoSymbol, ma.mod.getName(), ma.idx2name(prefix.getNameIdx()));
                 }
                 return;
             }
             if (!decl.isStructType() && !decl.isEnum()) {
-                ma.error(prefix.loc, "%s", msg);
+                ma.error(prefix.loc, ErrTypeFunc);
                 return;
             }
             if (d.isPublic() && !decl.isPublic()) {
@@ -434,8 +446,8 @@ fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
     // check for duplicate struct functions
     FunctionDecl* other = ma.type_fn_decls.findFunc(index, d.getNameIdx());
     if (other) {
-        ma.error(d.getLoc(), "redefinition of '%s'", ma.getFullName(d));
-        ma.note(other.asDecl().getLoc(), "previous definition is here");
+        ma.error(d.getLoc(), ErrRedefinition, ma.getFullName(d));
+        ma.note(other.asDecl().getLoc(), NotePreviousDef);
         return;
     }
 
@@ -447,7 +459,7 @@ fn void Analyser.handleStructFunc(void* arg, FunctionDecl* fd) {
         Decl* match = std.findMember(d.getNameIdx(), nil);
         if (match) {
             ma.error(match.getLoc(), "member '%s' conflicts with type-function '%s'", ma.getName(match), ma.getFullName(d));
-            ma.note(d.getLoc(), "previous declaration is here");
+            ma.note(d.getLoc(), NotePreviousDecl);
             return;
         }
     }
@@ -657,11 +669,11 @@ fn void Analyser.checkName(Analyser* ma, Decl* d, bool is_constant) {
     const char* name = ma.getName(d);
     if (is_constant) {
         if (ctype.islower(name[0])) {
-            ma.error(d.getLoc(), "a global constant name must start with an upper case character");
+            ma.error(d.getLoc(), ErrGlobalConstantCase);
         }
     } else {
         if (ctype.isupper(name[0])) {
-            ma.error(d.getLoc(), "a variable name must start with a lower case character");
+            ma.error(d.getLoc(), ErrVariableLowerCase);
         }
     }
 }
