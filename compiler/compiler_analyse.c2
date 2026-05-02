@@ -53,6 +53,10 @@ fn bool Compiler.analyse(Compiler* c) {
 
         c.analyse_component(comp);
         if (c.diags.hasErrors()) break;
+
+#if check_libc
+        c.check_libc(comp);
+#endif
     }
 
     if (c.diags.hasErrors()) {

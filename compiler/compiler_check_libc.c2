@@ -1,0 +1,205 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module compiler;
+
+#if check_libc
+
+import ast local;
+import component;
+import console;
+import constants;
+import file_utils;
+import value_type local;
+
+import string_buffer;
+
+type Check_info struct {
+    Compiler* c;
+    string_buffer.Buf* out;
+    const char* modname;
+    u32 index;
+}
+
+fn void check_on_type_decl(void* arg, Decl* d) {
+    if (!d.isStructType()) return;
+    StructTypeDecl* std = (StructTypeDecl*)d;
+    if (std.isOpaque()) return;
+
+    Check_info* ci = (Check_info*)arg;
+    const char* name = ci.c.astPool.idx2str(d.getNameIdx());
+    const char* cname = ci.c.astPool.idx2str(d.getCName());
+
+    const StructLayout* layout = std.getLayout();
+    u32 size = layout.size;
+    ci.out.print("    check_size(\"%s.%s\", %d, sizeof(struct %s));\n", ci.modname, name, size, cname);
+    // NOTE: C cannot do sizeof(Foo.a), needs instance of Foo
+    ci.out.print("    %s var%d;\n", cname, ++ci.index);
+
+    u32 num_members = std.getNumMembers();
+    Decl** members = std.getMembers();
+    for (u32 i = 0; i < num_members; i++) {
+        Decl* m = members[i];
+        if (m.isVariable()) {
+            VarDecl* vd = (VarDecl*)m;
+            const StructMemberLayout* ml = &layout.members[i];
+            const char* member_name = ci.c.astPool.idx2str(m.getNameIdx());
+            ci.out.print("    check_member(\"%s.%s.%s\", %d, %d, offsetof(struct %s, %s), sizeof(var%d.%s));\n", ci.modname, name, member_name, ml.offset, ml.size, cname, member_name, ci.index, member_name);
+        } else {
+            // Note: ignore sub-structs for now
+        }
+    }
+}
+
+fn void check_on_var_decl(void* arg, VarDecl* vd) {
+    Decl* d = (Decl*)vd;
+    QualType qt = d.getType();
+    if (!qt.isInteger() || !qt.isConst()) return;
+    const Expr* init = vd.getInit();
+    assert(init);
+    assert(init.isCtv());
+
+    Check_info* ci = (Check_info*)arg;
+    const char* name = ci.c.astPool.idx2str(d.getNameIdx());
+
+    const char* cname = name;
+    if (d.getCName()) cname = ci.c.astPool.idx2str(d.getCName());
+
+    Value value = evalExpr((init));
+    if (value.negative) {
+        ci.out.print("    check_i64(\"%s.%s\", -%d, %s);\n", ci.modname, name, value.uvalue, cname);
+    } else {
+        ci.out.print("    check_u64(\"%s.%s\", %d, %s);\n", ci.modname, name, value.uvalue, cname);
+    }
+
+}
+
+fn void check_on_module(void* arg, Module* m) {
+    if (!m.isUsed()) return;
+
+    Check_info* ci = (Check_info*)arg;
+    ci.modname = m.getName();
+    ci.out.print("\n    // ---- %s ----\n", ci.modname);
+    m.visitTypeDecls(check_on_type_decl, arg);
+    m.visitVarDecls(check_on_var_decl, arg);
+}
+
+fn void Compiler.check_libc(Compiler* c, component.Component* comp) {
+    const char* name = comp.getName();
+
+    if (comp.getNameIdx() != c.libc_name) return;
+
+    string_buffer.Buf* out = string_buffer.create(4096, false, 0);
+    Check_info ci = { .c = c, .out = out }
+
+    // TODO check dest target
+#if SYSTEM_LINUX
+    // TODO linux_ifether, linux_sockios, linux_types, net_if, netinet_tcp
+    out.add("#include <sys/sendfile.h>\n");
+    out.add("#include <sys/signalfd.h>\n");
+#endif
+    out.add(Header);
+
+    comp.visitModules(check_on_module, &ci);
+
+    out.add(Trailer);
+
+    file_utils.File outfile.init(constants.output_dir, "libc_check.c");
+    console.log("writing checkfile %s", outfile.path);
+    outfile.write(out.data(), out.size());
+    out.free();
+}
+
+const char[] Header =
+```c
+#include <stdio.h>
+#include <stdint.h>
+#include <errno.h>
+#include <setjmp.h>
+#include <signal.h>
+#include <termios.h>
+#include <ctype.h>
+#include <sys/types.h>
+#include <ifaddrs.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <time.h>
+#include <libgen.h>
+#include <regex.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/utsname.h>
+#include <sys/uio.h>
+#include <unistd.h>
+#include <stdbool.h>
+
+static bool error;
+
+static void check_size(const char* name, uint32_t c2_size, uint32_t c_size) {
+    if (c2_size != c_size) {
+        printf("size error: %s  C2 %u  C %u\n", name, c2_size, c_size);
+        error = true;
+    }
+}
+
+static void check_member(const char* name, size_t c2_offset, size_t c2_size, size_t c_offset, size_t c_size) {
+    if (c2_size != c_size) {
+        printf("member size error: %s  C2 %lu  C %lu\n", name, c2_size, c_size);
+        error = true;
+    }
+    if (c2_offset != c_offset) {
+        printf("member offset error: %s  C2 %lu  C %lu\n", name, c2_offset, c_offset);
+        error = true;
+    }
+}
+
+static void check_i64(const char* name, int64_t c2_size, int64_t c_size) {
+    if (c2_size != c_size) {
+        printf("constant error: %s  C2 %ld  C %ld\n", name, c2_size, c_size);
+        error = true;
+    }
+}
+
+static void check_u64(const char* name, uint64_t c2_size, uint64_t c_size) {
+    if (c2_size != c_size) {
+        printf("constant error: %s  C2 %lu(0x%lx)  C %lu(0x%lx)\n", name, c2_size, c2_size, c_size, c_size);
+        error = true;
+    }
+}
+
+#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)
+
+int main(int argc, const char *argv[]) {
+```;
+
+const char[] Trailer =
+```c
+    return error ? -1 : 0;
+}
+
+```;
+
+#endif
+

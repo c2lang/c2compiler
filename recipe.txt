@@ -174,6 +174,7 @@ executable c2c
 #    $config PrintGenerated
 #    $config DebugIr
 #    $config Arch32  # should be set by build-file
+    $config check_libc
     $plugin git_version []
 
     $use dl dynamic
@@ -253,6 +254,7 @@ executable c2c
     compiler/compiler_target.c2
     compiler/compiler_libs.c2
     compiler/compiler_analyse.c2
+    compiler/compiler_check_libc.c2
 	compiler/main.c2
     compiler/manifest.c2
     compiler/plugin_mgr.c2
