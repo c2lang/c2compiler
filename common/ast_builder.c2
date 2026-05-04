@@ -375,8 +375,11 @@ public fn VarDecl* Builder.createEnumAssocDecl(Builder* b,
     u32 name_idx = b.astPool.add(out.str(), out.size(), true);
     out.free();
 
-    TypeRefHolder ref.init();
-    ref.setBuiltin(Char, 0);    // just set as a builtin, not used
+    // Note: ref is only used by ast_visitor
+    VarDecl* vd_esv = (VarDecl*)esv;
+    // use same ref as VarDecl, since refs will use that. Just add a pointer
+    TypeRefHolder ref.copy(vd_esv.getTypeRef());
+    ref.addPointer();
 
     // create init-expr { 10, 20, 30 }, collected from different ECDs
     EnumConstantDecl** constants = etd.getConstants();
@@ -396,7 +399,6 @@ public fn VarDecl* Builder.createEnumAssocDecl(Builder* b,
     values.free();
 
     // create Enum__name variable
-    // use same ref as VarDecl, since refs will use that
     VarDecl* vd = b.actOnGlobalVarDecl(name_idx, esv.getLoc(), esv.isPublic(), &ref, 0, false, initValue);
     Decl* vdd = (Decl*)vd;
     vdd.setType(a);

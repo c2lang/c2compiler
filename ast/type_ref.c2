@@ -78,6 +78,11 @@ public fn void TypeRefHolder.init(TypeRefHolder* h) {
     // can leave other members uninitialized because flags and counts are zero
 }
 
+public fn void TypeRefHolder.copy(TypeRefHolder* h, const TypeRef* ref) {
+    u32 size = sizeof(TypeRef) + ref.getExtraSize();
+    string.memcpy(&h.ref, ref, size);
+}
+
 // note: returns dynamic size only!
 fn u32 TypeRefHolder.getExtraSize(const TypeRefHolder* h) {
     TypeRef* r = (TypeRef*)&h.ref;

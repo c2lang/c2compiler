@@ -215,6 +215,9 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                             // nothing to do
                         } else {
                             VarDecl* ad = etd.getAssocDecl(idx);
+                            Decl* add = (Decl*)ad;
+                            add.setUsed();
+                            if (add.isPublic()) add.setUsedPublic();
                             ma.builder.createEnumAssocValueAccess(e_ptr, etd, ad, vdd.getType(), m, baseType.isPointer());
                         }
                     }

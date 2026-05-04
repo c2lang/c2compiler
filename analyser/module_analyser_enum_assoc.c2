@@ -129,8 +129,6 @@ fn void Analyser.analyseEnumAssocValues(Analyser* ma, EnumTypeDecl* etd) {
             Decl* d = (Decl*)values[i];
             VarDecl* assoc_value = ma.builder.createEnumAssocDecl(d, etd, i);
             decls[i] = assoc_value;
-            //assoc_value.asDecl().dump();
-            // TODO also add as global to Module
         }
     }
 
