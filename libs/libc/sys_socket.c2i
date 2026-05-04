@@ -7,13 +7,38 @@ const int PF_UNIX    =  1;
 
 const int AF_UNIX    =  PF_UNIX;
 const int AF_INET    =  2;
+#if SYSTEM_LINUX
 const int AF_NETLINK = 16;
 const int AF_PACKET  = 17;
+#endif
 
 const int IPPROTO_IP  =  0;
 const int IPPROTO_TCP =  6;
+#if SYSTEM_DARWIN || SYSTEM_FREEBSD || SYSTEM_OPENBSD
+const int IPPROTO_UDP = 17;
+#else
 const int IPPROTO_UDP = 22;
+#endif
 
+#if SYSTEM_DARWIN || SYSTEM_FREEBSD || SYSTEM_OPENBSD
+const u32 IP_MULTICAST_IF         =  9;
+const u32 IP_MULTICAST_TTL        = 10;
+const u32 IP_MULTICAST_LOOP       = 11;
+const u32 IP_ADD_MEMBERSHIP       = 12;
+const u32 IP_DROP_MEMBERSHIP      = 13;
+const u32 IP_UNBLOCK_SOURCE       = 73;
+const u32 IP_BLOCK_SOURCE         = 72;
+const u32 IP_ADD_SOURCE_MEMBERSHIP  = 70;
+const u32 IP_DROP_SOURCE_MEMBERSHIP = 71;
+const u32 IP_MSFILTER             = 74;
+const u32 MCAST_JOIN_GROUP        = 80;
+const u32 MCAST_LEAVE_GROUP       = 81;
+const u32 MCAST_JOIN_SOURCE_GROUP = 82;
+const u32 MCAST_LEAVE_SOURCE_GROUP = 83;
+const u32 MCAST_BLOCK_SOURCE      = 84;
+const u32 MCAST_UNBLOCK_SOURCE    = 85;
+#endif
+#if SYSTEM_LINUX
 const u32 IP_MULTICAST_IF         = 32;
 const u32 IP_MULTICAST_TTL        = 33;
 const u32 IP_MULTICAST_LOOP       = 34;
@@ -35,6 +60,7 @@ const u32 IP_MULTICAST_ALL        = 49;
 const u32 IP_UNICAST_IF           = 50;
 const u32 IP_LOCAL_PORT_RANGE     = 51;
 const u32 IP_PROTOCOL             = 52;
+#endif
 
 enum SocketType : u32 @(cname="__socket_type") {
   SOCK_STREAM    = 1,   /* Sequenced, reliable, connection-based byte streams.  */
@@ -43,15 +69,47 @@ enum SocketType : u32 @(cname="__socket_type") {
   SOCK_RDM       = 4,   /* Reliably-delivered messages.  */
   SOCK_SEQPACKET = 5,   /* Sequenced, reliable, connection-based, datagrams of fixed maximum length.  */
   SOCK_DCCP      = 6,   /* Datagram Congestion Control Protocol.  */
+#if SYSTEM_LINUX
   SOCK_PACKET    = 10,  /* Linux specific way of getting packets at the dev level.  For writing rarp and other similar things on the user level. */
+#endif
 }
+
+#if SYSTEM_LINUX
 /* Flags to be ORed into the type parameter of socket and socketpair and
    used for the flags parameter of paccept.  */
 const u32 SOCK_NONBLOCK  = 00004000;  /* Atomically mark descriptor(s) as non-blocking.  */
 const u32 SOCK_CLOEXEC   = 02000000;  /* Atomically set close-on-exec flag for the new descriptor(s).  */
+#else
+// Put here to keep code compatible
+// TODO NASTY, check tool will try to test
+const u32 SOCK_NONBLOCK  = 0;
+const u32 SOCK_CLOEXEC   = 0;
+#endif
 
 int socket(int domain, int type_, int protocol);
 
+#if SYSTEM_DARWIN || SYSTEM_FREEBSD || SYSTEM_OPENBSD
+const int SOL_SOCKET = 0xFFFF;
+
+const int SO_DEBUG       = 0x0001;
+const int SO_ACCEPTCONN  = 0x0002;
+const int SO_REUSEADDR   = 0x0004;
+const int SO_KEEPALIVE   = 0x0008;
+const int SO_DONTROUTE   = 0x0010;
+const int SO_BROADCAST   = 0x0020;
+const int SO_USELOOPBACK = 0x0040;
+const int SO_LINGER      = 0x0080;
+const int SO_OOBINLINE   = 0x0100;
+const int SO_REUSEPORT   = 0x0200;
+const int SO_TIMESTAMP   = 0x0400;
+
+const int SO_SNDBUF      = 0x1001;
+const int SO_RCVBUF      = 0x1002;
+const int SO_ERROR       = 0x1007;
+const int SO_TYPE        = 0x1008;
+#endif
+
+#if SYSTEM_LINUX
 const int SOL_SOCKET = 1;
 
 const int SO_DEBUG     = 1;
@@ -68,10 +126,19 @@ const int SO_PRIORITY  = 12;
 const int SO_LINGER    = 13;
 const int SO_BSDCOMPAT = 14;
 const int SO_REUSEPORT = 15;
+#endif
 
+#if SYSTEM_LINUX
 typedef u16 SaFamily @(cname="sa_family_t");
+#endif
+#if SYSTEM_DARWIN || SYSTEM_FREEBSD || SYSTEM_OPENBSD
+typedef u8 SaFamily @(cname="sa_family_t");
+#endif
 
 struct Sockaddr @(cname="sockaddr") {
+#if SYSTEM_DARWIN || SYSTEM_FREEBSD || SYSTEM_OPENBSD
+    u8 sin_len;
+#endif
     SaFamily sa_family;
     char[14] sa_data;
 }
@@ -83,6 +150,9 @@ struct In_addr @(cname="in_addr") {
 }
 
 struct Sockaddr_in @(cname="sockaddr_in") {
+#if SYSTEM_DARWIN || SYSTEM_FREEBSD || SYSTEM_OPENBSD
+    u8 sin_len;
+#endif
     SaFamily sin_family;
     InPort sin_port;
     In_addr sin_addr;
@@ -110,6 +180,7 @@ int accept(int sockfd, Sockaddr *addr, u32 *addrlen);
 
 int accept4(int sockfd, Sockaddr* addr, u32* addrlen, int flags);
 
+
 #else
 
 int accept4(int sockfd, Sockaddr *addr, u32 *addrlen, int flags) {
@@ -117,6 +188,7 @@ int accept4(int sockfd, Sockaddr *addr, u32 *addrlen, int flags) {
     if (new_sockfd < 0) {
         return -1;
     }
+    // NOTE: some targets dont have these flags (or set to 0)
     if (flags & SOCK_CLOEXEC) {
         if (fcntl(new_sockfd, F_SETFD, FD_CLOEXEC) == -1) {
             close(new_sockfd);
@@ -131,7 +203,6 @@ int accept4(int sockfd, Sockaddr *addr, u32 *addrlen, int flags) {
     }
     return new_sockfd;
 }
-
 #endif
 
 // NOTE: some c-prototypes need to be converted
@@ -159,12 +230,21 @@ struct Sockaddr_ll @(cname="sockaddr_ll") {
     unsigned char[8] sll_addr;
 }
 
+#if SYSTEM_LINUX
 const u32 UNIX_PATH_MAX = 108;
 
 struct Sockaddr_un @(cname="sockaddr_un") {
     SaFamily sun_family;
     char[UNIX_PATH_MAX] sun_path;
 }
+#endif
+#if SYSTEM_DARWIN || SYSTEM_FREEBSD || SYSTEM_OPENBSD
+struct Sockaddr_un @(cname="sockaddr_un") {
+    u8 sun_len;
+    SaFamily sun_family;
+    char[104] sun_path;
+}
+#endif
 
 ssize_t send(int fd, const void* buf, size_t n, int flags);
 ssize_t sendto(int fd, const void* buf, size_t n, int flags, const Sockaddr* addr, u32 addr_len);

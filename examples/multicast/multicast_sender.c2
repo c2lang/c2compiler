@@ -47,13 +47,6 @@ fn void Sender.open_socket(Sender* s) {
         exit(EXIT_FAILURE);
     }
 
-    // set up destination address
-    Sockaddr_in addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(s.ipnr);
-    addr.sin_port = htons(s.port);
-
     u8 ttl = 1;
     if (setsockopt(s.fd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) != 0) {
         fprintf(stderr, "setsockopt(IP_MULTICAST_TTL): %s\n", strerror(*errno2()));
@@ -66,12 +59,27 @@ fn void Sender.open_socket(Sender* s) {
         exit(EXIT_FAILURE);
     }
 
-    if (bind(s.fd, (Sockaddr*)&addr, sizeof(addr))) {
+    // set up local address
+    Sockaddr_in local_addr;
+    memset(&local_addr, 0, sizeof(local_addr));
+    local_addr.sin_family = AF_INET;
+    local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    local_addr.sin_port = htons(0); // let OS pick port
+
+    if (bind(s.fd, (Sockaddr*)&local_addr, sizeof(local_addr))) {
         fprintf(stderr, "bind: %s\n", strerror(*errno2()));
         exit(EXIT_FAILURE);
     }
 
-    if (connect(s.fd, (Sockaddr*)&addr, sizeof(addr)) < 0) {
+    // set up destination address
+    Sockaddr_in dest_addr;
+    memset(&dest_addr, 0, sizeof(dest_addr));
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_addr.s_addr = inet_addr(s.ipnr);
+    dest_addr.sin_port = htons(s.port);
+
+    // bind to a local address
+    if (connect(s.fd, (Sockaddr*)&dest_addr, sizeof(dest_addr)) < 0) {
         fprintf(stderr, "connect: %s\n", strerror(*errno2()));
         exit(EXIT_FAILURE);
     }

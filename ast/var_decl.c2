@@ -186,10 +186,12 @@ fn QualType VarDecl.getType(const VarDecl* d) {
     return d.base.qt;
 }
 
+// for struct-members
 fn u32 VarDecl.getOffset(const VarDecl* d) {
     return d.base.offset;
 }
 
+// for struct-members
 public fn void VarDecl.setOffset(VarDecl* d, u32 offset) {
     d.base.offset = (u16)offset;
 }
