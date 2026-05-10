@@ -41,7 +41,6 @@ import c_errno local;
 import stdio local;
 import stdlib local;
 import string local;
-import unistd;
 
 type Options struct {
     bool log_verbose;
@@ -459,6 +458,7 @@ type Context struct {
 
     c2recipe.Recipe* recipe;
     build_file.Info* build_info;
+    char[file_utils.Max_path] build_filename;
     i32 recipe_id;
 
     plugin_mgr.Mgr* plugins;
@@ -486,10 +486,26 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
     console.setTiming(c.opts.print_timing);
     console.setDebug(c.opts.log_verbose);
 
+    const char[] notFound = "c2c: error: cannot find project root directory\n"
+                            "     c2c requires a %s file in the project root,\n"
+                            "     Use argument -h for c2c usage and a list of available options";
     if (c.opts.other_dir) {
-        if (unistd.chdir(c.opts.other_dir)) {
+        if (c.opts.files.length()) {
+            console.error("c2c: The -d option cannot be combined with <files>");
+            exit(EXIT_FAILURE);
+        }
+        u32 err = utils.changeToProjectDir(&c.path_info, c.opts.other_dir);
+        switch (err) {
+        case 0:
+            break;
+        case 2:
             console.error("c2c: cannot chdir to %s: %s", c.opts.other_dir, strerror(errno));
             exit(EXIT_FAILURE);
+            break;
+        case 3:
+            console.error(notFound, constants.recipe_name);
+            exit(EXIT_FAILURE);
+            break;
         }
     }
 
@@ -514,11 +530,8 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
             exit(EXIT_FAILURE);
         }
 
-        if (!utils.findProjectDir(&c.path_info)) {
-            console.error("c2c: error: cannot find project root directory\n"
-                          "     c2c requires a %s file in the project root,\n"
-                          "     Use argument -h for c2c usage and a list of available options",
-                          constants.recipe_name);
+        if (!c.opts.other_dir && !utils.findProjectDir(&c.path_info)) {
+            console.error(notFound, constants.recipe_name);
             exit(EXIT_FAILURE);
         }
         c.recipe_id = c.sm.loadFile(constants.recipe_name, 0);
@@ -528,16 +541,23 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
     }
 
     // look for build file (or use specified one)
+    bool auto_found_buildfile = false;
     if (!c.opts.build_file) {
         c.opts.build_file = utils.findBuildFile();
+        auto_found_buildfile = true;
     }
 
     c.plugins = plugin_mgr.create(c.auxPool, c.opts.print_timing, c.opts.log_verbose, c.opts.no_plugins);
 
     bool have_plugin_dir = false;
     if (c.opts.build_file) {
-        console.log("using build-file %s", c.opts.build_file);
-        c.build_info = build_file_parser.parse(c.sm, c.auxPool, c.opts.build_file);
+        if (auto_found_buildfile) {
+            strcpy(c.build_filename, c.opts.build_file);
+        } else {
+            snprintf(c.build_filename, sizeof(c.build_filename), "%s%s", c.path_info.orig2root, c.opts.build_file);
+        }
+        console.log("using build-file %s", c.build_filename);
+        c.build_info = build_file_parser.parse(c.sm, c.auxPool, c.build_filename);
         if (!c.build_info) exit(EXIT_FAILURE);
 
         const string_list.List* plugin_dirs = c.build_info.getPluginDirs();

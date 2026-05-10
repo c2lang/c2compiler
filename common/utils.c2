@@ -18,7 +18,6 @@ module utils;
 import constants;
 import file_utils;
 
-import c_errno local;
 import stdio local;
 import string local;
 import sys_stat local;
@@ -34,6 +33,7 @@ public fn u64 now() @(unused) {
     return now64;
 }
 
+// Note: both paths may be empty or should end in a /
 public type PathInfo struct {
     char[file_utils.Max_path] orig2root; // subdir/subdir/
     char[file_utils.Max_path] root2orig; // ../../
@@ -41,6 +41,41 @@ public type PathInfo struct {
 
 public fn bool PathInfo.hasSubdir(const PathInfo* pi) {
     return pi.orig2root[0] != 0;
+}
+
+fn bool checkFile(const char* filename) {
+    Stat buf;
+    i32 error = stat(filename, &buf);
+    if (error) return false;
+
+    if ((buf.st_mode & S_IFMT) != S_IFREG) return false;
+
+    return true;
+}
+
+public fn u32 changeToProjectDir(PathInfo* info, const char* other_dir) {
+    char* path = unistd.getcwd(info.orig2root, sizeof(info.orig2root)-1);   // -1 to add /
+    if (path == nil) {
+        perror("getcwd");
+        return 2;
+    }
+    // add '/'
+    usize len = strlen(path);
+    info.orig2root[len] = '/';
+    info.orig2root[len+1] = 0;
+
+    strcpy(info.root2orig, other_dir);
+    // add '/' if not present
+    len = strlen(other_dir);
+    if (other_dir[len-1] != '/') {
+        info.root2orig[len] = '/';
+        info.root2orig[len+1] = 0;
+    }
+
+    if (unistd.chdir(other_dir)) return 2;
+
+    if (!checkFile(constants.recipe_name)) return 3;
+    return 0;
 }
 
 // info may be nil
@@ -56,32 +91,26 @@ public fn bool findProjectDir(PathInfo* info) {
 
     char[file_utils.Max_path] buffer;
     while (1) {
-        char* path = unistd.getcwd(buffer, elemsof(buffer));
+        char* path = unistd.getcwd(buffer, elemsof(buffer)-1);  // -1 for trailing slash
         if (path == nil) {
             perror("getcwd");
             return false;
         }
-        if (base_path[0] == 0) strcpy(base_path, path);
-
-        Stat buf;
-        if (stat(constants.recipe_name, &buf)) {
-            if (path[0] == '/' && path[1] == '\0') return false;
-            if (errno != ENOENT) {
-                perror("stat");
-                return false;
-            }
-        } else {
-            // must be file, not dir
-            if ((buf.st_mode & S_IFMT) == S_IFREG) {
-                char* path_prefix = base_path + strlen(path);
-                if (*path_prefix == '/') path_prefix++;
-                if (info) {
-                    strcpy(info.orig2root, path_prefix);
-                    strcpy(info.root2orig, rel_path);
-                }
-                return true;
-            }
+        if (base_path[0] == 0) {
+            strcpy(base_path, path);
+            strcat(base_path, "/");
         }
+
+        if (checkFile(constants.recipe_name)) {
+            char* path_prefix = base_path + strlen(path);
+            if (*path_prefix == '/') path_prefix++;
+            if (info) {
+                strcpy(info.orig2root, path_prefix);
+                strcpy(info.root2orig, rel_path);
+            }
+            return true;
+        }
+        if (path[0] == '/' && path[1] == '\0') return false;
         if (unistd.chdir("..")) {
             perror("chdir");
             return false;
@@ -91,10 +120,7 @@ public fn bool findProjectDir(PathInfo* info) {
 }
 
 public fn const char* findBuildFile() @(unused) {
-    Stat buf;
-    i32 error = stat(constants.buildfile_name, &buf);
-    if (error) return nil;
-
+    if (!checkFile(constants.buildfile_name)) return nil;
     return constants.buildfile_name;
 }
 

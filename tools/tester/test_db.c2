@@ -23,6 +23,7 @@ import stdlib local;
 import string local;
 import unistd local;
 
+import constants;
 import expect_file local;
 import file_utils;
 import issues local;
@@ -62,6 +63,7 @@ public type Db struct {
     const char* source;    // no ownership
     const char* filename;
     TestKind kind;
+    u8 tmp_dir_len;     // including '/'
     const char* tmp_dir;
     const char* c2c_cmd;    // no ownership
 
@@ -107,6 +109,7 @@ public fn void Db.init(Db* db,
     db.source = source;
     db.filename = filename;
     db.kind = kind;
+    db.tmp_dir_len = (u8)strlen(tmp_dir) + 1; // +1 for '/'
     db.tmp_dir = tmp_dir;
     db.c2c_cmd = c2c_cmd;
     db.runSkipped = runSkipped;
@@ -676,7 +679,7 @@ public fn bool Db.parse(Db* db) {
             build.print("target: \"%s\"\n", db.target);
             build.add("libdir:\n");
             build.add("   - \"$C2_LIBDIR\"\n");
-            db.writeFile("build.yaml", build.data(), build.size());
+            db.writeFile(constants.buildfile_name, build.data(), build.size());
             build.free();
         }
         db.recipe.add("end\n");
@@ -794,14 +797,20 @@ fn void Db.checkDiagnosticLine(Db* db, const char* line) {
     color_print(color.White, "line: '%s'", line);
 #endif
     // line syntax: '<filename>.c2:<linenr>:<offset>: error/warning/note: <msg>\n'
-    char[128] filename;
+    char[128] filename_full;
     char[128] msg;
     char[8] tag;
     u32 error_line;
     u32 col;
 
-    if (sscanf(line, "%127[^: \n]:%u:%u: %7[a-z]: %127[^\n]", filename, &error_line, &col, tag, msg) != 5)
+    if (sscanf(line, "%127[^: \n]:%u:%u: %7[a-z]: %127[^\n]", filename_full, &error_line, &col, tag, msg) != 5)
         return;
+
+    const char* filename = filename_full;
+    if (db.kind == C2T) {
+        // remove '/tmp/testerX' prefix
+        filename = &filename_full[db.tmp_dir_len];
+    }
 
     switch (tag) {
     case "error":
