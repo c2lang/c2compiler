@@ -9,8 +9,6 @@ C2 has the following keywords:
 * `public`
 
 ### Type related
-* `auto`
-* `asm`
 * `bool`
 * `cast`
 * `char`
@@ -20,7 +18,7 @@ C2 has the following keywords:
 * `false`
 * `f32`
 * `f64`
-* `func`
+* `fn`
 * `i8`
 * `i16`
 * `i32`
@@ -29,9 +27,16 @@ C2 has the following keywords:
 * `local`
 * `nil`
 * `offsetof`
+* `reg8`
+* `reg16`
+* `reg32`
+* `reg64`
 * `to_container`
 * `sizeof`
+* `static`
 * `struct`
+* `template`
+* `tlocal`
 * `true`
 * `type`
 * `u8`
@@ -59,6 +64,7 @@ C2 has the following keywords:
 * `while`
 
 ### other
+* `asm`
 * `assert`
 * `static_assert`
 
@@ -68,6 +74,34 @@ C2 has the following keywords:
 * `#ifndef`
 * `#elif`
 * `#else`
-* `#warning`
+* `#endif`
 * `#error`
+* `#warning`
+
+## C keywords
+
+In addition to the C2 keywords, there are a number of C keywords that can be used in interface files:
+
+* `alignas`
+* `alignof`
+* `auto`
+* `constexpr`
+* `do`
+* `double`
+* `extern`
+* `float`
+* `inline`
+* `long`
+* `nullptr`
+* `register`
+* `restrict`
+* `short`
+* `signed`
+* `ssize_t`
+* `size_t`
+* `thread_local`
+* `typedef`
+* `typeof`
+* `typeof_unqual`
+* `unsigned`
 

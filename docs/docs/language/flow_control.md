@@ -33,3 +33,32 @@ If statements are exactly the same as C.
 if (x < 10 && y >= 10 && ptr != nil) { .. }
 ```
 
+It can be used with and without braces just like in C.
+
+## Label / Goto
+
+Labels and goto exist just like in C.
+
+```c
+start:
+    i++;
+    if (i < 10) goto start;
+```
+
+Labels *must* start with a lower-case character.
+
+## Labelled break/continue
+
+To jump out of or continue an outer loop __labelled break/continue__ exists:
+```c
+outer: for (i32 i=0; i<100; i++) {
+  inner: for (i32 j=0; j<100; j++) {
+      if (..) break outer;
+      if (..) continue outer;
+  }
+}
+```
+
+Note that these labels can also be used for regular goto statements.
+
+

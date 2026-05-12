@@ -29,6 +29,9 @@ Note that all enum constants are in only available through the enum type's names
 (eg. State.Begin, not Begin). This allows the names to be much shorter (not STATE_BEGIN,
 but just Begin).
 
+When the enum-constant values start at 0 and dont have any gaps, the enum type is called
+a __regular enum__.
+
 ### Enum init
 When *initializing* an enum variable, the enum prefix can be left out:
 ```c
@@ -44,6 +47,15 @@ So even if two different enum types have the same Constant, it still works.
 c = Red;
 line.draw(Green);
 ```
+
+### Enum min/max
+Enum types can be used as array size specifications for variables:
+
+```c
+i32[Color] my_vars;
+```
+
+Only __regular enums__ can be used for this.
 
 
 ### Enum min/max
@@ -82,8 +94,61 @@ Colors += Blue;
 
 Enums must always have at least one constant.
 
-## Struct types
 
+### Enum-associated values
+
+Often it's useful to associate other information to an enum-constant, for example a string name.
+The code often ends up like:
+```c
+fn const char* color2name(Color c) {
+    switch (c) {
+    case Red:    return "red";
+    case Green:  return "green";
+    case Blue:   return "blue";
+    }
+    return "?";
+}
+```
+
+When adding/removing enum-constants, this code must be kept in sync, which is a pain.
+
+To automatically keep these __associated values__ in sync, C2 allows associated other values
+to that enum:
+
+```c
+type State enum u8 (const char* name, State next, const bool is_active) {
+    Start : { "start", Run,  false },
+    Run   : { "run",   Stop, true  },
+    Stop  : { "stop",  Done, false },
+    Done  : { "done",  Done, false },
+}
+```
+
+Since the syntax doesn't allow specifying the values of the constanst, enums with associated-values
+are always __regular enums__.
+
+Associated values can be const or not.
+
+There are 2 ways to access these associated values:
+
+* by Type
+* by Constant
+
+#### By Type
+```c
+const State* states = State.next;   // use Type here, not instance
+State next = states[cur_state];
+```
+
+#### By Enum-Constant
+```c
+State cur_state = Run;
+bool is_active = cur_state.is_active;   // use instance here
+cur_state.next = Start; // assign to non-const values
+```
+
+
+## Struct types
 Structs are defined like so:
 ```c
 type Person struct {

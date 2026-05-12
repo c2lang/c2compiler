@@ -25,15 +25,15 @@ where b would be an 'int' and not an 'int*', defining multiple variables is not 
 for pointer and array types.
 
 
-## The `local` keyword
+## The `static` keyword
 
-The __local__ keyword has the same meaning as the __static__ keyword when used on local
+The __static__ keyword has the same meaning as the __static__ keyword in C when used on local
 (as in non-global) variables in C; their lifetime is bigger then that of the function.
 For example calling the function below 3 times:
 
 ```c
 fn void increment() {
-    local i32 counter = 0;
+    static i32 counter = 0;
     counter++;
     printf("%d\n", counter);
 }
@@ -45,9 +45,14 @@ will result in:
 3
 ```
 
-The __local__ keyword may only be used on non-global variables. The 'local' variable is
+The __static__ keyword may only be used on non-global variables. The 'static' variable is
 automatically zero-initialized (like global variables). If explicitly initialized, the
 init expression must be a compile-time constant/value.
+
+## The `tlocal` keyword
+
+The __tlocal__ keyword is usede to indicate a variable has __thread local__ storage.
+
 
 ## Initialization
 

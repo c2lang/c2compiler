@@ -21,22 +21,22 @@ The C2 compiler always has a pseudo module called __c2__. This module is used to
 store some language symbols such as min/max values and things like build time, etc.
 For each integral type there exists a minimum and maximum value:
 
-* `min_i8`, `max_i8`
-* `min_i16`, `max_i16`
-* `min_i32`, `max_i32`
-* `min_i64`, `max_i64`
-* `min_isize`, `max_isize`
-* `min_u8`, `max_u8`
-* `min_u16`, `max_u16`
-* `min_u32`, `max_u32`
-* `min_u64`, `max_u64`
-* `min_usize`, `max_usize`
+* `i8.min`, `i8.max`
+* `i16.min`, `i16.max`
+* `i32.min`, `i32.max`
+* `i64.min`, `i64.max`
+* `isize.min`, `isize.max`
+* `u8.min`, `u8.max`
+* `u16.min`, `u16.max`
+* `u32.min`, `u32.max`
+* `u64.min`, `u64.max`
+* `usize.min`, `usize.max`
 
 ```c
 module foo;
 import c2;
 
-i32 highest = c2.max_i32;
+i32 highest = i32.max;
 ```
 
 It also includes some C types for mapping C declarations in libraries to C2 interface types.

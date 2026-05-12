@@ -6,25 +6,28 @@ attributes to do all sorts of funky things the compilers do.
 
 The currently supported attributes are:
 
-* __embed__ (var)
-* __export__ (type, fn, var)
-* __packed__ (type)
-* __unused__ (type, fn, var)
-* __unused_params__ (fn)
-* __section__ (fn, var), requires argument
-* __noreturn__ (fn)
-* __printf_format__ (parameter)
-* __inline__ (fn)
-* __aligned__ (type, fn, var), requires argument
-* __weak__ (fn, var)
-* __opaque__ (public struct/union types)
-* __cname__ (type, fn, var), interface
-* __no_typedef__ (interface struct/union types)
-* __constructor__ (fn)
-* __destructor__ (fn)
+* __aligned__ (type, fn, var), requires number argument
 * __ auto_file__ (parameter)
 * __ auto_func__ (parameter)
 * __ auto_line__ (parameter)
+* __cname__ (type, fn, var), interface
+* __ cdef__ (type, fn, var), only in interface files, string argument
+* __constructor__ (fn)
+* __deprecated__ (fn), requires string argument
+* __destructor__ (fn)
+* __embed__ (var)
+* __export__ (type, fn, var)
+* __inline__ (fn)
+* __noreturn__ (fn)
+* __no_typedef__ (interface struct/union types)
+* __opaque__ (public struct/union types)
+* __packed__ (type)
+* __printf_format__ (parameter)
+* __pure__ (fn)
+* __section__ (fn, var), requires string argument
+* __unused_params__ (fn)
+* __unused__ (type, fn, var)
+* __weak__ (fn, var)
 
 The standard syntax for all attributes is `@(  )`  (Hint: the @ (at) is for attributes... ;) )
 

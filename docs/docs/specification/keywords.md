@@ -21,7 +21,7 @@ C2 has the following builtin types and keywords
 * `f32`
 * `f64`
 * `false`
-* `func`
+* `fn`
 * `i16`
 * `i32`
 * `i64`
@@ -31,8 +31,10 @@ C2 has the following builtin types and keywords
 * `offsetof`
 * `public`
 * `sizeof`
+* `static`
 * `struct`
 * `to_container`
+* `tlocal`
 * `true`
 * `type`
 * `u16`
