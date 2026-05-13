@@ -225,6 +225,13 @@ executable dir_walker
     dir_walker/main.c2
 end
 
+executable terminal
+    $warnings no-unused
+    $backend c
+
+    terminal/main.c2
+end
+
 #executable source_lib_use
 #    $warnings no-unused
 #    $backend c
