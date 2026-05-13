@@ -142,18 +142,29 @@ fn c_int sprintf(c_char* __s, const c_char* __format, ...);
 
 // .. (stuff left out)
 ```
-C2 has special types for creation of interface files for C libraries. These are defined in the C2 module:
+C2 supports the C types for creation of interface files for C libraries:
 
-* c_char
-* c_int
-* c_uint
-* c_long
-* c_ulong
-* c_size
-* c_ssize
-* c_longlong
-* c_float
-* c_double
+* char
+* int
+* uint
+* long
+* ulong
+* size
+* ssize
+* longlong
+* float
+* double
+* unsigned
+* signed
+
+
+Additionally, for opaque structs, it is allowed to define empty structs inside interface files:
+
+```c
+type ExternStruct struct;
+```
+
+
 
 ## Library types
 C2 project can use external libraries by specifying ```$use lib <type>``` in the recipe file.

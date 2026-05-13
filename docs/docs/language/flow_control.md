@@ -4,11 +4,15 @@ C2 has the same loop constructs as C, namely: for, while and do..while.
 
 ## For
 
+For statements are very similar to C:
+
 ```c
 for (u32 i=0; i<10; i++) printf("%d\n", i);
 ```
 
 ## While
+
+While statements are very similar to C as well:
 
 ```c
 while (i<10) i++;
@@ -62,3 +66,6 @@ outer: for (i32 i=0; i<100; i++) {
 Note that these labels can also be used for regular goto statements.
 
 
+## Switch statement
+
+For the *switch* statement see the dedicated page [Switch Statements](../language/switch_statement)

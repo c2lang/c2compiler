@@ -166,6 +166,8 @@ p.name - "John Doe";
 io.printf("%s is %d years old.", p.age, p.name);
 ```
 
+### Bitfields
+
 Structs may also contain *bit-fields*. These are the same as C.
 ```c
 type MyStruct struct {
@@ -175,8 +177,33 @@ type MyStruct struct {
 }
 ```
 
-Unnamed bit-fields are allowed.
+Unnamed bit-fields are allowed, as are bitfields of size 0 (same behavior as C)
 
+C2 also allows bitfield of Enum types. It will give an error if insufficient bits
+have been assigned.
+
+```c
+type State enum u8 { A, B, C }
+
+type Foo struct {
+    State a : 2;    // ok
+    State b : 3;    // ok
+    State c : 1;    // error, need 2 bits
+}
+```
+
+
+### Function pointers
+
+Function pointers can be defined without first defining a function type inside
+structs:
+
+```c
+type Foo struct {
+    fn void(void* arg, i32 a) cb;
+    fn Foo*(Foo* self, i32 arg) copy;
+}
+```
 
 ## Union types
 

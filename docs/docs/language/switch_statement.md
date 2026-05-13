@@ -134,3 +134,12 @@ Rules for using switch for strings:
 * there may be no duplicate cases
 
 
+## Decls
+
+C2 allows declaring a declaration inside a switch condition:
+```c
+switch (i32 a = getNum()) {
+    ...
+}
+```
+

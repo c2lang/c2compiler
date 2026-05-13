@@ -49,3 +49,17 @@ The *order* of the arguments must still be correct.
 C2 allows combining __named__ arguments with __default__ arguments as long as there is
 no ambiguity.
 
+
+### Function pointer arguments
+
+Function pointer types can be defines inline as function arguments:
+
+```c
+fn void my_func(void* arg,
+        fn i32(void* arg, bool b) a,
+        // even nested
+        fn void(void* arg, fn bool(i32, i32), i32 a) b,
+        i32 c) {
+}
+```
+
