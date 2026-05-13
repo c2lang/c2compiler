@@ -290,6 +290,11 @@ const unsigned IEXTEN  = 0002000;
 const unsigned EXTPROC = 0004000;
 #endif
 
+// tcsetattr uses these
+const int TCSANOW   = 0;
+const int TCSADRAIN = 1;
+const int TCSAFLUSH = 2;
+
 int tcgetattr(int fd, Termios* termios_p);
 int tcsetattr(int fd, int optional_actions, const Termios* termios_p);
 

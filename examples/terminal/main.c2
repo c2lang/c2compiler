@@ -17,25 +17,23 @@ module terminal;
 
 import ctermios local;
 import stdio local;
-import sys_ioctl local;
 import unistd local;
 
 Termios old;
 Termios new;
 
 public fn void init() {
-    ioctl(0, TCGETS, &old);
+    tcgetattr(0, &old);
     new=old;
-    new.c_lflag &= ~ECHO;
-    new.c_lflag &= ~ICANON;
+    new.c_lflag &= ~(ICANON | ECHO);
     new.c_cc[VMIN] = 1;
     new.c_cc[VTIME] = 0;
 
-    ioctl(0, TCSETS, &new);
+    tcsetattr(0, TCSANOW, &new);
 }
 
 public fn void reset() {
-    ioctl(0, TCSETS, &old);
+    tcsetattr(0, TCSANOW, &old);
 }
 
 public fn char read_char() {
