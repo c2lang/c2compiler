@@ -147,6 +147,7 @@ fn void Finder.handleVarDecl(Finder* s, VarDecl* d) {
 }
 
 fn void Finder.handleExpr(Finder* s, Expr* e) {
+    if (!e) return;
     switch (e.getKind()) {
     case IntegerLiteral:
     case FloatLiteral:
@@ -210,7 +211,18 @@ fn void Finder.handleExpr(Finder* s, Expr* e) {
         ParenExpr* p = (ParenExpr*)e;
         s.handleExpr(p.getInner());
         break;
-    case BitOffset:
+    case ArraySelection:
+        ArraySelectionExpr* a = (ArraySelectionExpr*)e;
+        s.handleExpr(a.getBase());
+        s.handleExpr(a.getIndex());
+        s.handleExpr(a.getCount());
+        s.handleExpr(a.getStep());
+        break;
+    case BitSelection:
+        BitSelectionExpr* bs = (BitSelectionExpr*)e;
+        s.handleExpr(bs.getBase());
+        s.handleExpr(bs.getHigh());
+        s.handleExpr(bs.getLow());
         break;
     case ExplicitCast:
         ExplicitCastExpr* c = (ExplicitCastExpr*)e;

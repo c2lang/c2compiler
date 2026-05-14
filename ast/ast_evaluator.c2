@@ -80,31 +80,27 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
         const BuiltinExpr* bi = (BuiltinExpr*)e;
         return Value.createUnsigned(bi.getValue());
     case ArraySubscript:  // a[high:low], both included
-        // note: can be CTV if BitOffsetExpr
-        ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
-        Expr* index = a.getIndex();
-        if (!index.isBitOffset()) break;
-        Value base = eval.get_value(a.getBase());
-        // Dont allow negative/float
-        if (!base.isInteger() || base.isNegative()) return Value.error("invalid bitoffset");
-        BitOffsetExpr* bo = (BitOffsetExpr*)index;
-        Value high = eval.get_value(bo.getLHS());
-        Value low = eval.get_value(bo.getRHS());
-        Value width = high.minus(&low);
-        width.incr();
-        // calculate base = (base >> low) & bitmask(width))
-        base = base.right_shift(&low);
-        base.mask(width.as_u32());
-        return base;
+        break;
     case Member:
         const MemberExpr* m = (MemberExpr*)e;
         return eval.get_decl_value(m.getFullDecl());
     case Paren:
         const ParenExpr* p = (ParenExpr*)e;
         return eval.get_value(p.getInner());
-    case BitOffset:
-        assert(0); // Handled in ArraySubscript
+    case ArraySelection:
         break;
+    case BitSelection:  // a[high:low], both included
+        BitSelectionExpr* bs = (BitSelectionExpr*)e;
+        Value base = eval.get_value(bs.getBase());
+        // Dont allow negative/float
+        if (!base.isInteger() || base.isNegative()) return Value.error("invalid bitoffset");
+        Value high = eval.get_value(bs.getHigh());
+        Value low = eval.get_value(bs.getLow());
+        u32 width = high.as_u32() - low.as_u32() + 1;
+        // calculate base = (base >> low) & bitmask(width))
+        base = base.right_shift(&low);
+        base.mask(width);
+        return base;
     case ExplicitCast:
         const ExplicitCastExpr* i = (ExplicitCastExpr*)e;
         Value inner = eval.get_value(i.getInner());

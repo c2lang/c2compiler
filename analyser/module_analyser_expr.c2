@@ -115,7 +115,12 @@ fn QualType Analyser.analyseExprInner(Analyser* ma, Expr** e_ptr, u32 side) {
         e.copyValType(inner);
         e.setEffect(inner.hasEffect());
         return qt;
-    case BitOffset:
+    case ArraySelection:
+        // analyse and potentially convert to BitSelection
+        return ma.analyseArraySelectionExpr(e_ptr, side);
+    case BitSelection:
+        // should already be analysed, hence type is already set
+        assert(0);
         break;
     case ExplicitCast:
         return ma.analyseExplicitCast(e_ptr);
@@ -493,16 +498,6 @@ fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 s
 
     // Derefence alias types
     Expr* index = sub.getIndex();
-    if (index.isBitOffset()) {
-        if (side & LHS) {
-            ma.errorRange(e.getLoc(), e.getRange(), "bitoffset cannot be used as left hand side expression");
-            return QualType_Invalid;
-        }
-        Expr* base = sub.getBase();
-        q = ma.analyseBitOffsetExpr(q, base, index);
-        e.combineConstantFlags(base, index);
-        return q;
-    }
 
     q = q.getCanonicalType();
 
@@ -565,49 +560,80 @@ fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 s
     return pt.getInner();
 }
 
-fn QualType Analyser.analyseBitOffsetExpr(Analyser* ma, QualType ltype, Expr* base, Expr* e) {
-    BitOffsetExpr* bo = (BitOffsetExpr*)e;
+fn QualType Analyser.analyseArraySelectionExpr(Analyser* ma, Expr** e_ptr, u32 side) {
+    // TODO: convert to BitSelection if lhs is a builtin type
+    // otherwise reject if lhs is neither an array nor a pointer
+    // a[b] is an LValue if not an array itself
+    Expr* e = *e_ptr;
+    ArraySelectionExpr* sub = (ArraySelectionExpr*)e;
+
+    Expr* orig = sub.getBase(); // save orig (might be wrapped in ImplicitCast(ArrayToPointerDecay)
+    // array[..] = ..  also mark array as used for read (RHS)
+    QualType ltype = ma.analyseExpr(sub.getBase2(), true, side | RHS);
+    if (ltype.isInvalid()) return ltype;
+
+    Expr* base = sub.getBase();
     QualType canon = ltype.getCanonicalType();
-
     BuiltinType* bi = canon.getBuiltin();
-    if (!canon.isBuiltin() || !bi.isUnsigned()) {
-        ma.error(base.getLoc(), "bitoffsets are only allowed on unsigned integer type");
-        return QualType_Invalid;
-    }
-
-    Value lval;
-    Value rval;
-    bool lvalid = ma.analyseBitOffsetIndex(bo.getLHS2(), canon, &lval);
-    bool rvalid = ma.analyseBitOffsetIndex(bo.getRHS2(), canon, &rval);
-
-    if (lvalid && rvalid) {
-        if (lval.is_less(&rval)) {
-            ma.error(e.getLoc(), "left bitoffset index is smaller than right index");
+    if (canon.isBuiltin()) {
+        if (!bi.isUnsigned()) {
+            ma.error(base.getLoc(), "bitoffsets are only allowed on unsigned integer types");
+            return QualType_Invalid;
+        }
+        if (!sub.getIndex() || !sub.getCount()) {
+            ma.error(e.getLoc(), "bitoffsets must have explicit high and low offsets");
+            return QualType_Invalid;
+        }
+        if (sub.getStep()) {
+            ma.error(sub.getStep().getLoc(), "bitoffsets cannot have step values");
+            return QualType_Invalid;
+        }
+        if (side & LHS) {
+            // TODO: support that
+            ma.errorRange(e.getLoc(), e.getRange(), "bitoffset cannot be used as left hand side expression");
             return QualType_Invalid;
         }
 
-        Value width = lval.minus(&rval);
-        u64 w = width.as_u64() + 1;
-        if (w <= 8) {
-            ltype = getBuiltinQT(UInt8);
-        } else if (w <= 16) {
-            ltype = getBuiltinQT(UInt16);
-        } else if (w <= 32) {
-            ltype = getBuiltinQT(UInt32);
-        } else {
-            ltype = getBuiltinQT(UInt64);
+        i32 lval = -1;
+        i32 rval = -1;
+        i32 width = -1;
+        bool lvalid = ma.analyseSelectionIndex(sub.getIndex2(), canon, &lval);
+        bool rvalid = ma.analyseSelectionIndex(sub.getCount2(), canon, &rval);
+        if (!lvalid || !rvalid)
+            return QualType_Invalid;
+
+        if (lval >= 0 && rval >= 0) {
+            if (lval < rval) {
+                // TODO: accept boundaries in reverse order
+                ma.error(e.getLoc(), "left bitoffset index %d is smaller than right index %d", lval, rval);
+                return QualType_Invalid;
+            }
+
+            width = lval - rval + 1;
+            // TODO: this is semantically incorrect as ltype should not depend on the offsets being constant
+            if (width <= 8) {
+                ltype = getBuiltinQT(UInt8);
+            } else if (width <= 16) {
+                ltype = getBuiltinQT(UInt16);
+            } else if (width <= 32) {
+                ltype = getBuiltinQT(UInt32);
+            } else {
+                ltype = getBuiltinQT(UInt64);
+            }
         }
-
-        bo.setWidth((u8)w);
+        e = ma.builder.actOnBitSelectionExpr(e.getLoc(), sub.getSrcLen(), base, sub.getIndex(), sub.getCount(), width);
         e.setType(ltype);
+        e.combineConstantFlags(base, sub.getIndex());
+        //e.combineConstantFlags(base, sub.getCount()); //???
+        *e_ptr = e;
+        return ltype;
     }
-
-    e.combineConstantFlags(bo.getLHS(), bo.getRHS());
-
-    return ltype;
+    // TODO: check for pointers and arrays
+    ma.errorRange(e.getLoc(), e.getRange(), "array selections are not supported yet");
+    return QualType_Invalid;
 }
 
-fn bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType baseType, Value* result) {
+fn bool Analyser.analyseSelectionIndex(Analyser* ma, Expr** e_ptr, QualType baseType, i32* result) {
     BuiltinType* base_bi = baseType.getBuiltin();
 
     QualType qt = ma.analyseExpr(e_ptr, true, RHS);
@@ -622,26 +648,26 @@ fn bool Analyser.analyseBitOffsetIndex(Analyser* ma, Expr** e_ptr, QualType base
         return false;
     }
 
-    // TODO only allow CTV expressions
-    if (!e.isCtv()) return false;
+    if (e.isCtv()) {
+        Value val = ast.evalExpr(e);
+        if (val.isNegative()) {
+            ma.errorRange(e.getLoc(), e.getRange(), "bitoffset index value '%s' is negative", val.str());
+            return false;
+        }
+        if (val.isFloat()) {
+            return false;
+        }
 
-    Value val = ast.evalExpr(e);
-    if (val.isNegative()) {
-        ma.errorRange(e.getLoc(), e.getRange(), "bitoffset index value '%s' is negative", val.str());
-        return false;
+        // accept shifting 1 << 31
+        u64 val64 = val.as_u64();
+        if (val64 >= base_bi.getWidth()) {
+            ma.errorRange(e.getLoc(), e.getRange(), "bitoffset index value '%s' too large for type '%s'", val.str(), baseType.diagName());
+            return false;
+        }
+        *result = (i32)val64;
+    } else {
+        *result = -1;
     }
-    if (val.isFloat()) {
-        return false;
-    }
-
-    // accept shifting 1 << 31
-    if (val.as_u64() >= base_bi.getWidth()) {
-        ma.errorRange(e.getLoc(), e.getRange(), "bitoffset index value '%s' too large for type '%s'", val.str(), baseType.diagName());
-        return false;
-    }
-
-    *result = val;
-
     return true;
 }
 
