@@ -23,9 +23,9 @@ Never worry about `%llu`, `%ld` or `%"PRIu64"` again!
 
 ### Other options
 Next to that, the printf specifier format still allows all other C options like
-size and alignment. It supports the full format of:
+width, precision and alignment. It supports the full format of:
 
-__%[flags][width][.precision][size]type__
+__%[flags][width][.precision]type__
 
 for example:
 

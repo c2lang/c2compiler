@@ -1,5 +1,5 @@
 
-Since C2 is an _evolution_ of C, this page is here to summarize the
+C2 is an _evolution_ of C: this page summarizes the
 _changes_ made and the design philosophy behind it.
 
 
@@ -11,11 +11,11 @@ _changes_ made and the design philosophy behind it.
 
 * no forward declarations
 
-    _philosophy_: types the same thing twice, reduces development speed
+    _philosophy_: define types in a single place, better development speed
 
     _consequence_: requires a multi-pass compiler
 
-* member access always through dot-operator ' . ' , not sometimes ' -> '
+* member access always through dot-operator '`.`' , not sometimes '`->`'
 
     _philosophy_: remove clutter/reduce change effort
 
@@ -29,16 +29,16 @@ _changes_ made and the design philosophy behind it.
 
 * [Improved operator precedence](../language/operators)
 
-* [No auto-fallthrough in switch cases](../language/switch_statement/#auto-fallthrough)
+* [Only explicit fallthrough in switch cases](../language/switch_statement/#auto-fallthrough)
 
 * [no arrays as function arguments](../language/functions.md)
 
-* removed do .. while, since it's not needed without macros and error prone
+* removed `do` .. `while`, since it's not needed without macros and error prone
 
 
 ### New Features
-While C2 introduces some *NEW* features, these dont break the C philosophy and are
-mainly *Syntax cleanup*, *syntactic-sugar* or remove a C anti-pattern:
+While C2 introduces some *NEW* features, these do not break the C philosophy and are
+mainly *Syntax cleanup*, *syntactic-sugar* or remove some C anti-patterns:
 
 * [BitOffsets](../language/bitoffsets)
 

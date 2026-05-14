@@ -4,16 +4,16 @@
 C2 has the following builtin types and keywords
 
 ### Module related
+
 * `as`
+* `extern`
 * `import`
 * `local`
 * `module`
 
 ### Type related
-* `asm`
-* `auto`
+
 * `bool`
-* `cast`
 * `char`
 * `const`
 * `elemsof`
@@ -30,11 +30,16 @@ C2 has the following builtin types and keywords
 * `nil`
 * `offsetof`
 * `public`
+* `reg16`
+* `reg32`
+* `reg64`
+* `reg8`
 * `sizeof`
 * `static`
 * `struct`
-* `to_container`
+* `template`
 * `tlocal`
+* `to_container`
 * `true`
 * `type`
 * `u16`
@@ -47,11 +52,11 @@ C2 has the following builtin types and keywords
 * `volatile`
 
 ### Control flow related
+
 * `break`
 * `case`
 * `continue`
 * `default`
-* `do`
 * `else`
 * `fallthrough`
 * `for`
@@ -61,16 +66,35 @@ C2 has the following builtin types and keywords
 * `switch`
 * `while`
 
-### other
+### Other
+
+* `asm`
 * `assert`
 * `static_assert`
 
+### Reserved for C compatibility
+
+* `auto`
+* `do`
+* `double`
+* `float`
+* `int`
+* `long`
+* `short`
+* `signed`
+* `size_t`
+* `ssize_t`
+* `typedef`
+* `unsigned`
+
 ### Feature selection
+
 * `#if`
 * `#ifdef`
 * `#ifndef`
 * `#elif`
 * `#else`
+* `#endif`
 * `#warning`
 * `#error`
 
