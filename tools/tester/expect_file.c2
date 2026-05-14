@@ -51,21 +51,24 @@ public type ExpectFile struct @(opaque) {
     ExpectMode mode;
     string_buffer.Buf* output;  // will be set in check()
 
+    const char* testFilename;
     // during analysis
     u32 lastLineNr;
     u32 expIndex;
     // cache for Lines[expIndex]
     const char* expectedLine;
+    u32 expectedLineNr;
     bool consecutive;
 
     line_db.Db* lines;
 }
 
 
-public fn ExpectFile* create(const char* name, ExpectMode m) {
+public fn ExpectFile* create(const char* name, ExpectMode m, const char* testFilename) {
     ExpectFile* f = calloc(1, sizeof(ExpectFile));
     strcpy(f.filename, name);
     f.mode = m;
+    f.testFilename = testFilename;
     f.lines = line_db.create();
     return f;
 }
@@ -84,7 +87,7 @@ public fn void ExpectFile.addLine(ExpectFile* f, u32 line_nr, const char* start,
     if (strncmp(start, "//", 2) == 0) return;   // ignore comments
 
     f.lastLineNr = line_nr;
-    f.lines.add(start, end, consecutive);
+    f.lines.add(start, end, line_nr, consecutive);
 }
 
 fn bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, const char* end) {
@@ -92,30 +95,20 @@ fn bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, cons
     skipInitialWhitespace(&start, end);
     skipTrailingWhitespace(start, &end);
 
-    char[EXPECT_MAX_LINE] line;
     u32 len = (u32)(end - start);
     if (len == 0) return true;  // ignore empty lines
-    if (start[0] == '/' && start[1] == '/') return true;    // ignore comment lines
-
-    if (len >= EXPECT_MAX_LINE) {
-        color_print2(f.output, colError, "  in file %s: line %d: line too long", f.filename, line_nr);
-        return false;
-    }
-    if (len != 0) memcpy(line, start, len);
-    line[len] = 0;
-#if TesterDebug
-    printf("got %d [%s]\n", line_nr, line);
-#endif
+    if (strncmp(start, "//", 2) == 0) return true;    // ignore comment lines
 
     if (!f.expectedLine) {
         if (f.mode == COMPLETE) {
-            color_print2(f.output, colError, "  in file %s: line %d\n     unexpected line '%s'", f.filename, line_nr, line);
+            color_print2(f.output, colError, "%s:%d: unexpected '%.*s'", f.testFilename, f.expectedLineNr+1, (i32)len, start);
+            color_print2(f.output, colError, "  in file %s: line %d\n     unexpected line '%.*s'", f.filename, line_nr, (i32)len, start);
             return false;
         } else {
             return true;
         }
     }
-    if (strcmp(f.expectedLine, line) == 0) {
+    if (strncmp(f.expectedLine, start, len) == 0) {
 #if TesterDebug
         printf("-> match\n");
 #endif
@@ -123,7 +116,8 @@ fn bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, cons
         f.setExpected();
     } else {
         if (f.mode == COMPLETE || f.consecutive) {
-            color_print2(f.output, colError, "  in file %s: line %d\n  expected '%s'\n       got '%s'", f.filename, line_nr, f.expectedLine, line);
+            color_print2(f.output, colError, "%s:%d: expected '%s', got '%.*s'", f.testFilename, f.expectedLineNr, f.expectedLine, (i32)len, start);
+            color_print2(f.output, colError, "  in file %s: line %d\n  expected '%s'\n       got '%.*s'", f.filename, line_nr, f.expectedLine, (i32)len, start);
             return false;
         }
     }
@@ -136,6 +130,7 @@ fn void ExpectFile.setExpected(ExpectFile* f) {
         f.consecutive = false;
     } else {
         f.expectedLine = f.lines.getLine(f.expIndex);
+        f.expectedLineNr = f.lines.getLineNr(f.expIndex);
         f.consecutive = f.lines.getConsecutive(f.expIndex);
     }
 #if TesterDebug
@@ -164,29 +159,26 @@ public fn bool ExpectFile.check(ExpectFile* f, string_buffer.Buf* output, const 
     f.setExpected();
 
     u32 line_nr = 1;
-    while (1) {
+    while (*lineStart) {
         // cut it up into lines (even if empty)
         const char* cp = lineStart;
         while (*cp) {
             if (*cp == '\n') break;
             cp++;
         }
-
-        if (*cp == 0) break;
         if (!f.checkLine(line_nr, lineStart, cp)) {
             result = false;
-            goto out;
+            break;
         }
         line_nr++;
-        cp++;   // skip newline
+        if (*cp == '\n') cp++;   // skip newline
         lineStart = cp;
     }
-
-    if (f.expectedLine != nil) {
+    if (!*lineStart && f.expectedLine != nil) {
+        color_print2(f.output, colError, "%s:%d: expected '%s'", f.testFilename, f.expectedLineNr, f.expectedLine);
         color_print2(f.output, colError, "  in file %s: expected '%s'", f.filename, f.expectedLine);
         result = false;
     }
-out:
     file.close();
     return result;
 }
