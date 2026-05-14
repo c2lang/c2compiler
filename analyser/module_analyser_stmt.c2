@@ -66,8 +66,8 @@ fn FlowBits Analyser.analyseStmt(Analyser* ma, Stmt** s_ptr, bool checkEffect) {
     Stmt* s = *s_ptr;
     FlowBits flow = 0;
     if (ma.scope.isUnreachable()) {
-        if (s.getKind() != Label && !ma.warnings.no_unreachable_code) {
-            ma.warn(s.getLoc(), "unreachable code");
+        if (s.getKind() != Label) {
+            ma.warn(W_unreachable_code, s.getLoc(), "unreachable code");
         }
         ma.scope.setReachable();  // prevent multiple warnings
     }
@@ -283,7 +283,7 @@ fn QualType Analyser.analyseCondition(Analyser* ma, Stmt** s_ptr, const char* co
         e = (Expr*)*s_ptr;    // re-read in case of ImplicitCast insertions
     }
     if (check_assign && e.isAssignment()) {
-        ma.warn(e.getLoc(), "using the result of an assignment as a condition without parentheses");
+        ma.warn(W_idiomatic_parentheses, e.getLoc(), "using the result of an assignment as a condition without parentheses");
     }
 
     return qt;
@@ -319,7 +319,7 @@ fn FlowBits Analyser.analyseIfStmt(Analyser* ma, Stmt* s) {
     bool ok = ma.conv_checker.checkAssign(getBuiltinQT(Bool), qt, condp, e.getLoc());
     e = *condp;    // re-read in case of ImplicitCast insertions
     if (e.isAssignment()) {
-        ma.warn(e.getLoc(), "using the result of an assignment as a condition without parentheses");
+        ma.warn(W_idiomatic_parentheses, e.getLoc(), "using the result of an assignment as a condition without parentheses");
     }
     if (!ok) goto done;
     // TODO: handle constant conditions
