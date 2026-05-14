@@ -3,9 +3,9 @@
 A build file is optional, but can used to specify:
 
 * Target-triple (eg. arm-linux-gnueabi-gcc, x86\_64-unknown-linux-gnu)
-* Compiler/Build options for the C-backend (eg. specify the cross-compiler + flags)
+* Compiler/Build options for the C backend (eg. specify the cross-compiler + flags)
 * A list of library search paths
-* Change the default output-directory
+* Change the default output directory
 
 
 ### Specifying a build file
@@ -73,5 +73,5 @@ A build file changes the way C2C searches for libraries. C2C uses the following 
 
 * If no build file is used, it **only** uses the *C2\_LIBDIR* environment variable.
 * If a build file is used, the *C2\_LIBDIR* environment variable is not used.
-* The build file can specify a list of paths that are search in the same order as in the file.
+* The build file can specify a list of paths that are searched in the given order.
 

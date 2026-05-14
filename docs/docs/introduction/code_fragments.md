@@ -1,9 +1,9 @@
 
 This section just shows some code fragments to give you a feel of the language.
-As you'll see, most code *inside* function bodies is almost identical to C, but
+As you will see, most code *inside* function bodies is almost identical to C, but
 code *outside* differs a bit.
 
-### if-statement
+### `if` statement
 ```c
 fn void demo_if(i32 a) {
     if (a > 0) {
@@ -14,22 +14,22 @@ fn void demo_if(i32 a) {
 }
 ```
 
-### for-loop
+### `for` loop
 ```c
 fn void demo_for() {
     // the for-loop is the same as C. You can declare the loop variable (i) inside.
-    for (i32 i=0; i<10; i++) {
+    for (i32 i = 0; i < 10; i++) {
         io.printf("%d\n", i);
     }
 
-    // also equal
+    // C for ever loops work the same
     for (;;) {
         // ..
     }
 }
 ```
 
-### while-loop
+### `while` loop
 ```c
 fn void demo_while() {
     // again exactly the same as C
@@ -45,7 +45,7 @@ fn void demo_while() {
 }
 ```
 
-### enum + switch
+### `enum` + `switch`
 
 ```c
 
@@ -59,13 +59,13 @@ fn void demo_enum(Height h) {
     switch (h) {
     case Low:
         fallthrough;
-    case Medium - High: // multi-condition case
+    case Medium, High: // multi-condition case
         break;
     }
 
     // special checking of switching on enum types
     switch (h) {
-        case Low - High:
+        case Low ... High:  // case range
             break;
         default:    // warning: default label in switch which covers all enumeration value
             break;
@@ -73,11 +73,11 @@ fn void demo_enum(Height h) {
 }
 ```
 
-The Switch statement differs from C in that the default case (if present) must be last. Also
-empty switch statements are also not allowed.
+The `switch` statement differs from C in that the `default` label (if present) must be last. Also
+empty switch statements are not allowed.
 
 Enum constants are always in their own namespace. This avoids global/module
-namespace pollution and allows multiple enums to have the same constant name. But when switching on an
+namespace pollution and allows multiple enums to have the same constant names. But when switching on an
 enum type, only the constant is allowed (for readability and consistency). When switching on a non-enum
 type, the prefix must be used.
 

@@ -48,7 +48,7 @@ c = Red;
 line.draw(Green);
 ```
 
-### Enum min/max
+### Enums as array sizes
 Enum types can be used as array size specifications for variables:
 
 ```c
@@ -97,7 +97,7 @@ Enums must always have at least one constant.
 
 ### Enum-associated values
 
-Often it's useful to associate other information to an enum-constant, for example a string name.
+Often it's useful to associate other information to an enum-constant, for example a name string.
 The code often ends up like:
 ```c
 fn const char* color2name(Color c) {
@@ -124,10 +124,10 @@ type State enum u8 (const char* name, State next, const bool is_active) {
 }
 ```
 
-Since the syntax doesn't allow specifying the values of the constanst, enums with associated-values
+Since the syntax doesn't allow specifying the values of the constants, enums with associated-values
 are always __regular enums__.
 
-Associated values can be const or not.
+Associated values can be const or not, public or not.
 
 There are 2 ways to access these associated values:
 

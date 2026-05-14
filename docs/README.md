@@ -1,6 +1,6 @@
 # C2 Documentation
 
-This is the source code for generating the C2 documenation (http://c2lang.org/site)
+This is the source code for generating the C2 documentation (http://c2lang.org/site)
 They are generated with [MkDocs](http://www.mkdocs.org).
 
 NOTE: the documentation uses an older version of mkdocs (from ubuntu 16.x) Since in
