@@ -32,7 +32,7 @@ Scroll down for the answer
 
 .
 
-Here it is:
+Here they are:
 
 1. __module__ keyword, see [modules](../language/modules.md)
 2. __import__ replaced #include, see [Import](../language/modules.md#import)

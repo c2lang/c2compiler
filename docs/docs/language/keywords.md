@@ -3,40 +3,41 @@
 C2 has the following keywords:
 
 ### Module related
+
 * `module`
+* `local`
 * `import`
 * `as`
 * `public`
 
 ### Type related
+
 * `bool`
-* `cast`
 * `char`
 * `const`
 * `elemsof`
 * `enum`
-* `false`
 * `f32`
 * `f64`
+* `false`
 * `fn`
 * `i8`
 * `i16`
 * `i32`
 * `i64`
 * `isize`
-* `local`
 * `nil`
 * `offsetof`
 * `reg8`
 * `reg16`
 * `reg32`
 * `reg64`
-* `to_container`
 * `sizeof`
 * `static`
 * `struct`
 * `template`
 * `tlocal`
+* `to_container`
 * `true`
 * `type`
 * `u8`
@@ -49,11 +50,11 @@ C2 has the following keywords:
 * `volatile`
 
 ### Control flow related
+
 * `break`
 * `case`
 * `continue`
 * `default`
-* `do`
 * `else`
 * `fallthrough`
 * `for`
@@ -63,12 +64,14 @@ C2 has the following keywords:
 * `switch`
 * `while`
 
-### other
+### Other
+
 * `asm`
 * `assert`
 * `static_assert`
 
 ### Feature selection
+
 * `#if`
 * `#ifdef`
 * `#ifndef`
@@ -80,28 +83,30 @@ C2 has the following keywords:
 
 ## C keywords
 
-In addition to the C2 keywords, there are a number of C keywords that can be used in interface files:
+In addition to the C2 keywords, there are a number of C keywords that can be used in interface files with their C semantics:
+
+* `double`
+* `extern`
+* `float`
+* `long`
+* `short`
+* `signed`
+* `size_t`
+* `ssize_t`
+* `typedef`
+* `unsigned`
+
+Other C keywords are reserved to avoid compatibility problems:
 
 * `alignas`
 * `alignof`
 * `auto`
 * `constexpr`
 * `do`
-* `double`
-* `extern`
-* `float`
 * `inline`
-* `long`
 * `nullptr`
 * `register`
 * `restrict`
-* `short`
-* `signed`
-* `ssize_t`
-* `size_t`
 * `thread_local`
-* `typedef`
 * `typeof`
 * `typeof_unqual`
-* `unsigned`
-
