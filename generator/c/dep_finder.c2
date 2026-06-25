@@ -37,7 +37,7 @@ public fn void Finder.check(Finder* s, Decl* d) {
     s.current = d;
     switch (d.getKind()) {
     case Function:
-        s.handleFunction((FunctionDecl*)d);
+        s.handleFunction((FunctionDecl*)d, true);
         break;
     case Import:
         break;
@@ -55,28 +55,22 @@ public fn void Finder.check(Finder* s, Decl* d) {
         break;
     case FunctionType:
         FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;
-        s.handleFunction(ftd.getDecl());
+        s.handleFunction(ftd.getDecl(), false);
         break;
     case AliasType:
         AliasTypeDecl* at = (AliasTypeDecl*)d;
-        s.handleTypeRef(at.getTypeRef());
+        s.handleTypeRef(at.getTypeRef(), false);
         break;
     case Variable:
-        s.handleVarDecl((VarDecl*)d);
+        s.handleVarDecl((VarDecl*)d, true);
         break;
     }
 }
 
-/*
-fn void Finder.handleFunctionType(Finder* s, FunctionTypeDecl* ftd) {
-    s.handleFunction(ftd.getDecl());
-}
-*/
-
-fn void Finder.handleFunction(Finder* s, FunctionDecl* d) {
+fn void Finder.handleFunction(Finder* s, FunctionDecl* d, bool full) {
     if (d.isTemplate()) return; // TODO skip template functions for now
 
-    s.handleTypeRef(d.getReturnTypeRef());
+    s.handleTypeRef(d.getReturnTypeRef(), full);
 
     // struct prefix
     //if (d.hasPrefix()) {
@@ -86,7 +80,7 @@ fn void Finder.handleFunction(Finder* s, FunctionDecl* d) {
     // args
     u32 num_params = d.getNumParams();
     VarDecl** args = d.getParams();
-    for (u32 i=0; i<num_params; i++) s.handleVarDecl(args[i]);
+    for (u32 i=0; i<num_params; i++) s.handleVarDecl(args[i], full);
 
     // body
     //CompoundStmt* body = d.getBody();
@@ -104,7 +98,7 @@ fn void Finder.handleStruct(Finder* s, StructTypeDecl* d) {
         } else {
             assert(m.isVariable());
             // TODO for pointer members, dont count, since forward decl is already done!
-            s.handleVarDecl((VarDecl*)m);
+            s.handleVarDecl((VarDecl*)m, true);
         }
     }
 }
@@ -121,10 +115,10 @@ fn void Finder.handleEnumType(Finder* s, EnumTypeDecl* etd) {
     }
 }
 
-fn void Finder.handleTypeRef(Finder* f, TypeRef* r) {
+fn void Finder.handleTypeRef(Finder* f, TypeRef* r, bool full) {
     const Decl* refDecl = r.getUserDecl();
     if (refDecl) {
-        if (r.isPointer() && refDecl.isStructType()) {
+        if ((r.isPointer() || !full) && refDecl.isStructType()) {
             // if pointing to another struct, dont add dep, since we already have a forward decl
             // note: this also filters 'self' pointers
         } else {
@@ -139,8 +133,8 @@ fn void Finder.handleTypeRef(Finder* f, TypeRef* r) {
     }
 }
 
-fn void Finder.handleVarDecl(Finder* s, VarDecl* d) {
-    s.handleTypeRef(d.getTypeRef());
+fn void Finder.handleVarDecl(Finder* s, VarDecl* d, bool full) {
+    s.handleTypeRef(d.getTypeRef(), full);
 
     Expr* init_expr = d.getInit();
     if (init_expr) s.handleExpr(init_expr);
@@ -162,7 +156,7 @@ fn void Finder.handleExpr(Finder* s, Expr* e) {
         break;
     case Type:
         TypeExpr* t = (TypeExpr*)e;
-        s.handleTypeRef(t.getTypeRef());
+        s.handleTypeRef(t.getTypeRef(), true);
         break;
     case Call:
         break;
@@ -215,7 +209,7 @@ fn void Finder.handleExpr(Finder* s, Expr* e) {
     case ExplicitCast:
         ExplicitCastExpr* c = (ExplicitCastExpr*)e;
         s.handleExpr(c.getInner());
-        s.handleTypeRef(c.getTypeRef());
+        s.handleTypeRef(c.getTypeRef(), true);
         break;
     case ImplicitCast:
         ImplicitCastExpr* c = (ImplicitCastExpr*)e;

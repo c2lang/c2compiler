@@ -24,13 +24,14 @@ fn void Analyser.analyseFunctionType(Analyser* ma, Decl* d) {
     FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;
     FunctionDecl* fd = ftd.getDecl();
 
-    ma.analyseFunction(fd);
+    // FunctionTypes (type Foo fn void(Bar b)) only have Partial Dependency on args (dont need definition)
+    ma.analyseFunction(fd, false);
 }
 
 fn void Analyser.analyseAliasType(Analyser* ma, AliasTypeDecl* a) {
     TypeRef* ref = a.getTypeRef();
     Decl* d = (Decl*)a;
-    QualType res = ma.analyseTypeRef(ref);
+    QualType res = ma.analyseTypeRef(ref, true);
     if (res.isInvalid()) return;
     QualType qt = d.getType();
     // Note: type is always AliasType
@@ -113,19 +114,19 @@ fn void Analyser.analyseEnumType(Analyser* ma, EnumTypeDecl* d) {
     if (is_regular || has_assoc) d.setRegular();
 }
 
-fn QualType Analyser.analyseStructMemberTypeRef(Analyser* ma, TypeRef* ref) {
+fn QualType Analyser.analyseStructMemberFnTypeRef(Analyser* ma, TypeRef* ref) {
     const Ref* member = ref.getStructMemberType();
     // Member.decl is uninitialized!? (member is ok)
     assert(member.decl);
     assert(member.decl.isFunction());
 
     FunctionDecl* fd = (FunctionDecl*)member.decl;
-    ma.analyseFunction(fd);
+    ma.analyseFunction(fd, false);
     if (ma.has_error) return QualType_Invalid;
     return member.decl.getType();
 }
 
-fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
+fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref, bool full) {
     assert(ma.mod);
     const Ref* user = ref.getUser();
 
@@ -171,19 +172,16 @@ fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
         return QualType_Invalid;
     }
 
-    //TODO already checked in findSymbolInModule
-    //if (!ma.scope.checkAccess(d, user.loc)) return QualType_Invalid;
-
-    bool full = !ref.isPointer();
+    full &= !ref.isPointer();
     DeclCheckState state = d.getCheckState();
 
-    if (full && state == InProgress) {
-        ma.error(user.loc, "circular declaration");
-        return QualType_Invalid;
-    }
+    if (full) {
+        if (state == InProgress) {
+            ma.error(user.loc, "circular declaration");
+            return QualType_Invalid;
+        }
 
-    if (full && state != Checked) {
-        ma.analyseGlobalDecl(d);
+        if (state != Checked) ma.analyseGlobalDecl(d);
     }
 
     d.setUsed();
@@ -193,7 +191,7 @@ fn QualType Analyser.analyseUserTypeRef(Analyser* ma, TypeRef* ref) {
     return d.getType();
 }
 
-fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
+fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref, bool full) {
     QualType base;
     switch (ref.getKind()) {
     case Builtin:
@@ -206,12 +204,12 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref) {
         assert(base.isValid());
         break;
     case User:
-        base = ma.analyseUserTypeRef(ref);
+        base = ma.analyseUserTypeRef(ref, full);
         if (base.isInvalid()) return base;
         if (!base.hasCanonicalType()) return QualType_Invalid;
         break;
     case Function:
-        base = ma.analyseStructMemberTypeRef(ref);
+        base = ma.analyseStructMemberFnTypeRef(ref);
         if (base.isInvalid()) return base;
         if (!base.hasCanonicalType()) return QualType_Invalid;
         break;
@@ -318,7 +316,7 @@ fn QualType Analyser.analyseIncrTypeRef(Analyser* ma, TypeRef* ref, u32 size) {
         assert(base.isValid());
         break;
     case User:
-        base = ma.analyseUserTypeRef(ref);
+        base = ma.analyseUserTypeRef(ref, true);
         if (base.isInvalid()) return base;
         assert(base.hasCanonicalType());
         break;

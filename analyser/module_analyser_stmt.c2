@@ -446,7 +446,7 @@ fn QualType Analyser.analyseDecl(Analyser* ma, VarDecl* vd) {
         return QualType_Invalid;
     }
 
-    QualType res = ma.analyseTypeRef(ref);
+    QualType res = ma.analyseTypeRef(ref, true);
     if (res.isInvalid()) return QualType_Invalid;
     d.setType(res);
 

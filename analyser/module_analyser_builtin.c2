@@ -47,7 +47,7 @@ fn QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     if (inner.isType()) {
         TypeExpr* te = (TypeExpr*)inner;
         TypeRef* ref = te.getTypeRef();
-        qt = ma.analyseTypeRef(ref);
+        qt = ma.analyseTypeRef(ref, true);
         inner.setType(qt);
     } else {
         // is Identifier/memberExpr, could still be Type!

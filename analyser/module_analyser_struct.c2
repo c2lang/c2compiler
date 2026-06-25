@@ -144,7 +144,7 @@ fn void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
         return;
     }
 
-    QualType res = ma.analyseTypeRef(ref);
+    QualType res = ma.analyseTypeRef(ref, true);
     if (res.isInvalid()) return;
 
     // check that array size is specified

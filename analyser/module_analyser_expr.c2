@@ -461,7 +461,7 @@ fn QualType Analyser.analyseExplicitCast(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
     ExplicitCastExpr* c = (ExplicitCastExpr*)e;
     TypeRef* ref = c.getTypeRef();
-    QualType destType = ma.analyseTypeRef(ref);
+    QualType destType = ma.analyseTypeRef(ref, true);
 
     QualType srcType = ma.analyseExpr(c.getInner2(), true, RHS);
 

@@ -20,7 +20,7 @@ import label_vector local;
 import scope;
 
 // Note: only analyses prototype + args, not the function body
-fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
+fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd, bool full) {
     if (fd.isTemplate()) {
         // do analyze template name (eg X) for name clash
         ma.scope.checkGlobalSymbol(fd.getTemplateNameIdx(), fd.getTemplateLoc());
@@ -46,7 +46,7 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
 
     // return type
     TypeRef* rtype = fd.getReturnTypeRef();
-    QualType qt = ma.analyseTypeRef(rtype);
+    QualType qt = ma.analyseTypeRef(rtype, full);
     if (qt.isInvalid()) return;
 
     QualType canon = qt.getCanonicalType();
@@ -72,7 +72,7 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd) {
         VarDecl* vd = params[i];
         TypeRef* ref = vd.getTypeRef();
 
-        QualType res = ma.analyseTypeRef(ref);
+        QualType res = ma.analyseTypeRef(ref, full);
         if (res.isInvalid()) continue;
 
         canon = res.getCanonicalType();

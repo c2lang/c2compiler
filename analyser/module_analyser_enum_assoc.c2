@@ -34,7 +34,7 @@ fn void Analyser.analyseEnumAssocValues(Analyser* ma, EnumTypeDecl* etd) {
         // save+restore public status
         ma.usedPublic = d.isPublic();
         TypeRef* ref = vd.getTypeRef();
-        QualType res = ma.analyseTypeRef(ref);
+        QualType res = ma.analyseTypeRef(ref, true);
         ma.usedPublic = savedPublic;
 
         if (res.isInvalid()) {

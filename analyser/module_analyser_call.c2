@@ -664,7 +664,7 @@ fn void Analyser.opaque_callback(void* arg, SrcLoc loc, Decl* d) {
 
 fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* call, FunctionDecl* fd) {
     TypeRef* template_arg = call.getTemplateArg();
-    QualType templateType = ma.analyseTypeRef(template_arg);
+    QualType templateType = ma.analyseTypeRef(template_arg, true);
     if (templateType.isInvalid()) return nil;
 
     FunctionDecl* instance = ma.mod.findInstance(fd, templateType);
@@ -688,7 +688,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
         }
         instance = fd.instantiate(&inst);
         Decl* d = (Decl*)instance;
-        ma.analyseFunction(instance);
+        ma.analyseFunction(instance, true);
         if (ma.has_error) return nil;
         d.setChecked();
 

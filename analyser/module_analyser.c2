@@ -489,7 +489,7 @@ fn bool Analyser.analyseGlobalDecl(Analyser* ma, Decl* d) {
 
     switch (d.getKind()) {
     case Function:
-        ma.analyseFunction((FunctionDecl*)d);
+        ma.analyseFunction((FunctionDecl*)d, true);
         break;
     case Import:
         break;
@@ -683,7 +683,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         }
         res = ma.analyseIncrTypeRef(ref, size);
     } else {
-        res = ma.analyseTypeRef(ref);
+        res = ma.analyseTypeRef(ref, true);
     }
     if (res.isInvalid()) return;
 
