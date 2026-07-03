@@ -127,7 +127,7 @@ fn Expr* Parser.parseRHSOfBinaryExpression(Parser* p, Expr* lhs, Prec minPrec) {
         Expr* ternaryMiddle = nil;
         if (nextTokPrec == Conditional) {
             if (p.tok.kind == Colon) {
-                p.error("TODO conditional expr"); // or warning?
+                p.error("expected expression after '?'");
             } else {
                 ternaryMiddle = p.parseExpr();
             }

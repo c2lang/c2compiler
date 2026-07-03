@@ -591,6 +591,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
                 p.consumeToken();
                 p.errorAt(p.tok.loc + p.tok.len, "missing argument list for init call");
             }
+            p.error("expected identifier after '.'");
             break;
         case LSquare:
             p.error("array indices should go after type");
