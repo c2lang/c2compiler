@@ -129,7 +129,7 @@ fn void Frames.popTrailingDangling(Frames* f) {
     }
 }
 
-fn Kind nextSignificantKind(TokList* toks, u32 i) {
+fn Kind TokList.nextSignificantKind(TokList* toks, u32 i) {
     for (u32 j = i + 1; j < toks.count; j++) {
         Kind k = toks.data[j].kind;
         if (k == LineComment || k == BlockComment) continue;
@@ -394,7 +394,7 @@ fn void alignColumn(string_buffer.Buf* out, u32 col) {
     for (u32 i = 0; i < col; i++) out.space();
 }
 
-fn void format_tokens(Formatter* fmt, TokList* toks) {
+fn void Formatter.format_tokens(Formatter* fmt, TokList* toks) {
     string_buffer.Buf* out = fmt.out;
 
     for (u32 i = 0; i < toks.count; i++) {
@@ -425,7 +425,7 @@ fn void format_tokens(Formatter* fmt, TokList* toks) {
                     Frame* top = fmt.frames.top();
                     bool in_call_args = top && top.kind == Paren && top.is_call;
                     if (!in_call_args && isupper((u8)fmt.pool.idx2str(prev.name_idx)[0])) {
-                        switch (nextSignificantKind(toks, i)) {
+                        switch (toks.nextSignificantKind(i)) {
                         case Identifier:
                         case Star:
                         case RParen:
@@ -544,11 +544,11 @@ fn void format_tokens(Formatter* fmt, TokList* toks) {
             }
             if (popped.is_switch_cond) fmt.next_brace_is_switch = true;
             fmt.prev_rparen_was_cond = popped.is_cond;
-            if (popped.is_cond && nextSignificantKind(toks, i) != LBrace) fmt.frames.push(DanglingStmt);
+            if (popped.is_cond && toks.nextSignificantKind(i) != LBrace) fmt.frames.push(DanglingStmt);
             break;
         }
         case KW_else: {
-            Kind nk = nextSignificantKind(toks, i);
+            Kind nk = toks.nextSignificantKind(i);
             if (nk != LBrace && nk != KW_if) fmt.frames.push(DanglingStmt);
             break;
         }
@@ -633,7 +633,7 @@ fn i32 format_file(const char* filename, bool write_mode, bool list_mode) {
     if (fatal || fmt.has_error) {
         result = -1;
     } else {
-        format_tokens(&fmt, &toks);
+        fmt.format_tokens(&toks);
 
         bool changed = (out.size() != file.data_size())
                     || (memcmp(out.data(), input, out.size()) != 0);
