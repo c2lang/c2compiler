@@ -70,6 +70,9 @@ type Frame struct {
     bool is_switch_cond;   // Paren that is specifically a `switch (..)` condition
     bool is_cond;          // Paren that is an if/for/while/switch condition
     bool is_call;          // Paren that is a call's argument list (not a cast/group/sizeof)
+    bool align_undecided;  // is_call: haven't yet seen whether args start on the `(` line
+    bool has_align;        // is_call: args started right after `(`, so align to align_col
+    u32 align_col;         // is_call: column right after the opening `(`
 }
 
 const u32 MaxDepth = 256;
@@ -86,6 +89,9 @@ fn void Frames.push(Frames* f, FrameKind k) {
         f.stack[f.depth].is_switch_cond = false;
         f.stack[f.depth].is_cond = false;
         f.stack[f.depth].is_call = false;
+        f.stack[f.depth].align_undecided = false;
+        f.stack[f.depth].has_align = false;
+        f.stack[f.depth].align_col = 0;
     }
     f.depth++;
 }
@@ -98,7 +104,7 @@ fn Frame* Frames.top(Frames* f) {
 }
 
 fn Frame Frames.pop(Frames* f) {
-    Frame result = { Brace, false, false, false, false }
+    Frame result = { Brace, false, false, false, false, false, false, 0 }
     if (f.depth) {
         f.depth--;
         if (f.depth < MaxDepth) result = f.stack[f.depth];
@@ -384,6 +390,10 @@ fn bool needsSpace(Formatter* fmt, const Token* prev, const Token* cur, bool is_
     return true;
 }
 
+fn void alignColumn(string_buffer.Buf* out, u32 col) {
+    for (u32 i = 0; i < col; i++) out.space();
+}
+
 fn void format_tokens(Formatter* fmt, TokList* toks) {
     string_buffer.Buf* out = fmt.out;
 
@@ -435,6 +445,17 @@ fn void format_tokens(Formatter* fmt, TokList* toks) {
             u32 gap_nl = countNewlines(fmt.input, prev_end, tok_start);
             u32 nl = gap_nl > 2 ? 2 : gap_nl;
 
+            // A call's argument list aligns to the column right after its `(`
+            // when the first argument stayed on the `(` line; otherwise (the
+            // author broke the line immediately after `(`) it falls back to
+            // regular block indentation. This is decided once, from the first
+            // token seen inside the argument list.
+            Frame* pending_align = fmt.frames.top();
+            if (pending_align && pending_align.align_undecided) {
+                pending_align.align_undecided = false;
+                pending_align.has_align = (nl == 0);
+            }
+
             // K&R: `{` always joins the previous line, except a wrapped function
             // declarator's parameter list forces it onto its own line instead.
             if (cur.kind == LBrace) {
@@ -445,7 +466,12 @@ fn void format_tokens(Formatter* fmt, TokList* toks) {
             if (nl > 0) {
                 fmt.frames.markNewline();
                 for (u32 n = 0; n < nl; n++) out.add1('\n');
-                out.indent(lineIndentLevel(fmt, cur.kind));
+                Frame* align_top = fmt.frames.top();
+                if (align_top && align_top.has_align) {
+                    alignColumn(out, align_top.align_col);
+                } else {
+                    out.indent(lineIndentLevel(fmt, cur.kind));
+                }
             } else {
                 if (needsSpace(fmt, &prev, &cur, is_ptr_star_cur, is_unary_cur)) out.space();
             }
@@ -490,6 +516,10 @@ fn void format_tokens(Formatter* fmt, TokList* toks) {
                 top.is_switch_cond = is_switch_cond;
                 top.is_cond = is_cond;
                 top.is_call = is_call;
+                if (is_call) {
+                    top.align_col = out.getColumn();
+                    top.align_undecided = true;
+                }
             }
             break;
         }
