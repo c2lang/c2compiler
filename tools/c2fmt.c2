@@ -70,9 +70,9 @@ type Frame struct {
     bool is_switch_cond;   // Paren that is specifically a `switch (..)` condition
     bool is_cond;          // Paren that is an if/for/while/switch condition
     bool is_call;          // Paren that is a call's argument list (not a cast/group/sizeof)
-    bool align_undecided;  // is_call: haven't yet seen whether args start on the `(` line
-    bool has_align;        // is_call: args started right after `(`, so align to align_col
-    u32 align_col;         // is_call: column right after the opening `(`
+    bool align_undecided;  // call args / fn params: haven't yet seen whether they start on the `(` line
+    bool has_align;        // call args / fn params: started right after `(`, so align to align_col
+    u32 align_col;         // call args / fn params: column right after the opening `(`
 }
 
 const u32 MaxDepth = 256;
@@ -445,11 +445,12 @@ fn void format_tokens(Formatter* fmt, TokList* toks) {
             u32 gap_nl = countNewlines(fmt.input, prev_end, tok_start);
             u32 nl = gap_nl > 2 ? 2 : gap_nl;
 
-            // A call's argument list aligns to the column right after its `(`
-            // when the first argument stayed on the `(` line; otherwise (the
-            // author broke the line immediately after `(`) it falls back to
-            // regular block indentation. This is decided once, from the first
-            // token seen inside the argument list.
+            // A call's argument list or a function's parameter list aligns to
+            // the column right after its `(` when the first argument/param
+            // stayed on the `(` line; otherwise (the author broke the line
+            // immediately after `(`) it falls back to regular block
+            // indentation. This is decided once, from the first token seen
+            // inside the list.
             Frame* pending_align = fmt.frames.top();
             if (pending_align && pending_align.align_undecided) {
                 pending_align.align_undecided = false;
@@ -516,7 +517,7 @@ fn void format_tokens(Formatter* fmt, TokList* toks) {
                 top.is_switch_cond = is_switch_cond;
                 top.is_cond = is_cond;
                 top.is_call = is_call;
-                if (is_call) {
+                if (is_call || fk == ParamParen) {
                     top.align_col = out.getColumn();
                     top.align_undecided = true;
                 }
