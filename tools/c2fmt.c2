@@ -1,0 +1,695 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module c2fmt_main;
+
+import c2_tokenizer;
+import file_utils;
+import keywords;
+import src_loc local;
+import string_buffer;
+import string_map;
+import string_pool;
+import token local;
+
+import ctype local;
+import stdio local;
+import stdlib local;
+import string local;
+
+// c2fmt reformats C2 source: it re-derives indentation and inter-token
+// spacing from the raw token stream, but never reflows or rewraps a line
+// that the author already broke somewhere else. Comments pass through
+// untouched, since raw-mode tokenizing returns them as ordinary tokens.
+
+type TokList struct {
+    Token* data;
+    u32 count;
+    u32 capacity;
+}
+
+fn void TokList.init(TokList* l) {
+    l.capacity = 1024;
+    l.count = 0;
+    l.data = malloc(l.capacity * sizeof(Token));
+}
+
+fn void TokList.add(TokList* l, const Token* t) {
+    if (l.count == l.capacity) {
+        l.capacity *= 2;
+        Token* data2 = malloc(l.capacity * sizeof(Token));
+        memcpy(data2, l.data, l.count * sizeof(Token));
+        free(l.data);
+        l.data = data2;
+    }
+    l.data[l.count] = *t;
+    l.count++;
+}
+
+fn void TokList.free(TokList* l) {
+    free(l.data);
+}
+
+type FrameKind enum u8 { Brace, SwitchBrace, Paren, ParamParen, Square, DanglingStmt }
+
+type Frame struct {
+    FrameKind kind;
+    bool had_newline;      // did source contain a line break while this frame was open
+    bool is_switch_cond;   // Paren that is specifically a `switch (..)` condition
+    bool is_cond;          // Paren that is an if/for/while/switch condition
+    bool is_call;          // Paren that is a call's argument list (not a cast/group/sizeof)
+}
+
+const u32 MaxDepth = 256;
+
+type Frames struct {
+    Frame[MaxDepth] stack;
+    u32 depth;
+}
+
+fn void Frames.push(Frames* f, FrameKind k) {
+    if (f.depth < MaxDepth) {
+        f.stack[f.depth].kind = k;
+        f.stack[f.depth].had_newline = false;
+        f.stack[f.depth].is_switch_cond = false;
+        f.stack[f.depth].is_cond = false;
+        f.stack[f.depth].is_call = false;
+    }
+    f.depth++;
+}
+
+fn Frame* Frames.top(Frames* f) {
+    if (f.depth == 0) return nil;
+    u32 idx = f.depth - 1;
+    if (idx >= MaxDepth) idx = MaxDepth - 1;
+    return &f.stack[idx];
+}
+
+fn Frame Frames.pop(Frames* f) {
+    Frame result = { Brace, false, false, false, false }
+    if (f.depth) {
+        f.depth--;
+        if (f.depth < MaxDepth) result = f.stack[f.depth];
+    }
+    return result;
+}
+
+fn void Frames.markNewline(Frames* f) {
+    u32 n = f.depth;
+    if (n > MaxDepth) n = MaxDepth;
+    for (u32 i = 0; i < n; i++) f.stack[i].had_newline = true;
+}
+
+// A braceless if/for/while/else body is indented one level, as if it had
+// braces; the virtual frame is popped once that single statement completes
+// (its `;`, or the `}` if the statement turned out to be a block after all).
+fn void Frames.popTrailingDangling(Frames* f) {
+    for (;;) {
+        Frame* top = f.top();
+        if (!top || top.kind != DanglingStmt) break;
+        f.pop();
+    }
+}
+
+fn Kind nextSignificantKind(TokList* toks, u32 i) {
+    for (u32 j = i + 1; j < toks.count; j++) {
+        Kind k = toks.data[j].kind;
+        if (k == LineComment || k == BlockComment) continue;
+        return k;
+    }
+    return Eof;
+}
+
+type Formatter struct {
+    string_pool.Pool* pool;
+    string_buffer.Buf* out;
+    const char* input;
+    const char* filename;
+    u32 loc_start;
+
+    Frames frames;
+
+    bool prev_is_ptr_star;
+    bool prev_is_unary_prefix;
+    bool prev_rparen_was_cond;
+    bool pending_cond;
+    bool pending_switch;
+    bool next_brace_is_switch;
+    bool pending_fn_header;
+    bool fn_header_paren_done;
+    bool pending_brace_break;
+    bool in_case_label;
+
+    c2_tokenizer.ErrorLevel error_level;
+    bool has_error;
+}
+
+type Location struct {
+    u32 line;
+    u32 column;
+}
+
+fn bool Location.init(Location* loc, const char* src, u32 offset) {
+    u32 line = 0;
+    u32 line_start = 0;
+    u32 i;
+    for (i = 0; src[i]; i++) {
+        if (src[i] == '\n') {
+            if (i >= offset) break;
+            line++;
+            line_start = i + 1;
+        }
+    }
+    if (i >= offset) {
+        loc.line = line + 1;
+        loc.column = offset - line_start + 1;
+        return true;
+    }
+    loc.line = 0;
+    loc.column = 0;
+    return false;
+}
+
+fn void Formatter.print_error(Formatter* fmt, c2_tokenizer.ErrorLevel level, SrcLoc loc, const char* msg) {
+    Location sloc.init(fmt.input, loc - fmt.loc_start);
+    if (sloc.line) {
+        fprintf(stderr, "%s:%d:%d: error: %s\n", fmt.filename, sloc.line, sloc.column, msg);
+    } else {
+        fprintf(stderr, "%s: error: %s\n", fmt.filename, msg);
+    }
+    fmt.error_level = level;
+    if (level >= c2_tokenizer.ErrorLevel.Error) fmt.has_error = true;
+}
+
+fn void on_tokenizer_error(void* arg, c2_tokenizer.ErrorLevel level, SrcLoc loc, const char* msg) {
+    Formatter* fmt = arg;
+    fmt.print_error(level, loc, msg);
+}
+
+fn bool completesValue(Kind k) {
+    switch (k) {
+    case Identifier:
+    case IntegerLiteral:
+    case FloatLiteral:
+    case CharLiteral:
+    case StringLiteral:
+    case RParen:
+    case RSquare:
+    case PlusPlus:
+    case MinusMinus:
+    case KW_true:
+    case KW_false:
+    case KW_nil:
+        return true;
+    default:
+        return false;
+    }
+}
+
+fn bool isUnaryOpKind(Kind k) {
+    switch (k) {
+    case Star:
+    case Amp:
+    case Plus:
+    case Minus:
+    case PlusPlus:
+    case MinusMinus:
+        return true;
+    default:
+        return false;
+    }
+}
+
+// C2 enforces that type names start uppercase and values/functions start
+// lowercase (see parser/c2_parser_type.c2), so a `*` following a type
+// keyword or an uppercase identifier is reliably a pointer declarator,
+// not a multiply/dereference operator.
+fn bool isTypeStartToken(Formatter* fmt, const Token* t) {
+    if (t.kind.isTypeKeyword()) return true;
+    if (t.kind == Identifier) {
+        const char* name = fmt.pool.idx2str(t.name_idx);
+        return isupper((u8)name[0]) != 0;
+    }
+    return false;
+}
+
+fn u32 countNewlines(const char* input, u32 start, u32 end) {
+    u32 n = 0;
+    for (u32 i = start; i < end; i++) {
+        if (input[i] == '\n') n++;
+    }
+    return n;
+}
+
+fn u32 lineIndentLevel(Formatter* fmt, Kind cur_kind) {
+    if (cur_kind >= Feat_if && cur_kind <= Feat_warning) return 0; // preprocessor-style, always column 0
+
+    switch (cur_kind) {
+    case RBrace:
+    case RParen:
+    case RSquare:
+        return fmt.frames.depth ? fmt.frames.depth - 1 : 0;
+    case KW_case:
+    case KW_default: {
+        Frame* top = fmt.frames.top();
+        if (top && top.kind == SwitchBrace) return fmt.frames.depth ? fmt.frames.depth - 1 : 0;
+        break;
+    }
+    default:
+        break;
+    }
+    return fmt.frames.depth;
+}
+
+fn bool needsSpace(Formatter* fmt, const Token* prev, const Token* cur, bool is_ptr_star_cur, bool is_unary_cur) {
+    Kind pk = prev.kind;
+    Kind ck = cur.kind;
+
+    if (pk == LBrace && ck == RBrace) return false; // {}
+
+    // array-size suffix (`Type[N]`) and indexing (`arr[i]`) both attach to
+    // whatever names the type/value being sized or indexed, with no space.
+    if (ck == LSquare && (completesValue(pk) || isTypeStartToken(fmt, prev))) return false;
+
+    switch (ck) {
+    case RParen:
+    case RSquare:
+    case Comma:
+    case Semicolon:
+    case Dot:
+        return false;
+    case Colon:
+        if (fmt.in_case_label) return false;
+        break;
+    case PlusPlus:
+    case MinusMinus:
+        if (completesValue(pk)) return false; // postfix, attach to left operand
+        break;
+    default:
+        break;
+    }
+
+    switch (pk) {
+    case LParen:
+    case LSquare:
+    case Dot:
+    case At:
+    case Exclaim:
+    case Tilde:
+        return false;
+    default:
+        break;
+    }
+
+    if (fmt.prev_is_ptr_star) {
+        switch (ck) {
+        case Star:
+        case RParen:
+        case RSquare:
+        case Comma:
+        case Semicolon:
+            return false;
+        default:
+            return true;
+        }
+    }
+
+    if (fmt.prev_is_unary_prefix) return false;
+
+    // `(Type*)expr` cast: a value-starting token can only follow a plain
+    // (non-condition) `)` grammatically as a cast, since two operands can
+    // never be adjacent otherwise - so it attaches with no space.
+    if (pk == RParen && !fmt.prev_rparen_was_cond) {
+        switch (ck) {
+        case Identifier:
+        case IntegerLiteral:
+        case FloatLiteral:
+        case CharLiteral:
+        case StringLiteral:
+        case KW_true:
+        case KW_false:
+        case KW_nil:
+        case LParen:
+        case Star:
+        case Amp:
+        case Exclaim:
+        case Tilde:
+        case Plus:
+        case Minus:
+        case PlusPlus:
+        case MinusMinus:
+            return false;
+        default:
+            break;
+        }
+    }
+
+    if (ck == LParen) {
+        switch (pk) {
+        case KW_if:
+        case KW_for:
+        case KW_while:
+        case KW_switch:
+            return true;
+        case KW_sizeof:
+        case KW_elemsof:
+        case KW_assert:
+        case KW_offsetof:
+        case KW_to_container:
+        case KW_static_assert:
+            return false;
+        case Identifier:
+        case RParen:
+        case RSquare:
+            return false;
+        default:
+            break;
+        }
+    }
+
+    if (is_ptr_star_cur) return false;
+
+    return true;
+}
+
+fn void format_tokens(Formatter* fmt, TokList* toks) {
+    string_buffer.Buf* out = fmt.out;
+
+    for (u32 i = 0; i < toks.count; i++) {
+        Token cur = toks.data[i];
+        if (cur.kind == Eof || cur.kind == Error) break;
+
+        u32 tok_start = cur.loc - fmt.loc_start;
+        u32 tok_len = cur.len;
+
+        if (i == 0) {
+            out.add2(fmt.input + tok_start, tok_len);
+        } else {
+            Token prev = toks.data[i - 1];
+            u32 prev_end = (prev.loc - fmt.loc_start) + prev.len;
+
+            bool is_ptr_star_cur = false;
+            if (cur.kind == Star) {
+                if (prev.kind.isTypeKeyword()) {
+                    // a builtin type keyword can never be a value, so this is unambiguous
+                    is_ptr_star_cur = true;
+                } else if (prev.kind == Star && fmt.prev_is_ptr_star) {
+                    is_ptr_star_cur = true;
+                } else if (prev.kind == Identifier) {
+                    // An uppercase identifier is *probably* a type, but could also be an
+                    // uppercase constant being multiplied - only trust the signal outside
+                    // call-argument lists, and only when what follows the star still looks
+                    // like a declarator (a name, another `*`, or the end of an abstract type).
+                    Frame* top = fmt.frames.top();
+                    bool in_call_args = top && top.kind == Paren && top.is_call;
+                    if (!in_call_args && isupper((u8)fmt.pool.idx2str(prev.name_idx)[0])) {
+                        switch (nextSignificantKind(toks, i)) {
+                        case Identifier:
+                        case Star:
+                        case RParen:
+                        case RSquare:
+                        case Comma:
+                        case Semicolon:
+                            is_ptr_star_cur = true;
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                }
+            }
+            bool is_unary_cur = isUnaryOpKind(cur.kind) && !is_ptr_star_cur && !completesValue(prev.kind);
+
+            u32 gap_nl = countNewlines(fmt.input, prev_end, tok_start);
+            u32 nl = gap_nl > 2 ? 2 : gap_nl;
+
+            // K&R: `{` always joins the previous line, except a wrapped function
+            // declarator's parameter list forces it onto its own line instead.
+            if (cur.kind == LBrace) {
+                nl = fmt.pending_brace_break ? 1 : 0;
+                fmt.pending_brace_break = false;
+            }
+
+            if (nl > 0) {
+                fmt.frames.markNewline();
+                for (u32 n = 0; n < nl; n++) out.add1('\n');
+                out.indent(lineIndentLevel(fmt, cur.kind));
+            } else {
+                if (needsSpace(fmt, &prev, &cur, is_ptr_star_cur, is_unary_cur)) out.space();
+            }
+
+            out.add2(fmt.input + tok_start, tok_len);
+
+            fmt.prev_is_ptr_star = is_ptr_star_cur;
+            fmt.prev_is_unary_prefix = is_unary_cur;
+        }
+
+        switch (cur.kind) {
+        case KW_switch:
+            fmt.pending_switch = true;
+            fmt.pending_cond = true;
+            break;
+        case KW_if:
+        case KW_for:
+        case KW_while:
+            fmt.pending_cond = true;
+            break;
+        case KW_fn:
+            fmt.pending_fn_header = true;
+            fmt.fn_header_paren_done = false;
+            break;
+        case LParen: {
+            FrameKind fk = Paren;
+            if (fmt.pending_fn_header && !fmt.fn_header_paren_done) {
+                fk = ParamParen;
+                fmt.fn_header_paren_done = true;
+            }
+            bool is_switch_cond = fmt.pending_switch;
+            bool is_cond = fmt.pending_cond;
+            bool is_call = fk == Paren && i > 0
+                         && (toks.data[i - 1].kind == Identifier
+                             || toks.data[i - 1].kind == RParen
+                             || toks.data[i - 1].kind == RSquare);
+            fmt.pending_switch = false;
+            fmt.pending_cond = false;
+            fmt.frames.push(fk);
+            Frame* top = fmt.frames.top();
+            if (top) {
+                top.is_switch_cond = is_switch_cond;
+                top.is_cond = is_cond;
+                top.is_call = is_call;
+            }
+            break;
+        }
+        case LSquare:
+            fmt.frames.push(Square);
+            break;
+        case LBrace: {
+            FrameKind bfk = Brace;
+            if (fmt.next_brace_is_switch) {
+                bfk = SwitchBrace;
+                fmt.next_brace_is_switch = false;
+            }
+            fmt.frames.push(bfk);
+            break;
+        }
+        case RParen: {
+            Frame popped = fmt.frames.pop();
+            if (popped.kind == ParamParen) {
+                fmt.pending_brace_break = popped.had_newline;
+                fmt.pending_fn_header = false;
+            }
+            if (popped.is_switch_cond) fmt.next_brace_is_switch = true;
+            fmt.prev_rparen_was_cond = popped.is_cond;
+            if (popped.is_cond && nextSignificantKind(toks, i) != LBrace) fmt.frames.push(DanglingStmt);
+            break;
+        }
+        case KW_else: {
+            Kind nk = nextSignificantKind(toks, i);
+            if (nk != LBrace && nk != KW_if) fmt.frames.push(DanglingStmt);
+            break;
+        }
+        case RSquare:
+            fmt.frames.pop();
+            break;
+        case RBrace:
+            fmt.frames.pop();
+            fmt.frames.popTrailingDangling();
+            break;
+        case Semicolon:
+            fmt.pending_brace_break = false;
+            fmt.in_case_label = false;
+            fmt.frames.popTrailingDangling();
+            break;
+        case KW_case:
+        case KW_default:
+            fmt.in_case_label = true;
+            break;
+        case Colon:
+            fmt.in_case_label = false;
+            break;
+        default:
+            break;
+        }
+    }
+
+    while (out.size() > 0) {
+        char c = out.at(out.size() - 1);
+        if (c != '\n' && c != ' ' && c != '\t') break;
+        out.trim(1);
+    }
+    out.add1('\n');
+}
+
+fn i32 format_file(const char* filename, bool write_mode, bool list_mode) {
+    file_utils.File file.init(filename);
+    if (!file.load()) {
+        fprintf(stderr, "c2fmt: error opening %s: %s\n", filename, file.getError());
+        return -1;
+    }
+
+    string_pool.Pool* pool = string_pool.create(16 * 1024, 1024);
+    string_buffer.Buf* tmpbuf = string_buffer.create(1024, false, 0);
+    string_buffer.Buf* out = string_buffer.create(16 * 1024, false, 4);
+    const char* input = file.data();
+
+    keywords.Info kwinfo.init(pool);
+    string_map.Map features.init(pool);
+
+    Formatter fmt = {
+        .pool = pool,
+        .out = out,
+        .input = input,
+        .filename = filename,
+        .loc_start = 1,
+    }
+
+    c2_tokenizer.Tokenizer tokenizer.init(pool, tmpbuf, input, 1, &kwinfo, &features,
+                                          on_tokenizer_error, &fmt, true);
+
+    TokList toks;
+    toks.init();
+
+    Token tok;
+    tok.init();
+    bool fatal = false;
+    while (!tok.done) {
+        tokenizer.lex(&tok);
+        if (fmt.error_level) {
+            if (fmt.error_level == c2_tokenizer.ErrorLevel.FatalError) {
+                fatal = true;
+                toks.add(&tok);
+                break;
+            }
+            fmt.error_level = (c2_tokenizer.ErrorLevel)0;
+        }
+        toks.add(&tok);
+    }
+
+    i32 result = 0;
+    if (fatal || fmt.has_error) {
+        result = -1;
+    } else {
+        format_tokens(&fmt, &toks);
+
+        bool changed = (out.size() != file.data_size())
+                    || (memcmp(out.data(), input, out.size()) != 0);
+
+        if (list_mode) {
+            if (changed) printf("%s\n", filename);
+        }
+        if (write_mode) {
+            if (changed) {
+                file_utils.File outfile.init(filename);
+                if (!outfile.write(out.data(), out.size())) {
+                    fprintf(stderr, "c2fmt: cannot write %s: %s\n", filename, outfile.getError());
+                    result = -1;
+                }
+                outfile.close();
+            }
+        } else if (!list_mode) {
+            fputs(out.str(), stdout);
+        }
+    }
+
+    toks.free();
+    out.free();
+    tmpbuf.free();
+    pool.free();
+    file.close();
+    return result;
+}
+
+fn void usage(const char* me) {
+    printf("Usage: %s [options] file.c2 ...\n"
+           "    -w  --write   write result to (source) file instead of stdout\n"
+           "    -l  --list    print names of files whose formatting differs\n"
+           "    -h  --help    show this help\n"
+           , me);
+}
+
+public fn i32 main(i32 argc, const char** argv) {
+    bool write_mode = false;
+    bool list_mode = false;
+    i32 status = 0;
+
+    u32 nfiles = 0;
+    bool done_options = false;
+    for (i32 i = 1; i < argc; i++) {
+        const char* arg = argv[i];
+        if (*arg == '-' && !done_options) {
+            switch (arg) {
+            case "--":
+                done_options = true;
+                break;
+            case "-w":
+            case "--write":
+                write_mode = true;
+                break;
+            case "-l":
+            case "--list":
+                list_mode = true;
+                break;
+            case "-?":
+            case "-h":
+            case "--help":
+                usage(argv[0]);
+                exit(EXIT_SUCCESS);
+            default:
+                fprintf(stderr, "c2fmt: unknown option %s\n", arg);
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            nfiles++;
+        }
+    }
+
+    if (!nfiles) {
+        usage(argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    done_options = false;
+    for (i32 i = 1; i < argc; i++) {
+        const char* arg = argv[i];
+        if (*arg == '-' && !done_options) {
+            done_options = !strcmp(arg, "--");
+            continue;
+        }
+        if (format_file(arg, write_mode, list_mode) < 0) status = EXIT_FAILURE;
+    }
+    return status;
+}
+

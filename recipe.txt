@@ -422,6 +422,31 @@ executable c2cat
     tools/c2cat.c2
 end
 
+executable c2fmt
+	$warnings no-unused
+	$backend c
+
+    ast_utils/color.c2
+    ast_utils/constants.c2
+    ast_utils/number_radix.c2
+    ast_utils/src_loc.c2
+    ast_utils/string_buffer.c2
+    ast_utils/string_pool.c2
+    ast_utils/value_type.c2
+
+    common/file/file_utils.c2
+    common/file/reader.c2
+    common/file/writer.c2
+    common/string_map.c2
+    common/utf8.c2
+
+    parser/c2_tokenizer.c2
+    parser/keywords.c2
+    parser/token.c2
+
+    tools/c2fmt.c2
+end
+
 executable c2loc
 #	$warnings no-unused
     $warnings no-unused-variable
