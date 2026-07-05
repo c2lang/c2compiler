@@ -136,9 +136,7 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
 
     switch (d.getKind()) {
     case Function:
-        break;
     case Import:
-        break;
     case StructType:
         break;
     case EnumType:
@@ -159,11 +157,8 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
         }
         return;
     case EnumConstant:
-        break;
     case FunctionType:
-        break;
     case AliasType:
-        break;
     case Variable:
         break;
     }

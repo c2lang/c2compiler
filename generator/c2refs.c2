@@ -378,6 +378,7 @@ type Link struct {
     u32 len : 5;
     u32 dest;
 }
+static_assert(8, sizeof(Link));
 
 type Links struct {
     u32 total_size;
@@ -442,16 +443,6 @@ fn u32 Links.find(const Links* t, u32 src) {
         if (l.src <= src &&  l.src + l.len > src) return l.dest;
     }
     return NOT_FOUND;
-}
-
-fn void Links.dump(const Links* l, bool verbose) {
-    printf("  links:   %7d bytes  %d/%d links\n", l.total_size, l.count, l.capacity);
-    if (verbose) {
-        for (u32 i=0; i<l.count; i++) {
-            const Link* link = &l.data[i];
-            printf("  [%5d] %2d  %5d -> %5d\n", i, link.len, link.src, link.dest);
-        }
-    }
 }
 #endif
 
@@ -694,11 +685,31 @@ public fn void Refs.findSymbolUses(const Refs* r, const char* symbol_name, RefUs
     r.loc2uses(src_loc, func, arg, symbol_len);
 }
 
+fn void Refs.dump_links(const Refs* r, bool verbose) {
+    const Links* l = r.links;
+    printf("  links:   %7d bytes  %d/%d links\n", l.total_size, l.count, l.capacity);
+    if (verbose) {
+        for (u32 i=0; i<l.count; i++) {
+            const Link* link = &l.data[i];
+            printf("  [%5d] %2d  %5d -> %5d", i, link.len, link.src, link.dest);
+            Dest l1 = r.loc2dest(link.src);
+            Dest l2 = r.loc2dest(link.dest);
+            printf(" (%s: %d:%d -> ", l1.filename, l1.line, l1.col);
+            if (l1.filename == l2.filename) {
+                printf("%d:%d", l2.line, l2.col);
+            } else {
+                printf("%s:%d:%d", l2.filename, l2.line, l2.col);
+            }
+            printf(")\n");
+        }
+    }
+}
+
 public fn void Refs.dump(const Refs* r, bool verbose) {
     printf("Refs:\n");
     r.files.dump(verbose);
     r.line_lengths.dump(verbose);
-    r.links.dump(verbose);
+    r.dump_links(verbose);
     r.symbols.dump(verbose);
 }
 

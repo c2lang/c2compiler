@@ -579,8 +579,8 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
                     p.error("static local variables cannot have an init call");
                 if (isCondition)
                     p.error("cannot use an init call inside a condition");
+                p.consumeToken();   // consume dot
                 u32 name_len = p.tok.len;
-                p.consumeToken();
                 Expr* func = p.builder.actOnMemberExpr(nil, name, name_len, p.tok.loc, p.tok.name_idx);
                 p.consumeToken();
                 initValue = p.parseCallExpr(func);
