@@ -119,7 +119,7 @@ public fn i32 main(i32 argc, const char** argv)
         finder.free();
     }
 
-    Refs* refs = Refs.load(refsfile);
+    Refs* refs = Refs.load(refsfile, false);
     if (!refs) {
         fprintf(stderr, "error loading %s: %s\n", refsfile, strerror(errno));
         return -1;
@@ -131,7 +131,7 @@ public fn i32 main(i32 argc, const char** argv)
     if (opts.symbolname) {
         refs.findSymbolUses(opts.symbolname, use_fn, r, &old_len);
     } else {
-        Dest origin = { opts.filename, opts.line, opts.column }
+        Dest origin = { .filename=opts.filename, .line=opts.line, .col=opts.column }
         refs.findRefUses(&origin, use_fn, r, &old_len);
     }
     i32 ret = r.replace(old_len);

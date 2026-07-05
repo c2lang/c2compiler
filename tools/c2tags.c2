@@ -34,11 +34,13 @@ type Options struct {
     const char* target;
     const char* symbolname;
     const char* filename;
+    u32 offset; // when use_offsets
     u32 line;
     u16 column;
     bool reverse;
     bool dump;
     bool verbose;
+    bool use_offsets;
 }
 
 Options opts;
@@ -56,7 +58,7 @@ public fn u64 getCurrentTime() {
 }
 #endif
 
-fn void usage(const char* me) {
+fn void usage(const char* me)  @(noreturn) {
     printf("Usage: %s [mode] <opts>\n", me);
     printf("  Modes:\n");
     printf("    [name]                  find definition of symbol specified by name\n");
@@ -64,6 +66,7 @@ fn void usage(const char* me) {
     printf("  Options:\n");
     printf("    -d                      dump refs\n");
     printf("    -D                      dump refs (verbose)\n");
+    printf("    -o                      use offset instead of line/col (both on input+output)\n");
     printf("    -r                      find uses of symbol (specified by name/position)\n");
     printf("    -t [target]             use [target]\n");
     exit(-1);
@@ -128,7 +131,11 @@ fn u32 Results.getCount(const Results* r) {
 fn void Results.print(const Results* r) {
     for (u32 i=0; i<r.count; i++) {
         const Result* res = &r.results[i];
-        printf("found %s %d %d\n", r.pool.idx2str(res.filename), res.line, res.col);
+        if (opts.use_offsets) {
+            printf("found %s %d\n", r.pool.idx2str(res.filename), res.line);
+        } else {
+            printf("found %s %d %d\n", r.pool.idx2str(res.filename), res.line, res.col);
+        }
     }
 }
 
@@ -146,6 +153,9 @@ fn void parse_options(i32 argc, const char** argv) {
             case 'D':
                 opts.dump = 1;
                 opts.verbose = 1;
+                break;
+            case 'o':
+                opts.use_offsets = true;
                 break;
             case 'r':
                 opts.reverse = 1;
@@ -170,14 +180,23 @@ fn void parse_options(i32 argc, const char** argv) {
         if (pos_count != 0) usage(argv[0]);
         return;
     }
-    if (pos_count == 1) {
+    switch (pos_count) {
+    case 1:
         opts.symbolname = args[0];
-    } else if (pos_count == 3) {
+        break;
+    case 2:
+        if (!opts.use_offsets) usage(argv[0]);
+        opts.filename = args[0];
+        opts.offset = (u32)atoi(args[1]);
+        break;
+    case 3:
         opts.filename = args[0];
         opts.line = (u32)atoi(args[1]);
         opts.column = (u16)atoi(args[2]);
-    } else {
+        break;
+    default:
         usage(argv[0]);
+        break;
     }
 }
 
@@ -194,7 +213,11 @@ fn void use_fn(void* arg, const Dest* res) {
             file_utils.make_path(fullname, elemsof(fullname), info.root2orig, filename);
             filename = fullname;
         }
-        printf("found %s %d %d\n", filename, res.line, res.col);
+        if (opts.use_offsets) {
+            printf("found %s %d\n", filename, res.offset);
+        } else {
+            printf("found %s %d %d\n", filename, res.line, res.col);
+        }
     }
 }
 
@@ -213,7 +236,7 @@ fn void use_fn_multi(void* arg, const Dest* res) {
 }
 
 fn bool check_refs(const char* refsfile, RefUsesFn on_result, void* arg) {
-    Refs* r = Refs.load(refsfile);
+    Refs* r = Refs.load(refsfile, opts.use_offsets);
     if (!r) {
         fprintf(stderr, "error loading %s: %s\n", refsfile, strerror(errno));
         return false;
@@ -224,8 +247,11 @@ fn bool check_refs(const char* refsfile, RefUsesFn on_result, void* arg) {
         r.free();
         return true;
     }
-    if (opts.filename) {    // lookup <file line col>
-        Dest origin = { opts.filename, opts.line, opts.column }
+    if (opts.filename) {    // lookup <file line col> or <file offset>
+        Dest origin = { .filename=opts.filename, .col=opts.column }
+        if (opts.use_offsets) origin.offset = opts.offset;
+        else origin.line = opts.line;
+
         if (opts.reverse) {
             u16 old_len = 0;
             r.findRefUses(&origin, on_result, arg, &old_len);

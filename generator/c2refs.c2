@@ -471,6 +471,7 @@ public type Refs struct @(opaque) {
 
     const char* dest_file_ptr;
     u16 dest_file_idx;
+    bool use_offsets;   // otherwise line+col
 }
 
 #if C2TagsGenerate
@@ -524,7 +525,7 @@ fn Refs* Refs.load_internal(MapFile f) {
     return r;
 }
 
-public fn Refs* Refs.load(const char* filename) {
+public fn Refs* Refs.load(const char* filename, bool use_offsets) {
     MapFile f = open_file(filename);
     if (!f.map) return nil;
 
@@ -534,6 +535,7 @@ public fn Refs* Refs.load(const char* filename) {
     } else {
         close_file(f);
     }
+    r.use_offsets = use_offsets;
     return r;
 }
 #endif
@@ -595,38 +597,48 @@ public fn void Refs.add_symbol(Refs* r, const char* symbol_name, u32 src_loc) {
 
 public type Dest struct {
     const char* filename;
-    u32 line;
+    union {
+        u32 offset;
+        u32 line;
+    }
     u16 col;
 }
 
 fn Dest Refs.loc2dest(const Refs* r, u32 loc) {
-    Dest result = { nil, 0, 0 }
+    Dest result = { }
     if (loc == NOT_FOUND) return result;
 
     const File* file = r.files.find_file(loc);
     if (!file) return result;
 
-    u32 file_offset = loc - file.start;
-
     result.filename = r.files.idx2name(file.name_idx);
-    r.line_lengths.fillDest(&result, file_offset, file.len_start, file.len_count);
+    u32 file_offset = loc - file.start;
+    if (r.use_offsets) {
+        result.offset = file_offset;
+    } else {
+        r.line_lengths.fillDest(&result, file_offset, file.len_start, file.len_count);
+    }
 
     return result;
 }
 
 public fn Dest Refs.findRef(const Refs* r, const Dest* origin) {
-    Dest result = { nil, 0, 0 }
+    Dest result = { }
     u32 file_id = r.files.name2idx(origin.filename);
     if (file_id == NOT_FOUND) return result;
 
     const File* file = &r.files.files[file_id];
-    // line can be 1 more if no newline after last line
-    if (origin.line > file.len_count + 1) return result;
+    u32 file_offset;
+    if (r.use_offsets) {
+        file_offset = origin.offset;
+    } else {
+        // line can be 1 more if no newline after last line
+        if (origin.line > file.len_count + 1) return result;
+        file_offset = r.line_lengths.get_offset(file.len_start, origin.line, origin.col);
+    }
 
-    u32 src_loc = file.start;
-    u32 file_offset = r.line_lengths.get_offset(file.len_start, origin.line, origin.col);
     if (file_offset > file.size) return result;
-    src_loc += file_offset;
+    u32 src_loc = file.start + file_offset;
 
     u32 dest_loc = r.links.find(src_loc);
     return r.loc2dest(dest_loc);
@@ -665,13 +677,18 @@ public fn void Refs.findRefUses(const Refs* r, const Dest* origin, RefUsesFn fun
     if (file_id == NOT_FOUND) return;
 
     const File* file = &r.files.files[file_id];
-    // line can be 1 more if no newline after last line
-    if (origin.line > file.len_count + 1) return;
 
-    u32 src_loc = file.start;
-    u32 file_offset = r.line_lengths.get_offset(file.len_start, origin.line, origin.col);
+    u32 file_offset;
+    if (r.use_offsets) {
+        file_offset = origin.offset;
+    } else {
+        // line can be 1 more if no newline after last line
+        if (origin.line > file.len_count + 1) return;
+        file_offset = r.line_lengths.get_offset(file.len_start, origin.line, origin.col);
+    }
+
     if (file_offset > file.size) return;
-    src_loc += file_offset;
+    u32 src_loc = file.start + file_offset;
 
     u32 dest_loc = r.links.find(src_loc);
     if (dest_loc == NOT_FOUND) dest_loc = src_loc;  // already at definition
