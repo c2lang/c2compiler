@@ -708,7 +708,8 @@ fn void Refs.dump_links(const Refs* r, bool verbose) {
 public fn void Refs.dump(const Refs* r, bool verbose) {
     printf("Refs:\n");
     r.files.dump(verbose);
-    r.line_lengths.dump(verbose);
+    printf("(line lengths skipped)\n");
+    //r.line_lengths.dump(verbose);
     r.dump_links(verbose);
     r.symbols.dump(verbose);
 }
