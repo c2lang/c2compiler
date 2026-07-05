@@ -373,13 +373,19 @@ public fn ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc, bool usedPubl
         if (id) {
             const char* alias_name = s.idx2name(id.getAliasNameIdx());
             s.diags.error(loc, "module '%s' is imported with alias '%s'", name, alias_name);
+            return nil;
+        }
+
+        ast.Module* m = s.allmodules.find(name_idx);
+        if (m) {
+            s.diags.error(loc, "use of unimported module '%s'", name);
+            return nil;
+        }
+        const char* hint = s.findBestMatch(name_idx, name, string.strlen(name));
+        if (hint) {
+            s.diags.error(loc, "use of undeclared identifier '%s'; did you mean '%s'?", name, hint);
         } else {
-            const char* hint = s.findBestMatch(name_idx, name, string.strlen(name));
-            if (hint) {
-                s.diags.error(loc, "use of undeclared identifier '%s'; did you mean '%s'?", name, hint);
-            } else {
-                s.diags.error(loc, "use of undeclared identifier '%s'", name);
-            }
+            s.diags.error(loc, "use of undeclared identifier '%s'", name);
         }
         return nil;
     }
@@ -431,7 +437,7 @@ public fn ast.ImportDecl* Scope.findModule(Scope* s, u32 name_idx, SrcLoc loc) {
 
     ast.Module* mod = s.allmodules.find(name_idx);
     if (mod) {
-        s.diags.error(loc, "module '%s' not imported", s.idx2name(name_idx));
+        s.diags.error(loc, "use of unimported module '%s'", s.idx2name(name_idx));
     } else {
         s.diags.error(loc, "unknown module: '%s'", s.idx2name(name_idx));
     }

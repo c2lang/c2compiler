@@ -1,0 +1,11 @@
+// @recipe bin
+    $warnings no-unused
+
+// @file{file1}
+module foo;
+
+// @file{file2}
+module bar;
+
+foo.Foo f;  // @error{use of unimported module 'foo'}
+
