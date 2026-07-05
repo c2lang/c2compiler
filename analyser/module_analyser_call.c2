@@ -533,6 +533,7 @@ fn bool on_scanf_specifier(void* context, u32 offset, ScanfSpecifier specifier, 
         case FloatingPoint:
             if (!bi || !bi.isFloatingPoint()) {
                 ma.error(arg.getStartLoc(), "conversion '%%%c' expects a floating-point pointer argument", c);
+                break;
             }
             if (bi.getWidth() > 32) fa.out.add1('l');
             break;

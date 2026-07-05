@@ -541,8 +541,7 @@ fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 s
     }
 
     if (index.isCtv()) {
-        QualType q2 = orig.getType();
-        ArrayType* at = q2.getArrayTypeOrNil();
+        ArrayType* at = otype.getArrayTypeOrNil();
         if (at) {
             // check range
             u32 size = at.getSize();

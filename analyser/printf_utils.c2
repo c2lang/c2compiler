@@ -201,7 +201,7 @@ fn ScanfSpecifier getScanfSpecifier(const char* format, ScanfConversion* conv) {
     case '[':
         u32 pos = 1;
         if (cp[pos] == '^') pos++;
-        if (cp[pos] == '[') pos++;
+        if (cp[pos] == ']') pos++;
         while (cp[pos] && cp[pos++] != ']') continue;
         conv.len2 = pos - 1;
         return Scanset;

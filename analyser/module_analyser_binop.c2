@@ -400,7 +400,7 @@ const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvSub = {
     //  Builtin -
     {   4,      3,      0,      2,      5,      2,     2,     0,     0  },
     //  Pointer -
-    {   8,      9,      0,      1,      8,      2,     2,     0,     0  },
+    {   8,      9,      0,      2,      8,      2,     2,     0,     0  },
     //  Array -
     {   0,      0,      0,      0,      0,      0,     0,     0,     0  },
     //  Struct -

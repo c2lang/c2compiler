@@ -289,6 +289,10 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref, bool full) {
                     ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size has negative value '%s'", value.str());
                     return QualType_Invalid;
                 }
+                if (!value.checkRange(0, u32.max)) {
+                    ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size '%s' is too large", value.str());
+                    return QualType_Invalid;
+                }
                 size = value.as_u32();
             }
         }

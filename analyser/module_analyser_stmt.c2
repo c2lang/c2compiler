@@ -162,6 +162,7 @@ fn FlowBits Analyser.analyseContinueStmt(Analyser* ma, Stmt* s) {
             return FlowGoto;
         }
         ma.error(s.getLoc(), "'continue' label does match an enclosing loop statement");
+        return FlowError;
     }
     return FlowContinue;
 }

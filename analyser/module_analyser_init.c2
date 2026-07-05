@@ -509,7 +509,7 @@ fn bool Analyser.analyseStructFieldInit(Analyser* ma, StructTypeDecl* std, InitL
         ctc &= inner.isCtc();
         value.setType(inner.getType());
         if (fif.is_bitfield && inner.isCtv()) {
-            if (!ctv_analyser.checkBitfield(ma.diags, fif.bitfield_width, fif.bitfield_signed, inner)) return false;
+            if (!ctv_analyser.checkBitfield(ma.diags, fif.bitfield_width, fif.bitfield_signed, inner)) goto out;
         }
     }
 
@@ -561,17 +561,16 @@ fn bool Analyser.analyseInitListStruct(Analyser* ma, InitListExpr* ile, QualType
     for (u32 i=0; i<numValues; i++) {
         Expr* value = values[i];
 
-        const StructMemberLayout* ml = &layout.members[member_idx];
         // skip bitfields with size 0
-        while (ml.is_bitfield && ml.bitfield_width == 0 && member_idx < num_members) {
+        while (member_idx < num_members && layout.members[member_idx].is_bitfield && layout.members[member_idx].bitfield_width == 0) {
             member_idx++;
-            ml = &layout.members[member_idx];
         }
 
         if (member_idx >= num_members) {
             ma.error(value.getLoc(), "excess initializer elements in struct");
             return false;
         }
+        const StructMemberLayout* ml = &layout.members[member_idx];
         if (value.isArrayDesignatedInit()) {
             ma.error(value.getLoc(), "array designator cannot initialize non-array type '%s'", expectedType.diagName());
             return false;

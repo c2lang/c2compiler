@@ -90,8 +90,8 @@ fn void Analyser.analyseEnumAssocValues(Analyser* ma, EnumTypeDecl* etd) {
         Decl* fn_decl = etd.findFunction(name_idx);
         if (fn_decl) {
             has_error = true;
-            ma.error(fn_decl.getLoc(), "redefinition of '%s'", ma.getFullName(fn_decl));
-            ma.note(vd.asDecl().getLoc(), "previous definition is here");
+            ma.error(vd.asDecl().getLoc(), "redefinition of '%s'", ma.getFullName(fn_decl));
+            ma.note(fn_decl.getLoc(), "previous definition is here");
         }
 
         if (vd.hasInit()) {

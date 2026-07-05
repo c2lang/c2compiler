@@ -807,7 +807,7 @@ fn bool Analyser.pushCheck(Analyser* ma, Decl* d, scope.Scope* s, FunctionDecl* 
     }
     // set correct scope for the current Decl (might be in different file than current Decl)
     ma.scope = s;
-    assert(ma.checkIndex <= MaxDepth);
+    assert(ma.checkIndex < MaxDepth);
     StackLayer* top = &ma.checkStack[ma.checkIndex];
     top.decl = d;
     top.scope = s;

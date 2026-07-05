@@ -1,13 +1,13 @@
 // @warnings{no-unused}
 module test;
 
-type Enum enum u8 (const char* str) {   // @note{previous definition is here}
+type Enum enum u8 (const char* str) {   // @error{redefinition of 'test.Enum.str'}
     A : { "a" },
     B : { "bb" },
     C : { "ccc" },
 }
 
-fn const char* Enum.str(Enum e) {   // @error{redefinition of 'test.Enum.str'}
+fn const char* Enum.str(Enum e) {   // @note{previous definition is here}
     switch (e) {
     case A: return "A";
     case B: return "B";
