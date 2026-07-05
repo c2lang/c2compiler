@@ -655,6 +655,7 @@ fn i32 format_file(const char* filename, bool write_mode, bool list_mode) {
         }
     }
 
+    features.free();
     toks.free();
     out.free();
     tmpbuf.free();
