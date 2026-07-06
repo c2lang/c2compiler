@@ -40,7 +40,7 @@ type Net_context struct @(cname="mbedtls_net_context") {
 
 fn void net_init( Net_context *ctx ) @(cname="mbedtls_net_init");
 
-fn c_int net_connect( Net_context *ctx, const char *host, const char *port, c_int proto ) @(cname="mbedtls_net_connect");
+fn c_int net_connect( Net_context *ctx, const char* host, const char* port, c_int proto ) @(cname="mbedtls_net_connect");
 
 fn c_int net_set_block( Net_context *ctx) @(cname="mbedtls_net_set_block");
 fn c_int net_set_nonblock( Net_context *ctx) @(cname="net_set_nonblock");
@@ -301,17 +301,17 @@ static_assert(616, sizeof(X509_crt));
 
 fn void x509_crt_init(X509_crt* crt) @(cname="mbedtls_x509_crt_init");
 
-fn c_int x509_crt_parse_path( X509_crt *chain, const char *path ) @(cname="mbedtls_x509_crt_parse_path");
+fn c_int x509_crt_parse_path( X509_crt *chain, const char* path ) @(cname="mbedtls_x509_crt_parse_path");
 
-fn c_int x509_crt_parse_file( X509_crt *chain, const char *path) @(cname="mbedtls_x509_crt_parse_file");
+fn c_int x509_crt_parse_file( X509_crt *chain, const char* path) @(cname="mbedtls_x509_crt_parse_file");
 
 fn c_int x509_crt_parse( X509_crt *chain, const c_uchar *buf, c_size buflen ) @(cname="mbedtls_x509_crt_parse");
 
 fn void x509_crt_free(X509_crt *crt) @(cname="mbedtls_x509_crt_free");
 
-fn c_int x509_crt_info(char *buf, c_size size, const char *prefix, const X509_crt *crt) @(cname="mbedtls_x509_crt_info");
+fn c_int x509_crt_info(char *buf, c_size size, const char* prefix, const X509_crt *crt) @(cname="mbedtls_x509_crt_info");
 
-fn c_int x509_crt_verify_info(char *buf, c_size size, const char *prefix, c_uint flags) @(cname="mbedtls_x509_crt_verify_info");
+fn c_int x509_crt_verify_info(char *buf, c_size size, const char* prefix, c_uint flags) @(cname="mbedtls_x509_crt_verify_info");
 
 
 // ------ ssl_tls.h ------
@@ -340,7 +340,7 @@ fn c_int ssl_conf_own_cert( Ssl_config *conf, X509_crt *own_cert, Pk_context *pk
 
 fn c_int ssl_setup( Ssl_context *ssl, const Ssl_config *conf) @(cname="mbedtls_ssl_setup");
 
-fn c_int ssl_set_hostname( Ssl_context *ssl, const char *hostname) @(cname="mbedtls_ssl_set_hostname");
+fn c_int ssl_set_hostname( Ssl_context *ssl, const char* hostname) @(cname="mbedtls_ssl_set_hostname");
 
 fn void ssl_set_bio( Ssl_context *ssl, void *p_bio, Ssl_send_t f_send, Ssl_recv_t f_recv, Ssl_recv_timeout_t f_recv_timeout ) @(cname="mbedtls_ssl_set_bio");
 
@@ -500,7 +500,7 @@ type Ssl_session struct @(cname="mbedtls_ssl_session") {
 
 
 
-type Cfg_dbg_f fn void(void *, c_int, const char *, c_int, const char *);
+type Cfg_dbg_f fn void(void *, c_int, const char* , c_int, const char* );
 type Cfg_rng_f fn c_int(void *, c_uchar*, c_size);
 type Cfg_get_cache_f fn c_int(void *, Ssl_session*);
 type Cfg_set_cache_f fn c_int(void *, const Ssl_session*);
@@ -646,7 +646,7 @@ type Ssl_config struct @(cname="mbedtls_ssl_config") {
 //#endif /* MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED */
 
 //#if defined(MBEDTLS_SSL_ALPN)
-    const char **alpn_list;         /*!< ordered list of protocols          */
+    const char* *alpn_list;         /*!< ordered list of protocols          */
 //#endif
 
 //#if defined(MBEDTLS_SSL_DTLS_SRTP)
@@ -933,7 +933,7 @@ type Ssl_context struct @(cname="mbedtls_ssl_context") {
 //#endif /* MBEDTLS_X509_CRT_PARSE_C */
 
 //#if defined(MBEDTLS_SSL_ALPN)
-    const char *alpn_chosen;    /*!<  negotiated protocol                   */
+    const char* alpn_chosen;    /*!<  negotiated protocol                   */
 //#endif /* MBEDTLS_SSL_ALPN */
 
 //#if defined(MBEDTLS_SSL_DTLS_SRTP)
@@ -1052,7 +1052,7 @@ fn void ctr_drbg_init( Ctr_drbg_context *ctx ) @(cname="mbedtls_ctr_drbg_init");
 
 fn c_int ctr_drbg_random( void *p_rng, c_uchar *output, c_size output_len) @(cname="mbedtls_ctr_drbg_random");
 
-type Dbg_fn fn void(void*, c_int, const char *, c_int, const char *);
+type Dbg_fn fn void(void*, c_int, const char* , c_int, const char* );
 fn void ssl_conf_dbg( Ssl_config *conf, Dbg_fn f_dbg, void  *p_dbg ) @(cname="mbedtls_ssl_conf_dbg");
 
 // ------ sha512.h ------

@@ -3,5 +3,5 @@ module lua_auxlib extern "C";
 import lua local;
 
 State *luaL_newstate(void);
-void luaL_requiref(State *L, const char *modname, CFunction openf, int glb);
-int luaL_loadfilex(State *L, const char *filename, const char *mode);
+void luaL_requiref(State *L, const char* modname, CFunction openf, int glb);
+int luaL_loadfilex(State *L, const char* filename, const char* mode);

@@ -67,7 +67,7 @@ type StringList struct {
     char **strings;
     u32 string_count;
     u32 string_capacity;
-    const char *last_string;
+    const char* last_string;
     u32 last_index;
 }
 
@@ -169,7 +169,7 @@ fn void Generator.writeCalls(Generator* gen, string_buffer.Buf* out) {
     if (!gen.trace_calls)
         return;
 
-    out.add("const char *c2_filenames[] = {\n");
+    out.add("const char* c2_filenames[] = {\n");
     u32 n = gen.filenames.length();
     for (u32 i = 0; i < n; i++) {
         out.print("    \"%s\",\n", gen.filenames.get(i));

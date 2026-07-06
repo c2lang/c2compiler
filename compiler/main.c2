@@ -236,12 +236,12 @@ type ArgumentParser struct {
     i32 cur;
     i32 argc;
     char **argv;
-    const char *prog;
-    const char *help;
+    const char* prog;
+    const char* help;
 }
 
 fn void ArgumentParser.init(ArgumentParser *ap, i32 argc, char **argv,
-                            const char *prog = nil, const char* help = nil)
+                            const char* prog = nil, const char* help = nil)
 {
     ap.cur = 1;
     ap.argc = argc;
@@ -347,7 +347,7 @@ fn void parse_arguments(ArgumentParser *ap, compiler.Options* comp_opts, Options
             if (arg[1] == '-') {
                 parse_long_opt(ap, arg, comp_opts, opts);
             } else {
-                const char *argarg = nil;
+                const char* argarg = nil;
                 if (memchr("Ddbo", arg[1], 4)) { // need argument
                     argarg = arg[2] ? &arg[2] : ap.getOptionArgument(arg);
                 } else

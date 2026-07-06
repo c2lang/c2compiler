@@ -69,7 +69,7 @@ struct FILE {
     void *_close;   //int (*_close)(void *);
     void *_read;    //int (*_read)(void *, char *, int);
     void *_seek;    //fpos_t (*_seek)(void *, fpos_t, int);
-    void *_write;   //int (*_write)(void *, const char *, int);
+    void *_write;   //int (*_write)(void *, const char* , int);
     Sbuf__ _ext;
     unsigned char *_up;
     int _ur;
@@ -182,11 +182,11 @@ int fpurge(FILE *);
 //int vasprintf(char**, const char*, va_list);
 FILE *zopen(const char*, const char*, int);
 
-int vdprintf(int __fd, const char *format, va_list ap);
-int vfprintf(FILE* stream, const char *format, va_list ap);
+int vdprintf(int __fd, const char* format, va_list ap);
+int vfprintf(FILE* stream, const char* format, va_list ap);
 int vprintf(const char* format, va_list ap);
-int vsprintf(char* str, const char *format, va_list ap);
-int vsnprintf(char* str, size_t size, const char *format, va_list ap);
+int vsprintf(char* str, const char* format, va_list ap);
+int vsnprintf(char* str, size_t size, const char* format, va_list ap);
 
 int vfscanf(FILE* stream, const char* format, va_list ap);
 int vscanf(const char* format, va_list ap);

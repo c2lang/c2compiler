@@ -457,7 +457,7 @@ static inline void io_uring_prep_fallocate(struct io_uring_sqe *sqe, int fd,
 }
 
 static inline void io_uring_prep_openat(struct io_uring_sqe *sqe, int dfd,
-					const char *path, int flags, mode_t mode)
+					const char* path, int flags, mode_t mode)
 {
 	io_uring_prep_rw(IORING_OP_OPENAT, sqe, dfd, path, mode, 0);
 	sqe->open_flags = (__u32) flags;
@@ -465,7 +465,7 @@ static inline void io_uring_prep_openat(struct io_uring_sqe *sqe, int dfd,
 
 /* open directly into the fixed file table */
 static inline void io_uring_prep_openat_direct(struct io_uring_sqe *sqe,
-					       int dfd, const char *path,
+					       int dfd, const char* path,
 					       int flags, mode_t mode,
 					       unsigned file_index)
 {
@@ -493,7 +493,7 @@ fn void Sqe.prep_write(Sqe* sqe, c_int fd, const void* buf, u32 nbytes, u64 offs
 #if 0
 struct statx;
 static inline void io_uring_prep_statx(struct io_uring_sqe *sqe, int dfd,
-				const char *path, int flags, unsigned mask,
+				const char* path, int flags, unsigned mask,
 				struct statx *statxbuf)
 {
 	io_uring_prep_rw(IORING_OP_STATX, sqe, dfd, path, mask,
@@ -530,7 +530,7 @@ static inline void io_uring_prep_recv(struct io_uring_sqe *sqe, int sockfd,
 }
 
 static inline void io_uring_prep_openat2(struct io_uring_sqe *sqe, int dfd,
-					const char *path, struct open_how *how)
+					const char* path, struct open_how *how)
 {
 	io_uring_prep_rw(IORING_OP_OPENAT2, sqe, dfd, path, sizeof(*how),
 				(uint64_t) (uintptr_t) how);
@@ -538,7 +538,7 @@ static inline void io_uring_prep_openat2(struct io_uring_sqe *sqe, int dfd,
 
 /* open directly into the fixed file table */
 static inline void io_uring_prep_openat2_direct(struct io_uring_sqe *sqe,
-						int dfd, const char *path,
+						int dfd, const char* path,
 						struct open_how *how,
 						unsigned file_index)
 {
@@ -578,15 +578,15 @@ static inline void io_uring_prep_shutdown(struct io_uring_sqe *sqe, int fd,
 }
 
 static inline void io_uring_prep_unlinkat(struct io_uring_sqe *sqe, int dfd,
-					  const char *path, int flags)
+					  const char* path, int flags)
 {
 	io_uring_prep_rw(IORING_OP_UNLINKAT, sqe, dfd, path, 0, 0);
 	sqe->unlink_flags = (__u32) flags;
 }
 
 static inline void io_uring_prep_renameat(struct io_uring_sqe *sqe, int olddfd,
-					  const char *oldpath, int newdfd,
-					  const char *newpath, int flags)
+					  const char* oldpath, int newdfd,
+					  const char* newpath, int flags)
 {
 	io_uring_prep_rw(IORING_OP_RENAMEAT, sqe, olddfd, oldpath, (__u32) newdfd,
 				(uint64_t) (uintptr_t) newpath);
@@ -602,21 +602,21 @@ static inline void io_uring_prep_sync_file_range(struct io_uring_sqe *sqe,
 }
 
 static inline void io_uring_prep_mkdirat(struct io_uring_sqe *sqe, int dfd,
-					const char *path, mode_t mode)
+					const char* path, mode_t mode)
 {
 	io_uring_prep_rw(IORING_OP_MKDIRAT, sqe, dfd, path, mode, 0);
 }
 
 static inline void io_uring_prep_symlinkat(struct io_uring_sqe *sqe,
-					const char *target, int newdirfd, const char *linkpath)
+					const char* target, int newdirfd, const char* linkpath)
 {
 	io_uring_prep_rw(IORING_OP_SYMLINKAT, sqe, newdirfd, target, 0,
 				(uint64_t) (uintptr_t) linkpath);
 }
 
 static inline void io_uring_prep_linkat(struct io_uring_sqe *sqe, int olddfd,
-					const char *oldpath, int newdfd,
-					const char *newpath, int flags)
+					const char* oldpath, int newdfd,
+					const char* newpath, int flags)
 {
 	io_uring_prep_rw(IORING_OP_LINKAT, sqe, olddfd, oldpath, (__u32) newdfd,
 				(uint64_t) (uintptr_t) newpath);

@@ -170,7 +170,7 @@ fn void Diags.internal(Diags* diags,
         // then a second line with ~~~~~^~~~~ pointing to the error location
         // and the region if any.
         // if the source line is long, an initial part is skipped (`skip` bytes)
-        const char *text = loc.line_start;  // pointer to the source code line
+        const char* text = loc.line_start;  // pointer to the source code line
         u32 loc_col = loc.column;       // column number for the error
         u32 range_start_col = loc_col;  // column number for start of the ~~~ area
         u32 range_end_col = loc_col + 1; // column number for end of the ~~~ area

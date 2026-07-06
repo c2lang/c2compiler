@@ -56,7 +56,7 @@ type Alloc fn void* (void *ud, void *ptr, size_t osize, size_t nsize) @(cname="l
 
 type State struct @(cname="lua_State") { }
 
-const char *lua_ident;
+const char* lua_ident;
 
 
 // state manipulation
@@ -88,12 +88,12 @@ int iscfunction(State *L, int idx) @(cname="lua_iscfunction");
 int isinteger(State *L, int idx) @(cname="lua_isinteger");
 int isuserdata(State *L, int idx) @(cname="lua_isuserdata");
 int lua_type(State *L, int idx) @(cname="lua_type");
-const char *typename(State *L, int tp) @(cname="lua_typename");
+const char* typename(State *L, int tp) @(cname="lua_typename");
 
 Number tonumberx(State *L, int idx, int *isnum) @(cname="lua_tonumberx");
 Integer tointegerx(State *L, int idx, int *isnum) @(cname="lua_tointegerx");
 int toboolean(State *L, int idx) @(cname="lua_toboolean");
-const char *tolstring(State *L, int idx, size_t *len) @(cname="lua_tolstring");
+const char* tolstring(State *L, int idx, size_t *len) @(cname="lua_tolstring");
 size_t rawlen(State *L, int idx) @(cname="lua_rawlen");
 CFunction tocfunction(State *L, int idx) @(cname="lua_tocfunction");
 void *touserdata(State *L, int idx) @(cname="lua_touserdata");
@@ -128,10 +128,10 @@ int compare(State *L, int idx1, int idx2, int op) @(cname="lua_compare");
 void pushnil(State *L) @(cname="lua_pushnil");
 void pushnumber(State *L, Number n) @(cname="lua_pushnumber");
 void pushinteger(State *L, Integer n) @(cname="lua_pushinteger");
-const char *pushlstring(State *L, const char *s, size_t len) @(cname="lua_pushlstring");
-const char *pushstring(State *L, const char *s) @(cname="lua_pushstring");
-const char *pushvfstring(State *L, const char *fmt, va_list argp) @(cname="lua_pushvfstring");
-const char *pushfstring(State *L, const char *fmt @(printf_format), ...) @(cname="lua_pushfstring");
+const char* pushlstring(State *L, const char* s, size_t len) @(cname="lua_pushlstring");
+const char* pushstring(State *L, const char* s) @(cname="lua_pushstring");
+const char* pushvfstring(State *L, const char* fmt, va_list argp) @(cname="lua_pushvfstring");
+const char* pushfstring(State *L, const char* fmt @(printf_format), ...) @(cname="lua_pushfstring");
 void pushcclosure(State *L, CFunction func, int n) @(cname="lua_pushcclosure");
 void pushboolean(State *L, int b) @(cname="lua_pushboolean");
 void pushlightuserdata(State *L, void *p) @(cname="lua_pushlightuserdata");
@@ -139,9 +139,9 @@ int pushthread(State *L) @(cname="lua_pushthread");
 
 
 // get functions (Lua -> stack)
-int getglobal(State *L, const char *name) @(cname="lua_getglobal");
+int getglobal(State *L, const char* name) @(cname="lua_getglobal");
 int gettable(State *L, int idx) @(cname="lua_gettable");
-int getfield(State *L, int idx, const char *k) @(cname="lua_getfield");
+int getfield(State *L, int idx, const char* k) @(cname="lua_getfield");
 int geti(State *L, int idx, Integer n) @(cname="lua_geti");
 int rawget(State *L, int idx) @(cname="lua_rawget");
 int rawgeti(State *L, int idx, Integer n) @(cname="lua_rawgeti");
@@ -154,9 +154,9 @@ int getuservalue(State *L, int idx) @(cname="lua_getuservalue");
 
 
 // set functions (stack -> Lua)
-void setglobal(State *L, const char *name) @(cname="lua_setglobal");
+void setglobal(State *L, const char* name) @(cname="lua_setglobal");
 void settable(State *L, int idx) @(cname="lua_settable");
-void setfield(State *L, int idx, const char *k) @(cname="lua_setfield");
+void setfield(State *L, int idx, const char* k) @(cname="lua_setfield");
 void seti(State *L, int idx, Integer n) @(cname="lua_seti");
 void rawset(State *L, int idx) @(cname="lua_rawset");
 void rawseti(State *L, int idx, Integer n) @(cname="lua_rawseti");
@@ -176,7 +176,7 @@ int pcallk(State *L, int nargs, int nresults, int errfunc,
 //#define lua_pcall(L,n,r,f)  lua_pcallk(L, (n), (r), (f), 0, NULL)
 
 int load(State *L, Reader reader, void *dt,
-                    const char *chunkname, const char *mode) @(cname="lua_load");
+                    const char* chunkname, const char* mode) @(cname="lua_load");
 
 int dump(State *L, Writer writer, void *data, int strip) @(cname="lua_dump");
 
@@ -210,7 +210,7 @@ int error(State *L) @(cname="lua_error");
 int next(State *L, int idx) @(cname="lua_next");
 void concat(State *L, int n) @(cname="lua_concat");
 void len(State *L, int idx) @(cname="lua_len");
-size_t stringtonumber(State *L, const char *s) @(cname="lua_stringtonumber");
+size_t stringtonumber(State *L, const char* s) @(cname="lua_stringtonumber");
 Alloc getallocf(State *L, void **ud) @(cname="lua_getallocf");
 void setallocf(State *L, Alloc f, void *ud) @(cname="lua_setallocf");
 

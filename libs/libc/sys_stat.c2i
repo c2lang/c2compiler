@@ -152,8 +152,8 @@ int fchmodat(int dirfd, const char* pathname, mode_t mode, int flag);
 mode_t umask(mode_t mask);
 mode_t getumask(void);
 
-int mkdir(const char *path, mode_t mode);
-int mkdirat(int fd, const char *path, mode_t mode);
+int mkdir(const char* path, mode_t mode);
+int mkdirat(int fd, const char* path, mode_t mode);
 
 // TODO other functions
 

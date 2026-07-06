@@ -30,9 +30,9 @@ import stdlib;
 import string local;
 
 #if SYSTEM_DARWIN
-const char *lib_ext = ".dylib";
+const char* lib_ext = ".dylib";
 #else
-const char *lib_ext = ".so";
+const char* lib_ext = ".so";
 #endif
 
 type Plugin struct {

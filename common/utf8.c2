@@ -51,7 +51,7 @@ public fn u32 encode(char *dest, u32 max_len, u32 cc) {
     return 0;
 }
 
-public fn u32 decode(const char *p, u32 max_len, u32* pc) {
+public fn u32 decode(const char* p, u32 max_len, u32* pc) {
     if (!max_len)
         return 0;
 

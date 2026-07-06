@@ -561,7 +561,7 @@ fn bool filter_name(const char* name) {
     return false;
 }
 
-fn bool match_name(const char *name, const char *end, const char *pattern) {
+fn bool match_name(const char* name, const char* end, const char* pattern) {
     for (;;) {
         char c1;
         char c2;

@@ -42,8 +42,8 @@ import stdarg local;
 import stdio local;
 import stdlib local;
 
-const u32 NumStmtLists = 16;    // max used for c2c is 8
-const u32 MaxLookahead = 64;    // must be power of 2
+const u32 NumStmtLists = 16; // max used for c2c is 8
+const u32 MaxLookahead = 64; // must be power of 2
 
 public type Parser struct @(opaque) {
     c2_tokenizer.Tokenizer tokenizer;
@@ -52,7 +52,7 @@ public type Parser struct @(opaque) {
     i32 file_id;
 
     u32 next_count;
-    u32 next_head;  // index of next token (circular index into next)
+    u32 next_head; // index of next token (circular index into next)
     Token[MaxLookahead] next;
 
     SourceMgr* sm;
@@ -81,12 +81,12 @@ public type Parser struct @(opaque) {
 }
 
 public fn Parser* create(SourceMgr* sm,
-                           diagnostics.Diags* diags,
-                           string_pool.Pool* pool,
-                           ast_builder.Builder* builder,
-                           const keywords.Info* kwinfo,
-                           const string_map.Map* features,
-                           bool has_asserts)
+                         diagnostics.Diags* diags,
+                         string_pool.Pool* pool,
+                         ast_builder.Builder* builder,
+                         const keywords.Info* kwinfo,
+                         const string_map.Map* features,
+                         bool has_asserts)
 {
     Parser* p = calloc(1, sizeof(Parser));
     p.sm = sm;
@@ -106,7 +106,7 @@ public fn Parser* create(SourceMgr* sm,
 
     // create a stack of stmt_lists to re-use (resize stack if needed)
     p.stmt_lists = malloc(NumStmtLists * sizeof(stmt_list.List));
-    for (u32 i=0; i<NumStmtLists; i++) {
+    for (u32 i = 0; i < NumStmtLists; i++) {
         p.stmt_lists[i].init();
     }
 
@@ -114,7 +114,7 @@ public fn Parser* create(SourceMgr* sm,
 }
 
 public fn void Parser.free(Parser* p) {
-    for (u32 i=0; i<NumStmtLists; i++) {
+    for (u32 i = 0; i < NumStmtLists; i++) {
         p.stmt_lists[i].free();
     }
     free(p.stmt_lists);
@@ -216,7 +216,7 @@ fn Kind Parser.peekToken(Parser* p, u32 n) {
     return p.next[slot].kind;
 }
 
-fn Kind Parser.peekToken2(Parser* p, u32 n, Token *tok) {
+fn Kind Parser.peekToken2(Parser* p, u32 n, Token* tok) {
     Kind kind = p.peekToken(n);
     u32 slot = (p.next_head + n - 1) % MaxLookahead;
     *tok = p.next[slot];
@@ -306,7 +306,7 @@ fn void Parser.parseModule(Parser* p) {
             if (p.tok.text_len != 1 || *extern_name != 'C') {
                 p.error("unsupported extern module language tag '%s'", extern_name);
             }
-            p.tokenizer.c_mode++;   // must set before consuming the token
+            p.tokenizer.c_mode++; // must set before consuming the token
             p.consumeToken();
         }
         p.builder.setExternal(true);
@@ -419,10 +419,10 @@ fn void Parser.parseTopLevel(Parser* p) {
     default:
         p.parseVarDecl(is_public);
         break;
-    invalid_c:
+    invalid_c :
         p.error("invalid keyword '%s' in extern C code", p.tok.kind.name);
         //noreturn;
-    invalid_c2:
+    invalid_c2 :
         p.error("invalid '%s' definition in C2 code", p.tok.kind.name);
         //noreturn;
     }
@@ -624,7 +624,7 @@ fn bool Parser.parseFunctionParams(Parser* p, VarDeclList* params, bool is_publi
     // VarDeclList args
     while (p.tok.kind != RParen) {
         VarDecl* decl = p.parseParamDecl(is_public, accept_default);
-        decl.setOffset(params.count);  // set argument number
+        decl.setOffset(params.count); // set argument number
         params.add(decl);
 
         if (p.tok.kind != Comma) break;
@@ -746,7 +746,7 @@ fn void Parser.parseArrayEntry(Parser* p) {
     u32 name = p.tok.name_idx;
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
-    p.consumeToken();   // +=
+    p.consumeToken(); // +=
     bool need_semi = (p.tok.kind != LBrace);
     Expr* initValue = p.parseInitValue(false);
     p.consumeSemicolon(need_semi);
@@ -1067,14 +1067,14 @@ fn void Parser.parseExternDecl(Parser* p) {
             p.error("extern must be followed by \"C\" and a block");
         }
         p.consumeToken();
-        p.tokenizer.c_mode++;   // must set before consuming the token
+        p.tokenizer.c_mode++; // must set before consuming the token
         p.expectAndConsume(LBrace);
         while (p.tok.kind != RBrace) {
             if (p.tok.kind == Eof)
                 p.error("unterminated extern \"C\" block");
             p.parseTopLevel();
         }
-        p.tokenizer.c_mode--;   // must set before consuming the token
+        p.tokenizer.c_mode--; // must set before consuming the token
         p.consumeToken();
     } else {
         p.parseTopLevel();
@@ -1118,9 +1118,9 @@ const BuiltinKind[CTypeKind] CType2builtin = {
     [Int] = Int32,
     [SignedInt] = Int32,
     [UnsignedInt] = UInt32,
-    [Long] = Int64,             // should depend target arch
-    [SignedLong] = Int64,       // should depend target arch
-    [UnsignedLong] = UInt64,    // should depend target arch
+    [Long] = Int64, // should depend target arch
+    [SignedLong] = Int64, // should depend target arch
+    [UnsignedLong] = UInt64, // should depend target arch
     [LongLong] = Int64,
     [SignedLongLong] = Int64,
     [UnsignedLongLong] = UInt64,
@@ -1139,7 +1139,7 @@ fn CTypeKind Parser.convertCType(Parser* p) {
     SrcLoc loc = p.tok.loc;
     CTypeKind kind = Int;
     CTypeKind size = None;
-    u8 sign = 0;  // 0:None, 1:Signed, 2:Unsigned, 3:invalid
+    u8 sign = 0; // 0:None, 1:Signed, 2:Unsigned, 3:invalid
     bool skip_last = true;
     for (;; p.consumeToken()) {
         switch (p.tok.kind) {
@@ -1208,4 +1208,3 @@ fn CTypeKind Parser.convertCType(Parser* p) {
         return kind;
     }
 }
-

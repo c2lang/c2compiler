@@ -74,7 +74,7 @@ size_t strlcat(char* dest, const char* src, size_t n);
  * Find the first occurrence of s2 in s1, where the search is limited to the
  * first n c_characters of s.
  */
-char *strnstr(const char *s1, const char *s2, size_t n) {
+char *strnstr(const char* s1, const char* s2, size_t n) {
     /* simplistic algorithm with O(n2) worst case */
     char c = *s2++;
     if (c == '\0') return (char *)s1;
@@ -92,7 +92,7 @@ char *strnstr(const char *s1, const char *s2, size_t n) {
     return nil;
 }
 
-size_t strlcpy(char *dst, const char *src, size_t n) {
+size_t strlcpy(char *dst, const char* src, size_t n) {
     for (size_t i = 0; i < n; i++) {
         if ((dst[i] = *src++) == '\0') return i;
     }
@@ -101,7 +101,7 @@ size_t strlcpy(char *dst, const char *src, size_t n) {
     return n;
 }
 
-size_t strlcat(char *dst, const char *src, size_t n) {
+size_t strlcat(char *dst, const char* src, size_t n) {
     size_t i = 0;
     while (i < n && dst[i]) i++;
     while (i < n) {

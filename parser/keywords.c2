@@ -35,7 +35,7 @@ const char[] C_keywords = "alignas alignof auto constexpr do inline nullptr"
 public fn void Info.init(Info* info, string_pool.Pool* pool) {
     u32 idx = 0;
     string.memset(info, 0, sizeof(Info));
-    const char *p = C_keywords;
+    const char* p = C_keywords;
     while (*p) {
         u32 len;
         for (len = 0; p[len] && p[len] != ' '; len++)
@@ -47,7 +47,7 @@ public fn void Info.init(Info* info, string_pool.Pool* pool) {
         while (*p == ' ') p++;
     }
     for (Kind k = KW_bool; k <= KW_while; k++) {
-        const char *s = k.name;
+        const char* s = k.name;
         idx = pool.add(s, string.strlen(s), true);
         assert(idx < elemsof(info.indexes));
         info.indexes[idx] = k;

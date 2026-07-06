@@ -743,7 +743,7 @@ fn bool is_binary(char c) {
     return (c >= '0' && c <= '1');
 }
 
-fn void Tokenizer.lex_number_error(Tokenizer* t, Token* result, const char *p, const char *qual) {
+fn void Tokenizer.lex_number_error(Tokenizer* t, Token* result, const char* p, const char* qual) {
     if (isdigit(*p)) {
         t.num_error(result, p, "invalid digit '%c' in %s constant", *p, qual);
         return;
@@ -831,7 +831,7 @@ fn void Tokenizer.lex_number(Tokenizer* t, Token* result) {
             if (*p == '_' && isdigit(p[1]))
                 p++;
         }
-        const char *p0 = p;
+        const char* p0 = p;
         if (isdigit(*p)) {
             // skip digits to check for floating point constant
             while (isdigit(*p) || (*p == '_' && isdigit(p[1])))
@@ -1108,7 +1108,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype
 
 fn void Tokenizer.lex_char_literal(Tokenizer* t, Token* result) {
     result.kind = CharLiteral;
-    const char *start = t.cur;
+    const char* start = t.cur;
 
     t.cur++; // skip single quote
     switch (*t.cur) {
@@ -1405,14 +1405,14 @@ fn bool compare_word(const char* cur, const char* expect) {
 
 // return true if we pass result
 fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
-    const char *start = t.cur;
+    const char* start = t.cur;
 
     // skip '#' and blanks
     t.cur = skip_blanks(t.cur + 1);
 
     Kind kind;
     for (kind = Feat_if; kind < Invalid; kind++) {
-        const char *word = kind.name + 1;
+        const char* word = kind.name + 1;
         if (compare_word(t.cur, word)) {
             t.cur += string.strlen(word);
             break;
@@ -1453,7 +1453,7 @@ fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
 }
 
 fn bool Tokenizer.at_bol(Tokenizer* t) {
-    const char *p = t.cur;
+    const char* p = t.cur;
     while (p > t.line_start) {
         if (!isblank(*--p))
             return false;
@@ -1528,7 +1528,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
             switch (op) {
             case Identifier:
                 val.setUnsigned(0);
-                const char *id = t.pool.idx2str(result.name_idx);
+                const char* id = t.pool.idx2str(result.name_idx);
                 if (!string.strcmp(id, "defined")) {
                     bool has_paren = false;
                     if (t.lex_preproc(result) == LParen) {
@@ -1866,7 +1866,7 @@ fn bool Tokenizer.handle_endif(Tokenizer* t, Token* result) {
 }
 
 fn bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
-    const char *p = t.cur;
+    const char* p = t.cur;
     for (;;) {
         switch (*p++) {
         case '\0':
@@ -1906,12 +1906,12 @@ fn bool Tokenizer.skip_feature(Tokenizer* t, Token* result) {
     }
 }
 
-fn const char *skip_blanks(const char *p) {
+fn const char* skip_blanks(const char* p) {
     while (isblank(*p)) p++;
     return p;
 }
 
-fn const char *skip_string_literal(const char *p) {
+fn const char* skip_string_literal(const char* p) {
     char sep = *p++;
 
     for (;;) {
@@ -1934,7 +1934,7 @@ fn const char *skip_string_literal(const char *p) {
     }
 }
 
-fn const char *skip_raw_string_literal(const char *p) {
+fn const char* skip_raw_string_literal(const char* p) {
     u32 count;
     for (count = 0; *p == '`'; count++) p++;
 
@@ -1948,13 +1948,13 @@ fn const char *skip_raw_string_literal(const char *p) {
     return p;
 }
 
-fn const char *skip_line_comment(const char *p) {
+fn const char* skip_line_comment(const char* p) {
     while (*p != '\0' && *p != '\r' && *p != '\n')
         p++;
     return p;
 }
 
-fn const char *skip_block_comment(const char *p) {
+fn const char* skip_block_comment(const char* p) {
     while (*p != '\0') {
         if (*p == '*' && p[1] == '/') {
             p += 2;

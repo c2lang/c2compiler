@@ -8,7 +8,7 @@ module test1;
 
 public fn i32 test_fn(const char* format, ...) @(inline) {
     const char* p;
-    if (const char *q = format) {
+    if (const char* q = format) {
     }
     if (format) {
     }
@@ -26,7 +26,7 @@ public fn i32 test_fn(const char* format, ...) @(inline) {
     if (format) p = format;
     if (format) p = format;
     else p = format;
-    while (const char *q = format) {
+    while (const char* q = format) {
     }
     while (format) {
     }

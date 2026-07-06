@@ -26,7 +26,7 @@ public fn i32 main(i32 argc, char** argv) {
     file_utils.Reader file;
     file.open(argv[1]);
 
-    const char *contents = file.data();
+    const char* contents = file.data();
     printf("%s", contents);
 
     file.close();

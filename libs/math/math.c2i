@@ -278,9 +278,9 @@ float copysignf(float, float) @(pure);
 double copysign(double, double) @(pure);
 //long double copysignl(long double, long double) @(pure);
 
-float nanf(const char *);
-double nan(const char *);
-//long double nanl(const char *);
+float nanf(const char* );
+double nan(const char* );
+//long double nanl(const char* );
 
 float nextafterf(float, float) @(pure);
 double nextafter(double, double) @(pure);

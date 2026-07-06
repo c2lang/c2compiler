@@ -133,7 +133,7 @@ struct stat {
     // ...
 };
 
-int stat(const char *pathname, struct stat *statbuf);
+int stat(const char* pathname, struct stat* statbuf);
 ```
 
 So both the struct and the function are called _stat_.

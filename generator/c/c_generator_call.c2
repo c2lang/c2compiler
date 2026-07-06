@@ -115,7 +115,7 @@ fn Decl* getFuncDecl(Expr* func, bool* no_trace) {
         // TODO check for pointer
         IdentifierExpr* i = (IdentifierExpr*)func;
         // do not trace calls to va_start, va_arg, va_end...
-        const char *name = i.getName();
+        const char* name = i.getName();
         if (name && name[0] == 'v' && name[1] == 'a' && name[2] == '_')
             *no_trace = true;
         return i.getDecl();

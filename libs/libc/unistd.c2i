@@ -17,24 +17,24 @@ typedef unsigned useconds_t;
 /* POSIX.1-1990 */
 
 void _exit(int) @(noreturn);
-int access(const char *name, int flags);
+int access(const char* name, int flags);
 const u8 R_OK = 4;
 const u8 W_OK = 2;
 const u8 X_OK = 1;
 const u8 F_OK = 0;
 unsigned int alarm(unsigned int seconds);
-int chdir(const char *path);
-int chown(const char *file, uid_t owner, gid_t group);
+int chdir(const char* path);
+int chown(const char* file, uid_t owner, gid_t group);
 int close(int fd);
 int dup(int oldfd);
 int dup2(int oldfd, int newfd);
-int execl(const char *path, const char *arg, ...);
-int execle(const char *path, const char *arg, ...);
-int execlp(const char *file, const char *arg, ...);
-int execv(const char *path, char */*const*/ *argv);
-int execve(const char *path, char */*const*/ *argv, char */*const*/ *envp);
-int execvp(const char *file, char */*const*/ *argv);
-int execvpe(const char *file, char */*const*/ *argv, char */*const*/ *envp);
+int execl(const char* path, const char* arg, ...);
+int execle(const char* path, const char* arg, ...);
+int execlp(const char* file, const char* arg, ...);
+int execv(const char* path, char */*const*/ *argv);
+int execve(const char* path, char */*const*/ *argv, char */*const*/ *envp);
+int execvp(const char* file, char */*const*/ *argv);
+int execvpe(const char* file, char */*const*/ *argv, char */*const*/ *envp);
 pid_t fork(void);
 long fpathconf(int fd, int name);
 char *getcwd(char *buf, size_t size);
@@ -45,9 +45,9 @@ pid_t getpid(void);
 pid_t getppid(void);
 uid_t getuid(void);
 int isatty(int fd);
-//int link(const char *from, const char *to);
+//int link(const char* from, const char* to);
 off_t lseek(int fd, off_t offset, int whence);
-long pathconf(const char *path, int name);
+long pathconf(const char* path, int name);
 int pause(void);
 int pipe(int *pipedes);
 ssize_t read(int fd, void *buf, size_t nbytes);
@@ -70,7 +70,7 @@ ssize_t write(int fd, const void *buf, size_t nbytes);
  */
 
 size_t confstr(int name, char *buf, size_t len);
-int getopt(int argc, char */*const*/ *argv, const char *optstring);
+int getopt(int argc, char */*const*/ *argv, const char* optstring);
 char *optarg;
 int optind;
 int opterr;
@@ -90,8 +90,8 @@ const int F_TEST  = 3;      /* test a section for locks by other procs */
 #if 0
 /* Removed in Issue 6 */
 void *brk(const void *addr) @(deprecated);
-int chroot(const char *path) @(deprecated);
-char *crypt(const char *, const char *);
+int chroot(const char* path) @(deprecated);
+char *crypt(const char* , const char* );
 int encrypt(char *buf /*_LIBC_COUNT(64)*/, int);
 #endif
 
@@ -104,13 +104,13 @@ pid_t getsid(pid_t pid);
 /* Removed in Issue 6 */
 int getdtablesize(void) @(deprecated);
 int getpagesize(void) @(pure, deprecated);
-char *getpass(const char *) @(deprecated);
+char *getpass(const char* ) @(deprecated);
 
 /* Removed in Issue 7 */
 char *getwd(char *buf /*PATH_MAX*/) @(deprecated="obsoleted by getcwd()")
 #endif
 
-int lchown(const char *file, uid_t owner, gid_t group);
+int lchown(const char* file, uid_t owner, gid_t group);
 int lockf(int fd, int cmd, off_t len);
 int nice(int inc);
 ssize_t pread(int fd, void *buf, size_t nbytes, off_t offset);
@@ -128,7 +128,7 @@ int setregid(gid_t gid, gid_t gid2);
 int setreuid(uid_t uid, uid_t uid2);
 //void swab(const void *, void *, ssize_t nbytes);
 void sync(void);
-int truncate(const char *path, off_t offset);
+int truncate(const char* path, off_t offset);
 useconds_t ualarm(useconds_t value, useconds_t interval);
 int usleep(useconds_t useconds);
 
@@ -147,21 +147,21 @@ int getlogin_r(char *name, size_t name_len);
 
 int fchown(int fd, uid_t owner, gid_t group);
 int gethostname(char *name, size_t len);
-ssize_t readlink(const char *path, char *buf, size_t bufsize);
+ssize_t readlink(const char* path, char *buf, size_t bufsize);
 int setegid(gid_t);
 int seteuid(uid_t);
-int symlink(const char *from, const char *to);
+int symlink(const char* from, const char* to);
 
 /* linux extensions */
 int dup3(int oldfd, int newfd, int flags);
-int faccessat(int fd, const char *file, int type_, int flag);
-int fchownat(int fd, const char *file, uid_t owner, gid_t group, int flag);
+int faccessat(int fd, const char* file, int type_, int flag);
+int fchownat(int fd, const char* file, uid_t owner, gid_t group, int flag);
 int fdatasync(int fd);
 int fexecve(int fd, char */*const*/ *argv, char */*const*/ *envp);
-int linkat(int fromfd, const char *from, int tofd, const char *to, int flags);
-ssize_t readlinkat(int fd, const char *path, char *buf, size_t len);
-int symlinkat(const char *from, int tofd, const char *to);
-int unlinkat(int fd, const char *name, int flag);
+int linkat(int fromfd, const char* from, int tofd, const char* to, int flags);
+ssize_t readlinkat(int fd, const char* path, char *buf, size_t len);
+int symlinkat(const char* from, int tofd, const char* to);
+int unlinkat(int fd, const char* name, int flag);
 
 char* mktemp(char* tpl);
 int mkstemp(char* tpl);

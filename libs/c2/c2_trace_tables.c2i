@@ -4,7 +4,7 @@ type c2_func_t struct {
     u32 count;
     u16 filename_idx;
     u16 line;
-    const char *funcname;
+    const char* funcname;
 }
 
 c2_func_t[] c2_func_data;

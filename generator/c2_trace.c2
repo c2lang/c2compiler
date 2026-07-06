@@ -21,7 +21,7 @@ import stdio local;
 import stdlib local;
 import string local;
 
-fn bool match_name(const char *name, const char *pattern) {
+fn bool match_name(const char* name, const char* pattern) {
     for (;;) {
         char c1, c2;
         while ((c1 = *name++) == (c2 = *pattern++)) {
@@ -43,9 +43,9 @@ fn bool match_name(const char *name, const char *pattern) {
     }
 }
 
-fn bool match_pattern(const char *name, const char *pattern) {
+fn bool match_pattern(const char* name, const char* pattern) {
     if (!pattern || !*pattern) return true;
-    for (const char *p = pattern; *p;) {
+    for (const char* p = pattern; *p;) {
         if (match_name(name, p)) return true;
         char c;
         while ((c = *p++) != 0 && c != ',' && c != ';') continue;
@@ -73,10 +73,10 @@ fn i32 cmp_calls(const void *a, const void *b) {
 }
 
 fn void list_calls() @(destructor, unused) {
-    const char *p = getenv("C2_TRACE");
-    const char *pattern = nil;
-    const char *filename = nil;
-    const char *caller = nil;
+    const char* p = getenv("C2_TRACE");
+    const char* pattern = nil;
+    const char* filename = nil;
+    const char* caller = nil;
     if (!p || !*p) return;
     u32 min = 1, min2 = 1;
     i32 pos = 0, mode = 3, fd = 1, indent = 2;

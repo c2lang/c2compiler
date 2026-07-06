@@ -45,7 +45,7 @@ public fn void skipTrailingWhitespace(const char* start, const char** end) {
     *end = cp;
 }
 
-public fn void set_color_output(const char *name, bool enable) {
+public fn void set_color_output(const char* name, bool enable) {
     proc_name = name;
     color_output = enable;
 }

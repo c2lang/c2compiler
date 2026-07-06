@@ -166,7 +166,7 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
                 u32 index = 0;  // nil string has index 0
                 if (e.isStringLiteral()) {
                     StringLiteral* lit = (StringLiteral*)e;
-                    const char *str = ma.idx2name(lit.getText());
+                    const char* str = ma.idx2name(lit.getText());
                     index = 1;  // empty string has index 1
                     u8 slen = lit.getLength() & 0xFF;
                     if (slen) {

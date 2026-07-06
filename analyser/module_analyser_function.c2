@@ -104,13 +104,13 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd, bool full) {
             }
             // check type
             if (vd.hasAutoAttr()) {
-                if (vd.hasAttrAutoFile() && !ref.isConstCharPtr()) { // check for 'const char *'
+                if (vd.hasAttrAutoFile() && !ref.isConstCharPtr()) { // check for 'const char* '
                     ma.error(ref.getLoc(), "attribute 'auto_file' requires a parameter of type 'const char*'");
                 }
                 if (vd.hasAttrAutoLine() && !ref.isU32()) {  // check for 'u32'
                     ma.error(ref.getLoc(), "attribute 'auto_line' requires a parameter of type 'u32'");
                 }
-                if (vd.hasAttrAutoFunc() && !ref.isConstCharPtr()) { // check for 'const char *'
+                if (vd.hasAttrAutoFunc() && !ref.isConstCharPtr()) { // check for 'const char* '
                     ma.error(ref.getLoc(), "attribute 'auto_func' requires a parameter of type 'const char*'");
                 }
             }
