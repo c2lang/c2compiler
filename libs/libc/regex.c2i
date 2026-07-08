@@ -1,7 +1,7 @@
 module regex extern "C";
 
 struct Regex_t @(cname="regex_t") {
-    void *re_pcre;
+    void* re_pcre;
     size_t re_nsub;
     size_t re_erroffset;
 }

@@ -67,7 +67,7 @@ public type FunctionDecl struct @(opaque) {
     Decl base;
     union {
         CompoundStmt* body;
-        void *address;
+        void* address;
     }
     QualType rt;          // return type after analysis
     u8 num_params;

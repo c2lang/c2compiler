@@ -54,24 +54,24 @@ FILE* stderr @(cname="__stderrp");
 #endif
 #if SYSTEM_OPENBSD
 struct Sbuf__ {
-    unsigned char *_base;
+    unsigned char* _base;
     int _size;
 }
 struct FILE {
-    unsigned char *_p;
+    unsigned char* _p;
     int _r;
     int _w;
     short _flags;
     short _file;
     Sbuf__ _bf;
     int _lbfsize;
-    void *_cookie;
-    void *_close;   //int (*_close)(void *);
-    void *_read;    //int (*_read)(void *, char *, int);
-    void *_seek;    //fpos_t (*_seek)(void *, fpos_t, int);
-    void *_write;   //int (*_write)(void *, const char* , int);
+    void* _cookie;
+    void* _close;   //int (*_close)(void*);
+    void* _read;    //int (*_read)(void*, char*, int);
+    void* _seek;    //fpos_t (*_seek)(void*, fpos_t, int);
+    void* _write;   //int (*_write)(void*, const char*, int);
     Sbuf__ _ext;
-    unsigned char *_up;
+    unsigned char* _up;
     int _ur;
     unsigned char[3] _ubuf;
     unsigned char[1] _nbuf;
@@ -178,9 +178,9 @@ int asprintf(char**, const char* @(printf_format), ...);
 char* ctermid_r(char*);
 char* fgetln(FILE*, size_t*);
 const char* fmtcheck(const char*, const char*);
-int fpurge(FILE *);
+int fpurge(FILE*);
 //int vasprintf(char**, const char*, va_list);
-FILE *zopen(const char*, const char*, int);
+FILE* zopen(const char*, const char*, int);
 
 int vdprintf(int __fd, const char* format, va_list ap);
 int vfprintf(FILE* stream, const char* format, va_list ap);

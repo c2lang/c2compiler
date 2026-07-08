@@ -466,7 +466,7 @@ fn component.Component* Compiler.findModuleComponent(const Compiler* c, u32 name
 fn void Compiler.add_source(void* arg, const char* name, string_buffer.Buf* content) {
     Compiler* c = arg;
     u32 size;
-    void *data = content.detach(&size);
+    void* data = content.detach(&size);
     i32 file_id = c.sm.addGenerated(name, data, size);
     c.parser.parse(file_id, false, true);
 }

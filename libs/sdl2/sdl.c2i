@@ -314,7 +314,7 @@ type Event union @(cname="SDL_Event") {
        the next multiple of 16, 64, and on architectures where pointers are
        even larger the size of SDL_UserEvent will dominate as being 3 pointers.
     */
-    //u8 padding[sizeof(void *) <= 8 ? 56 : sizeof(void *) == 16 ? 64 : 3 * sizeof(void *)];
+    //u8 padding[sizeof(void*) <= 8 ? 56 : sizeof(void*) == 16 ? 64 : 3 * sizeof(void*)];
     u8[56] padding;
 }
 
@@ -1066,7 +1066,7 @@ type AudioSpec struct @(cname="SDL_AudioSpec") {
     u16 padding;             /**< Necessary for some compile environments */
     u32 size;                /**< Audio buffer size in bytes (calculated) */
     AudioCallback callback; /**< Callback that feeds the audio device (NULL to use SDL_QueueAudio()). */
-    void *userdata;             /**< Userdata passed to callback (ignored for NULL callbacks). */
+    void* userdata;             /**< Userdata passed to callback (ignored for NULL callbacks). */
 }
 
 type AudioDeviceID u32 @(cname="SDL_AudioDeviceID");
@@ -1246,7 +1246,7 @@ fn void free(void* mem) @(cname="SDL_free");
 
 type PixelFormat struct @(cname="SDL_PixelFormat") {
     u32 format;
-    Palette *palette;
+    Palette* palette;
     u8 BitsPerPixel;
     u8 BytesPerPixel;
     u8[2] padding;
@@ -1263,7 +1263,7 @@ type PixelFormat struct @(cname="SDL_PixelFormat") {
     u8 Bshift;
     u8 Ashift;
     c_int refcount;
-    PixelFormat *next;
+    PixelFormat* next;
 }
 
 // TEMP, avoid macros

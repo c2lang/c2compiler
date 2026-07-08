@@ -33,7 +33,7 @@ Tm* localtime_r(const Time* timep, Tm* result);
 
 Time mktime(Tm* tm);
 
-size_t strftime(char *s, size_t max, const char* format, const Tm *tm);
+size_t strftime(char* s, size_t max, const char* format, const Tm* tm);
 
 typedef long clock_t;
 clock_t clock(void);

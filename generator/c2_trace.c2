@@ -54,11 +54,11 @@ fn bool match_pattern(const char* name, const char* pattern) {
     return false;
 }
 
-fn i32 cmp_funcs(const void *a, const void *b) {
-    const c2_trace_t *aa = a;
-    const c2_trace_t *bb = b;
-    const c2_func_t *fa = &c2_func_data[aa.callee_idx];
-    const c2_func_t *fb = &c2_func_data[bb.callee_idx];
+fn i32 cmp_funcs(const void* a, const void* b) {
+    const c2_trace_t* aa = a;
+    const c2_trace_t* bb = b;
+    const c2_func_t* fa = &c2_func_data[aa.callee_idx];
+    const c2_func_t* fb = &c2_func_data[bb.callee_idx];
     if (fa.count != fb.count)
         return fa.count < fb.count ? 1 : -1;
     if (fa != fb)
@@ -66,9 +66,9 @@ fn i32 cmp_funcs(const void *a, const void *b) {
     return (aa.count < bb.count) - (aa.count > bb.count);
 }
 
-fn i32 cmp_calls(const void *a, const void *b) {
-    const c2_trace_t *aa = a;
-    const c2_trace_t *bb = b;
+fn i32 cmp_calls(const void* a, const void* b) {
+    const c2_trace_t* aa = a;
+    const c2_trace_t* bb = b;
     return (aa.count < bb.count) - (aa.count > bb.count);
 }
 
@@ -105,11 +105,11 @@ fn void list_calls() @(destructor, unused) {
         while (p[pos] && p[pos++] != ';') continue;
     }
     if (!mode) return;
-    u32 *counts = c2_trace_counts;
+    u32* counts = c2_trace_counts;
     c2_trace_t* data = c2_trace_data;
     u32 n = c2_trace_length;
     for (u32 i = 0; i < n; i++) {
-        c2_trace_t *cp = &data[i];
+        c2_trace_t* cp = &data[i];
         if (match_pattern(c2_func_data[cp.callee_idx].funcname, pattern)
         &&  match_pattern(c2_filenames[cp.filename_idx], filename)
         &&  match_pattern(c2_func_data[cp.caller_idx].funcname, caller)) {
@@ -124,11 +124,11 @@ fn void list_calls() @(destructor, unused) {
     } else {
         qsort(data, n, sizeof(c2_trace_t), cmp_funcs);
     }
-    c2_func_t *last = nil;
+    c2_func_t* last = nil;
     i32 show = 0;
     for (u32 i = 0; i < n; i++) {
-        c2_trace_t *cp = &data[i];
-        c2_func_t *func = &c2_func_data[cp.callee_idx];
+        c2_trace_t* cp = &data[i];
+        c2_func_t* func = &c2_func_data[cp.callee_idx];
         u32 count1 = func.count;
         u32 count2 = cp.count;
         if (count1 < min) continue;

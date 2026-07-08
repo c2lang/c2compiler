@@ -547,7 +547,7 @@ fn i32 dump_bin(u8 b) {
 }
 
 u32 nvals;
-char **vals;
+char** vals;
 
 fn bool filter_name(const char* name) {
     if (!name || !nvals) return true;
@@ -616,7 +616,7 @@ fn void check(const char* s, usize a, u8* p1, u8* p2) {
     }
 }
 
-public fn i32 main(i32 argc, char **argv) {
+public fn i32 main(i32 argc, char** argv) {
     i32 i;
     for (i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-d")) dump = 16;

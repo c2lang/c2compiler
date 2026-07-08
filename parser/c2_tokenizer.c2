@@ -1514,9 +1514,9 @@ type Operand struct {
     u8 prec;
 }
 
-fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token *result) {
+fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token* result) {
     Operand[MAX_LEVEL] stack;
-    Operand *sp;
+    Operand* sp;
     Kind op;
     u8 prec;
     Value val.setUnsigned(0);

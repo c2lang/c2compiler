@@ -56,7 +56,7 @@ public fn u32 QualType.getQuals(const QualType qt) {
     return qt.ptr & QualType_Mask;
 }
 
-public fn void QualType.setQuals(QualType *qt, u32 qualifiers) {
+public fn void QualType.setQuals(QualType* qt, u32 qualifiers) {
     qt.ptr |= qualifiers;
 }
 
@@ -530,7 +530,7 @@ public fn void QualType.print(const QualType qt, string_buffer.Buf* out) {
 }
 
 fn void QualType.printInner(const QualType qt, string_buffer.Buf* out,  bool printCanon, bool printModifiers, bool print_error) {
-    // output examples: const char*,  const char const *,
+    // output examples: const char*,  const char const*,
     const Type* t = qt.getTypeOrNil();
     if (t) {
         u32 quals = qt.getQuals();

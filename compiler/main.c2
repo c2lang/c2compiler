@@ -68,7 +68,7 @@ fn void Options.init(Options* opts, string_pool.Pool* pool) {
     opts.features.init(pool);
 }
 
-fn void Options.free(Options *opts) {
+fn void Options.free(Options* opts) {
     opts.targets.free();
     opts.files.free();
     opts.features.free();
@@ -235,12 +235,12 @@ Options:
 type ArgumentParser struct {
     i32 cur;
     i32 argc;
-    char **argv;
+    char** argv;
     const char* prog;
     const char* help;
 }
 
-fn void ArgumentParser.init(ArgumentParser *ap, i32 argc, char **argv,
+fn void ArgumentParser.init(ArgumentParser* ap, i32 argc, char** argv,
                             const char* prog = nil, const char* help = nil)
 {
     ap.cur = 1;
@@ -250,30 +250,30 @@ fn void ArgumentParser.init(ArgumentParser *ap, i32 argc, char **argv,
     ap.help = help;
 }
 
-fn void ArgumentParser.showHelp(ArgumentParser *ap) {
+fn void ArgumentParser.showHelp(ArgumentParser* ap) {
     if (ap.help) console.log("%s", ap.help);
 }
 
-fn const char* ArgumentParser.getArgument(ArgumentParser *ap) {
+fn const char* ArgumentParser.getArgument(ArgumentParser* ap) {
     return ap.cur < ap.argc ? ap.argv[ap.cur++] : nil;
 }
 
-fn const char* ArgumentParser.getOptionArgument(ArgumentParser *ap, const char* option) {
+fn const char* ArgumentParser.getOptionArgument(ArgumentParser* ap, const char* option) {
     if (ap.cur < ap.argc) return ap.argv[ap.cur++];
     ap.missingArgument(option);
 }
 
-fn void ArgumentParser.missingArgument(ArgumentParser *ap, const char* option) @(noreturn) {
+fn void ArgumentParser.missingArgument(ArgumentParser* ap, const char* option) @(noreturn) {
     console.error("%s: missing argument for option '%s'", ap.prog, option);
     exit(EXIT_FAILURE);
 }
 
-fn void ArgumentParser.unknownOption(ArgumentParser *ap, const char* option) @(noreturn) {
+fn void ArgumentParser.unknownOption(ArgumentParser* ap, const char* option) @(noreturn) {
     console.error("%s: unknown option: '%s'", ap.prog, option);
     exit(EXIT_FAILURE);
 }
 
-fn void parse_long_opt(ArgumentParser *ap, const char* arg, compiler.Options* comp_opts, Options* opts) {
+fn void parse_long_opt(ArgumentParser* ap, const char* arg, compiler.Options* comp_opts, Options* opts) {
     switch (arg+2) {
     case "I2":
         opts.use_ir_backend = true;
@@ -341,7 +341,7 @@ fn void parse_long_opt(ArgumentParser *ap, const char* arg, compiler.Options* co
     }
 }
 
-fn void parse_arguments(ArgumentParser *ap, compiler.Options* comp_opts, Options* opts) {
+fn void parse_arguments(ArgumentParser* ap, compiler.Options* comp_opts, Options* opts) {
     while (const char* arg = ap.getArgument()) {
         if (arg[0] == '-') {
             if (arg[1] == '-') {

@@ -279,11 +279,11 @@ const char[] C2_types_header =
     ```
 #else
     ```c
-    #define offsetof(type, member) ((unsigned long) &((type *)0)->member)
+    #define offsetof(type, member) ((unsigned long) &((type*)0)->member)
     ```
 #endif
     ```c
-    #define to_container(type, member, ptr) ((type *)((char *)(ptr)-offsetof(type, member)))
+    #define to_container(type, member, ptr) ((type*)((char*)(ptr)-offsetof(type, member)))
 
     // NOTE: 64-bit only for now
     typedef signed char i8;

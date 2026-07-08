@@ -23,7 +23,7 @@ void* calloc(size_t count, size_t size);
 #if __ASAN__ || __MSAN__ || __UBSAN__
 void* malloc(size_t size) {
     // fill malloced blocks with junk if debugging
-    void *p = calloc(size, 1);
+    void* p = calloc(size, 1);
     return p ? string.memset(p, 0xAA, size) : p;
 }
 #else

@@ -36,10 +36,10 @@ type TraceCallList struct {
     u32 capacity;
 }
 
-fn u32 TraceCallList.add(TraceCallList *cl, TraceCall call) {
+fn u32 TraceCallList.add(TraceCallList* cl, TraceCall call) {
     if (cl.count >= cl.capacity) {
         cl.capacity += cl.capacity / 2 + 16;
-        TraceCall *array2 = stdlib.malloc(cl.capacity * sizeof(TraceCall));
+        TraceCall* array2 = stdlib.malloc(cl.capacity * sizeof(TraceCall));
         if (cl.array) {
             string.memcpy(array2, cl.array, cl.count * sizeof(TraceCall));
             stdlib.free(cl.array);
@@ -64,7 +64,7 @@ type StringList struct {
     u32* hash_array;
     u32 hash_count;
     u32 hash_capacity;
-    char **strings;
+    char** strings;
     u32 string_count;
     u32 string_capacity;
     const char* last_string;
@@ -140,9 +140,9 @@ fn u32 StringList.add(StringList* sl, const char* s, bool check_last) {
 #endif
     if (sl.string_count >= sl.string_capacity) {
         sl.string_capacity += sl.string_capacity / 2 + 16;
-        char **strings2 = stdlib.malloc(sl.string_capacity * sizeof(char *));
+        char** strings2 = stdlib.malloc(sl.string_capacity * sizeof(char*));
         if (sl.strings) {
-            string.memcpy(strings2, sl.strings, sl.string_count * sizeof(char *));
+            string.memcpy(strings2, sl.strings, sl.string_count * sizeof(char*));
             stdlib.free(sl.strings);
         }
         sl.strings = strings2;

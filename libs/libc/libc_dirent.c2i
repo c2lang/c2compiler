@@ -11,7 +11,7 @@ int closedir(DIR* dirp);
 #if ARCH_X86_64
 Dirent* readdir(DIR* dirp) @(cname="readdir$INODE64");
 #else
-Dirent *readdir(DIR *dirp);
+Dirent* readdir(DIR* dirp);
 #endif
 #else
 Dirent* readdir(DIR* dirp);

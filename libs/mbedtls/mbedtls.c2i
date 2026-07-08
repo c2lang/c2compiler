@@ -500,7 +500,7 @@ type Ssl_session struct @(cname="mbedtls_ssl_session") {
 
 
 
-type Cfg_dbg_f fn void(void *, c_int, const char* , c_int, const char* );
+type Cfg_dbg_f fn void(void *, c_int, const char*, c_int, const char*);
 type Cfg_rng_f fn c_int(void *, c_uchar*, c_size);
 type Cfg_get_cache_f fn c_int(void *, Ssl_session*);
 type Cfg_set_cache_f fn c_int(void *, const Ssl_session*);
@@ -1052,7 +1052,7 @@ fn void ctr_drbg_init( Ctr_drbg_context *ctx ) @(cname="mbedtls_ctr_drbg_init");
 
 fn c_int ctr_drbg_random( void *p_rng, c_uchar *output, c_size output_len) @(cname="mbedtls_ctr_drbg_random");
 
-type Dbg_fn fn void(void*, c_int, const char* , c_int, const char* );
+type Dbg_fn fn void(void*, c_int, const char*, c_int, const char*);
 fn void ssl_conf_dbg( Ssl_config *conf, Dbg_fn f_dbg, void  *p_dbg ) @(cname="mbedtls_ssl_conf_dbg");
 
 // ------ sha512.h ------

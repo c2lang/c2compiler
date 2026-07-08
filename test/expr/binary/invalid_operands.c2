@@ -15,8 +15,8 @@ u32 ui;
 u64 ul;
 f32 f;
 f64 d;
-char *p;
-void *vp;
+char* p;
+void* vp;
 
 fn void f1() {}
 

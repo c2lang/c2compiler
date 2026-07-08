@@ -114,7 +114,7 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
 
         // change to working dir
         if (path && *path) {
-            char *cwd = getcwd(nil, 0);
+            char* cwd = getcwd(nil, 0);
             printf("current dir: %s\n", cwd);
             free(cwd);
 
@@ -190,7 +190,7 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
     return 0;
 }
 
-fn u32 parseArgs(const char* args, char** argv, u32 maxargs, char *tmp, usize tmp_size) {
+fn u32 parseArgs(const char* args, char** argv, u32 maxargs, char* tmp, usize tmp_size) {
     // TODO accept quoted arguments
     u32 argc = 0;
     usize len = strlen(args);
@@ -209,7 +209,7 @@ fn u32 parseArgs(const char* args, char** argv, u32 maxargs, char *tmp, usize tm
 }
 
 /* Find file in one of the PATH directories */
-fn const char* find_bin(char *dest, usize size, const char* name) {
+fn const char* find_bin(char* dest, usize size, const char* name) {
     Stat statbuf;
     const char* s = getenv("PATH");
     if (!s) s = "";

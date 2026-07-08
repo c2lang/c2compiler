@@ -23,7 +23,7 @@ fn Operator getop(char c) {
     }
 }
 
-type Evaluator fn u32 (Num *sp);
+type Evaluator fn u32 (Num* sp);
 
 fn u32 error(Num*) { printf("invalid operator\n"); return 0; }
 fn u32 add(Num* sp) { *sp += sp[1]; return 1; }
@@ -49,7 +49,7 @@ public fn i32 main() {
 
         Num[32] stack;
         Num* sp = stack;
-        char *p = buf;
+        char* p = buf;
         while (*p) {
             if (isspace(*p)) {
                 p++;

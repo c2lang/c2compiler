@@ -70,7 +70,7 @@ type Generator struct {
     const char* results_dir;
     const char* output_dir;     // output/<target>
     const char* cgen_dir;       // output/<target>/cgen
-    diagnostics.Diags *diags;
+    diagnostics.Diags* diags;
     source_mgr.SourceMgr* sm;
     const build_file.Info* build_info;
     const target_info.Info* targetInfo;
@@ -1222,7 +1222,7 @@ fn void Generator.init(Generator* gen,
                        build_target.Kind kind,
                        const char* results_dir,       // output/<target>/
                        const char* output_dir,        // output/<target>/cgen/
-                       diagnostics.Diags *diags,
+                       diagnostics.Diags* diags,
                        source_mgr.SourceMgr* sm,
                        const build_file.Info* build_info,
                        Decl* mainFunc)
@@ -1275,7 +1275,7 @@ public fn void generate(string_pool.Pool* astPool,
                         const char* target,
                         build_target.Kind kind,
                         const char* output_dir,
-                        diagnostics.Diags *diags,
+                        diagnostics.Diags* diags,
                         source_mgr.SourceMgr* sm,
                         const build_file.Info* build_info,
                         const target_info.Info* targetInfo,

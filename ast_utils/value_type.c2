@@ -737,7 +737,7 @@ public fn void Value.mask(Value* v, u32 width) {
     }
 }
 
-public fn void Value.truncate(Value *v, u32 width, bool is_signed) {
+public fn void Value.truncate(Value* v, u32 width, bool is_signed) {
     if (v.kind == Error) return;
     u64 uvalue = v.as_u64();
     if (is_signed) {
@@ -823,7 +823,7 @@ fn f64 fabs(f64 d) {
 // Convert a floating point number to its closest minimal representation as a
 // string and trying to avoid using exponential notation
 // TODO: should be in the C2 library as a type function f64.str()
-public fn char *ftoa(char *dest, usize size, f64 d) {
+public fn char* ftoa(char* dest, usize size, f64 d) {
     char[32] buf;
     usize pos = 0;
 
@@ -860,20 +860,20 @@ public fn char *ftoa(char *dest, usize size, f64 d) {
         }
     }
     // remove trailing zeroes, keep at least one decimal
-    char *dot = buf + 1;
+    char* dot = buf + 1;
     while (*dot && *dot != '.')
         dot++;
-    char *exp = dot;
+    char* exp = dot;
     while (*exp && *exp != 'e')
         exp++;
     char* decimals = exp;
     while (decimals > dot + 2 && decimals[-1] == '0')
         decimals--;
     usize len = size - 1;
-    for (char *p = buf; p < decimals && pos < len; p++) {
+    for (char* p = buf; p < decimals && pos < len; p++) {
         dest[pos++] = *p;
     }
-    for (char *p = exp; *p && pos < len; p++) {
+    for (char* p = exp; *p && pos < len; p++) {
         dest[pos++] = *p;
     }
     dest[pos] = '\0';

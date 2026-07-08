@@ -24,7 +24,7 @@ public fn i32 main() {
     const char* const s = "a";
     const char* const[1][1][1] a = {{{ s }}}
     const char* const* p = a[0][0];
-    const void *q = (const char* const*)p;
+    const void* q = (const char* const*)p;
     A* const cc = nil;
     q = (A* const*)&cc;
     A[1] aa;

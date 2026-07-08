@@ -1,6 +1,6 @@
 module test;
 
-fn void test3(char *s) {
+fn void test3(char* s) {
     switch (s) {
     case "a\0b":     // @error{case string value has embedded null byte}
         break;

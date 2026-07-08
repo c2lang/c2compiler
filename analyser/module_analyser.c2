@@ -535,7 +535,7 @@ fn void Analyser.handleEnumAssocValue(void* arg, Decl* d) {
     ma.popCheck();
 }
 
-fn void Analyser.printLiteral(Analyser* ma, string_buffer.Buf *buf,
+fn void Analyser.printLiteral(Analyser* ma, string_buffer.Buf* buf,
                               const char* s, const Expr* e, Value val,
                               bool as_is = false)
 {

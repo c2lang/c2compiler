@@ -17,8 +17,8 @@ struct Ifaddrs {
        bit is set in `ifa_flags', then `ifa_broadaddr' is valid.  If the
        IFF_POINTOPOINT bit is set, then `ifa_dstaddr' is valid.
        It is never the case that both these bits are set at once.  */
-    sys_socket.Sockaddr *ifu_broadaddr; /* Broadcast address of this interface. */
-    sys_socket.Sockaddr *ifu_dstaddr; /* Point-to-point destination address.  */
+    sys_socket.Sockaddr* ifu_broadaddr; /* Broadcast address of this interface. */
+    sys_socket.Sockaddr* ifu_dstaddr; /* Point-to-point destination address.  */
   }
   void* ifa_data;       /* Address-specific data (may be unused).  */
 }

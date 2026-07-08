@@ -31,10 +31,10 @@ public type LabelStmt struct @(opaque) {
     Stmt base;
     u32 name;
     // 4 bytes padding
-    Stmt *stmt;
+    Stmt* stmt;
 }
 
-public fn LabelStmt* LabelStmt.create(ast_context.Context* c, u32 name, SrcLoc loc, Stmt *stmt) {
+public fn LabelStmt* LabelStmt.create(ast_context.Context* c, u32 name, SrcLoc loc, Stmt* stmt) {
     LabelStmt* s = c.alloc(sizeof(LabelStmt));
     s.base.init(Label, loc);
     s.name = name;

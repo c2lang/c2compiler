@@ -429,10 +429,10 @@ const unsigned PENDIN  = 04000000000;
 const unsigned IEXTEN  = 0002000;
 const unsigned EXTPROC = 0004000;
 
-void cfmakesane(Termios *termios_p);
+void cfmakesane(Termios* termios_p);
 int tcsetsid(int fd, pid_t pid);
-int tcgetwinsize(int fd, Winsize *wp);
-int tcsetwinsize(int fd, const Winsize *wp);
+int tcgetwinsize(int fd, Winsize* wp);
+int tcsetwinsize(int fd, const Winsize* wp);
 #endif
 
 #if SYSTEM_OPENBSD
@@ -555,14 +555,14 @@ const int TCSANOW   = 0;
 const int TCSADRAIN = 1;
 const int TCSAFLUSH = 2;
 
-speed_t cfgetispeed(const Termios *termios_p);
-speed_t cfgetospeed(const Termios *termios_p);
-int cfsetispeed(Termios *termios_p, speed_t speed);
-int cfsetospeed(Termios *termios_p, speed_t speed);
-int cfsetspeed(Termios *termios_p, speed_t speed);
-void cfmakeraw(Termios *termios_p);
-int tcgetattr(int fd, Termios *termios_p);
-int tcsetattr(int fd, int optional_actions, const Termios *termios_p);
+speed_t cfgetispeed(const Termios* termios_p);
+speed_t cfgetospeed(const Termios* termios_p);
+int cfsetispeed(Termios* termios_p, speed_t speed);
+int cfsetospeed(Termios* termios_p, speed_t speed);
+int cfsetspeed(Termios* termios_p, speed_t speed);
+void cfmakeraw(Termios* termios_p);
+int tcgetattr(int fd, Termios* termios_p);
+int tcsetattr(int fd, int optional_actions, const Termios* termios_p);
 int tcdrain(int fd);
 int tcflow(int fd, int action);
 int tcflush(int fd, int queue_selector);

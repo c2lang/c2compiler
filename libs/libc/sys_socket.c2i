@@ -174,7 +174,7 @@ int setsockopt(int sockfd, int level, int optname, const void* optval, u32 optle
 int bind(int sockfd, const Sockaddr* addr, u32 addrlen);
 int connect(int sockfd, const Sockaddr* addr, u32 addrlen);
 int listen(int sockfd, int backlog);
-int accept(int sockfd, Sockaddr *addr, u32 *addrlen);
+int accept(int sockfd, Sockaddr* addr, u32* addrlen);
 
 #if SYSTEM_LINUX
 
@@ -183,7 +183,7 @@ int accept4(int sockfd, Sockaddr* addr, u32* addrlen, int flags);
 
 #else
 
-int accept4(int sockfd, Sockaddr *addr, u32 *addrlen, int flags) {
+int accept4(int sockfd, Sockaddr* addr, u32* addrlen, int flags) {
     int new_sockfd = accept(sockfd, addr, addrlen);
     if (new_sockfd < 0) {
         return -1;
@@ -206,7 +206,7 @@ int accept4(int sockfd, Sockaddr *addr, u32 *addrlen, int flags) {
 #endif
 
 // NOTE: some c-prototypes need to be converted
-//int inet_aton(const char* cp, struct in_addr *inp);
+//int inet_aton(const char* cp, struct in_addr* inp);
 InAddr inet_addr(const char* cp);
 char* inet_ntoa(In_addr in);
 //struct in_addr inet_makeaddr(in_addr_t net, in_addr_t host);

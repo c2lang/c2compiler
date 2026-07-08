@@ -20,8 +20,8 @@ struct Name @(cname="utsname") {
 }
 
 #if SYSTEM_FREEBSD
-int __xuname(int len, void *);       /* Variable record size. */
-int uname(Name *name) {
+int __xuname(int len, void*);       /* Variable record size. */
+int uname(Name* name) {
     return __xuname(NAME_LEN, name);
 }
 #else

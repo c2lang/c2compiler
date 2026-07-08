@@ -307,14 +307,14 @@ fn u64 now() {
 public fn i32 main(i32 argc, char** argv) {
     u32 num_threads = 0;
     TestQueue* queue = TestQueue.create();
-    char *target = nil;
+    char* target = nil;
 
     u64 t1 = now();
 
     set_color_output(argv[0], color.useColor());
 
     for (i32 i = 1; i < argc; i++) {
-        char *arg = argv[i];
+        char* arg = argv[i];
         if (arg[0] == '-') {
             switch (arg) {
             case "-s":

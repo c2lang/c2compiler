@@ -90,7 +90,7 @@ fn const char* Plugin.getName(Plugin* p, Decl* d) {
 const char[] Content1 @(embed="plugins/unit_test1.c2");
 const char[] Content2 @(embed="plugins/unit_test2.c2");
 
-fn void generate_types(Plugin *p) {
+fn void generate_types(Plugin* p) {
     string_buffer.Buf* out = string_buffer.create(4096, false, 2);
 
     out.add(Content1);

@@ -47,7 +47,7 @@ type File struct {
     bool is_generated;
     bool is_const;
     char* data;
-    CheckPoint *checkpoints;
+    CheckPoint* checkpoints;
 }
 
 fn void File.clear(File* f) {
@@ -91,7 +91,7 @@ fn void File.addCheckPoints(File* f) {
     *cp = pos;
 }
 
-fn CheckPoint File.findCheckPoint(File *f, u32 offset) {
+fn CheckPoint File.findCheckPoint(File* f, u32 offset) {
     if (!f.checkpoints) f.addCheckPoints();
     CheckPoint pos = f.checkpoints[offset / CheckPointSize];
     u32 chunk = offset % CheckPointSize;
@@ -169,7 +169,7 @@ public fn i32 SourceMgr.addResource(SourceMgr* sm, const char* name, const void*
 #if PrintGenerated
     stdio.printf("------ RESOURCE (%s) ------\n%s\n", name, data);
 #endif
-    return sm.addFile(name, (void *)data, size, true, true);
+    return sm.addFile(name, (void*)data, size, true, true);
 }
 
 public fn i32 SourceMgr.loadFile(SourceMgr* sm, const char* filename, SrcLoc sloc) {
@@ -193,7 +193,7 @@ public fn i32 SourceMgr.loadFile(SourceMgr* sm, const char* filename, SrcLoc slo
         return -1;
     }
     u32 size;
-    void *data = file.detach(&size);
+    void* data = file.detach(&size);
     return sm.addFile(filename, data, size, false, false);
 }
 

@@ -11,7 +11,7 @@ type Font struct @(cname="TTF_FONT", opaque);
 
 fn Font* openFont(const char* file, c_int ptsize) @(cname="TTF_OpenFont");
 
-fn void Font.close(Font *font) @(cname="TTF_CloseFont");
+fn void Font.close(Font* font) @(cname="TTF_CloseFont");
 
 fn c_int Font.setSize(Font* font, c_int ptsize) @(cname="TTF_SetFontSize");
 
