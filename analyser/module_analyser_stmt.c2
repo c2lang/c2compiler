@@ -212,6 +212,7 @@ fn FlowBits Analyser.analyseLabelStmt(Analyser* ma, Stmt* s) {
     if (label.has_break) {
         ls.setUsed();
         ls.setBreak();
+        ma.scope.setReachable();
         flow |= FlowNext;
     }
     if (label.has_continue) {

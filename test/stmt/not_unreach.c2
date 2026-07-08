@@ -1,0 +1,20 @@
+module test;
+
+fn char read_char() {
+    return 'a';
+}
+
+public fn i32 main() {
+    loop: while (1) {
+        char c = read_char();
+        switch (c) {
+        case 'q':
+            break loop;
+        default:
+            break;
+        }
+    }
+    return 0;
+}
+
+
