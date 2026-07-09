@@ -54,7 +54,7 @@ public fn bool Parser.parse(Parser* p, const char* text, bool verbose) {
     p.blocks.init();
 
     XmlParser parser;
-    bool status = parser.parse(text, p.message, elemsof(p.message), &p.blocks);
+    bool status = parser.parse(text, p.message, countof(p.message), &p.blocks);
     if (status && verbose) p.blocks.dump(true);
     return status;
 }
@@ -354,7 +354,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             case '\r':
                 t.current++;
                 if (t.current[0] != '\n') {
-                    snprintf(t.msg, elemsof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
+                    snprintf(t.msg, countof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
                     result.setKind(TokenKind.Error);
                     result.setData(t.msg);
                     return;
@@ -391,7 +391,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
     while (1) {
         switch (t.current[0]) {
         case 0:
-            snprintf(t.msg, elemsof(t.msg), "unexpected eof %s", t.loc.str());
+            snprintf(t.msg, countof(t.msg), "unexpected eof %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             return;
@@ -402,7 +402,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
         case '\r':
             t.current++;
             if (t.current[0] != '\n') {
-                snprintf(t.msg, elemsof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
+                snprintf(t.msg, countof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return;
@@ -424,7 +424,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             return;
         case '/':       // expect '/>'
             if (t.current[1] != '>') {
-                snprintf(t.msg, elemsof(t.msg), "expected '/>' %s", t.loc.str());
+                snprintf(t.msg, countof(t.msg), "expected '/>' %s", t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return;
@@ -436,7 +436,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             return;
         case '?':   // expect '?>'
             if (t.current[1] != '>') {
-                snprintf(t.msg, elemsof(t.msg), "expected '?>' %s", t.loc.str());
+                snprintf(t.msg, countof(t.msg), "expected '?>' %s", t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return;
@@ -457,7 +457,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             return;
         case ']':   // expect ']]>'
             if (t.current[1] != ']' || t.current[2] != '>') {
-                snprintf(t.msg, elemsof(t.msg), "expected ']]>' %s", t.loc.str());
+                snprintf(t.msg, countof(t.msg), "expected ']]>' %s", t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return;
@@ -470,7 +470,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             if (isNameStartChar(t.current[0])) {
                 t.parseName(result);
             } else {
-                snprintf(t.msg, elemsof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
+                snprintf(t.msg, countof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
 
@@ -491,7 +491,7 @@ fn bool Tokenizer.readLtToken(Tokenizer* t, Token* result) {
     if (t.current[1] == '!') {  // can be <![CDATA[, <!-- or <!
         switch (t.current[2]) {
         case 0:
-            snprintf(t.msg, elemsof(t.msg), "unexpected eof %s", t.loc.str());
+            snprintf(t.msg, countof(t.msg), "unexpected eof %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             break;
@@ -501,7 +501,7 @@ fn bool Tokenizer.readLtToken(Tokenizer* t, Token* result) {
                 result.setKind(TokenKind.CdataBegin);
                 t.advance(9);
             } else {
-                snprintf(t.msg, elemsof(t.msg), "expected '<!CDATA[' %s", t.loc.str());
+                snprintf(t.msg, countof(t.msg), "expected '<!CDATA[' %s", t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
             }
@@ -511,7 +511,7 @@ fn bool Tokenizer.readLtToken(Tokenizer* t, Token* result) {
                 if (!t.readComments(result)) return true;
                 return false;
             } else {
-                snprintf(t.msg, elemsof(t.msg), "expected '<!--' %s", t.loc.str());
+                snprintf(t.msg, countof(t.msg), "expected '<!--' %s", t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
             }
@@ -531,7 +531,7 @@ fn bool Tokenizer.readLtToken(Tokenizer* t, Token* result) {
             t.advance(5);
             t.inElement = true;
         } else {
-            snprintf(t.msg, elemsof(t.msg), "expected '<?xml' %s", t.loc.str());
+            snprintf(t.msg, countof(t.msg), "expected '<?xml' %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
         }
@@ -550,7 +550,7 @@ fn bool Tokenizer.readComments(Tokenizer* t, Token* result) {
     while (1) {
         switch (t.current[0]) {
         case 0:
-            snprintf(t.msg, elemsof(t.msg), "unexpected eof %s", t.loc.str());
+            snprintf(t.msg, countof(t.msg), "unexpected eof %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             return false;
@@ -561,7 +561,7 @@ fn bool Tokenizer.readComments(Tokenizer* t, Token* result) {
         case '\r':
             t.current++;
             if (t.current[0] != '\n') {
-                snprintf(t.msg, elemsof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
+                snprintf(t.msg, countof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return false;
@@ -594,7 +594,7 @@ fn void Tokenizer.parseValue(Tokenizer* t, Token* result, char delimiter) {
     // TODO support escaped delimiters
     while (true) {
         if (t.current[0] == 0) {
-            snprintf(t.msg, elemsof(t.msg), "unexpected eof %s", t.loc.str());
+            snprintf(t.msg, countof(t.msg), "unexpected eof %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             return;
@@ -740,7 +740,7 @@ fn void Location.set(Location* loc, u32 l, u32 c) {
 
 fn const char* Location.str(const Location* loc) {
     static char[32] msg;
-    snprintf(msg, elemsof(msg), "at line %d:%-3d", loc.line, loc.col);
+    snprintf(msg, countof(msg), "at line %d:%-3d", loc.line, loc.col);
     return msg;
 }
 

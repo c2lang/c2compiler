@@ -8,8 +8,8 @@ module aa;
 
 public i32[10][20] array;
 
-public const u32 Rows = elemsof(array);
-public const u32 Columns = elemsof(array[0]);
+public const u32 Rows = countof(array);
+public const u32 Columns = countof(array[0]);
 
 // @expect{complete, aa.c2i}
 module aa;

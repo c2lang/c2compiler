@@ -7,7 +7,7 @@ module test;
 
 i32[] numbers = { 1, 2, 3, 4 }
 
-const i32 Amount = elemsof(numbers);
+const i32 Amount = countof(numbers);
 
 // @expect{atleast, cgen/build.c}
 

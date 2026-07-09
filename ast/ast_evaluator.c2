@@ -330,7 +330,7 @@ fn Value Evaluator.get_decl_value(Evaluator* eval, const Decl* d) {
             fallthrough;
         case FunctionParam:
             u32 off = vd.getOffset();
-            if (off < elemsof(eval.args)) return eval.args[off];
+            if (off < countof(eval.args)) return eval.args[off];
             break;
         case StructMember:
         case EnumValue:
@@ -375,7 +375,7 @@ fn Value Evaluator.set_decl_value(Evaluator* eval, const Decl* d, Value v) {
             fallthrough;
         case FunctionParam:
             u32 off = vd.getOffset();
-            if (off < elemsof(eval.args)) return eval.args[off] = v;
+            if (off < countof(eval.args)) return eval.args[off] = v;
             break;
         case StructMember:
             break;
@@ -410,7 +410,7 @@ fn Value Evaluator.eval_call(Evaluator* caller, const CallExpr* c) {
     // TODO: handle Stack frames as separate allocated objects or fragments of a stack area
     Evaluator eval;
 
-    if (num_args > elemsof(eval.args)) {
+    if (num_args > countof(eval.args)) {
         return Value.error("too many arguments in pure function evaluation");
     }
     eval.prev = caller;

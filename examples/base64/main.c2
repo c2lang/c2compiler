@@ -160,7 +160,7 @@ fn i32 handle_file(const char* filename, bool decode, base64.Mode mode, u32 widt
     char[3 * 4094] decoded_buf;
 
     if (decode) {
-        while (usize len = fread(encoded_buf, 1, elemsof(encoded_buf), fp)) {
+        while (usize len = fread(encoded_buf, 1, countof(encoded_buf), fp)) {
             u32 decode_len = base64.decode_block(encoded_buf, (u32)len, decoded_buf, mode);
             if (!decode_len) {
                 fprintf(stderr, "decoding error\n");
@@ -170,7 +170,7 @@ fn i32 handle_file(const char* filename, bool decode, base64.Mode mode, u32 widt
         }
     } else {
         u32 pos = 0;
-        while (usize len = fread(decoded_buf, 1, elemsof(decoded_buf), fp)) {
+        while (usize len = fread(decoded_buf, 1, countof(decoded_buf), fp)) {
             u32 encode_len = base64.encode_block(decoded_buf, (u32)len, encoded_buf);
             u8* p = encoded_buf;
             u32 size = encode_len;
@@ -203,7 +203,7 @@ const char*[][2] tests = {
 
 fn i32 run_tests() {
     i32 status = 0;
-    for (u32 i = 0; i < elemsof(tests); i++) {
+    for (u32 i = 0; i < countof(tests); i++) {
         const char* s = tests[i][0];
         const char* e = tests[i][1];
         char* encode = base64.encode(s, (u32)strlen(s));

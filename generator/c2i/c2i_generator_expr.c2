@@ -49,7 +49,7 @@ fn void Generator.emitExpr(Generator* gen, Buf* out, const Expr* e) {
         }
         break;
     case Type:
-        // for sizeof/elemsof argument?
+        // for sizeof/countof argument?
         gen.emitTypePre(out, e.getType());
         gen.emitTypePost(out, e.getType());
         break;
@@ -222,7 +222,7 @@ fn void Generator.emitBuiltinExpr(Generator* gen, Buf* out, const BuiltinExpr* b
         gen.emitExpr(out, b.getInner());
         out.rparen();
         break;
-    case Elemsof:
+    case Countof:
     case OffsetOf:
         // TODO: generate c2 source?
         // TODO: should be typed explicitly?

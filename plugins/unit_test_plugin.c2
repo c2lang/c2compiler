@@ -179,7 +179,7 @@ fn void generate_tests(void* arg) {
         } else {
             out.add("nil,\n");
         }
-        out.add("  .num_tests = elemsof(Test_functions),\n");
+        out.add("  .num_tests = countof(Test_functions),\n");
         out.add("  .tests = Test_functions,\n");
         out.add("}\n\n");
 

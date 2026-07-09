@@ -26,8 +26,8 @@ fn QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
     switch (b.getKind()) {
     case Sizeof:
         return ma.analyseSizeof(b);
-    case Elemsof:
-        return ma.analyseElemsof(b);
+    case Countof:
+        return ma.analyseCountof(b);
     case OffsetOf:
         return ma.analyseOffsetOf(b);
     case ToContainer:
@@ -87,7 +87,7 @@ fn QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     return getBuiltinQT(UInt32);
 }
 
-fn QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
+fn QualType Analyser.analyseCountof(Analyser* ma, BuiltinExpr* b) {
     // could be EnumType or array VarDecl
 
     Expr* inner = b.getInner();
@@ -100,7 +100,7 @@ fn QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
     const ArrayType* at = qt.getArrayTypeOrNil();
     if (at) {
         if (!at.hasSize()) {
-            ma.error(inner.getLoc(), "elemsof cannot be used on arrays of unknown length");
+            ma.error(inner.getLoc(), "countof cannot be used on arrays of unknown length");
             return QualType_Invalid;
         }
         b.setValue(at.getSize());
@@ -112,7 +112,7 @@ fn QualType Analyser.analyseElemsof(Analyser* ma, BuiltinExpr* b) {
         b.setValue(etd.getNumConstants());
         return getBuiltinQT(UInt32);
     }
-    ma.error(inner.getLoc(), "elemsof can only be used on arrays/enums");
+    ma.error(inner.getLoc(), "countof can only be used on arrays/enums");
     return QualType_Invalid;
 }
 

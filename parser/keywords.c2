@@ -41,7 +41,7 @@ public fn void Info.init(Info* info, Pool* pool) {
         for (len = 0; p[len] && p[len] != ' '; len++)
             continue;
         idx = pool.add(p, len, true);
-        assert(idx < elemsof(info.indexes));
+        assert(idx < countof(info.indexes));
         info.indexes[idx] = Error;
         p += len;
         while (*p == ' ') p++;
@@ -49,9 +49,12 @@ public fn void Info.init(Info* info, Pool* pool) {
     for (Kind k = KW_bool; k <= KW_while; k++) {
         const char* s = k.name;
         idx = pool.add(s, strlen(s), true);
-        assert(idx < elemsof(info.indexes));
+        assert(idx < countof(info.indexes));
         info.indexes[idx] = k;
     }
+    idx = pool.add("elemsof", strlen("elemsof"), true);
+    assert(idx < countof(info.indexes));
+    info.indexes[idx] = KW_countof;
     info.max_index = idx;
 }
 

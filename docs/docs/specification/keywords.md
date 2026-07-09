@@ -15,7 +15,7 @@ C2 has the following builtin types and keywords
 * `bool`
 * `char`
 * `const`
-* `elemsof`
+* `countof`
 * `enum`
 * `f32`
 * `f64`

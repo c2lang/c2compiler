@@ -32,9 +32,9 @@ fn void handle_file(const char* path, i32 indent) {
 fn i32 handle_dir(const char* path, i32 indent) {
     char[512] temp;
 
-    usize len = pstrcpy(temp, elemsof(temp), path);
+    usize len = pstrcpy(temp, countof(temp), path);
     if (len == 0) temp[len++] = '.';
-    if (len < elemsof(temp) - 1 && temp[len - 1] != '/') {
+    if (len < countof(temp) - 1 && temp[len - 1] != '/') {
         temp[len++] = '/';
         temp[len] = '\0';
     }
@@ -48,7 +48,7 @@ fn i32 handle_dir(const char* path, i32 indent) {
     }
 
     while (Dirent* e = readdir(dir)) {
-        pstrcpy(temp + len, elemsof(temp) - len, e.d_name);
+        pstrcpy(temp + len, countof(temp) - len, e.d_name);
         switch (e.d_type) {
         case DT_REG:
             handle_file(temp, indent+1);

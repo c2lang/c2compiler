@@ -713,7 +713,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
         u16 instance_idx = ma.mod.addInstance(fd, templateType, instance);
         instance.setTemplateInstanceIdx(instance_idx);
         char[64] name;
-        ma.create_template_name(name, elemsof(name), d.getNameIdx(), instance_idx);
+        ma.create_template_name(name, countof(name), d.getNameIdx(), instance_idx);
         instance.setInstanceName(ma.astPool.addStr(name, true));
     }
     call.setTemplateIdx(instance.getTemplateInstanceIdx());

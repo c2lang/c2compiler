@@ -54,7 +54,7 @@ fn bool checkFile(const char* filename) {
 }
 
 public fn u32 changeToProjectDir(PathInfo* info, const char* other_dir) {
-    char* path = getcwd(info.orig2root, sizeof(info.orig2root)-1);   // -1 to add /
+    char* path = getcwd(info.orig2root, countof(info.orig2root)-1);   // -1 to add /
     if (path == nil) {
         perror("getcwd");
         return 2;
@@ -64,7 +64,7 @@ public fn u32 changeToProjectDir(PathInfo* info, const char* other_dir) {
     info.orig2root[len] = '/';
     info.orig2root[len+1] = 0;
 
-    pstrcpy(info.root2orig, elemsof(info.root2orig), other_dir);
+    pstrcpy(info.root2orig, countof(info.root2orig), other_dir);
     // add '/' if not present
     len = strlen(other_dir);
     if (other_dir[len-1] != '/') {
@@ -93,22 +93,22 @@ public fn bool findProjectDir(PathInfo* info) {
 
     char[Max_path] buffer;
     while (1) {
-        char* path = getcwd(buffer, elemsof(buffer)-1);  // -1 for trailing slash
+        char* path = getcwd(buffer, countof(buffer)-1);  // -1 for trailing slash
         if (path == nil) {
             perror("getcwd");
             return false;
         }
         if (base_path[0] == 0) {
-            usize pos = pstrcpy(base_path, elemsof(base_path), path);
-            pstrcpy(base_path + pos, elemsof(base_path) - pos, "/");
+            usize pos = pstrcpy(base_path, countof(base_path), path);
+            pstrcpy(base_path + pos, countof(base_path) - pos, "/");
         }
 
         if (checkFile(recipe_name)) {
             char* path_prefix = base_path + strlen(path);
             if (*path_prefix == '/') path_prefix++;
             if (info) {
-                pstrcpy(info.orig2root, elemsof(info.orig2root), path_prefix);
-                pstrcpy(info.root2orig, elemsof(info.root2orig), rel_path);
+                pstrcpy(info.orig2root, countof(info.orig2root), path_prefix);
+                pstrcpy(info.root2orig, countof(info.root2orig), rel_path);
             }
             return true;
         }
@@ -117,7 +117,7 @@ public fn bool findProjectDir(PathInfo* info) {
             perror("chdir");
             return false;
         }
-        pstrcat(rel_path, elemsof(rel_path), "../");
+        pstrcat(rel_path, countof(rel_path), "../");
     }
 }
 

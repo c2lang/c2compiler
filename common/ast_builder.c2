@@ -754,7 +754,7 @@ public fn bool Builder.actOnAttr(Builder* b, const Attr* a) {
     }
 
     // always store attribute and apply later in applyAttributes()
-    if (b.num_attrs == elemsof(b.attrs)) {
+    if (b.num_attrs == countof(b.attrs)) {
         b.diags.error(a.loc, "too many attributes");
         return false;
     }

@@ -6,5 +6,5 @@ i32[] array = {
     [7] = 4,
 }
 
-static_assert(8, elemsof(array));
+static_assert(8, countof(array));
 

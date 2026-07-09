@@ -7,24 +7,24 @@ type Struct struct {
 
 fn void test1() {
     i32 ii;
-    i32 a = elemsof(ii);      // @error{elemsof can only be used on arrays/enums}
+    i32 a = countof(ii);      // @error{countof can only be used on arrays/enums}
 }
 
 fn void test3() {
     Struct ss;
-    i32 c = elemsof(ss);     // @error{elemsof can only be used on arrays/enums}
+    i32 c = countof(ss);     // @error{countof can only be used on arrays/enums}
 }
 
 fn void test4() {
-    i32 d = elemsof(test1);  // @error{elemsof can only be used on arrays/enums}
+    i32 d = countof(test1);  // @error{countof can only be used on arrays/enums}
 }
 
 fn void test5() {
     i32[4] aa;
-    i32 f = elemsof(aa);
+    i32 f = countof(aa);
 }
 
 fn void test6() {
-    i32 e = elemsof(test);   // @error{elemsof can only be used on arrays/enums}
+    i32 e = countof(test);   // @error{countof can only be used on arrays/enums}
 }
 

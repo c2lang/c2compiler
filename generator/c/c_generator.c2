@@ -468,7 +468,7 @@ fn void Generator.emitFunctionParam(Generator* gen, Buf* out, QualType qt, u32 n
         name = gen.idx2name(name_idx);
     } else {
         // some compilers do not accept unnamed arguments in function definitions
-        snprintf(temp, elemsof(temp), "_arg%d", arg_num);
+        snprintf(temp, countof(temp), "_arg%d", arg_num);
         name = temp;
     }
     if (qt.isFunction()) {
@@ -1287,7 +1287,7 @@ public fn void generate(Pool* astPool,
                         bool test_mode, bool trace_calls)
 {
     char[file_utils.Max_path] dir;
-    if (!file_utils.make_path(dir, elemsof(dir), output_dir, Dir)
+    if (!file_utils.make_path(dir, countof(dir), output_dir, Dir)
     ||  file_utils.create_path(dir)) {
         console.error("cannot create directory %s: %s", dir, strerror(errno));
         return;
@@ -1370,7 +1370,7 @@ public fn void build(const char* output_dir)
 #endif
 
     char[file_utils.Max_path] dir;
-    if (!file_utils.make_path(dir, elemsof(dir), output_dir, Dir, "/")) {
+    if (!file_utils.make_path(dir, countof(dir), output_dir, Dir, "/")) {
         console.error("cannot launch C compilation: %s", strerror(errno));
         return;
     }

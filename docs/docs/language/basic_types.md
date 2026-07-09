@@ -81,7 +81,7 @@ Point[4] b;
 void*[] c = { nil, nil }
 ```
 
-For array types, C2 introduces a new operator, [elemsof](builtin_functions.md#elemsof).
+For array types, C2 introduces a new operator, [countof](builtin_functions/#countof).
 This returns the number of elements in an array and avoids C macros like:
 ```c
 #define ARRAY_SIZE(x)  (sizeof(x) / sizeof((x)[0]))

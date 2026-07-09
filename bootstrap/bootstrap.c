@@ -19609,7 +19609,7 @@ static ast_Expr** expr_list_List_getData(expr_list_List* l)
 typedef struct keywords_Info_ keywords_Info;
 
 struct keywords_Info_ {
-   token_Kind indexes[660];
+   token_Kind indexes[670];
    u32 max_index;
 };
 
@@ -19625,7 +19625,7 @@ static void keywords_Info_init(keywords_Info* info, string_pool_Pool* pool)
       u32 len;
       for (len = 0; p[len] && p[len] != ' '; len++) continue;
       idx = string_pool_Pool_add(pool, p, len, true);
-      ;//assert(idx < 660);
+      ;//assert(idx < 670);
       info->indexes[idx] = token_Kind_Error;
       p += len;
       while (*p == ' ') p++;
@@ -19633,12 +19633,12 @@ static void keywords_Info_init(keywords_Info* info, string_pool_Pool* pool)
    for (token_Kind k = token_Kind_KW_bool; k <= token_Kind_KW_while; k++) {
       const char* s = token_Kind__name[k];
       idx = string_pool_Pool_add(pool, s, strlen(s), true);
-      ;//assert(idx < 660);
+      ;//assert(idx < 670);
       info->indexes[idx] = k;
    }
+   idx = string_pool_Pool_add(pool, "countof", strlen("countof"), true); if (!(idx < 670)) exit(42); info->indexes[idx] = token_Kind_KW_elemsof;
    info->max_index = idx;
 }
-
 
 // --- module stmt_list ---
 typedef struct stmt_list_List_ stmt_list_List;

@@ -28,7 +28,7 @@ public type Type enum u8 {
     F32,
     F64,
 }
-static_assert(elemsof(Type) < 16, 1);
+static_assert(countof(Type) < 16, 1);
 
 public fn const char* Type.str(Type t) {
     switch (t) {

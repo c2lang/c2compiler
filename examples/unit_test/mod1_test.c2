@@ -40,7 +40,7 @@ fn void Test.test4(Test* t) @(skip) {
 fn void Test.test5(Test* t) {
     u8[] a = { 0x1, 0x2, 0x3, 0x4 }
     u8[] b = { 0x1, 0x2, 0x8, 0x4 }
-    check_data(a, elemsof(a), b, elemsof(b));
+    check_data(a, countof(a), b, countof(b));
 }
 
 fn void Test.test6(Test* t) {

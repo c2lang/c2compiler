@@ -20,7 +20,7 @@ import plugin_main;
 
 public fn i32 main() {
 #if 0
-    u32 len1 = elemsof(plugin_main.array1);
+    u32 len1 = countof(plugin_main.array1);
 #else
     u32 len1 = 3;
 #endif
@@ -31,7 +31,7 @@ public fn i32 main() {
     printf("};\n");
 
 #if 0
-    u32 len2 = elemsof(plugin_main.array2);
+    u32 len2 = countof(plugin_main.array2);
 #else
     // length of incremental arrays is not exposed in the interface
     u32 len2 = 4;
@@ -43,7 +43,7 @@ public fn i32 main() {
     printf("};\n");
 
 #if 0
-    u32 len3 = elemsof(plugin_main.array3);
+    u32 len3 = countof(plugin_main.array3);
 #else
     // length of incremental arrays is not exposed in the interface
     u32 len3 = 5;

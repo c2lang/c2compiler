@@ -131,7 +131,7 @@ fn const char* Generator.getPrefixedName(const Generator* gen, const Decl* d) {
         if (fd.hasPrefix()) {
             static char[64] fullname;
             const char* prefix_name = gen.idx2name(fd.getPrefixNameIdx());
-            snprintf(fullname, elemsof(fullname), "%s.%s", prefix_name, gen.getName(d));
+            snprintf(fullname, countof(fullname), "%s.%s", prefix_name, gen.getName(d));
             return fullname;
         }
         break;
@@ -172,7 +172,7 @@ fn void Generator.on_decl(void* arg, Decl* d, bool global) {
             Decl* ecd = (Decl*)constants[i];
             // NOTE: we add the symbol here, since we have the EnumDecl here
             char[64] fullname;
-            snprintf(fullname, elemsof(fullname), "%s.%s", gen.getName(d), gen.getName(ecd));
+            snprintf(fullname, countof(fullname), "%s.%s", gen.getName(d), gen.getName(ecd));
             //gen.refs.add_symbol(fullname, &dest);
 
             Generator.on_decl(arg, ecd, false);

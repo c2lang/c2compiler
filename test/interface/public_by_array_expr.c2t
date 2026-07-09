@@ -13,7 +13,7 @@ import aa;
 
 public i32[aa.AA] b;
 
-public const u32 Size = elemsof(b);
+public const u32 Size = countof(b);
 
 // @expect{complete, bb.c2i}
 module bb;
