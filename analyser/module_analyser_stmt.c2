@@ -525,6 +525,16 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
     if (qt.isInvalid()) return;
 
     Expr* inner = a.getInner();
+    if (inner.isAssignment()) {
+        char[128] tmp;
+        string_buffer.Buf buf.init(tmp, elemsof(tmp), true, false, 0);
+        string_buffer.Buf* out = &buf;
+        BinaryOperator* b = (BinaryOperator*)inner;
+        encode_expression(out, b.getLHS());
+        out.add(" == ");
+        encode_expression(out, b.getRHS());
+        ma.error(inner.getLoc(), "invalid assignment, did you mean 'assert(%s)'?", out.str());
+    }
     ma.conv_checker.checkAssign(getBuiltinQT(Bool), qt, a.getInner2(), inner.getLoc());
 
     if (ma.has_asserts) {

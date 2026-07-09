@@ -1,0 +1,7 @@
+// @warnings{no-unused}
+module test;
+
+fn void test1() {
+    u32 a;
+    assert(a = 0);   // @error{invalid assignment, did you mean 'assert(a == 0)'?}
+}
