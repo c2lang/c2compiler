@@ -7,8 +7,8 @@ type Enum enum u8 {
     CC,
 }
 
-static_assert(3, elemsof(Enum));
+static_assert(3, countof(Enum));
 
 fn void test1() {
-    u8 a = elemsof(Enum);
+    u8 a = countof(Enum);
 }

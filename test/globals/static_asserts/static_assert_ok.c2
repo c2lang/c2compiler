@@ -28,7 +28,7 @@ i32[+] numbers;
 numbers += 1;
 numbers += 2;
 numbers += 3;
-static_assert(3, elemsof(numbers));
+static_assert(3, countof(numbers));
 
 const i32 A = 123;
 static_assert(123, A);

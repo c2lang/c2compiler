@@ -8,5 +8,5 @@ State += B;
 State += C;
 State += D;
 
-static_assert(4, elemsof(State));
+static_assert(4, countof(State));
 

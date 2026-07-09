@@ -23,7 +23,7 @@ public fn i32 copy_file(const char* source, const char* dest) {
 
     // create required sub-directories in dest
     char[file_utils.Max_path] tmp;
-    pstrcpy(tmp, elemsof(tmp), dest);
+    pstrcpy(tmp, countof(tmp), dest);
     const char* base = get_basename(tmp);
     if (base != tmp) {
         u32 len = (u32)(base - tmp);

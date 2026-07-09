@@ -12,15 +12,15 @@ Struct s;
 fn void test1() {
     i32[2] z;
 
-    i8 a = elemsof(z);
-    i8 b = elemsof(y);
-    i8 c = elemsof(s.x);
-    i8 d = elemsof(test.s.x);
-    i8 e = elemsof(test.y);
-    i8 f = elemsof(test.s);       // @error{elemsof can only be used on arrays/enums}
+    i8 a = countof(z);
+    i8 b = countof(y);
+    i8 c = countof(s.x);
+    i8 d = countof(test.s.x);
+    i8 e = countof(test.y);
+    i8 f = countof(test.s);       // @error{countof can only be used on arrays/enums}
 
     // Not supported (yet)
-    //i8 g = elemsof(Struct.x);
-    //i8 h = elemsof(test.Struct.x);
+    //i8 g = countof(Struct.x);
+    //i8 h = countof(test.Struct.x);
 }
 

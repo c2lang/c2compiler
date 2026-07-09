@@ -113,8 +113,8 @@ public fn void Builder.closeArray(Builder* b) {
 
 public fn void Builder.reset(Builder* b) {
     b.buffer.clear();
-    for (u32 i = 0; i < elemsof(b.hasEntry); i++) b.hasEntry[i] = false;
-    for (u32 i = 0; i < elemsof(b.inArray); i++) b.inArray[i] = false;
+    for (u32 i = 0; i < countof(b.hasEntry); i++) b.hasEntry[i] = false;
+    for (u32 i = 0; i < countof(b.inArray); i++) b.inArray[i] = false;
     b.indent = 0;
 }
 

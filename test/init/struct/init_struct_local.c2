@@ -14,7 +14,7 @@ u32 other_data;
 fn void test1() {
     Foo foo1 = {
         .data = Foo1_data,
-        .size = elemsof(Foo1_data),
+        .size = countof(Foo1_data),
         .other = &other_data,
     }
 }

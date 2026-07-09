@@ -160,7 +160,7 @@ fn void handle_dir(TestQueue* queue, const char* path) {
 
     while (Dirent* entry = readdir(dir)) {
         char[file_utils.Max_path] temp;
-        if (file_utils.make_path(temp, elemsof(temp), path, entry.d_name)) {
+        if (file_utils.make_path(temp, countof(temp), path, entry.d_name)) {
             switch (entry.d_type) {
             case DT_REG:
                 handle_file(queue, temp);
@@ -203,7 +203,7 @@ fn Tester* Tester.create(u32 idx, TestQueue* q, const char* cwd, bool sync) {
     t.queue = q;
     t.cwd = cwd;
     t.thread = nil;
-    snprintf(t.tmp_dir, elemsof(t.tmp_dir), "/tmp/tester%d", idx);
+    snprintf(t.tmp_dir, countof(t.tmp_dir), "/tmp/tester%d", idx);
     if (sync)
         tester_thread_main(t);
     else
@@ -230,7 +230,7 @@ fn void Tester.run_test(Tester* t, Test* test) {
     // setup dir
     // temp, just delete this way
     char[64] cmd;
-    snprintf(cmd, elemsof(cmd), "rm -rf '%s'", t.tmp_dir);
+    snprintf(cmd, countof(cmd), "rm -rf '%s'", t.tmp_dir);
     i32 err = system(cmd);
     if (err != 0 && errno != ECHILD) {
         print_error("error running '%s': %s", cmd, strerror(errno));

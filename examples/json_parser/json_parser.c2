@@ -40,7 +40,7 @@ public fn bool Parser.parse(Parser* p, const char* text) {
     p.data.reset();
     p.message[0] = 0;
     JParser parser;
-    return parser.parse(text, p.message, elemsof(p.message), p.data);
+    return parser.parse(text, p.message, countof(p.message), p.data);
 }
 
 public fn Iter Parser.get_root(const Parser* p) {
@@ -204,7 +204,7 @@ fn void JParser.parseArray(JParser* p, u32 parent_idx) {
 }
 
 fn u32 JParser.addName(JParser* p, u32 entry_idx, const char* name) {
-    if (!p.inArray || entry_idx >= elemsof(p.name_cache)) {
+    if (!p.inArray || entry_idx >= countof(p.name_cache)) {
         return p.data.addName(name, (u32)strlen(name));
     }
     u32 name_idx = 0;
@@ -227,7 +227,7 @@ fn void JParser.parseObject(JParser* p, u32 parent_idx) {
 
         p.expect(TokenKind.Text);
         char [MAX_TEXT] name;
-        pstrcpy(name, elemsof(name), p.token.getText());
+        pstrcpy(name, countof(name), p.token.getText());
         p.consumeToken();
 
         u32 name_idx = p.addName(entry_idx, name);
@@ -295,7 +295,7 @@ fn u32 JParser.parseValue(JParser* p) {
         value[0] = 0;
         break;
     case Text:
-        pstrcpy(value, elemsof(value), p.token.getText());
+        pstrcpy(value, countof(value), p.token.getText());
         break;
     default:
         snprintf(p.msg, p.msg_size, "syntax error %s", p.diagLoc());
@@ -337,7 +337,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
         case '\r':
             t.current++;
             if (t.current[0] != '\n') {
-                snprintf(t.msg, elemsof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
+                snprintf(t.msg, countof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return;
@@ -391,7 +391,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.parseKeyword(result);
             return;
         default:
-            snprintf(t.msg, elemsof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
+            snprintf(t.msg, countof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             return;
@@ -408,14 +408,14 @@ fn void Tokenizer.parseText(Tokenizer* t, Token* result) {
     while (1) {
         switch (t.current[0]) {
         case 0:
-            snprintf(t.msg, elemsof(t.msg), "expected '\"' %s", t.loc.str());
+            snprintf(t.msg, countof(t.msg), "expected '\"' %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             return;
         case '\\':
             switch (t.current[1]) {
             case 0:
-                snprintf(t.msg, elemsof(t.msg), "invalid escape sequence '\\0 %s", t.loc.str());
+                snprintf(t.msg, countof(t.msg), "invalid escape sequence '\\0 %s", t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return;
@@ -435,7 +435,7 @@ fn void Tokenizer.parseText(Tokenizer* t, Token* result) {
                 *out++ = '\t';
                 break;
             default:
-                snprintf(t.msg, elemsof(t.msg), "invalid escape sequence '\\%c %s", t.current[1], t.loc.str());
+                snprintf(t.msg, countof(t.msg), "invalid escape sequence '\\%c %s", t.current[1], t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return;
@@ -450,7 +450,7 @@ fn void Tokenizer.parseText(Tokenizer* t, Token* result) {
             break;
         }
         if (out == end) {
-            snprintf(t.msg, elemsof(t.msg), "text too long (max %d) %s", MAX_TEXT-1, t.loc.str());
+            snprintf(t.msg, countof(t.msg), "text too long (max %d) %s", MAX_TEXT-1, t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             return;
@@ -498,7 +498,7 @@ fn void Tokenizer.parseKeyword(Tokenizer* t, Token* result) {
         result.setKind(TokenKind.Kw_null);
         t.advance(4);
     } else {
-        snprintf(t.msg, elemsof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
+        snprintf(t.msg, countof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
         result.setKind(TokenKind.Error);
         result.setData(t.msg);
     }
@@ -608,7 +608,7 @@ fn void Location.set(Location* loc, u32 l, u32 c) {
 
 fn const char* Location.str(const Location* loc) {
     static char[32] msg;
-    snprintf(msg, elemsof(msg), "at line %d:%d", loc.line, loc.col);
+    snprintf(msg, countof(msg), "at line %d:%d", loc.line, loc.col);
     return msg;
 }
 

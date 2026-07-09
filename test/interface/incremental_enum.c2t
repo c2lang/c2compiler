@@ -12,7 +12,7 @@ Enum += A;
 Enum += B;
 Enum += C;
 
-public const u32 Size = elemsof(Enum);
+public const u32 Size = countof(Enum);
 
 // @expect{complete, aa.c2i}
 module aa;

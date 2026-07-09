@@ -674,7 +674,7 @@ invalid_char:
 fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf_format), ...) {
     va_list args;
     va_start(args, format);
-    vsnprintf(t.error_msg, elemsof(t.error_msg), format, args);
+    vsnprintf(t.error_msg, countof(t.error_msg), format, args);
     va_end(args);
 
     result.loc = t.loc_start + (SrcLoc)(t.cur - t.input_start);
@@ -688,7 +688,7 @@ fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf
 fn void Tokenizer.num_error(Tokenizer* t, Token* result, const char* p, const char* format @(printf_format), ...) {
     va_list args;
     va_start(args, format);
-    vsnprintf(t.error_msg, elemsof(t.error_msg), format, args);
+    vsnprintf(t.error_msg, countof(t.error_msg), format, args);
     va_end(args);
 
     SrcLoc err_loc = t.loc_start + (SrcLoc)(p - t.input_start);
@@ -900,11 +900,11 @@ fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* st
                 break;
         }
         buf[pos++] = *p++;
-        if (pos == elemsof(buf))
+        if (pos == countof(buf))
             goto too_large;
     }
     if (*p == 'e' || *p == 'E') {
-        if (pos >= elemsof(buf) - 2)
+        if (pos >= countof(buf) - 2)
             goto too_large;
         buf[pos++] = *p++;
         if (*p == '+' || *p == '-')
@@ -915,7 +915,7 @@ fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* st
         }
         while (isdigit(*p)) {
             buf[pos++] = *p++;
-            if (pos == elemsof(buf))
+            if (pos == countof(buf))
                 goto too_large;
             if (*p == '_' && isdigit(p[1]))
                 p++;
@@ -959,11 +959,11 @@ fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char
                 break;
         }
         buf[pos++] = *p++;
-        if (pos == elemsof(buf))
+        if (pos == countof(buf))
             goto too_large;
     }
     if (*p == 'p' || *p == 'P') {
-        if (pos >= elemsof(buf) - 2)
+        if (pos >= countof(buf) - 2)
             goto too_large;
         buf[pos++] = *p++;
         if (*p == '+' || *p == '-')
@@ -974,7 +974,7 @@ fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char
         }
         while (isdigit(*p)) {
             buf[pos++] = *p++;
-            if (pos == elemsof(buf))
+            if (pos == countof(buf))
                 goto too_large;
             if (*p == '_' && isdigit(p[1]))
                 p++;
@@ -1087,7 +1087,7 @@ fn u32 Tokenizer.lex_escaped_char(Tokenizer* t, Token* result, const char* stype
             return 0;
         }
         char[4] tab;
-        u32 clen = utf8.encode(tab, elemsof(tab), cc);
+        u32 clen = utf8.encode(tab, countof(tab), cc);
         t.buf.add2(tab, clen);
         break;
     default:
@@ -1464,7 +1464,7 @@ fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, Kind kind) {
     Token tok;
 
     // parse pptokens instead of raw text
-    Buf msg.init(t.error_msg, elemsof(t.error_msg), false, false, 0);
+    Buf msg.init(t.error_msg, countof(t.error_msg), false, false, 0);
     SrcLoc last_loc = 0;
     while (t.lex_preproc(&tok) != Eof) {
         // replace blanks with a single space

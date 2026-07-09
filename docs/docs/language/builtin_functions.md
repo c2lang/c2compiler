@@ -4,7 +4,7 @@
 C2 has the following built-ins:
 
 * `sizeof`
-* `elemsof`
+* `countof`
 * `offsetof`
 * `to_container`
 * `assert`
@@ -20,8 +20,8 @@ u32 size = sizeof(void*);
 C2 does not allow the use of *[ ]* inside a sizeof expression, since this introduces
 ambiguity between _arrays_ and _subscript expressions_.
 
-### elemsof
-For array types, C2 introduces a new operator, namely `elemsof`. This returns the number
+### countof
+For array types, C2 introduces a new operator, namely `countof`. This returns the number
 of elements in an array or the number of constants in an enum and avoids C macros like:
 ```c
 #define ARRAY_SIZE(x) ( sizeof(x) / sizeof(x[0]) )
@@ -31,19 +31,19 @@ So
 
 ```c
 char[15] name;
-const u32 Len = elemsof(name);   // will be 15
+const u32 Len = countof(name);   // will be 15
 
 u32[10][20] multi;
-const u32 Cols = elemsof(multi); // will be 10
-const u32 Rows = elemsof(multi[0]); // will be 20
+const u32 Cols = countof(multi); // will be 10
+const u32 Rows = countof(multi[0]); // will be 20
 
 type Colors enum u8 { Red, Green, Blue }
-const u32 Count = elemsof(Colors); // will be 3
+const u32 Count = countof(Colors); // will be 3
 
 ```
 Note that this also works for [incrementally declared arrays](variables.md#incrementally-declared-arrays).
 
-The `elemsof` function can also be used on Enum types, to return the number of elements
+The `countof` function can also be used on Enum types, to return the number of elements
 in the Enum.
 
 

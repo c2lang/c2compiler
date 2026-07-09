@@ -42,7 +42,7 @@ fn void copy_file(void* arg, const char* filename, u32 src_loc) {
     const char* output_dir = arg;
 
     char[file_utils.Max_path] dest;
-    if (!file_utils.make_path(dest, elemsof(dest), output_dir, filename)) {
+    if (!file_utils.make_path(dest, countof(dest), output_dir, filename)) {
         console.error("filename too long %s: %s", output_dir, filename);
         exit(EXIT_FAILURE);
         return;

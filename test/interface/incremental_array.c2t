@@ -12,7 +12,7 @@ b += 10;
 b += 20;
 b += 30;
 
-public const u32 Size = elemsof(b);
+public const u32 Size = countof(b);
 
 // @expect{complete, aa.c2i}
 module aa;

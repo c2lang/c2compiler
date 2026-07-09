@@ -30,7 +30,7 @@ fn u32 bar1(u32 val = Default_bar) {
     return val;
 }
 
-fn u32 bar2(u32 val = elemsof(bar_array)) {
+fn u32 bar2(u32 val = countof(bar_array)) {
     return val;
 }
 

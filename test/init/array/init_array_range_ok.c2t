@@ -16,7 +16,7 @@ u32[100] a = {
 
 u32[100] b = { [...] = 1 }
 
-public fn i32 main() { return elemsof(a) + elemsof(b); }
+public fn i32 main() { return countof(a) + countof(b); }
 // @expect{atleast, cgen/build.c}
 static u32 test_a[100] = {
    [0 ... 0] = 0,

@@ -311,7 +311,7 @@ fn QualType Analyser.checkBinopAddSubAssign(Analyser* ma, BinaryOperator* b, Qua
 // 7  builtin/enum + ptr
 // 8  ptr + builtin/enum
 // TODO remove Alias/Module (+Array, need to move) since already checked
-// TODO need to fix C2C.c++ (asserts of elemsof(..) -2), then table can be 5x5
+// TODO need to fix C2C.c++ (asserts of countof(..) -2), then table can be 5x5
 const u8[TypeKind][TypeKind] BinOpConvAdd = {
     //  Builtin Pointer Array   Struct  Enum    Func   Void   Alias  Module
     //  Builtin +

@@ -154,11 +154,11 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
     char[128] msg;
     va_list args;
     va_start(args, format);
-    vsnprintf(msg, elemsof(msg), format, args);
+    vsnprintf(msg, countof(msg), format, args);
     va_end(args);
 
     char[256] locstr;
-    p.sm.loc2str(p.token.loc, locstr, elemsof(locstr));
+    p.sm.loc2str(p.token.loc, locstr, countof(locstr));
 
     if (color.useColor()) {
         fprintf(stderr, "%s: %serror:%s %s\n", locstr, color.Red.str(), color.Normal.str(), msg);
@@ -172,11 +172,11 @@ fn void Parser.warning(Parser* p, const char* format @(printf_format), ...) {
     char[128] msg;
     va_list args;
     va_start(args, format);
-    vsnprintf(msg, elemsof(msg), format, args);
+    vsnprintf(msg, countof(msg), format, args);
     va_end(args);
 
     char[256] locstr;
-    p.sm.loc2str(p.token.loc, locstr, elemsof(locstr));
+    p.sm.loc2str(p.token.loc, locstr, countof(locstr));
 
     if (color.useColor()) {
         fprintf(stderr, "%s: %swarning:%s %s\n", locstr, color.Red.str(), color.Normal.str(), msg);
@@ -189,7 +189,7 @@ fn void Parser.consumeToken(Parser* p) {
     p.lex(&p.token);
 #if 0
     char[256] locstr;
-    p.sm.loc2str(p.token.loc, locstr, elemsof(locstr));
+    p.sm.loc2str(p.token.loc, locstr, countof(locstr));
     printf("  %s   %s", locstr, p.token.kind.name);
     switch (p.token.kind) {
     case PluginOptions:
@@ -380,7 +380,7 @@ fn void Parser.lex_option(Parser* p, Token* result) {
 
     char[24] option;
     u32 len = (u32)(end - p.cur);
-    if (len >= elemsof(option)) p.error("unknown option");
+    if (len >= countof(option)) p.error("unknown option");
 
     memcpy(option, p.cur, len);
     option[len] = '\0';

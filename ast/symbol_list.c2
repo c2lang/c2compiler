@@ -40,7 +40,7 @@ public type SymbolList struct {
 public fn void SymbolList.init(SymbolList* l) {
     memset(l, 0, sizeof(SymbolList));
     l.data = l.stash;
-    l.capacity = elemsof(l.stash);
+    l.capacity = countof(l.stash);
 }
 
 public fn void SymbolList.clear(SymbolList* l) @(unused) {

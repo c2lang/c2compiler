@@ -27,12 +27,12 @@ public type DeclList struct {
 
 public fn void DeclList.init(DeclList* l) {
     l.count = 0;
-    l.capacity = elemsof(l.stash);
+    l.capacity = countof(l.stash);
     l.data = l.stash;
 }
 
 public fn void DeclList.free(DeclList* l) {
-    if (l.capacity > elemsof(l.stash)) free(l.data);
+    if (l.capacity > countof(l.stash)) free(l.data);
     l.data = nil;
     l.count = 0;
     l.capacity = 0;
@@ -43,14 +43,14 @@ public fn void DeclList.clear(DeclList* l) @(unused) {
 }
 
 fn void DeclList.resize(DeclList* l) {
-    if (l.capacity < elemsof(l.stash)) {
-        l.capacity = elemsof(l.stash);
+    if (l.capacity < countof(l.stash)) {
+        l.capacity = countof(l.stash);
         l.data = l.stash;
     } else
-    if (l.capacity == elemsof(l.stash)) {
+    if (l.capacity == countof(l.stash)) {
         l.capacity = l.capacity * 2;
         l.data = malloc(l.capacity * sizeof(*l.data));
-        memcpy(l.data, l.stash, elemsof(l.stash) * sizeof(*l.data));
+        memcpy(l.data, l.stash, countof(l.stash) * sizeof(*l.data));
     } else {
         l.capacity = l.capacity * 2;
         l.data = stdlib.realloc(l.data, l.capacity * sizeof(*l.data));

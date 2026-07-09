@@ -131,7 +131,7 @@ fn void Tree.dump_stats(const Tree* t) {
     Stats stats = { }
     t.stats_iter(t.nodes.root_idx, &stats);
     printf("---- stats (%d leaves, %d internal) ----\n", stats.leaf_nodes, stats.internal_nodes);
-    for (u32 i=0; i<elemsof(stats.children); i++) {
+    for (u32 i = 0; i < countof(stats.children); i++) {
         if (stats.children[i]) printf("  [%2d] %6d\n", i, stats.children[i]);
     }
 }

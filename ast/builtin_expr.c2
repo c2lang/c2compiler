@@ -21,7 +21,7 @@ import string_buffer { Buf }
 
 public type BuiltinExprKind enum u8 (const char* const name) {
     Sizeof      : { "sizeof" },
-    Elemsof     : { "elemsof" },
+    Countof     : { "countof" },
     OffsetOf    : { "offsetof" },
     ToContainer : { "to_container" },
 }
@@ -30,7 +30,7 @@ type BuiltinExprBits struct {
     u32 : NumExprBits;
     BuiltinExprKind kind : 2;
     // TODO: builtin expressions should be output literally in the
-    //   C generator except elemsof(enum) that cannot be expressed in C.
+    //   C generator except countof(enum) that cannot be expressed in C.
     //   use_literal is tested in the C generator but not set yet.
     bool use_literal : 1;
     u32 src_len : 32 - NumExprBits - 5; // length of () expression
@@ -103,7 +103,7 @@ public fn BuiltinExpr* BuiltinExpr.createToContainer(Context* c, SrcLoc loc, u32
 fn Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
     switch (e.getKind()) {
     case Sizeof:
-    case Elemsof:
+    case Countof:
         return (Expr*)BuiltinExpr.create(inst.c, e.base.base.loc, e.base.base.builtinExprBits.src_len,
                                          e.inner.instantiate(inst), e.getKind());
     case OffsetOf:
@@ -172,7 +172,7 @@ fn void BuiltinExpr.print(const BuiltinExpr* e, Buf* out, u32 indent) {
 
     switch (e.getKind()) {
     case Sizeof:
-    case Elemsof:
+    case Countof:
         break;
     case OffsetOf:
         e.offset[0].member.print(out, indent + 1);
@@ -190,7 +190,7 @@ fn void BuiltinExpr.printLiteral(const BuiltinExpr* e, Buf* out) {
     e.inner.printLiteral(out);
     switch (e.getKind()) {
     case Sizeof:
-    case Elemsof:
+    case Countof:
         break;
     case OffsetOf:
         out.add(", ");

@@ -571,7 +571,7 @@ public fn void TypeRef.dump_full(const TypeRef* r) @(unused) {
 
 public fn const char* TypeRef.diagName(const TypeRef* r) {
     static char[128] result;
-    Buf buf.init(result, elemsof(result), false, false, 0);
+    Buf buf.init(result, countof(result), false, false, 0);
     r.print(&buf, true);
     return buf.str();  // ensure null terminator
 }

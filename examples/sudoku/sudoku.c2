@@ -130,7 +130,7 @@ const u16[] Box_chars = {
     [E+W+N+S+H2+V2] = 0x256C, // ╬
 }
 
-const u16[elemsof(Box_chars)] Ascii_chars = {
+const u16[countof(Box_chars)] Ascii_chars = {
     [0]             = ' ',    //
     [N]             = '|',    // ╵
     [S]             = '|',    // ╷
@@ -543,7 +543,7 @@ const char[] Usage =
 fn void sudoku_usage() {
     fputs(Usage, stderr);
     fprintf(stderr, "available puzzles:");
-    for (u32 i = 0; i < elemsof(Puzzles); i++) {
+    for (u32 i = 0; i < countof(Puzzles); i++) {
         fprintf(stderr, " %s", Puzzles[i].name);
     }
     fprintf(stderr, "\n");
@@ -562,7 +562,7 @@ fn u64 current_time() {
 fn i32 sudoku(const char* name, Options options) {
     Board board.init(options);
 
-    const Puzzle* p = find(Puzzles, elemsof(Puzzles), name);
+    const Puzzle* p = find(Puzzles, countof(Puzzles), name);
     if (p) {
         if (!board.setup(p.setup, p.setup_count)) {
             fprintf(stderr, "sudoku: invalid puzzle '%s'\n", name);

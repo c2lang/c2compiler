@@ -98,7 +98,7 @@ public fn i32 main(i32 argc, const char** argv)
     const char* refsfile = Refs_filename;
     char[file_utils.Max_path] refsname;
     if (opts.target) {
-        file_utils.make_path3(refsname, elemsof(refsname),
+        file_utils.make_path3(refsname, countof(refsname),
                               output_dir, opts.target, Refs_filename);
         refsfile = refsname;
     } else {
@@ -110,7 +110,7 @@ public fn i32 main(i32 argc, const char** argv)
             return -1;
         }
         if (count == 1) {
-            pstrcpy(refsname, elemsof(refsname), finder.get(0));
+            pstrcpy(refsname, countof(refsname), finder.get(0));
             refsfile = refsname;
         } else {
             fprintf(stderr, "multiple %s files, please specify target with '-t' option\n", Refs_filename);

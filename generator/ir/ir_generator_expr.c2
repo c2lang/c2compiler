@@ -473,7 +473,7 @@ fn void Generator.emitBuiltin(Generator* gen, ir.Ref* result, const Expr* e) {
     const BuiltinExpr* bi = (BuiltinExpr*)e;
     switch (bi.getKind()) {
     case Sizeof:
-    case Elemsof:
+    case Countof:
     case OffsetOf:
         e.dump();
         assert(0);

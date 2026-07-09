@@ -153,7 +153,7 @@ public fn i32 main(i32 argc, char** argv) {
     if (use_cache && !isCache(filename)) {
         u64 t3 = current_time();
         char[128] cache_file;
-        snprintf(cache_file, elemsof(cache_file), "%s%s", filename, Cache_suffix);
+        snprintf(cache_file, countof(cache_file), "%s%s", filename, Cache_suffix);
         parser.write_cache(cache_file);
         u64 t4 = current_time();
         if (show_times) printf("writing %s took %d usec\n", cache_file, t4 - t3);

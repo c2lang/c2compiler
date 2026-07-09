@@ -528,7 +528,7 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
     Expr* inner = a.getInner();
     if (inner.isAssignment()) {
         char[128] tmp;
-        Buf buf.init(tmp, elemsof(tmp), true, false, 0);
+        Buf buf.init(tmp, countof(tmp), true, false, 0);
         Buf* out = &buf;
         BinaryOperator* b = (BinaryOperator*)inner;
         encode_expression(out, b.getLHS());
@@ -547,7 +547,7 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
         u32 num_args = 1;
         Expr*[3] args;
         char[128] tmp;
-        Buf buf.init(tmp, elemsof(tmp), true, false, 0);
+        Buf buf.init(tmp, countof(tmp), true, false, 0);
         Buf* out = &buf;
         encode_expression(out, inner);
         if (inner.isComparison()) {
@@ -587,7 +587,7 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
 // encode expression as part of a format string
 fn void encode_expression(Buf* out, Expr* e) {
     char[128] tmp;
-    Buf buf.init(tmp, elemsof(tmp), false, false, 0);
+    Buf buf.init(tmp, countof(tmp), false, false, 0);
     e.printLiteral(&buf);
     const char* s = buf.data();
     for (const char* p = s; *p; p++) {

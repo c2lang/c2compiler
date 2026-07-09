@@ -104,7 +104,7 @@ public fn i32 create_path(const char* path) {
             if (c == '\0')
                 break;
         }
-        if (p > &tmp[elemsof(tmp) - 2])
+        if (p > &tmp[countof(tmp) - 2])
             return errno = ENAMETOOLONG;
         *p++ = c;
     }
@@ -139,7 +139,7 @@ public fn bool File.init(File* file, const char* dir, const char* filename = nil
     file.error = 0;
     file.contents_size = 0;
     file.contents = nil;
-    if (!make_path(file.path, elemsof(file.path), dir, filename, ext)) {
+    if (!make_path(file.path, countof(file.path), dir, filename, ext)) {
         file.error = ENAMETOOLONG;
         return false;
     }

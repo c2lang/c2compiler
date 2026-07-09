@@ -148,7 +148,7 @@ fn bool run_cmd(Cmd* cmd, string_buffer.Buf* out) {
     // Split command name and arguments
     usize cmd_len = strcspn(cmd.cmd, " \t");
     usize args_off = cmd_len + strspn(cmd.cmd + cmd_len, " \t");
-    if (cmd_len >= sizeof(cmd_str)) {
+    if (cmd_len >= countof(cmd_str)) {
         console.error("shell_cmd: command too long '%.*s'",
                       (i32)cmd_len, cmd.cmd);
         return false;
@@ -161,7 +161,7 @@ fn bool run_cmd(Cmd* cmd, string_buffer.Buf* out) {
     output[0] = '\0';
     // TODO use timeout
     console.debug("shell_cmd: running %s", cmd.cmd);
-    i32 res = process_utils.run2(cmd.path, cmd_str, args, output, elemsof(output));
+    i32 res = process_utils.run2(cmd.path, cmd_str, args, output, countof(output));
     if (res != 0) {
         console.error("shell_cmd: error running cmd '%s'", cmd.cmd);
         return false;
