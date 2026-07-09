@@ -1,37 +1,61 @@
 module builtin extern "C";
 
 // Returns one plus the index of the least significant 1-bit of x, or if x is zero, returns zero.
-u8 ffs(u32) @(cname="__builtin_ffs");
+int ffs(int) @(cname="__builtin_ffs");
 
 // Returns the number of leading 0-bits in x, starting at the most significant bit position. If x is 0, the result is undefined.
-u8 clz(u32) @(cname="__builtin_clz");
+int clz(u32) @(cname="__builtin_clz");
 
 // Returns the number of trailing 0-bits in x, starting at the least significant bit position. If x is 0, the result is undefined.
-u8 ctz(u32) @(cname="__builtin_ctz");
+int ctz(u32) @(cname="__builtin_ctz");
 
 // Returns the number of leading redundant sign bits in x, i.e. the number of bits following the most significant bit that are identical to it. There are no special cases for 0 or other values.
-u8 clrsb(i32) @(cname="__builtin_clrsb");
+int clrsb(i32) @(cname="__builtin_clrsb");
 
 // Returns the number of 1-bits in x.
-u8 popcount(u32) @(cname="__builtin_popcount");
+int popcount(u32) @(cname="__builtin_popcount");
 
 // Returns the parity of x, i.e. the number of 1-bits in x modulo 2.
-u8 parity(u32) @(cname="__builtin_parity");
+int parity(u32) @(cname="__builtin_parity");
+
+#if LONG_32BIT
 
 // Similar to __builtin_ffs, except the argument type is long long.
-u8 ffs64(i64) @(cname="__builtin_ffsll");
+int ffs64(long long) @(cname="__builtin_ffsll");
 
 // Similar to __builtin_clz, except the argument type is unsigned long long.
-u8 clz64(u64) @(cname="__builtin_clzll");
+int clz64(unsigned long long) @(cname="__builtin_clzll");
 
 // Similar to __builtin_ctz, except the argument type is unsigned long long.
-u8 ctz64(u64) @(cname="__builtin_ctzll");
+int ctz64(unsigned long long) @(cname="__builtin_ctzll");
 
 // Similar to __builtin_clrsb, except the argument type is long long.
-u8 clrsb64(i64) @(cname="__builtin_clrsbll");
+int clrsb64(long long) @(cname="__builtin_clrsbll");
 
 // Similar to __builtin_popcount, except the argument type is unsigned long long.
-u8 popcount64(u64) @(cname="__builtin_popcountll");
+int popcount64(unsigned long long) @(cname="__builtin_popcountll");
 
 // Similar to __builtin_parity, except the argument type is unsigned long long.
-u8 parity64(u64) @(cname="__builtin_parityll");
+int parity64(unsigned long long) @(cname="__builtin_parityll");
+
+#else
+
+// Similar to __builtin_ffs, except the argument type is long.
+int ffs64(long) @(cname="__builtin_ffsl");
+
+// Similar to __builtin_clz, except the argument type is unsigned long.
+int clz64(unsigned long) @(cname="__builtin_clzl");
+
+// Similar to __builtin_ctz, except the argument type is unsigned long.
+int ctz64(unsigned long) @(cname="__builtin_ctzl");
+
+// Similar to __builtin_clrsb, except the argument type is long.
+int clrsb64(long) @(cname="__builtin_clrsbl");
+
+// Similar to __builtin_popcount, except the argument type is unsigned long.
+int popcount64(unsigned long) @(cname="__builtin_popcountl");
+
+// Similar to __builtin_parity, except the argument type is unsigned long.
+int parity64(unsigned long) @(cname="__builtin_parityl");
+
+#endif

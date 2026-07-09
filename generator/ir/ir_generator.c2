@@ -91,7 +91,7 @@ fn void Generator.init(Generator* gen,
     gen.locals.init();
     gen.print = print;
     gen.enable_asserts = enable_asserts;
-    gen.ptr_type = targetInfo.intWidth == 64 ? ir.Type.U64 : ir.Type.U32;
+    gen.ptr_type = targetInfo.ptrWidth == 64 ? ir.Type.U64 : ir.Type.U32;
     gen.sm = sm;
     gen.name_buf = string_buffer.create(128, false, 0);
 }

@@ -1450,31 +1450,31 @@ fn void Generator.emit_external_header(Generator* gen, string_buffer.Buf* out) {
     out.add(Include_guard1);
     out.add(Warning_control);
     out.add(C_types);
-    if (gen.targetInfo.intWidth == 32) {
-        // ILP32 (32-bit int, long and pointers)
+    // we support 3 models:
+    // ILP32: 32-bit int, long and pointers
+    // LP64: 32-bit int, 64-bit long and pointers
+    // LLP64: 32-bit int and long, 64-bit pointers
+    if (gen.targetInfo.longWidth == 32) {
         out.add(```c
                 typedef signed long long i64;
                 typedef unsigned long long u64;
-                typedef signed long ssize_t;
-                typedef unsigned long size_t;
                 ```);
     } else {
-        // LP64 (64-bit long and pointers)
         out.add(```c
                 typedef signed long i64;
                 typedef unsigned long u64;
-                typedef signed long ssize_t;
-                typedef unsigned long size_t;
                 ```);
-#if 0
-        // TODO support LLP64 (64-bit long long and pointers, but 32-bit long)
+    }
+    if (gen.targetInfo.ptrWidth == 32) {
         out.add(```c
-                typedef signed long long i64;
-                typedef unsigned long long u64;
+                typedef signed int ssize_t;
+                typedef unsigned int size_t;
+                ```);
+    } else {
+        out.add(```c
                 typedef signed long long ssize_t;
                 typedef unsigned long long size_t;
                 ```);
-#endif
     }
     out.add(C_defines);
 #if 1

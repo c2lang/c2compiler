@@ -87,7 +87,8 @@ public type Info struct {
     Vendor vendor;
     Abi abi;
 
-    u32 intWidth;   // 32/64
+    u32 ptrWidth;   // 32/64
+    u32 longWidth;  // 32/64
 
     char[80] triple;
 }
@@ -95,22 +96,27 @@ public type Info struct {
 public fn void Info.init(Info* info) {
     switch (info.arch) {
     case Unknown:
-        info.intWidth = 64;
+        info.ptrWidth = 64;
+        info.longWidth = 64;
         break;
     case I686:
     case Arm:
-        info.intWidth = 32;
+        info.ptrWidth = 32;
+        info.longWidth = 32;
         break;
     case X86_64:
     case Arm64:
     case Amd64:
-        info.intWidth = 64;
+        info.ptrWidth = 64;
+        info.longWidth = 64;
         break;
     case Riscv_32:
-        info.intWidth = 32;
+        info.ptrWidth = 32;
+        info.longWidth = 32;
         break;
     case Riscv_64:
-        info.intWidth = 64;
+        info.ptrWidth = 64;
+        info.longWidth = 64;
         break;
     }
 
