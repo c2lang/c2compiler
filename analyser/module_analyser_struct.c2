@@ -44,7 +44,7 @@ fn void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
 fn const char* Analyser.bitfieldDesc(Analyser* ma, u32 name_idx) {
     if (name_idx) {
         static char[64] bitfield_desc;
-        snprintf(bitfield_desc, elemsof(bitfield_desc), "bit-field '%s'", ma.idx2name(name_idx));
+        snprintf(bitfield_desc, countof(bitfield_desc), "bit-field '%s'", ma.idx2name(name_idx));
         return bitfield_desc;
     } else {
         return "unnamed bit-field";

@@ -9,7 +9,7 @@ i32[] array = {
 }
 
 fn void test1() {
-    i8 a = 126 + elemsof(array); // @error{constant value 130 out-of-bounds for type 'i8', range [-128, 127]}
+    i8 a = 126 + countof(array); // @error{constant value 130 out-of-bounds for type 'i8', range [-128, 127]}
 }
 
 

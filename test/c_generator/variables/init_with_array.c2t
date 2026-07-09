@@ -11,7 +11,7 @@ type List struct {
 }
 
 const List[] Lists = {
-    { N1, elemsof(N1) },
+    { N1, countof(N1) },
 }
 
 const i32[] N1 = { 1, 2, 3, 4 }

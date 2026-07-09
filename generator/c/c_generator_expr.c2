@@ -422,9 +422,9 @@ fn void Generator.emitBuiltinExpr(Generator* gen, Buf* out, Expr* e) {
             out.print("%d", b.getValue());
         }
         break;
-    case Elemsof:
+    case Countof:
         if (b.useLiteral()) {
-            // Note: ARRAY_SIZE looks nicer, but doesn't work for elemsof(Enum)
+            // Note: ARRAY_SIZE looks nicer, but doesn't work for countof(Enum)
             out.add("ARRAY_SIZE(");
             gen.emitExpr(out, b.getInner());
             out.rparen();

@@ -111,8 +111,8 @@ fn void Stat.dump(const Stat* ss, const char* name, StatPack* sp) {
         u32 avg = (u32)(size * (u64)100 / count);
         u32 whole = avg / 100;
         u32 frac = avg % 100;
-        if (frac) snprintf(buf, elemsof(buf), "%3d.%02d", whole, frac);
-        else snprintf(buf, elemsof(buf), "%3d   ", whole);
+        if (frac) snprintf(buf, countof(buf), "%3d.%02d", whole, frac);
+        else snprintf(buf, countof(buf), "%3d   ", whole);
     }
     printf("  %20s  %6d  %7d  %s", name, count, size, buf);
     bool output = false;

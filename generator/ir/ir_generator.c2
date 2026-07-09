@@ -108,7 +108,7 @@ fn const char* Generator.idx2name(const Generator* gen, u32 name_idx) {
 }
 
 fn void Generator.enterScope(Generator* gen, ir.BlockId break_block, ir.BlockId continue_block) {
-    assert(gen.num_scopes < elemsof(gen.scopes));
+    assert(gen.num_scopes < countof(gen.scopes));
     JumpScope* s = &gen.scopes[gen.num_scopes];
     s.break_block = break_block;
     if (continue_block) {
@@ -589,7 +589,7 @@ public fn void generate(const char* target,
                         bool print,
                         bool print_all) {
     char[file_utils.Max_path] ir_dir;
-    if (!file_utils.make_path(ir_dir, elemsof(ir_dir), output_dir, "ir")
+    if (!file_utils.make_path(ir_dir, countof(ir_dir), output_dir, "ir")
     ||  file_utils.create_path(ir_dir)) {
         console.error("cannot create directory %s: %s", ir_dir, strerror(errno));
         return;

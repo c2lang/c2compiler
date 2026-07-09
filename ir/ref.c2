@@ -126,7 +126,7 @@ public fn const char* Ref.str(const Ref* r) @(unused) {
     static u32 idx;
     idx = (idx+1) % 4;
     char* tmp = buf[idx++];
-    u32 tmp_size = elemsof(buf[0]);
+    u32 tmp_size = countof(buf[0]);
     snprintf(tmp, tmp_size, "%s %d", r.getKind().str(), r.value);
     return tmp;
 }

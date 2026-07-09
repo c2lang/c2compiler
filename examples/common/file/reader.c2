@@ -56,7 +56,7 @@ public fn bool Reader.openStream(Reader* file, FILE* fp) @(unused) {
     if (fseek(fp, 0, SEEK_END) < 0) {  // stream is not seekable
         char[4096] buf;
         usize nread;
-        while ((nread = fread(buf, 1, elemsof(buf), fp)) > 0) {
+        while ((nread = fread(buf, 1, countof(buf), fp)) > 0) {
             data = realloc(data, size + nread + 1);
             memcpy(data + size, buf, nread);
             size += nread;
@@ -89,7 +89,7 @@ public fn bool Reader.openHandle(Reader* file, i32 fd) @(unused) {
     if (file_length < 0) {   // file descriptor is not seekable
         char[4096] buf;
         isize nread;
-        while ((nread = read(fd, buf, elemsof(buf))) != 0) {
+        while ((nread = read(fd, buf, sizeof(buf))) != 0) {
             if (nread < 0) {
                 if (errno == EINTR)
                     continue;

@@ -180,7 +180,7 @@ public fn i32 SourceMgr.loadFile(SourceMgr* sm, const char* filename, SrcLoc slo
         if (sloc) {
             Location loc = sm.locate(sloc);
             if (loc.line_start) {
-                snprintf(tmp, elemsof(tmp), "%s:%d:%d: ", loc.filename, loc.line, loc.column);
+                snprintf(tmp, countof(tmp), "%s:%d:%d: ", loc.filename, loc.line, loc.column);
             }
         }
         // Cannot use console since we need source loc first

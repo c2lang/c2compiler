@@ -38,7 +38,7 @@ u32[] a = {
 //static_assert(fib(20), 6765);
 
 public fn i32 main() {
-    for (u32 i = 0; i < elemsof(a); i++) {
+    for (u32 i = 0; i < countof(a); i++) {
         assert(a[i] == fib(i));
     }
     assert(FIB_20 == fib(20));

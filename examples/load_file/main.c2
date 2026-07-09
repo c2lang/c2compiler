@@ -15,10 +15,10 @@ fn void hex_dump(const u8* data, u32 len) {
 }
 
 public fn i32 main() {
-    printf("FILE1: size %d\n", elemsof(Data1));
-    hex_dump(Data1, elemsof(Data1));
+    printf("FILE1: size %d\n", countof(Data1));
+    hex_dump(Data1, countof(Data1));
 
-    printf("FILE2: size %d\n", elemsof(File2));
+    printf("FILE2: size %d\n", countof(File2));
     printf("%s\n", File2);
 
     return 0;

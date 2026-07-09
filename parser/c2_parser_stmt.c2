@@ -148,7 +148,7 @@ fn u32 Parser.skipArray(Parser* p, u32 ahead, Kind endKind) {
     Kind[8] closeKind = { endKind }
     while (depth > 0) {
         Token next;
-        if (depth >= elemsof(closeKind)) {
+        if (depth >= countof(closeKind)) {
             p.error("expression too complex");
         }
         switch (p.peekToken2(ahead++, &next)) {
@@ -599,7 +599,7 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
             p.error("cannot define multiple variables in a condition");
         if (ref.isPointer() || ref.isArray())
             p.error("pointer and array variables must be defined separately");
-        if (num_decls >= elemsof(decls))
+        if (num_decls >= countof(decls))
             p.error("too many variables defined in a single statement");
     }
     if (checkSemi) {

@@ -137,7 +137,7 @@ public fn void Log.fatal(Log* log, const char* format @(printf_format), ...) @(u
 
 fn void Log.internal(Log* log, Level level, const char* color_, const char* format, va_list args) @(unused) {
     char[256] buffer;
-    StringBuffer buf.init(elemsof(buffer), buffer, false);
+    StringBuffer buf.init(countof(buffer), buffer, false);
 
     if (log.base.useColor) buf.add(color_);
     buf.putc('[');

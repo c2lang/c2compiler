@@ -9,7 +9,7 @@ u32[Enum] a = {
     [Maybe]= 2,
 }
 
-static_assert(elemsof(a), elemsof(Enum));
+static_assert(countof(a), countof(Enum));
 
 type Foo enum u8 { A, B, C }
 

@@ -75,15 +75,15 @@ void preprocess_header(const char *header_name) {
     size_t pos;
     printf("// preprocessor output of <%s>\n{\n", header_name);
     fflush(stdout);
-    pos = snprintf(cmd, sizeof(cmd), "echo '#include <%s>' | cc -E -", header_name);
-    if (pos > sizeof(cmd)) {
-        pos = sizeof(cmd);
+    pos = snprintf(cmd, countof(cmd), "echo '#include <%s>' | cc -E -", header_name);
+    if (pos > countof(cmd)) {
+        pos = countof(cmd);
     }
     if (!verbose) {
-        pos += pstrcpy(cmd + pos, sizeof(cmd) - pos, " | grep -v '^#'");
-        pos += pstrcpy(cmd + pos, sizeof(cmd) - pos, " | tr -s '\n'");
+        pos += pstrcpy(cmd + pos, countof(cmd) - pos, " | grep -v '^#'");
+        pos += pstrcpy(cmd + pos, countof(cmd) - pos, " | tr -s '\n'");
     }
-    if (pos >= sizeof(cmd)) {
+    if (pos >= countof(cmd)) {
         printf("command too long: %s\n", cmd);
     } else
     if (system(cmd)) {

@@ -39,7 +39,7 @@ fn void run_group(const Group* g, Stats* stats) {
   for (u32 i=0; i<g.num_tests; i++) {
     const C2Test* t = &g.tests[i];
 
-    error_size = elemsof(error_buffer);
+    error_size = countof(error_buffer);
     error_msg = error_buffer;
     printf("TEST [%d/%d] %s.%s ", i+1+stats.done, stats.total, g.name, t.name);
     fflush(stdout);
@@ -122,12 +122,12 @@ public fn i32 run_tests() {
   c2test.init(&cfg);
 
   Stats stats = { }
-  for(u32 i=0; i<elemsof(groups); i++) {
+  for (u32 i = 0; i < countof(groups); i++) {
     stats.total += groups[i].num_tests;
   }
 
   u64 t1 = now();
-  for(u32 i=0; i<elemsof(groups); i++) {
+  for (u32 i = 0; i < countof(groups); i++) {
     const Group* g = groups[i];
     run_group(g, &stats);
     stats.done += g.num_tests;
@@ -136,14 +136,14 @@ public fn i32 run_tests() {
 
   const char* color = stats.failed ? Red : Green;
   char[80] results;
-  snprintf(results, elemsof(results), "RESULT: %d tests (%d ok, %d failed, %d skipped) ran in %d ms",
+  snprintf(results, countof(results), "RESULT: %d tests (%d ok, %d failed, %d skipped) ran in %d ms",
     stats.total, stats.ok, stats.failed, stats.skipped, (t2 - t1) / 1000);
   color_print(color, results);
   return 0;
 }
 
 public fn void show_tests() {
-  for(u32 i=0; i<elemsof(groups); i++) {
+  for (u32 i = 0; i < countof(groups); i++) {
     const Group* g = groups[i];
     for(u32 t=0; t<g.num_tests; t++) {
       printf("%s.%s\n", g.name, g.tests[t].name);

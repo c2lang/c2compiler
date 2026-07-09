@@ -26,7 +26,7 @@ type Location struct {
 
 fn const char* Location.str(const Location* loc) {
     static char[32] msg;
-    snprintf(msg, elemsof(msg), "at line %d:%d", loc.line, loc.column);
+    snprintf(msg, countof(msg), "at line %d:%d", loc.line, loc.column);
     return msg;
 }
 

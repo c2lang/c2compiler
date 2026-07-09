@@ -112,7 +112,7 @@ public fn void Db.init(Db* db,
     db.recipe = string_buffer.create(4096, false, 2);
 
     if (kind == C2) { // only for single file test
-        file_utils.make_path(db.current_file, elemsof(db.current_file), cwd, filename);
+        file_utils.make_path(db.current_file, countof(db.current_file), cwd, filename);
     }
 }
 
@@ -191,8 +191,8 @@ fn const char* Db.readWord(Db* db) {
     while (isalnum(*cp) || *cp == '-' || *cp == '_') cp++;
     // silently truncate overlong words
     u32 len = (u32)(cp - db.cur);
-    if (len >= elemsof(db.word_buffer))
-        len = elemsof(db.word_buffer) - 1;
+    if (len >= countof(db.word_buffer))
+        len = countof(db.word_buffer) - 1;
     memcpy(db.word_buffer, db.cur, len);
     db.word_buffer[len] = 0;
     db.cur = cp;
@@ -204,8 +204,8 @@ fn const char* Db.readLine(Db* db) {
     while (*cp && *cp != '\n') cp++;
     u32 len = (u32)(cp - db.cur);
     // silently truncate overlong lines
-    if (len >= elemsof(db.line_buffer))
-        len = elemsof(db.line_buffer) - 1;
+    if (len >= countof(db.line_buffer))
+        len = countof(db.line_buffer) - 1;
     memcpy(db.line_buffer, db.cur, len);
     db.line_buffer[len] = 0;
     db.cur = cp;
@@ -277,13 +277,13 @@ fn bool Db.parseRecipe(Db* db) {
 fn bool Db.parseFile(Db* db) {
     // Syntax file{name}
     char[128] filename;
-    if (!db.readArgument(filename, elemsof(filename), "filename"))
+    if (!db.readArgument(filename, countof(filename), "filename"))
         return false;
     if (*filename == 0) {
         return db.error("expected filename");
     }
     if (!endsWith(filename, ".c2"))
-        pstrcat(filename, elemsof(filename), ".c2");
+        pstrcat(filename, countof(filename), ".c2");
     db.recipe.print("    %s\n", filename);
     u32 line_offset = db.line_nr;
     db.skipLine();
@@ -299,7 +299,7 @@ fn bool Db.parseFile(Db* db) {
 fn bool Db.parseExpect(Db* db) {
     char[128] args;
     // Syntax expect{mode, name}
-    if (!db.readArgument(args, elemsof(args), "expect"))
+    if (!db.readArgument(args, countof(args), "expect"))
         return false;
 
     const char* mode = args;
@@ -337,8 +337,8 @@ fn bool Db.parseExpect(Db* db) {
 fn bool Db.checkKind(Db* db, const char* keyword, TestKind k1, TestKind k2 = None) {
     if (k1 == db.kind || k2 == db.kind) return true;
     char[80] buf;
-    usize pos = pstrcpy(buf, elemsof(buf), k1.ext);
-    if (k2) snprintf(buf + pos, elemsof(buf) - pos, "/%s", k2.ext);
+    usize pos = pstrcpy(buf, countof(buf), k1.ext);
+    if (k2) snprintf(buf + pos, countof(buf) - pos, "/%s", k2.ext);
     return db.error("keyword '%s' only allowed in %s files", keyword, buf);
 }
 
@@ -356,14 +356,14 @@ fn bool Db.parseKeyword(Db* db) {
     case "warnings":
         if (!db.checkKind(keyword, C2)) return false;
         char[128] list;
-        if (!db.readArgument(list, elemsof(list), "list"))
+        if (!db.readArgument(list, countof(list), "list"))
             return false;
         db.recipe.print("  $warnings %s\n", list);
         db.skipLine();
         return true;
     case "target":
         if (!db.checkKind(keyword, C2)) return false;
-        if (!db.readArgument(db.target, elemsof(db.target), "target"))
+        if (!db.readArgument(db.target, countof(db.target), "target"))
             return false;
         if (*db.target == 0) {
             return db.error("expected target triple");
@@ -422,7 +422,7 @@ fn bool Db.error(Db* db, const char* format @(printf_format), ...) {
     char[1024] msg;
     va_list args;
     va_start(args, format);
-    vsnprintf(msg, elemsof(msg), format, args);
+    vsnprintf(msg, countof(msg), format, args);
     va_end(args);
     color_print2(db.output, colError, "%s:%d: %s", db.filename, db.line_nr, msg);
     db.hasErrors = true;
@@ -448,7 +448,7 @@ fn void Db.parseTags(Db* db, const char* filename, u32 line_nr) {
     }
 
     char[128] msg;
-    if (!db.readArgument(msg, elemsof(msg), "message"))
+    if (!db.readArgument(msg, countof(msg), "message"))
         return;
 
     // adjust line number for some special cases
@@ -651,7 +651,7 @@ fn void Db.checkErrors(Db* db, const char* buffer, u32 size) {
 
 fn void Db.checkExpectedFiles(Db* db) {
     char[file_utils.Max_path] basedir;
-    file_utils.make_path(basedir, elemsof(basedir), db.tmp_dir, "output/test/");
+    file_utils.make_path(basedir, countof(basedir), db.tmp_dir, "output/test/");
     for (u32 i=0; i<db.expectedCount; ++i) {
         ExpectFile* e = db.expectedFiles[i];
         if (!e.check(db.output, basedir)) db.hasErrors = true;
@@ -660,7 +660,7 @@ fn void Db.checkExpectedFiles(Db* db) {
 
 fn const char* relativeFilename(const char* name) {
     char[file_utils.Max_path] buffer;
-    char* cwd = unistd.getcwd(buffer, sizeof(buffer));
+    char* cwd = getcwd(buffer, countof(buffer));
     if (cwd) {
         usize len = strlen(cwd);
         if (len > 1 && !strncmp(name, cwd, len) && name[len] == '/' && name[len + 1] != '\0')
@@ -683,7 +683,7 @@ fn const char* Db.getShowName(Db* db, char* path, usize path_size, const char* f
 
 fn void Db.matchIssues(Db* db, Issues* ip, const char* filename, u32 linenr, const char* msg) {
     char[128] path;
-    const char* show_filename = db.getShowName(path, elemsof(path), filename);
+    const char* show_filename = db.getShowName(path, countof(path), filename);
 
     Iter iter = ip.getIter();
     if (iter.find(filename, linenr)) {
@@ -714,7 +714,7 @@ public fn void Db.checkIssues(Db* db, Issues* ip) {
     for (issues.Iter iter = ip.getIter(); iter.more(); iter.next()) {
         if (iter.getFound()) continue;
         char[128] path;
-        const char* show_filename = db.getShowName(path, elemsof(path), iter.getFilename());
+        const char* show_filename = db.getShowName(path, countof(path), iter.getFilename());
         color_print2(db.output, colError, "%s:%d: expected %s '%s'",
                      show_filename, iter.getLineNr(), ip.getName(), iter.getMsg());
         db.hasErrors = true;

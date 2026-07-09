@@ -10,8 +10,8 @@ module file1;
 const char[] Text @(embed="text.c2");
 const u8[] Binary @(embed="text.c2");
 
-static_assert(14, elemsof(Text));
-static_assert(13, elemsof(Binary));
+static_assert(14, countof(Text));
+static_assert(13, countof(Binary));
 static_assert(14, sizeof(Text));
 static_assert(13, sizeof(Binary));
 

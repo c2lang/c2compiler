@@ -18,7 +18,7 @@ fn void test_tocontainer(void* ptr) {
 
 public fn i32 main() {
     char a = sizeof(u64);
-    char b = elemsof(chars);
+    char b = countof(chars);
 
     test1(14);
     return 0;

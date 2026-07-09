@@ -115,7 +115,7 @@ public type Kind enum u8 (public const char* const name) {
     KW_const             : { "const" },
     KW_continue          : { "continue" },
     KW_default           : { "default" },
-    KW_elemsof           : { "elemsof" },
+    KW_countof           : { "countof" },
     KW_else              : { "else" },
     KW_enum              : { "enum" },
     KW_extern            : { "extern" },

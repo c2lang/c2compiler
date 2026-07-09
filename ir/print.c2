@@ -402,7 +402,7 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
         out.print(" %d", num_args);
         break;
     case JmpIf:
-        for (u32 r=0; r<elemsof(i.args); r++) {
+        for (u32 r = 0; r < countof(i.args); r++) {
             if (i.args[r].isValid()) {
                 if (r > 0) out.add1(',');
                 out.space();
@@ -459,7 +459,7 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
         out.add(" ]");
         break;
     default:
-        for (u32 r=0; r<elemsof(i.args); r++) {
+        for (u32 r = 0; r < countof(i.args); r++) {
             if (i.args[r].isValid()) {
                 if (r > 0) out.add1(',');
                 out.space();

@@ -45,7 +45,7 @@ public fn i32 main() {
     for (;;) {
         printf("calc > ");
         fflush(stdout);
-        if (!getsn(buf, elemsof(buf))) break;
+        if (!getsn(buf, countof(buf))) break;
 
         Num[32] stack;
         Num* sp = stack;
@@ -56,7 +56,7 @@ public fn i32 main() {
                 continue;
             }
             if (isdigit(*p)) {
-                if (sp >= stack + elemsof(stack)) {
+                if (sp >= stack + countof(stack)) {
                     printf("stack overflow\n");
                     break;
                 }

@@ -59,7 +59,7 @@ fn void NameMap.resize(NameMap* v) {
     if (v.capacity == 0) {
         v.name_data = v.name_stash;
         v.loc_data = v.loc_stash;
-        v.capacity = elemsof(v.name_stash);
+        v.capacity = countof(v.name_stash);
     } else {
         v.capacity = v.capacity * 2;
         u32* name_data2 = malloc(v.capacity * sizeof(*v.name_data));

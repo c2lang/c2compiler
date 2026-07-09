@@ -123,7 +123,7 @@ fn void Generator.createMakefile(Generator* gen,
     switch (gen.target_kind) {
     case Image:
     case Executable:
-        pstrcpy(target_name, elemsof(target_name), gen.target);
+        pstrcpy(target_name, countof(target_name), gen.target);
         out.print("all: ../%s\n\n", target_name);
 
         out.print("../%s: $(objects) $(headers)\n", target_name);
@@ -190,7 +190,7 @@ fn void Generator.createMakefile(Generator* gen,
         out.newline();
         break;
     case StaticLibrary:
-        snprintf(target_name, elemsof(target_name), "lib%s.a", gen.target);
+        snprintf(target_name, countof(target_name), "lib%s.a", gen.target);
         out.print("all: ../%s\n\n", target_name);
 
         out.print("../%s: $(objects) $(headers)\n", target_name);
@@ -199,9 +199,9 @@ fn void Generator.createMakefile(Generator* gen,
     case DynamicLibrary:
         out.add("CFLAGS+=-fPIC\n");
         if (gen.targetInfo.sys == Darwin) {
-            snprintf(target_name, elemsof(target_name), "lib%s.dylib", gen.target);
+            snprintf(target_name, countof(target_name), "lib%s.dylib", gen.target);
         } else {
-            snprintf(target_name, elemsof(target_name), "lib%s.so", gen.target);
+            snprintf(target_name, countof(target_name), "lib%s.so", gen.target);
         }
         out.print("all: ../%s\n\n", target_name);
 

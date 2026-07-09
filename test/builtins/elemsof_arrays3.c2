@@ -5,5 +5,5 @@ i32[+] array3;
 array3 += 1;
 array3 += 2;
 
-static_assert(2, elemsof(array3));
+static_assert(2, countof(array3));
 
