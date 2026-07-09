@@ -30,8 +30,8 @@ type StatKind enum u8 (const StatGroup group, const char* const name) {
 }
 
 type Stats struct {
-    u32[elemsof(StatKind)] count;
-    u32[elemsof(StatKind)] size;
+    u32[StatKind] count;
+    u32[StatKind] size;
 }
 
 fn void Stats.add(Stats* s, StatKind kind, u32 size) {

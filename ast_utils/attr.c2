@@ -77,13 +77,14 @@ public fn const char* Attr.kind2name(const Attr* a) {
 }
 
 public type AttrRegistry struct {
-    u32[elemsof(AttrKind)] name_indexes;
+    u32[AttrKind] name_indexes;
 }
 
 public fn void AttrRegistry.init(AttrRegistry* ar, string_pool.Pool* pool) {
     // skip unknown attribute
-    ar.name_indexes[0] = 0;
-    for (AttrKind kind = (AttrKind)1; kind <= AttrKind.max; kind++) {
+    AttrKind kind = (AttrKind)0;
+    ar.name_indexes[kind++] = 0;
+    for (; kind <= AttrKind.max; kind++) {
         ar.name_indexes[kind] = pool.addStr(kind.name, true);
     }
 }

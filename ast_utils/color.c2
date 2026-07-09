@@ -55,7 +55,7 @@ public const Color Bcyan    = Bcyan;
 public const Color White    = White;
 public const Color Normal   = Normal;
 
-const char*[elemsof(Color)] defaultColors = {
+const char*[Color] defaultColors = {
     [Color.None]     = "",
     [Color.Black]    = "\033[0;30m",
     [Color.Red]      = "\033[0;31m",

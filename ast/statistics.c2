@@ -28,10 +28,10 @@ type Stat struct {
 }
 
 type Stats struct {
-    Stat[elemsof(TypeKind)] types;
-    Stat[elemsof(ExprKind)] exprs;
-    Stat[elemsof(StmtKind)] stmts;
-    Stat[elemsof(DeclKind)] decls;
+    Stat[TypeKind] types;
+    Stat[ExprKind] exprs;
+    Stat[StmtKind] stmts;
+    Stat[DeclKind] decls;
     Stat[3] others; // 0=ArrayValue, 1=StaticAssert, 2=SwitchCase
 }
 

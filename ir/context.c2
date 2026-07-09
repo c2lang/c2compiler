@@ -434,7 +434,7 @@ public fn Ref Context.addLoadInstr(Context* c, Type t, Ref src) {
     return out;
 }
 
-const InstrKind[elemsof(Type)] Type2Store = {
+const InstrKind[Type] Type2Store = {
     [Type.I8]  = InstrKind.Store1,
     [Type.I16] = InstrKind.Store2,
     [Type.I32] = InstrKind.Store4,
