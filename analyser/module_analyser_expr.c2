@@ -284,7 +284,7 @@ fn IdentifierKind Analyser.setExprFlags(Analyser* ma, Expr** e_ptr, Decl* d) {
 // 10  struct : struct
 // 11  void : void
 // TODO: accept pointer/function : 0 and 0 : pointer/function
-const u8[elemsof(TypeKind)][elemsof(TypeKind)] CondOpTable = {
+const u8[TypeKind][TypeKind] CondOpTable = {
     //  Builtin Pointer Array   Struct  Enum    Func   Void   Alias  Module
     //  Builtin :
     {   2,      1,      0,      1,      3,      0,     1,     0,     0  },

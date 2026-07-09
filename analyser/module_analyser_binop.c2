@@ -248,7 +248,7 @@ fn QualType Analyser.checkBinopLogical(Analyser* ma, BinaryOperator* b, QualType
 // 6  pointer -= builtin/enum
 // 7  enum -= builtin
 // 8  enum -= enum -> int (CTV)
-const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvAddSubAss = {
+const u8[TypeKind][TypeKind] BinOpConvAddSubAss = {
     //  Builtin Pointer Array   Struct  Enum    Func   Void   Alias  Module
     //  Builtin += / -=
     {   4,      2,      0,      2,      5,      2,     2,     0,     0  },
@@ -312,7 +312,7 @@ fn QualType Analyser.checkBinopAddSubAssign(Analyser* ma, BinaryOperator* b, Qua
 // 8  ptr + builtin/enum
 // TODO remove Alias/Module (+Array, need to move) since already checked
 // TODO need to fix C2C.c++ (asserts of elemsof(..) -2), then table can be 5x5
-const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvAdd = {
+const u8[TypeKind][TypeKind] BinOpConvAdd = {
     //  Builtin Pointer Array   Struct  Enum    Func   Void   Alias  Module
     //  Builtin +
     {   4,      7,      0,      2,      5,      2,     2,     0,     0  },
@@ -395,7 +395,7 @@ fn QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualType
 // 7  enum - enum -> int if same enum
 // 8  pointer - builtin/enum
 // 9  pointer - pointer -> isize
-const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvSub = {
+const u8[TypeKind][TypeKind] BinOpConvSub = {
     //  Builtin Pointer Array   Struct  Enum    Func   Void   Alias  Module
     //  Builtin -
     {   4,      3,      0,      2,      5,      2,     2,     0,     0  },
@@ -490,7 +490,7 @@ fn QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType
 // 10  invalid lhs
 // 11  invalid rhs
 // TODO: accept pointer/function : 0 and 0 : pointer/function
-const u8[elemsof(TypeKind)][elemsof(TypeKind)] BinOpConvComparison = {
+const u8[TypeKind][TypeKind] BinOpConvComparison = {
     //  Builtin Pointer Array   Struct  Enum    Func   Void   Alias  Module
     //  Builtin :
     {   2,      1,      0,     11,      3,      0,    11,     0,     0  },
