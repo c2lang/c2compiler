@@ -14,6 +14,9 @@ ifdef DEBUG
 # should be --debug
 C2FLAGS+= --fast
 endif
+ifdef CONFIG_32BIT
+MAKEFLAGS+= CONFIG_32BIT=y
+endif
 
 C2C_DIRS:= {analyser,analyser_utils,ast,ast_utils,common,compiler,generator,ir,libs,parser}
 C2C_DEPS:= $(wildcard $(C2C_DIRS)/*.c2* $(C2C_DIRS)/*/*.c2*) recipe.txt Makefile
@@ -39,13 +42,13 @@ $(C2C): output/bootstrap/bootstrap $(C2C_DEPS)
 	@./install_plugins.sh
 
 output/bootstrap/bootstrap:
-	@$(MAKE) -B -C bootstrap
+	@$(MAKE) -B -C bootstrap $(MAKEFLAGS)
 
-san:;	@$(MAKE) -B ASAN=1 UBSAN=1
-asan:;	@$(MAKE) -B ASAN=1
-msan:;	@$(MAKE) -B MSAN=1
-ubsan:;	@$(MAKE) -B UBSAN=1
-debug:;	@$(MAKE) -B DEBUG=1
+san:;	@$(MAKE) -B ASAN=1 UBSAN=1 $(MAKEFLAGS)
+asan:;	@$(MAKE) -B ASAN=1 $(MAKEFLAGS)
+msan:;	@$(MAKE) -B MSAN=1 $(MAKEFLAGS)
+ubsan:;	@$(MAKE) -B UBSAN=1 $(MAKEFLAGS)
+debug:;	@$(MAKE) -B DEBUG=1 $(MAKEFLAGS)
 
 output/tester/tester: tools/tester/*.c2 $(C2C_DEPS) $(C2C)
 	@$(C2C) tester --quiet
@@ -65,6 +68,9 @@ rebuild-bootstrap: $(C2C)
 	( diff bootstrap/bootstrap.c output/freebsd-amd64/c2c/cgen/build.c > bootstrap/bootstrap-freebsd-amd64.patch ; true )
 	$(C2C) c2c -b bootstrap/build-openbsd-amd64.yaml --no-build --bootstrap --quiet
 	( diff bootstrap/bootstrap.c output/openbsd-amd64/c2c/cgen/build.c > bootstrap/bootstrap-openbsd-amd64.patch ; true )
+
+globals:
+	@$(MAKE) -C bootstrap globals $(MAKEFLAGS)
 
 test: output/tester/tester
 	@echo "---- running tests ----"
@@ -97,7 +103,7 @@ rebuild: clean all test trace_calls
 
 .PHONY: examples
 examples: c2c
-	@$(MAKE) -C examples
+	@$(MAKE) -C examples $(MAKEFLAGS)
 
 clean:
 	rm -rf output examples/output

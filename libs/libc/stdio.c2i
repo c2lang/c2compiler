@@ -30,6 +30,7 @@ typedef i64 Offset @(cname="off_t");
 
 //NOTE: _G_fpos_t is some struct(_G_fpos_t.h)
 //typedef _G_fpos_t fpos_t;
+//typedef off_t fpos_t;
 
 #if SYSTEM_LINUX
 struct FILE @(opaque) {}

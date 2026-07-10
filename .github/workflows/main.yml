@@ -8,7 +8,8 @@ on:
 
 jobs:
 
-  build-linux:
+  linux:
+    name: Linux (Ubuntu)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -18,7 +19,7 @@ jobs:
 
     steps:
       - name: clone repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: bootstrap + compile
         run: |
@@ -29,3 +30,66 @@ jobs:
         run: |
           . env.sh
           make test
+
+  linux-32bits:
+    name: Linux 32-bits
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: alpine.sh {0}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: jirutka/setup-alpine@v1
+        with:
+          arch: x86
+          packages: "build-base make"
+      - name: bootstrap + compile + tests
+        run: |
+          . env.sh
+          make globals CONFIG_32BIT=y
+          make all test CONFIG_32BIT=y
+
+  macos:
+    name: macOS
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-15]
+    steps:
+      - uses: actions/checkout@v6
+      - name: bootstrap + compile + tests
+        run: |
+          . env.sh
+          make all test
+
+  openbsd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: bootstrap + compile + tests
+        uses: vmactions/openbsd-vm@v1
+        with:
+          usesh: true
+          prepare: |
+            pkg_add gmake
+          run: |
+            . ./env.sh
+            gmake globals MAKE=gmake
+            gmake all test MAKE=gmake
+
+  freebsd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: bootstrap + compile + tests
+        uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          prepare: |
+            pkg install -y gmake
+          run: |
+            . env.sh
+            gmake globals MAKE=gmake
+            gmake all test MAKE=gmake
+

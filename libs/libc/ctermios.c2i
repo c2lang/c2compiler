@@ -311,7 +311,7 @@ struct Termios @(cname="termios") {
     cc_t[NCCS] c_cc;	/* control chars */
     speed_t c_ispeed;	/* input speed */
     speed_t c_ospeed;	/* output speed */
-};
+}
 
 /*
  * Window/terminal size structure.  This information is stored by the kernel
@@ -322,7 +322,7 @@ struct Winsize @(cname="winsize") {
     unsigned short ws_col;      /* columns, in characters */
     unsigned short ws_xpixel;   /* horizontal size, pixels */
     unsigned short ws_ypixel;   /* vertical size, pixels */
-};
+}
 
 /* c_cc characters */
 const unsigned VEOF = 0;
@@ -451,7 +451,7 @@ struct Termios @(cname="termios") {
     cc_t[NCCS] c_cc;
     int c_ispeed;
     int c_ospeed;
-};
+}
 
 /* c_cc characters */
 const unsigned VEOF = 0;

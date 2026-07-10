@@ -881,7 +881,7 @@ const u32 CQE_F_MORE   = (1 << 1);
 
 //enum {
 //    IORING_CQE_BUFFER_SHIFT     = 16,
-//};
+//}
 
 /*
  * Magic offsets for the application to mmap the data it needs

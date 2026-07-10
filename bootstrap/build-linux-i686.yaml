@@ -1,0 +1,9 @@
+target: "i686-pc-linux-gnu"
+
+output_dir: "output/linux-i686"
+
+libdir:
+  - "$C2_LIBDIR"
+
+plugindir:
+  - "$C2_PLUGINDIR"
