@@ -52,8 +52,8 @@
 < extern FILE* stdout;
 < extern FILE* stderr;
 ---
-> extern FILE __sF[];
-> extern FILE __sF[];
+> extern FILE __stdout[];
+> extern FILE __stderr[];
 258a287,291
 > struct timespec {
 >    i64 tv_sec;
@@ -116,27 +116,27 @@
 3000c3032
 <       fprintf(stderr, "%swarning: %s%s\n", color_Color_str(color_Yellow), buf, color_Color_str(color_Normal));
 ---
->       fprintf((&__sF[2]), "%swarning: %s%s\n", color_Color_str(color_Yellow), buf, color_Color_str(color_Normal));
+>       fprintf(__stderr, "%swarning: %s%s\n", color_Color_str(color_Yellow), buf, color_Color_str(color_Normal));
 3002c3034
 <       fprintf(stderr, "warning: %s\n", buf);
 ---
->       fprintf((&__sF[2]), "warning: %s\n", buf);
+>       fprintf(__stderr, "warning: %s\n", buf);
 3015c3047
 <       fprintf(stderr, "%serror: %s%s\n", color_Color_str(color_Red), buf, color_Color_str(color_Normal));
 ---
->       fprintf((&__sF[2]), "%serror: %s%s\n", color_Color_str(color_Red), buf, color_Color_str(color_Normal));
+>       fprintf(__stderr, "%serror: %s%s\n", color_Color_str(color_Red), buf, color_Color_str(color_Normal));
 3017c3049
 <       fprintf(stderr, "error: %s\n", buf);
 ---
->       fprintf((&__sF[2]), "error: %s\n", buf);
+>       fprintf(__stderr, "error: %s\n", buf);
 3030c3062
 <       fprintf(stderr, "%s%s: error: %s%s\n", color_Color_str(color_Red), loc, buf, color_Color_str(color_Normal));
 ---
->       fprintf((&__sF[2]), "%s%s: error: %s%s\n", color_Color_str(color_Red), loc, buf, color_Color_str(color_Normal));
+>       fprintf(__stderr, "%s%s: error: %s%s\n", color_Color_str(color_Red), loc, buf, color_Color_str(color_Normal));
 3032c3064
 <       fprintf(stderr, "%s: error: %s\n", loc, buf);
 ---
->       fprintf((&__sF[2]), "%s: error: %s\n", loc, buf);
+>       fprintf(__stderr, "%s: error: %s\n", loc, buf);
 3202c3234
 <    (*__errno_location()) = c_errno_ENAMETOOLONG;
 ---
@@ -185,20 +185,20 @@
 <       fprintf(stderr, "[exec] %s\n", msg);
 <       fflush(stderr);
 ---
->       fprintf((&__sF[2]), "[exec] %s\n", msg);
->       fflush((&__sF[2]));
+>       fprintf(__stderr, "[exec] %s\n", msg);
+>       fflush(__stderr);
 3525c3557
 <       fprintf(stderr, "pipe() failed: %s\n", strerror((*__errno_location())));
 ---
->       fprintf((&__sF[2]), "pipe() failed: %s\n", strerror((*__errno())));
+>       fprintf(__stderr, "pipe() failed: %s\n", strerror((*__errno())));
 3529c3561
 <       fprintf(stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror((*__errno_location())));
 ---
->       fprintf((&__sF[2]), "fcncl(FD_CLOEXEC) failed: %s\n", strerror((*__errno())));
+>       fprintf(__stderr, "fcncl(FD_CLOEXEC) failed: %s\n", strerror((*__errno())));
 3536c3568
 <       fprintf(stderr, "fork() failed: %s\n", strerror((*__errno_location())));
 ---
->       fprintf((&__sF[2]), "fork() failed: %s\n", strerror((*__errno())));
+>       fprintf(__stderr, "fork() failed: %s\n", strerror((*__errno())));
 3548c3580
 <          process_utils_child_error(error_pipe[1], "cannot open output '%s': %s", filename, strerror((*__errno_location())));
 ---
@@ -214,29 +214,29 @@
 3575c3607
 <       fflush(stdout);
 ---
->       fflush((&__sF[1]));
+>       fflush(__stdout);
 3577,3578c3609,3610
 <       int lasterr = (*__errno_location());
 <       fprintf(stderr, "failed to start %s: %s\n", cmd, strerror(lasterr));
 ---
 >       int lasterr = (*__errno());
->       fprintf((&__sF[2]), "failed to start %s: %s\n", cmd, strerror(lasterr));
+>       fprintf(__stderr, "failed to start %s: %s\n", cmd, strerror(lasterr));
 3586c3618
 <          fprintf(stderr, "Error reading pipe\n");
 ---
->          fprintf((&__sF[2]), "Error reading pipe\n");
+>          fprintf(__stderr, "Error reading pipe\n");
 3598c3630
 <          fprintf(stderr, "Error waiting for pid: %s\n", strerror((*__errno_location())));
 ---
->          fprintf((&__sF[2]), "Error waiting for pid: %s\n", strerror((*__errno())));
+>          fprintf(__stderr, "Error waiting for pid: %s\n", strerror((*__errno())));
 3825c3857
 <          fprintf(stderr, "%s%serror:%s cannot open %s: %s\n", tmp, color_Color_str(color_Red), color_Color_str(color_Normal), filename, file_utils_File_getError(&file));
 ---
->          fprintf((&__sF[2]), "%s%serror:%s cannot open %s: %s\n", tmp, color_Color_str(color_Red), color_Color_str(color_Normal), filename, file_utils_File_getError(&file));
+>          fprintf(__stderr, "%s%serror:%s cannot open %s: %s\n", tmp, color_Color_str(color_Red), color_Color_str(color_Normal), filename, file_utils_File_getError(&file));
 3827c3859
 <          fprintf(stderr, "%serror: cannot open %s: %s\n", tmp, filename, file_utils_File_getError(&file));
 ---
->          fprintf((&__sF[2]), "%serror: cannot open %s: %s\n", tmp, filename, file_utils_File_getError(&file));
+>          fprintf(__stderr, "%serror: cannot open %s: %s\n", tmp, filename, file_utils_File_getError(&file));
 4234c4266
 <          if ((*__errno_location()) != c_errno_ENOENT) {
 ---
@@ -244,67 +244,67 @@
 4432c4464
 <          fprintf(stderr, "[build-file] warning: environment variable '%s' not set!\n", raw + 1);
 ---
->          fprintf((&__sF[2]), "[build-file] warning: environment variable '%s' not set!\n", raw + 1);
+>          fprintf(__stderr, "[build-file] warning: environment variable '%s' not set!\n", raw + 1);
 4479c4511
 <             fprintf(stderr, "[build-file] missing options for %s\n", name);
 ---
->             fprintf((&__sF[2]), "[build-file] missing options for %s\n", name);
+>             fprintf(__stderr, "[build-file] missing options for %s\n", name);
 4497c4529
 <       fprintf(stderr, "Error: %s\n", yaml_Parser_getMessage(parser));
 ---
->       fprintf((&__sF[2]), "Error: %s\n", yaml_Parser_getMessage(parser));
+>       fprintf(__stderr, "Error: %s\n", yaml_Parser_getMessage(parser));
 18007c18039
 <       fprintf(stderr, "unsupported function prototype: %s\n", ast_FunctionDecl_getCName(fd));
 ---
->       fprintf((&__sF[2]), "unsupported function prototype: %s\n", ast_FunctionDecl_getCName(fd));
+>       fprintf(__stderr, "unsupported function prototype: %s\n", ast_FunctionDecl_getCName(fd));
 18975c19007
 <    fputs(string_buffer_Buf_data(out), stderr);
 ---
->    fputs(string_buffer_Buf_data(out), (&__sF[2]));
+>    fputs(string_buffer_Buf_data(out), __stderr);
 19006c19038
 <       fputs(string_buffer_Buf_data(out), stderr);
 ---
->       fputs(string_buffer_Buf_data(out), (&__sF[2]));
+>       fputs(string_buffer_Buf_data(out), __stderr);
 20838c20870
 <       fprintf(stderr, "%s: %serror:%s %s\n", locstr, color_Color_str(color_Red), color_Color_str(color_Normal), msg);
 ---
->       fprintf((&__sF[2]), "%s: %serror:%s %s\n", locstr, color_Color_str(color_Red), color_Color_str(color_Normal), msg);
+>       fprintf(__stderr, "%s: %serror:%s %s\n", locstr, color_Color_str(color_Red), color_Color_str(color_Normal), msg);
 20840c20872
 <       fprintf(stderr, "%s: error: %s\n", locstr, msg);
 ---
->       fprintf((&__sF[2]), "%s: error: %s\n", locstr, msg);
+>       fprintf(__stderr, "%s: error: %s\n", locstr, msg);
 20856c20888
 <       fprintf(stderr, "%s: %swarning:%s %s\n", locstr, color_Color_str(color_Red), color_Color_str(color_Normal), msg);
 ---
->       fprintf((&__sF[2]), "%s: %swarning:%s %s\n", locstr, color_Color_str(color_Red), color_Color_str(color_Normal), msg);
+>       fprintf(__stderr, "%s: %swarning:%s %s\n", locstr, color_Color_str(color_Red), color_Color_str(color_Normal), msg);
 20858c20890
 <       fprintf(stderr, "%s: warning: %s\n", locstr, msg);
 ---
->       fprintf((&__sF[2]), "%s: warning: %s\n", locstr, msg);
+>       fprintf(__stderr, "%s: warning: %s\n", locstr, msg);
 32494c32526
 <       fprintf(stderr, "error: missing node %s\n", path);
 ---
->       fprintf((&__sF[2]), "error: missing node %s\n", path);
+>       fprintf(__stderr, "error: missing node %s\n", path);
 32521c32553
 <          fprintf(stderr, "error in manifest: invalid library kind '%s'\n", kind);
 ---
->          fprintf((&__sF[2]), "error in manifest: invalid library kind '%s'\n", kind);
+>          fprintf(__stderr, "error in manifest: invalid library kind '%s'\n", kind);
 32527c32559
 <       fprintf(stderr, "error in manifest: a library must be dynamic static and/or source\n");
 ---
->       fprintf((&__sF[2]), "error in manifest: a library must be dynamic static and/or source\n");
+>       fprintf(__stderr, "error in manifest: a library must be dynamic static and/or source\n");
 32536c32568
 <       fprintf(stderr, "manifest: a source library must have c2 as language\n");
 ---
->       fprintf((&__sF[2]), "manifest: a source library must have c2 as language\n");
+>       fprintf(__stderr, "manifest: a source library must have c2 as language\n");
 32552c32584
 <          fprintf(stderr, "manifest: sources are only allowed for source library kind\n");
 ---
->          fprintf((&__sF[2]), "manifest: sources are only allowed for source library kind\n");
+>          fprintf(__stderr, "manifest: sources are only allowed for source library kind\n");
 32557c32589
 <          fprintf(stderr, "manifest: sources are required for source library kind\n");
 ---
->          fprintf((&__sF[2]), "manifest: sources are required for source library kind\n");
+>          fprintf(__stderr, "manifest: sources are required for source library kind\n");
 32706c32738
 <          console_warn("cannot read '%s': %s", path, strerror((*__errno_location())));
 ---

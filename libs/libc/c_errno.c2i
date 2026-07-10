@@ -3,6 +3,7 @@ module c_errno extern "C";
 // NOTE: errno isn't working in case of REENTRANT LIBC, where errno is defined as
 // #define errno *errno_location()
 // TODO: define variables with functional getter/setter/getlvalue
+// typedef int errno_t;
 
 #if SYSTEM_LINUX
 int* __errno_location(void);
@@ -61,7 +62,6 @@ const i32 EPIPE       = 32;  /* Broken pipe */
 const i32 EDOM        = 33;  /* Math argument out of domain of func */
 const i32 ERANGE      = 34;  /* Math result not representable */
 const i32 ENAMETOOLONG = 36;  /* File name too long */
-
 const i32 EALREADY    = 114; /* Operation already in progress */
 const i32 EINPROGRESS = 115; /* Operation now in progress */
 const i32 ESTALE      = 116; /* Stale file handle */
