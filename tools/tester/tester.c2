@@ -206,7 +206,7 @@ fn Tester* Tester.create(u32 idx, TestQueue* q, const char* cwd, bool sync) {
     t.index = idx;
     t.queue = q;
     t.cwd = cwd;
-    t.thread = 0;
+    t.thread = nil;
     snprintf(t.tmp_dir, elemsof(t.tmp_dir), "/tmp/tester%d", idx);
     if (sync)
         tester_thread_main(t);
