@@ -24,7 +24,7 @@ import stdio local;
 import stdlib local;
 import string;
 
-fn void getNativeTarget(Info* info) {
+fn void getNativeTarget(Info* info, bool m32 = false) {
     sys_utsname.Name un;
     if (sys_utsname.uname(&un) != 0) {
         console.error("error getting system info: %s", string.strerror(errno));
@@ -59,7 +59,7 @@ fn void getNativeTarget(Info* info) {
         break;
     }
 
-    info.arch = str2arch(un.machine);
+    info.arch = str2arch(un.machine, m32);
     if (info.arch == Unknown) {
         console.error("unsupported arch: '%s'", un.machine);
         exit(EXIT_FAILURE);

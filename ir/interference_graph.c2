@@ -63,7 +63,7 @@ public type InterferenceGraph struct @(opaque) {
     u32 queue_count;
     u32 queue_head;
 }
-static_assert(224, sizeof(InterferenceGraph));
+static_assert(sizeof(void*) == 4 ? 208 : 224, sizeof(InterferenceGraph));
 
 // Note: map size must be a multiple of largest arena size (so 256)
 public fn InterferenceGraph* create(u32 max_elems, u16 num_variables, u16 num_regs) {

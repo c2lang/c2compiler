@@ -61,7 +61,7 @@ public type Map struct @(opaque) {
     u32 max_elems;   // only used for dump
     Arena[NumArenas] arenas;
 }
-static_assert(168, sizeof(Map));
+static_assert(sizeof(void*) == 4 ? 160 : 168, sizeof(Map));
 
 // Note: map size must be a multiple of largest arena size (so 256)
 public fn Map* create(u32 max_elems, u16 num_blocks) {

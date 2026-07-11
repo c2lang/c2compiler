@@ -83,7 +83,7 @@ fn void Compiler.generate(Compiler* c, const char* target_name, const char* outp
                              &asm_files,
                              c.target.hasAsserts(),
                              c.target.getFastBuild() | c.opts.fast_build,
-                             c.opts.asan, c.opts.msan, c.opts.ubsan,
+                             c.opts.asan, c.opts.msan, c.opts.ubsan, c.opts.m32,
                              c.opts.test_mode, c.opts.trace_calls);
         asm_files.free();
         u64 gen4 = utils.now();

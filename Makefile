@@ -14,8 +14,10 @@ ifdef DEBUG
 # should be --debug
 C2FLAGS+= --fast
 endif
-ifdef CONFIG_32BIT
-MAKEFLAGS+= CONFIG_32BIT=y
+ifeq (y,$(CONFIG_M32))
+# Probably useless
+MAKEFLAGS+= CONFIG_M32=y
+C2FLAGS32+= -m32
 endif
 
 C2C_DIRS:= {analyser,analyser_utils,ast,ast_utils,common,compiler,generator,ir,libs,parser}
@@ -33,16 +35,16 @@ $(C2C): output/bootstrap/bootstrap $(C2C_DEPS)
 	@output/bootstrap/bootstrap c2c $(C2FLAGS) --fast --noplugins
 	@rm -rf output/bootstrap/cgen
 	@mv -f output/c2c/* output/bootstrap
-	@echo "---- running c2c (no plugins$(C2FLAGS)) ----"
-	@output/bootstrap/c2c $(C2FLAGS) --noplugins --fast --quiet c2c $(PLUGINS)
+	@echo "---- running c2c (no plugins$(C2FLAGS) $(C2FLAGS32)) ----"
+	@output/bootstrap/c2c $(C2FLAGS) $(C2FLAGS32) --noplugins --fast --quiet c2c $(PLUGINS)
 	@mv -f output/c2c/c2c output/c2c/c2c_fast
 	@./install_plugins.sh
-	@echo "---- running c2c (optimized with plugins$(C2FLAGS)) ----"
-	@output/c2c/c2c_fast $(C2FLAGS) --quiet
+	@echo "---- running c2c (optimized with plugins$(C2FLAGS) $(C2FLAGS32)) ----"
+	@output/c2c/c2c_fast $(C2FLAGS) $(C2FLAGS32) --quiet
 	@./install_plugins.sh
 
 output/bootstrap/bootstrap:
-	@$(MAKE) -B -C bootstrap $(MAKEFLAGS)
+	@$(MAKE) -B -C bootstrap CONFIG_M32=n
 
 san:;	@$(MAKE) -B ASAN=1 UBSAN=1 $(MAKEFLAGS)
 asan:;	@$(MAKE) -B ASAN=1 $(MAKEFLAGS)
@@ -60,10 +62,12 @@ rebuild-bootstrap: $(C2C)
 	@echo "generating bootstrap files for various systems/architectures"
 	$(C2C) c2c -b bootstrap/build-linux-x86_64.yaml  --no-build --bootstrap --quiet
 	mv -f output/linux-x86_64/c2c/cgen/build.c bootstrap/bootstrap.c
+	$(C2C) c2c -b bootstrap/build-linux-i686.yaml    --no-build --bootstrap --quiet
+	( diff bootstrap/bootstrap.c output/linux-i686/c2c/cgen/build.c    > bootstrap/bootstrap-linux-i686.patch    ; true )
 	$(C2C) c2c -b bootstrap/build-darwin-x86_64.yaml --no-build --bootstrap --quiet
 	( diff bootstrap/bootstrap.c output/darwin-x86_64/c2c/cgen/build.c > bootstrap/bootstrap-darwin-x86_64.patch ; true )
 	$(C2C) c2c -b bootstrap/build-darwin-arm64.yaml  --no-build --bootstrap --quiet
-	( diff bootstrap/bootstrap.c output/darwin-arm64/c2c/cgen/build.c > bootstrap/bootstrap-darwin-arm64.patch ; true )
+	( diff bootstrap/bootstrap.c output/darwin-arm64/c2c/cgen/build.c  > bootstrap/bootstrap-darwin-arm64.patch  ; true )
 	$(C2C) c2c -b bootstrap/build-freebsd-amd64.yaml --no-build --bootstrap --quiet
 	( diff bootstrap/bootstrap.c output/freebsd-amd64/c2c/cgen/build.c > bootstrap/bootstrap-freebsd-amd64.patch ; true )
 	$(C2C) c2c -b bootstrap/build-openbsd-amd64.yaml --no-build --bootstrap --quiet
@@ -81,16 +85,16 @@ testv: output/tester/tester
 	@output/tester/tester -v test
 
 output/c2c_trace/c2c_trace: $(C2C_DEPS)
-	$(C2C) c2c --trace-calls -o c2c_trace --fast --quiet
+	$(C2C) c2c --trace-calls -o c2c_trace --fast --quiet $(C2FLAGS32)
 
 trace_calls: $(C2C) output/c2c_trace/c2c_trace
-	C2_TRACE="min=10;min2=1;mode=3;name=*;fd=2" output/c2c_trace/c2c_trace c2c -o c2c_calls --quiet --test 2> output/c2c/calls
+	C2_TRACE="min=10;min2=1;mode=3;name=*;fd=2" output/c2c_trace/c2c_trace c2c -o c2c_calls --quiet --test $(C2FLAGS32) 2> output/c2c/calls
 
 trace: trace_calls
 	cat output/c2c/calls
 
 alloc_trace: $(C2C) output/c2c_trace/c2c_trace
-	C2_TRACE="min=10;min2=1;mode=3;name=stdlib.malloc,stdlib.calloc,stdlib.realloc;fd=2" output/c2c_trace/c2c_trace --quiet c2c -o c2c_alloc --test 2> output/c2c/calls
+	C2_TRACE="min=10;min2=1;mode=3;name=stdlib.malloc,stdlib.calloc,stdlib.realloc;fd=2" output/c2c_trace/c2c_trace c2c -o c2c_alloc --quiet --test $(C2FLAGS32) 2> output/c2c/calls
 	cat output/c2c/calls
 
 errors:

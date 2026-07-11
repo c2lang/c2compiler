@@ -42,7 +42,7 @@ public type Ref struct {
     u32 name_idx;
     Decl* decl; // set during analysis, or during parsing for Function
 }
-static_assert(16, sizeof(Ref));
+static_assert(sizeof(void*) == 4 ? 12 : 16, sizeof(Ref));
 
 public fn u32 Ref.getNameIdx(const Ref* r) {
     return r.name_idx;

@@ -404,9 +404,14 @@ fn bool on_printf_specifier(void* context, u32 offset, PrintfSpecifier specifier
             ma.error(arg.getStartLoc(), "format '%%%c' expects an integer argument", c);
             break;
         }
-        // TODO add ll prefix on LLP targets (64-bit long long and pointers, but 32-bit long)
         u32 width = bi.getWidth();
-        if (width > 32) fa.out.add1('l');
+        if (width > 32) {
+            fa.out.add1('l');
+            if (ma.builder.getNativeLong() == Int32) {
+                // add ll prefix on targets with 32-bit long
+                fa.out.add1('l');
+            }
+        }
         if (c == 'd' && width >= 32 && bi.isUnsigned()) c = 'u';
         // Assume target libc supports %b
         break;
@@ -428,10 +433,15 @@ fn bool on_printf_specifier(void* context, u32 offset, PrintfSpecifier specifier
             BuiltinType* bi = t.getBuiltinTypeOrNil();
             if (bi && bi.isInteger()) {
                 u32 width = bi.getWidth();
-                // TODO add ll prefix on LLP targets (64-bit long long and pointers, but 32-bit long)
                 if (width < 16) fa.out.add1('h');
                 if (width < 32) fa.out.add1('h');
-                if (width > 32) fa.out.add1('l');
+                if (width > 32) {
+                    fa.out.add1('l');
+                    if (ma.builder.getNativeLong() == Int32) {
+                        // add ll prefix on targets with 32-bit long
+                        fa.out.add1('l');
+                    }
+                }
                 break;
             }
         }
