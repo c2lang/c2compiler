@@ -88,6 +88,10 @@ fn void Generator.createMakefile(Generator* gen,
         out.add("CFLAGS+=-fsanitize=undefined -D__UBSAN__ -O0\n");
         out.add("LDFLAGS+=-fsanitize=undefined\n");
     }
+    if (gen.m32) {
+        out.add("CFLAGS+=-m32\n");
+        out.add("LDFLAGS+=-m32\n");
+    }
 
     char[Max_path] target_name;
 

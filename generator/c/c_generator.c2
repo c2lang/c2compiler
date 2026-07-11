@@ -79,6 +79,7 @@ type Generator struct {
     bool asan;
     bool msan;
     bool ubsan;
+    bool m32;
     bool trace_calls;
     bool no_trace;  //to disable tracing on c2_trace module
     u32 indent;
@@ -1283,7 +1284,7 @@ public fn void generate(string_pool.Pool* astPool,
                         Decl* mainFunc,
                         string_list.List* asm_files,
                         bool enable_asserts,
-                        bool fast_build, bool asan, bool msan, bool ubsan,
+                        bool fast_build, bool asan, bool msan, bool ubsan, bool m32,
                         bool test_mode, bool trace_calls)
 {
     char[file_utils.Max_path] dir;
@@ -1300,6 +1301,7 @@ public fn void generate(string_pool.Pool* astPool,
     gen.asan = asan;
     gen.msan = msan;
     gen.ubsan = ubsan;
+    gen.m32 = m32;
     gen.trace_calls = trace_calls;
     gen.targetInfo = targetInfo;
     gen.cgen_dir = dir;
