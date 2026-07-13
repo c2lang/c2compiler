@@ -25,6 +25,7 @@ import stdio local;
 import stdlib local;
 import string local;
 import sys_stat local;
+import sys_types local; // pid_t
 import unistd local;
 
 const u32 MAX_ARG_LEN = 512;

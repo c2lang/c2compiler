@@ -50,7 +50,11 @@ public type FieldInitField struct {
     // 1 byte padding
     Decl* decl;    // can point to anonymous sub-struct members as well
 }
+#if ARCH_32BIT
+static_assert(20, sizeof(FieldInitField));
+#else
 static_assert(24, sizeof(FieldInitField));
+#endif
 
 public fn bool FieldInitField.isZeroSizeBitfield(const FieldInitField* f) {
     return f.is_bitfield && f.bitfield_width == 0;

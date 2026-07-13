@@ -1,5 +1,7 @@
 module libc_time extern "C";
 
+import sys_types local; // clock_t, time_t
+
 struct Tm {
     int tm_sec;    /* Seconds (0-60) */
     int tm_min;    /* Minutes (0-59) */
@@ -35,7 +37,6 @@ Time mktime(Tm* tm);
 
 size_t strftime(char* s, size_t max, const char* format, const Tm* tm);
 
-typedef long clock_t;
 clock_t clock(void);
 
 #if SYSTEM_FREEBSD
@@ -45,3 +46,44 @@ const i64 CLOCKS_PER_SEC = 100;
 #else
 const i64 CLOCKS_PER_SEC = 1000000;
 #endif
+
+struct Timespec {
+    time_t  tv_sec;         /* seconds */
+    long    tv_nsec;        /* and nanoseconds */
+}
+
+//int clock_getcpuclockid(pid_t pid, clockid_t *clock_id);
+/*
+     CLOCK_REALTIME
+     CLOCK_REALTIME_PRECISE
+     CLOCK_REALTIME_FAST
+     CLOCK_REALTIME_COARSE
+             Increments as a wall clock should.
+     CLOCK_MONOTONIC
+     CLOCK_MONOTONIC_PRECISE
+     CLOCK_MONOTONIC_FAST
+     CLOCK_MONOTONIC_COARSE
+             Increments in SI seconds.
+     CLOCK_UPTIME
+     CLOCK_UPTIME_PRECISE
+     CLOCK_UPTIME_FAST
+     CLOCK_BOOTTIME
+             Starts at zero when the kernel boots and increments monotonically
+             in SI seconds while the machine is running.
+     CLOCK_VIRTUAL
+             Increments only when the CPU is running in user mode on behalf of
+             the calling process.
+     CLOCK_PROF
+             Increments when the CPU is running in user or kernel mode.
+     CLOCK_SECOND
+             Returns the current second without performing a full time counter
+             query, using an in-kernel cached value of the current second.
+     CLOCK_PROCESS_CPUTIME_ID
+             Returns the execution time of the calling process.
+     CLOCK_THREAD_CPUTIME_ID
+             Returns the execution time of the calling thread.
+ */
+
+int clock_gettime(clockid_t clock_id, Timespec *tp);
+int clock_settime(clockid_t clock_id, const Timespec *tp);
+int clock_getres(clockid_t clock_id, Timespec *tp);

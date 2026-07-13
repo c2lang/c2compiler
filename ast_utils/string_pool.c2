@@ -62,7 +62,11 @@ public type Pool struct @(opaque) {
     u32 entry_capacity;
     HashEntry* entries; // contain hash table followed by collision lists
 }
+#if ARCH_32BIT
+static_assert(56, sizeof(Pool));
+#else
 static_assert(64, sizeof(Pool));
+#endif
 
 public fn Pool* create(u32 data_capacity, u32 hash_size) {
     Pool* p = stdlib.calloc(1, sizeof(Pool));
