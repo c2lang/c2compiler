@@ -20,6 +20,9 @@
 
 typedef unsigned int u32;
 int verbose;
+int m32;
+int ptr_width = sizeof(void*) * 8;
+char cmdline[128];
 
 int pf(const char *fmt, ...) {
     int res;
@@ -73,9 +76,16 @@ size_t pstrcpy(char *dest, size_t size, const char *src) {
 void preprocess_header(const char *header_name) {
     char cmd[200];
     size_t pos;
-    printf("// preprocessor output of <%s>\n{\n", header_name);
-    fflush(stdout);
-    pos = snprintf(cmd, sizeof(cmd), "echo '#include <%s>' | cc -E -", header_name);
+    if (m32) {
+        printf("// preprocessor output of <%s> (%d-bits, -m32, #undef __LP64__)\n{\n", header_name, ptr_width);
+        fflush(stdout);
+        pos = snprintf(cmd, sizeof(cmd), "echo '#undef __LP64__\n#include <%s>' | cc -m32 -E -",
+                       header_name);
+    } else {
+        printf("// preprocessor output of <%s> (%d-bits)\n{\n", header_name, ptr_width);
+        fflush(stdout);
+        pos = snprintf(cmd, sizeof(cmd), "echo '#include <%s>' | cc -E -", header_name);
+    }
     if (pos > sizeof(cmd)) {
         pos = sizeof(cmd);
     }
@@ -99,9 +109,18 @@ int main(int argc, char *argv[]) {
     jmp_buf buf;
     setjmp(buf);
 
+    m32 = (ptr_width == 32);
+
+    strcpy(cmdline, argv[0]);
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-v")) {
+            strcat(cmdline, " -v");
             verbose = 1;
+            continue;
+        }
+        if (!strcmp(argv[i], "-m32")) {
+            strcat(cmdline, " -m32");
+            m32 = 1;
             continue;
         }
         fprintf(stderr, "globals: invalid argument '%s'\n", argv[i]);
@@ -113,7 +132,7 @@ int main(int argc, char *argv[]) {
     nothing(stderr_);
 
     printf("// ----------------------------------------------------------------\n");
-    printf("// Output of global header processor\n{\n");
+    printf("// Output of %s (%d-bits)\n{\n", cmdline, ptr_width);
     //printf("// preprocessor output of cc -E - < globals.c\n{\n");
     //fflush(stdout);
     //system("cc -E - < globals.c");
@@ -122,8 +141,18 @@ int main(int argc, char *argv[]) {
 #define xstr(x) #x
 #define str(x) xstr(x)
 
-    preprocess_header("sys/types.h");
-
+    printf("// libc/sys_types.c2i\n{\n"); {
+        preprocess_header("sys/types.h");
+    }
+    printf("}\n");
+    printf("// libc/sys_time.c2i\n{\n"); {
+        preprocess_header("sys/time.h");
+    }
+    printf("}\n");
+    printf("// libc/sys_stat.c2i\n{\n"); {
+        preprocess_header("sys/stat.h");
+    }
+    printf("}\n");
     printf("// libc/c2_assert.c2i\n{\n"); {
         preprocess_header("assert.h");
     }
@@ -1136,14 +1165,6 @@ int main(int argc, char *argv[]) {
     printf("}\n");
     printf("// libc/sys_socket.c2i\n{\n"); {
         preprocess_header("sys/socket.h");
-    }
-    printf("}\n");
-    printf("// libc/sys_stat.c2i\n{\n"); {
-        preprocess_header("sys/stat.h");
-    }
-    printf("}\n");
-    printf("// libc/sys_time.c2i\n{\n"); {
-        preprocess_header("sys/time.h");
     }
     printf("}\n");
     printf("// libc/sys_utsname.c2i\n{\n"); {
