@@ -3,7 +3,12 @@ module test;
 
 fn void test1() {
     isize a = 0;
+#if ARCH_32BIT
+    isize b = -2147483647;
+    isize c = 2147483647;
+#else
     isize b = -9223372036854775807;
     isize c = 9223372036854775807;
+#endif
 }
 

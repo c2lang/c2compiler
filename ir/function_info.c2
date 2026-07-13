@@ -31,7 +31,11 @@ public type FunctionInfo struct {
     u32 id;
     u32 use_count;  // static number of uses (calls, address taken, initializers), see use_count.c2
 }
+#if ARCH_32BIT
+static_assert(68, sizeof(FunctionInfo));
+#else
 static_assert(88, sizeof(FunctionInfo));
+#endif
 
 public fn FunctionInfo* FunctionInfo.create(u32 id, u32 num_blks, u32 num_instr) {
     FunctionInfo* fi = malloc(sizeof(FunctionInfo));

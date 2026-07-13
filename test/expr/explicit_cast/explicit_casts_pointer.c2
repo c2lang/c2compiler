@@ -14,7 +14,7 @@ type Ptr void*;
 type Func fn void(i32);
 
 fn void test1(void* a) {
-    u32 b1 = (u32)(a);  // @error{pointers may only be cast to integer type 'u64'}
+    u32 b1 = (u32)(a);  // @error64{pointers may only be cast to integer type 'u64'}
 }
 
 fn void test2(void* a) {

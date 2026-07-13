@@ -1,7 +1,6 @@
 module sys_sendfile extern "C";
 
-typedef i64 off_t;
-type Offset off_t;
+import sys_types { off_t }
 
 ssize_t sendfile(int out_fd, int in_fd, off_t* offset, size_t count);
 

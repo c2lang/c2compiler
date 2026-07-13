@@ -1,21 +1,12 @@
 module unistd extern "C";
 
 import libc_fcntl { * }
+import sys_types { off_t, uid_t, gid_t, pid_t, useconds_t }
 
 /* Standard file descriptors.  */
 const int STDIN_FILENO  = 0;
 const int STDOUT_FILENO = 1;
 const int STDERR_FILENO = 2;
-
-// ifdef USE_XOPEN_EXTENDED ..
-typedef unsigned gid_t;
-typedef long long off_t;
-typedef int pid_t;
-typedef unsigned uid_t;
-typedef unsigned useconds_t;
-
-type Offset off_t;
-type Pid pid_t;
 
 /* POSIX.1-1990 */
 
