@@ -17,7 +17,7 @@ public fn i32 main()
     return 0;
 }
 
-// @expect{atleast, cgen/build.c}
+// @expect64{atleast, cgen/build.c}
 
 __attribute__((__format__(printf, 1, 2)))
 static void file1_log(const char* format, ...);
@@ -35,6 +35,27 @@ int main(void)
    i64 li = -33333;
    u64 lu = 444444;
    file1_log("A %d B %u %+4d %06u C %ld D %lu E", i, u, i, u, li, lu);
+   return 0;
+}
+
+// @expect32{atleast, cgen/build.c}
+
+__attribute__((__format__(printf, 1, 2)))
+static void file1_log(const char* format, ...);
+int main(void);
+
+__attribute__((__format__(printf, 1, 2)))
+static void file1_log(const char* format, ...)
+{
+}
+
+int main(void)
+{
+   int i = -20;
+   u32 u = 10;
+   i64 li = -33333;
+   u64 lu = 444444;
+   file1_log("A %d B %u %+4d %06u C %lld D %llu E", i, u, i, u, li, lu);
    return 0;
 }
 

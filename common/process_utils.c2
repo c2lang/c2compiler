@@ -24,6 +24,7 @@ import stdlib { * }
 import string { * }
 import libc_fcntl { * }
 import sys_stat { Stat, stat }
+import sys_types { pid_t }
 import unistd { * }
 
 const u32 MAX_ARG_LEN = 512;
@@ -81,7 +82,7 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
         return -1;
     }
 
-    Pid child_pid = fork();
+    pid_t child_pid = fork();
     if (child_pid == -1) {
         fprintf(stderr, "fork() failed: %s\n", strerror(errno));
         close(error_pipe[0]);
@@ -164,7 +165,7 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
 
         // TODO handle output larger than pipe buffer length
         i32 state = 0;
-        Pid pid = waitpid(child_pid, &state, 0);
+        pid_t pid = waitpid(child_pid, &state, 0);
         if (pid == -1) {
             fprintf(stderr, "Error waiting for pid: %s\n", strerror(errno));
             return -1;
@@ -258,7 +259,7 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
         return -1;
     }
 
-    Pid child_pid = fork();
+    pid_t child_pid = fork();
     if (child_pid == -1) {
         fprintf(stderr, "fork() failed: %s\n", strerror(errno));
         close(error_pipe[0]);
@@ -338,7 +339,7 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
 
         // TODO handle output larger than pipe buffer length
         i32 state = 0;
-        Pid pid = waitpid(child_pid, &state, 0);
+        pid_t pid = waitpid(child_pid, &state, 0);
         if (pid == -1) {
             fprintf(stderr, "Error waiting for pid: %s\n", strerror(errno));
             close(output_pipe[0]);

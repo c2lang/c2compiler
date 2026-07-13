@@ -37,13 +37,20 @@ static_assert(123, A);
 type T1 struct {
     char* cp;
 }
+#if ARCH_32BIT
+static_assert(4, sizeof(T1));
+#else
 static_assert(8, sizeof(T1));
-
+#endif
 type T2 struct {
     char* cp;
     char c;
 }
+#if ARCH_32BIT
+static_assert(8, sizeof(T2));
+#else
 static_assert(16, sizeof(T2));
+#endif
 
 type T3 struct {
     char[16] ca;
