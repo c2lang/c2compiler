@@ -1,8 +1,8 @@
 module sys_mman extern "C";
 
-typedef i64 Offset @(cname="off_t");
+import sys_types local; // off_t
 
-void* mmap(void* addr, size_t length, int prot, int flags, int fd, Offset offset);
+void* mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset);
 int munmap(void* addr, size_t length);
 
 const u32 PROT_NONE  = 0x0;

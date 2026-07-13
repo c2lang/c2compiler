@@ -27,7 +27,11 @@ type FieldInit struct {
     const ast.FieldInitField* info;
     ast.Expr* expr;
 }
+#if ARCH_32BIT
+static_assert(8, sizeof(FieldInit));
+#else
 static_assert(16, sizeof(FieldInit));
+#endif
 
 type FieldStructLayouter struct {
     Generator* gen;
