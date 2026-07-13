@@ -1,13 +1,7 @@
 module sys_time extern "C";
 
-#if SYSTEM_DARWIN
-typedef long time_t;
-typedef int suseconds_t;
-#else
-// Same for Linux, FreeBSD and OpenBSD
-typedef long time_t;
-typedef long suseconds_t;
-#endif
+import sys_types { time_t, suseconds_t }
+
 type Time time_t;
 type SuSeconds suseconds_t;
 
@@ -15,7 +9,7 @@ struct Timeval @(cname="timeval") {
     time_t tv_sec;
     suseconds_t tv_usec;
 }
-static_assert(16, sizeof(Timeval));
+static_assert(2 * sizeof(time_t), sizeof(Timeval));
 
 struct Timezone @(cname="timezone") {
     int tz_minuteswest;
