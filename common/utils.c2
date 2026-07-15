@@ -16,7 +16,7 @@
 module utils;
 
 import constants;
-import file_utils;
+import file_utils local;
 
 import stdio local;
 import string local;
@@ -35,8 +35,8 @@ public fn u64 now() @(unused) {
 
 // Note: both paths may be empty or should end in a /
 public type PathInfo struct {
-    char[file_utils.Max_path] orig2root; // subdir/subdir/
-    char[file_utils.Max_path] root2orig; // ../../
+    char[Max_path] orig2root; // subdir/subdir/
+    char[Max_path] root2orig; // ../../
 }
 
 public fn bool PathInfo.hasSubdir(const PathInfo* pi) {
@@ -64,7 +64,7 @@ public fn u32 changeToProjectDir(PathInfo* info, const char* other_dir) {
     info.orig2root[len] = '/';
     info.orig2root[len+1] = 0;
 
-    strcpy(info.root2orig, other_dir);
+    pstrcpy(info.root2orig, elemsof(info.root2orig), other_dir);
     // add '/' if not present
     len = strlen(other_dir);
     if (other_dir[len-1] != '/') {
@@ -79,17 +79,19 @@ public fn u32 changeToProjectDir(PathInfo* info, const char* other_dir) {
 }
 
 // info may be nil
+// XXX: this function changes the current directory if recipe file
+//      is not present there.
 public fn bool findProjectDir(PathInfo* info) {
     if (info) {
         info.root2orig[0] = 0;
         info.orig2root[0] = 0;
     }
-    char[file_utils.Max_path] base_path;
-    char[file_utils.Max_path] rel_path;
+    char[Max_path] base_path;
+    char[Max_path] rel_path;
     base_path[0] = 0;
     rel_path[0] = 0;
 
-    char[file_utils.Max_path] buffer;
+    char[Max_path] buffer;
     while (1) {
         char* path = unistd.getcwd(buffer, elemsof(buffer)-1);  // -1 for trailing slash
         if (path == nil) {
@@ -97,16 +99,16 @@ public fn bool findProjectDir(PathInfo* info) {
             return false;
         }
         if (base_path[0] == 0) {
-            strcpy(base_path, path);
-            strcat(base_path, "/");
+            usize pos = pstrcpy(base_path, elemsof(base_path), path);
+            pstrcpy(base_path + pos, elemsof(base_path) - pos, "/");
         }
 
         if (checkFile(constants.recipe_name)) {
             char* path_prefix = base_path + strlen(path);
             if (*path_prefix == '/') path_prefix++;
             if (info) {
-                strcpy(info.orig2root, path_prefix);
-                strcpy(info.root2orig, rel_path);
+                pstrcpy(info.orig2root, elemsof(info.orig2root), path_prefix);
+                pstrcpy(info.root2orig, elemsof(info.root2orig), rel_path);
             }
             return true;
         }
@@ -115,7 +117,7 @@ public fn bool findProjectDir(PathInfo* info) {
             perror("chdir");
             return false;
         }
-        strcat(rel_path, "../");
+        pstrcat(rel_path, elemsof(rel_path), "../");
     }
 }
 

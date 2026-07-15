@@ -19,13 +19,13 @@ import ast;
 import build_file;
 import build_target;
 import component;
-import file_utils;
+import file_utils local;
 import module_list;
 import string_buffer;
 import string_list;
 
 import stdio local;
-import string;
+import string local;
 
 fn void Generator.createMakefile(Generator* gen,
                                  const char* output_dir,
@@ -89,7 +89,7 @@ fn void Generator.createMakefile(Generator* gen,
         out.add("LDFLAGS+=-fsanitize=undefined\n");
     }
 
-    char[file_utils.Max_path] target_name;
+    char[Max_path] target_name;
 
     if (gen.fast_build) {
         // dont add *.c, but add (handy for switching between fast/normal build
@@ -120,7 +120,7 @@ fn void Generator.createMakefile(Generator* gen,
     switch (gen.target_kind) {
     case Image:
     case Executable:
-        string.strcpy(target_name, gen.target);
+        pstrcpy(target_name, elemsof(target_name), gen.target);
         out.print("all: ../%s\n\n", target_name);
 
         out.print("../%s: $(objects) $(headers)\n", target_name);
@@ -151,7 +151,7 @@ fn void Generator.createMakefile(Generator* gen,
 
             if (gen.targetInfo.sys == FreeBSD || gen.targetInfo.sys == OpenBSD) {
                 // ignore "dl" library on BSD systems: libc handles dlopen etc.
-                if (linkname && !string.strcmp(linkname, "dl")) continue;
+                if (linkname && !strcmp(linkname, "dl")) continue;
             }
             if (c.getKind() == ExternalStaticLib) {
                 if (c.getNameIdx() == libc_name) { // special case for static libc

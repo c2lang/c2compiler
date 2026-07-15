@@ -354,7 +354,7 @@ fn void Compiler.build(Compiler* c,
     info.addSource = Compiler.add_source;
     info.register_attr = Compiler.register_attr;
     info.fn_arg = c;
-    string.strcpy(info.target_name, c.auxPool.idx2str(target.getNameIdx()));
+    string.pstrcpy(info.target_name, elemsof(info.target_name), c.auxPool.idx2str(target.getNameIdx()));
 
     // create output directory
     if (!file_utils.make_path(info.output_dir, elemsof(info.output_dir), output_base, c.auxPool.idx2str(target.getNameIdx()))

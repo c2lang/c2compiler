@@ -20,6 +20,7 @@ import attr local;
 import string_buffer;
 
 import stdio;
+import string;
 
 // TODO better order (most used first)
 public type DeclKind enum u8 (const char* const name) {
@@ -327,7 +328,7 @@ public fn const char* Decl.getFullName(const Decl* d) {
         }
         break;
     case Import:
-        stdio.snprintf(tmp, tmp_size, "%s", d.getName());
+        string.pstrcpy(tmp, tmp_size, d.getName());
         break;
     case EnumConstant:
         QualType qt = d.getType();

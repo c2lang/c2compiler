@@ -519,7 +519,9 @@ fn void Tree.iterate(const Tree* t, u32 node_idx, Iter* iter) {
     const Node* n = t.idx2node(node_idx);
     // if we have children, dont print
     const char* word = t.idx2word(n.word_idx);
-    strcpy(iter.buf + iter.len, word);
+    usize len = strlen(word);
+    assert(iter.len + len < elemsof(iter.buf));
+    memcpy(iter.buf + iter.len, word, len + 1);
     if (n.num_children == 0) {
 #if RadixTreeValue
         iter.func(iter.arg, iter.buf, n.value);
@@ -528,7 +530,7 @@ fn void Tree.iterate(const Tree* t, u32 node_idx, Iter* iter) {
 #endif
     } else {
         u32 old_len = iter.len;
-        iter.len += (u32)strlen(word);
+        iter.len += len;
         for (u32 i=0; i<n.num_children; i++) {
             t.iterate(n.children[i], iter);
         }
@@ -544,16 +546,19 @@ public fn void Tree.find(Tree* t, const char* text, MatchFn func, void* arg) @(u
     if (node_idx == 0) return;
 
     const Node* n = t.idx2node(node_idx);
+    const char* tail = t.idx2word(n.word_idx) + cur_match;
     if (n.num_children == 0) {
 #if RadixTreeValue
-        func(arg, t.idx2word(n.word_idx) + cur_match, n.value);
+        func(arg, tail, n.value);
 #else
-        func(arg, t.idx2word(n.word_idx) + cur_match);
+        func(arg, tail);
 #endif
     } else {
         Iter iter = { func, arg, 0 }
-        strcpy(iter.buf, t.idx2word(n.word_idx) + cur_match);
-        iter.len = (u32)strlen(iter.buf);
+        u32 len = (u32)strlen(tail);
+        assert(len < elemsof(iter.buf));
+        memcpy(iter.buf, tail, len + 1);
+        iter.len = len;
         for (u32 i=0; i<n.num_children; i++) {
             u32 old_len = iter.len;
             t.iterate(n.children[i], &iter);

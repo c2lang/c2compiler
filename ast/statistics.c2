@@ -109,8 +109,10 @@ fn void Stat.dump(const Stat* ss, const char* name, StatPack* sp) {
     char[10] buf = "";
     if (count) {
         u32 avg = (u32)(size * (u64)100 / count);
-        i32 len = snprintf(buf, sizeof(buf), "%3d   ", avg / 100);
-        if (avg % 100) snprintf(buf + len - 3, sizeof(buf) - (len - 3), ".%02d", avg % 100);
+        u32 whole = avg / 100;
+        u32 frac = avg % 100;
+        if (frac) snprintf(buf, elemsof(buf), "%3d.%02d", whole, frac);
+        else snprintf(buf, elemsof(buf), "%3d   ", whole);
     }
     printf("  %20s  %6d  %7d  %s", name, count, size, buf);
     bool output = false;

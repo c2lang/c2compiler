@@ -92,18 +92,27 @@ char* strnstr(const char* s1, const char* s2, size_t n) {
     return nil;
 }
 
+// return the length of src, but copy at most n-1 bytes
+// from src and null terminate dst.
 size_t strlcpy(char* dst, const char* src, size_t n) {
-    for (size_t i = 0; i < n; i++) {
+    size_t i = 0;
+    while (i < n) {
         if ((dst[i] = *src++) == '\0') return i;
+        i++;
     }
     if (n) dst[n - 1] = '\0';
     while (*src++) n++;
     return n;
 }
 
+// return the length of src, but copy at most n-1 bytes
+// from src and null terminate dst.
+// return the combined length of dst and src, but copy
+// at most n - strlen(dst) - 1 bytes from src and null
+// terminate dst.
 size_t strlcat(char* dst, const char* src, size_t n) {
     size_t i = 0;
-    while (i < n && dst[i]) i++;
+    while (dst[i]) i++;
     while (i < n) {
         if ((dst[i] = *src++) == '\0') return i;
         i++;

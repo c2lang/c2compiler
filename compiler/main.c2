@@ -574,9 +574,10 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
     bool have_plugin_dir = false;
     if (c.opts.build_file) {
         if (auto_found_buildfile) {
-            strcpy(c.build_filename, c.opts.build_file);
+            pstrcpy(c.build_filename, elemsof(c.build_filename), c.opts.build_file);
         } else {
-            snprintf(c.build_filename, sizeof(c.build_filename), "%s%s", c.path_info.orig2root, c.opts.build_file);
+            usize pos = pstrcpy(c.build_filename, elemsof(c.build_filename), c.path_info.orig2root);
+            pstrcpy(c.build_filename + pos, elemsof(c.build_filename) - pos, c.opts.build_file);
         }
         console.log("using build-file %s", c.build_filename);
         c.build_info = build_file_parser.parse(c.sm, c.auxPool, c.build_filename);

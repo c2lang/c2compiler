@@ -33,16 +33,62 @@ int pf(const char *fmt, ...) {
 void nothing(void *p) {
 }
 
+size_t pstrcpy(char *dest, size_t size, const char *src) {
+    /*@API utils.string
+       Copy the string pointed by `src` to the destination array `dest`,
+       of length `size` bytes, truncating excess bytes.
+
+       @param `dest` destination array, must be a valid pointer.
+       @param `size` length of destination array in bytes.
+       @param `src` pointer to a source string, must be a valid pointer.
+       @return the length of the resulting string or `size` if truncation
+       occurred.  `dest` is null terminated unless `size` is `0`.
+       @note: truncation can be detected reliably by comparing the return
+       value with the destination size.
+       @note: this function does what many programmers wrongly expect
+       `strncpy` to do. `strncpy` has different semantics and does not
+       null terminate the destination array in case of excess bytes.
+       **NEVER use `strncpy`**.
+       @note: use this function to concatenate strings efficiently and safely:
+       ```
+       bool make_greeting(char *dest, size_t size, const char *name) {
+           size_t pos = 0;
+           pos += pstrcpy(dest + pos, size - pos, "Hello ");
+           pos += pstrcpy(dest + pos, size - pos, name);
+           pos += pstrcpy(dest + pos, size - pos, "! The world is safe\n");
+           return pos < size;
+       }
+       ```
+     */
+    for (size_t i = 0; i + 1 < size; i++) {
+        if ((dest[i] = *src++) == '\0')
+            return i;
+    }
+    if (size) {
+        dest[size - 1] = '\0';
+    }
+    return size;
+}
+
 void preprocess_header(const char *header_name) {
     char cmd[200];
+    size_t pos;
     printf("// preprocessor output of <%s>\n{\n", header_name);
     fflush(stdout);
-    snprintf(cmd, sizeof(cmd), "echo '#include <%s>' | cc -E -", header_name);
-    if (!verbose) {
-        strcat(cmd, " | grep -v '^#'");
-        strcat(cmd, " | tr -s '\n'");
+    pos = snprintf(cmd, sizeof(cmd), "echo '#include <%s>' | cc -E -", header_name);
+    if (pos > sizeof(cmd)) {
+        pos = sizeof(cmd);
     }
-    system(cmd);
+    if (!verbose) {
+        pos += pstrcpy(cmd + pos, sizeof(cmd) - pos, " | grep -v '^#'");
+        pos += pstrcpy(cmd + pos, sizeof(cmd) - pos, " | tr -s '\n'");
+    }
+    if (pos >= sizeof(cmd)) {
+        printf("command too long: %s\n", cmd);
+    } else
+    if (system(cmd)) {
+        printf("system failed (%s): %s\n", strerror(errno), cmd);
+    }
     printf("}\n");
 }
 

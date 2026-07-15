@@ -42,7 +42,7 @@ fn void* load(const char* options, console.Config* config) {
     Plugin* p = calloc(1, sizeof(Plugin));
     console.init(config);
     // TODO handle options
-    strcpy(p.version, "unknown");
+    pstrcpy(p.version, elemsof(p.version), "unknown");
 
     i32 retval = process_utils.run2(".", "git", "describe --tags --always --dirty",
                                     p.version, sizeof(p.version));

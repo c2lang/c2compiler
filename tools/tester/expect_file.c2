@@ -64,7 +64,7 @@ public type ExpectFile struct @(opaque) {
 
 public fn ExpectFile* create(const char* name, ExpectMode m) {
     ExpectFile* f = calloc(1, sizeof(ExpectFile));
-    strcpy(f.filename, name);
+    pstrcpy(f.filename, elemsof(f.filename), name);
     f.mode = m;
     f.lines = line_db.create();
     return f;
