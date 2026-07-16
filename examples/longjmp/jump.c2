@@ -16,7 +16,6 @@
 module jump;
 
 import stdio local;
-import unistd local;
 import csetjmp local;
 
 JmpBufTag env1;
@@ -46,7 +45,7 @@ fn void function1()
             printf("comping from jump TWO, res=%d\n", res);
             continue;
         }
-        usleep(250000);
+        //usleep(250000);
         res = function2(i);
     }
 }

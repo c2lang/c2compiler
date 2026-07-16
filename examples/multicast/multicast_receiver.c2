@@ -50,7 +50,7 @@ public fn void Receiver.destroy(Receiver* s) {
     mreq.imr_multiaddr.s_addr = inet_addr(s.ipnr);
     mreq.imr_interface.s_addr = htonl(INADDR_ANY);
     if (setsockopt(s.fd, IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) < 0) {
-        fprintf(stderr, "setsockopt(IP_DROP_MEMBERSHIP): %s\n", strerror(*errno2()));
+        fprintf(stderr, "setsockopt(IP_DROP_MEMBERSHIP): %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -60,13 +60,13 @@ public fn void Receiver.destroy(Receiver* s) {
 fn void Receiver.open_socket(Receiver* s) {
     // create what looks like an ordinary UDP socket
     if ((s.fd = socket(AF_INET, SocketType.SOCK_DGRAM | SOCK_CLOEXEC, 0)) < 0) {
-        fprintf(stderr, "error opening socket: %s\n", strerror(*errno2()));
+        fprintf(stderr, "error opening socket: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     i32 reuse = 1;
     if (setsockopt(s.fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) != 0) {
-        fprintf(stderr, "setsockopt(SO_REUSEADDR): %s\n", strerror(*errno2()));
+        fprintf(stderr, "setsockopt(SO_REUSEADDR): %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -77,7 +77,7 @@ fn void Receiver.open_socket(Receiver* s) {
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     addr.sin_port = htons(s.port);
     if (bind(s.fd, (Sockaddr*)&addr, sizeof(addr))) {
-        fprintf(stderr, "bind: %s\n", strerror(*errno2()));
+        fprintf(stderr, "bind: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
     s.addr = addr;
@@ -87,7 +87,7 @@ fn void Receiver.open_socket(Receiver* s) {
     mreq.imr_multiaddr.s_addr = inet_addr(s.ipnr);
     mreq.imr_interface.s_addr = htonl(INADDR_ANY);
     if (setsockopt(s.fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0) {
-        fprintf(stderr, "setsockopt(IP_ADD_MEMBERSHIP): %s\n", strerror(*errno2()));
+        fprintf(stderr, "setsockopt(IP_ADD_MEMBERSHIP): %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 }

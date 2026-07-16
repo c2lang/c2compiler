@@ -17,23 +17,24 @@ module test;
 
 import stdio local;
 import string local;
+
 import file_utils;
 import yaml;
 
 fn void get_info(yaml.Parser* parser) {
-    const yaml.Node* cmds;
+    //const yaml.Node* cmds;
 }
 
 public fn i32 main(i32 argc, char** argv) {
     if (argc != 2) {
-        printf("Usage: parser [yaml-file]\n");
-        return 0;
+        fprintf(stderr, "usage: yaml_parser [yaml-file]\n");
+        return 2;
     }
     const char* filename = argv[1];
 
     file_utils.Reader file;
     if (!file.open(filename)) {
-        fprintf(stderr, "%s", strerror(file.errno));
+        fprintf(stderr, "cannot load %s: %s\n", filename, strerror(file.errno));
         return -1;
 
     }

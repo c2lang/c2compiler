@@ -46,7 +46,7 @@ public fn i32 main() {
     Sigaction act;
     memset(&act, 0, sizeof(act));
     act.sa_flags = SA_NOCLDSTOP|SA_RESTART;
-	act.sa_handler = signal_handler;
+    act.sa_handler = signal_handler;
     if (sigaction(SIGINT, &act, nil) != 0) fatal("sigaction(SIGINT)");
     if (sigaction(SIGTERM, &act, nil) != 0) fatal("sigaction(SIGTERM)");
 
@@ -70,7 +70,8 @@ public fn i32 main() {
 }
 
 fn void fatal(const char* msg) {
-	exit(EXIT_FAILURE);
+    fprintf(stderr, "fatal: %s\n", msg);
+    exit(EXIT_FAILURE);
 }
 
 fn void signal_handler(i32 num) {

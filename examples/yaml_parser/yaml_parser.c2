@@ -50,7 +50,7 @@ public fn void Parser.destroy(Parser* p) {
 }
 
 public fn bool Parser.parse(Parser* p, const char* input) {
-    p.tokenizer.init(input, &p.data, p.message);
+    p.tokenizer.init(input, &p.data, p.message, elemsof(p.message));
 
     p.token.kind = TokenKind.None;
 
@@ -74,10 +74,10 @@ public fn const char* Parser.getMessage(const Parser* p) {
 fn void Parser.error(Parser* p, const char* format @(printf_format), ...) {
     va_list args;
     va_start(args, format);
-    char* cp = p.message;
-    cp += vsnprintf(cp, MaxDiag-1, format, args);
+    i32 len = vsnprintf(p.message, elemsof(p.message), format, args);
     va_end(args);
-    sprintf(cp, " %s", p.token.loc.str());
+    if (len < elemsof(p.message))
+        snprintf(p.message + len, elemsof(p.message) - len, " %s", p.token.loc.str());
     longjmp(&p.jmp_err, 1);
 }
 

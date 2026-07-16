@@ -39,19 +39,6 @@ public fn const char* get_extension(const char* s) {
     return ext ? ext : s;
 }
 
-// Copy a string with truncation
-// return the length of the string if shorter than size
-// otherwise truncate the string and return size
-// compare the return value with size to detect truncation
-fn usize pstrcpy(char* dest, usize size, const char* src) {
-    usize i;
-    for (i = 0; i < size; i++) {
-        if ((dest[i] = src[i]) == '\0') return i;
-    }
-    if (size) dest[size - 1] = '\0';
-    return size;
-}
-
 // Copy a directory name with truncation and append a / if not empty
 fn usize copy_dirname(char* buf, usize size, const char* dir) {
     usize pos = pstrcpy(buf, size, dir);

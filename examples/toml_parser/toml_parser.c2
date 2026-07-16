@@ -18,8 +18,9 @@ module toml;
 import stdio local;
 import stdlib local;
 import string local;
-import file_utils;
 import csetjmp local;
+
+import file_utils;
 
 const u32 NamesCacheSize = 8;
 const u32 MaxNodes = 1024;
@@ -105,6 +106,7 @@ type Parser struct {
     Token tok;
     JmpBufTag jump_err;
     char* errorMsg;
+    usize errorMsgSize;
 
     Blocks* blocks;
     Node*[MaxDepth] parents;
@@ -113,10 +115,11 @@ type Parser struct {
     Node* topParent;
 }
 
-fn bool Parser.parse(Parser* p, const char* input, char* diagMsg, Blocks* blocks) {
+fn bool Parser.parse(Parser* p, const char* input, char* diagMsg, usize diagMsgSize, Blocks* blocks) {
     p.tokenizer.init(input);
     p.tok.init();
     p.errorMsg = diagMsg;
+    p.errorMsgSize = diagMsgSize;
     p.errorMsg[0] = 0;
 
     p.blocks = blocks;
@@ -162,7 +165,7 @@ fn void Parser.parseTopLevel(Parser* p) {
             p.parseTableArray();
             break;
         default:
-            sprintf(p.errorMsg, "syntax error %s", p.tok.loc.str());
+            snprintf(p.errorMsg, p.errorMsgSize, "syntax error %s", p.tok.loc.str());
             longjmp(&p.jump_err, 1);
             break;
         }
@@ -249,7 +252,7 @@ fn u32 Parser.parseValue(Parser* p) {
     u32 value = 0;
     switch (p.tok.kind) {
     case Word:
-        sprintf(p.errorMsg, "unexpected word at %s", p.tok.loc.str());
+        snprintf(p.errorMsg, p.errorMsgSize, "unexpected word at %s", p.tok.loc.str());
         longjmp(&p.jump_err, 1);
         break;
     case Text:
@@ -368,7 +371,7 @@ fn Token* Parser.nextToken(Parser* p) {
 
 fn void Parser.expectAndConsume(Parser* p, TokenKind k) {
     if (p.tok.isNot(k)) {
-        sprintf(p.errorMsg, "expected '%s' at %s", token2str(k), p.tok.loc.str());
+        snprintf(p.errorMsg, p.errorMsgSize, "expected '%s' at %s", token2str(k), p.tok.loc.str());
         longjmp(&p.jump_err, 1);
     }
     p.consumeToken();
@@ -376,7 +379,7 @@ fn void Parser.expectAndConsume(Parser* p, TokenKind k) {
 
 fn void Parser.expect(Parser* p, TokenKind k) {
     if (p.tok.isNot(k)) {
-        sprintf(p.errorMsg, "expected '%s' at %s", token2str(k), p.tok.loc.str());
+        snprintf(p.errorMsg, p.errorMsgSize, "expected '%s' at %s", token2str(k), p.tok.loc.str());
         longjmp(&p.jump_err, 1);
     }
 }
@@ -408,9 +411,8 @@ public fn const char* Reader.getMsg(const Reader* r) {
 public fn bool Reader.parse(Reader* r, const char* filename) {
     file_utils.Reader file;
     if (!file.open(filename)) {
-        sprintf(r.message, "%s", strerror(file.errno));
+        snprintf(r.message, elemsof(r.message), "%s", strerror(file.errno));
         return false;
-
     }
 
     if (file.isEmpty()) {
@@ -419,7 +421,7 @@ public fn bool Reader.parse(Reader* r, const char* filename) {
         return false;
     }
     Parser parser;
-    bool status = parser.parse(file.data(), r.message, r.blocks);
+    bool status = parser.parse(file.data(), r.message, elemsof(r.message), r.blocks);
     file.close();
 
 #if DEBUG_NODES

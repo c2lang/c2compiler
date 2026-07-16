@@ -1,0 +1,26 @@
+  C> running function doTick
+LUA> doTick() timesCalled 1
+  C> running function doTick
+LUA> doTick() timesCalled 2
+  C> running function doTick
+LUA> doTick() timesCalled 3
+  C> running function doTick
+LUA> doTick() timesCalled 4
+  C> running function doTick
+LUA> doTick() timesCalled 5
+  C> calling LUA timesTen(2) = 20
+  C> calling LUA timesTen(3) = 30
+  C> running function function1
+LUA> running function1
+LUA> starting script foo
+  C> startScript(foo)
+LUA> running script (foo)
+LUA> starting script bar
+  C> startScript(bar)
+LUA> running script (bar)
+LUA> starting script 10
+  C> startScript(10)
+LUA> running script (10)
+LUA> part2
+  C> stopScript(foo)
+  C> stopScript(foo)

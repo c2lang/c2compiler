@@ -19,7 +19,8 @@ import unistd;
 
 public fn i32 main(i32 argc, char** argv) {
     logger.Base logbase;
-    logbase.init(logger.Level.Info, unistd.isatty(1), argc == 2);
+    bool relative_times = (argc == 2 && !*argv[1] == 'r');
+    logbase.init(logger.Level.Info, unistd.isatty(1), relative_times);
 
     logger.Log log;
     log.init(&logbase, "main");

@@ -23,5 +23,5 @@ public fn i32 main(i32 argc, char** argv) {
         }
     }
 
-	return 0;
+    return 0;
 }

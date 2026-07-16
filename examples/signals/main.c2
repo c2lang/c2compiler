@@ -21,12 +21,13 @@ import stdio local;
 import unistd local;
 
 fn void fatal(const char* msg) {
-	exit(EXIT_FAILURE);
+    fprintf(stderr, "fatal: %s\n", msg);
+    exit(EXIT_FAILURE);
 }
 
 fn void signal_handler(i32 num) {
-	printf("got signal %d\n", num);
-	exit(EXIT_SUCCESS);
+    printf("got signal %d\n", num);
+    exit(EXIT_SUCCESS);
 }
 
 public fn i32 main() {
@@ -39,14 +40,14 @@ public fn i32 main() {
     //if (sigaction(SIGQUIT, &act, nil) != 0) fatal("sigaction(SIGQUIT)");
     //if (sigaction(SIGALRM, &act, nil) != 0) fatal("sigaction(SIGALRM)");
 
-	act.sa_handler = signal_handler;
+    act.sa_handler = signal_handler;
     if (sigaction(SIGINT, &act, nil) != 0) fatal("sigaction(SIGINT)");
     if (sigaction(SIGTERM, &act, nil) != 0) fatal("sigaction(SIGTERM)");
 
     printf("press Ctrl-C to stop\n");
-	while (1) {
-		sleep(1);
-	}
+    while (1) {
+        sleep(1);
+    }
 
     //return 0;
 }

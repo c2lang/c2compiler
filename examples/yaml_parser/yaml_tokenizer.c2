@@ -26,7 +26,7 @@ type Location struct {
 
 fn const char* Location.str(const Location* loc) {
     static char[32] msg;
-    sprintf(msg, "at line %d:%d", loc.line, loc.column);
+    snprintf(msg, elemsof(msg), "at line %d:%d", loc.line, loc.column);
     return msg;
 }
 
@@ -83,6 +83,7 @@ type Tokenizer struct {
     Location loc;
     const char* input_start;
     char* error_msg;
+    usize error_msg_size;
     i32 cur_indent;
     bool same_line;
     Data* data;
@@ -90,13 +91,14 @@ type Tokenizer struct {
     Token next;
 }
 
-fn void Tokenizer.init(Tokenizer* t, const char* input, Data* d, char* error_msg) {
+fn void Tokenizer.init(Tokenizer* t, const char* input, Data* d, char* error_msg, usize error_msg_size) {
     memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
     t.input_start = input;
     t.loc.line = 1;
     t.loc.column = 1;
     t.error_msg = error_msg;
+    t.error_msg_size = error_msg_size;
     t.data = d;
     t.next.kind = TokenKind.None;
 }
@@ -129,13 +131,13 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             result.kind = TokenKind.Eof;
             return;
         case '\t':
-            sprintf(t.error_msg, "file contains TAB characters %s", t.loc.str());
+            snprintf(t.error_msg, t.error_msg_size, "file contains TAB characters %s", t.loc.str());
             t.error(result);
             return;
         case '\r':
             t.cur++;
             if (*t.cur != '\n') {
-                sprintf(t.error_msg, "unexpected char 0x%02X %s", *t.cur, t.loc.str());
+                snprintf(t.error_msg, t.error_msg_size, "unexpected char 0x%02X %s", *t.cur, t.loc.str());
                 t.error(result);
                 return;
             }
@@ -209,7 +211,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
                 t.lex_string(result);
                 return;
             }
-            sprintf(t.error_msg, "unhandled char 0x%02x (%c) %s",
+            snprintf(t.error_msg, t.error_msg_size, "unhandled char 0x%02x (%c) %s",
                 *t.cur, isprint(*t.cur) ? *t.cur : ' ', t.loc.str());
             t.error(result);
             return;
@@ -292,7 +294,7 @@ fn void Tokenizer.lex_quoted_string(Tokenizer* t, Token* result, char delim) {
         case '\r':
         case '\n':
             t.loc.column += (t.cur - start);
-            sprintf(t.error_msg, "unterminated string %s", t.loc.str());
+            snprintf(t.error_msg, t.error_msg_size, "unterminated string %s", t.loc.str());
             t.error(result);
             return;
         default:

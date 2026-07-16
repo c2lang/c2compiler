@@ -20,6 +20,7 @@ import lua;
 import lua_auxlib local;
 import lua_lib local;
 import color;
+import unistd;
 
 public type LuaState struct {
     lua.State* l;
@@ -110,7 +111,11 @@ public fn i32 startScript(lua.State* l) {
         return -1;
     }
     const char* scriptname = lua.tolstring(l, -1, nil);
-    printf("  C> startScript(%s%s%s)\n", color.Green, scriptname, color.Normal);
+    if (unistd.isatty(1)) {
+        printf("  C> startScript(%s%s%s)\n", color.Green, scriptname, color.Normal);
+    } else {
+        printf("  C> startScript(%s)\n", scriptname);
+    }
 
     // TODO check returns
     lua.getglobal(l, "runScript");
@@ -137,7 +142,11 @@ public fn i32 stopScript(lua.State* l) {
         return -1;
     }
     const char* scriptname = lua.tolstring(l, -1, nil);
-    printf("  C> stopScript(%s%s%s)\n", color.Red, scriptname, color.Normal);
+    if (unistd.isatty(1)) {
+        printf("  C> stopScript(%s%s%s)\n", color.Red, scriptname, color.Normal);
+    } else {
+        printf("  C> stopScript(%s)\n", scriptname);
+    }
 
     return 0;
 }

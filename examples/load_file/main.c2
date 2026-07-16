@@ -1,4 +1,5 @@
 module test_main;
+
 import stdio local;
 
 const char[] Data1 @(embed="load_file/files/data1.dat");
@@ -12,13 +13,13 @@ fn void hex_dump(const u8* data, u32 len) {
     if (len%16 != 15) printf("\n");
 }
 
-public fn i32 main(i32 argc, char** argv) {
+public fn i32 main() {
     printf("FILE1: size %d\n", elemsof(Data1));
     hex_dump(Data1, elemsof(Data1));
 
     printf("FILE2: size %d\n", elemsof(File2));
     printf("%s\n", File2);
 
-	return 0;
+    return 0;
 }
 

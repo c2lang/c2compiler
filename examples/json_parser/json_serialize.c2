@@ -15,10 +15,10 @@
 
 module json;
 
-import stdlib local;
 import stdio local;
-import libc_fcntl local;
+import stdlib local;
 import string local;
+import libc_fcntl local;
 import c_errno local;
 import unistd local;
 import file_utils;
@@ -92,15 +92,15 @@ public fn bool Parser.write_cache(Parser* p, const char* filename) {
     if (!p.data) return true;
     i32 fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0660);
     if (fd == -1) {
-        sprintf(p.message, "cannot open file: %s", strerror(*errno2()));
+        snprintf(p.message, elemsof(p.message), "cannot open file: %s", strerror(errno));
         return false;
     }
     if (!p.data.write(fd)) {
-        sprintf(p.message, "cannot write file: %s", strerror(*errno2()));
+        snprintf(p.message, elemsof(p.message), "cannot write file: %s", strerror(errno));
         close(fd);
         return false;
     }
-	close(fd);
+    close(fd);
     return true;
 }
 
@@ -110,17 +110,17 @@ public fn bool Parser.read_cache(Parser* p, const char* filename) {
 
     file_utils.Reader file;
     if (!file.open(filename)) {
-        sprintf(p.message, "cannot read file: %s", strerror(*errno2()));
+        snprintf(p.message, elemsof(p.message), "cannot read file: %s", strerror(errno));
         return false;
     }
     if (file.isEmpty()) {
-        strcpy(p.message, "invalid data");
+        snprintf(p.message, elemsof(p.message), "invalid data");
         return false;
     }
     p.data = Data.read(file.data(), file.size);
     file.close();
     if (!p.data) {
-        strcpy(p.message, "invalid data");
+        snprintf(p.message, elemsof(p.message), "invalid data");
         return false;
     }
     return true;

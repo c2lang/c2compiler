@@ -15,85 +15,66 @@
 
 module json;
 
-import stdlib local;
-import stdio local;
-
-fn const char* indent(u32 i) {
-    static const char[] indents = "                            ";
-    static const u32 max = 28;
-    return &indents[max - i*2];
-}
-
+import utils local;
 
 public type Builder struct {
-    char* buffer;
-    u32 size;
-    u32 capacity;
+    StringBuffer buffer;
     bool[6] hasEntry;
     bool[6] inArray;
     u32 indent;
 }
 
 public fn void Builder.init(Builder* b, u32 capacity) {
-    b.buffer = malloc(capacity);
-    b.capacity = capacity;
+    b.buffer.init(capacity);
     b.reset();
 }
 
 public fn void Builder.free(Builder* b) {
-    free(b.buffer);
+    b.buffer.deinit();
 }
 
 public fn void Builder.finalize(Builder* b) {
-    char* orig = &b.buffer[b.size];
-    i32 len = sprintf(orig, "\n");
-    b.size += len;
+    b.buffer.putc('\n');
 }
 
 public fn const char* Builder.getData(const Builder* b) {
-    return b.buffer;
+    return b.buffer.data();
 }
 
 public fn u32 Builder.getSize(const Builder* b) {
-    return b.size + 1;  // include 0-termination
+    return b.buffer.size() + 1;  // include 0-termination
 }
 
 public fn void Builder.addNumber(Builder* b, const char* key, i64 value) {
-    char* orig = &b.buffer[b.size];
-    char* cp = orig;
-    if (b.hasEntry[b.indent]) cp += sprintf(cp, ",\n");
+    if (b.hasEntry[b.indent]) b.buffer.add(",\n");
+    b.buffer.indent(b.indent * 2);
     if (b.inArray[b.indent]) {
-        cp += sprintf(cp, "%s%d", indent(b.indent), value);
+        b.buffer.printf("%d", value);
     } else {
-        cp += sprintf(cp, "%s\"%s\": %d", indent(b.indent), key, value);
+        b.buffer.printf("\"%s\": %d", key, value);
     }
-    b.size += (cp - orig);
     b.hasEntry[b.indent] = true;
 }
 
 public fn void Builder.addValue(Builder* b, const char* key, const char* value) {
-    char* orig = &b.buffer[b.size];
-    char* cp = orig;
-    if (b.hasEntry[b.indent]) cp += sprintf(cp, ",\n");
+    if (b.hasEntry[b.indent]) b.buffer.add(",\n");
+    b.buffer.indent(b.indent * 2);
     if (b.inArray[b.indent]) {
-        cp += sprintf(cp, "%s\"%s\"", indent(b.indent), value);
+        b.buffer.printf("\"%s\"", value);
     } else {
-        cp += sprintf(cp, "%s\"%s\": \"%s\"", indent(b.indent), key, value);
+        b.buffer.printf("\"%s\": \"%s\"", key, value);
     }
-    b.size += (cp - orig);
     b.hasEntry[b.indent] = true;
 }
 
 public fn void Builder.addObject(Builder* b, const char* key) {
-    char* orig = &b.buffer[b.size];
-    char* cp = orig;
-    if (b.hasEntry[b.indent]) cp += sprintf(cp, ",\n");
-    if (b.inArray[b.indent]) {
-        cp += sprintf(cp, "%s{\n", indent(b.indent));
-    } else {
-        cp += sprintf(cp, "%s\"%s\":\n%s{\n", indent(b.indent), key, indent(b.indent));
+    if (b.hasEntry[b.indent]) b.buffer.add(",\n");
+    b.buffer.indent(b.indent * 2);
+    if (!b.inArray[b.indent]) {
+        b.buffer.printf("\"%s\":\n", key);
+        b.buffer.indent(b.indent * 2);
     }
-    b.size += (cp - orig);
+    b.buffer.printf("{\n");
     b.hasEntry[b.indent] = true;
     b.indent++;
     b.hasEntry[b.indent] = false;
@@ -103,23 +84,19 @@ public fn void Builder.addObject(Builder* b, const char* key) {
 public fn void Builder.closeObject(Builder* b) {
     // NOTE: no sanity check
     b.indent--;
-    char* orig = &b.buffer[b.size];
-    char* cp = orig;
-    *cp++ = '\n';
-    cp += sprintf(cp, "%s}", indent(b.indent));
-    b.size += (cp - orig);
+    b.buffer.putc('\n');
+    b.buffer.indent(b.indent * 2);
+    b.buffer.putc('}');
 }
 
 public fn void Builder.addArray(Builder* b, const char* key) {
-    char* orig = &b.buffer[b.size];
-    char* cp = orig;
-    if (b.hasEntry[b.indent]) cp += sprintf(cp, ",\n");
+    if (b.hasEntry[b.indent]) b.buffer.add(",\n");
+    b.buffer.indent(b.indent * 2);
     if (key) {
-        cp += sprintf(cp, "%s\"%s\":\n%s[\n", indent(b.indent), key, indent(b.indent));
-    } else {
-        cp += sprintf(cp, "%s[\n", indent(b.indent));
+        b.buffer.printf("\"%s\":\n", key);
+        b.buffer.indent(b.indent * 2);
     }
-    b.size += (cp - orig);
+    b.buffer.printf("[\n");
     b.hasEntry[b.indent] = true;
     b.indent++;
     b.inArray[b.indent] = true;
@@ -129,18 +106,15 @@ public fn void Builder.addArray(Builder* b, const char* key) {
 public fn void Builder.closeArray(Builder* b) {
     b.inArray[b.indent] = false;
     b.indent--;
-    char* orig = &b.buffer[b.size];
-    char* cp = orig;
-    *cp++ = '\n';
-    cp += sprintf(cp, "%s]", indent(b.indent));
-    b.size += (cp - orig);
+    b.buffer.putc('\n');
+    b.buffer.indent(b.indent * 2);
+    b.buffer.putc(']');
 }
 
 public fn void Builder.reset(Builder* b) {
-    b.size = 0;
-    for (u32 i=0; i<elemsof(b.hasEntry); i++) b.hasEntry[i] = false;
-    for (u32 i=0; i<elemsof(b.inArray); i++) b.inArray[i] = false;
+    b.buffer.clear();
+    for (u32 i = 0; i < elemsof(b.hasEntry); i++) b.hasEntry[i] = false;
+    for (u32 i = 0; i < elemsof(b.inArray); i++) b.inArray[i] = false;
     b.indent = 0;
-    b.size = 0;
 }
 

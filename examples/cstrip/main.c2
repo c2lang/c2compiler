@@ -1,0 +1,229 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module test;
+
+import ctype local;
+import stdio local;
+import string local;
+
+import file_utils;
+import utils local;
+
+const char NEWLINE = 0x0A;
+
+/*
+    strip all lines startin with '//'
+    TODO also handle multi-line comments
+*/
+fn void strip_comments(const char* input, StringBuffer* out)
+{
+    const char* cp = input;
+    const char* linestart = cp;
+    u32 lines = 0;
+    u32 outlines = 0;
+    u32 comments = 0;
+    u32 blanks = 0;
+    bool white = true;
+    bool skip = false;
+    char c;
+    while (*cp) {
+        switch (c = *cp++) {
+        case NEWLINE:
+            lines++;
+            if (!skip) {
+                if (blanks) {
+                    // strip trailing whitespace
+                    out.add2(linestart, (u32)(cp - 1 - blanks - linestart));
+                    linestart = cp - 1;
+                }
+                out.add2(linestart, (u32)(cp - linestart));
+                outlines++;
+            }
+            linestart = cp;
+            blanks = 0;
+            white = true;
+            skip = false;
+            continue;
+        case ' ':
+        case '\t':
+            blanks++;
+            continue;
+        case '\\':
+            if (*cp == NEWLINE) {
+                cp++;
+                lines++;
+                continue;
+            }
+            break;
+        case '\'':
+            if (isdigit(*cp) && cp > linestart + 1 && isdigit(cp[-2])) {
+                // ignore C++ style thousand separator
+                break;
+            }
+            fallthrough;
+        case '"':
+            // skip C style character constants and string literals
+            char sep = c;
+            while ((c = *cp) != 0 && c != NEWLINE) {
+                cp++;
+                if (c == sep) break;
+                if (c == '\\' && *cp) {
+                    if (*cp == NEWLINE) lines++;
+                    cp++;
+                }
+            }
+            break;
+        case '`':
+            // skip C2 style raw strings
+            u32 count = 1;
+            while (*cp == '`') {
+                count++;
+                cp++;
+            }
+            while ((c = *cp) != 0) {
+                cp++;
+                if (c == NEWLINE) lines++;
+                if (c == '`') {
+                    u32 i = 1;
+                    while (i < count && *cp == '`') {
+                        cp++;
+                        i++;
+                    }
+                    if (i == count) break;
+                }
+            }
+            break;
+        case '/':
+            if (*cp == '/' || *cp == '*') {
+                const char* start = cp - 1;
+                cp = skip_comments(cp, &lines, &comments);
+                if (!*cp || *cp == NEWLINE) {
+                    start -= blanks;
+                    if (white) {
+                        skip = true;
+                        break;
+                    }
+                }
+                out.add2(linestart, (u32)(start - linestart));
+                // replace comments with a single space to separate tokens
+                if (!isspace(*cp) && start > linestart && !blanks) out.putc(' ');
+                linestart = cp;
+            }
+            break;
+        }
+        white = false;
+        blanks = 0;
+    }
+    fprintf(stderr, "cstrip: lines %d -> %d", lines, outlines);
+    if (comments) {
+        fprintf(stderr, " (stripped %d lines, %d comments)\n", lines - outlines, comments);
+    } else {
+        fprintf(stderr, " (file does not contain any comments)\n");
+    }
+}
+
+fn const char* skip_comments(const char* cp, u32* linep, u32* comments) {
+    char c;
+    for (;;) {
+        if (*cp == '/') {   // single line comment
+            *comments += 1;
+            cp++;
+            while ((c = *cp) != 0 && c != NEWLINE) {
+                cp++;
+                if (c == '\\' && *cp == NEWLINE) {
+                    *linep += 1;
+                    cp++;
+                }
+            }
+            return cp;
+        }
+        if (*cp == '*') {   // multi line comment
+            *comments += 1;
+            cp++;
+            while ((c = *cp) != 0) {
+                cp++;
+                if (c == '*' && *cp == '/') {  // end of comment
+                    cp++;
+                    break;
+                }
+                if (c == NEWLINE) *linep += 1;
+            }
+            while (isblank(*cp)) cp++;
+        }
+        if (*cp != '/')
+            break;
+        cp++;
+    }
+    return cp;
+}
+
+public fn i32 main(i32 argc, char** argv) {
+    if (argc != 2) {
+        fprintf(stderr, "usage: parser [c-file]\n");
+        return 2;
+    }
+    const char* filename = argv[1];
+    const char* outname = "out.c";
+    bool to_stdout = false;
+    i32 status = 0;
+
+    file_utils.Reader infile;
+    if (!strcmp(filename, "-")) {
+        filename = "<stdin>";
+        outname = "<stdout>";
+        to_stdout = true;
+        infile.openStream(stdin);
+    } else {
+        if (!infile.open(filename)) {
+            fprintf(stderr, "cstrip: cannot load %s: %s\n",
+                    filename, strerror(infile.errno));
+            return 1;
+        }
+    }
+
+    if (infile.errno) {
+        fprintf(stderr, "cstrip: error reading %s: %s\n",
+                filename, strerror(infile.errno));
+        infile.close();
+        return 1;
+    }
+
+    if (infile.isEmpty()) {
+        fprintf(stderr, "cstrip: file %s is empty\n", filename);
+        infile.close();
+        return 0;
+    }
+
+    StringBuffer* buffer = StringBuffer.create(infile.size + 1);
+
+    strip_comments(infile.data(), buffer);
+    infile.close();
+
+    file_utils.Writer outfile;
+    if (to_stdout) {
+        fwrite(buffer.data(), 1, buffer.size(), stdout);
+    } else {
+        if (outfile.write(outname, buffer.data(), buffer.size())) {
+            printf("%d bytes written to %s\n", buffer.size(), outname);
+        } else {
+            fprintf(stderr, "cstrip: error writing file %s: %s\n", outname, outfile.getError());
+            status = 1;
+        }
+    }
+    buffer.destroy();
+    return status;
+}
+

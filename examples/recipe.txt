@@ -1,49 +1,47 @@
-
 plugin refs_generator
 
 executable base64
-	$backend c
+    $backend c
     base64/base64.c2
     base64/main.c2
 end
 
 executable cstrip
-    $warnings no-unused
-	$backend c
+    $backend c
     common/file/reader.c2
     common/file/writer.c2
     common/string_buffer.c2
-    comment_strip/main.c2
+    cstrip/main.c2
 end
 
 executable event
     $warnings no-unused
-	$backend c
+    $backend c
     common/color.c2
     common/logger.c2
+    common/string_buffer.c2
     event/events.c2
     event/example_socket.c2
     event/main.c2
 end
 
 executable file_ops
-    $warnings no-unused
-	$backend c
+    $backend c
     common/file/reader.c2
     file_ops/main.c2
 end
 
 executable inline_asm
-#    $warnings no-unused
-	$backend c
+    $backend c
     inline_asm/main.c2
 end
 
 executable json_parser
     $warnings no-unused
-	$backend c
+    $backend c
     common/file/reader.c2
     common/file/writer.c2
+    common/string_buffer.c2
     json_parser/json_parser.c2
     json_parser/json_data.c2
     json_parser/json_builder.c2
@@ -52,30 +50,28 @@ executable json_parser
 end
 
 executable list
-    $warnings no-unused
-	$backend c
+    $backend c
     common/color.c2
     list/list.c2
     list/main.c2
 end
 
 executable log
-    $warnings no-unused
-	$backend c
+    $backend c
     common/logger.c2
+    common/string_buffer.c2
     common/color.c2
     logger/main.c2
 end
 
 executable jump
-    $warnings no-unused
-	$backend c
+    $backend c
     longjmp/jump.c2
 end
 
 # Disabled because location of lua.a/lua.so needs to be specified
 #executable lua_test
-#    $warnings no-unused
+#    $warnings no-unused-parameter
 #	$backend c
 #    $use lua dynamic
 #    common/color.c2
@@ -84,26 +80,24 @@ end
 #end
 
 executable signal_test
-    $warnings no-unused
-	$backend c
+    $backend c
     signals/main.c2
 end
 
 executable socket
-	$backend c
+    $backend c
     socket/server.c2
 end
 
 executable string
-    $warnings no-unused
-	$backend c
+    $backend c
     common/string_buffer.c2
     string_buffer/main.c2
 end
 
 executable toml_parser
     $warnings no-unused
-	$backend c
+    $backend c
 #    $config DEBUG_NODES
     common/file/reader.c2
     toml_parser/toml_tokenizer.c2
@@ -113,7 +107,7 @@ end
 
 executable yaml_parser
     $warnings no-unused
-	$backend c
+    $backend c
 #    $config YAML_PRINT_TOKENS
     common/file/reader.c2
     yaml_parser/yaml_parser.c2
@@ -126,41 +120,39 @@ end
 
 executable xml_parser
     $warnings no-unused
-	$backend c
+    $backend c
     common/color.c2
     common/file/reader.c2
-#    file_utils.c2
     xml_parser/xml_parser.c2
     xml_parser/xml_structure.c2
     xml_parser/main.c2
 end
 
 executable sudoku
-    $warnings no-unused
-	$backend c
+    $backend c
     common/color.c2
     sudoku/sudoku.c2
     sudoku/boards.c2
 end
 
 lib plugin1 dynamic
-    $warnings no-unused
-	$backend c
+    $warnings no-unused-public
+    $backend c
     $export plugin_main
     plugin/other.c2
     plugin/plugin1.c2
 end
 
 lib plugin2 dynamic
-    $warnings no-unused
-	$backend c
+    $warnings no-unused-public
+    $backend c
     $export plugin_main
     plugin/plugin2.c2
 end
 
 executable plugin_mgr
-    $warnings no-unused
-	$backend c
+    $warnings no-unused-public
+    $backend c
     $use dl dynamic
     plugin/other.c2
     plugin/plugin_mgr.c2
@@ -168,21 +160,19 @@ end
 
 #executable test_lib
 #    $warnings no-unused
-#	$backend c
+#    $backend c
 #    $use plugin1 dynamic
 #    plugin/test_lib.c2
 #end
 
 executable pthread_test
-    $warnings no-unused
-	$backend c
+    $backend c
     $use pthread dynamic
 
     pthread/pthread.c2
 end
 
 executable load_file
-    $warnings no-unused
     $backend c
 
     load_file/main.c2
@@ -219,14 +209,13 @@ executable mc_receiver
 end
 
 executable dir_walker
-    $warnings no-unused
     $backend c
 
     dir_walker/main.c2
 end
 
 executable terminal
-    $warnings no-unused
+    $warnings no-unused-public
     $backend c
 
     terminal/main.c2

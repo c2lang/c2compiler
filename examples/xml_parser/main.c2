@@ -16,20 +16,24 @@
 module test;
 
 import stdio local;
+import string local;
 import file_utils;
 import xml;
 
 public fn i32 main(i32 argc, char** argv) {
     if (argc != 2 && argc != 3) {
-        printf("Usage: parser [xml-file] <verbose>\n");
-        return 0;
+        fprintf(stderr, "usage: xml_parser [xml-file] <verbose>\n");
+        return 2;
     }
     const char* filename = argv[1];
     bool verbose = (argc == 3);
 
     printf("parsing %s\n", filename);
     file_utils.Reader file;
-    file.open(filename);
+    if (!file.open(filename)) {
+        fprintf(stderr, "cannot read %s: %s\n", filename, strerror(file.errno));
+        return 1;
+    }
 
     if (file.isEmpty()) {
         printf("file %s is empty\n", filename);

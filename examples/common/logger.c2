@@ -21,8 +21,9 @@ import string local;
 import stdio local;
 import stdlib local;
 import sys_time local;
-import unistd;
 import libc_time;
+
+import utils local;
 
 public type Level enum u8 {
     Fatal = 0,
@@ -32,7 +33,7 @@ public type Level enum u8 {
     Debug,
 }
 
-fn const char* level2str(Level lvl) {
+fn const char* level2str(Level lvl) @(unused) {
     switch (lvl) {
     case Fatal: return "Fatal";
     case Error: return "Error";
@@ -43,7 +44,7 @@ fn const char* level2str(Level lvl) {
     return nil;
 }
 
-fn u64 current_time() {
+fn u64 current_time() @(unused) {
    Timeval tv;
    gettimeofday(&tv, nil);
    u64 tv64 = (u64)tv.tv_sec;
@@ -62,11 +63,11 @@ public type Base struct {
     WriteFunc write;
 }
 
-fn void log_stdout(const char* data, u32 len) {
+fn void log_stdout(const char* data, u32 /*len*/) @(unused) {
     printf("%s", data);
 }
 
-public fn void Base.init(Base* base, Level lvl_, bool color_, bool relativeTimes_)
+public fn void Base.init(Base* base, Level lvl_, bool color_, bool relativeTimes_) @(unused)
 {
     base.defaultLevel = lvl_;
     base.useColor = color_;
@@ -75,7 +76,7 @@ public fn void Base.init(Base* base, Level lvl_, bool color_, bool relativeTimes
     base.write = log_stdout;
 }
 
-public fn void Base.destroy(Base* base)
+public fn void Base.destroy(Base* /*base*/) @(unused)
 {
 }
 
@@ -85,18 +86,18 @@ public type Log struct {
     char[16] name;
 }
 
-public fn void Log.init(Log* log, Base* base, const char* name_) {
+public fn void Log.init(Log* log, Base* base, const char* name_) @(unused) {
     log.base = base;
     log.level = base.defaultLevel;
     strlcpy(log.name, name_, 16);
     log.name[15] = 0;
 }
 
-public fn void Log.setLevel(Log* log, Level lvl) {
+public fn void Log.setLevel(Log* log, Level lvl) @(unused) {
     log.level = lvl;
 }
 
-public fn void Log.debug(Log* log, const char* format, ...) {
+public fn void Log.debug(Log* log, const char* format @(printf_format), ...) @(unused) {
     if (Level.Debug > log.level) return;
     va_list args;
     va_start(args, format);
@@ -104,7 +105,7 @@ public fn void Log.debug(Log* log, const char* format, ...) {
     va_end(args);
 }
 
-public fn void Log.info(Log* log, const char* format, ...) {
+public fn void Log.info(Log* log, const char* format @(printf_format), ...) @(unused) {
     if (Level.Info > log.level) return;
     va_list args;
     va_start(args, format);
@@ -112,7 +113,7 @@ public fn void Log.info(Log* log, const char* format, ...) {
     va_end(args);
 }
 
-public fn void Log.warn(Log* log, const char* format, ...) {
+public fn void Log.warn(Log* log, const char* format @(printf_format), ...) @(unused) {
     if (Level.Warn > log.level) return;
     va_list args;
     va_start(args, format);
@@ -120,7 +121,7 @@ public fn void Log.warn(Log* log, const char* format, ...) {
     va_end(args);
 }
 
-public fn void Log.error(Log* log, const char* format, ...) {
+public fn void Log.error(Log* log, const char* format @(printf_format), ...) @(unused) {
     if (Level.Error > log.level) return;
     va_list args;
     va_start(args, format);
@@ -128,7 +129,7 @@ public fn void Log.error(Log* log, const char* format, ...) {
     va_end(args);
 }
 
-public fn void Log.fatal(Log* log, const char* format, ...) {
+public fn void Log.fatal(Log* log, const char* format @(printf_format), ...) @(unused) {
     va_list args;
     va_start(args, format);
     log.internal(Level.Fatal, color.Red, format, args);
@@ -136,32 +137,32 @@ public fn void Log.fatal(Log* log, const char* format, ...) {
     exit(EXIT_FAILURE);
 }
 
-fn void Log.internal(Log* log, Level level, const char* color_, const char* format, va_list args) {
+fn void Log.internal(Log* log, Level level, const char* color_, const char* format, va_list args) @(unused) {
     char[256] buffer;
-    char* cp = buffer;
+    StringBuffer buf.init(elemsof(buffer), buffer, false);
 
-    if (log.base.useColor) cp += sprintf(cp, "%s", color_);
-    *cp++ = '[';
+    if (log.base.useColor) buf.add(color_);
+    buf.putc('[');
     if (log.base.relativeTimes) {
         u64 now = current_time();
         now -= log.base.startTime;
         u64 subsec = now % 1000000;
-        cp += sprintf(cp, "%04d.%06d", now / 1000000, subsec);
+        buf.printf("%04d.%06d", now / 1000000, subsec);
     } else {
         Timeval tv;
         gettimeofday(&tv, nil);
         Time now = tv.tv_sec;
         libc_time.Tm* now2 = libc_time.localtime(&now);
-        cp += sprintf(cp, "%02d/%02d/%02d %02d:%02d:%02d.%d",
-            now2.tm_year % 100, now2.tm_mon + 1, now2.tm_mday,
-            now2.tm_hour, now2.tm_min, now2.tm_sec, tv.tv_usec / 1000);
+        buf.printf("%02d/%02d/%02d %02d:%02d:%02d.%d",
+                   now2.tm_year % 100, now2.tm_mon + 1, now2.tm_mday,
+                   now2.tm_hour, now2.tm_min, now2.tm_sec, tv.tv_usec / 1000);
     }
-    *cp++ = ']';
-    cp += sprintf(cp, " %s %s: ", level2str(level), log.name);
-    cp += vsprintf(cp, format, args);
-    if (log.base.useColor) cp += sprintf(cp, "%s", color.Normal);
-    *cp++ = '\n';
-    *cp = 0;
-    log.base.write(buffer, (u32)(cp - buffer));
+    buf.putc(']');
+    buf.printf(" %s %s: ", level2str(level), log.name);
+    buf.vprintf(format, args);
+    if (log.base.useColor) buf.add(color.Normal);
+    buf.putc('\n');
+    log.base.write(buf.data(), buf.size());
+    buf.deinit();
 }
 

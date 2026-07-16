@@ -107,6 +107,7 @@ public fn i32 main() {
     c.addDep(b);
     c.addDep(e);
     d.addDep(e);
+    g = g;  // unused
 
     printList("all", &modules, true);
     check(&modules, a);

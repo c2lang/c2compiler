@@ -44,8 +44,8 @@ fn bool isCache(const char* filename) {
 
 public fn i32 main(i32 argc, char** argv) {
     if (argc < 2) {
-        printf("Usage: parser [json-file]\n");
-        return 0;
+        fprintf(stderr, "usage: json_parser [json-file]\n");
+        return 2;
     }
     const char* filename = argv[1];
 
@@ -56,7 +56,10 @@ public fn i32 main(i32 argc, char** argv) {
     if (!use_cache || !isCache(filename)) {
         u64 t1 = current_time();
         file_utils.Reader file;
-        file.open(filename);
+        if (!file.open(filename)) {
+            fprintf(stderr, "cannot load %s: %s\n", filename, strerror(file.errno));
+            return 1;
+        }
 
         //printf("%s", file.data());
         if (file.isEmpty()) {
@@ -148,7 +151,7 @@ public fn i32 main(i32 argc, char** argv) {
     if (use_cache && !isCache(filename)) {
         u64 t3 = current_time();
         char[128] cache_file;
-        sprintf(cache_file, "%s%s", filename, Cache_suffix);
+        snprintf(cache_file, elemsof(cache_file), "%s%s", filename, Cache_suffix);
         parser.write_cache(cache_file);
         u64 t4 = current_time();
         printf("writing %s took %d usec\n", cache_file, t4 - t3);

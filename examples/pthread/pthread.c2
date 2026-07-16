@@ -24,7 +24,7 @@ bool stop = false;
 fn void* startThread1(void*) {
     io.printf("started thread1\n");
     while (!stop) {
-        sleep(1);
+        usleep(10);
         io.printf("running1\n");
     }
     io.printf("quit thread1\n");
@@ -34,7 +34,7 @@ fn void* startThread1(void*) {
 fn void* startThread2(void*) {
     io.printf("started thread2\n");
     while (!stop) {
-        sleep(1);
+        usleep(10);
         io.printf("running2\n");
     }
     io.printf("quit thread2\n");
@@ -54,13 +54,13 @@ public fn i32 main() {
         return -1;
     }
 
-    sleep(4);
+    usleep(40);
     io.printf("stopping threads\n");
     stop = true;
     i32 res;
     res = pthread.join(threads[0], nil);
-    res = pthread.join(threads[1], nil);
+    res |= pthread.join(threads[1], nil);
     io.printf("done\n");
-    return 0;
+    return res != 0;
 }
 

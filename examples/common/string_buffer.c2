@@ -22,78 +22,153 @@ import string local;
 
 public type StringBuffer struct {
     u32 capacity;
-    u32 size_;
-    char* data_;
+    u32 len;
+    char* data_ptr;
+    bool own;       // data_ptr should be freed
+    bool grow;      // data_ptr should be reallocated
+    bool truncated @(unused);
+    bool error @(unused);
 }
 
-static_assert(16, sizeof(StringBuffer));
+static_assert(24, sizeof(StringBuffer));
 
-public fn StringBuffer* StringBuffer.create(u32 capacity)
+public fn StringBuffer* StringBuffer.init(StringBuffer* buf,
+                                          u32 capacity,
+                                          char *data = nil,
+                                          bool grow = true) @(unused)
 {
-    StringBuffer* buf = malloc(sizeof(StringBuffer));
     buf.capacity = capacity;
-    buf.size_ = 0;
-    buf.data_ = malloc(capacity);
+    buf.len = 0;
+    buf.data_ptr = data;
+    buf.own = false;
+    buf.grow = grow;
+    buf.truncated = false;
+    buf.error = false;
+    if (!data && capacity) {
+        buf.data_ptr = malloc(capacity);
+        buf.own = true;
+    }
     return buf;
 }
 
-public fn void StringBuffer.destroy(StringBuffer* buf)
-{
-    free(buf.data_);
-    free(buf);
+public fn void StringBuffer.deinit(StringBuffer* buf) @(unused) {
+    if (buf.own) free(buf.data_ptr);
+    buf.data_ptr = nil;
 }
 
-public fn u32 StringBuffer.size(const StringBuffer* buf)
-{
-    return buf.size_;
+public fn StringBuffer* StringBuffer.create(u32 capacity, char *data = nil, bool grow = true) @(unused) {
+    StringBuffer* buf = malloc(sizeof(StringBuffer));
+    return buf.init(capacity, data, grow);
 }
 
-public fn const char* StringBuffer.data(const StringBuffer* buf)
-{
-    return buf.data_;
+public fn void StringBuffer.destroy(StringBuffer* buf) @(unused) {
+    if (buf) {
+        buf.deinit();
+        free(buf);
+    }
 }
 
-public fn void StringBuffer.clear(StringBuffer* buf)
-{
-    buf.size_ = 0;
+public fn u32 StringBuffer.size(const StringBuffer* buf) @(unused) {
+    return buf.len;
 }
 
-public fn void StringBuffer.add(StringBuffer* buf, const char* text)
-{
+public fn const char* StringBuffer.data(const StringBuffer* buf) {
+    return buf.data_ptr;
+}
+
+public fn void StringBuffer.clear(StringBuffer* buf) @(unused) {
+    buf.len = 0;
+    buf.truncated = false;
+}
+
+public fn void StringBuffer.add(StringBuffer* buf, const char* text) @(unused) {
     u32 len = (u32)strlen(text);
     buf.add2(text, len);
 }
 
-public fn void StringBuffer.add2(StringBuffer* buf, const char* text, u32 len)
-{
-    if ((len + 1) >= (buf.capacity - buf.size_)) {
-        u32 newcap = buf.capacity * 2;
-        if ((len + 1) >= (newcap - buf.size_)) newcap += buf.size_ + len + 1;
-        buf.capacity = newcap;
-        char* data2 = malloc(newcap);
-        memcpy(data2, buf.data_, buf.size_ + 1);
-        free(buf.data_);
-        buf.data_ = data2;
+public fn void StringBuffer.putc(StringBuffer* buf, char c) @(unused) {
+    if (buf.len + 2 > buf.capacity) {
+        if (!buf.extend(1)) return;
     }
-    strcpy(&buf.data_[buf.size_], text);
-    buf.size_ += len;
-    buf.data_[buf.size_] = 0;
+    buf.data_ptr[buf.len++] = c;
+    buf.data_ptr[buf.len] = 0;
 }
 
-public fn void StringBuffer.print(StringBuffer* buf, const char* format, ...) {
-    // NOTE: no growing
+public fn void StringBuffer.add2(StringBuffer* buf, const char* text, u32 len) @(unused) {
+    if (buf.len + len + 1 > buf.capacity) {
+        // truncate if resize fails.
+        if (!buf.extend(len)) {
+            u32 size = buf.capacity - buf.len;
+            if (!size) return;
+            len = size - 1;
+        }
+    }
+    memcpy(&buf.data_ptr[buf.len], text, len);
+    buf.len += len;
+    buf.data_ptr[buf.len] = 0;
+}
+
+public fn void StringBuffer.printf(StringBuffer* buf, const char* format @(printf_format), ...) @(unused) {
     va_list args;
     va_start(args, format);
-    i32 len = vsprintf(&buf.data_[buf.size_], format, args);
-    // TODO check size
-    buf.size_ += len;
+    buf.vprintf(format, args);
     va_end(args);
 }
 
-public fn void StringBuffer.indent(StringBuffer* buf, u32 indent) {
-    // NOTE: no growing/checking
-    for (u32 i=0; i<indent; i++) {
-        buf.data_[buf.size_++] = ' ';
+public fn void StringBuffer.vprintf(StringBuffer* buf, const char* format, va_list args) @(unused) {
+    // formatted output is limited to 4095 bytes
+    char[4096] tmp;
+    char* dest = tmp;
+    u32 dest_size = elemsof(tmp);
+    u32 avail = buf.capacity - buf.len;
+    if (!buf.grow || avail >= 4096) {
+        if (!avail) {
+            buf.truncated = true;
+            return;
+        }
+        dest = &buf.data_ptr[buf.len];
+        dest_size = avail;
     }
-    buf.data_[buf.size_] = 0;
+    i32 len = vsnprintf(dest, avail, format, args);
+    if (len < 0) {
+        buf.error = true;
+        return;
+    }
+    if (len >= (i32)dest_size) {
+        buf.truncated = true;
+        len = (i32)dest_size - 1;
+    }
+    if (dest == tmp) memcpy(&buf.data_ptr[buf.len], tmp, (u32)len + 1);
+    buf.len += len;
+}
+
+fn bool StringBuffer.extend(StringBuffer* buf, u32 len) @(unused) {
+    if (!buf.grow) {
+        buf.truncated = true;
+        return false;
+    }
+    u32 newcap = buf.capacity * 2;
+    if ((len + 1) >= (newcap - buf.len)) newcap += buf.len + len + 1;
+    buf.capacity = newcap;
+    char* data2 = malloc(newcap);
+    memcpy(data2, buf.data_ptr, buf.len + 1);
+    if (buf.own) free(buf.data_ptr);
+    buf.own = true;
+    buf.data_ptr = data2;
+    return true;
+}
+
+public fn void StringBuffer.indent(StringBuffer* buf, u32 indent) @(unused) {
+    if (buf.len + indent + 1 > buf.capacity) {
+        // truncate if resize fails.
+        if (!buf.extend(indent)) {
+            u32 size = buf.capacity - buf.len;
+            if (!size) return;
+            indent = size - 1;
+        }
+    }
+    for (u32 i = 0; i < indent; i++) {
+        buf.data_ptr[buf.len++] = ' ';
+    }
+    buf.data_ptr[buf.len] = 0;
 }

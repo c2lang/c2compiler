@@ -120,8 +120,8 @@ public fn Socket* Socket.create(events.Base* base, logger.Base* logbase, const c
         fatal("opening TCP socket");
     }
 
-	Sockaddr_in my_addr;
-	my_addr.sin_family = AF_INET;
+    Sockaddr_in my_addr;
+    my_addr.sin_family = AF_INET;
     my_addr.sin_port = htons(port);
     my_addr.sin_addr.s_addr = INADDR_ANY;
     memset(&my_addr.sin_zero, 0, 8);

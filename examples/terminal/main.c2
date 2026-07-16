@@ -19,21 +19,17 @@ import ctermios local;
 import stdio local;
 import unistd local;
 
-Termios old;
-Termios new;
-
-public fn void init() {
-    tcgetattr(0, &old);
-    new=old;
+public fn void init(Termios *save) {
+    tcgetattr(0, save);
+    Termios new = *save;
     new.c_lflag &= ~(ICANON | ECHO);
     new.c_cc[VMIN] = 1;
     new.c_cc[VTIME] = 0;
-
     tcsetattr(0, TCSANOW, &new);
 }
 
-public fn void reset() {
-    tcsetattr(0, TCSANOW, &old);
+public fn void reset(Termios *old) {
+    tcsetattr(0, TCSANOW, old);
 }
 
 public fn char read_char() {
@@ -45,7 +41,8 @@ public fn char read_char() {
 
 
 public fn i32 main() {
-    init();
+    Termios old;
+    init(&old);
     printf("Press any key (q=quit)\n");
     loop: while (1) {
         printf("> ");
@@ -59,8 +56,7 @@ public fn i32 main() {
             break;
         }
     }
-    reset();
+    reset(&old);
     return 0;
 }
-
 

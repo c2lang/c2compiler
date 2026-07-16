@@ -17,13 +17,12 @@ module file_utils;
 
 import libc_fcntl local;
 import c_errno local;
-import sys_stat local;
 import unistd local;
-import stdlib;
+import stdio local;
+import stdlib local;
+import string local;
 
-u8 empty;
-
-public const i32 Err_not_a_file = 2001;
+u8[1] empty;
 
 public type Reader struct {
     void* region;
@@ -31,62 +30,114 @@ public type Reader struct {
     i32 errno;
 }
 
-public fn bool Reader.open(Reader* file, const char* filename) {
+public fn bool Reader.open(Reader* file, const char* filename) @(unused) {
     file.region = nil;
     file.size = 0;
+    file.errno = 0;
 
     i32 fd = open(filename, O_RDONLY);
     if (fd == -1) {
-        file.errno = *errno2();
+        file.errno = errno;
         return false;
     }
+    bool res = file.openHandle(fd);
+    close(fd);
+    return res;
+}
 
-    Stat statbuf;
-    i32 err = fstat(fd, &statbuf);
-    if (err) {
-        file.errno = *errno2();
-        return false;
-    }
+public fn bool Reader.openStream(Reader* file, FILE* fp) @(unused) {
+    char *data = nil;
+    usize size = 0;
 
-    if ((statbuf.st_mode & S_IFMT) != S_IFREG) {
-        close(fd);
-        file.errno = Err_not_a_file;
-        return false;
-    }
+    file.region = empty;
+    file.size = 0;
+    file.errno = 0;
 
-    file.size = (u32)statbuf.st_size;
-
-    if (file.size == 0) {
-        file.region = &empty;
+    if (fseek(fp, 0, SEEK_END) < 0) {  // stream is not seekable
+        char[4096] buf;
+        usize nread;
+        while ((nread = fread(buf, 1, elemsof(buf), fp)) > 0) {
+            data = realloc(data, size + nread + 1);
+            memcpy(data + size, buf, nread);
+            size += nread;
+        }
     } else {
-        file.region = stdlib.malloc(file.size+1);
-        isize numread = read(fd, file.region, file.size);
-        if (numread != file.size) return false;
-        // 0-terminate
-        u8* ptr = file.region;
-        ptr[file.size] = 0;
+        i64 file_length = ftell(fp);
+        usize length = (usize)file_length;
+        data = malloc(length + 1);
+        fseek(fp, 0, SEEK_SET);
+        size = fread(data, 1, length, fp);
     }
-	close(fd);
+    if (data) {
+        data[size] = '\0';
+        file.region = data;
+        file.size = (u32)size;
+    }
     return true;
 }
 
-public fn void Reader.close(Reader* file) {
-    if (file.region) {
-        stdlib.free(file.region);
+public fn bool Reader.openHandle(Reader* file, i32 fd) @(unused) {
+    char *data = nil;
+    usize size = 0;
+
+    file.region = empty;
+    file.size = 0;
+    file.errno = 0;
+
+    i64 file_length = lseek(fd, 0, SEEK_END);
+    lseek(fd, 0, SEEK_SET);
+    if (file_length < 0) {   // file descriptor is not seekable
+        char[4096] buf;
+        isize nread;
+        while ((nread = read(fd, buf, elemsof(buf))) != 0) {
+            if (nread < 0) {
+                if (errno == EINTR)
+                    continue;
+                file.errno = errno;
+                break;
+            }
+            data = realloc(data, size + (usize)nread + 1);
+            memcpy(data + size, buf, (usize)nread);
+            size += nread;
+        }
+    } else
+    if (file_length > 0) {
+        usize length = (usize)file_length;
+        data = malloc(length + 1);
+        isize nread;
+        while (size < length && (nread = read(fd, data + size, length - size)) != 0) {
+            if (nread < 0) {
+                if (errno == EINTR)
+                    continue;
+                file.errno = errno;
+                break;
+            }
+            size += nread;
+        }
+    }
+    if (data) {
+        data[size] = '\0';
+        file.region = data;
+        file.size = (u32)size;
+    }
+    return true;
+}
+
+public fn void Reader.close(Reader* file) @(unused) {
+    if (file.region && file.region != empty) {
+        free(file.region);
         file.region = nil;
     }
 }
 
-public fn bool Reader.isOpen(const Reader* file) {
+public fn bool Reader.isOpen(const Reader* file) @(unused) {
     return file.region != nil;
 }
 
-public fn const void* Reader.data(Reader* file) {
+public fn const void* Reader.data(Reader* file) @(unused) {
     return file.region;
 }
 
-public fn bool Reader.isEmpty(const Reader* file) {
+public fn bool Reader.isEmpty(const Reader* file) @(unused) {
     return file.size == 0;
 }
-
-

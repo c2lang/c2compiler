@@ -33,7 +33,7 @@ public fn i32 main() {
     while (1) {
         const char* message = "Hello Multicast World!";
         char[64] tmp;
-        sprintf(tmp, "%s %d", message, nr);
+        snprintf(tmp, elemsof(tmp), "%s %d", message, nr);
         nr++;
 
         sender.broadcast(tmp, (u32)strlen(tmp));

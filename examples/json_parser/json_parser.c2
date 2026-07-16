@@ -40,7 +40,7 @@ public fn bool Parser.parse(Parser* p, const char* text) {
     p.data.reset();
     p.message[0] = 0;
     JParser parser;
-    return parser.parse(text, p.message, p.data);
+    return parser.parse(text, p.message, elemsof(p.message), p.data);
 }
 
 public fn Iter Parser.get_root(const Parser* p) {
@@ -72,13 +72,15 @@ type JParser struct {
 
     JmpBufTag jmp_err;
     char* msg;
+    usize msg_size;
 }
 
-fn bool JParser.parse(JParser* p, const char* text, char* diagMsg, Data* data) {
+fn bool JParser.parse(JParser* p, const char* text, char* diagMsg, usize diagMsgSize, Data* data) {
     p.tokenizer.init(text);
     p.token.init();
     p.prev.set(0, 0);
     p.msg = diagMsg;
+    p.msg_size = diagMsgSize;
     p.data = data;
     p.inArray = false;
     memset(p.name_cache, 0, sizeof(p.name_cache));
@@ -119,7 +121,7 @@ fn void JParser.parseFile(JParser* p) {
         p.parseArray(node_idx);
         break;
     default:
-        sprintf(p.msg, "unexpected '%s' %s", getTokenName(p.token.getKind()), p.diagLoc());
+        snprintf(p.msg, p.msg_size, "unexpected '%s' %s", getTokenName(p.token.getKind()), p.diagLoc());
         longjmp(&p.jmp_err, 1);
         break;
     }
@@ -133,7 +135,7 @@ fn const char* JParser.diagLoc(const JParser* p) {
 
 fn void JParser.expect(JParser* p, TokenKind k) {
     if (p.token.isNot(k)) {
-        sprintf(p.msg, "expected '%s' %s", getTokenName(k), p.diagLoc());
+        snprintf(p.msg, p.msg_size, "expected '%s' %s", getTokenName(k), p.diagLoc());
         longjmp(&p.jmp_err, 1);
     }
 }
@@ -178,7 +180,7 @@ fn void JParser.parseArray(JParser* p, u32 parent_idx) {
         case Comma:
         case Eof:
         case Error:
-            sprintf(p.msg, "expected '{', '[' or text %s", p.diagLoc());
+            snprintf(p.msg, p.msg_size, "expected '{', '[' or text %s", p.diagLoc());
             longjmp(&p.jmp_err, 1);
             break;
         }
@@ -193,7 +195,7 @@ fn void JParser.parseArray(JParser* p, u32 parent_idx) {
         if (p.token.isNot(TokenKind.Comma)) break;
         Location commaLoc = p.consumeToken();
         if (p.token.is(TokenKind.R_sbracket)) {
-            sprintf(p.msg, "superfluous comma %s", commaLoc.str());
+            snprintf(p.msg, p.msg_size, "superfluous comma %s", commaLoc.str());
             longjmp(&p.jmp_err, 1);
         }
     }
@@ -254,7 +256,7 @@ fn void JParser.parseObject(JParser* p, u32 parent_idx) {
         case Comma:
         case Eof:
         case Error:
-            sprintf(p.msg, "expected '{', '[' or text %s", p.diagLoc());
+            snprintf(p.msg, p.msg_size, "expected '{', '[' or text %s", p.diagLoc());
             longjmp(&p.jmp_err, 1);
             break;
         }
@@ -270,7 +272,7 @@ fn void JParser.parseObject(JParser* p, u32 parent_idx) {
         if (p.token.isNot(TokenKind.Comma)) break;
         Location commaLoc = p.consumeToken();
         if (p.token.is(TokenKind.R_brace)) {
-            sprintf(p.msg, "superfluous comma %s", commaLoc.str());
+            snprintf(p.msg, p.msg_size, "superfluous comma %s", commaLoc.str());
             longjmp(&p.jmp_err, 1);
         }
         entry_idx++;
@@ -296,7 +298,7 @@ fn u32 JParser.parseValue(JParser* p) {
         strcpy(value, p.token.getText());
         break;
     default:
-        sprintf(p.msg, "syntax error %s", p.diagLoc());
+        snprintf(p.msg, p.msg_size, "syntax error %s", p.diagLoc());
         longjmp(&p.jmp_err, 1);
         break;
     }
@@ -335,7 +337,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
         case '\r':
             t.current++;
             if (t.current[0] != '\n') {
-                sprintf(t.msg, "unexpected char '%c' %s", t.current[0], t.loc.str());
+                snprintf(t.msg, elemsof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return;
@@ -389,7 +391,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             t.parseKeyword(result);
             return;
         default:
-            sprintf(t.msg, "unexpected char '%c' %s", t.current[0], t.loc.str());
+            snprintf(t.msg, elemsof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             return;
@@ -399,21 +401,21 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
 
 fn void Tokenizer.parseText(Tokenizer* t, Token* result) {
     t.current++;
-    const char* start = t.current;
+    //const char* start = t.current;
     // convert text, un-escape if needed
     const char* end = &t.msg[MAX_TEXT-1];
     char* out = t.msg;
     while (1) {
         switch (t.current[0]) {
         case 0:
-            sprintf(t.msg, "expected '\"' %s", t.loc.str());
+            snprintf(t.msg, elemsof(t.msg), "expected '\"' %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             return;
         case '\\':
             switch (t.current[1]) {
             case 0:
-                sprintf(t.msg, "invalid escape sequence '\\0 %s", t.loc.str());
+                snprintf(t.msg, elemsof(t.msg), "invalid escape sequence '\\0 %s", t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return;
@@ -433,7 +435,7 @@ fn void Tokenizer.parseText(Tokenizer* t, Token* result) {
                 *out++ = '\t';
                 break;
             default:
-                sprintf(t.msg, "invalid escape sequence '\\%c %s", t.current[1], t.loc.str());
+                snprintf(t.msg, elemsof(t.msg), "invalid escape sequence '\\%c %s", t.current[1], t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return;
@@ -448,7 +450,7 @@ fn void Tokenizer.parseText(Tokenizer* t, Token* result) {
             break;
         }
         if (out == end) {
-            sprintf(t.msg, "text too long (max %d) %s", MAX_TEXT-1, t.loc.str());
+            snprintf(t.msg, elemsof(t.msg), "text too long (max %d) %s", MAX_TEXT-1, t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             return;
@@ -496,7 +498,7 @@ fn void Tokenizer.parseKeyword(Tokenizer* t, Token* result) {
         result.setKind(TokenKind.Kw_null);
         t.advance(4);
     } else {
-        sprintf(t.msg, "unexpected char '%c' %s", t.current[0], t.loc.str());
+        snprintf(t.msg, elemsof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
         result.setKind(TokenKind.Error);
         result.setData(t.msg);
     }
@@ -606,7 +608,7 @@ fn void Location.set(Location* loc, u32 l, u32 c) {
 
 fn const char* Location.str(const Location* loc) {
     static char[32] msg;
-    sprintf(msg, "at line %d:%d", loc.line, loc.col);
+    snprintf(msg, elemsof(msg), "at line %d:%d", loc.line, loc.col);
     return msg;
 }
 

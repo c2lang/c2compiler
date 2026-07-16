@@ -270,20 +270,23 @@ fn void Data.dump(const Data* d, bool verbose) {
     d.dumpNode(1, 0);
 }
 
-fn void Data.dumpNode(const Data* d, u32 idx, u32 indent_) {
+fn void Data.dumpNode(const Data* d, u32 idx, u32 indent) {
     while (idx != 0) {
         const Node* n = &d.nodes.data[idx];
         switch (n.kind()) {
         case Object:
-            printf("%s%s\n", indent(indent_), &d.names.data[n.name_idx]);
-            if (n.child_idx != 0) d.dumpNode(n.child_idx, indent_+1);
+            printf("%*s", (i32)indent * 2, "");
+            printf("%s\n", &d.names.data[n.name_idx]);
+            if (n.child_idx != 0) d.dumpNode(n.child_idx, indent + 1);
             break;
         case Value:
-            printf("%s%s = '%s'\n", indent(indent_), &d.names.data[n.name_idx], &d.values.data[n.value_idx]);
+            printf("%*s", (i32)indent * 2, "");
+            printf("%s = '%s'\n", &d.names.data[n.name_idx], &d.values.data[n.value_idx]);
             break;
         case Array:
-            printf("%s %s\n", indent(indent_), &d.names.data[n.name_idx]);
-            if (n.child_idx != 0) d.dumpNode(n.child_idx, indent_+1);
+            printf("%*s", (i32)indent * 2, "");
+            printf("%s\n", &d.names.data[n.name_idx]);
+            if (n.child_idx != 0) d.dumpNode(n.child_idx, indent + 1);
             break;
         }
         idx = n.next();

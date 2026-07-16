@@ -71,7 +71,7 @@ fn void Location.init(Location* l, u32 line, u32 col) {
 
 fn const char* Location.str(Location* l) {
     static char[32] msg;
-    sprintf(msg, "line %d:%d", l.line, l.column);
+    snprintf(msg, elemsof(msg), "line %d:%d", l.line, l.column);
     return msg;
 }
 
@@ -144,7 +144,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             return;
         case '#':
             if (t.loc.column != 1) {
-                sprintf(t.text, "unexpected '#' after line start at %s", t.loc.str());
+                snprintf(t.text, elemsof(t.text), "unexpected '#' after line start at %s", t.loc.str());
                 result.kind = TokenKind.Error;
                 result.text = t.text;
                 return;
@@ -222,7 +222,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
                 t.parseKey(result);
                 return;
             }
-            sprintf(t.text, "unexpected char '%c' at %s", t.current[0], t.loc.str());
+            snprintf(t.text, elemsof(t.text), "unexpected char '%c' at %s", t.current[0], t.loc.str());
             result.kind = TokenKind.Error;
             result.text = t.text;
             return;
@@ -290,7 +290,7 @@ fn void Tokenizer.parseMultiText(Tokenizer* t, Token* result) {
     const char* start = t.current;
     while (1) {
         if (t.current[0] == 0) {
-            sprintf(t.text, "missing end \"\"\" %s", t.loc.str());
+            snprintf(t.text, elemsof(t.text), "missing end \"\"\" %s", t.loc.str());
             result.kind = TokenKind.Error;
             result.text = t.text;
             return;

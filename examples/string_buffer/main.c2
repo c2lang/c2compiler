@@ -16,24 +16,27 @@
 module tester;
 
 import stdio local;
-import utils;
+import utils local;
 
-type Callback fn void (utils.StringBuffer* buf, const char* text);
+//type Callback fn void (StringBuffer* buf, const char* text);
 
 public fn i32 main() {
-    utils.StringBuffer* buf = utils.StringBuffer.create(8);
-    //utils.StringBuffer* buf = utils.StringBuffer.create(100);
+    StringBuffer* buf = StringBuffer.create(8);
 
     buf.add("hello ");
     buf.add("this ");
     buf.add("is ");
     buf.add("a ");
     buf.add("test!");
+    buf.indent(2);
+    buf.add2("xxx", 1);
+    buf.putc('y');
+    buf.printf("%d", 123);
 
     printf("size = %d\n", buf.size());
     printf("data = '%s'\n", buf.data());
 
-    Callback cb = utils.StringBuffer.add;
+    //Callback cb = StringBuffer.add;
 
     buf.clear();
     buf.destroy();

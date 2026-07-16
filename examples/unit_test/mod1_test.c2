@@ -51,7 +51,7 @@ fn void Test.test6(Test* t) {
 
 fn void Test.test7(Test* t) {
     check_not_nil(t);
-    check_nil(t);
+    check_nil((void*)(usize)1);  // make output reproducible
 }
 
 fn void Test.helper(Test* t) {

@@ -16,60 +16,51 @@
 module mod_main;
 
 import stdio local;
-import stdlib local;
 import string local;
-import sys_stat local;
-import sys_time;
 import libc_dirent local;
 import c_errno local;
-import unistd;
 
-fn void print_indent(u32 indent) {
-    for (u32 i=0; i<indent; i++) {
-        printf("  ");
-    }
+fn void print_indent(i32 indent) {
+    printf("%*s", indent * 2, "");
 }
 
-fn void handle_file(const char* path, u32 indent) {
+fn void handle_file(const char* path, i32 indent) {
     print_indent(indent);
     printf("%s\n", path);
 }
 
-fn void handle_dir(const char* path, u32 indent) {
+fn i32 handle_dir(const char* path, i32 indent) {
     print_indent(indent);
     printf("%s/\n", path);
+
     DIR* dir = opendir(path);
     if (dir == nil) {
-        printf("cannot open dir '%s': %s\n", path, strerror(*errno2()));
-        return;
+        fprintf(stderr, "cannot open directory '%s': %s\n", path, strerror(errno));
+        return 1;
     }
-    Dirent* dir2 = readdir(dir);
-    char[512] temp;
-    while (dir2 != nil) {
+
+    while (Dirent* e = readdir(dir)) {
+        char[512] temp;
         // FIXME: need string.makepath
-        snprintf(temp, sizeof(temp), "%s/%s", path, dir2.d_name);
-        switch (dir2.d_type) {
+        snprintf(temp, elemsof(temp), "%s/%s", path, e.d_name);
+        switch (e.d_type) {
         case DT_REG:
             handle_file(temp, indent+1);
             break;
         case DT_DIR:
-            if (strcmp(dir2.d_name, ".") != 0 && strcmp(dir2.d_name, "..") != 0) {
+            if (strcmp(e.d_name, ".") != 0 && strcmp(e.d_name, "..") != 0) {
                 handle_dir(temp, indent+1);
             }
             break;
         default:
             break;
         }
-        dir2 = readdir(dir);
     }
     closedir(dir);
-}
-
-
-public fn i32 main() {
-    handle_dir(".", 0);
-
     return 0;
 }
 
+public fn i32 main(i32 argc, char** argv) {
+    return handle_dir(argc > 1 ? argv[1] : ".", 0);
+}
 

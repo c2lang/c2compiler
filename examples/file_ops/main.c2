@@ -15,19 +15,27 @@
 
 module event_test;
 
-import csignal local;
-import string local;
-import stdlib local;
 import stdio local;
-import unistd local;
+import string local;
+
 import file_utils;
 
 public fn i32 main(i32 argc, char** argv) {
+    if (argc != 2) {
+        fprintf(stderr, "usage: file_ops [file]\n");
+        return 2;
+    }
+
+    const char* filename = argv[1];
     file_utils.Reader file;
-    file.open(argv[1]);
+
+    if (!file.open(filename)) {
+        fprintf(stderr, "cannot load '%s': %s\n", filename, strerror(file.errno));
+        return 1;
+    }
 
     const char* contents = file.data();
-    printf("%s", contents);
+    fputs(contents, stdout);
 
     file.close();
 

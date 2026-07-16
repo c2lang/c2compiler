@@ -43,19 +43,19 @@ fn void Sender.open_socket(Sender* s) {
     // create what looks like an ordinary UDP socket
     //if ((s.fd = socket(AF_INET, SocketType.SOCK_DGRAM | SOCK_CLOEXEC, IPPROTO_UDP)) < 0) {
     if ((s.fd = socket(AF_INET, SocketType.SOCK_DGRAM | SOCK_CLOEXEC, 0)) < 0) {
-        fprintf(stderr, "error opening socket: %s\n", strerror(*errno2()));
+        fprintf(stderr, "error opening socket: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     u8 ttl = 1;
     if (setsockopt(s.fd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) != 0) {
-        fprintf(stderr, "setsockopt(IP_MULTICAST_TTL): %s\n", strerror(*errno2()));
+        fprintf(stderr, "setsockopt(IP_MULTICAST_TTL): %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     i32 reuse = 1;
     if (setsockopt(s.fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) != 0) {
-        fprintf(stderr, "setsockopt(SO_REUSEADDR): %s\n", strerror(*errno2()));
+        fprintf(stderr, "setsockopt(SO_REUSEADDR): %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -67,7 +67,7 @@ fn void Sender.open_socket(Sender* s) {
     local_addr.sin_port = htons(0); // let OS pick port
 
     if (bind(s.fd, (Sockaddr*)&local_addr, sizeof(local_addr))) {
-        fprintf(stderr, "bind: %s\n", strerror(*errno2()));
+        fprintf(stderr, "bind: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -80,7 +80,7 @@ fn void Sender.open_socket(Sender* s) {
 
     // bind to a local address
     if (connect(s.fd, (Sockaddr*)&dest_addr, sizeof(dest_addr)) < 0) {
-        fprintf(stderr, "connect: %s\n", strerror(*errno2()));
+        fprintf(stderr, "connect: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -94,7 +94,7 @@ fn void Sender.open_socket(Sender* s) {
 
 public fn void Sender.broadcast(Sender* s, const void* data, u32 size) {
     if (send(s.fd, data, size, 0) < 0) {
-        fprintf(stderr, "send: %s\n", strerror(*errno2()));
+        fprintf(stderr, "send: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 

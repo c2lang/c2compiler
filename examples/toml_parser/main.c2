@@ -28,8 +28,8 @@ import toml;
 
 public fn i32 main(i32 argc, char** argv) {
     if (argc != 2) {
-        printf("Usage: parser [toml-file]\n");
-        return 0;
+        fprintf(stderr, "usage: toml_parser [toml-file]\n");
+        return 2;
     }
     const char* filename = argv[1];
 

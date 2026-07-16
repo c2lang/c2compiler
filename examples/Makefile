@@ -10,3 +10,7 @@ warnings:
 
 clean:
 	rm -rf output
+
+test:
+	@echo "---- running tests ----"
+	@./test.sh

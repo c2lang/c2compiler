@@ -17,17 +17,15 @@ module plugin_mgr;
 
 import other;
 
-import c_errno local;
 import dlfcn local;
 import stdio local;
-import string local;
 
 type LoadFn fn void(i32 arg);
 
 public fn i32 main(i32 argc, char** argv) {
     if (argc != 2) {
-        printf("Usage: %s [filename]\n", argv[0]);
-        return 0;
+        fprintf(stderr, "usage: plugin_mgr [filename]\n");
+        return 2;
     }
 
     printf("other.test1 = %p\n", other.test1);

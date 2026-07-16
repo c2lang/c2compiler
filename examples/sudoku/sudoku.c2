@@ -98,32 +98,28 @@ fn void Board.init(Board* board) {
 }
 
 fn void Board.print(const Board* board, bool showOptions, u8 xx, u8 yy) {
-    char[2048] buffer;
-    memset(buffer, 0, sizeof(buffer));
-    char* cp = buffer;
-    cp += sprintf(cp, "-------------------------\n");
-    for (u32 y=0; y<9; y++) {
-        *cp++ = '|';
-        for (u32 x=0; x<9; x++) {
-            u32 idx = 9*y + x;
+    printf("-------------------------\n");
+    for (u32 y = 0; y < 9; y++) {
+        putchar('|');
+        for (u32 x = 0; x < 9; x++) {
+            u32 idx = 9 * y + x;
             const Field* f = &board.fields[idx];
             if (f.value) {
                 const char* col = color.Green;
                 if (x == xx && y == yy) col = color.Byellow;
-                cp += sprintf(cp, " %s%d%s", col, f.value, color.Normal);
+                printf(" %s%d%s", col, f.value, color.Normal);
             } else {
-                cp += sprintf(cp, "  ");
+                printf("  ");
             }
             if (x % 3 == 2) {
-                *cp++ = ' ';
-                *cp++ = '|';
+                putchar(' ');
+                putchar('|');
             }
         }
-        *cp++ = '\n';
-        if (y % 3 == 2) cp += sprintf(cp, "-------------------------\n");
+        putchar('\n');
+        if (y % 3 == 2) printf("-------------------------\n");
     }
-    *cp = 0;
-    puts(buffer);
+    putchar('\n');
     if (showOptions && board.todo != 0) board.printOptions();
 }
 
@@ -389,7 +385,7 @@ const Puzzle[] Puzzles = {
 
 public fn i32 main(i32 argc, char** argv) {
     if (argc != 2) {
-        printf("usage: %s [puzzle]\n", argv[0]);
+        printf("usage: sudoku [puzzle]\n");
         for (u32 i=0; i<elemsof(Puzzles); i++) {
             printf("  %s\n", Puzzles[i].name);
         }

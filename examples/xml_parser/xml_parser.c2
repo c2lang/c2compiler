@@ -19,7 +19,6 @@ import stdio local;
 import string local;
 import csetjmp local;
 import ctype local;
-import color;
 
 const u32 MAX_NAME = 128;
 const u32 MAX_VALUE = 128;
@@ -55,7 +54,7 @@ public fn bool Parser.parse(Parser* p, const char* text, bool verbose) {
     p.blocks.init();
 
     XmlParser parser;
-    bool status = parser.parse(text, p.message, &p.blocks);
+    bool status = parser.parse(text, p.message, elemsof(p.message), &p.blocks);
     if (status && verbose) p.blocks.dump(true);
     return status;
 }
@@ -82,14 +81,16 @@ type XmlParser struct {
     Location prev;
     JmpBufTag jmp_err;
     char* msg;
+    usize msg_size;
     Blocks* blocks;
 }
 
-fn bool XmlParser.parse(XmlParser* p, const char* text, char* diagMsg, Blocks* blocks_) {
+fn bool XmlParser.parse(XmlParser* p, const char* text, char* diagMsg, usize diagMsgSize, Blocks* blocks_) {
     p.tokenizer.init(text);
     p.token.init();
     p.prev.set(0, 0);
     p.msg = diagMsg;
+    p.msg_size = diagMsgSize;
     p.blocks = blocks_;
 
     i32 res = setjmp(&p.jmp_err);
@@ -109,7 +110,7 @@ fn bool XmlParser.parse(XmlParser* p, const char* text, char* diagMsg, Blocks* b
 }
 
 fn void XmlParser.fatal(XmlParser* p, const char* text) {
-    sprintf(p.msg, "error %s %s", text, p.diagLoc());
+    snprintf(p.msg, p.msg_size, "error %s %s", text, p.diagLoc());
     longjmp(&p.jmp_err, 1);
 }
 
@@ -174,7 +175,7 @@ fn u32 XmlParser.parseNode(XmlParser* p) {
 }
 
 fn bool XmlParser.parseTag(XmlParser* p, Node* node) {
-    u32 last_attr_off = 0;
+    //u32 last_attr_off = 0;
     Attr* lastAttr = nil;
 
     // <name has been parsed already
@@ -305,7 +306,7 @@ fn const char* XmlParser.diagLoc(const XmlParser* p) {
 
 fn void XmlParser.expect(XmlParser* p, TokenKind k) {
     if (p.token.isNot(k)) {
-        sprintf(p.msg, "expected '%s' %s", getTokenName(k), p.diagLoc());
+        snprintf(p.msg, p.msg_size, "expected '%s' %s", getTokenName(k), p.diagLoc());
         longjmp(&p.jmp_err, 1);
     }
 }
@@ -353,7 +354,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             case '\r':
                 t.current++;
                 if (t.current[0] != '\n') {
-                    sprintf(t.msg, "unexpected char '%c' %s", t.current[0], t.loc.str());
+                    snprintf(t.msg, elemsof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
                     result.setKind(TokenKind.Error);
                     result.setData(t.msg);
                     return;
@@ -390,7 +391,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
     while (1) {
         switch (t.current[0]) {
         case 0:
-            sprintf(t.msg, "unexpected eof %s", t.loc.str());
+            snprintf(t.msg, elemsof(t.msg), "unexpected eof %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             return;
@@ -401,7 +402,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
         case '\r':
             t.current++;
             if (t.current[0] != '\n') {
-                sprintf(t.msg, "unexpected char '%c' %s", t.current[0], t.loc.str());
+                snprintf(t.msg, elemsof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return;
@@ -423,7 +424,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             return;
         case '/':       // expect '/>'
             if (t.current[1] != '>') {
-                sprintf(t.msg, "expected '/>' %s", t.loc.str());
+                snprintf(t.msg, elemsof(t.msg), "expected '/>' %s", t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return;
@@ -435,7 +436,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             return;
         case '?':   // expect '?>'
             if (t.current[1] != '>') {
-                sprintf(t.msg, "expected '?>' %s", t.loc.str());
+                snprintf(t.msg, elemsof(t.msg), "expected '?>' %s", t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return;
@@ -456,7 +457,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             return;
         case ']':   // expect ']]>'
             if (t.current[1] != ']' || t.current[2] != '>') {
-                sprintf(t.msg, "expected ']]>' %s", t.loc.str());
+                snprintf(t.msg, elemsof(t.msg), "expected ']]>' %s", t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return;
@@ -469,7 +470,7 @@ fn void Tokenizer.lex(Tokenizer* t, Token* result) {
             if (isNameStartChar(t.current[0])) {
                 t.parseName(result);
             } else {
-                sprintf(t.msg, "unexpected char '%c' %s", t.current[0], t.loc.str());
+                snprintf(t.msg, elemsof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
 
@@ -490,7 +491,7 @@ fn bool Tokenizer.readLtToken(Tokenizer* t, Token* result) {
     if (t.current[1] == '!') {  // can be <![CDATA[, <!-- or <!
         switch (t.current[2]) {
         case 0:
-            sprintf(t.msg, "unexpected eof %s", t.loc.str());
+            snprintf(t.msg, elemsof(t.msg), "unexpected eof %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             break;
@@ -500,7 +501,7 @@ fn bool Tokenizer.readLtToken(Tokenizer* t, Token* result) {
                 result.setKind(TokenKind.CdataBegin);
                 t.advance(9);
             } else {
-                sprintf(t.msg, "expected '<!CDATA[' %s", t.loc.str());
+                snprintf(t.msg, elemsof(t.msg), "expected '<!CDATA[' %s", t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
             }
@@ -510,7 +511,7 @@ fn bool Tokenizer.readLtToken(Tokenizer* t, Token* result) {
                 if (!t.readComments(result)) return true;
                 return false;
             } else {
-                sprintf(t.msg, "expected '<!--' %s", t.loc.str());
+                snprintf(t.msg, elemsof(t.msg), "expected '<!--' %s", t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
             }
@@ -530,7 +531,7 @@ fn bool Tokenizer.readLtToken(Tokenizer* t, Token* result) {
             t.advance(5);
             t.inElement = true;
         } else {
-            sprintf(t.msg, "expected '<?xml' %s", t.loc.str());
+            snprintf(t.msg, elemsof(t.msg), "expected '<?xml' %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
         }
@@ -549,7 +550,7 @@ fn bool Tokenizer.readComments(Tokenizer* t, Token* result) {
     while (1) {
         switch (t.current[0]) {
         case 0:
-            sprintf(t.msg, "unexpected eof %s", t.loc.str());
+            snprintf(t.msg, elemsof(t.msg), "unexpected eof %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             return false;
@@ -560,7 +561,7 @@ fn bool Tokenizer.readComments(Tokenizer* t, Token* result) {
         case '\r':
             t.current++;
             if (t.current[0] != '\n') {
-                sprintf(t.msg, "unexpected char '%c' %s", t.current[0], t.loc.str());
+                snprintf(t.msg, elemsof(t.msg), "unexpected char '%c' %s", t.current[0], t.loc.str());
                 result.setKind(TokenKind.Error);
                 result.setData(t.msg);
                 return false;
@@ -593,7 +594,7 @@ fn void Tokenizer.parseValue(Tokenizer* t, Token* result, char delimiter) {
     // TODO support escaped delimiters
     while (true) {
         if (t.current[0] == 0) {
-            sprintf(t.msg, "unexpected eof %s", t.loc.str());
+            snprintf(t.msg, elemsof(t.msg), "unexpected eof %s", t.loc.str());
             result.setKind(TokenKind.Error);
             result.setData(t.msg);
             return;
@@ -739,7 +740,7 @@ fn void Location.set(Location* loc, u32 l, u32 c) {
 
 fn const char* Location.str(const Location* loc) {
     static char[32] msg;
-    sprintf(msg, "at line %d:%-3d", loc.line, loc.col);
+    snprintf(msg, elemsof(msg), "at line %d:%-3d", loc.line, loc.col);
     return msg;
 }
 
