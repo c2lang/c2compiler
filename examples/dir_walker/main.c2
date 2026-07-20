@@ -30,8 +30,16 @@ fn void handle_file(const char* path, i32 indent) {
 }
 
 fn i32 handle_dir(const char* path, i32 indent) {
+    char[512] temp;
+
+    usize len = pstrcpy(temp, elemsof(temp), path);
+    if (len == 0) temp[len++] = '.';
+    if (len < elemsof(temp) - 1 && temp[len - 1] != '/') {
+        temp[len++] = '/';
+        temp[len] = '\0';
+    }
     print_indent(indent);
-    printf("%s/\n", path);
+    printf("%s\n", temp);
 
     DIR* dir = opendir(path);
     if (dir == nil) {
@@ -40,9 +48,7 @@ fn i32 handle_dir(const char* path, i32 indent) {
     }
 
     while (Dirent* e = readdir(dir)) {
-        char[512] temp;
-        // FIXME: need string.makepath
-        snprintf(temp, elemsof(temp), "%s/%s", path, e.d_name);
+        pstrcpy(temp + len, elemsof(temp) - len, e.d_name);
         switch (e.d_type) {
         case DT_REG:
             handle_file(temp, indent+1);

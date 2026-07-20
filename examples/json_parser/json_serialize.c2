@@ -117,7 +117,7 @@ public fn bool Parser.read_cache(Parser* p, const char* filename) {
         snprintf(p.message, elemsof(p.message), "invalid data");
         return false;
     }
-    p.data = Data.read(file.data(), file.size);
+    p.data = Data.read(file.data(), file.size());
     file.close();
     if (!p.data) {
         snprintf(p.message, elemsof(p.message), "invalid data");

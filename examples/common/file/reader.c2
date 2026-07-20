@@ -26,13 +26,13 @@ u8[1] empty;
 
 public type Reader struct {
     void* region;
-    u32 size;
+    u32 region_size;
     i32 errno;
 }
 
 public fn bool Reader.open(Reader* file, const char* filename) @(unused) {
     file.region = nil;
-    file.size = 0;
+    file.region_size = 0;
     file.errno = 0;
 
     i32 fd = open(filename, O_RDONLY);
@@ -50,7 +50,7 @@ public fn bool Reader.openStream(Reader* file, FILE* fp) @(unused) {
     usize size = 0;
 
     file.region = empty;
-    file.size = 0;
+    file.region_size = 0;
     file.errno = 0;
 
     if (fseek(fp, 0, SEEK_END) < 0) {  // stream is not seekable
@@ -71,7 +71,7 @@ public fn bool Reader.openStream(Reader* file, FILE* fp) @(unused) {
     if (data) {
         data[size] = '\0';
         file.region = data;
-        file.size = (u32)size;
+        file.region_size = (u32)size;
     }
     return true;
 }
@@ -81,7 +81,7 @@ public fn bool Reader.openHandle(Reader* file, i32 fd) @(unused) {
     usize size = 0;
 
     file.region = empty;
-    file.size = 0;
+    file.region_size = 0;
     file.errno = 0;
 
     i64 file_length = lseek(fd, 0, SEEK_END);
@@ -118,7 +118,7 @@ public fn bool Reader.openHandle(Reader* file, i32 fd) @(unused) {
     if (data) {
         data[size] = '\0';
         file.region = data;
-        file.size = (u32)size;
+        file.region_size = (u32)size;
     }
     return true;
 }
@@ -138,6 +138,10 @@ public fn const void* Reader.data(Reader* file) @(unused) {
     return file.region;
 }
 
+public fn u32 Reader.size(Reader* file) @(unused) {
+    return file.region_size;
+}
+
 public fn bool Reader.isEmpty(const Reader* file) @(unused) {
-    return file.size == 0;
+    return file.region_size == 0;
 }

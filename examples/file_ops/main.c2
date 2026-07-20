@@ -35,7 +35,8 @@ public fn i32 main(i32 argc, char** argv) {
     }
 
     const char* contents = file.data();
-    fputs(contents, stdout);
+    usize size = file.size();
+    fwrite(contents, 1, size, stdout);
 
     file.close();
 

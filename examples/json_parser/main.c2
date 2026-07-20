@@ -19,6 +19,7 @@ import stdio local;
 import string local;
 import stdlib;
 import sys_time;
+import unistd;
 
 import file_utils;
 import json;
@@ -48,10 +49,10 @@ public fn i32 main(i32 argc, char** argv) {
         return 2;
     }
     const char* filename = argv[1];
-
+    bool show_times = unistd.isatty(1);
     bool use_cache = false;
-    json.Parser parser;
-    parser.init();
+
+    json.Parser parser.init();
 
     if (!use_cache || !isCache(filename)) {
         u64 t1 = current_time();
@@ -72,7 +73,7 @@ public fn i32 main(i32 argc, char** argv) {
             return -1;
         }
         u64 t2 = current_time();
-        printf("parsing took %d usec\n", t2 - t1);
+        if (show_times) printf("parsing took %d usec\n", t2 - t1);
         file.close();
     } else {
         u64 t1 = current_time();
@@ -81,7 +82,7 @@ public fn i32 main(i32 argc, char** argv) {
             return -1;
         }
         u64 t2 = current_time();
-        printf("reading cache took %d usec\n", t2 - t1);
+        if (show_times) printf("reading cache took %d usec\n", t2 - t1);
     }
     parser.report();
 
@@ -154,7 +155,7 @@ public fn i32 main(i32 argc, char** argv) {
         snprintf(cache_file, elemsof(cache_file), "%s%s", filename, Cache_suffix);
         parser.write_cache(cache_file);
         u64 t4 = current_time();
-        printf("writing %s took %d usec\n", cache_file, t4 - t3);
+        if (show_times) printf("writing %s took %d usec\n", cache_file, t4 - t3);
     }
 
     parser.destroy();

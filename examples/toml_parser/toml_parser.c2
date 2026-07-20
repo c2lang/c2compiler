@@ -187,7 +187,7 @@ fn u32 addType(u32 raw, ValueType t) @(inline) {
 fn void Parser.parseKeyValue(Parser* p) {
     //printf("parseKeyValue()\n");
     char[MaxText] key;
-    strcpy(key, p.tok.text);
+    pstrcpy(key, elemsof(key), p.tok.text);
     p.consumeToken();
     p.expectAndConsume(TokenKind.Equals);
     u32 value = p.parseValue();
@@ -359,7 +359,7 @@ fn Location Parser.consumeToken(Parser* p) {
     Location prev = p.tok.loc;
     p.tokenizer.lex(&p.tok);
     if (p.tok.is(TokenKind.Error)) {
-        strcpy(p.errorMsg, p.tok.text);
+        pstrcpy(p.errorMsg, p.errorMsgSize, p.tok.text);
         longjmp(&p.jump_err, 1);
     }
     return prev;

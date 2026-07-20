@@ -6,11 +6,12 @@ const char[] Data1 @(embed="load_file/files/data1.dat");
 const char[] File2 @(embed="load_file/files/file2.txt");
 
 fn void hex_dump(const u8* data, u32 len) {
-    for (u32 i=0; i<len; i++) {
-        printf("%02X ", data[i]);
-        if (i%16 == 15) printf("\n");
+    for (u32 i = 0; i < len; i++) {
+        if (i % 16) putchar(' ');
+        printf("%02X", data[i]);
+        if (i % 16 == 15) putchar('\n');
     }
-    if (len%16 != 15) printf("\n");
+    if (len % 16 != 15) putchar('\n');
 }
 
 public fn i32 main() {

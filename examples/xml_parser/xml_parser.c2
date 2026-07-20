@@ -293,7 +293,7 @@ fn Location XmlParser.consumeToken(XmlParser* p) {
     printf("\n");
 #endif
     if (p.token.is(TokenKind.Error)) {
-        strcpy(p.msg, p.token.getText());
+        pstrcpy(p.msg, p.msg_size, p.token.getText());
         longjmp(&p.jmp_err, 1);
     }
     return p.prev;

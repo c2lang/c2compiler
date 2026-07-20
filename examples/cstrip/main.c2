@@ -207,7 +207,7 @@ public fn i32 main(i32 argc, char** argv) {
         return 0;
     }
 
-    StringBuffer* buffer = StringBuffer.create(infile.size + 1);
+    StringBuffer* buffer = StringBuffer.create(infile.size() + 1);
 
     strip_comments(infile.data(), buffer);
     infile.close();
