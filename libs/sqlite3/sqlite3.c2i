@@ -1,0 +1,93 @@
+module sqlite3 extern "C";
+
+const char[] Version = "3.53.3";
+
+const char* libversion() @(cname="sqlite3_libversion");
+
+type Sqlite3 struct @(opaque);
+
+// flags for open
+const u32 OPEN_READONLY         = 0x00000001;  /* Ok for sqlite3_open_v2() */
+const u32 OPEN_READWRITE        = 0x00000002;  /* Ok for sqlite3_open_v2() */
+const u32 OPEN_CREATE           = 0x00000004;  /* Ok for sqlite3_open_v2() */
+const u32 OPEN_DELETEONCLOSE    = 0x00000008;  /* VFS only */
+const u32 OPEN_EXCLUSIVE        = 0x00000010;  /* VFS only */
+const u32 OPEN_AUTOPROXY        = 0x00000020;  /* VFS only */
+const u32 OPEN_URI              = 0x00000040;  /* Ok for sqlite3_open_v2() */
+const u32 OPEN_MEMORY           = 0x00000080;  /* Ok for sqlite3_open_v2() */
+const u32 OPEN_MAIN_DB          = 0x00000100;  /* VFS only */
+const u32 OPEN_TEMP_DB          = 0x00000200;  /* VFS only */
+const u32 OPEN_TRANSIENT_DB     = 0x00000400;  /* VFS only */
+const u32 OPEN_MAIN_JOURNAL     = 0x00000800;  /* VFS only */
+const u32 OPEN_TEMP_JOURNAL     = 0x00001000;  /* VFS only */
+const u32 OPEN_SUBJOURNAL       = 0x00002000;  /* VFS only */
+const u32 OPEN_SUPER_JOURNAL    = 0x00004000;  /* VFS only */
+const u32 OPEN_NOMUTEX          = 0x00008000;  /* Ok for sqlite3_open_v2() */
+const u32 OPEN_FULLMUTEX        = 0x00010000;  /* Ok for sqlite3_open_v2() */
+const u32 OPEN_SHAREDCACHE      = 0x00020000;  /* Ok for sqlite3_open_v2() */
+const u32 OPEN_PRIVATECACHE     = 0x00040000;  /* Ok for sqlite3_open_v2() */
+const u32 OPEN_WAL              = 0x00080000;  /* VFS only */
+const u32 OPEN_NOFOLLOW         = 0x01000000;  /* Ok for sqlite3_open_v2() */
+const u32 OPEN_EXRESCODE        = 0x02000000;  /* Extended result codes */
+
+// result codes
+const u32 SQLITE_OK           = 0;  /* Successful result */
+const u32 SQLITE_ERROR        = 1;  /* Generic error */
+const u32 SQLITE_INTERNAL     = 2;  /* Internal logic error in SQLite */
+const u32 SQLITE_PERM         = 3;  /* Access permission denied */
+const u32 SQLITE_ABORT        = 4;  /* Callback routine requested an abort */
+const u32 SQLITE_BUSY         = 5;  /* The database file is locked */
+const u32 SQLITE_LOCKED       = 6;  /* A table in the database is locked */
+const u32 SQLITE_NOMEM        = 7;  /* A malloc() failed */
+const u32 SQLITE_READONLY     = 8;  /* Attempt to write a readonly database */
+const u32 SQLITE_INTERRUPT    = 9;  /* Operation terminated by sqlite3_interrupt()*/
+const u32 SQLITE_IOERR       = 10;  /* Some kind of disk I/O error occurred */
+const u32 SQLITE_CORRUPT     = 11;  /* The database disk image is malformed */
+const u32 SQLITE_NOTFOUND    = 12;  /* Unknown opcode in sqlite3_file_control() */
+const u32 SQLITE_FULL        = 13;  /* Insertion failed because database is full */
+const u32 SQLITE_CANTOPEN    = 14;  /* Unable to open the database file */
+const u32 SQLITE_PROTOCOL    = 15;  /* Database lock protocol error */
+const u32 SQLITE_EMPTY       = 16;  /* Internal use only */
+const u32 SQLITE_SCHEMA      = 17;  /* The database schema changed */
+const u32 SQLITE_TOOBIG      = 18;  /* String or BLOB exceeds size limit */
+const u32 SQLITE_CONSTRAINT  = 19;  /* Abort due to constraint violation */
+const u32 SQLITE_MISMATCH    = 20;  /* Data type mismatch */
+const u32 SQLITE_MISUSE      = 21;  /* Library used incorrectly */
+const u32 SQLITE_NOLFS       = 22;  /* Uses OS features not supported on host */
+const u32 SQLITE_AUTH        = 23;  /* Authorization denied */
+const u32 SQLITE_FORMAT      = 24;  /* Not used */
+const u32 SQLITE_RANGE       = 25;  /* 2nd parameter to sqlite3_bind out of range */
+const u32 SQLITE_NOTADB      = 26;  /* File opened that is not a database file */
+const u32 SQLITE_NOTICE      = 27;  /* Notifications from sqlite3_log() */
+const u32 SQLITE_WARNING     = 28;  /* Warnings from sqlite3_log() */
+const u32 SQLITE_ROW         = 100;  /* sqlite3_step() has another row ready */
+const u32 SQLITE_DONE        = 101;  /* sqlite3_step() has finished executing */
+
+
+int Sqlite3.open(const char* filename,
+                 Sqlite3**ppDb,
+                 int flags,
+                 const char* zVfs) @(cname="sqlite3_open_v2");
+
+int Sqlite3.close(Sqlite3* s) @(cname="sqlite3_close_v2");
+
+int Sqlite3.errcode(Sqlite3* db) @(cname="sqlite3_errcode");
+
+//TODO some weird macro? api->errmsg?
+const char* Sqlite3.errmsg(Sqlite3* db) @(cname="sqlite3_errmsg");
+
+i64 memory_used() @(cname="sqlite3_memory_used");
+
+int Sqlite3.get_table(Sqlite3* db,
+                      const char* zSql,
+                      char*** pazResult,
+                      int* pnRow,
+                      int* pnColumn,
+                      char** pzErrmsg) @(cname="sqlite3_get_table");
+
+void free_table(char** result) @(cname="sqlite3_free_table");
+
+// sqlite3_exec();
+
+// int sqlit3_config(int, ...);
+

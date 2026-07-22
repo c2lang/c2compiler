@@ -1,0 +1,14 @@
+info:
+    language: c
+    type: library
+    linkname: sqlite3
+    kinds:
+        - static
+
+dependencies:
+    libc: dynamic
+#    math: dynamic
+
+modules:
+    - sqlite3
+
