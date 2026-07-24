@@ -18,17 +18,17 @@ module unused_checker;
 import ast local;
 import diagnostics;
 import string_pool;
-import warning_flags;
+import warning_flags local;
 
 type Checker struct {
     diagnostics.Diags* diags;
     string_pool.Pool* astPool;
-    const warning_flags.Flags* warnings;
+    const WarningFlags* warnings;
 }
 
 public fn void check(diagnostics.Diags* diags,
                        string_pool.Pool* astPool,
-                       const warning_flags.Flags* warnings,
+                       const WarningFlags* warnings,
                        Module* mod)
 {
     Checker c = {
@@ -59,58 +59,56 @@ fn const char* Checker.getFullName(const Checker* c, const Decl* d) {
 
 fn void Checker.unused_module(void* arg, AST* a) {
     Checker* c = arg;
-    if (!c.warnings.no_unused_module) {
-        c.diags.warn(a.getLoc(), "unused module '%s'", c.idx2name(a.getNameIdx()));
-    }
+    c.diags.warn(W_unused_module, a.getLoc(), "unused module '%s'", c.idx2name(a.getNameIdx()));
 }
 
 fn void Checker.check(void* arg, Decl* d) {
     Checker* c = arg;
     bool used = d.isUsed();
-    if (used && d.isPublic() && !d.isUsedPublic() && !c.warnings.no_unused_public && !d.hasAttrUnused()) {
-        c.diags.warn(d.getLoc(), "%s '%s' is not used public", d.getKindName(), c.getFullName(d));
+    if (used && d.isPublic() && !d.isUsedPublic() && !d.hasAttrUnused()) {
+        c.diags.warn(W_unused_public, d.getLoc(), "%s '%s' is not used public", d.getKindName(), c.getFullName(d));
     }
 
+    WarningKind wk = W_unknown;
     switch (d.getKind()) {
     case Function:
-        if (c.warnings.no_unused_function) return;
         if (d.hasAttrUnused()) return;
+        wk = W_unused_function;
         break;
     case Import:
-        if (c.warnings.no_unused_import) return;
+        wk = W_unused_import;
         break;
     case StructType:
         if (used) {
             c.checkStructMembers(d);
         }
-        if (c.warnings.no_unused_type) return;
+        wk = W_unused_type;
         break;
     case EnumType:
         if (used) {
             EnumTypeDecl* etd = (EnumTypeDecl*)d;
-            if (!c.warnings.no_unused_enum_constant) {
+            if (c.warnings.test(W_unused_enum_constant)) {
                 c.checkEnumConstants(etd);
             }
-            if (etd.hasAssocValues() && !c.warnings.no_unused_enum_assoc_value) {
+            if (etd.hasAssocValues() && c.warnings.test(W_unused_enum_assoc_value)) {
                 c.checkEnumAssocValues(etd);
             }
         }
-        if (c.warnings.no_unused_type) return;
+        wk = W_unused_type;
         break;
     case EnumConstant:
+        wk = W_unused_enum_constant;
         break;
     case FunctionType:
-        if (c.warnings.no_unused_type) return;
-        break;
     case AliasType:
-        if (c.warnings.no_unused_type) return;
+        wk = W_unused_type;
         break;
     case Variable:
-        if (c.warnings.no_unused_variable) return;
+        wk = W_unused_variable;
         break;
     }
     if (!used && !d.hasAttrUnused() && !d.isExported()) {
-        c.diags.warn(d.getLoc(), "unused %s '%s'", d.getKindName(), c.getFullName(d));
+        c.diags.warn(wk, d.getLoc(), "unused %s '%s'", d.getKindName(), c.getFullName(d));
         return;
     }
 }
@@ -122,7 +120,7 @@ fn void Checker.checkEnumConstants(Checker* c, EnumTypeDecl* d) {
         EnumConstantDecl* ecd = constants[i];
         Decl* dd = (Decl*)ecd;
         if (!dd.isUsed()) {
-            c.diags.warn(dd.getLoc(), "unused %s '%s'", dd.getKindName(), c.getName(dd));
+            c.diags.warn(W_unused_enum_constant, dd.getLoc(), "unused %s '%s'", dd.getKindName(), c.getName(dd));
         }
     }
 }
@@ -135,15 +133,15 @@ fn void Checker.checkEnumAssocValues(Checker* c, EnumTypeDecl* etd) {
         Decl* d = (Decl*)vd;
         bool used = d.isUsed();
         if (used) {
-            if (d.isPublic() && !d.isUsedPublic() && !c.warnings.no_unused_public && !d.hasAttrUnused()) {
+            if (d.isPublic() && !d.isUsedPublic() && !d.hasAttrUnused()) {
                 Decl* ed = (Decl*)etd;
-                c.diags.warn(d.getLoc(), "enum-associated value '%s.%s' is not used public",
+                c.diags.warn(W_unused_public, d.getLoc(), "enum-associated value '%s.%s' is not used public",
                              c.getFullName(ed), c.getName(d));
             }
         } else {
             if (!d.hasAttrUnused()) {
                 Decl* ed = (Decl*)etd;
-                c.diags.warn(d.getLoc(), "unused enum-associated value '%s.%s'",
+                c.diags.warn(W_unused_enum_assoc_value, d.getLoc(), "unused enum-associated value '%s.%s'",
                              c.getFullName(ed), c.getName(d));
             }
         }
@@ -159,8 +157,8 @@ fn void Checker.checkStructMembers(Checker* c, Decl* d) {
         if (member.isStructType()) {
             c.checkStructMembers(member);
         } else {
-            if (!member.isUsed() && !member.hasAttrUnused() && !c.warnings.no_unused_variable) {
-                c.diags.warn(member.getLoc(), "unused %s member '%s'", std.isStruct() ? "struct" : "union", c.getName(member));
+            if (!member.isUsed() && !member.hasAttrUnused()) {
+                c.diags.warn(W_unused_variable, member.getLoc(), "unused %s member '%s'", std.isStruct() ? "struct" : "union", c.getName(member));
             }
         }
     }
