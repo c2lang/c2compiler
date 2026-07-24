@@ -662,6 +662,9 @@ fn void Builder.actOnVarAttr(Builder* b, Decl* d, const Attr* a) {
         if (!d.isPublic()) b.diags.error(a.loc, "weak declarations must be public");
         vd.setAttrWeak();
         break;
+    case NoInit:
+        vd.setAttrNoInit();
+        break;
     default:
         b.diags.error(a.loc, "attribute '%s' is not applicable to variables",
                       a.kind2name());
