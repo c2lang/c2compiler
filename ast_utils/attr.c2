@@ -69,7 +69,7 @@ public type Attr struct {
     AttrValueKind value_kind;
     AttrValue value;
 }
-static_assert(32, sizeof(Attr));
+static_assert(sizeof(void*) == 4 ? 24 : 32, sizeof(Attr));
 
 // Note: only meant for printing (since not allocated in StringPool)
 public fn const char* Attr.kind2name(const Attr* a) {

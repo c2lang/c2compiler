@@ -258,7 +258,7 @@ fn void Tools.eliminateCopies(Tools* t) {
         Instr* instr = &all[i];
         if (instr.isPhi()) {
             PhiClause* clauses = fi.phis.get((u32)instr.args[0].value);
-            for (u32 j=0; j<instr.args[1].value; j++) {
+            for (u32 j = 0; j < (u32)instr.args[1].value; j++) {
                 Ref* r = &clauses[j].ref;
                 if (r.isTemp()) {
                     Ref* copy = t.copies.find((u32)r.value);
@@ -322,7 +322,7 @@ fn void Tools.removeUnused(Tools* t) {
             break;
         case Phi:
             PhiClause* clauses = fi.phis.get((u32)is.args[0].value);
-            for (u32 p=0; p<is.args[1].value; p++) {
+            for (u32 p = 0; p < (u32)is.args[1].value; p++) {
                 t.checkRef(clauses[p].ref);
             }
             break;
@@ -466,7 +466,7 @@ fn void Tools.fixup_function(Tools* t) {
 
             if (is.isPhi()) {
                 PhiClause* clauses = fi.phis.get((u32)is.args[0].value);
-                for (u32 p=0; p<is.args[1].value; p++) {
+                for (u32 p = 0; p < (u32)is.args[1].value; p++) {
                     PhiClause* pc = &clauses[p];
                     pc.dest_idx = t.conversion.get(pc.dest_idx);
                     Ref* r = &pc.ref;

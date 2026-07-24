@@ -65,14 +65,14 @@ type BitFieldInfo struct {
     BitFieldLayout layout;
     // u16 pad
 }
-static_assert(16, sizeof(BitFieldInfo));
+static_assert(sizeof(void*) == 4 ? 12 : 16, sizeof(BitFieldInfo));
 
 type VarDeclInit struct {
     Expr* expr;
     SrcLoc loc;
     // u32 pad
 }
-static_assert(16, sizeof(VarDeclInit));
+static_assert(sizeof(void*) == 4 ? 8 : 16, sizeof(VarDeclInit));
 
 public type VarDecl struct @(opaque) {
     Decl base;

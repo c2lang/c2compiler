@@ -916,7 +916,7 @@ fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref) {
     } else if (kind.isCType()) {
         if (!p.tokenizer.c_mode) p.error("invalid keyword");
         CTypeKind c_kind = p.convertCType();
-        ref.setBuiltin(cTypeToBuiltinKind(c_kind), loc);
+        ref.setBuiltin(p.cTypeToBuiltinKind(c_kind), loc);
     } else {
         p.error("expected type specifier");
     }
@@ -1118,9 +1118,9 @@ const BuiltinKind[CTypeKind] CType2builtin = {
     [Int] = Int32,
     [SignedInt] = Int32,
     [UnsignedInt] = UInt32,
-    [Long] = Int64, // should depend target arch
-    [SignedLong] = Int64, // should depend target arch
-    [UnsignedLong] = UInt64, // should depend target arch
+    [Long] = Int64,          // depends on target arch
+    [SignedLong] = Int64,    // depends on target arch
+    [UnsignedLong] = UInt64, // depends on target arch
     [LongLong] = Int64,
     [SignedLongLong] = Int64,
     [UnsignedLongLong] = UInt64,
@@ -1131,7 +1131,15 @@ const BuiltinKind[CTypeKind] CType2builtin = {
     [LongDouble] = Float64,
 }
 
-fn BuiltinKind cTypeToBuiltinKind(CTypeKind kind) {
+fn BuiltinKind Parser.cTypeToBuiltinKind(Parser* p, CTypeKind kind) {
+    if (p.builder.getNativeLong() == Int32) {
+        switch (kind) {
+        case Long:          return Int32;
+        case SignedLong:    return Int32;
+        case UnsignedLong:  return UInt32;
+        default: break;
+        }
+    }
     return CType2builtin[kind];
 }
 

@@ -58,8 +58,8 @@ public type BuiltinType struct @(opaque) {
 
 fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
     BuiltinKind base_kind = kind;
-    if (kind == ISize) base_kind = (c.getWordSize() == 4) ? Int32 : Int64;
-    if (kind == USize) base_kind = (c.getWordSize() == 4) ? UInt32 : UInt64;
+    if (kind == ISize) base_kind = (c.getPointerSize() == 4) ? Int32 : Int64;
+    if (kind == USize) base_kind = (c.getPointerSize() == 4) ? UInt32 : UInt64;
     BuiltinType* b = c.alloc(sizeof(BuiltinType));
     b.base.init(Builtin);
     b.base.builtinTypeBits.kind = kind;

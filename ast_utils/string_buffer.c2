@@ -33,7 +33,7 @@ public type Buf struct {
     u32 indent_step;
 }
 
-static_assert(24, sizeof(Buf));
+static_assert(sizeof(void*) == 4 ? 20 : 24, sizeof(Buf));
 
 public fn Buf* Buf.init(Buf* buf, char* data, u32 capacity, bool grow, bool use_colors, u32 indent_step) {
     assert(capacity);
