@@ -6,7 +6,7 @@ extra_css:
   - css/highlight.css
 extra_javascript:
   - js/highlight.pack.js
-pages:
+nav:
 - Introduction:
   - Philosophy: index.md
   - introduction/evolution.md

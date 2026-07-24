@@ -6,14 +6,14 @@ attributes to do all sorts of funky things the compilers do.
 
 The currently supported attributes are:
 
-* __aligned__ (type, fn, var), requires number argument
-* __ auto_file__ (parameter)
-* __ auto_func__ (parameter)
-* __ auto_line__ (parameter)
+* __aligned__ (type, fn, var), requires a numeric argument
+* __auto_file__ (parameter)
+* __auto_func__ (parameter)
+* __auto_line__ (parameter)
 * __cname__ (type, fn, var), interface
-* __ cdef__ (type, fn, var), only in interface files, string argument
+* __cdef__ (type, fn, var), only in interface files, string argument
 * __constructor__ (fn)
-* __deprecated__ (fn), requires string argument
+* __deprecated__ (fn), requires a string argument
 * __destructor__ (fn)
 * __embed__ (var)
 * __export__ (type, fn, var)
@@ -24,9 +24,9 @@ The currently supported attributes are:
 * __packed__ (type)
 * __printf_format__ (parameter)
 * __pure__ (fn)
-* __section__ (fn, var), requires string argument
-* __unused_params__ (fn)
+* __section__ (fn, var), requires a string argument
 * __unused__ (type, fn, var)
+* __unused_params__ (fn)
 * __weak__ (fn, var)
 
 The standard syntax for all attributes is `@(  )`  (Hint: the @ (at) is for attributes... ;) )
@@ -150,7 +150,7 @@ fn c_int stat(const c_char* pathname, Stat* buf);
 ```
 
 This means C2 code can use 'Stat' instead of 'struct stat', so the spelling conventions
-stay intact (types start with capital case). Also for the C-backend, we cannot generate:
+stay intact (types start with capital case). Also for the C backend, we cannot generate:
 ```c
 typedef struct stat_ stat;
 

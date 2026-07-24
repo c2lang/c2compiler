@@ -1,10 +1,10 @@
 
 __NOTE:
 While this might be seen as critique of C, it is not. C is an
-awesome language that has survived the test of time for more than 40 years!
+awesome language that has survived the test of time for more than 50 years!
 Respect to its designer...__
 
-*"Evolution consists of mutation and selection.."*
+*"Evolution consists of mutation and selection..."*
 
 In other words, we __change the bad__ things and __keep the good__ things of C.
 
@@ -17,12 +17,12 @@ Things that are seen as *bad* nowadays and can be improved:
 - needs an external build system
 
 C was designed in an era when the compiler had to work with very limited processing
-power and memory. Nowadays, these restrictions simply don't apply anymore and it would
+power and memory. Nowadays, these restrictions simply do not apply anymore and it would
 be better to put more work into the compiler instead of onto the developer.
 
 One of the major show-stoppers in C is the use of header file includes. The clang
 website has a [very nice article](http://clang.llvm.org/docs/Modules.html#problems-with-the-current-model) on
-the problems of #include.
+the problems of `#include`.
 Because #includes are recursive, the compiler often has to parse and analyse a lot more
 then just your code. Tests on regular C code have shown the factor of user code / external code
 to be roughly 1 to 50. So for every line of code you write, the compiler needs to parse and
@@ -36,16 +36,16 @@ This section describes the main differences between C and C2.
 
 ### no header files
 C2 uses a modern approach for usage of external symbols. There is only one type
-of files, the **.c2** source files. To replace the ```#include```, there is an __import__
+of file, the **.c2** source files. To replace the ```#include```, there is an __import__
 statement. Also all source code is divided into [Modules](../language/modules.md).
 
 __no mandatory declaration ordering__
 
-There are no *forward declarations* in C2 of any kind. Each declaration is just
+There are no *forward declarations* in C2 of any kind. Each object is just
 defined in a single place. This implies that there are no ordering requirements
-of any kind within a source file. That means that top level declarations can be
+of any kind within a source file. Top level declarations can be
 written in any order, which allows the programmer to sort their declaration in a
-way that suites them and their needs the most rather than the way the compiler
+way that suits them and their needs the most rather than the way the compiler
 dictates as it is with C. The example below is valid:
 
 ```c
@@ -65,7 +65,7 @@ enables a lot of improvements. See [this page](../build_system/intro.md) for a
 description of the build system.
 
 C2C uses a multi-pass analyser that analyses a complete program in multiple passes.
-The image below show the difference between traditional C compilation and C2 compilation.
+The image below shows the difference between traditional C compilation and C2 compilation.
 ![compile_diff](compile_diff.svg)
 
 In C, the compiler is called separately for each .c file and asked to parse and
@@ -95,7 +95,7 @@ turned into a single LLVM module (see below). The optimizer pass already has a b
 piece of the puzzle now, a whole C2 module.
 ![multi](build_multi.svg)
 
-To allow even more optimization, C2 can convert all sources into a single LLVM
+To allow even more optimizations, C2 can convert all sources into a single LLVM
 module, allowing full 'LTO' (link-time optimization). Enabling LTO or 'whole program
 optimization' in C is very hard for any realistic size project. In C2 it can be easily
 enabled in the recipe file.
@@ -112,15 +112,15 @@ please visit [Build system section](../build_system/symbols.md).
 C2 provides the following built-in primitive types:
 
 * __bool__
+* __char__
 * __i8__, __i16__, __i32__, __i64__
 * __u8__, __u16__, __u32__, __u64__
-* __f32__, __f64__
-* __char__
 * __isize__, __usize__
+* __f32__, __f64__
 
 
-The default __int__ and __float__ types have been removed along with type modifiers such as
-__short__, __long__, __signed__, or __unsigned__.
+The standard __int__, __float__ and __double__ types have been removed along with type modifiers such as
+__short__, __long__, __signed__, or __unsigned__.  They can only be used in C2 interface files for C libraries.
 
 The `NULL` macro, has been replaced by the __nil__ keyword.
 
@@ -134,7 +134,7 @@ A lot of projects in C lose quite some time tweaking the warning levels. Getting
 diagnostics from a C compiler requires passing it a lot of options.
 
 The C2 language only uses a few warnings (mostly about unused import/type/var/function/etc).
-All the other diagnostics are simply an error.
+All the other diagnostics are simply errors.
 Examples of errors in C2:
 
 * using an uninitialized variable

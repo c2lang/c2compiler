@@ -33,8 +33,7 @@ Rules:
 - member names adhere to VarDecl naming rules
 - substructs may be anonymous (no name)
 - if substructs are named, the name has the same rules as other members
-- member names must be unique, but multiple sub-structs have the same name if at least one
-    of the sub-structs itself is named.
+- member names must be unique, including member names of anonymous sub-structs
 
 ### Attributes
 
