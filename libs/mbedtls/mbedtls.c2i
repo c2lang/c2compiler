@@ -147,8 +147,11 @@ type Pk_context struct @(cname="mbedtls_pk_context") {
     const Pk_info_t* pk_info; /**< Public key information         */
     void *           pk_ctx;  /**< Underlying public key context  */
 }
-
+#if ARCH_32BIT
+static_assert(8, sizeof(Pk_context));
+#else
 static_assert(16, sizeof(Pk_context));
+#endif
 
 fn void pk_init(Pk_context* ctx) @(cname="mbedtls_pk_init");
 
@@ -182,16 +185,18 @@ const c_int ERR_X509_FATAL_ERROR                      = -0x3000;
 // ------ x509_crt.h ------
 
 type X509_buf Asn1_buf @(cname="mbedtls_x509_buf");
-
-static_assert(24, sizeof(X509_buf));
-
 type X509_name Asn1_named_data @(cname="mbedtls_x509_name");
-
-static_assert(64, sizeof(X509_name));
-
 type X509_sequence Asn1_sequence @(cname="mbedtls_x509_sequence");
 
+#if ARCH_32BIT
+static_assert(12, sizeof(X509_buf));
+static_assert(32, sizeof(X509_name));
+static_assert(16, sizeof(X509_sequence));
+#else
+static_assert(24, sizeof(X509_buf));
+static_assert(64, sizeof(X509_name));
 static_assert(32, sizeof(X509_sequence));
+#endif
 
 type X509_time struct @(cname="mbedtls_x509_time") {
     c_int year;
@@ -297,7 +302,11 @@ type X509_crt struct @(cname="mbedtls_x509_crt") {
     X509_crt *next;     /**< Next certificate in the CA-chain. */
 }
 
+#if ARCH_32BIT
+static_assert(340, sizeof(X509_crt));
+#else
 static_assert(616, sizeof(X509_crt));
+#endif
 
 fn void x509_crt_init(X509_crt* crt) @(cname="mbedtls_x509_crt_init");
 
@@ -745,7 +754,11 @@ type Ssl_config struct @(cname="mbedtls_ssl_config") {
 #endif
 }
 
+#if ARCH_32BIT
+static_assert(208, sizeof(Ssl_config));
+#else
 static_assert(384, sizeof(Ssl_config));
+#endif
 
 type Ssl_handshake_params struct @(opaque, cname="mbedtls_ssl_handshake_params");
 
@@ -979,8 +992,11 @@ type Ssl_context struct @(cname="mbedtls_ssl_context") {
 //#endif /* MBEDTLS_SSL_DTLS_CONNECTION_ID */
 }
 
+#if ARCH_32BIT
+static_assert(288, sizeof(Ssl_context));
+#else
 static_assert(472, sizeof(Ssl_context));
-
+#endif
 
 // ------ aes.h ------
 
@@ -1038,7 +1054,11 @@ type Ctr_drbg_context struct @(cname="mbedtls_ctr_drbg_context") {
 //#endif
 }
 
+#if ARCH_32BIT
+static_assert(320, sizeof(Ctr_drbg_context));
+#else
 static_assert(344, sizeof(Ctr_drbg_context));
+#endif
 
 type Entropy_seed_f fn c_int(void *, c_uchar *, c_size);
 
@@ -1103,7 +1123,11 @@ type Entropy_context struct @(cname="mbedtls_entropy_context") {
 //#endif
 }
 
+#if ARCH_32BIT
+static_assert(632, sizeof(Entropy_context));
+#else
 static_assert(1032, sizeof(Entropy_context));
+#endif
 
 fn void entropy_init( Entropy_context *ctx ) @(cname="mbedtls_entropy_init");
 

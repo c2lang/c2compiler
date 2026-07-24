@@ -21,6 +21,7 @@ import stdio local;
 import stdarg local;
 import stdlib local;
 import string local;
+import sys_types local; // pid_t
 import unistd local;
 
 import constants;
@@ -251,11 +252,12 @@ fn const char* Db.findEndOfLine(Db* db) {
 
 fn const char* Db.readWord(Db* db) {
     const char* cp = db.cur;
-    while (*cp != 0 && cp - db.cur < 31) {
-        if ((*cp < 'a' || *cp > 'z') && *cp != '-' && *cp != '_') break;
+    while (*cp != 0 && (isalnum(*cp) || *cp == '-' || *cp == '_')) {
         cp++;
     }
     u32 len = (u32)(cp - db.cur);
+    if (len >= elemsof(db.word_buffer))
+        len = elemsof(db.word_buffer) - 1;
     memcpy(db.word_buffer, db.cur, len);
     db.word_buffer[len] = 0;
     return db.word_buffer;
@@ -358,7 +360,7 @@ fn bool Db.parseFile(Db* db) {
     return true;
 }
 
-fn bool Db.parseExpect(Db* db) {
+fn bool Db.parseExpect(Db* db, bool add) {
     // Syntax expect{mode, name}
     if (*db.cur != '{') {
         db.errorMsg.add("expected { after expect");
@@ -394,11 +396,13 @@ fn bool Db.parseExpect(Db* db) {
     }
     db.skipLine(); // skip rest of the line
 
-    db.currentExpect = expect_file.create(filename, em);
-    // TODO check for name duplicates
-    db.addExpected(db.currentExpect);
+    if (add) {
+        db.currentExpect = expect_file.create(filename, em);
+        // TODO check for name duplicates
+        db.addExpected(db.currentExpect);
+    }
     while (*db.cur != 0 && !strstart(db.cur, "// @", nil)) {
-        if (*db.cur != '\n') {
+        if (*db.cur != '\n' && add) {
             db.currentExpect.addLine(db.line_nr, db.cur, db.findEndOfLine());
         }
         db.skipLine();
@@ -411,6 +415,7 @@ fn bool Db.parseKeyword(Db* db) {
     // NOTE: cur points to start of keyword after // @
     const char* keyword = db.readWord();
 
+    i32 flags = 3;
     switch (keyword) {
     case "skip":
         if (!db.runSkipped) db.skip = true;
@@ -437,13 +442,19 @@ fn bool Db.parseKeyword(Db* db) {
         }
         db.cur += 4;
         return db.parseFile();
+    case "expect32":
+        flags = 0;
+        fallthrough;
+    case "expect64":
+        flags ^= 1;
+        fallthrough;
     case "expect":
         if (db.kind != C2T && db.kind != C2A) {
-            db.errorMsg.add("keyword 'expect' only allowed in .c2t/.c2a files");
+            db.errorMsg.print("keyword '%s' only allowed in .c2t/.c2a files", keyword);
             return false;
         }
-        db.cur += 6;
-        return db.parseExpect();
+        db.cur += strlen(keyword);
+        return db.parseExpect((sizeof(void*) / 4) & flags);
     default:
         db.errorMsg.print("unknown keyword '%s'", keyword);
         return false;
@@ -492,16 +503,29 @@ fn void Db.parseTags(Db* db, const char* start, const char* end) {
     if (!cp) return;
     cp += 4;    // skip "// @";
 
+    i32 flags = 0;
     Type kind = ERROR;
-    if (strstart(cp, "error{", &cp)) {
+    if (strstart(cp, "error", &cp)) {
         kind = ERROR;
     } else
-    if (strstart(cp, "warning{", &cp)) {
+    if (strstart(cp, "warning", &cp)) {
         kind = WARNING;
     } else
-    if (strstart(cp, "note{", &cp)) {
+    if (strstart(cp, "note", &cp)) {
         kind = NOTE;
     } else {
+        goto fail;
+    }
+    if (strstart(cp, "32{", &cp)) {
+        flags = 1;
+    } else
+    if (strstart(cp, "64{", &cp)) {
+        flags = 2;
+    } else
+    if (strstart(cp, "{", &cp)) {
+        flags = 3;
+    } else {
+    fail:
         db.error("unknown tag, expect note/warning/error");
         return;
     }
@@ -510,6 +534,12 @@ fn void Db.parseTags(Db* db, const char* start, const char* end) {
         return;
 
     u32 line_nr = db.line_nr - db.line_offset;
+    if (!((sizeof(void*) / 4) & flags)) {
+#if TesterDebug
+        color_print(color.Blue, "  ignoring tag '%s' at %d", msg, line_nr);
+#endif
+        return;
+    }
     // adjust line number for some special cases
     for (const char* suff = cp + strlen(msg) + 1; suff < end; suff++) {
         if (!isspace(*suff)) {
@@ -541,7 +571,8 @@ fn void Db.parseTags(Db* db, const char* start, const char* end) {
 
 fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
     const char* cp = start;
-    skipInitialWhitespace(&cp, end);
+    //global directives must start at column 1
+    //skipInitialWhitespace(&cp, end);
     if (cp == end) return;
 
     // TODO if .c2t/.cta, only accept tags or comments
@@ -577,18 +608,34 @@ fn void Db.parseLineOutside(Db* db, const char* start, const char* end) {
             db.file_start = end + 1;
             db.line_offset = db.line_nr;
             db.mode = Infile;
-        } else if (strstart(cp, "expect{", &cp)) {
+        } else if (strstart(cp, "expect", &cp)) {
             if (db.kind != C2T) {
                 db.error("invalid @expect tag in .c2/.cta test");
+                return;
+            }
+            i32 flags = 0;
+            if (strstart(cp, "32{", &cp)) {
+                flags = 1;
+            } else
+            if (strstart(cp, "64{", &cp)) {
+                flags = 2;
+            } else
+            if (strstart(cp, "{", &cp)) {
+                flags = 3;
+            } else {
+                db.error("unknown tag");
                 return;
             }
             char[128] name;
             if (!db.readUntil(name, elemsof(name), cp, '}', "filename"))
                 return;
-            db.currentExpect = expect_file.create(name, ATLEAST);
-            // TODO check for name duplicates
-            db.addExpected(db.currentExpect);
+            db.currentExpect = nil;
             db.mode = InExpectFile;
+            if ((sizeof(void*) / 4) & flags) {
+                db.currentExpect = expect_file.create(name, ATLEAST);
+                // TODO check for name duplicates
+                db.addExpected(db.currentExpect);
+            }
         } else if (strstart(cp, "backend c", &cp)) {
             if (db.kind != C2T) {
                 db.error("invalid @backend c tag in .c2/c2a test");
@@ -631,9 +678,10 @@ fn void Db.parseLineExpect(Db* db, const char* start, const char* end) {
         db.parseLine(start, end);
         return;
     }
-    assert(db.currentExpect);
-    db.currentExpect.addLine(db.line_nr, start, end);
-    // TODO add non-empty lines (stripped of heading+trailing whitespace) to list
+    if (db.currentExpect) {
+        db.currentExpect.addLine(db.line_nr, start, end);
+        // TODO add non-empty lines (stripped of heading+trailing whitespace) to list
+    }
 }
 
 fn void Db.parseLine(Db* db, const char* start, const char* end) {
@@ -687,7 +735,7 @@ public fn bool Db.parse(Db* db) {
         return false;
     case C2T:
         if (!db.parseOuter()) {
-            print_error("%s: error in recipe: %s on line %d", db.filename, db.errorMsg.str(), db.line_nr);
+            print_error_at("%s:%d: error in recipe: %s", db.filename, db.line_nr, db.errorMsg.str());
             return false;
         }
         db.recipe.add("end\n");
@@ -700,7 +748,7 @@ public fn bool Db.parse(Db* db) {
         db.recipe.add("  $backend c skip\n");
         db.recipe.add("  $write-AST\n");
         if (!db.parseOuter()) {
-            print_error("%s: error in recipe: %s on line %d", db.filename, db.errorMsg.str(), db.line_nr);
+            print_error_at("%s:%d: error in recipe: %s", db.filename, db.line_nr, db.errorMsg.str());
             return false;
         }
         db.recipe.add("end\n");
@@ -727,7 +775,7 @@ public fn void Db.testFile(Db* db) {
     }
 
     // spawn a child to run c2c
-    Pid pid = fork();
+    pid_t pid = fork();
     if (pid == -1) {
         fprintf(stderr, "fork() failed: %s\n", strerror(errno));
         exit(1);

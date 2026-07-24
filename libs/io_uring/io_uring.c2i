@@ -30,7 +30,11 @@ type Sq struct @(cname="io_uring_sq") {
 
     u32[4] pad;
 }
+#if ARCH_32BIT
+static_assert(64, sizeof(Sq));
+#else
 static_assert(104, sizeof(Sq));
+#endif
 
 
 type Cq struct @(cname="io_uring_cq") {
@@ -47,7 +51,11 @@ type Cq struct @(cname="io_uring_cq") {
 
     u32[4] pad;
 }
+#if ARCH_32BIT
+static_assert(52, sizeof(Cq));
+#else
 static_assert(88, sizeof(Cq));
+#endif
 
 
 type Ring struct @(cname="io_uring") {
@@ -59,7 +67,11 @@ type Ring struct @(cname="io_uring") {
     u32 features;
     u32[3] pad;
 }
+#if ARCH_32BIT
+static_assert(140, sizeof(Ring));
+#else
 static_assert(216, sizeof(Ring));
+#endif
 
 
 /*
@@ -234,7 +246,7 @@ fn void prep_rw(c_int op, Sqe* sqe, c_int fd, const void* addr, u32 len, u64 off
 	sqe.ioprio = 0;
 	sqe.fd = fd;
 	sqe.off = offset;
-	sqe.addr = (u64)addr;
+	sqe.addr = (usize)addr;
 	sqe.len = len;
 	sqe.rw_flags = 0;
 	sqe.user_data = 0;
@@ -393,7 +405,7 @@ fn void Sqe.prep_timeout_remove(Sqe* sqe, u64 user_data, u32 flags) //@(cname="i
 
 fn void Sqe.prep_timeout_update(Sqe* sqe, linux_types.Timespec* ts, u64 user_data, u32 flags) //@(cname="io_uring_prep_timeout_update")
 {
-	prep_rw(Op.TIMEOUT_REMOVE, sqe, -1, (void*)user_data, 0, (usize)ts);
+	prep_rw(Op.TIMEOUT_REMOVE, sqe, -1, (void*)(usize)user_data, 0, (usize)ts);
 	sqe.timeout_flags = flags | TIMEOUT_UPDATE;
 }
 
@@ -402,7 +414,7 @@ fn void Sqe.prep_accept(Sqe* sqe, c_int fd,
                         u32* addrlen,
                         c_int flags) //@(cname="io_uring_prep_accept")
 {
-	prep_rw(Op.ACCEPT, sqe, fd, addr, 0, (u64)addrlen);
+	prep_rw(Op.ACCEPT, sqe, fd, addr, 0, (usize)addrlen);
 	sqe.accept_flags = (u32)flags;
 }
 

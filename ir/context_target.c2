@@ -24,6 +24,7 @@ import target_info;
 fn const ir_tools.Target* getArchTarget(const target_info.Info* info) {
     switch (info.arch) {
     case Unknown:
+    case I386:
     case I686:
         break;
     case Arm:
