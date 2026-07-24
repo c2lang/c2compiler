@@ -64,6 +64,7 @@ function expect_sorted() {
     fi
 }
 
+#----------------
 run 0 base64 -e Hello-world
 expect $stderr $empty
 expect $stdout == "SGVsbG8td29ybGQ="
@@ -76,10 +77,12 @@ run 0 base64 -d base64/HELLO.b64
 expect $stderr $empty
 expect $stdout base64/HELLO.txt
 
+#----------------
 run 2 cstrip
 expect $stderr == "usage: parser [c-file]"
 expect $stdout $empty
 
+#----------------
 run 0 dir_walker
 expect $stderr $empty
 # output is directory order dependend
@@ -103,8 +106,10 @@ common/
   common/color.c2
 EOF
 
+#----------------
 #run 0 event
 
+#----------------
 run 2 file_ops
 expect $stderr == "usage: file_ops [file]"
 expect $stdout $empty
@@ -117,16 +122,106 @@ run 0 file_ops file_ops/main.c2
 expect $stderr $empty
 expect $stdout file_ops/main.c2
 
+run 0 file_ops output/file_ops/file_ops
+expect $stderr $empty
+expect $stdout output/file_ops/file_ops
+
+#----------------
 run 0 inline_asm
 expect $stderr $empty
 # output is time dependend
 #expect $stdout $empty
 
+#----------------
 run 2 json_parser
 expect $stderr == "usage: json_parser [json-file]"
 expect $stdout $empty
 
-## takes too long
+run 0 json_parser json_parser/example1.json
+expect $stderr $empty
+expect $stdout <<EOF
+JSON: 13 nodes, names: 81 bytes, values: 111 bytes
+platform.checksum = [1234456789]
+EOF
+
+run 0 json_parser json_parser/example2.json
+expect $stderr $empty
+expect $stdout <<EOF
+JSON: 11 nodes, names: 80 bytes, values: 31 bytes
+EOF
+
+run 0 json_parser json_parser/example3.json
+expect $stderr $empty
+expect $stdout <<EOF
+JSON: 43 nodes, names: 75 bytes, values: 277 bytes
+Items:
+  item:
+    index -> 1
+    index_start_at -> 56
+    integer -> 6
+    float -> 12.8328
+    name -> Marcus
+    surname -> Sawyer
+    fullname -> Janet Murphy
+    email -> tracy@hester.gt
+    bool -> false
+  item:
+    index -> 2
+    index_start_at -> 57
+    integer -> 30
+    float -> 16.5476
+    name -> Rita
+    surname -> Locklear
+    fullname -> Hazel Cooke
+    email -> arthur@willis.be
+    bool -> false
+  item:
+    index -> 3
+    index_start_at -> 58
+    integer -> 39
+    float -> 19.7193
+    name -> Audrey
+    surname -> Adkins
+    fullname -> Kate Lang
+    email -> stephanie@katz.aw
+    bool -> true
+  item:
+    index -> 4
+    index_start_at -> 59
+    integer -> 41
+    float -> 18.3492
+    name -> Donna
+    surname -> Hicks
+    fullname -> Allison Eason
+    email -> julian@burnette.tl (changed from tp)
+    bool -> true
+EOF
+
+run 0 json_parser json_parser/example4.json
+expect $stderr $empty
+expect $stdout <<EOF
+JSON: 11 nodes, names: 69 bytes, values: 65 bytes
+top level:
+  index: 1
+  index_start_at: 56
+  integer: 6
+  float: 12.8328
+  name: Marcus
+  surname: Sawyer
+  fullname: Janet Murphy
+  email: tracy@hester.gt
+  bool: false
+EOF
+
+run 0 json_parser json_parser/example5.json
+expect $stderr $empty
+expect $stdout <<EOF
+JSON: 8 nodes, names: 36 bytes, values: 57 bytes
+OBJECT 5
+2  uid 19223201  action BootNotification (vendor VendorX, model SingleSocketCharger)
+EOF
+
+#----------------
 run 0 jump
 expect $stderr $empty
 expect $stdout <<EOF
@@ -154,6 +249,7 @@ function2(G)
 returning from function2(G)
 EOF
 
+#----------------
 run 0 list
 expect $stderr $empty
 expect $stdout <<EOF
@@ -185,27 +281,28 @@ all:
  E     4
 EOF
 
+#----------------
 run 0 load_file
 expect $stderr $empty
 expect $stdout <<EOF
 FILE1: size 257
-00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 
-10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F 
-20 21 22 23 24 25 26 27 28 29 2A 2B 2C 2D 2E 2F 
-30 31 32 33 34 35 36 37 38 39 3A 3B 3C 3D 3E 3F 
-40 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F 
-50 51 52 53 54 55 56 57 58 59 5A 5B 5C 5D 5E 5F 
-60 61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 
-70 71 72 73 74 75 76 77 78 79 7A 7B 7C 7D 7E 7F 
-80 81 82 83 84 85 86 87 88 89 8A 8B 8C 8D 8E 8F 
-90 91 92 93 94 95 96 97 98 99 9A 9B 9C 9D 9E 9F 
-A0 A1 A2 A3 A4 A5 A6 A7 A8 A9 AA AB AC AD AE AF 
-B0 B1 B2 B3 B4 B5 B6 B7 B8 B9 BA BB BC BD BE BF 
-C0 C1 C2 C3 C4 C5 C6 C7 C8 C9 CA CB CC CD CE CF 
-D0 D1 D2 D3 D4 D5 D6 D7 D8 D9 DA DB DC DD DE DF 
-E0 E1 E2 E3 E4 E5 E6 E7 E8 E9 EA EB EC ED EE EF 
-F0 F1 F2 F3 F4 F5 F6 F7 F8 F9 FA FB FC FD FE FF 
-00 
+00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F
+20 21 22 23 24 25 26 27 28 29 2A 2B 2C 2D 2E 2F
+30 31 32 33 34 35 36 37 38 39 3A 3B 3C 3D 3E 3F
+40 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F
+50 51 52 53 54 55 56 57 58 59 5A 5B 5C 5D 5E 5F
+60 61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F
+70 71 72 73 74 75 76 77 78 79 7A 7B 7C 7D 7E 7F
+80 81 82 83 84 85 86 87 88 89 8A 8B 8C 8D 8E 8F
+90 91 92 93 94 95 96 97 98 99 9A 9B 9C 9D 9E 9F
+A0 A1 A2 A3 A4 A5 A6 A7 A8 A9 AA AB AC AD AE AF
+B0 B1 B2 B3 B4 B5 B6 B7 B8 B9 BA BB BC BD BE BF
+C0 C1 C2 C3 C4 C5 C6 C7 C8 C9 CA CB CC CD CE CF
+D0 D1 D2 D3 D4 D5 D6 D7 D8 D9 DA DB DC DD DE DF
+E0 E1 E2 E3 E4 E5 E6 E7 E8 E9 EA EB EC ED EE EF
+F0 F1 F2 F3 F4 F5 F6 F7 F8 F9 FA FB FC FD FE FF
+00
 FILE2: size 74
 This is a random
 text file that is used
@@ -214,20 +311,24 @@ to show how to embed TEXT files
 
 EOF
 
+#----------------
 run 1 log
 expect $stderr $empty
 # output is time dependent
 #expect $stdout $empty
 
+#----------------
 #run 0 mc_receiver
 #run 0 mc_sender
-#run 0 plugin1
-#run 0 plugin2
 
+#----------------
+c2c -q plugin1
+c2c -q plugin2
 run 2 plugin_mgr
 expect $stderr == "usage: plugin_mgr [filename]"
 expect $stdout $empty
 
+#----------------
 run 0 pthread_test
 expect $stderr $empty
 # output might be out of order
@@ -246,9 +347,11 @@ quit thread1
 done
 EOF
 
+#----------------
 #run 0 output/signal_test/signal_test
 #run 0 output/socket/socket
 
+#----------------
 run 0 string
 expect $stderr $empty
 expect $stdout <<EOF
@@ -291,12 +394,15 @@ run 0 sudoku u5
 expect $stdout sudoku/u5.output
 expect $stderr $empty
 
+#----------------
 #run 0 output/terminal/terminal
 
+#----------------
 run 2 toml_parser
 expect $stderr == "usage: toml_parser [toml-file]"
 expect $stdout $empty
 
+#----------------
 run 0 unit_test
 expect $stderr $empty
 expect $stdout <<EOF
@@ -318,14 +424,17 @@ TEST [8/8] mod2.test2 [OK]
 RESULT: 8 tests (4 ok, 4 failed, 0 skipped) ran in 0 ms
 EOF
 
+#----------------
 run 2 xml_parser
 expect $stderr == "usage: xml_parser [xml-file] <verbose>"
 expect $stdout $empty
 
+#----------------
 run 2 yaml_parser
 expect $stderr == "usage: yaml_parser [yaml-file]"
 expect $stdout $empty
 
+#----------------
 #run 0 lua_test
 #expect $stderr $empty
 #expect $stdout lua/stdout

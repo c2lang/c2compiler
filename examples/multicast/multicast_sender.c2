@@ -30,7 +30,7 @@ public type Sender struct {
 
 public fn void Sender.init(Sender* s, const char* ipnr, u16 port) {
     s.fd = -1;
-    strcpy(s.ipnr, ipnr);
+    pstrcpy(s.ipnr, elemsof(s.ipnr), ipnr);
     s.port = port;
     s.open_socket();
 }

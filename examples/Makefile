@@ -12,5 +12,5 @@ clean:
 	rm -rf output
 
 test:
-	@echo "---- running tests ----"
+	@echo "---- running examples tests ----"
 	@./test.sh
