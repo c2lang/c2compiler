@@ -325,17 +325,28 @@ fn Expr* Parser.parsePostfixExprSuffix(Parser* p, Expr* lhs, bool couldBeTemplat
         case LSquare:
             SrcLoc loc = p.tok.loc;
             p.consumeToken();
-            Expr* idx = p.parseExpr();
+            Expr* idx = nil;
+            if (p.tok.kind != Colon) idx = p.parseExpr();
             if (p.tok.kind == Colon) {
-                // BitOffset <expr> : <expr>
+                // BitSelection <expr> : <expr>
+                // ArraySelection <expr>? : <expr>? : <expr>?
                 SrcLoc colon_loc = p.tok.loc;
                 p.consumeToken();
-                Expr* rhs = p.parseExpr();
-                idx = p.builder.actOnBitOffsetExpr(colon_loc, idx, rhs);
+                Expr* count = nil;
+                Expr* step = nil;
+                if (p.tok.kind != Colon && p.tok.kind != RSquare) count = p.parseExpr();
+                if (p.tok.kind == Colon) {
+                    p.consumeToken();
+                    step = p.parseExpr();
+                }
+                u32 src_len = p.tok.loc + 1 - loc;
+                p.expectAndConsume(RSquare);
+                lhs = p.builder.actOnArraySelectionExpr(loc, src_len, lhs, idx, count, step);
+            } else {
+                u32 src_len = p.tok.loc + 1 - loc;
+                p.expectAndConsume(RSquare);
+                lhs = p.builder.actOnArraySubscriptExpr(loc, src_len, lhs, idx);
             }
-            u32 src_len = p.tok.loc + 1 - loc;
-            p.expectAndConsume(RSquare);
-            lhs = p.builder.actOnArraySubscriptExpr(loc, src_len, lhs, idx);
             break;
         case Dot:
             lhs = p.parseImpureMemberExpr(lhs);
