@@ -1,16 +1,14 @@
-module mbedtls;
-
-import c_types local;
+module mbedtls extern "C";
 
 // ------ ssl_msg.h ------
 
-fn c_int ssl_get_record_expansion( const Ssl_context *ssl ) @(cname="mbedtls_ssl_get_record_expansion");
+int ssl_get_record_expansion(const Ssl_context *ssl) @(cname="mbedtls_ssl_get_record_expansion");
 
 
 // ------ timing.h ------
 
 type Timing_hr_time struct @(cname="mbedtls_timing_hr_time") {
-    c_uchar[32] opaque;
+    unsigned char[32] opaque;
 }
 
 type Timing_delay_context struct @(cname="mbedtls_timing_delay_context") {
@@ -20,54 +18,46 @@ type Timing_delay_context struct @(cname="mbedtls_timing_delay_context") {
 }
 
 
-fn void timing_set_delay( void *data, u32 int_ms, u32 fin_ms ) @(cname="mbedtls_timing_set_delay");
-fn c_int timing_get_delay(void *data) @(cname="mbedtls_timing_get_delay");
-
+void timing_set_delay(void *data, u32 int_ms, u32 fin_ms) @(cname="mbedtls_timing_set_delay");
+int timing_get_delay(void *data) @(cname="mbedtls_timing_get_delay");
 
 
 // ------ net_sockets.h ------
 
-const c_int NET_PROTO_TCP  = 0; /**< The TCP transport protocol */
-const c_int NET_PROTO_UDP  = 1; /**< The UDP transport protocol */
+const int NET_PROTO_TCP  = 0; /**< The TCP transport protocol */
+const int NET_PROTO_UDP  = 1; /**< The UDP transport protocol */
 
-const c_int NET_POLL_READ  = 1; /**< Used in \c mbedtls_net_poll to check for pending data  */
-const c_int NET_POLL_WRITE = 2; /**< Used in \c mbedtls_net_poll to check if write possible */
+const int NET_POLL_READ  = 1; /**< Used in \c mbedtls_net_poll to check for pending data  */
+const int NET_POLL_WRITE = 2; /**< Used in \c mbedtls_net_poll to check if write possible */
 
 
 type Net_context struct @(cname="mbedtls_net_context") {
-    c_int fd;             /**< The underlying file descriptor                 */
+    int fd;             /**< The underlying file descriptor                 */
 }
 
-fn void net_init( Net_context *ctx ) @(cname="mbedtls_net_init");
-
-fn c_int net_connect( Net_context *ctx, const char* host, const char* port, c_int proto ) @(cname="mbedtls_net_connect");
-
-fn c_int net_set_block( Net_context *ctx) @(cname="mbedtls_net_set_block");
-fn c_int net_set_nonblock( Net_context *ctx) @(cname="net_set_nonblock");
-
-type Verify_fn fn c_int(void*, X509_crt *, c_int, c_uint*);
-fn void ssl_conf_verify(Ssl_config *conf, Verify_fn f_vrfy, void *p_vrfy) @(cname="mbedtls_ssl_conf_verify");
-
-fn c_int net_send(void *ctx, const c_uchar *buf, c_size len) @(cname="mbedtls_net_send");
-
-fn c_int net_recv(void *ctx, c_uchar *buf, c_size len) @(cname="mbedtls_net_recv");
-
-fn c_int net_recv_timeout( void *ctx, c_uchar *buf, c_size len, c_uint timeout) @(cname="mbedtls_net_recv_timeout");
-
+void net_init(Net_context *ctx) @(cname="mbedtls_net_init");
+int net_connect(Net_context *ctx, const char* host, const char* port, int proto) @(cname="mbedtls_net_connect");
+int net_set_block(Net_context *ctx) @(cname="mbedtls_net_set_block");
+int net_set_nonblock(Net_context *ctx) @(cname="net_set_nonblock");
+type Verify_fn fn int(void*, X509_crt *, int, unsigned*);
+void ssl_conf_verify(Ssl_config *conf, Verify_fn f_vrfy, void *p_vrfy) @(cname="mbedtls_ssl_conf_verify");
+int net_send(void *ctx, const unsigned char *buf, size_t len) @(cname="mbedtls_net_send");
+int net_recv(void *ctx, unsigned char *buf, size_t len) @(cname="mbedtls_net_recv");
+int net_recv_timeout(void *ctx, unsigned char *buf, size_t len, unsigned timeout) @(cname="mbedtls_net_recv_timeout");
 
 
 // ------ asn1.h ------
 type Asn1_buf struct @(cname="mbedtls_asn1_buf") {
-    c_int tag;                /**< ASN1 type, e.g. MBEDTLS_ASN1_UTF8_STRING. */
-    c_size len;             /**< ASN1 length, in octets. */
-    c_uchar *p;       /**< ASN1 data, e.g. in ASCII. */
+    int tag;                /**< ASN1 type, e.g. MBEDTLS_ASN1_UTF8_STRING. */
+    size_t len;             /**< ASN1 length, in octets. */
+    unsigned char *p;       /**< ASN1 data, e.g. in ASCII. */
 }
 
 type Asn1_named_data struct @(cname="mbedtls_asn1_named_data") {
     Asn1_buf oid;                   /**< The object identifier. */
     Asn1_buf val;                   /**< The named value. */
     Asn1_named_data *next;  /**< The next entry in the sequence. */
-    c_uchar next_merged;      /**< Merge next item into the current one? */
+    unsigned char next_merged;      /**< Merge next item into the current one? */
 }
 
 type Asn1_sequence struct @(cname="mbedtls_asn1_sequence") {
@@ -78,16 +68,16 @@ type Asn1_sequence struct @(cname="mbedtls_asn1_sequence") {
 
 // ------ error.h ------
 
-fn void strerror(c_int ret, char *buf, c_size buflen) @(cname="mbedtls_strerror");
+void strerror(int ret, char *buf, size_t buflen) @(cname="mbedtls_strerror");
 
 
 // ------ bignum.h ------
 
-type Mpi_uint c_ulonglong;
+type Mpi_uint unsigned long long;
 
 type Mpi struct @(cname="mbedtls_mpi") {
-    c_int s;              /*!<  Sign: -1 if the mpi is negative, 1 otherwise */
-    c_size n;           /*!<  total # of limbs  */
+    int s;              /*!<  Sign: -1 if the mpi is negative, 1 otherwise */
+    size_t n;           /*!<  total # of limbs  */
     Mpi_uint *p;          /*!<  pointer to limbs  */
 }
 
@@ -150,33 +140,32 @@ type Pk_context struct @(cname="mbedtls_pk_context") {
 
 static_assert(16, sizeof(Pk_context));
 
-fn void pk_init(Pk_context* ctx) @(cname="mbedtls_pk_init");
-
-fn void pk_free( Pk_context *ctx) @(cname="mbedtls_pk_free");
+void pk_init(Pk_context* ctx) @(cname="mbedtls_pk_init");
+void pk_free(Pk_context *ctx) @(cname="mbedtls_pk_free");
 
 
 // ------ x509.h ------
 
-const c_int ERR_X509_FEATURE_UNAVAILABLE              = -0x2080;
-const c_int ERR_X509_UNKNOWN_OID                      = -0x2100;
-const c_int ERR_X509_INVALID_FORMAT                   = -0x2180;
-const c_int ERR_X509_INVALID_VERSION                  = -0x2200;
-const c_int ERR_X509_INVALID_SERIAL                   = -0x2280;
-const c_int ERR_X509_INVALID_ALG                      = -0x2300;
-const c_int ERR_X509_INVALID_NAME                     = -0x2380;
-const c_int ERR_X509_INVALID_DATE                     = -0x2400;
-const c_int ERR_X509_INVALID_SIGNATURE                = -0x2480;
-const c_int ERR_X509_INVALID_EXTENSIONS               = -0x2500;
-const c_int ERR_X509_UNKNOWN_VERSION                  = -0x2580;
-const c_int ERR_X509_UNKNOWN_SIG_ALG                  = -0x2600;
-const c_int ERR_X509_SIG_MISMATCH                     = -0x2680;
-const c_int ERR_X509_CERT_VERIFY_FAILED               = -0x2700;
-const c_int ERR_X509_CERT_UNKNOWN_FORMAT              = -0x2780;
-const c_int ERR_X509_BAD_INPUT_DATA                   = -0x2800;
-const c_int ERR_X509_ALLOC_FAILED                     = -0x2880;
-const c_int ERR_X509_FILE_IO_ERROR                    = -0x2900;
-const c_int ERR_X509_BUFFER_TOO_SMALL                 = -0x2980;
-const c_int ERR_X509_FATAL_ERROR                      = -0x3000;
+const int ERR_X509_FEATURE_UNAVAILABLE              = -0x2080;
+const int ERR_X509_UNKNOWN_OID                      = -0x2100;
+const int ERR_X509_INVALID_FORMAT                   = -0x2180;
+const int ERR_X509_INVALID_VERSION                  = -0x2200;
+const int ERR_X509_INVALID_SERIAL                   = -0x2280;
+const int ERR_X509_INVALID_ALG                      = -0x2300;
+const int ERR_X509_INVALID_NAME                     = -0x2380;
+const int ERR_X509_INVALID_DATE                     = -0x2400;
+const int ERR_X509_INVALID_SIGNATURE                = -0x2480;
+const int ERR_X509_INVALID_EXTENSIONS               = -0x2500;
+const int ERR_X509_UNKNOWN_VERSION                  = -0x2580;
+const int ERR_X509_UNKNOWN_SIG_ALG                  = -0x2600;
+const int ERR_X509_SIG_MISMATCH                     = -0x2680;
+const int ERR_X509_CERT_VERIFY_FAILED               = -0x2700;
+const int ERR_X509_CERT_UNKNOWN_FORMAT              = -0x2780;
+const int ERR_X509_BAD_INPUT_DATA                   = -0x2800;
+const int ERR_X509_ALLOC_FAILED                     = -0x2880;
+const int ERR_X509_FILE_IO_ERROR                    = -0x2900;
+const int ERR_X509_BUFFER_TOO_SMALL                 = -0x2980;
+const int ERR_X509_FATAL_ERROR                      = -0x3000;
 
 
 // ------ x509_crt.h ------
@@ -194,33 +183,27 @@ type X509_sequence Asn1_sequence @(cname="mbedtls_x509_sequence");
 static_assert(32, sizeof(X509_sequence));
 
 type X509_time struct @(cname="mbedtls_x509_time") {
-    c_int year;
-    c_int mon;
-    c_int day;         /**< Date. */
-    c_int hour;
-    c_int min;
-    c_int sec;         /**< Time. */
+    int year;
+    int mon;
+    int day;         /**< Date. */
+    int hour;
+    int min;
+    int sec;         /**< Time. */
 }
 
 type X509_crl_entry struct @(cname="mbedtls_x509_crl_entry") {
     X509_buf raw;
-
     X509_buf serial;
-
     X509_time revocation_date;
-
     X509_buf entry_ext;
-
     X509_crl_entry *next;
 }
-
-
 
 type X509_crl struct @(cname="mbedtls_x509_crl") {
     X509_buf raw;           /**< The raw certificate data (DER). */
     X509_buf tbs;           /**< The raw certificate body (DER). The part that is To Be Signed. */
 
-    c_int version;            /**< CRL version (1=v1, 2=v2) */
+    int version;            /**< CRL version (1=v1, 2=v2) */
     X509_buf sig_oid;       /**< CRL signature type identifier */
 
     X509_buf issuer_raw;    /**< The raw issuer data (DER). */
@@ -244,20 +227,20 @@ type X509_crl struct @(cname="mbedtls_x509_crl") {
 }
 
 type X509_crt_profile struct @(cname="mbedtls_x509_crt_profile") {
-    c_uint allowed_mds;       /**< MDs for signatures         */
-    c_uint allowed_pks;       /**< PK algs for signatures     */
-    c_uint allowed_curves;    /**< Elliptic curves for ECDSA  */
-    c_uint rsa_min_bitlen;    /**< Minimum size for RSA keys  */
+    unsigned allowed_mds;       /**< MDs for signatures         */
+    unsigned allowed_pks;       /**< PK algs for signatures     */
+    unsigned allowed_curves;    /**< Elliptic curves for ECDSA  */
+    unsigned rsa_min_bitlen;    /**< Minimum size for RSA keys  */
 }
 
 
 type X509_crt struct @(cname="mbedtls_x509_crt") {
-    c_int own_buffer;                     /**< Indicates if \c raw is owned
+    int own_buffer;                     /**< Indicates if \c raw is owned
                                          *   by the structure or not.        */
     X509_buf raw;               /**< The raw certificate data (DER). */
     X509_buf tbs;               /**< The raw certificate body (DER). The part that is To Be Signed. */
 
-    c_int version;                /**< The X.509 version. (1=v1, 2=v2, 3=v3) */
+    int version;                /**< The X.509 version. (1=v1, 2=v2, 3=v3) */
     X509_buf serial;            /**< Unique id for certificate issued by a specific CA. */
     X509_buf sig_oid;           /**< Signature algorithm, e.g. sha1RSA */
 
@@ -279,15 +262,15 @@ type X509_crt struct @(cname="mbedtls_x509_crt") {
 
     X509_sequence certificate_policies; /**< Optional list of certificate policies (Only anyPolicy is printed and enforced, however the rest of the policies are still listed). */
 
-    c_int ext_types;              /**< Bit string containing detected and parsed extensions */
-    c_int ca_istrue;              /**< Optional Basic Constraint extension value: 1 if this certificate belongs to a CA, 0 otherwise. */
-    c_int max_pathlen;            /**< Optional Basic Constraint extension value: The maximum path length to the root certificate. Path length is 1 higher than RFC 5280 'meaning', so 1+ */
+    int ext_types;              /**< Bit string containing detected and parsed extensions */
+    int ca_istrue;              /**< Optional Basic Constraint extension value: 1 if this certificate belongs to a CA, 0 otherwise. */
+    int max_pathlen;            /**< Optional Basic Constraint extension value: The maximum path length to the root certificate. Path length is 1 higher than RFC 5280 'meaning', so 1+ */
 
-    c_uint key_usage;     /**< Optional key usage extension value: See the values in x509.h */
+    unsigned key_usage;     /**< Optional key usage extension value: See the values in x509.h */
 
     X509_sequence ext_key_usage; /**< Optional list of extended key usage OIDs. */
 
-    c_uchar ns_cert_type; /**< Optional Netscape certificate type extension value: See the values in x509.h */
+    unsigned char ns_cert_type; /**< Optional Netscape certificate type extension value: See the values in x509.h */
 
     X509_buf sig;               /**< Signature: hash of the tbs part signed with the private key. */
     Md_type_t sig_md;           /**< Internal representation of the MD algorithm of the signature algorithm, e.g. MBEDTLS_MD_SHA256 */
@@ -299,63 +282,37 @@ type X509_crt struct @(cname="mbedtls_x509_crt") {
 
 static_assert(616, sizeof(X509_crt));
 
-fn void x509_crt_init(X509_crt* crt) @(cname="mbedtls_x509_crt_init");
-
-fn c_int x509_crt_parse_path( X509_crt *chain, const char* path ) @(cname="mbedtls_x509_crt_parse_path");
-
-fn c_int x509_crt_parse_file( X509_crt *chain, const char* path) @(cname="mbedtls_x509_crt_parse_file");
-
-fn c_int x509_crt_parse( X509_crt *chain, const c_uchar *buf, c_size buflen ) @(cname="mbedtls_x509_crt_parse");
-
-fn void x509_crt_free(X509_crt *crt) @(cname="mbedtls_x509_crt_free");
-
-fn c_int x509_crt_info(char *buf, c_size size, const char* prefix, const X509_crt *crt) @(cname="mbedtls_x509_crt_info");
-
-fn c_int x509_crt_verify_info(char *buf, c_size size, const char* prefix, c_uint flags) @(cname="mbedtls_x509_crt_verify_info");
+void x509_crt_init(X509_crt* crt) @(cname="mbedtls_x509_crt_init");
+int x509_crt_parse_path(X509_crt *chain, const char* path) @(cname="mbedtls_x509_crt_parse_path");
+int x509_crt_parse_file(X509_crt *chain, const char* path) @(cname="mbedtls_x509_crt_parse_file");
+int x509_crt_parse(X509_crt *chain, const unsigned char *buf, size_t buflen) @(cname="mbedtls_x509_crt_parse");
+void x509_crt_free(X509_crt *crt) @(cname="mbedtls_x509_crt_free");
+int x509_crt_info(char *buf, size_t size, const char* prefix, const X509_crt *crt) @(cname="mbedtls_x509_crt_info");
+int x509_crt_verify_info(char *buf, size_t size, const char* prefix, unsigned flags) @(cname="mbedtls_x509_crt_verify_info");
 
 
 // ------ ssl_tls.h ------
 
-fn void ssl_init( Ssl_context *ssl ) @(cname="mbedtls_ssl_init");
-
-fn void ssl_config_init( Ssl_config *conf ) @(cname="mbedtls_ssl_config_init");
-
-fn c_int ssl_config_defaults( Ssl_config *conf, c_int endpoint, c_int transport, c_int preset ) @(cname="mbedtls_ssl_config_defaults");
-
-fn c_int ssl_conf_max_frag_len( Ssl_config *conf, c_uchar mfl_code) @(cname="mbedtls_ssl_conf_max_frag_len");
-
-type Rng_fn fn c_int(void *, c_uchar *, c_size);
-
-fn void ssl_conf_rng( Ssl_config *conf, Rng_fn f_rng, void *p_rng) @(cname="mbedtls_ssl_conf_rng");
-
-fn void ssl_conf_read_timeout(Ssl_config *conf, c_uint timeout) @(cname="mbedtls_ssl_conf_read_timeout");
-
-fn void ssl_conf_session_tickets( Ssl_config *conf, c_int use_tickets) @(cname="mbedtls_ssl_conf_session_tickets");
-
-fn void ssl_conf_renegotiation(Ssl_config *conf, c_int renegotiation) @(cname="mbedtls_ssl_conf_renegotiation");
-
-fn void ssl_conf_ca_chain( Ssl_config *conf, X509_crt *ca_chain, X509_crl *ca_crl) @(cname="mbedtls_ssl_conf_ca_chain");
-
-fn c_int ssl_conf_own_cert( Ssl_config *conf, X509_crt *own_cert, Pk_context *pk_key) @(cname="mbedtls_ssl_conf_own_cert");
-
-fn c_int ssl_setup( Ssl_context *ssl, const Ssl_config *conf) @(cname="mbedtls_ssl_setup");
-
-fn c_int ssl_set_hostname( Ssl_context *ssl, const char* hostname) @(cname="mbedtls_ssl_set_hostname");
-
-fn void ssl_set_bio( Ssl_context *ssl, void *p_bio, Ssl_send_t f_send, Ssl_recv_t f_recv, Ssl_recv_timeout_t f_recv_timeout ) @(cname="mbedtls_ssl_set_bio");
-
-fn void ssl_set_timer_cb(Ssl_context *ssl, void *p_timer, Ssl_set_timer_t f_set_timer, Ssl_get_timer_t f_get_timer) @(cname="mbedtls_ssl_set_timer_cb");
-
-fn c_int ssl_handshake(Ssl_context *ssl) @(cname="mbedtls_ssl_handshake");
-
-fn const char* ssl_get_version( const Ssl_context *ssl) @(cname="mbedtls_ssl_get_version");
-
-fn const char* ssl_get_ciphersuite(const Ssl_context *ssl) @(cname="mbedtls_ssl_get_ciphersuite");
-
-fn c_size ssl_get_input_max_frag_len( const Ssl_context *ssl ) @(cname="mbedtls_ssl_get_input_max_frag_len");
-
-fn c_size ssl_get_output_max_frag_len( const Ssl_context *ssl) @(cname="mbedtls_ssl_get_output_max_frag_len");
-
+void ssl_init(Ssl_context *ssl) @(cname="mbedtls_ssl_init");
+void ssl_config_init(Ssl_config *conf) @(cname="mbedtls_ssl_config_init");
+int ssl_config_defaults(Ssl_config *conf, int endpoint, int transport, int preset) @(cname="mbedtls_ssl_config_defaults");
+int ssl_conf_max_frag_len(Ssl_config *conf, unsigned char mfl_code) @(cname="mbedtls_ssl_conf_max_frag_len");
+type Rng_fn fn int(void *, unsigned char *, size_t);
+void ssl_conf_rng(Ssl_config *conf, Rng_fn f_rng, void *p_rng) @(cname="mbedtls_ssl_conf_rng");
+void ssl_conf_read_timeout(Ssl_config *conf, unsigned timeout) @(cname="mbedtls_ssl_conf_read_timeout");
+void ssl_conf_session_tickets(Ssl_config *conf, int use_tickets) @(cname="mbedtls_ssl_conf_session_tickets");
+void ssl_conf_renegotiation(Ssl_config *conf, int renegotiation) @(cname="mbedtls_ssl_conf_renegotiation");
+void ssl_conf_ca_chain(Ssl_config *conf, X509_crt *ca_chain, X509_crl *ca_crl) @(cname="mbedtls_ssl_conf_ca_chain");
+int ssl_conf_own_cert(Ssl_config *conf, X509_crt *own_cert, Pk_context *pk_key) @(cname="mbedtls_ssl_conf_own_cert");
+int ssl_setup(Ssl_context *ssl, const Ssl_config *conf) @(cname="mbedtls_ssl_setup");
+int ssl_set_hostname(Ssl_context *ssl, const char* hostname) @(cname="mbedtls_ssl_set_hostname");
+void ssl_set_bio(Ssl_context *ssl, void *p_bio, Ssl_send_t f_send, Ssl_recv_t f_recv, Ssl_recv_timeout_t f_recv_timeout) @(cname="mbedtls_ssl_set_bio");
+void ssl_set_timer_cb(Ssl_context *ssl, void *p_timer, Ssl_set_timer_t f_set_timer, Ssl_get_timer_t f_get_timer) @(cname="mbedtls_ssl_set_timer_cb");
+int ssl_handshake(Ssl_context *ssl) @(cname="mbedtls_ssl_handshake");
+const char* ssl_get_version(const Ssl_context *ssl) @(cname="mbedtls_ssl_get_version");
+const char* ssl_get_ciphersuite(const Ssl_context *ssl) @(cname="mbedtls_ssl_get_ciphersuite");
+size_t ssl_get_input_max_frag_len(const Ssl_context *ssl) @(cname="mbedtls_ssl_get_input_max_frag_len");
+size_t ssl_get_output_max_frag_len(const Ssl_context *ssl) @(cname="mbedtls_ssl_get_output_max_frag_len");
 
 
 // ------ ssl.h ------
@@ -363,108 +320,108 @@ fn c_size ssl_get_output_max_frag_len( const Ssl_context *ssl) @(cname="mbedtls_
  * SSL Error codes
  */
 // Note: removed prefix ERR_SSL_ (otherwise too long)
-const c_int FEATURE_UNAVAILABLE               = -0x7080;  /**< The requested feature is not available. */
-const c_int BAD_INPUT_DATA                    = -0x7100;  /**< Bad input parameters to function. */
-const c_int INVALID_MAC                       = -0x7180;  /**< Verification of the message MAC failed. */
-const c_int INVALID_RECORD                    = -0x7200;  /**< An invalid SSL record was received. */
-const c_int CONN_EOF                          = -0x7280;  /**< The connection indicated an EOF. */
-const c_int UNKNOWN_CIPHER                    = -0x7300;  /**< An unknown cipher was received. */
-const c_int NO_CIPHER_CHOSEN                  = -0x7380;  /**< The server has no ciphersuites in common with the client. */
-const c_int NO_RNG                            = -0x7400;  /**< No RNG was provided to the SSL module. */
-const c_int NO_CLIENT_CERTIFICATE             = -0x7480;  /**< No client certification received from the client, but required by the authentication mode. */
-const c_int CERTIFICATE_TOO_LARGE             = -0x7500;  /**< Our own certificate(s) is/are too large to send in an SSL message. */
-const c_int CERTIFICATE_REQUIRED              = -0x7580;  /**< The own certificate is not set, but needed by the server. */
-const c_int PRIVATE_KEY_REQUIRED              = -0x7600;  /**< The own private key or pre-shared key is not set, but needed. */
-const c_int CA_CHAIN_REQUIRED                 = -0x7680;  /**< No CA Chain is set, but required to operate. */
-const c_int UNEXPECTED_MESSAGE                = -0x7700;  /**< An unexpected message was received from our peer. */
-const c_int FATAL_ALERT_MESSAGE               = -0x7780;  /**< A fatal alert message was received from our peer. */
-const c_int PEER_VERIFY_FAILED                = -0x7800;  /**< Verification of our peer failed. */
-const c_int PEER_CLOSE_NOTIFY                 = -0x7880;  /**< The peer notified us that the connection is going to be closed. */
-const c_int BAD_HS_CLIENT_HELLO               = -0x7900;  /**< Processing of the ClientHello handshake message failed. */
-const c_int BAD_HS_SERVER_HELLO               = -0x7980;  /**< Processing of the ServerHello handshake message failed. */
-const c_int BAD_HS_CERTIFICATE                = -0x7A00;  /**< Processing of the Certificate handshake message failed. */
-const c_int BAD_HS_CERTIFICATE_REQUEST        = -0x7A80;  /**< Processing of the CertificateRequest handshake message failed. */
-const c_int BAD_HS_SERVER_KEY_EXCHANGE        = -0x7B00;  /**< Processing of the ServerKeyExchange handshake message failed. */
-const c_int BAD_HS_SERVER_HELLO_DONE          = -0x7B80;  /**< Processing of the ServerHelloDone handshake message failed. */
-const c_int BAD_HS_CLIENT_KEY_EXCHANGE        = -0x7C00;  /**< Processing of the ClientKeyExchange handshake message failed. */
-const c_int BAD_HS_CLIENT_KEY_EXCHANGE_RP     = -0x7C80;  /**< Processing of the ClientKeyExchange handshake message failed in DHM / ECDH Read Public. */
-const c_int BAD_HS_CLIENT_KEY_EXCHANGE_CS     = -0x7D00;  /**< Processing of the ClientKeyExchange handshake message failed in DHM / ECDH Calculate Secret. */
-const c_int BAD_HS_CERTIFICATE_VERIFY         = -0x7D80;  /**< Processing of the CertificateVerify handshake message failed. */
-const c_int BAD_HS_CHANGE_CIPHER_SPEC         = -0x7E00;  /**< Processing of the ChangeCipherSpec handshake message failed. */
-const c_int BAD_HS_FINISHED                   = -0x7E80;  /**< Processing of the Finished handshake message failed. */
-const c_int ALLOC_FAILED                      = -0x7F00;  /**< Memory allocation failed */
-const c_int HW_ACCEL_FAILED                   = -0x7F80;  /**< Hardware acceleration function returned with error */
-const c_int HW_ACCEL_FALLTHROUGH              = -0x6F80;  /**< Hardware acceleration function skipped / left alone data */
-const c_int COMPRESSION_FAILED                = -0x6F00;  /**< Processing of the compression / decompression failed */
-const c_int BAD_HS_PROTOCOL_VERSION           = -0x6E80;  /**< Handshake protocol not within min/max boundaries */
-const c_int BAD_HS_NEW_SESSION_TICKET         = -0x6E00;  /**< Processing of the NewSessionTicket handshake message failed. */
-const c_int SESSION_TICKET_EXPIRED            = -0x6D80;  /**< Session ticket has expired. */
-const c_int PK_TYPE_MISMATCH                  = -0x6D00;  /**< Public key type mismatch (eg, asked for RSA key exchange and presented EC key) */
-const c_int UNKNOWN_IDENTITY                  = -0x6C80;  /**< Unknown identity received (eg, PSK identity) */
-const c_int INTERNAL_ERROR                    = -0x6C00;  /**< Internal error (eg, unexpected failure in lower-level module) */
-const c_int COUNTER_WRAPPING                  = -0x6B80;  /**< A counter would wrap (eg, too many messages exchanged). */
-const c_int WAITING_SERVER_HELLO_RENEGO       = -0x6B00;  /**< Unexpected message at ServerHello in renegotiation. */
-const c_int HELLO_VERIFY_REQUIRED             = -0x6A80;  /**< DTLS client must retry for hello verification */
-const c_int BUFFER_TOO_SMALL                  = -0x6A00;  /**< A buffer is too small to receive or write a message */
-const c_int NO_USABLE_CIPHERSUITE             = -0x6980;  /**< None of the common ciphersuites is usable (eg, no suitable certificate, see debug messages). */
-const c_int WANT_READ                         = -0x6900;  /**< No data of requested type currently available on underlying transport. */
-const c_int WANT_WRITE                        = -0x6880;  /**< Connection requires a write call. */
-const c_int TIMEOUT                           = -0x6800;  /**< The operation timed out. */
-const c_int CLIENT_RECONNECT                  = -0x6780;  /**< The client initiated a reconnect from the same port. */
-const c_int UNEXPECTED_RECORD                 = -0x6700;  /**< Record header looks valid but is not expected. */
-const c_int NON_FATAL                         = -0x6680;  /**< The alert message received indicates a non-fatal error. */
-const c_int INVALID_VERIFY_HASH               = -0x6600;  /**< Couldn't set the hash for verifying CertificateVerify */
-const c_int CONTINUE_PROCESSING               = -0x6580;  /**< Internal-only message signaling that further message-processing should be done */
-const c_int ASYNC_IN_PROGRESS                 = -0x6500;  /**< The asynchronous operation is not completed yet. */
-const c_int EARLY_MESSAGE                     = -0x6480;  /**< Internal-only message signaling that a message arrived early. */
-const c_int UNEXPECTED_CID                    = -0x6000;  /**< An encrypted DTLS-frame with an unexpected CID was received. */
-const c_int VERSION_MISMATCH                  = -0x5F00;  /**< An operation failed due to an unexpected version or configuration. */
-const c_int CRYPTO_IN_PROGRESS                = -0x7000;  /**< A cryptographic operation is in progress. Try again later. */
-const c_int BAD_CONFIG                        = -0x5E80;  /**< Invalid value in SSL config */
+const int FEATURE_UNAVAILABLE               = -0x7080;  /**< The requested feature is not available. */
+const int BAD_INPUT_DATA                    = -0x7100;  /**< Bad input parameters to function. */
+const int INVALID_MAC                       = -0x7180;  /**< Verification of the message MAC failed. */
+const int INVALID_RECORD                    = -0x7200;  /**< An invalid SSL record was received. */
+const int CONN_EOF                          = -0x7280;  /**< The connection indicated an EOF. */
+const int UNKNOWN_CIPHER                    = -0x7300;  /**< An unknown cipher was received. */
+const int NO_CIPHER_CHOSEN                  = -0x7380;  /**< The server has no ciphersuites in common with the client. */
+const int NO_RNG                            = -0x7400;  /**< No RNG was provided to the SSL module. */
+const int NO_CLIENT_CERTIFICATE             = -0x7480;  /**< No client certification received from the client, but required by the authentication mode. */
+const int CERTIFICATE_TOO_LARGE             = -0x7500;  /**< Our own certificate(s) is/are too large to send in an SSL message. */
+const int CERTIFICATE_REQUIRED              = -0x7580;  /**< The own certificate is not set, but needed by the server. */
+const int PRIVATE_KEY_REQUIRED              = -0x7600;  /**< The own private key or pre-shared key is not set, but needed. */
+const int CA_CHAIN_REQUIRED                 = -0x7680;  /**< No CA Chain is set, but required to operate. */
+const int UNEXPECTED_MESSAGE                = -0x7700;  /**< An unexpected message was received from our peer. */
+const int FATAL_ALERT_MESSAGE               = -0x7780;  /**< A fatal alert message was received from our peer. */
+const int PEER_VERIFY_FAILED                = -0x7800;  /**< Verification of our peer failed. */
+const int PEER_CLOSE_NOTIFY                 = -0x7880;  /**< The peer notified us that the connection is going to be closed. */
+const int BAD_HS_CLIENT_HELLO               = -0x7900;  /**< Processing of the ClientHello handshake message failed. */
+const int BAD_HS_SERVER_HELLO               = -0x7980;  /**< Processing of the ServerHello handshake message failed. */
+const int BAD_HS_CERTIFICATE                = -0x7A00;  /**< Processing of the Certificate handshake message failed. */
+const int BAD_HS_CERTIFICATE_REQUEST        = -0x7A80;  /**< Processing of the CertificateRequest handshake message failed. */
+const int BAD_HS_SERVER_KEY_EXCHANGE        = -0x7B00;  /**< Processing of the ServerKeyExchange handshake message failed. */
+const int BAD_HS_SERVER_HELLO_DONE          = -0x7B80;  /**< Processing of the ServerHelloDone handshake message failed. */
+const int BAD_HS_CLIENT_KEY_EXCHANGE        = -0x7C00;  /**< Processing of the ClientKeyExchange handshake message failed. */
+const int BAD_HS_CLIENT_KEY_EXCHANGE_RP     = -0x7C80;  /**< Processing of the ClientKeyExchange handshake message failed in DHM / ECDH Read Public. */
+const int BAD_HS_CLIENT_KEY_EXCHANGE_CS     = -0x7D00;  /**< Processing of the ClientKeyExchange handshake message failed in DHM / ECDH Calculate Secret. */
+const int BAD_HS_CERTIFICATE_VERIFY         = -0x7D80;  /**< Processing of the CertificateVerify handshake message failed. */
+const int BAD_HS_CHANGE_CIPHER_SPEC         = -0x7E00;  /**< Processing of the ChangeCipherSpec handshake message failed. */
+const int BAD_HS_FINISHED                   = -0x7E80;  /**< Processing of the Finished handshake message failed. */
+const int ALLOC_FAILED                      = -0x7F00;  /**< Memory allocation failed */
+const int HW_ACCEL_FAILED                   = -0x7F80;  /**< Hardware acceleration function returned with error */
+const int HW_ACCEL_FALLTHROUGH              = -0x6F80;  /**< Hardware acceleration function skipped / left alone data */
+const int COMPRESSION_FAILED                = -0x6F00;  /**< Processing of the compression / decompression failed */
+const int BAD_HS_PROTOCOL_VERSION           = -0x6E80;  /**< Handshake protocol not within min/max boundaries */
+const int BAD_HS_NEW_SESSION_TICKET         = -0x6E00;  /**< Processing of the NewSessionTicket handshake message failed. */
+const int SESSION_TICKET_EXPIRED            = -0x6D80;  /**< Session ticket has expired. */
+const int PK_TYPE_MISMATCH                  = -0x6D00;  /**< Public key type mismatch (eg, asked for RSA key exchange and presented EC key) */
+const int UNKNOWN_IDENTITY                  = -0x6C80;  /**< Unknown identity received (eg, PSK identity) */
+const int INTERNAL_ERROR                    = -0x6C00;  /**< Internal error (eg, unexpected failure in lower-level module) */
+const int COUNTER_WRAPPING                  = -0x6B80;  /**< A counter would wrap (eg, too many messages exchanged). */
+const int WAITING_SERVER_HELLO_RENEGO       = -0x6B00;  /**< Unexpected message at ServerHello in renegotiation. */
+const int HELLO_VERIFY_REQUIRED             = -0x6A80;  /**< DTLS client must retry for hello verification */
+const int BUFFER_TOO_SMALL                  = -0x6A00;  /**< A buffer is too small to receive or write a message */
+const int NO_USABLE_CIPHERSUITE             = -0x6980;  /**< None of the common ciphersuites is usable (eg, no suitable certificate, see debug messages). */
+const int WANT_READ                         = -0x6900;  /**< No data of requested type currently available on underlying transport. */
+const int WANT_WRITE                        = -0x6880;  /**< Connection requires a write call. */
+const int TIMEOUT                           = -0x6800;  /**< The operation timed out. */
+const int CLIENT_RECONNECT                  = -0x6780;  /**< The client initiated a reconnect from the same port. */
+const int UNEXPECTED_RECORD                 = -0x6700;  /**< Record header looks valid but is not expected. */
+const int NON_FATAL                         = -0x6680;  /**< The alert message received indicates a non-fatal error. */
+const int INVALID_VERIFY_HASH               = -0x6600;  /**< Couldn't set the hash for verifying CertificateVerify */
+const int CONTINUE_PROCESSING               = -0x6580;  /**< Internal-only message signaling that further message-processing should be done */
+const int ASYNC_IN_PROGRESS                 = -0x6500;  /**< The asynchronous operation is not completed yet. */
+const int EARLY_MESSAGE                     = -0x6480;  /**< Internal-only message signaling that a message arrived early. */
+const int UNEXPECTED_CID                    = -0x6000;  /**< An encrypted DTLS-frame with an unexpected CID was received. */
+const int VERSION_MISMATCH                  = -0x5F00;  /**< An operation failed due to an unexpected version or configuration. */
+const int CRYPTO_IN_PROGRESS                = -0x7000;  /**< A cryptographic operation is in progress. Try again later. */
+const int BAD_CONFIG                        = -0x5E80;  /**< Invalid value in SSL config */
 
-const c_int SSL_IS_CLIENT = 0;
-const c_int SSL_IS_SERVER = 1;
+const int SSL_IS_CLIENT = 0;
+const int SSL_IS_SERVER = 1;
 
-const c_int SSL_TRANSPORT_STREAM  = 0;
-const c_int SSL_TRANSPORT_DATAGRAM =1;
+const int SSL_TRANSPORT_STREAM  = 0;
+const int SSL_TRANSPORT_DATAGRAM =1;
 
-const c_int SSL_PRESET_DEFAULT = 0;
-const c_int SSL_PRESET_SUITEB  = 2;
+const int SSL_PRESET_DEFAULT = 0;
+const int SSL_PRESET_SUITEB  = 2;
 
-const c_int SSL_MAX_FRAG_LEN_NONE         = 0;   /*!< don't use this extension   */
-const c_int SSL_MAX_FRAG_LEN_512          = 1;   /*!< MaxFragmentLength 2^9      */
-const c_int SSL_MAX_FRAG_LEN_1024         = 2;   /*!< MaxFragmentLength 2^10     */
-const c_int SSL_MAX_FRAG_LEN_2048         = 3;   /*!< MaxFragmentLength 2^11     */
-const c_int SSL_MAX_FRAG_LEN_4096         = 4;   /*!< MaxFragmentLength 2^12     */
-const c_int SSL_MAX_FRAG_LEN_INVALID      = 5;   /*!< first invalid value        */
+const int SSL_MAX_FRAG_LEN_NONE         = 0;   /*!< don't use this extension   */
+const int SSL_MAX_FRAG_LEN_512          = 1;   /*!< MaxFragmentLength 2^9      */
+const int SSL_MAX_FRAG_LEN_1024         = 2;   /*!< MaxFragmentLength 2^10     */
+const int SSL_MAX_FRAG_LEN_2048         = 3;   /*!< MaxFragmentLength 2^11     */
+const int SSL_MAX_FRAG_LEN_4096         = 4;   /*!< MaxFragmentLength 2^12     */
+const int SSL_MAX_FRAG_LEN_INVALID      = 5;   /*!< first invalid value        */
 
-const c_int SSL_SESSION_TICKETS_DISABLED   = 0;
-const c_int SSL_SESSION_TICKETS_ENABLED    = 1;
+const int SSL_SESSION_TICKETS_DISABLED   = 0;
+const int SSL_SESSION_TICKETS_ENABLED    = 1;
 
-const c_int SSL_RENEGOTIATION_DISABLED    = 0;
-const c_int SSL_RENEGOTIATION_ENABLED     = 1;
+const int SSL_RENEGOTIATION_DISABLED    = 0;
+const int SSL_RENEGOTIATION_ENABLED     = 1;
 
 
-type Ssl_send_t fn c_int(void *ctx, const c_char *buf, c_size len) @(cname="mbedtls_ssl_send_t");
-type Ssl_recv_t fn c_int(void *ctx, c_uchar *buf, c_size len) @(cname="mbedtls_ssl_recv_t");
-type Ssl_recv_timeout_t fn c_int(void *ctx, c_uchar *buf, c_size len, c_uint timeout) @(cname="mbedtls_ssl_recv_timeout_t");
+type Ssl_send_t fn int(void *ctx, const char *buf, size_t len) @(cname="mbedtls_ssl_send_t");
+type Ssl_recv_t fn int(void *ctx, unsigned char *buf, size_t len) @(cname="mbedtls_ssl_recv_t");
+type Ssl_recv_timeout_t fn int(void *ctx, unsigned char *buf, size_t len, unsigned timeout) @(cname="mbedtls_ssl_recv_timeout_t");
 
 
 type Ssl_key_cert struct @(opaque, cname="mbedtls_ssl_key_cert");
 
 
 // NOTE: from platform_time.h
-type Time_t c_long;
+type Time_t long;
 
 type Ssl_session struct @(cname="mbedtls_ssl_session") {
 //#if defined(MBEDTLS_HAVE_TIME)
     Time_t start;       /*!< starting time      */
 //#endif
-    c_int ciphersuite;            /*!< chosen ciphersuite */
-    c_int compression;            /*!< chosen compression */
-    c_size id_len;              /*!< session id length  */
-    c_uchar[32] id;       /*!< session identifier */
-    c_uchar[48] master;   /*!< the master secret  */
+    int ciphersuite;            /*!< chosen ciphersuite */
+    int compression;            /*!< chosen compression */
+    size_t id_len;              /*!< session id length  */
+    unsigned char[32] id;       /*!< session identifier */
+    unsigned char[48] master;   /*!< the master secret  */
 
 //#if defined(MBEDTLS_X509_CRT_PARSE_C)
 //#if defined(MBEDTLS_SSL_KEEP_PEER_CERTIFICATE)
@@ -472,40 +429,40 @@ type Ssl_session struct @(cname="mbedtls_ssl_session") {
 //#else /* MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
     /*! The digest of the peer's end-CRT. This must be kept to detect CRT
      *  changes during renegotiation, mitigating the triple handshake attack. */
-//    c_uchar *peer_cert_digest;
+//    unsigned char *peer_cert_digest;
 //    size_t peer_cert_digest_len;
 //    mbedtls_md_type_t peer_cert_digest_type;
 //#endif /* !MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
 //#endif /* MBEDTLS_X509_CRT_PARSE_C */
-    c_uint verify_result;          /*!<  verification result     */
+    unsigned verify_result;          /*!<  verification result     */
 
 //#if defined(MBEDTLS_SSL_SESSION_TICKETS) && defined(MBEDTLS_SSL_CLI_C)
-    c_uchar *ticket;      /*!< RFC 5077 session ticket */
-    c_size ticket_len;          /*!< session ticket length   */
-    c_uint ticket_lifetime;   /*!< ticket lifetime hint    */
+    unsigned char *ticket;      /*!< RFC 5077 session ticket */
+    size_t ticket_len;          /*!< session ticket length   */
+    unsigned ticket_lifetime;   /*!< ticket lifetime hint    */
 //#endif /* MBEDTLS_SSL_SESSION_TICKETS && MBEDTLS_SSL_CLI_C */
 
 //#if defined(MBEDTLS_SSL_MAX_FRAGMENT_LENGTH)
-    c_uchar mfl_code;     /*!< MaxFragmentLength negotiated by peer */
+    unsigned char mfl_code;     /*!< MaxFragmentLength negotiated by peer */
 //#endif /* MBEDTLS_SSL_MAX_FRAGMENT_LENGTH */
 
 //#if defined(MBEDTLS_SSL_TRUNCATED_HMAC)
-    c_int trunc_hmac;             /*!< flag for truncated hmac activation   */
+    int trunc_hmac;             /*!< flag for truncated hmac activation   */
 //#endif /* MBEDTLS_SSL_TRUNCATED_HMAC */
 
 //#if defined(MBEDTLS_SSL_ENCRYPT_THEN_MAC)
-    c_int encrypt_then_mac;       /*!< flag for EtM activation                */
+    int encrypt_then_mac;       /*!< flag for EtM activation                */
 //#endif
 }
 
 
 
-type Cfg_dbg_f fn void(void *, c_int, const char*, c_int, const char*);
-type Cfg_rng_f fn c_int(void *, c_uchar*, c_size);
-type Cfg_get_cache_f fn c_int(void *, Ssl_session*);
-type Cfg_set_cache_f fn c_int(void *, const Ssl_session*);
+type Cfg_dbg_f fn void(void *, int, const char*, int, const char*);
+type Cfg_rng_f fn int(void *, unsigned char*, size_t);
+type Cfg_get_cache_f fn int(void *, Ssl_session*);
+type Cfg_set_cache_f fn int(void *, const Ssl_session*);
 
-type Cfg_sni_f fn c_int(void *, Ssl_context *, const c_uchar *, c_size);
+type Cfg_sni_f fn int(void *, Ssl_context *, const unsigned char *, size_t);
 
 type Ssl_config struct @(cname="mbedtls_ssl_config") {
    /* Group items by size (largest first) to minimize padding overhead */
@@ -514,7 +471,7 @@ type Ssl_config struct @(cname="mbedtls_ssl_config") {
      * Pointers
      */
 
-    const c_int*[4] ciphersuite_list; /*!< allowed ciphersuites per version   */
+    const int*[4] ciphersuite_list; /*!< allowed ciphersuites per version   */
 
     /** Callback for printing debug output                                  */
     Cfg_dbg_f f_dbg;
@@ -599,7 +556,7 @@ type Ssl_config struct @(cname="mbedtls_ssl_config") {
 //#endif /* MBEDTLS_SSL_ASYNC_PRIVATE */
 
 //#if defined(MBEDTLS_KEY_EXCHANGE_WITH_CERT_ENABLED)
-    const c_int *sig_hashes;          /*!< allowed signature hashes           */
+    const int *sig_hashes;          /*!< allowed signature hashes           */
 //#endif
 
 //#if defined(MBEDTLS_ECP_C)
@@ -622,22 +579,22 @@ type Ssl_config struct @(cname="mbedtls_ssl_config") {
 //                              */
 //#endif /* MBEDTLS_USE_PSA_CRYPTO */
 
-    c_uchar *psk;      /*!< The raw pre-shared key. This field should
+    unsigned char *psk;      /*!< The raw pre-shared key. This field should
                               *   only be set via mbedtls_ssl_conf_psk().
                               *   If either no PSK or an opaque PSK
                               *   have been configured, this has value NULL. */
-    c_size         psk_len;  /*!< The length of the raw pre-shared key.
+    size_t         psk_len;  /*!< The length of the raw pre-shared key.
                               *   This field should only be set via
                               *   mbedtls_ssl_conf_psk().
                               *   Its value is non-zero if and only if
                               *   \c psk is not \c NULL. */
 
-    c_uchar *psk_identity;    /*!< The PSK identity for PSK negotiation.
+    unsigned char *psk_identity;    /*!< The PSK identity for PSK negotiation.
                                      *   This field should only be set via
                                      *   mbedtls_ssl_conf_psk().
                                      *   This is set if and only if either
                                      *   \c psk or \c psk_opaque are set. */
-    c_size         psk_identity_len;/*!< The length of PSK identity.
+    size_t         psk_identity_len;/*!< The length of PSK identity.
                                      *   This field should only be set via
                                      *   mbedtls_ssl_conf_psk().
                                      *   Its value is non-zero if and only if
@@ -660,33 +617,33 @@ type Ssl_config struct @(cname="mbedtls_ssl_config") {
      * Numerical settings (int then char)
      */
 
-    c_uint read_timeout;          /*!< timeout for mbedtls_ssl_read (ms)  */
+    unsigned read_timeout;          /*!< timeout for mbedtls_ssl_read (ms)  */
 
 //#if defined(MBEDTLS_SSL_PROTO_DTLS)
-    c_uint hs_timeout_min;        /*!< initial value of the handshake
+    unsigned hs_timeout_min;        /*!< initial value of the handshake
                                          retransmission timeout (ms)        */
-    c_uint hs_timeout_max;        /*!< maximum value of the handshake
+    unsigned hs_timeout_max;        /*!< maximum value of the handshake
                                          retransmission timeout (ms)        */
 //#endif
 
 //#if defined(MBEDTLS_SSL_RENEGOTIATION)
-    c_int renego_max_records;         /*!< grace period for renegotiation     */
-    c_uchar[8] renego_period; /*!< value of the record counters
+    int renego_max_records;         /*!< grace period for renegotiation     */
+    unsigned char[8] renego_period; /*!< value of the record counters
                                          that triggers renegotiation        */
 //#endif
 
 //#if defined(MBEDTLS_SSL_DTLS_BADMAC_LIMIT)
-    c_uint badmac_limit;      /*!< limit of records with a bad MAC    */
+    unsigned badmac_limit;      /*!< limit of records with a bad MAC    */
 //#endif
 
 //#if defined(MBEDTLS_DHM_C) && defined(MBEDTLS_SSL_CLI_C)
-    c_uint dhm_min_bitlen;    /*!< min. bit length of the DHM prime   */
+    unsigned dhm_min_bitlen;    /*!< min. bit length of the DHM prime   */
 //#endif
 
-    c_uchar max_major_ver;    /*!< max. major version used            */
-    c_uchar max_minor_ver;    /*!< max. minor version used            */
-    c_uchar min_major_ver;    /*!< min. major version used            */
-    c_uchar min_minor_ver;    /*!< min. minor version used            */
+    unsigned char max_major_ver;    /*!< max. major version used            */
+    unsigned char max_minor_ver;    /*!< max. minor version used            */
+    unsigned char min_major_ver;    /*!< min. major version used            */
+    unsigned char min_minor_ver;    /*!< min. minor version used            */
 
    /*
      * Flags (bitfields)
@@ -694,52 +651,52 @@ type Ssl_config struct @(cname="mbedtls_ssl_config") {
 
     // TODO
 #if 0
-    c_uint endpoint : 1;      /*!< 0: client, 1: server               */
-    c_uint transport : 1;     /*!< stream (TLS) or datagram (DTLS)    */
-    c_uint authmode : 2;      /*!< MBEDTLS_SSL_VERIFY_XXX             */
+    unsigned endpoint : 1;      /*!< 0: client, 1: server               */
+    unsigned transport : 1;     /*!< stream (TLS) or datagram (DTLS)    */
+    unsigned authmode : 2;      /*!< MBEDTLS_SSL_VERIFY_XXX             */
     /* needed even with renego disabled for LEGACY_BREAK_HANDSHAKE          */
-    c_uint allow_legacy_renegotiation : 2 ; /*!< MBEDTLS_LEGACY_XXX   */
+    unsigned allow_legacy_renegotiation : 2 ; /*!< MBEDTLS_LEGACY_XXX   */
 #if defined(MBEDTLS_ARC4_C)
-    c_uint arc4_disabled : 1; /*!< blacklist RC4 ciphersuites?        */
+    unsigned arc4_disabled : 1; /*!< blacklist RC4 ciphersuites?        */
 #endif
 #if defined(MBEDTLS_SSL_MAX_FRAGMENT_LENGTH)
-    c_uint mfl_code : 3;      /*!< desired fragment length            */
+    unsigned mfl_code : 3;      /*!< desired fragment length            */
 #endif
 #if defined(MBEDTLS_SSL_ENCRYPT_THEN_MAC)
-    c_uint encrypt_then_mac : 1 ; /*!< negotiate encrypt-then-mac?    */
+    unsigned encrypt_then_mac : 1 ; /*!< negotiate encrypt-then-mac?    */
 #endif
 #if defined(MBEDTLS_SSL_EXTENDED_MASTER_SECRET)
-    c_uint extended_ms : 1;   /*!< negotiate extended master secret?  */
+    unsigned extended_ms : 1;   /*!< negotiate extended master secret?  */
 #endif
 #if defined(MBEDTLS_SSL_DTLS_ANTI_REPLAY)
-    c_uint anti_replay : 1;   /*!< detect and prevent replay?         */
+    unsigned anti_replay : 1;   /*!< detect and prevent replay?         */
 #endif
 #if defined(MBEDTLS_SSL_CBC_RECORD_SPLITTING)
-    c_uint cbc_record_splitting : 1;  /*!< do cbc record splitting    */
+    unsigned cbc_record_splitting : 1;  /*!< do cbc record splitting    */
 #endif
 #if defined(MBEDTLS_SSL_RENEGOTIATION)
-    c_uint disable_renegotiation : 1; /*!< disable renegotiation?     */
+    unsigned disable_renegotiation : 1; /*!< disable renegotiation?     */
 #endif
 #if defined(MBEDTLS_SSL_TRUNCATED_HMAC)
-    c_uint trunc_hmac : 1;    /*!< negotiate truncated hmac?          */
+    unsigned trunc_hmac : 1;    /*!< negotiate truncated hmac?          */
 #endif
 #if defined(MBEDTLS_SSL_SESSION_TICKETS)
-    c_uint session_tickets : 1;   /*!< use session tickets?           */
+    unsigned session_tickets : 1;   /*!< use session tickets?           */
 #endif
 #if defined(MBEDTLS_SSL_FALLBACK_SCSV) && defined(MBEDTLS_SSL_CLI_C)
-    c_uint fallback : 1;      /*!< is this a fallback?                */
+    unsigned fallback : 1;      /*!< is this a fallback?                */
 #endif
 #if defined(MBEDTLS_SSL_SRV_C)
-    c_uint cert_req_ca_list : 1;  /*!< enable sending CA list in
+    unsigned cert_req_ca_list : 1;  /*!< enable sending CA list in
                                           Certificate Request messages?     */
 #endif
 #if defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)
-    c_uint ignore_unexpected_cid : 1; /*!< Determines whether DTLS
+    unsigned ignore_unexpected_cid : 1; /*!< Determines whether DTLS
                                              *   record with unexpected CID
                                              *   should lead to failure.    */
 #endif /* MBEDTLS_SSL_DTLS_CONNECTION_ID */
 #if defined(MBEDTLS_SSL_DTLS_SRTP)
-    c_uint dtls_srtp_mki_support : 1; /* support having mki_value
+    unsigned dtls_srtp_mki_support : 1; /* support having mki_value
                                                in the use_srtp extension     */
 #endif
 #endif
@@ -751,8 +708,8 @@ type Ssl_handshake_params struct @(opaque, cname="mbedtls_ssl_handshake_params")
 
 type Ssl_transform struct @(opaque, cname="mbedtls_ssl_transform");
 
-type Ssl_set_timer_t fn void (void* ctx, c_uint int_ms, c_uint fin_ms) @(cname="mbedtls_ssl_set_timer_t");
-type Ssl_get_timer_t fn c_int (void* ctx) @(cname="mbedtls_ssl_get_timer_t");
+type Ssl_set_timer_t fn void (void* ctx, unsigned int_ms, unsigned fin_ms) @(cname="mbedtls_ssl_set_timer_t");
+type Ssl_get_timer_t fn int (void* ctx) @(cname="mbedtls_ssl_get_timer_t");
 
 type Tls_prf_types enum u8 {
     NONE,   //MBEDTLS_SSL_TLS_PRF_NONE,
@@ -762,20 +719,20 @@ type Tls_prf_types enum u8 {
     SHA256, //MBEDTLS_SSL_TLS_PRF_SHA256
 }
 
-type Ctx_vrfy_f fn c_int (void*, X509_crt *, c_int, c_uint*);
-type Ctx_psk_f fn c_int(void *, Ssl_context *, const c_uchar *, c_size);
-type Ctx_cookie_write_f fn c_int(void *, c_uchar **, c_uchar *, const c_uchar *, c_size );
-type Ctx_cookie_check_f fn c_int(void *, const c_uchar *, c_size, const c_uchar *, c_size);
-type Ctx_ticket_write_f fn c_int(void *, const Ssl_session *, c_uchar *, const c_uchar *, c_size *, c_uint*);
-type Ctx_ticket_parse_f fn c_int(void *, Ssl_session *, c_uchar *, c_size);
-type Ctx_export_keys_f fn c_int(void *, const c_uchar *, const c_uchar *, c_size, c_size, c_size);
-type Ctx_export_keys_ext_f fn c_int(void *, const c_uchar *,
-                const c_uchar *, c_size, c_size, c_size,
-                const c_uchar*, const c_uchar*,
-                Tls_prf_types );
+type Ctx_vrfy_f fn int (void*, X509_crt *, int, unsigned*);
+type Ctx_psk_f fn int(void *, Ssl_context *, const unsigned char *, size_t);
+type Ctx_cookie_write_f fn int(void *, unsigned char **, unsigned char *, const unsigned char *, size_t);
+type Ctx_cookie_check_f fn int(void *, const unsigned char *, size_t, const unsigned char *, size_t);
+type Ctx_ticket_write_f fn int(void *, const Ssl_session *, unsigned char *, const unsigned char *, size_t *, unsigned*);
+type Ctx_ticket_parse_f fn int(void *, Ssl_session *, unsigned char *, size_t);
+type Ctx_export_keys_f fn int(void *, const unsigned char *, const unsigned char *, size_t, size_t, size_t);
+type Ctx_export_keys_ext_f fn int(void *, const unsigned char *,
+                const unsigned char *, size_t, size_t, size_t,
+                const unsigned char*, const unsigned char*,
+                Tls_prf_types);
 
 //#if defined(MBEDTLS_SSL_PROTO_SSL3)
-//const c_int SSL_VERIFY_DATA_MAX_LEN = 36;
+//const int SSL_VERIFY_DATA_MAX_LEN = 36;
 //#else
 const i32 SSL_VERIFY_DATA_MAX_LEN = 12;
 //#endif
@@ -786,19 +743,19 @@ type Ssl_context struct @(cname="mbedtls_ssl_context") {
     /*
      * Miscellaneous
      */
-    c_int state;                  /*!< SSL handshake: current state     */
+    int state;                  /*!< SSL handshake: current state     */
 //#if defined(MBEDTLS_SSL_RENEGOTIATION)
-    c_int renego_status;          /*!< Initial, in progress, pending?   */
-    c_int renego_records_seen;    /*!< Records since renego request, or with DTLS,
+    int renego_status;          /*!< Initial, in progress, pending?   */
+    int renego_records_seen;    /*!< Records since renego request, or with DTLS,
                                   number of retransmissions of request if
                                   renego_max_records is < 0           */
 //#endif /* MBEDTLS_SSL_RENEGOTIATION */
 
-    c_int major_ver;              /*!< equal to  MBEDTLS_SSL_MAJOR_VERSION_3    */
-    c_int minor_ver;              /*!< either 0 (SSL3) or 1 (TLS1.0)    */
+    int major_ver;              /*!< equal to  MBEDTLS_SSL_MAJOR_VERSION_3    */
+    int minor_ver;              /*!< either 0 (SSL3) or 1 (TLS1.0)    */
 
 //#if defined(MBEDTLS_SSL_DTLS_BADMAC_LIMIT)
-    c_uint badmac_seen;       /*!< records with a bad MAC received    */
+    unsigned badmac_seen;       /*!< records with a bad MAC received    */
 //#endif /* MBEDTLS_SSL_DTLS_BADMAC_LIMIT */
 
 //#if defined(MBEDTLS_X509_CRT_PARSE_C)
@@ -843,86 +800,86 @@ type Ssl_context struct @(cname="mbedtls_ssl_context") {
     /*
      * Record layer (incoming data)
      */
-    c_uchar *in_buf;      /*!< input buffer                     */
-    c_uchar *in_ctr;      /*!< 64-bit incoming message counter
+    unsigned char *in_buf;      /*!< input buffer                     */
+    unsigned char *in_ctr;      /*!< 64-bit incoming message counter
                                      TLS: maintained by us
                                      DTLS: read from peer             */
-    c_uchar *in_hdr;      /*!< start of record header           */
+    unsigned char *in_hdr;      /*!< start of record header           */
 //#if defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)
-//    c_uchar *in_cid;      /*!< The start of the CID;
+//    unsigned char *in_cid;      /*!< The start of the CID;
 //                                 *   (the end is marked by in_len).   */
 //#endif /* MBEDTLS_SSL_DTLS_CONNECTION_ID */
-    c_uchar *in_len;      /*!< two-bytes message length field   */
-    c_uchar *in_iv;       /*!< ivlen-byte IV                    */
-    c_uchar *in_msg;      /*!< message contents (in_iv+ivlen)   */
-    c_uchar *in_offt;     /*!< read offset in application data  */
+    unsigned char *in_len;      /*!< two-bytes message length field   */
+    unsigned char *in_iv;       /*!< ivlen-byte IV                    */
+    unsigned char *in_msg;      /*!< message contents (in_iv+ivlen)   */
+    unsigned char *in_offt;     /*!< read offset in application data  */
 
-    c_int in_msgtype;             /*!< record header: message type      */
-    c_size in_msglen;           /*!< record header: message length    */
-    c_size in_left;             /*!< amount of data read so far       */
+    int in_msgtype;             /*!< record header: message type      */
+    size_t in_msglen;           /*!< record header: message length    */
+    size_t in_left;             /*!< amount of data read so far       */
 //#if defined(MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH)
-//    c_size in_buf_len;          /*!< length of input buffer           */
+//    size_t in_buf_len;          /*!< length of input buffer           */
 //#endif
 //#if defined(MBEDTLS_SSL_PROTO_DTLS)
-    c_ushort in_epoch;          /*!< DTLS epoch for incoming records  */
-    c_size next_record_offset;  /*!< offset of the next record in datagram
+    unsigned short in_epoch;          /*!< DTLS epoch for incoming records  */
+    size_t next_record_offset;  /*!< offset of the next record in datagram
                                      (equal to in_left if none)       */
 //#endif /* MBEDTLS_SSL_PROTO_DTLS */
 //#if defined(MBEDTLS_SSL_DTLS_ANTI_REPLAY)
-    c_ulonglong in_window_top;     /*!< last validated record seq_num    */
-    c_ulonglong in_window;         /*!< bitmask for replay detection     */
+    unsigned long long in_window_top;     /*!< last validated record seq_num    */
+    unsigned long long in_window;         /*!< bitmask for replay detection     */
 //#endif /* MBEDTLS_SSL_DTLS_ANTI_REPLAY */
 
-    c_size in_hslen;            /*!< current handshake message length,
+    size_t in_hslen;            /*!< current handshake message length,
                                      including the handshake header   */
-    c_int nb_zero;                /*!< # of 0-length encrypted messages */
+    int nb_zero;                /*!< # of 0-length encrypted messages */
 
-    c_int keep_current_message;   /*!< drop or reuse current message
+    int keep_current_message;   /*!< drop or reuse current message
                                      on next call to record layer? */
 
 //#if defined(MBEDTLS_SSL_PROTO_DTLS)
-    c_uchar disable_datagram_packing;  /*!< Disable packing multiple records
+    unsigned char disable_datagram_packing;  /*!< Disable packing multiple records
                                         *   within a single datagram.  */
 //#endif /* MBEDTLS_SSL_PROTO_DTLS */
 
     /*
      * Record layer (outgoing data)
      */
-    c_uchar *out_buf;     /*!< output buffer                    */
-    c_uchar *out_ctr;     /*!< 64-bit outgoing message counter  */
-    c_uchar *out_hdr;     /*!< start of record header           */
+    unsigned char *out_buf;     /*!< output buffer                    */
+    unsigned char *out_ctr;     /*!< 64-bit outgoing message counter  */
+    unsigned char *out_hdr;     /*!< start of record header           */
 //#if defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)
-//    c_uchar *out_cid;     /*!< The start of the CID;
+//    unsigned char *out_cid;     /*!< The start of the CID;
 //                                 *   (the end is marked by in_len).   */
 //#endif /* MBEDTLS_SSL_DTLS_CONNECTION_ID */
-    c_uchar *out_len;     /*!< two-bytes message length field   */
-    c_uchar *out_iv;      /*!< ivlen-byte IV                    */
-    c_uchar *out_msg;     /*!< message contents (out_iv+ivlen)  */
+    unsigned char *out_len;     /*!< two-bytes message length field   */
+    unsigned char *out_iv;      /*!< ivlen-byte IV                    */
+    unsigned char *out_msg;     /*!< message contents (out_iv+ivlen)  */
 
-    c_int out_msgtype;            /*!< record header: message type      */
-    c_size out_msglen;          /*!< record header: message length    */
-    c_size out_left;            /*!< amount of data not yet written   */
+    int out_msgtype;            /*!< record header: message type      */
+    size_t out_msglen;          /*!< record header: message length    */
+    size_t out_left;            /*!< amount of data not yet written   */
 //#if defined(MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH)
-//   c_size out_buf_len;         /*!< length of output buffer          */
+//   size_t out_buf_len;         /*!< length of output buffer          */
 //#endif
 
-    c_uchar[8] cur_out_ctr; /*!<  Outgoing record sequence  number. */
+    unsigned char[8] cur_out_ctr; /*!<  Outgoing record sequence  number. */
 
 //#if defined(MBEDTLS_SSL_PROTO_DTLS)
-    c_ushort mtu;               /*!< path mtu, used to fragment outgoing messages */
+    unsigned short mtu;               /*!< path mtu, used to fragment outgoing messages */
 //#endif /* MBEDTLS_SSL_PROTO_DTLS */
 
 //#if defined(MBEDTLS_ZLIB_SUPPORT)
-//    c_uchar *compress_buf;        /*!<  zlib data buffer        */
+//    unsigned char *compress_buf;        /*!<  zlib data buffer        */
 //#endif /* MBEDTLS_ZLIB_SUPPORT */
 //#if defined(MBEDTLS_SSL_CBC_RECORD_SPLITTING)
-    c_char split_done;     /*!< current record already splitted? */
+    char split_done;     /*!< current record already splitted? */
 //#endif /* MBEDTLS_SSL_CBC_RECORD_SPLITTING */
 
  /*
      * PKI layer
      */
-    c_int client_auth;                    /*!<  flag for client auth.   */
+    int client_auth;                    /*!<  flag for client auth.   */
 
     /*
      * User settings
@@ -947,18 +904,18 @@ type Ssl_context struct @(cname="mbedtls_ssl_context") {
      * Information for DTLS hello verify
      */
 //#if defined(MBEDTLS_SSL_DTLS_HELLO_VERIFY) && defined(MBEDTLS_SSL_SRV_C)
-    c_uchar  *cli_id;         /*!<  transport-level ID of the client  */
-    c_size          cli_id_len;     /*!<  length of cli_id                  */
+    unsigned char  *cli_id;         /*!<  transport-level ID of the client  */
+    size_t          cli_id_len;     /*!<  length of cli_id                  */
 //#endif /* MBEDTLS_SSL_DTLS_HELLO_VERIFY && MBEDTLS_SSL_SRV_C */
 
     /*
      * Secure renegotiation
      */
     /* needed to know when to send extension on server */
-    c_int secure_renegotiation;           /*!<  does peer support legacy or
+    int secure_renegotiation;           /*!<  does peer support legacy or
                                               secure renegotiation           */
 //#if defined(MBEDTLS_SSL_RENEGOTIATION)
-    c_size verify_data_len;             /*!<  length of verify data stored   */
+    size_t verify_data_len;             /*!<  length of verify data stored   */
     char[SSL_VERIFY_DATA_MAX_LEN] own_verify_data; /*!<  previous handshake verify data */
     char[SSL_VERIFY_DATA_MAX_LEN] peer_verify_data; /*!<  previous handshake verify data */
 //#endif /* MBEDTLS_SSL_RENEGOTIATION */
@@ -970,9 +927,9 @@ type Ssl_context struct @(cname="mbedtls_ssl_context") {
      *  all subsequent handshakes. This may be different from the
      *  CID currently used in case the user has re-configured the CID
      *  after an initial handshake. */
-//    c_uchar own_cid[ MBEDTLS_SSL_CID_IN_LEN_MAX ];
-//    c_uchar own_cid_len;   /*!< The length of \c own_cid. */
-//    c_uchar negotiate_cid; /*!< This indicates whether the CID extension should
+//    unsigned char own_cid[ MBEDTLS_SSL_CID_IN_LEN_MAX ];
+//    unsigned char own_cid_len;   /*!< The length of \c own_cid. */
+//    unsigned char negotiate_cid; /*!< This indicates whether the CID extension should
 //                            *   be negotiated in the next handshake or not.
 //                            *   Possible values are #MBEDTLS_SSL_CID_ENABLED
 //                            *   and #MBEDTLS_SSL_CID_DISABLED. */
@@ -985,9 +942,9 @@ static_assert(472, sizeof(Ssl_context));
 // ------ aes.h ------
 
 type Aes_context struct @(cname="mbedtls_aes_context") {
-    c_int nr;                     /*!< The number of rounds. */
-    c_uint *rk;               /*!< AES round keys. */
-    c_uint[68] buf;           /*!< Unaligned data buffer. This buffer can
+    int nr;                     /*!< The number of rounds. */
+    unsigned *rk;               /*!< AES round keys. */
+    unsigned[68] buf;           /*!< Unaligned data buffer. This buffer can
                                      hold 32 extra Bytes, which can be used for
                                      one of the following purposes:
                                      <ul><li>Alignment if VIA padlock is
@@ -1000,11 +957,11 @@ type Aes_context struct @(cname="mbedtls_aes_context") {
 
 // ------ ctr_drbg.h ------
 
-type Entropy_cb_f fn c_int(void*, c_uchar*, c_size);
+type Entropy_cb_f fn int(void*, unsigned char*, size_t);
 
 type Ctr_drbg_context struct @(cname="mbedtls_ctr_drbg_context") {
-    c_uchar[16] counter;  /*!< The counter (V). */
-    c_int reseed_counter;         /*!< The reseed counter.
+    unsigned char[16] counter;  /*!< The counter (V). */
+    int reseed_counter;         /*!< The reseed counter.
                                  * This is the number of requests that have
                                  * been made since the last (re)seeding,
                                  * minus one.
@@ -1014,13 +971,13 @@ type Ctr_drbg_context struct @(cname="mbedtls_ctr_drbg_context") {
                                  * or -1 if no nonce length has been explicitly
                                  * set (see mbedtls_ctr_drbg_set_nonce_len()).
                                  */
-    c_int prediction_resistance;  /*!< This determines whether prediction
+    int prediction_resistance;  /*!< This determines whether prediction
                                      resistance is enabled, that is
                                      whether to systematically reseed before
                                      each random generation. */
-    c_size entropy_len;         /*!< The amount of entropy grabbed on each
+    size_t entropy_len;         /*!< The amount of entropy grabbed on each
                                      seed or reseed operation, in bytes. */
-    c_int reseed_interval;        /*!< The reseed interval.
+    int reseed_interval;        /*!< The reseed interval.
                                  * This is the maximum number of requests
                                  * that can be made between reseedings. */
 
@@ -1040,29 +997,26 @@ type Ctr_drbg_context struct @(cname="mbedtls_ctr_drbg_context") {
 
 static_assert(344, sizeof(Ctr_drbg_context));
 
-type Entropy_seed_f fn c_int(void *, c_uchar *, c_size);
+type Entropy_seed_f fn int(void *, unsigned char *, size_t);
 
-fn c_int ctr_drbg_seed( Ctr_drbg_context *ctx,
+int ctr_drbg_seed(Ctr_drbg_context *ctx,
                           Entropy_seed_f f_entropy,
                           void *p_entropy,
-                          const c_uchar *custom,
-                          c_size len) @(cname="mbedtls_ctr_drbg_seed");
-
-fn void ctr_drbg_init( Ctr_drbg_context *ctx ) @(cname="mbedtls_ctr_drbg_init");
-
-fn c_int ctr_drbg_random( void *p_rng, c_uchar *output, c_size output_len) @(cname="mbedtls_ctr_drbg_random");
-
-type Dbg_fn fn void(void*, c_int, const char*, c_int, const char*);
-fn void ssl_conf_dbg( Ssl_config *conf, Dbg_fn f_dbg, void  *p_dbg ) @(cname="mbedtls_ssl_conf_dbg");
+                          const unsigned char *custom,
+                          size_t len) @(cname="mbedtls_ctr_drbg_seed");
+void ctr_drbg_init(Ctr_drbg_context *ctx) @(cname="mbedtls_ctr_drbg_init");
+int ctr_drbg_random(void *p_rng, unsigned char *output, size_t output_len) @(cname="mbedtls_ctr_drbg_random");
+type Dbg_fn fn void(void*, int, const char*, int, const char*);
+void ssl_conf_dbg(Ssl_config *conf, Dbg_fn f_dbg, void  *p_dbg) @(cname="mbedtls_ssl_conf_dbg");
 
 // ------ sha512.h ------
 
 type Sha512_context struct @(cname="mbedtls_sha512_context") {
-    c_ulonglong[2] total;          /*!< The number of Bytes processed. */
-    c_ulonglong[8] state;          /*!< The intermediate digest state. */
-    c_uchar[128] buffer;        /*!< The data block being processed. */
+    unsigned long long[2] total;          /*!< The number of Bytes processed. */
+    unsigned long long[8] state;          /*!< The intermediate digest state. */
+    unsigned char[128] buffer;        /*!< The data block being processed. */
 //#if !defined(MBEDTLS_SHA512_NO_SHA384)
-    c_int is384;                  /*!< Determines which function to use:
+    int is384;                  /*!< Determines which function to use:
                                      0: Use SHA-512, or 1: Use SHA-384. */
 //#endif
 }
@@ -1070,27 +1024,27 @@ type Sha512_context struct @(cname="mbedtls_sha512_context") {
 
 // ------ entropy.h ------
 
-type Entropy_f_source_ptr fn c_int(void* data, c_uchar* output, c_size len, c_size* olen);
+type Entropy_f_source_ptr fn int(void* data, unsigned char* output, size_t len, size_t* olen);
 
 type Entropy_source_state struct @(cname="mbedtls_entropy_source_state") {
     Entropy_f_source_ptr    f_source;   /**< The entropy source callback */
     void*           p_source;   /**< The callback data pointer */
-    c_size          size;       /**< Amount received in bytes */
-    c_size          threshold;  /**< Minimum bytes required before release */
-    c_int           strong;     /**< Is the source strong? */
+    size_t          size;       /**< Amount received in bytes */
+    size_t          threshold;  /**< Minimum bytes required before release */
+    int           strong;     /**< Is the source strong? */
 }
 
 
 const i32 ENTROPY_MAX_SOURCES = 20;
 
 type Entropy_context struct @(cname="mbedtls_entropy_context") {
-    c_int accumulator_started;
+    int accumulator_started;
 //#if defined(MBEDTLS_ENTROPY_SHA512_ACCUMULATOR)
     Sha512_context  accumulator;
 //#else
 //    mbedtls_sha256_context  accumulator;
 //#endif
-    c_int             source_count;
+    int             source_count;
     Entropy_source_state[ENTROPY_MAX_SOURCES] source;
 //#if defined(MBEDTLS_HAVEGE_C)
 //    mbedtls_havege_state    havege_data;
@@ -1099,14 +1053,12 @@ type Entropy_context struct @(cname="mbedtls_entropy_context") {
 //    mbedtls_threading_mutex_t mutex;    /*!< mutex                  */
 //#endif
 //#if defined(MBEDTLS_ENTROPY_NV_SEED)
-//    c_int initial_entropy_run;
+//    int initial_entropy_run;
 //#endif
 }
 
 static_assert(1032, sizeof(Entropy_context));
 
-fn void entropy_init( Entropy_context *ctx ) @(cname="mbedtls_entropy_init");
-
-fn c_int entropy_func(void* data, c_uchar* output, c_size len) @(cname="mbedtls_entropy_func");
-
+void entropy_init(Entropy_context *ctx) @(cname="mbedtls_entropy_init");
+int entropy_func(void* data, unsigned char* output, size_t len) @(cname="mbedtls_entropy_func");
 
