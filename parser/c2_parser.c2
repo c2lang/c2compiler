@@ -793,6 +793,12 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
     TypeRefHolder ref.init();
     p.parseTypeSpecifier(&ref);
 
+    bool has_block = false;
+    if (p.tok.kind == LBrace) {
+        has_block = true;
+        p.consumeToken();
+    }
+
     for (;;) {
         p.expectIdentifier();
 
@@ -854,10 +860,13 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
         if (p.tok.kind != Comma)
             break;
         p.consumeToken();
+        if (has_block && p.tok.kind == RBrace)
+            break;
         if (ref.isPointer() || ref.isArray())
             p.error("pointer and array variables must be defined separately");
     }
-    p.consumeSemicolon(need_semi);
+    if (has_block) p.expectAndConsume(RBrace);
+    else p.consumeSemicolon(need_semi);
 }
 
 fn void Parser.parseStaticAssert(Parser* p) {
@@ -928,6 +937,7 @@ fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref) {
     u32 type_qualifiers = p.parseOptionalTypeQualifier();
     ref.setQuals(type_qualifiers);
 
+    bool has_block = false;
     Kind kind = p.tok.kind;
     SrcLoc loc = p.tok.loc;
     if (kind.isBuiltinType()) {
@@ -938,6 +948,10 @@ fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref) {
         ref.setVoid(loc);
         p.consumeToken();
     } else if (kind == Identifier) {
+        if (p.peekToken(1) == Equal) {
+            ref.setUntyped(loc);
+            return;
+        }
         p.parseFullTypeIdentifier(ref);
         if (ref.user.name_idx == p.va_list_idx)
             p.addImplicitImport(p.varargs_idx, true);
@@ -945,6 +959,9 @@ fn void Parser.parseSingleTypeSpecifier(Parser* p, TypeRefHolder* ref) {
         if (!p.tokenizer.c_mode) p.error("invalid keyword");
         CTypeKind c_kind = p.convertCType();
         ref.setBuiltin(cTypeToBuiltinKind(c_kind), loc);
+    } else if (kind == LBrace) {
+        ref.setUntyped(loc);
+        return;
     } else {
         p.error("expected type specifier");
     }

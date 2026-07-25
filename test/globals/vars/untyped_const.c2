@@ -1,0 +1,68 @@
+// @warnings{no-unused}
+module test;
+
+import string local;
+
+const TRUE = true;
+const ZERO = 0;
+const ONE = ZERO + 1;
+const MAX = u64.max;
+const {
+    F1 = 1.0F,
+    D1 = 1.0,
+    NULL = nil,
+}
+const { HELLO = "Hello" }
+
+const STRCPY = strcpy;
+
+const char* p1 = HELLO;
+
+static_assert(sizeof(TRUE) == 1);
+static_assert(sizeof(ZERO) == 4);
+static_assert(sizeof(ONE) == 4);
+static_assert(sizeof(MAX) == 8);
+static_assert(sizeof(F1) == 4);
+static_assert(sizeof(D1) == 8);
+static_assert(sizeof(NULL) == sizeof(void*));
+static_assert(sizeof(HELLO) == 6);
+static_assert(sizeof(STRCPY) == sizeof(void*));
+
+public fn i32 main() {
+    const true_ = true;
+    const zero = 0;
+    const one = zero + 1;
+    const max = u64.max;
+    const {
+        f1 = 1.0F,
+        d1 = 1.0,
+        null = nil,
+    }
+    const { hello = "Hello" }
+    const mystrcpy = strcpy;
+
+    const char* p2 = hello;
+
+    assert(sizeof(true_) == 1);
+    assert(sizeof(zero) == 4);
+    assert(sizeof(one) == 4);
+    assert(sizeof(max) == 8);
+    assert(sizeof(f1) == 4);
+    assert(sizeof(d1) == 8);
+    assert(sizeof(null) == sizeof(void*));
+    assert(sizeof(hello) == 6);
+    assert(sizeof(mystrcpy) == sizeof(void*));
+
+    assert(true_ == TRUE);
+    assert(zero == ZERO);
+    assert(one == ONE);
+    assert(max == MAX);
+    assert(f1 == F1);
+    assert(d1 == D1);
+    assert(null == NULL);
+    assert(!strcmp(hello, HELLO));
+    assert(!strcmp(p1, p2));
+    assert(mystrcpy == STRCPY);
+
+    return 0;
+}

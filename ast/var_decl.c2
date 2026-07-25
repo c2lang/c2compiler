@@ -52,6 +52,7 @@ type VarDeclBits struct {
     AutoAttr auto_attr : 2;  // for parameters only
     FormatAttr format_attr : 2; // for parameters only
     u32 is_tlocal : 1;  // local or global variables with thread local storage
+    u32 is_untyped : 1;  // variable was defined without a type
 }
 
 public type BitFieldLayout struct {
@@ -182,7 +183,7 @@ public fn Decl* VarDecl.asDecl(VarDecl* d) {
     return &d.base;
 }
 
-fn QualType VarDecl.getType(const VarDecl* d) {
+public fn QualType VarDecl.getType(const VarDecl* d) {
     return d.base.qt;
 }
 
@@ -309,6 +310,15 @@ public fn void VarDecl.setTLocal(VarDecl* d) {
     d.base.varDeclBits.is_tlocal = true;
 }
 
+public fn bool VarDecl.isUntypedGlobal(const VarDecl* d) {
+    return (d.base.varDeclBits.kind == GlobalVar &&
+            d.base.varDeclBits.is_untyped);
+}
+
+public fn void VarDecl.setUntyped(VarDecl* d) {
+    d.base.varDeclBits.is_untyped = true;
+}
+
 public fn void VarDecl.setInitCall(VarDecl* d, bool has_init_call) {
     d.base.varDeclBits.has_init_call = has_init_call;
 }
@@ -388,6 +398,7 @@ fn void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     if (d.isStatic()) out.add(" (static)");
     if (d.base.varDeclBits.attr_weak) out.add(" weak");
     if (d.base.varDeclBits.addr_used) out.add(" addr_used");
+    if (d.base.varDeclBits.is_untyped) out.add(" untyped");
     switch (d.base.varDeclBits.auto_attr) {
     case None: break;
     case File: out.add(" auto_file"); break;
