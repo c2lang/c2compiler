@@ -172,6 +172,9 @@ public fn void Analyser.checkModule(Analyser* ma, Module* mod) {
 
     if (ma.diags.hasErrors()) return;
 
+    mod.visitImports(Analyser.handleImportList, ma);
+    //if (ma.has_error) return;
+
     ma.collectTypeFunctions();
     if (ma.has_error) return;
 
@@ -322,6 +325,27 @@ fn void Analyser.handleImport(void* arg, ast.ImportDecl* id) {
     if (dest.isExternal()) return;
     if (!dest.isExported()) {
         ma.error(d.getLoc(), "exported module '%s' publicly uses non-exported module '%s'", ma.mod.getName(), dest.getName());
+    }
+}
+
+fn void Analyser.handleImportList(void* arg, ast.ImportDecl* id) {
+    Analyser* ma = arg;
+    Module* dest = id.getDest();
+    u32 symlist_count = id.getSymlistSize();
+    ast.Symbol* symlist = id.getSymlistData();
+    for (u32 i = 0; i < symlist_count; i++) {
+        u32 name_idx = symlist[i].name_idx;
+        symlist[i].decl = dest.findPublicSymbol(name_idx);
+        if (!symlist[i].decl) {
+            u32 loc = symlist[i].loc;
+            if (Decl* d = dest.findSymbol(name_idx)) {
+                ma.error(loc, "symbol '%s' is not public", ma.getFullName(d));
+                ma.note(d.getLoc(), "symbol definition is here");
+            } else {
+                ma.error(loc, "module '%s' has no symbol '%s'",
+                         ma.idx2name(((Decl*)id).getNameIdx()), ma.idx2name(name_idx));
+            }
+        }
     }
 }
 

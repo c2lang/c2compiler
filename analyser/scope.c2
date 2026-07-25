@@ -402,7 +402,8 @@ public fn bool Scope.checkGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc) {
             decl = (ast.Decl*)id;
             break;
         }
-
+        decl = id.findSymbol(name_idx);
+        if (decl) break;
         if (id.isLocal()) {
             ast.Module* dest = id.getDest();
             decl = dest.findSymbol(name_idx);
@@ -505,17 +506,20 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
 
     for (u32 i = 0; i < s.imports.size(); i++) {
         ast.ImportDecl* id = s.imports.get(i);
-        if (!id.isLocal()) continue;    // this includes implicit self-import
 
-        ast.Module* dest = id.getDest();
-        // first search visible symbols only
-        ast.Decl* d;
-        if (s.mod == dest) {
-            d = dest.findSymbol(name_idx);
-        } else {
-            d = dest.findPublicSymbol(name_idx);
+        ast.Decl* d = id.findSymbol(name_idx);
+        if (!d) {
+            if (!id.isLocal()) continue;    // this includes implicit self-import
+
+            ast.Module* dest = id.getDest();
+            // first search visible symbols only
+            if (s.mod == dest) {
+                d = dest.findSymbol(name_idx);
+            } else {
+                d = dest.findPublicSymbol(name_idx);
+            }
+            if (!d) continue;
         }
-        if (!d) continue;
 
         if (decl) { // already have result
             const char* name = s.idx2name(name_idx);

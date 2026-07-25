@@ -1,0 +1,8 @@
+module test;
+
+import stdio { printf }
+
+public fn i32 main() {
+    printf("Hello world!\n");
+    return 0;
+}

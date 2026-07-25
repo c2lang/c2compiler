@@ -1,0 +1,72 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import string local;
+import stdlib local;
+import src_loc local;
+
+// Use stack for small lists, heap for larger ones
+
+public type Symbol struct {
+    u32 name_idx;
+    SrcLoc loc;
+    u32 as_name_idx;
+    bool used;
+    Decl* decl;
+}
+
+public type SymbolList struct {
+    u32 count;
+    u32 capacity;
+    Symbol* data;
+    Symbol[16] stash;
+}
+
+public fn void SymbolList.init(SymbolList* l) {
+    memset(l, 0, sizeof(SymbolList));
+    l.data = l.stash;
+    l.capacity = elemsof(l.stash);
+}
+
+public fn void SymbolList.clear(SymbolList* l) @(unused) {
+    l.count = 0;
+}
+
+public fn void SymbolList.add(SymbolList* l, Symbol sym) {
+    if (l.count == l.capacity) {
+        l.capacity *= 2;
+        Symbol* data2 = malloc(l.capacity * sizeof(*l.data));
+        memcpy(data2, l.data, l.count * sizeof(*l.data));
+        if (l.data != l.stash) free(l.data);
+        l.data = data2;
+    }
+    l.data[l.count] = sym;
+    l.count++;
+}
+
+public fn void SymbolList.free(SymbolList* l) {
+    if (l.data != l.stash) free(l.data);
+}
+
+public fn u32 SymbolList.size(const SymbolList* l) {
+    return l.count;
+}
+
+public fn Symbol* SymbolList.getData(SymbolList* l) {
+    return l.data;
+}
+

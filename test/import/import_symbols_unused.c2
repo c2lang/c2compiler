@@ -1,0 +1,13 @@
+module test;
+
+import stdlib { * }  // @warning{unused import 'stdlib'}
+
+import stdio {
+    printf,
+    scanf,  // @warning{unused import 'stdio.scanf'}
+}
+
+public fn i32 main() {
+    printf("Hello world!\n");
+    return 0;
+}

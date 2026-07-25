@@ -18,11 +18,13 @@ module ast;
 import ast_context;
 import string_buffer;
 import src_loc local;
+import string local;
 
 type ImportDeclBits struct {
     u32 : NumDeclBits;
     u32 is_local : 1;
 //    u32 own_component : 1;
+    u32 symlist_count : 16;
 }
 
 public type ImportDecl struct @(opaque) {
@@ -30,6 +32,7 @@ public type ImportDecl struct @(opaque) {
     u32 alias_idx;
     SrcLoc alias_loc;
     Module* dest;
+    Symbol[0] symlist;
 }
 
 public fn ImportDecl* ImportDecl.create(ast_context.Context* c,
@@ -38,16 +41,21 @@ public fn ImportDecl* ImportDecl.create(ast_context.Context* c,
                                           u32 alias_name,
                                           SrcLoc alias_loc,
                                           u32 ast_idx,
-                                          bool is_local)
+                                          bool is_local,
+                                          Symbol* symlist,
+                                          u32 symlist_count)
 {
-    ImportDecl* d = c.alloc(sizeof(ImportDecl));
+    u32 size = sizeof(ImportDecl) + symlist_count * sizeof(*symlist);
+    ImportDecl* d = c.alloc(size);
     d.base.init(Import, name, loc, false, QualType_Invalid, ast_idx);
     d.base.importDeclBits.is_local = is_local;
+    d.base.importDeclBits.symlist_count = symlist_count;
     d.alias_idx = alias_name;
     d.alias_loc = alias_loc;
     d.dest = nil;
+    memcpy(d.symlist, symlist, symlist_count * sizeof(*symlist));
 #if AstStatistics
-    Stats.addDecl(Import, sizeof(ImportDecl));
+    Stats.addDecl(Import, size);
 #endif
     return d;
 }
@@ -66,11 +74,24 @@ public fn SrcLoc ImportDecl.getLoc(const ImportDecl* d) {
     return d.base.getLoc();
 }
 
+public fn Symbol* ImportDecl.getSymlistData(ImportDecl* d) { return d.symlist; }
+public fn u32 ImportDecl.getSymlistSize(const ImportDecl* d) { return d.base.importDeclBits.symlist_count; }
+
 public fn void ImportDecl.setDest(ImportDecl* d, Module* mod) { d.dest = mod; }
 
 public fn Module* ImportDecl.getDest(const ImportDecl* d) { return d.dest; }
 
 public fn bool ImportDecl.isLocal(const ImportDecl* d) { return d.base.importDeclBits.is_local; }
+
+public fn Decl* ImportDecl.findSymbol(ImportDecl* d, u32 name_idx) {
+    for (u32 i = 0; i < d.base.importDeclBits.symlist_count; i++) {
+        if (d.symlist[i].as_name_idx == name_idx) {
+            d.symlist[i].used = true;
+            return d.symlist[i].decl;
+        }
+    }
+    return nil;
+}
 
 fn void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 indent) {
     out.indent(indent);
@@ -94,6 +115,18 @@ fn void ImportDecl.print(const ImportDecl* d, string_buffer.Buf* out, u32 indent
         out.add(" as ");
         out.color(col_Value);
         out.add(idx2name(d.alias_idx));
+    }
+    if (d.base.importDeclBits.symlist_count) {
+        out.color(col_Normal);
+        out.add(" {");
+        for (u32 i = 0; i < d.base.importDeclBits.symlist_count; i++) {
+            const Symbol* sp = &d.symlist[i];
+            out.print(" %s", idx2name(sp.name_idx));
+            if (sp.name_idx != sp.as_name_idx) {
+                out.print(" as %s", idx2name(sp.as_name_idx));
+            }
+        }
+        out.add(" }");
     }
     out.newline();
 }

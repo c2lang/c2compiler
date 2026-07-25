@@ -39,6 +39,7 @@ public fn void check(diagnostics.Diags* diags,
 
     if (mod.isUsed()) {
         mod.visitDecls(Checker.check, &c);
+        mod.visitImports(Checker.checkImportList, &c);
     } else {
         mod.visitASTs(Checker.unused_module, &c);
     }
@@ -112,6 +113,20 @@ fn void Checker.check(void* arg, Decl* d) {
     if (!used && !d.hasAttrUnused() && !d.isExported()) {
         c.diags.warn(d.getLoc(), "unused %s '%s'", d.getKindName(), c.getFullName(d));
         return;
+    }
+}
+
+fn void Checker.checkImportList(void* arg, ImportDecl* id) {
+    Checker* c = arg;
+    u32 symlist_count = id.getSymlistSize();
+    ast.Symbol* symlist = id.getSymlistData();
+    for (u32 i = 0; i < symlist_count; i++) {
+        Decl* d = symlist[i].decl;
+        if (!symlist[i].used) {
+            if (!c.warnings.no_unused_import) {
+                c.diags.warn(symlist[i].loc, "unused import '%s'", c.getFullName(d));
+            }
+        }
     }
 }
 

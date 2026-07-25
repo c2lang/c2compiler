@@ -122,7 +122,7 @@ public fn void Builder.actOnModule(Builder* b,
     b.ast_idx = b.ast.getIdx();
 
     // NOTE: make special ImportDecl to add own symbols
-    ImportDecl* i = ImportDecl.create(b.context, mod_name, mod_loc, 0, 0, b.ast_idx, true);
+    ImportDecl* i = ImportDecl.create(b.context, mod_name, mod_loc, 0, 0, b.ast_idx, true, nil, 0);
     Decl* d = (Decl*)i;
     d.setUsed();
     d.setChecked();
@@ -136,7 +136,9 @@ public fn Decl* Builder.actOnImport(Builder* b,
                                    SrcLoc mod_loc,
                                    u32 alias_name,
                                    SrcLoc alias_loc,
-                                   bool islocal) {
+                                   bool islocal,
+                                   Symbol* symlist,
+                                   u32 symlist_count) {
     if (b.ast.getNameIdx() == mod_name) {
         if (mod_loc) {
             // reject self imports, no error for implicit imports (eg: varargs)
@@ -169,7 +171,9 @@ public fn Decl* Builder.actOnImport(Builder* b,
                                       alias_name,
                                       alias_loc,
                                       b.ast_idx,
-                                      islocal);
+                                      islocal,
+                                      symlist,
+                                      symlist_count);
     b.ast.addImport(d);
     return (Decl*)d;
 }

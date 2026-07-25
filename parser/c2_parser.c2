@@ -322,7 +322,7 @@ fn void Parser.parseModule(Parser* p) {
 }
 
 fn void Parser.addImplicitImport(Parser* p, u32 mod_name, bool islocal) {
-    Decl* d = p.builder.actOnImport(mod_name, 0, 0, 0, islocal);
+    Decl* d = p.builder.actOnImport(mod_name, 0, 0, 0, islocal, nil, 0);
     if (d) d.setAttrUnused();
 }
 
@@ -354,13 +354,41 @@ fn void Parser.parseImports(Parser* p) {
         }
         // TODO: accept @(unused) attribute on imports
         //u32 num_attr = p.parseOptionalAttributes();
-        p.expectAndConsume(Semicolon);
+        SymbolList symlist.init();
+        if (p.tok.kind == LBrace) {
+            p.consumeToken();
+            if (p.tok.kind == Star) {
+                islocal = true;
+                p.consumeToken();
+            } else {
+                while (p.tok.kind == Identifier) {
+                    u32 name_idx = p.tok.name_idx;
+                    u32 as_name_idx = name_idx;
+                    SrcLoc loc = p.tok.loc;
+                    p.consumeToken();
+                    if (p.tok.kind == KW_as) {
+                        p.consumeToken();
+                        p.expectIdentifier();
+                        as_name_idx = p.tok.name_idx;
+                        p.consumeToken();
+                    }
+                    symlist.add({ name_idx, loc, as_name_idx });
+                    if (p.tok.kind != Comma) break;
+                    p.consumeToken();
+                }
+            }
+            p.expectAndConsume(RBrace);
+        } else {
+            p.expectAndConsume(Semicolon);
+        }
 
         if (mod_name != p.stdarg_idx) {
             // ignore import stdarg: vararg is imported implicitly from c2 library
-            p.builder.actOnImport(mod_name, mod_loc, alias_name, alias_loc, islocal);
+            p.builder.actOnImport(mod_name, mod_loc, alias_name, alias_loc,
+                                  islocal, symlist.getData(), symlist.size());
             //if (d) p.applyAttributes(d, num_attr);
         }
+        symlist.free();
     }
 }
 

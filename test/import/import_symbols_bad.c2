@@ -1,0 +1,11 @@
+module test;
+
+import stdio {
+    printf,
+    xxx,    // @error{module 'stdio' has no symbol 'xxx'}
+}
+
+public fn i32 main() {
+    printf("Hello world!\n");
+    return 0;
+}

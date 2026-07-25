@@ -1,0 +1,19 @@
+// @recipe bin
+    $backend c
+
+// @file{file1}
+module test;
+
+import stdio { printf as my_printf }
+
+public fn i32 main() {
+    my_printf("Hello world!\n");
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+int main(void)
+{
+    printf("Hello world!\n");
+    return 0;
+}

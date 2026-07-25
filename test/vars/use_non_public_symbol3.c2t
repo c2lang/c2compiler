@@ -8,7 +8,6 @@ const i32 Priv = 0;  // @note{symbol definition is here}
 
 // @file{file2}
 module bar;
-import foo local;
+import foo { * }
 
-i32 c = Priv;         // @error{symbol 'foo.Priv' is not public}
-
+i32 a = foo.Priv;     // @error{symbol 'foo.Priv' is not public}
