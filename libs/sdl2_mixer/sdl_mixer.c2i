@@ -1,6 +1,5 @@
-module sdl_mixer;
+module sdl_mixer extern "C";
 
-import c_types local;
 import sdl;
 
 // TODO make nice function names (with Mix_)
@@ -19,45 +18,32 @@ const i32 CHANNEL_POST = -2; // MIX_CHANNEL_POST
 
 type Mix_Music struct @(opaque, cname="Mix_Music");
 
-fn Mix_Music* Mix_LoadMUS(const char* file) @(cname="Mix_LoadMUS");
+Mix_Music* Mix_LoadMUS(const char* file) @(cname="Mix_LoadMUS");
 
 type Mix_Chunk struct {
-    c_int allocated;
+    int allocated;
     u8* abuf;
     u32 alen;
     u8 volume;
 }
 
 // TODO Mix_LoadWAV(file) -> Mix_LoadWAV_RW(SDL_RWFromFile(..)
-fn Mix_Chunk* Mix_LoadWAV_RW(sdl.RWops* src, c_int freesrc) @(cname="Mix_LoadWAV_RW");
-fn sdl.RWops* rwFromFile(const char* file, const char* mode) @(cname="SDL_RWFromFile");
+Mix_Chunk* Mix_LoadWAV_RW(sdl.RWops* src, int freesrc) @(cname="Mix_LoadWAV_RW");
+sdl.RWops* rwFromFile(const char* file, const char* mode) @(cname="SDL_RWFromFile");
 
-
-
-fn c_int Mix_OpenAudio(c_int frequency, u16 format, c_int channels, c_int chunksize); //@(cname="Mix_OpenAudio";;
-
-fn c_int Mix_PlayMusic(Mix_Music* music, c_int loops) @(cname="Mix_PlayMusic");
-
-fn c_int Mix_FadeInMusic(Mix_Music* music, c_int loops, c_int ms) @(cname="Mix_FadeInMusic");
-
-fn c_int Mix_PlayChannelTimed(c_int channel, Mix_Chunk* chunk, c_int loops, c_int ticks);
-
-fn c_int Mix_HaltChannel(c_int channel) @(cname="Mix_HaltChannel");
-
-fn c_int Mix_HaltMusic() @(cname="Mix_HaltMusic");
-
-fn c_int Mix_FadeOutChannel(c_int which, c_int ms) @(cname="Mix_FadeOutChannel");
-fn c_int Mix_FadeOutMusic(c_int ms) @(cname="Mix_FadeOutMusic");
-
-fn void Mix_FreeChunk(Mix_Chunk* chunk) @(cname="Mix_FreeChunk");
-fn void Mix_FreeMusic(Mix_Music* music) @(cname="Mix_FreeMusic");
-
-fn void Mix_CloseAudio() @(cname="Mix_CloseAudio");
-
-fn c_int Mix_SetPanning(c_int channel, u8 left, u8 right) @(cname="Mix_SetPanning");
-
-fn c_int Mix_SetDistance(c_int channel, u8 distance) @(cname="Mix_SetDistance");
-
-fn c_int Mix_SetPosition(c_int channel, i16 angle, u8 distance) @(cname="Mix_SetPosition");
+int Mix_OpenAudio(int frequency, u16 format, int channels, int chunksize); //@(cname="Mix_OpenAudio";;
+int Mix_PlayMusic(Mix_Music* music, int loops) @(cname="Mix_PlayMusic");
+int Mix_FadeInMusic(Mix_Music* music, int loops, int ms) @(cname="Mix_FadeInMusic");
+int Mix_PlayChannelTimed(int channel, Mix_Chunk* chunk, int loops, int ticks);
+int Mix_HaltChannel(int channel) @(cname="Mix_HaltChannel");
+int Mix_HaltMusic() @(cname="Mix_HaltMusic");
+int Mix_FadeOutChannel(int which, int ms) @(cname="Mix_FadeOutChannel");
+int Mix_FadeOutMusic(int ms) @(cname="Mix_FadeOutMusic");
+void Mix_FreeChunk(Mix_Chunk* chunk) @(cname="Mix_FreeChunk");
+void Mix_FreeMusic(Mix_Music* music) @(cname="Mix_FreeMusic");
+void Mix_CloseAudio() @(cname="Mix_CloseAudio");
+int Mix_SetPanning(int channel, u8 left, u8 right) @(cname="Mix_SetPanning");
+int Mix_SetDistance(int channel, u8 distance) @(cname="Mix_SetDistance");
+int Mix_SetPosition(int channel, i16 angle, u8 distance) @(cname="Mix_SetPosition");
 
 // TODO many other functions

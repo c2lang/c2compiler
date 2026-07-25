@@ -1,79 +1,59 @@
-module sdl;
-
-import c_types local;
+module sdl extern "C";
 
 // ------ From SDL.h ------
 
-const c_int INIT_TIMER          = 0x00000001;
-const c_int INIT_AUDIO          = 0x00000010;
-const c_int INIT_VIDEO          = 0x00000020;  /**< INIT_VIDEO implies INIT_EVENTS */
-const c_int INIT_JOYSTICK       = 0x00000200;  /**< INIT_JOYSTICK implies INIT_EVENTS */
-const c_int INIT_HAPTIC         = 0x00001000;
-const c_int INIT_GAMECONTROLLER = 0x00002000;  /**< INIT_GAMECONTROLLER implies INIT_JOYSTICK */
-const c_int INIT_EVENTS         = 0x00004000;
-const c_int INIT_SENSOR         = 0x00008000;
-const c_int INIT_NOPARACHUTE    = 0x00100000;  /**< compatibility; this flag is ignored. */
-const c_int INIT_EVERYTHING =
+const int INIT_TIMER          = 0x00000001;
+const int INIT_AUDIO          = 0x00000010;
+const int INIT_VIDEO          = 0x00000020;  /**< INIT_VIDEO implies INIT_EVENTS */
+const int INIT_JOYSTICK       = 0x00000200;  /**< INIT_JOYSTICK implies INIT_EVENTS */
+const int INIT_HAPTIC         = 0x00001000;
+const int INIT_GAMECONTROLLER = 0x00002000;  /**< INIT_GAMECONTROLLER implies INIT_JOYSTICK */
+const int INIT_EVENTS         = 0x00004000;
+const int INIT_SENSOR         = 0x00008000;
+const int INIT_NOPARACHUTE    = 0x00100000;  /**< compatibility; this flag is ignored. */
+const int INIT_EVERYTHING =
                 INIT_TIMER | INIT_AUDIO | INIT_VIDEO |
                 INIT_EVENTS | INIT_JOYSTICK | INIT_HAPTIC |
                 INIT_GAMECONTROLLER | INIT_SENSOR;
 
-fn c_int init(u32 flags) @(cname="SDL_Init");
-
-fn void quit() @(cname="SDL_Quit");
+int init(u32 flags) @(cname="SDL_Init");
+void quit() @(cname="SDL_Quit");
 
 
 // ------ From SDL_stdinc.h ------
 
-fn void memset(void* dst, c_int c, usize len) @(cname="SDL_memset");
+void memset(void* dst, int c, usize len) @(cname="SDL_memset");
 
 
 // ------ From SDL_error.h ------
 
-fn const char* getError() @(cname="SDL_GetError");
+const char* getError() @(cname="SDL_GetError");
 
 
 // ------ From SDL_log.h ------
 
-fn void log(const char* fmt @(printf_format), ...) @(cname="SDL_Log");
-
+void log(const char* fmt @(printf_format), ...) @(cname="SDL_Log");
 
 
 // ------ From SDL_keyboard.h ------
 
-fn const u8* getKeyBoardState(c_int* numkeys) @(cname="SDL_GetKeyboardState");
-
-fn void resetKeyboard() @(cname="SDL_ResetKeyboard");
-
-fn Keymod getModState() @(cname="SDL_GetModState");
-
-fn Keycode getKeyFromScancode(Scancode scancode) @(cname="SDL_GetKeyFromScancode");
-
-fn Scancode getScanCodeFromKey(Keycode key) @(cname="SDL_GetScancodeFromKey");
-
-fn const char* getScancodeName(Scancode scancode) @(cname="SDL_GetScancodeName");
-
-fn Scancode getScancodeFromName(const char* name) @(cname="SDL_GetScancodeFromName");
-
-fn const char* getKeyName(Keycode key) @(cname="SDL_GetKeyName");
-
-fn Keycode getKeycodeFromName(const char* name) @(cname="SDL_GetKeyFromName");
-
-fn void startTextInput() @(cname="SDL_StartTextInput");
-
-fn bool isTextInputActive() @(cname="SDL_IsTextInputActive");
-
-fn void stopTextInput() @(cname="SDL_StopTextInput");
-
-fn void clearComposition() @(cname="SDL_ClearComposition");
-
-fn bool isTextInputShown() @(cname="SDL_IsTextInputShown");
-
-fn void setTextInputRect(const Rect* rect) @(cname="SDL_SetTextInputRect");
-
-fn bool hasScreenKeyboardSupport() @(cname="SDL_HasScreenKeyboardSupport");
-
-fn bool isScreenKeyboardShown(Window* window) @(cname="SDL_IsScreenKeyboardShown");
+const u8* getKeyBoardState(int* numkeys) @(cname="SDL_GetKeyboardState");
+void resetKeyboard() @(cname="SDL_ResetKeyboard");
+Keymod getModState() @(cname="SDL_GetModState");
+Keycode getKeyFromScancode(Scancode scancode) @(cname="SDL_GetKeyFromScancode");
+Scancode getScanCodeFromKey(Keycode key) @(cname="SDL_GetScancodeFromKey");
+const char* getScancodeName(Scancode scancode) @(cname="SDL_GetScancodeName");
+Scancode getScancodeFromName(const char* name) @(cname="SDL_GetScancodeFromName");
+const char* getKeyName(Keycode key) @(cname="SDL_GetKeyName");
+Keycode getKeycodeFromName(const char* name) @(cname="SDL_GetKeyFromName");
+void startTextInput() @(cname="SDL_StartTextInput");
+bool isTextInputActive() @(cname="SDL_IsTextInputActive");
+void stopTextInput() @(cname="SDL_StopTextInput");
+void clearComposition() @(cname="SDL_ClearComposition");
+bool isTextInputShown() @(cname="SDL_IsTextInputShown");
+void setTextInputRect(const Rect* rect) @(cname="SDL_SetTextInputRect");
+bool hasScreenKeyboardSupport() @(cname="SDL_HasScreenKeyboardSupport");
+bool isScreenKeyboardShown(Window* window) @(cname="SDL_IsScreenKeyboardShown");
 
 // ------ From SDL_palette.h ------
 
@@ -85,14 +65,14 @@ type Color struct @(cname="SDL_Color") {
 }
 
 type Palette struct @(cname="SDL_Palette") {
-    c_int ncolors;
+    int ncolors;
     Color* colors;
     u32 version;
-    c_int refcount;
+    int refcount;
 }
 
-fn void Palette.setColors(Palette* palette, const Color* colors,
-                            c_int firstcolor, c_int ncolors)
+void Palette.setColors(Palette* palette, const Color* colors,
+                            int firstcolor, int ncolors)
                             @(cname="SDL_SetPaletteColors");
 
 
@@ -100,33 +80,33 @@ fn void Palette.setColors(Palette* palette, const Color* colors,
 
 type Thread struct @(cname="SDL_Thread", opaque);
 
-type ThreadFunction fn c_int (void* data);
+type ThreadFunction fn int (void* data);
 
-type CurrentBeginThreadArg fn c_uint (void*);
+type CurrentBeginThreadArg fn unsigned (void*);
 
-type CurrentBeginThread fn usize (void*, c_uint, c_uint, CurrentBeginThreadArg func,
-    void* arg, c_uint, c_uint* threadID);
+type CurrentBeginThread fn usize (void*, unsigned, unsigned, CurrentBeginThreadArg func,
+                                  void* arg, unsigned, unsigned* threadID);
 
-type CurrentEndThread fn void (c_uint code);
+type CurrentEndThread fn void (unsigned code);
 
-fn Thread* createThread(ThreadFunction func, const char* name, void* data,
+Thread* createThread(ThreadFunction func, const char* name, void* data,
                           CurrentBeginThread beginThread, CurrentEndThread endThread)
                           @(cname="SDL_CreateThread");
 
-fn void Thread.wait(Thread* thread, c_int* status) @(cname="SDL_WaitThread");
+void Thread.wait(Thread* thread, int* status) @(cname="SDL_WaitThread");
 
 // ------ From SDL_rect.h ------
 
 type Point struct @(cname="SDL_Point") {
-    c_int x;
-    c_int y;
+    int x;
+    int y;
 }
 
 type Rect struct @(cname="SDL_Rect") {
-    c_int x;
-    c_int y;
-    c_int w;
-    c_int h;
+    int x;
+    int y;
+    int w;
+    int h;
 }
 
 
@@ -134,15 +114,15 @@ type Rect struct @(cname="SDL_Rect") {
 
 type RWops struct @(opaque, cname="SDL_RWops");
 
-fn RWops* rwFromFile(const char* file, const char* mode) @(cname="SDL_RWFromFile");
+RWops* rwFromFile(const char* file, const char* mode) @(cname="SDL_RWFromFile");
 
 
 // ------ From SDL_events.h ------
 
-const c_int SDL_QUERY   = -1;
-const c_int SDL_IGNORE  =  0;
-const c_int SDL_DISABLE =  0;
-const c_int SDL_ENABLE  =  1;
+const int SDL_QUERY   = -1;
+const int SDL_IGNORE  =  0;
+const int SDL_DISABLE =  0;
+const int SDL_ENABLE  =  1;
 
 type EventType enum u16 @(cname="SDL_EventType") {
     FIRSTEVENT     = 0,     /**< Unused (do not remove) */
@@ -428,13 +408,10 @@ type MouseWheelEvent struct {
     i32 mouseY;      /**< Y coordinate, relative to window (added in 2.26.0) */
 }
 
-fn c_int Event.poll(Event* event) @(cname="SDL_PollEvent");
-
-fn c_int pushEvent(Event* event)  @(cname="SDL_PushEvent");
-
-fn c_int registerEvents(c_int numevents) @(cname="SDL_RegisterEvents");
-
-fn c_int waitEventTimeout(Event* event, c_int timeout_ms) @(cname="SDL_WaitEventTimeout");
+int Event.poll(Event* event) @(cname="SDL_PollEvent");
+int pushEvent(Event* event)  @(cname="SDL_PushEvent");
+int registerEvents(int numevents) @(cname="SDL_RegisterEvents");
+int waitEventTimeout(Event* event, int timeout_ms) @(cname="SDL_WaitEventTimeout");
 
 // ------ From SDL_keycode.h ------
 
@@ -595,90 +572,78 @@ type Keysym struct {
 type Surface struct @(cname="SDL_Surface") {
     u32 flags;
     PixelFormat* format;
-    c_int w;
-    c_int h;
-    c_int pitch;
+    int w;
+    int h;
+    int pitch;
     void* pixels;
     void* userdata;
-    c_int locked;
+    int locked;
     // TODO more private fields
 }
 
-fn Surface* loadBMP_RW(RWops* src, c_int freesrc) @(cname="SDL_LoadBMP_RW");
+Surface* loadBMP_RW(RWops* src, int freesrc) @(cname="SDL_LoadBMP_RW");
 
-
-fn Surface* createRGBSurface(u32 flags, c_int width, c_int height, c_int depth,
+Surface* createRGBSurface(u32 flags, int width, int height, int depth,
                                u32 rmask, u32 gmask, u32 bmask, u32 amask)
                                @(cname="SDL_CreateRGBSurface");
 
-fn void Surface.free(Surface* surface) @(cname="SDL_FreeSurface");
-
-fn void Surface.blit(Surface* src, const Rect* srcrect,
-                       Surface* dst, Rect* dstrect)
-                       @(cname="SDL_UpperBlit");
-
-fn void Surface.blitScaled(Surface* src, const Rect* srcrect,
-                             Surface* dst, Rect* dstrect)
-                             @(cname="SDL_UpperBlitScaled");
-
-fn void Surface.unlock(Surface* surface) @(cname="SDL_UnlockSurface");
-
-fn c_int Surface.fillRect(Surface* dst, const Rect* rect, u32 color) @(cname="SDL_FillRect");
-
-fn c_int Surface.setColorKey(Surface* surface, c_int flag, u32 key) @(cname="SDL_SetColorKey");
+void Surface.free(Surface* surface) @(cname="SDL_FreeSurface");
+void Surface.blit(Surface* src, const Rect* srcrect,
+                  Surface* dst, Rect* dstrect) @(cname="SDL_UpperBlit");
+void Surface.blitScaled(Surface* src, const Rect* srcrect,
+                        Surface* dst, Rect* dstrect) @(cname="SDL_UpperBlitScaled");
+void Surface.unlock(Surface* surface) @(cname="SDL_UnlockSurface");
+int Surface.fillRect(Surface* dst, const Rect* rect, u32 color) @(cname="SDL_FillRect");
+int Surface.setColorKey(Surface* surface, int flag, u32 key) @(cname="SDL_SetColorKey");
 
 // ------ From SDL_video.h ------
 
-const c_int WINDOWPOS_UNDEFINED_MASK = 0x1FFF0000;
-const c_int WINDOWPOS_UNDEFINED      = WINDOWPOS_UNDEFINED_MASK | 0;
+const int WINDOWPOS_UNDEFINED_MASK = 0x1FFF0000;
+const int WINDOWPOS_UNDEFINED      = WINDOWPOS_UNDEFINED_MASK | 0;
 
-const c_int WINDOWPOS_CENTERED_MASK  = 0x2FFF0000;
-const c_int WINDOWPOS_CENTERED       = WINDOWPOS_CENTERED_MASK | 0;
+const int WINDOWPOS_CENTERED_MASK  = 0x2FFF0000;
+const int WINDOWPOS_CENTERED       = WINDOWPOS_CENTERED_MASK | 0;
 
 
 // SDL_WindowFlags
-const c_uint WINDOW_FULLSCREEN = 0x00000001;         /**< fullscreen window */
-const c_uint WINDOW_OPENGL = 0x00000002;             /**< window usable with OpenGL context */
-const c_uint WINDOW_SHOWN = 0x00000004;              /**< window is visible */
-const c_uint WINDOW_HIDDEN = 0x00000008;             /**< window is not visible */
-const c_uint WINDOW_BORDERLESS = 0x00000010;         /**< no window decoration */
-const c_uint WINDOW_RESIZABLE = 0x00000020;          /**< window can be resized */
-const c_uint WINDOW_MINIMIZED = 0x00000040;          /**< window is minimized */
-const c_uint WINDOW_MAXIMIZED = 0x00000080;          /**< window is maximized */
-const c_uint WINDOW_MOUSE_GRABBED = 0x00000100;      /**< window has grabbed mouse input */
-const c_uint WINDOW_INPUT_FOCUS = 0x00000200;        /**< window has input focus */
-const c_uint WINDOW_MOUSE_FOCUS = 0x00000400;        /**< window has mouse focus */
-const c_uint WINDOW_FULLSCREEN_DESKTOP = ( WINDOW_FULLSCREEN | 0x00001000 );
-const c_uint WINDOW_FOREIGN = 0x00000800;            /**< window not created by SDL */
-const c_uint WINDOW_ALLOW_HIGHDPI = 0x00002000;      /**< window should be created in high-DPI mode if supported.
-                                                 On macOS NSHighResolutionCapable must be set true in the
-                                                 application's Info.plist for this to have any effect. */
-const c_uint WINDOW_MOUSE_CAPTURE    = 0x00004000;   /**< window has mouse captured (unrelated to MOUSE_GRABBED) */
-const c_uint WINDOW_ALWAYS_ON_TOP    = 0x00008000;   /**< window should always be above others */
-const c_uint WINDOW_SKIP_TASKBAR     = 0x00010000;   /**< window should not be added to the taskbar */
-const c_uint WINDOW_UTILITY          = 0x00020000;   /**< window should be treated as a utility window */
-const c_uint WINDOW_TOOLTIP          = 0x00040000;   /**< window should be treated as a tooltip */
-const c_uint WINDOW_POPUP_MENU       = 0x00080000;   /**< window should be treated as a popup menu */
-const c_uint WINDOW_KEYBOARD_GRABBED = 0x00100000;   /**< window has grabbed keyboard input */
-const c_uint WINDOW_VULKAN           = 0x10000000;   /**< window usable for Vulkan surface */
-const c_uint WINDOW_METAL            = 0x20000000;   /**< window usable for Metal view */
-const c_uint WINDOW_INPUT_GRABBED = WINDOW_MOUSE_GRABBED; /**< equivalent to WINDOW_MOUSE_GRABBED for compatibility */
-
+const unsigned WINDOW_FULLSCREEN = 0x00000001;         /**< fullscreen window */
+const unsigned WINDOW_OPENGL = 0x00000002;             /**< window usable with OpenGL context */
+const unsigned WINDOW_SHOWN = 0x00000004;              /**< window is visible */
+const unsigned WINDOW_HIDDEN = 0x00000008;             /**< window is not visible */
+const unsigned WINDOW_BORDERLESS = 0x00000010;         /**< no window decoration */
+const unsigned WINDOW_RESIZABLE = 0x00000020;          /**< window can be resized */
+const unsigned WINDOW_MINIMIZED = 0x00000040;          /**< window is minimized */
+const unsigned WINDOW_MAXIMIZED = 0x00000080;          /**< window is maximized */
+const unsigned WINDOW_MOUSE_GRABBED = 0x00000100;      /**< window has grabbed mouse input */
+const unsigned WINDOW_INPUT_FOCUS = 0x00000200;        /**< window has input focus */
+const unsigned WINDOW_MOUSE_FOCUS = 0x00000400;        /**< window has mouse focus */
+const unsigned WINDOW_FULLSCREEN_DESKTOP = ( WINDOW_FULLSCREEN | 0x00001000 );
+const unsigned WINDOW_FOREIGN = 0x00000800;            /**< window not created by SDL */
+const unsigned WINDOW_ALLOW_HIGHDPI = 0x00002000;      /**< window should be created in high-DPI mode if supported.
+                                                        On macOS NSHighResolutionCapable must be set true in the
+                                                        application's Info.plist for this to have any effect. */
+const unsigned WINDOW_MOUSE_CAPTURE    = 0x00004000;   /**< window has mouse captured (unrelated to MOUSE_GRABBED) */
+const unsigned WINDOW_ALWAYS_ON_TOP    = 0x00008000;   /**< window should always be above others */
+const unsigned WINDOW_SKIP_TASKBAR     = 0x00010000;   /**< window should not be added to the taskbar */
+const unsigned WINDOW_UTILITY          = 0x00020000;   /**< window should be treated as a utility window */
+const unsigned WINDOW_TOOLTIP          = 0x00040000;   /**< window should be treated as a tooltip */
+const unsigned WINDOW_POPUP_MENU       = 0x00080000;   /**< window should be treated as a popup menu */
+const unsigned WINDOW_KEYBOARD_GRABBED = 0x00100000;   /**< window has grabbed keyboard input */
+const unsigned WINDOW_VULKAN           = 0x10000000;   /**< window usable for Vulkan surface */
+const unsigned WINDOW_METAL            = 0x20000000;   /**< window usable for Metal view */
+const unsigned WINDOW_INPUT_GRABBED = WINDOW_MOUSE_GRABBED; /**< equivalent to WINDOW_MOUSE_GRABBED for compatibility */
 
 
 type Window struct @(opaque, cname="SDL_Window");
 
-fn Window* createWindow(const char* title, c_int x, c_int y, c_int w, c_int h, u32 flags) @(cname="SDL_CreateWindow");
-
-fn void Window.destroy(Window* window) @(cname="SDL_DestroyWindow");
-
-fn Surface* Window.getSurface(Window* window) @(cname="SDL_GetWindowSurface");
-
-fn void Window.updateSurface(Window* window) @(cname="SDL_UpdateWindowSurface");
+Window* createWindow(const char* title, int x, int y, int w, int h, u32 flags) @(cname="SDL_CreateWindow");
+void Window.destroy(Window* window) @(cname="SDL_DestroyWindow");
+Surface* Window.getSurface(Window* window) @(cname="SDL_GetWindowSurface");
+void Window.updateSurface(Window* window) @(cname="SDL_UpdateWindowSurface");
 
 // ------ From SDL_mouse.h ------
 
-fn c_int showCursor(c_int toggle) @(cname="SDL_ShowCursor");
+int showCursor(int toggle) @(cname="SDL_ShowCursor");
 
 
 // ------ From SDL_scancode.h ------
@@ -1055,10 +1020,10 @@ type Scancode enum u16 {
 
 type AudioFormat u16 @(cname="SDL_AudioFormat");
 
-type AudioCallback fn void (void* userdata, u8* stream, c_int len) @(cname="SDL_AudioCallback");
+type AudioCallback fn void (void* userdata, u8* stream, int len) @(cname="SDL_AudioCallback");
 
 type AudioSpec struct @(cname="SDL_AudioSpec") {
-    c_int freq;                   /**< DSP frequency -- samples per second */
+    int freq;                   /**< DSP frequency -- samples per second */
     AudioFormat format;     /**< Audio data format */
     u8 channels;             /**< Number of channels: 1 mono, 2 stereo */
     u8 silence;              /**< Audio buffer silence value (calculated) */
@@ -1071,14 +1036,14 @@ type AudioSpec struct @(cname="SDL_AudioSpec") {
 
 type AudioDeviceID u32 @(cname="SDL_AudioDeviceID");
 
-fn AudioDeviceID openAudioDevice(const char* device,
-                                   c_int iscapture,
+AudioDeviceID openAudioDevice(const char* device,
+                                   int iscapture,
                                    const AudioSpec* desired,
                                    AudioSpec* obtained,
-                                   c_int allowed_changes)
+                                   int allowed_changes)
                                    @(cname="SDL_OpenAudioDevice");
 
-fn void closeAudioDevice(AudioDeviceID dev) @(cname="SDL_CloseAudioDevice");
+void closeAudioDevice(AudioDeviceID dev) @(cname="SDL_CloseAudioDevice");
 
 // ------ From SDL_BLendMode.h ------
 
@@ -1126,120 +1091,77 @@ type RendererFlip enum u8 {
 
 type Renderer struct @(opaque, cname="SDL_Renderer");
 
-fn Renderer* Window.createRenderer(Window* window, c_int index, u32 flags) @(cname="SDL_CreateRenderer");
-
-fn Renderer* Window.getRenderer(Window* window) @(cname="SDL_GetRenderer");
-
-fn void Renderer.destroy(Renderer* renderer) @(cname="SDL_DestroyRenderer");
-
-fn void Renderer.clear(Renderer* renderer) @(cname="SDL_RenderClear");
-
-fn void Renderer.present(Renderer* renderer) @(cname="SDL_RenderPresent");
-
-fn c_int Renderer.drawLine(Renderer* renderer, i32 x1, i32 y1, i32 x2, i32 y2) @(cname="SDL_RenderDrawLine");
-
-fn c_int Renderer.drawLines(Renderer* renderer, const Point* points, c_int count) @(cname="SDL_RenderDrawLines");
-
-fn c_int Renderer.drawRect(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderDrawRect");
-
-fn c_int Renderer.drawRects(Renderer* renderer, const Rect* rects, c_int count) @(cname="SDL_RenderDrawRects");
-
-fn c_int Renderer.fillRect(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderFillRect");
-
-fn c_int Renderer.fillRects(Renderer* renderer, const Rect* rects, c_int count) @(cname="SDL_RenderFillRects");
+Renderer* Window.createRenderer(Window* window, int index, u32 flags) @(cname="SDL_CreateRenderer");
+Renderer* Window.getRenderer(Window* window) @(cname="SDL_GetRenderer");
+void Renderer.destroy(Renderer* renderer) @(cname="SDL_DestroyRenderer");
+void Renderer.clear(Renderer* renderer) @(cname="SDL_RenderClear");
+void Renderer.present(Renderer* renderer) @(cname="SDL_RenderPresent");
+int Renderer.drawLine(Renderer* renderer, i32 x1, i32 y1, i32 x2, i32 y2) @(cname="SDL_RenderDrawLine");
+int Renderer.drawLines(Renderer* renderer, const Point* points, int count) @(cname="SDL_RenderDrawLines");
+int Renderer.drawRect(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderDrawRect");
+int Renderer.drawRects(Renderer* renderer, const Rect* rects, int count) @(cname="SDL_RenderDrawRects");
+int Renderer.fillRect(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderFillRect");
+int Renderer.fillRects(Renderer* renderer, const Rect* rects, int count) @(cname="SDL_RenderFillRects");
 
 type Texture struct @(opaque, cname="SDL_Texture");
 
-fn c_int Renderer.copy(Renderer* renderer, Texture* texture, const Rect* src, const Rect* dst) @(cname="SDL_RenderCopy");
+int Renderer.copy(Renderer* renderer, Texture* texture, const Rect* src, const Rect* dst) @(cname="SDL_RenderCopy");
+int Renderer.copyEx(Renderer* renderer,
+                    Texture* texture,
+                    const Rect* src,
+                    const Rect* dst,
+                    const f64 angle,
+                    const Point* center,
+                    const RendererFlip flip) @(cname="SDL_RenderCopyEx");
 
-fn c_int Renderer.copyEx(Renderer* renderer,
-                         Texture* texture,
-                         const Rect* src,
-                         const Rect* dst,
-                         const f64 angle,
-                         const Point* center,
-                         const RendererFlip flip) @(cname="SDL_RenderCopyEx");
-
-fn c_int Renderer.setTarget(Renderer* renderer, Texture* texture) @(cname="SDL_SetRenderTarget");
-
-fn Texture* Renderer.getTarget(Renderer* renderer) @(cname="SDL_GetRenderTarget");
-
-fn Texture* createTexture(Renderer* renderer, u32 format, c_int access, c_int w, c_int h) @(cname="SDL_CreateTexture");
-
-fn Texture* createTextureFromSurface(Renderer* renderer, Surface* surface) @(cname="SDL_CreateTextureFromSurface");
-
-fn c_int Texture.query(Texture* texture, u32 format, c_int* access, c_int* w, c_int* h) @(cname = "SDL_QueryTexture");
-
-fn c_int Renderer.setViewPort(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderSetViewport");
-
-fn void Renderer.getViewPort(Renderer* renderer, Rect* rect) @(cname="SDL_RenderGetViewport");
-
-fn c_int Renderer.setClipRect(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderSetClipRect");
-
-fn void Renderer.getClipRect(Renderer* renderer, Rect* rect) @(cname="SDL_RenderGetClipRect");
-
-fn c_int Renderer.setDrawColor(Renderer* renderer, u8 r, u8 g, u8 b, u8 a) @(cname="SDL_SetRenderDrawColor");
-
-fn c_int Renderer.getDrawColor(Renderer* renderer, u8* r, u8* g, u8* b, u8* a) @(cname="SDL_GetRenderDrawColor");
-
-fn c_int Renderer.drawPoint(Renderer* renderer, c_int x, c_int y) @(cname="SDL_RenderDrawPoint");
-
-fn c_int Renderer.drawPoints(Renderer* renderer, const Point* points, c_int count) @(cname="SDL_RenderDrawPoints");
-
-fn void Texture.destroy(Texture* texture) @(cname="SDL_DestroyTexture");
-
-fn c_int Texture.setColorMod(Texture* texture, u8 r, u8 g,u8 b) @(cname="SDL_SetTextureColorMod");
-
-fn c_int Texture.getColorMod(Texture* texture, u8* r, u8* g,u8* b) @(cname="SDL_GetTextureColorMod");
-
-fn c_int Texture.setAlphaMod(Texture* texture, u8 alpha) @(cname="SDL_SetTextureAlphaMod");
-
-fn c_int Texture.getAlphaMod(Texture* texture, u8* alpha) @(cname="SDL_GetTextureAlphaMod");
-
-fn c_int Texture.setBlendMode(Texture* texture, BlendMode mode) @(cname="SDL_SetTextureBlendMode");
-
-fn c_int Texture.getBlendMode(Texture* texture, BlendMode* mode) @(cname="SDL_GetTextureBlendMode");
-
-fn c_int Texture.setScaleMode(Texture* texture, ScaleMode mode) @(cname="SDL_SetTextureScaleMode");
-
-fn c_int Texture.getScaleMode(Texture* texture, ScaleMode* mode) @(cname="SDL_GetTextureScaleMode");
-
-fn c_int Texture.setUserData(Texture* texture, void* userdata) @(cname="SDL_SetTextureUserData");
-
-fn void* Texture.getUserData(Texture* texture) @(cname="SDL_GetTextureUserData");
-
-fn c_int Texture.lock(Texture* texture, const Rect* rect, void** pixels, c_int* pitch)  @(cname="SDL_LockTexture");
-
-fn void Texture.unlock(Texture* texture) @(cname="SDL_UnlockTexture");
+int Renderer.setTarget(Renderer* renderer, Texture* texture) @(cname="SDL_SetRenderTarget");
+Texture* Renderer.getTarget(Renderer* renderer) @(cname="SDL_GetRenderTarget");
+Texture* createTexture(Renderer* renderer, u32 format, int access, int w, int h) @(cname="SDL_CreateTexture");
+Texture* createTextureFromSurface(Renderer* renderer, Surface* surface) @(cname="SDL_CreateTextureFromSurface");
+int Texture.query(Texture* texture, u32 format, int* access, int* w, int* h) @(cname = "SDL_QueryTexture");
+int Renderer.setViewPort(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderSetViewport");
+void Renderer.getViewPort(Renderer* renderer, Rect* rect) @(cname="SDL_RenderGetViewport");
+int Renderer.setClipRect(Renderer* renderer, const Rect* rect) @(cname="SDL_RenderSetClipRect");
+void Renderer.getClipRect(Renderer* renderer, Rect* rect) @(cname="SDL_RenderGetClipRect");
+int Renderer.setDrawColor(Renderer* renderer, u8 r, u8 g, u8 b, u8 a) @(cname="SDL_SetRenderDrawColor");
+int Renderer.getDrawColor(Renderer* renderer, u8* r, u8* g, u8* b, u8* a) @(cname="SDL_GetRenderDrawColor");
+int Renderer.drawPoint(Renderer* renderer, int x, int y) @(cname="SDL_RenderDrawPoint");
+int Renderer.drawPoints(Renderer* renderer, const Point* points, int count) @(cname="SDL_RenderDrawPoints");
+void Texture.destroy(Texture* texture) @(cname="SDL_DestroyTexture");
+int Texture.setColorMod(Texture* texture, u8 r, u8 g,u8 b) @(cname="SDL_SetTextureColorMod");
+int Texture.getColorMod(Texture* texture, u8* r, u8* g,u8* b) @(cname="SDL_GetTextureColorMod");
+int Texture.setAlphaMod(Texture* texture, u8 alpha) @(cname="SDL_SetTextureAlphaMod");
+int Texture.getAlphaMod(Texture* texture, u8* alpha) @(cname="SDL_GetTextureAlphaMod");
+int Texture.setBlendMode(Texture* texture, BlendMode mode) @(cname="SDL_SetTextureBlendMode");
+int Texture.getBlendMode(Texture* texture, BlendMode* mode) @(cname="SDL_GetTextureBlendMode");
+int Texture.setScaleMode(Texture* texture, ScaleMode mode) @(cname="SDL_SetTextureScaleMode");
+int Texture.getScaleMode(Texture* texture, ScaleMode* mode) @(cname="SDL_GetTextureScaleMode");
+int Texture.setUserData(Texture* texture, void* userdata) @(cname="SDL_SetTextureUserData");
+void* Texture.getUserData(Texture* texture) @(cname="SDL_GetTextureUserData");
+int Texture.lock(Texture* texture, const Rect* rect, void** pixels, int* pitch)  @(cname="SDL_LockTexture");
+void Texture.unlock(Texture* texture) @(cname="SDL_UnlockTexture");
 
 
 // ------ From SDL_timer.h ------
 
 type TimerCallback fn u32 (u32 interval, void* param);
+type TimerID int;
 
-type TimerID c_int;
-
-fn TimerID addTimer(u32 interval, TimerCallback callback, void* param) @(cname="SDL_AddTimer");
-
-fn bool removeTimer(TimerID id) @(cname="SDL_RemoveTimer");
-
-fn u32 getTicks() @(cname="SDL_GetTicks");
-
-fn u64 getTicks64() @(cname="SDL_GetTicks64");
-
-fn void delay(u32 ms) @(cname="SDL_Delay");
+TimerID addTimer(u32 interval, TimerCallback callback, void* param) @(cname="SDL_AddTimer");
+bool removeTimer(TimerID id) @(cname="SDL_RemoveTimer");
+u32 getTicks() @(cname="SDL_GetTicks");
+u64 getTicks64() @(cname="SDL_GetTicks64");
+void delay(u32 ms) @(cname="SDL_Delay");
 
 // ------ From SDL_clipboard.h ------
 
-fn c_int setClipboardText(const char* text) @(cname="SDL_SetClipboardText");
-
-fn char* getClipboardText() @(cname="SDL_GetClipboardText");
-
-fn bool hasClipboardText() @(cname="SDL_HasClipboardText");
+int setClipboardText(const char* text) @(cname="SDL_SetClipboardText");
+char* getClipboardText() @(cname="SDL_GetClipboardText");
+bool hasClipboardText() @(cname="SDL_HasClipboardText");
 
 // ------ From SDL_stdint.h ------
 
-fn void free(void* mem) @(cname="SDL_free");
+void free(void* mem) @(cname="SDL_free");
 
 
 // ------ From SDL_pixel.h ------
@@ -1262,12 +1184,12 @@ type PixelFormat struct @(cname="SDL_PixelFormat") {
     u8 Gshift;
     u8 Bshift;
     u8 Ashift;
-    c_int refcount;
+    int refcount;
     PixelFormat* next;
 }
 
 // TEMP, avoid macros
 const u32 PIXELFORMAT_RGBA8888 = 0x16462004;
 
-fn u32 PixelFormat.mapRGB(const PixelFormat* format, u8 r, u8 g, u8 b) @(cname="SDL_MapRGB");
+u32 PixelFormat.mapRGB(const PixelFormat* format, u8 r, u8 g, u8 b) @(cname="SDL_MapRGB");
 

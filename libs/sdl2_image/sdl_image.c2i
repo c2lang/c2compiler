@@ -1,19 +1,15 @@
-module sdl_image;
+module sdl_image extern "C";
 
-import c_types local;
 import sdl;
 
 //IMG_InitFlags;
-const c_uint INIT_JPG  = 0x00000001;
-const c_uint INIT_PNG  = 0x00000002;
-const c_uint INIT_TIF  = 0x00000004;
-const c_uint INIT_WEBP = 0x00000008;
+const unsigned INIT_JPG  = 0x00000001;
+const unsigned INIT_PNG  = 0x00000002;
+const unsigned INIT_TIF  = 0x00000004;
+const unsigned INIT_WEBP = 0x00000008;
 
-fn c_int init(c_int flags) @(cname="IMG_Init");
-
-fn void quit() @(cname="IMG_Quit");
-
-fn sdl.Surface* load(const char* file) @(cname="IMG_Load");
-
-fn c_int setColorKey(sdl.Surface* surface, c_int flag, u32 key) @(cname="SDL_SetColorKey");
+int init(int flags) @(cname="IMG_Init");
+void quit(void) @(cname="IMG_Quit");
+sdl.Surface* load(const char* file) @(cname="IMG_Load");
+int setColorKey(sdl.Surface* surface, int flag, u32 key) @(cname="SDL_SetColorKey");
 
