@@ -258,7 +258,7 @@ public fn bool QualType.isCharPointer(const QualType qt) {
     if (!qt.isPointer()) return false;
     const PointerType* pt = qt.getPointerType();
     QualType inner = pt.getInner();
-    // accept aliases so c_char can be used with @(printf_format)
+    // accept aliases so they can be used with @(printf_format)
     inner = inner.getCanonicalType();
     return inner.isChar();
 }

@@ -72,7 +72,7 @@ size_t strlcat(char* dest, const char* src, size_t n);
 #else
 /*
  * Find the first occurrence of s2 in s1, where the search is limited to the
- * first n c_characters of s.
+ * first n bytes of s.
  */
 char* strnstr(const char* s1, const char* s2, size_t n) {
     /* simplistic algorithm with O(n2) worst case */

@@ -146,7 +146,7 @@ type Stat struct @(cname="stat", no_typedef) {
     // ...
 }
 
-fn c_int stat(const c_char* pathname, Stat* buf);
+fn int stat(const char* pathname, Stat* buf);
 ```
 
 This means C2 code can use 'Stat' instead of 'struct stat', so the spelling conventions
