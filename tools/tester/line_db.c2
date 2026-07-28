@@ -58,16 +58,13 @@ fn void Db.resize(Db* db, u32 capacity) {
 }
 
 public fn void Db.add(Db* db, const char* start, const char* end, bool consecutive) {
-    u32 len = (u32)(end - start);
     if (db.count == db.capacity) {
-        db.resize((u32)(db.capacity ? db.capacity * 2 : 4));
+        db.resize(db.capacity ? db.capacity * 2 : 4);
     }
     Entry* entry = &db.entries[db.count];
     db.count++;
 
-    entry.line = malloc(len + 1); // add 0-terminator
-    memcpy(entry.line, start, len);
-    entry.line[len] = 0;
+    entry.line = strndup(start, (usize)(end - start));
     entry.consecutive = consecutive;
 }
 
@@ -78,5 +75,4 @@ public fn const char* Db.getLine(const Db* db, u32 idx) {
 public fn bool Db.getConsecutive(const Db* db, u32 idx) {
     return db.entries[idx].consecutive;
 }
-
 

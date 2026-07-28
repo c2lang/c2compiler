@@ -65,14 +65,12 @@ void* mempcpy(void* dest, const void* src, size_t n);
 void* memrchr(const void* s, int c, size_t n);
 char* strchrnul(const char* s, int c);
 
-#if SYSTEM_DARWIN || SYSTEM_FREEBSD || SYSTEM_OPENBSD
+#if SYSTEM_DARWIN || SYSTEM_FREEBSD
 char* strnstr(const char* s1, const char* s2, size_t n);
-size_t strlcpy(char* dest, const char* src, size_t n);
-size_t strlcat(char* dest, const char* src, size_t n);
 #else
 /*
  * Find the first occurrence of s2 in s1, where the search is limited to the
- * first n c_characters of s.
+ * first n bytes of s.
  */
 char* strnstr(const char* s1, const char* s2, size_t n) {
     /* simplistic algorithm with O(n2) worst case */
@@ -91,7 +89,12 @@ char* strnstr(const char* s1, const char* s2, size_t n) {
     }
     return nil;
 }
+#endif
 
+#if SYSTEM_DARWIN || SYSTEM_FREEBSD || SYSTEM_OPENBSD
+size_t strlcpy(char* dest, const char* src, size_t n);
+size_t strlcat(char* dest, const char* src, size_t n);
+#else
 // return the length of src, but copy at most n-1 bytes
 // from src and null terminate dst.
 size_t strlcpy(char* dst, const char* src, size_t n) {

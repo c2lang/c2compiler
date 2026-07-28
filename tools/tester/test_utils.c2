@@ -15,10 +15,9 @@
 
 module test_utils;
 
-import ctype;
+import ctype local;
 import stdarg local;
 import stdio local;
-import string local;
 
 import color local;
 import string_buffer;
@@ -30,20 +29,6 @@ public Color colError = Bred;
 public Color colSkip  = Bcyan;
 public Color colOk    = Green;
 public Color colDebug = Bmagenta;
-
-// NOTE: end must point AFTER last valid char (could be 0-terminator)
-
-public fn void skipInitialWhitespace(const char** start, const char* end) {
-    const char* cp = *start;
-    while (cp != end && ctype.isblank(*cp)) cp++;
-    *start = cp;
-}
-
-public fn void skipTrailingWhitespace(const char* start, const char** end) {
-    const char* cp = *end;
-    while (cp > start && ctype.isblank(cp[-1])) cp--;
-    *end = cp;
-}
 
 public fn void set_color_output(const char* name, bool enable) {
     proc_name = name;
@@ -77,59 +62,34 @@ public fn void color_print2(string_buffer.Buf* output,
                             const char* format @(printf_format),
                             ...)
 {
-    char[1024] buffer;
+    output.color(col);
     va_list args;
     va_start(args, format);
-    vsnprintf(buffer, elemsof(buffer), format, args);
+    output.vprintf(format, args);
     va_end(args);
-
-    output.color(col);
-    output.add(buffer);
-    output.color(color.Normal);
+    output.color(Normal);
     output.newline();
 }
 
-public fn const char* find(const char* start, const char* end, const char* text) {
-    usize tlen = strlen(text);
-    if (start > end)
-        return nil;
-    if (tlen == 0)
-        return start;
-    for (;;) {
-        const char* cp = memchr(start, *text, (usize)(end - start));
-        if (!cp)
-            break;
-        usize len = (usize)(end - cp);
-        if (len < tlen)
-            break;
-        if (!memcmp(cp, text, tlen))
-            return cp;
-        start = cp + 1;
+public fn const char* skipBlanks(const char* cp) {
+    while (isblank(*cp)) cp++;
+    return cp;
+}
+
+public fn const char* lineEnd(const char* cp) {
+    while (*cp && *cp != '\n') cp++;
+    return cp;
+}
+
+public fn const char* trimTrailingBlanks(const char* start, const char* cp) {
+    while (cp > start && isblank(cp[-1])) cp--;
+    return cp;
+}
+
+public fn bool strstart(const char* p, const char* s, const char** pp = nil) {
+    while (*s) {
+        if (*p++ != *s++) return false;
     }
-    return nil;
-}
-
-public fn bool append(char* dest, u32 size, const char* tail) {
-    usize len = strlen(dest);
-    usize len2 = strlen(tail);
-    if (len + len2 >= size) {
-        while (len + 1 < size)
-            dest[len++] = *tail++;
-        dest[len] = '\0';
-        return false;
-    }
-    memcpy(dest + len, tail, len2 + 1);
-    return true;
-}
-
-public fn bool same_string(const char* a, const char* b) {
-    return strcmp(a, b) == 0;
-}
-
-public fn bool strstart(const char* p, const char* s, const char** pp) {
-    usize len = strlen(s);
-    if (strncmp(p, s, len) != 0)
-        return false;
-    if (pp) *pp = p + len;
+    if (pp) *pp = p;
     return true;
 }
