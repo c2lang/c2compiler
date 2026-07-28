@@ -141,18 +141,14 @@ fn u32 online_cpus() {
 }
 
 fn void handle_file(TestQueue* queue, const char* filename) {
-    TestKind kind;
-    if (endsWith(filename, ".c2")) {
-        kind = C2;
-    } else if (endsWith(filename, ".c2t")) {
-        kind = C2T;
-    } else if (endsWith(filename, ".c2a")) {
-        kind = C2A;
-    } else {
-        return;
+    for (TestKind kind = TestKind.min; kind <= TestKind.max; kind++) {
+        const char* ext = kind.ext;
+        if (*ext && endsWith(filename, ext)) {
+            queue.add(filename, kind);
+            return;
+        }
     }
-
-    queue.add(filename, kind);
+    // ignore other files
 }
 
 fn void handle_dir(TestQueue* queue, const char* path) {
@@ -184,9 +180,9 @@ fn void handle_dir(TestQueue* queue, const char* path) {
 
 
 type Tester struct {
-    u32 numtests;
-    u32 numerrors;
-    u32 numskipped;
+    u32 num_tests;
+    u32 num_errors;
+    u32 num_skipped;
 
     u32 index;
     TestQueue* queue;
@@ -225,9 +221,7 @@ fn void Tester.join(Tester* t) {
 }
 
 fn void Tester.run(Tester* t) {
-    while (1) {
-        Test* test = t.queue.get();
-        if (!test) break;
+    while (Test* test = t.queue.get()) {
         t.run_test(test);
     }
 }
@@ -236,11 +230,10 @@ fn void Tester.run_test(Tester* t, Test* test) {
     // setup dir
     // temp, just delete this way
     char[64] cmd;
-    snprintf(cmd, elemsof(cmd), "rm -rf %s", t.tmp_dir);
+    snprintf(cmd, elemsof(cmd), "rm -rf '%s'", t.tmp_dir);
     i32 err = system(cmd);
     if (err != 0 && errno != ECHILD) {
-        i32 saved = errno;
-        print_error("error running '%s': %s, %d", cmd, strerror(saved), saved);
+        print_error("error running '%s': %s", cmd, strerror(errno));
         exit(EXIT_FAILURE);
     }
     // create test dir
@@ -250,35 +243,37 @@ fn void Tester.run_test(Tester* t, Test* test) {
         exit(EXIT_FAILURE);
     }
 
-    t.numtests++;
+    t.num_tests++;
 
     string_buffer.Buf* buf = string_buffer.create(4096, color_output, 2);
     buf.print("%s\n", test.filename);
 
     file_utils.File file.init(test.filename);
     if (!file.load()) {
-        print_error("error opening %s: %s", test.filename, file.getError());
+        print_error("cannot load %s: %s", test.filename, file.getError());
         exit(EXIT_FAILURE);
     }
 
     test_db.Db db.init(buf, file.data(), test.filename, test.kind, t.tmp_dir, c2c_cmd, t.cwd, runSkipped);
+    bool print = verboseLevel > 1;
     bool skip = db.parse();
     if (skip) {
-        t.numskipped++;
+        t.num_skipped++;
         color_print2(buf, colSkip, "%s SKIPPED", test.filename);
     } else {
-        bool print = verboseLevel > 1;
         if (!db.haveErrors()) {
             db.testFile();
-            if (db.printIssues()) print = true;
+            db.checkIssues(db.errors);
+            db.checkIssues(db.warnings);
+            db.checkIssues(db.notes);
         }
         if (db.haveErrors()) {
             print = true;
             test.failed = true;
-            t.numerrors++;
+            t.num_errors++;
         }
-        if (print) fputs(buf.data(), stdout);
     }
+    if (print) fputs(buf.data(), stdout);
     db.destroy();
     file.close();
     buf.free();
@@ -346,14 +341,14 @@ public fn i32 main(i32 argc, char** argv) {
         if (file_utils.is_dir(target)) {
             handle_dir(queue, target);
         } else {
-            print_error("argument must be a regular file a directory: %s", target);
+            print_error("argument must be a regular file or a directory: %s", target);
             return EXIT_FAILURE;
         }
     }
 
     if (!queue.count) {
-        print_error("no test files found");
-        exit(EXIT_FAILURE);
+        print_error("no test files provided");
+        return EXIT_FAILURE;
     }
     if (queue.count == 1) num_threads = 1;
     if (num_threads == 0) num_threads = online_cpus();
@@ -363,38 +358,38 @@ public fn i32 main(i32 argc, char** argv) {
     char* cwd = unistd.getcwd(nil, 0);
     if (cwd == nil) {
         print_error("cannot get current directory: %s", strerror(errno));
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     bool sync = (num_threads == 1);
-    Tester*[MAX_THREADS] testers = { nil }
+    Tester*[MAX_THREADS] testers = {}
     for (u32 i=0; i<num_threads; i++) {
         testers[i] = Tester.create(i, queue, cwd, sync);
     }
 
     // TODO handle Ctrl-C
 
-    u32 numtests = 0;
-    u32 numerrors = 0;
-    u32 numskipped = 0;
+    u32 num_tests = 0;
+    u32 num_errors = 0;
+    u32 num_skipped = 0;
 
     for (u32 i=0; i<num_threads; i++) {
         Tester* t = testers[i];
         t.join();
-        numtests += t.numtests;
-        numerrors += t.numerrors;
-        numskipped += t.numskipped;
+        num_tests += t.num_tests;
+        num_errors += t.num_errors;
+        num_skipped += t.num_skipped;
         t.destroy();
     }
 
     u64 t2 = now();
 
-    color_print(numerrors ? colError : colOk,
+    color_print(num_errors ? colError : colOk,
                 "RESULTS: %d test%s, %d threads (%d ok, %d failed, %d skipped) ran in %d ms",
-                numtests, numtests == 1 ? "" : "s",
-                num_threads, numtests - (numerrors + numskipped), numerrors, numskipped,
+                num_tests, num_tests == 1 ? "" : "s",
+                num_threads, num_tests - (num_errors + num_skipped), num_errors, num_skipped,
                 (t2 - t1) / 1000);
-    if (numerrors) queue.summarizeFailed();
+    if (num_errors) queue.summarizeFailed();
 
     queue.destroy();
     free(cwd);

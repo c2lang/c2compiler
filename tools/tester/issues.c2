@@ -15,12 +15,9 @@
 
 module issues;
 
-import file_utils;
-
 import stdio local; // for dump()
 import stdlib local;
 import string local;
-import unistd; // getcwd()
 
 type Issue struct {
     u32 filename; // into Issues' string pool
@@ -32,17 +29,6 @@ type Issue struct {
 public type Iter struct {
     Issues* issues;
     u32 idx;
-}
-
-public fn const char* relativeFilename(const char* name) {
-    char[file_utils.Max_path] buffer;
-    char* path = unistd.getcwd(buffer, sizeof(buffer));
-    if (path && *path && path[1]) {
-        usize len = strlen(path);
-        if (!strncmp(name, path, len) && name[len] == '/' && name[len + 1] != '\0')
-            return name + len + 1;
-    }
-    return name;
 }
 
 public fn bool Iter.find(Iter* iter, const char* filename, u32 line_nr) {
@@ -57,7 +43,7 @@ public fn bool Iter.find(Iter* iter, const char* filename, u32 line_nr) {
 
 public fn const char* Iter.getFilename(const Iter* iter) {
     const Issue* cur = &iter.issues.issues[iter.idx];
-    return relativeFilename(&iter.issues.pool[cur.filename]);
+    return &iter.issues.pool[cur.filename];
 }
 
 public fn u32 Iter.getLineNr(const Iter* iter) {
@@ -101,10 +87,12 @@ public type Issues struct @(opaque) {
     u32 pool_capacity;
 
     u32 found_count;
+    const char* name;
 }
 
-public fn Issues* create() {
+public fn Issues* create(const char* name) {
     Issues* i = calloc(1, sizeof(Issues));
+    i.name = name;
     i.resizeIssues(4);
     i.resizePool(256);
     return i;
@@ -116,10 +104,14 @@ public fn void Issues.destroy(Issues* i) {
     free(i);
 }
 
+public fn const char* Issues.getName(Issues* ip) {
+    return ip.name;
+}
+
 fn void Issues.resizePool(Issues* i, u32 capacity) {
     i.pool_capacity = capacity;
     char* pool2 = malloc(capacity);
-    if (i.pool_count) {
+    if (i.pool) {
         memcpy(pool2, i.pool, i.pool_count);
         free(i.pool);
     }
@@ -139,7 +131,7 @@ fn u32 Issues.addPool(Issues* i, const char* text) {
 fn void Issues.resizeIssues(Issues* i, u32 capacity) {
     i.capacity = capacity;
     Issue* issues2 = malloc(capacity * sizeof(Issue));
-    if (i.count) {
+    if (i.issues) {
         memcpy(issues2, i.issues, i.count * sizeof(Issue));
         free(i.issues);
     }
@@ -157,6 +149,10 @@ public fn void Issues.add(Issues* i, const char* filename, u32 line_nr, const ch
     i.count++;
 }
 
+fn const char* Issues.getStr(const Issues* i, u32 index) {
+    return i.pool + index;
+}
+
 public fn bool Issues.allFound(const Issues* i) {
     return i.count == i.found_count;
 }
@@ -170,6 +166,6 @@ public fn void Issues.dump(const Issues* i) @(unused) {
     printf("Issues (%d, %d)\n", i.count, i.pool_count);
     for (u32 j=0; j<i.count; j++) {
         const Issue* cur = &i.issues[j];
-        printf("  %s %d %s\n", &i.pool[cur.filename], cur.line_nr, &i.pool[cur.msg]);
+        printf("  %s %d %s\n", i.getStr(cur.filename), cur.line_nr, i.getStr(cur.msg));
     }
 }

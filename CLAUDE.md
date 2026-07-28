@@ -41,8 +41,8 @@ output/tester/tester test/vars/duplicate_function_arg.c2   # run a single test f
 
 The tester (`tools/tester/`) recursively finds test files under `test/` and dispatches by extension:
 - `.c2` — single-file compile test. Uses inline annotation comments:
-  - `// @error{msg}` / `// @note{msg}` / `// @warning{msg}` on the offending line — expected diagnostics.
-  - `// @skip` — skip this test.
+  - `// @error{msg}` / `// @note{msg}` / `// @warning{msg}` on the offending line — expected diagnostics. Write a number after the argument if the message refers to a different line, eg: `// @warning{msg} +1` if the warning should occur on the next line.
+  - `// @skip` — skip this test. Should be the first line.
   - `// @target{triplet}` — only run on a matching target.
 - `.c2t` — tests generation of output files for a whole recipe/target. Requires `// @recipe bin/lib dynamic/static`, one or more `// @file{filename}`, and `// @expect{atleast|complete, filename}` blocks comparing generated output against an expectation file.
 - `.c2a` — tests the parsed AST (unused-decl checking disabled). Requires exactly one `// @file{filename}` and one `// @expect{atleast|complete}`.
