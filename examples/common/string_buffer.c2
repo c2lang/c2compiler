@@ -150,17 +150,27 @@ public fn void StringBuffer.vprintf(StringBuffer* buf, const char* format, va_li
         dest = &buf.data_ptr[buf.len];
         dest_size = avail;
     }
-    i32 len = vsnprintf(dest, avail, format, args);
-    if (len < 0) {
+    i32 ret = vsnprintf(dest, dest_size, format, args);
+    if (ret < 0) {
         buf.error = true;
         return;
     }
-    if (len >= (i32)dest_size) {
+    u32 len = (u32)ret;
+    if (len >= dest_size) {
         buf.truncated = true;
-        len = (i32)dest_size - 1;
+        len = dest_size - 1;    // we know that dest_size > 0
     }
-    if (dest == tmp) memcpy(&buf.data_ptr[buf.len], tmp, (u32)len + 1);
-    buf.len += len;
+    if (dest == tmp) {
+        if (len >= avail) {
+            buf.add2(tmp, len);
+        } else {
+            memcpy(&buf.data_ptr[buf.len], tmp, len);
+            buf.len += len;
+        }
+    } else {
+        // output is already in buffer
+        buf.len += len;
+    }
 }
 
 fn bool StringBuffer.extend(StringBuffer* buf, u32 len) @(unused) {

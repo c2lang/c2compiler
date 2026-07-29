@@ -40,7 +40,7 @@ fn void run_group(const Group* g, Stats* stats) {
   for (u32 i=0; i<g.num_tests; i++) {
     const C2Test* t = &g.tests[i];
 
-    error_size = sizeof(error_buffer) -1;
+    error_size = elemsof(error_buffer);
     error_msg = error_buffer;
     printf("TEST [%d/%d] %s.%s ", i+1+stats.done, stats.total, g.name, t.name);
     fflush(stdout);
@@ -60,15 +60,14 @@ fn void run_group(const Group* g, Stats* stats) {
 }
 
 fn void vprint_errormsg(const char* fmt, va_list ap) {
+  if (error_size <= 1) return;
   i32 ret = vsnprintf(error_msg, error_size, fmt, ap);
   if (ret < 0) {
     error_msg[0] = 0;
   } else {
-    const usize size = (usize)ret;
-    const usize s = (error_size <= size) ? size - error_size : size;
-    // error_size may overflow at this point
-    error_size -= s;
-    error_msg += s;
+    const usize len = (usize)ret < error_size ? (usize)ret : error_size - 1;
+    error_size -= len;
+    error_msg += len;
   }
 }
 

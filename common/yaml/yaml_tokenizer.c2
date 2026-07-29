@@ -60,6 +60,7 @@ type Tokenizer struct {
     const char* input_start;
     const char* line_start;
     char* error_msg;
+    usize error_msg_size;
     u32 line_number;
     i32 cur_indent;
     bool same_line;
@@ -68,12 +69,13 @@ type Tokenizer struct {
     Token next;
 }
 
-fn void Tokenizer.init(Tokenizer* t, const char* input, Data* d, char* error_msg) {
+fn void Tokenizer.init(Tokenizer* t, const char* input, Data* d, char* error_msg, usize error_msg_size) {
     memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
     t.input_start = input;
     t.line_start = input;
     t.error_msg = error_msg;
+    t.error_msg_size = error_msg_size;
     t.line_number = 1;
     t.data = d;
     t.next.kind = None;
@@ -275,10 +277,10 @@ fn void Tokenizer.lex_string(Tokenizer* t, Token* result) {
 fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf_format), ...) {
     va_list args;
     va_start(args, format);
-    i32 len = vsnprintf(t.error_msg, MaxDiag, format, args);
-    if ((u32)len < MaxDiag) {
+    i32 len = vsnprintf(t.error_msg, t.error_msg_size, format, args);
+    if ((u32)len < t.error_msg_size) {
         // TODO output standard error message <filename:line:col: msg>
-        snprintf(t.error_msg + len, MaxDiag - len, "at line %d:%d", result.loc.line, result.loc.column);
+        snprintf(t.error_msg + len, t.error_msg_size - len, "at line %d:%d", result.loc.line, result.loc.column);
     }
     va_end(args);
     result.kind = Error;

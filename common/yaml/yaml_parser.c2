@@ -50,7 +50,7 @@ public fn void Parser.destroy(Parser* p) {
 }
 
 public fn bool Parser.parse(Parser* p, const char* input) {
-    p.tokenizer.init(input, &p.data, p.message);
+    p.tokenizer.init(input, &p.data, p.message, elemsof(p.message));
 
     p.token.kind = None;
 
@@ -75,10 +75,12 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) {
     va_list args;
     va_start(args, format);
     char* cp = p.message;
-    i32 len = vsnprintf(cp, MaxDiag, format, args);
+    usize size = elemsof(p.message);
+    i32 len = vsnprintf(cp, size, format, args);
     va_end(args);
-    if ((u32)len < MaxDiag) {
-        snprintf(cp + len, MaxDiag - len, "at line %d:%d", p.token.loc.line, p.token.loc.column);
+    if ((u32)len < size) {
+        // TODO output standard error message <filename:line:col: msg>
+        snprintf(cp + len, size - len, " at line %d:%d", p.token.loc.line, p.token.loc.column);
     }
     longjmp(&p.jmp_err, 1);
 }

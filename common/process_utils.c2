@@ -47,17 +47,15 @@ fn void child_error(i32 fd, const char* format @(printf_format), ...) @(noreturn
     char[256] msg;
     va_list args;
     va_start(args, format);
-    i32 res = vsnprintf(msg, elemsof(msg), format, args);
+    i32 res = vsnprintf(msg, elemsof(msg) - 1, format, args);
     va_end(args);
-    if (res >= 0) {
-        usize len = (usize)res;
-        msg[len++] = '\n';
-        msg[len] = '\0';
-        write(fd, msg, len);
-        fsync(fd);
-        fprintf(stderr, "[exec] %s\n", msg);
-        fflush(stderr);
-    }
+    if (res < 0) pstrcpy(msg, elemsof(msg), "formatting error");
+    pstrcat(msg, elemsof(msg), "\n");
+    write(fd, msg, strlen(msg));
+    fsync(fd);
+    fputs("[exec] ", stderr);
+    fputs(msg, stderr);
+    fflush(stderr);
     _exit(EXIT_FAILURE);      // don't call atexit functions
 }
 

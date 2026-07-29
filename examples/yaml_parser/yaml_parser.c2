@@ -76,8 +76,8 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) {
     va_start(args, format);
     i32 len = vsnprintf(p.message, elemsof(p.message), format, args);
     va_end(args);
-    if (len < elemsof(p.message))
-        snprintf(p.message + len, elemsof(p.message) - len, " %s", p.token.loc.str());
+    if ((u32)len < elemsof(p.message))
+        snprintf(p.message + (u32)len, elemsof(p.message) - (u32)len, " %s", p.token.loc.str());
     longjmp(&p.jmp_err, 1);
 }
 

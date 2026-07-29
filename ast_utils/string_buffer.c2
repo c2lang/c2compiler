@@ -168,23 +168,47 @@ public fn void Buf.stripTrailingSpaces(Buf* buf) {
     while (buf.size_ && buf.data_[buf.size_-1] == ' ') buf.size_--;
 }
 
-public fn void Buf.print(Buf* buf, const char* format @(printf_format), ...) {
-    char[4096] tmp;
-    // NOTE: no growing
+public fn void Buf.print(Buf* buf, const char* format @(printf_format), ...) @(unused) {
     va_list args;
     va_start(args, format);
-    i32 len = vsnprintf(tmp, elemsof(tmp), format, args);
+    buf.vprintf(format, args);
     va_end(args);
-    assert(len < elemsof(tmp));
-    buf.add2(tmp, (u32)len);
 }
 
-public fn void Buf.vprintf(Buf* buf, const char* format, va_list args) {
+public fn void Buf.vprintf(Buf* buf, const char* format, va_list args) @(unused) {
+    // formatted output is limited to 4095 bytes
     char[4096] tmp;
-    // NOTE: no growing
-    i32 len = vsnprintf(tmp, elemsof(tmp), format, args);
-    assert(len < elemsof(tmp));
-    buf.add2(tmp, (u32)len);
+    char* dest = tmp;
+    u32 dest_size = elemsof(tmp);
+    u32 avail = buf.capacity - buf.size_;
+    if (!buf.grow || avail >= 4096) {
+        if (!avail) {
+            buf.truncated = true;
+            return;
+        }
+        dest = &buf.data_[buf.size_];
+        dest_size = avail;
+    }
+    i32 ret = vsnprintf(dest, dest_size, format, args);
+    if (ret < 0) {
+        return;
+    }
+    u32 len = (u32)ret;
+    if (len >= dest_size) {
+        buf.truncated = true;
+        len = dest_size - 1;    // we know that dest_size > 0
+    }
+    if (dest == tmp) {
+        if (len >= avail) {
+            buf.add2(tmp, len);
+        } else {
+            memcpy(&buf.data_[buf.size_], tmp, len);
+            buf.size_ += len;
+        }
+    } else {
+        // output is already in buffer
+        buf.size_ += len;
+    }
 }
 
 public fn void Buf.unindent(Buf* buf) {
