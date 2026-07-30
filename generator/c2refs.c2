@@ -425,10 +425,10 @@ fn u32 Links.add(Links** t_ptr, u32 src, u32 dest, u32 len) {
 
     u32 idx = t.count;
 
-    Link* link = &t.data[idx];
-    link.src = src;
-    link.len = len;
-    link.dest = dest;
+    Link* linkp = &t.data[idx];
+    linkp.src = src;
+    linkp.len = len;
+    linkp.dest = dest;
     t.count++;
     return idx;
 }
@@ -707,10 +707,10 @@ fn void Refs.dump_links(const Refs* r, bool verbose) {
     printf("  links:   %7d bytes  %d/%d links\n", l.total_size, l.count, l.capacity);
     if (verbose) {
         for (u32 i=0; i<l.count; i++) {
-            const Link* link = &l.data[i];
-            printf("  [%5d] %2d  %5d -> %5d", i, link.len, link.src, link.dest);
-            Dest l1 = r.loc2dest(link.src);
-            Dest l2 = r.loc2dest(link.dest);
+            const Link* linkp = &l.data[i];
+            printf("  [%5d] %2d  %5d -> %5d", i, linkp.len, linkp.src, linkp.dest);
+            Dest l1 = r.loc2dest(linkp.src);
+            Dest l2 = r.loc2dest(linkp.dest);
             printf(" (%s: %d:%d -> ", l1.filename, l1.line, l1.col);
             if (l1.filename == l2.filename) {
                 printf("%d:%d", l2.line, l2.col);

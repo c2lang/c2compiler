@@ -139,8 +139,6 @@ int mbtowc(int* __pwc, const char* __s, size_t __n);
 int mbstowcs(int* __pwcs, const char* __s, size_t __n);
 int wcstombs(char* __s, const int* __pwcs, size_t __n);
 int rpmatch(const char* __response);
-// TODO need to parse char* const*
-//fn int getsubopt(char** __optionp, char*const* __tokens, char** __valuep);
-int getsubopt(char** __optionp, char** __tokens, char** __valuep);
+int getsubopt(char** __optionp, char* const* __tokens, char** __valuep);
 int getloadavg(double* __loadavg, int __nelem);
 
