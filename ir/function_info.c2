@@ -16,6 +16,7 @@
 module ir;
 
 import constants;
+
 import stdlib { malloc, free }
 
 public type FunctionInfo struct {

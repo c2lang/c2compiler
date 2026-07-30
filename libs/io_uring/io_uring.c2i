@@ -2,9 +2,9 @@ module io_uring extern "C";
 
 import uio;
 
-import csignal;
-import linux_types;
-import sys_socket;
+import csignal { Sigset }
+import linux_types { Timespec }
+import sys_socket { Sockaddr }
 
 // ------ liburing.h ------
 /*
@@ -152,7 +152,7 @@ int io_uring_register_iowq_max_workers(struct io_uring *ring, unsigned int *valu
  * Helper for the peek/wait single cqe functions. Exported because of that,
  * but probably shouldn't be used directly in an application.
  */
-int Ring.get_cqe_internal(Ring *ring, Cqe** cqe_ptr, u32 submit, u32 wait_nr, csignal.Sigset* sigmask) @(cname="__io_uring_get_cqe");
+int Ring.get_cqe_internal(Ring *ring, Cqe** cqe_ptr, u32 submit, u32 wait_nr, Sigset* sigmask) @(cname="__io_uring_get_cqe");
 
 #if 0
 //define LIBURING_UDATA_TIMEOUT	((__u64) -1)
@@ -373,7 +373,7 @@ void Sqe.prep_nop(Sqe* sqe) //@(cname="io_uring_prep_nop")
 	prep_rw(Op.NOP, sqe, -1, nil, 0, 0);
 }
 
-void Sqe.prep_timeout(Sqe* sqe, linux_types.Timespec* ts,
+void Sqe.prep_timeout(Sqe* sqe, Timespec* ts,
                       u32 count, u32 flags) //@(cname="io_uring_prep_timeout")
 {
 	prep_rw(Op.TIMEOUT, sqe, -1, ts, 1, count);
@@ -387,14 +387,14 @@ void Sqe.prep_timeout_remove(Sqe* sqe, u64 user_data, u32 flags) //@(cname="io_u
 	sqe.timeout_flags = flags;
 }
 
-void Sqe.prep_timeout_update(Sqe* sqe, linux_types.Timespec* ts, u64 user_data, u32 flags) //@(cname="io_uring_prep_timeout_update")
+void Sqe.prep_timeout_update(Sqe* sqe, Timespec* ts, u64 user_data, u32 flags) //@(cname="io_uring_prep_timeout_update")
 {
 	prep_rw(Op.TIMEOUT_REMOVE, sqe, -1, (void*)user_data, 0, (size_t)ts);
 	sqe.timeout_flags = flags | TIMEOUT_UPDATE;
 }
 
 void Sqe.prep_accept(Sqe* sqe, int fd,
-                     sys_socket.Sockaddr* addr,
+                     Sockaddr* addr,
                      u32* addrlen,
                      int flags) //@(cname="io_uring_prep_accept")
 {
@@ -420,7 +420,7 @@ void Sqe.prep_cancel(Sqe* sqe, void* user_data, int flags) //@(cname="io_uring_p
 	sqe.cancel_flags = (u32)flags;
 }
 
-void Sqe.prep_link_timeout(Sqe* sqe, linux_types.Timespec* ts,
+void Sqe.prep_link_timeout(Sqe* sqe, Timespec* ts,
 					      u32 flags) //@(cname="io_uring_prep_link_timeout")
 {
 	prep_rw(Op.LINK_TIMEOUT, sqe, -1, ts, 1, 0);

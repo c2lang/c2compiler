@@ -15,9 +15,9 @@
 
 module json;
 
-import stdio { * }
-import string { * }
 import csetjmp { JmpBufTag, setjmp, longjmp }
+import stdio { printf, snprintf }
+import string { memcpy, memset, pstrcpy, strcmp, strlen, strncmp }
 
 public const u32 MAX_DIAG = 256;
 

@@ -15,13 +15,13 @@
 
 module logger;
 
-import color;
-import string { strlcpy }
 import stdio { printf }
 import stdlib { exit, EXIT_FAILURE }
-import sys_time { Timeval, gettimeofday, Time }
-import libc_time;
+import string { pstrcpy }
+import libc_time { Time, Tm, localtime }
+import sys_time { Timeval, gettimeofday }
 
+import color;
 import utils { StringBuffer }
 
 public type Level enum u8 {
@@ -88,8 +88,7 @@ public type Log struct {
 public fn void Log.init(Log* log, Base* base, const char* name_) @(unused) {
     log.base = base;
     log.level = base.defaultLevel;
-    strlcpy(log.name, name_, 16);
-    log.name[15] = 0;
+    pstrcpy(log.name, elemsof(log.name), name_);
 }
 
 public fn void Log.setLevel(Log* log, Level lvl) @(unused) {
@@ -151,7 +150,7 @@ fn void Log.internal(Log* log, Level level, const char* color_, const char* form
         Timeval tv;
         gettimeofday(&tv, nil);
         Time now = tv.tv_sec;
-        libc_time.Tm* now2 = libc_time.localtime(&now);
+        Tm* now2 = localtime(&now);
         buf.printf("%02d/%02d/%02d %02d:%02d:%02d.%d",
                    now2.tm_year % 100, now2.tm_mon + 1, now2.tm_mday,
                    now2.tm_hour, now2.tm_min, now2.tm_sec, tv.tv_usec / 1000);

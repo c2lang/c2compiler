@@ -17,8 +17,8 @@ module ir_context;
 
 import ir { * }
 
-import string { memset, memcpy }
 import stdlib { calloc, free }
+import string { memset, memcpy }
 
 public type SymbolId u32;
 

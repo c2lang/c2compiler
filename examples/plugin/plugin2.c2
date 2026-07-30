@@ -17,9 +17,9 @@ module plugin_main;
 
 //import plugin;
 
-import stdio;
+import stdio { printf }
 
 public fn void load(i32 arg) {
-    stdio.printf("Plugin2.load() %d\n", arg);
+    printf("Plugin2.load() %d\n", arg);
 }
 

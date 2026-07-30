@@ -1,6 +1,6 @@
 module ifaddrs extern "C";
 
-import sys_socket;
+import sys_socket { Sockaddr }
 
 /* The `getifaddrs' function generates a linked list of these structures.
    Each element of the list describes one network interface.  */
@@ -10,15 +10,15 @@ struct Ifaddrs {
   char* ifa_name;       /* Name of this network interface.  */
   unsigned ifa_flags;      /* Flags as from SIOCGIFFLAGS ioctl.  */
 
-  sys_socket.Sockaddr* ifa_addr;    /* Network address of this interface.  */
-  sys_socket.Sockaddr* ifa_netmask; /* Netmask of this interface.  */
+  Sockaddr* ifa_addr;    /* Network address of this interface.  */
+  Sockaddr* ifa_netmask; /* Netmask of this interface.  */
   union ifa_ifu {
     /* At most one of the following two is valid.  If the IFF_BROADCAST
        bit is set in `ifa_flags', then `ifa_broadaddr' is valid.  If the
        IFF_POINTOPOINT bit is set, then `ifa_dstaddr' is valid.
        It is never the case that both these bits are set at once.  */
-    sys_socket.Sockaddr* ifu_broadaddr; /* Broadcast address of this interface. */
-    sys_socket.Sockaddr* ifu_dstaddr; /* Point-to-point destination address.  */
+    Sockaddr* ifu_broadaddr; /* Broadcast address of this interface. */
+    Sockaddr* ifu_dstaddr; /* Point-to-point destination address.  */
   }
   void* ifa_data;       /* Address-specific data (may be unused).  */
 }

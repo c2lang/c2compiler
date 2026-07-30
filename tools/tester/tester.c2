@@ -16,11 +16,11 @@
 module tester_main;
 
 import c_errno { * }
+import stdio { * }
+import stdlib { * }
+import string { strdup, strerror, strcmp }
 import libc_dirent { * }
 import pthread;
-import stdio { * }
-import stdlib {* }
-import string { strdup, strerror, strcmp }
 import sys_stat { * }
 import sys_time { Timeval, gettimeofday }
 import unistd { sysconf, _SC_NPROCESSORS_ONLN, getcwd }

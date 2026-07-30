@@ -16,10 +16,10 @@
 module sukodu;
 
 import stdio { * }
+import string { memset, strcmp, strspn }
+import sys_time { Timeval, gettimeofday }
+import utils { StringBuffer }   // should be implicit
 import color;
-import string { * }
-import sys_time;
-import utils { StringBuffer }
 
 /*
     2 extra algorithms:
@@ -549,9 +549,10 @@ fn void sudoku_usage() {
     fprintf(stderr, "\n");
 }
 
+// TODO should be a library function
 fn u64 current_time() {
-    sys_time.Timeval tv;
-    sys_time.gettimeofday(&tv, nil);
+    Timeval tv;
+    gettimeofday(&tv, nil);
     u64 now64 = (u64)tv.tv_sec;
     now64 *= 1000000;
     now64 += tv.tv_usec;

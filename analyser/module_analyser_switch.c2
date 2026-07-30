@@ -20,8 +20,9 @@ import init_checker;
 import src_loc { SrcLoc }
 import scope;
 import string_buffer { Buf }
-import string { memchr }
 import value_type { Value }
+
+import string { memchr }
 
 fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
     FlowBits flow = 0;

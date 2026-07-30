@@ -15,11 +15,11 @@
 
 module event_test;
 
-import csignal { * }
-import string { memset }
-import stdlib { exit, EXIT_SUCCESS, EXIT_FAILURE }
 import stdio { fprintf, stderr }
-import unistd { * }
+import stdlib { exit, EXIT_SUCCESS, EXIT_FAILURE }
+import string { memset }
+import csignal { * }
+import unistd { isatty }
 import example_socket { Socket }
 import events;
 import logger;
@@ -32,7 +32,7 @@ fn void timeout_func(void*) {
 }
 
 public fn i32 main() {
-    logger.Base logbase.init(logger.Level.Info, unistd.isatty(1), true);
+    logger.Base logbase.init(logger.Level.Info, isatty(1), true);
 
     logger.Log log.init(&logbase, "main");
     mainlog = &log;

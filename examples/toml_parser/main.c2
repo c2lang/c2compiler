@@ -15,9 +15,10 @@
 
 module test;
 
-import stdio { * }
-import string { strcmp }
 import toml;
+
+import stdio { fprintf, printf, stderr }
+import string { strcmp }
 
 /*
     3 kinds of nodes:

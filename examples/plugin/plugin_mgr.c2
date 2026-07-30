@@ -17,8 +17,8 @@ module plugin_mgr;
 
 import other;
 
+import stdio { printf, fprintf, stderr }
 import dlfcn { * }
-import stdio { * }
 
 type LoadFn fn void(i32 arg);
 

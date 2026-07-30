@@ -17,8 +17,8 @@ module ref_list;
 
 import ir;
 
-import string { memcpy }
 import stdlib { malloc, free }
+import string { memcpy }
 
 public type RefList struct {
     u32 count;

@@ -15,10 +15,10 @@
 
 module xml;
 
-import stdio { snprintf }
-import string { * }
 import csetjmp { JmpBufTag, setjmp, longjmp }
 import ctype { isalpha, isdigit }
+import stdio { snprintf }
+import string { memcpy, strcmp, strncmp, pstrcpy }
 
 const u32 MAX_NAME = 128;
 const u32 MAX_VALUE = 128;

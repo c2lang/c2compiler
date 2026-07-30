@@ -14,16 +14,18 @@
  */
 
 module test;
+
 import stdio { printf }
-import stdlib { calloc  }
+import stdlib { calloc }   // free is obviously missing!
+
 import list as ll { Element }
 
 type Module struct {
     const char* name;
-    i32 depth;
     Element list;
-    Module*[4] deps;
+    i32 depth;
     u32 numDeps;
+    Module*[4] deps;
 }
 
 fn void printList(const char* name, const Element* list, bool printDeps) {
@@ -59,10 +61,8 @@ fn void check(Element* all, Module* top) {
     Element done.init();
 
     i32 max_depth = (i32)all.size();
-    top.list.remove();
-    todo.addFront(&top.list);
+    todo.addFront(top.list.detach());
     top.depth = 0;
-
 
     while (!todo.isEmpty()) {
         Element* node = todo.popFront();
@@ -75,13 +75,11 @@ fn void check(Element* all, Module* top) {
         for (u32 i=0; i<m.numDeps; i++) {
             Module* d = m.deps[i];
             d.depth = m.depth + 1;
-            d.list.remove();
-            todo.addTail(&d.list);
+            todo.addTail(d.list.detach());
         }
     }
     done.move(all);
 }
-
 
 public fn i32 main() {
     printf("this program orders a DAG by depth, using List\n");

@@ -18,7 +18,7 @@ module module_analyser;
 import ast { * }
 import c_prec { C_Prec, C_Prec_table }
 import c2_prec { Prec, Prec_table }
-import conversion_checker;
+import conversion_checker { usual_arithmetic_conversion }
 import src_loc { SrcLoc }
 import value_type { Value }
 
@@ -131,7 +131,7 @@ fn QualType Analyser.checkBinopArithArgs(Analyser* ma, BinaryOperator* b, QualTy
 
     BuiltinType* bl = lcanon.getBuiltinTypeOrNil();
     BuiltinType* br = rcanon.getBuiltinTypeOrNil();
-    QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
+    QualType optype = usual_arithmetic_conversion(bl, br);
     BuiltinType* bi = optype.getBuiltin();
     if (br != bi) {
         ma.builder.insertImplicitCast(IntegralCast, b.getRHS2(), optype);
@@ -163,7 +163,7 @@ fn QualType Analyser.checkBinopIntArgs(Analyser* ma, BinaryOperator* b, QualType
 
     BuiltinType* bl = lcanon.getBuiltinTypeOrNil();
     BuiltinType* br = rcanon.getBuiltinTypeOrNil();
-    QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
+    QualType optype = usual_arithmetic_conversion(bl, br);
     BuiltinType* bi = optype.getBuiltin();
     if (br != bi) {
         ma.builder.insertImplicitCast(IntegralCast, b.getRHS2(), optype);
@@ -356,7 +356,7 @@ fn QualType Analyser.checkBinopAddArgs(Analyser* ma, BinaryOperator* b, QualType
         BuiltinType* bl = lcanon.getBuiltin();
         BuiltinType* br = rcanon.getBuiltin();
         // TODO move somewhere else (used at many places)
-        QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
+        QualType optype = usual_arithmetic_conversion(bl, br);
         if (!optype.isValid()) goto invalid;
         BuiltinType* bi = optype.getBuiltin();
         if (bl != bi) {
@@ -437,7 +437,7 @@ fn QualType Analyser.checkBinopSubArgs(Analyser* ma, BinaryOperator* b, QualType
         BuiltinType* bl = lcanon.getBuiltin();
         BuiltinType* br = rcanon.getBuiltin();
         // TODO move somewhere else (used at many places)
-        QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
+        QualType optype = usual_arithmetic_conversion(bl, br);
         if (!optype.isValid()) goto invalid;
         BuiltinType* bi = optype.getBuiltin();
         if (bl != bi) {
@@ -526,7 +526,7 @@ fn QualType Analyser.checkBinopComparison(Analyser* ma, BinaryOperator* b, QualT
         BuiltinType* bl = lcanon.getBuiltin();
         BuiltinType* br = rcanon.getBuiltin();
         // TODO move somewhere else (used at many places)
-        QualType optype = conversion_checker.usual_arithmetic_conversion(bl, br);
+        QualType optype = usual_arithmetic_conversion(bl, br);
         if (!optype.isValid()) goto invalid;
         BuiltinType* bi = optype.getBuiltin();
         if (bl != bi) {

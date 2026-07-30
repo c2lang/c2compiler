@@ -15,12 +15,13 @@
 
 module json;
 
+import c_errno { errno }
 import stdio { snprintf }
 import stdlib { malloc, free }
 import string { memcpy, strerror }
 import libc_fcntl { * }
-import c_errno { errno }
-import unistd { * }
+import unistd { close, write }
+
 import file_utils;
 
 fn u32 roundup(u32 size) {

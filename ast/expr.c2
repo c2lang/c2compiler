@@ -15,8 +15,8 @@
 
 module ast;
 
-import string_buffer { Buf }
 import src_loc { SrcLoc, SrcRange }
+import string_buffer { Buf }
 
 public type ExprKind enum u8 (const char* const name) {
     IntegerLiteral        : { "IntegerLiteral" },

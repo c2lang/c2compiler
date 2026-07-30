@@ -25,11 +25,11 @@ import file_utils;
 import ir { * }
 import ir_context { SymbolId }
 import ir_gen_locals { Locals, StackVar }
+import label_map;
 import source_mgr { SourceMgr }
 import string_buffer { Buf }
 import string_pool { Pool }
 import target_info;
-import label_map;
 import value_type { Value }
 
 import c_errno { errno }

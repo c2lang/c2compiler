@@ -15,8 +15,8 @@
 
 module ast;
 
-import string { memcpy }
 import stdlib { malloc, free }
+import string { memcpy }
 
 public type DeclList struct {
     u32 count;

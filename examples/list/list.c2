@@ -26,6 +26,7 @@ public fn void Element.init(Element* src) {
 }
 
 public fn void Element.addTail(Element* src, Element* item) {
+    assert(!item.next && !item.prev);
     Element* old_tail = src.prev;
     src.prev = item;
     item.next = src;
@@ -34,6 +35,7 @@ public fn void Element.addTail(Element* src, Element* item) {
 }
 
 public fn void Element.addFront(Element* src, Element* item) {
+    assert(!item.next && !item.prev);
     Element* old_head = src.next;
     old_head.prev = item;
     item.next = old_head;
@@ -42,16 +44,16 @@ public fn void Element.addFront(Element* src, Element* item) {
 }
 
 public fn Element* Element.popFront(Element* item) {
-    Element* node = item.next;
-    node.remove();
-    return node;
+    return item.next.detach();
 }
 
-public fn void Element.remove(Element* item) {
+public fn Element* Element.detach(Element* item) {
     Element* prev = item.prev;
     Element* next = item.next;
     prev.next = next;
     next.prev = prev;
+    item.next = item.prev = nil;
+    return item;
 }
 
 public fn u64 Element.size(const Element* src) {
@@ -69,13 +71,12 @@ public fn bool Element.isEmpty(const Element* src) {
 }
 
 public fn void Element.move(Element* src, Element* dest) {
+    // TODO seems bogus if `src == dest` or if `node == dest`
     Element* node = src.next;
-
     while (node != src) {
-        Element* tmp = node;
-        node = node.next;
-        tmp.remove();
-        dest.addTail(tmp);
+        Element* next = node.next;
+        dest.addTail(node.detach());
+        node = next;
     }
 }
 

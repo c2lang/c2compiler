@@ -16,10 +16,11 @@
 module example_socket;
 
 import stdio { printf }
-import stdlib { * }
-import unistd { * }
-import string { * }
+import stdlib { calloc, free, exit, EXIT_FAILURE }
+import string { memset, strcmp, strlen }
 import sys_socket { * }
+import unistd { close, read, write }
+
 import events;
 import logger;
 

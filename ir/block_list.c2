@@ -15,8 +15,8 @@
 
 module ir;
 
-import string { memcpy }
 import stdlib { calloc, free }
+import string { memcpy }
 
 public type BlockList struct {
     u32 count;

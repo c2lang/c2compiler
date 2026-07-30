@@ -15,9 +15,9 @@
 
 module build_file;
 
-import string_pool { Pool }
 import src_loc { SrcLoc }
 import string_list;
+import string_pool { Pool }
 
 import stdlib { malloc, free }
 import string { memcpy }

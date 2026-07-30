@@ -16,7 +16,7 @@
 module ast;
 
 import ast_context { Context }
-import string_buffer { Buf}
+import string_buffer { Buf }
 
 public type FunctionType struct @(opaque) {
     Type base;

@@ -17,9 +17,9 @@ module test;
 
 import stdio { printf }
 import stdlib { exit, EXIT_FAILURE }
-import unistd { * }
 import string { memset }
 import sys_socket { * }
+import unistd { close, read }
 
 fn void fatal(const char* msg) {
     printf("%s\n", msg);

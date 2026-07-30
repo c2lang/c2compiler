@@ -15,11 +15,11 @@
 
 module file_utils;
 
-import libc_fcntl { * }
 import c_errno { * }
+import stdlib { malloc, free }
+import libc_fcntl { * }
 import sys_stat { * }
 import unistd { read, close }
-import stdlib { malloc, free }
 
 fn isize read2(i32 hd, void* data, usize len) {
     u8* p = data;

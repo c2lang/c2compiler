@@ -1,10 +1,10 @@
 module bar;
 
 import faa;
-import stdlib;
+import stdlib { malloc }
 
 public fn i32 test1(i32 a) {
-    stdlib.malloc(10);
+    malloc(10);
     return 10 * a;
 }
 

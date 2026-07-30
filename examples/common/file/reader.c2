@@ -15,12 +15,12 @@
 
 module file_utils;
 
-import libc_fcntl { * }
 import c_errno { errno, EINTR }
-import unistd { * }
 import stdio { * }
-import stdlib { malloc, realloc, free }
+import stdlib { free, malloc, realloc }
 import string { memcpy }
+import libc_fcntl { open, O_RDONLY }
+import unistd { close, lseek, read }
 
 u8[1] empty;
 

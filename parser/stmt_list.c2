@@ -17,8 +17,8 @@ module stmt_list;
 
 import ast { Stmt }
 
-import string { memcpy, memset }
 import stdlib { malloc, free }
+import string { memcpy, memset }
 
 // Use stack for small lists, heap for larger ones
 

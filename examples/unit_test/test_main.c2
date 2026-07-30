@@ -2,7 +2,7 @@ module test_main;
 
 import c2test_main;
 
-import string;
+import string { strcmp }
 
 // Options:
 // (no args) - run all tests
@@ -15,7 +15,7 @@ public fn i32 main(i32 argc, char** argv) {
         return c2test_main.run_tests();
     }
     if (argc == 2) {
-        if (string.strcmp("-l", argv[1]) == 0) {
+        if (strcmp("-l", argv[1]) == 0) {
             c2test_main.show_tests();
             return 0;
         } else {

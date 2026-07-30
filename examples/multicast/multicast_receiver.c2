@@ -17,11 +17,11 @@ module multicast_receiver;
 
 import events;
 
+import c_errno { errno }
 import stdio { printf, fprintf, stderr, perror }
 import stdlib { exit, EXIT_FAILURE }
-import unistd { close }
-import c_errno { errno }
 import string { pstrcpy, strerror, memset }
+import unistd { close }
 import sys_socket { * }
 
 public type Receiver struct {

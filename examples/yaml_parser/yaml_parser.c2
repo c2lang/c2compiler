@@ -15,9 +15,15 @@
 
 module yaml;
 
-import stdlib { calloc, free }
 import csetjmp { JmpBufTag, setjmp, longjmp }
-import stdio { vsnprintf, snprintf }
+import stdio {
+#if YamlPrintToken
+    printf,
+#endif
+    snprintf,
+    vsnprintf
+}
+import stdlib { calloc, free }
 
 const u32 MaxDiag = 256;
 

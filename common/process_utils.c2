@@ -19,10 +19,10 @@ import file_utils;
 
 import c_errno { errno, EINTR }
 import ctype { isspace }
-import libc_fcntl { * }
 import stdio { * }
 import stdlib { * }
 import string { * }
+import libc_fcntl { * }
 import sys_stat { Stat, stat }
 import unistd { * }
 

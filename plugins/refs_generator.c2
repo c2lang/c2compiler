@@ -25,8 +25,8 @@ import source_mgr;
 import string_pool { Pool }
 import string_utils { endsWith }
 
-import string { memcpy, strlen }
 import stdlib { malloc, free }
+import string { memcpy, strlen }
 
 type Loc struct {
     u32 line;

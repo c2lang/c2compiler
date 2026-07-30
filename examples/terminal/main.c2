@@ -15,9 +15,9 @@
 
 module terminal;
 
+import stdio { fflush, printf, stdout }
 import ctermios { * }
-import stdio { * }
-import unistd { * }
+import unistd { read }
 
 fn void init(Termios *save) {
     tcgetattr(0, save);
@@ -38,7 +38,6 @@ fn char read_char() {
     if (numread == 1) return c;
     return 0;
 }
-
 
 public fn i32 main() {
     Termios old;

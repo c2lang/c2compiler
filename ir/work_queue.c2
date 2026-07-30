@@ -20,8 +20,8 @@ import ir_tools;
 
 import stdlib { calloc, malloc, free }
 import string { memset, memcpy }
-import unistd { sysconf, _SC_NPROCESSORS_ONLN }
 import pthread { Mutex, Pthread }
+import unistd { sysconf, _SC_NPROCESSORS_ONLN }
 
 const u32 MAX_THREADS = 32;
 

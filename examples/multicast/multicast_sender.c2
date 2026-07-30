@@ -18,7 +18,7 @@ module multicast_sender;
 import c_errno { errno }
 import stdio { fprintf, stderr }
 import stdlib { exit, EXIT_FAILURE }
-import string { strerror, memset, pstrcpy }
+import string { memset, pstrcpy, strerror }
 import sys_socket { * }
 import unistd { close }
 

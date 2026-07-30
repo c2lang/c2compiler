@@ -17,8 +17,8 @@ module struct_func_list;
 
 import ast;
 
-import string { memcpy }
 import stdlib { malloc, free }
+import string { memcpy }
 
 // this component is used to collect struct functions
 

@@ -30,10 +30,10 @@ import string_buffer { Buf }
 import string_list;
 
 import c_errno { errno }
-import libc_dirent { * }
 import stdio { puts }
 import stdlib { exit, EXIT_FAILURE }
 import string { strerror }
+import libc_dirent { * }
 
 fn Kind convertKind(build_target.Kind kind) {
     switch (kind) {

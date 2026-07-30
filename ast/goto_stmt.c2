@@ -16,8 +16,8 @@
 module ast;
 
 import ast_context { Context }
-import string_buffer { Buf}
 import src_loc { SrcLoc }
+import string_buffer { Buf}
 
 public type GotoStmt struct @(opaque) {
     Stmt base;

@@ -15,8 +15,8 @@
 
 module ast;
 
-import string { memset, memcpy }
 import stdlib { free, malloc }
+import string { memset, memcpy }
 
 public type FunctionDeclList struct {
     u32 count;

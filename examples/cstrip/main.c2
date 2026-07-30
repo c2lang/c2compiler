@@ -20,12 +20,12 @@ import stdio { * }
 import string { strcmp, strerror }
 
 import file_utils;
-import utils { * }
+import utils { StringBuffer }
 
 const char NEWLINE = 0x0A;
 
 /*
-    strip all lines startin with '//'
+    strip all lines starting with '//'
     TODO also handle multi-line comments
 */
 fn void strip_comments(const char* input, StringBuffer* out)

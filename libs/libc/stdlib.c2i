@@ -1,7 +1,7 @@
 module stdlib extern "C";
 
 #if __ASAN__ || __MSAN__ || __UBSAN__
-import string;
+import string { memset }
 #endif
 
 struct Div_t @(cname="div_t") {
@@ -24,7 +24,7 @@ void* calloc(size_t count, size_t size);
 void* malloc(size_t size) {
     // fill malloced blocks with junk if debugging
     void* p = calloc(size, 1);
-    return p ? string.memset(p, 0xAA, size) : p;
+    return p ? memset(p, 0xAA, size) : p;
 }
 #else
 void* malloc(size_t size);

@@ -15,8 +15,8 @@
 
 module ir;
 
-import string { memcpy }
 import stdlib { calloc, malloc, free }
+import string { memcpy }
 
 public type PhiClause struct {
     BlockId src;

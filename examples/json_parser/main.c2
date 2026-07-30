@@ -15,20 +15,21 @@
 
 module test;
 
-import stdio { * }
-import string { * }
-import stdlib;
-import sys_time;
-import unistd;
+import stdio { fprintf, printf, snprintf, stderr }
+import stdlib { atoi }
+import string { strcmp, strlen, strerror }
+import sys_time { Timeval, gettimeofday }
+import unistd { isatty }
 
 import file_utils;
 import json;
 
 const char[] Cache_suffix = ".cache";
 
+// should come from a library
 fn u64 current_time() {
-    sys_time.Timeval tv;
-    sys_time.gettimeofday(&tv, nil);
+    Timeval tv;
+    gettimeofday(&tv, nil);
     u64 now64 = (u64)tv.tv_sec;
     now64 *= 1000000;
     now64 += tv.tv_usec;
@@ -49,7 +50,7 @@ public fn i32 main(i32 argc, char** argv) {
         return 2;
     }
     const char* filename = argv[1];
-    bool show_times = unistd.isatty(1);
+    bool show_times = isatty(1);
     bool use_cache = false;
 
     json.Parser parser.init();
@@ -134,7 +135,7 @@ public fn i32 main(i32 argc, char** argv) {
     if (strcmp(filename, "json_parser/example5.json") == 0) {
         json.Iter iter = root.get_child_iter();
         if (iter.check_schema("ssso(ss)")) {
-            i32 id = stdlib.atoi(iter.value());
+            i32 id = atoi(iter.value());
             iter.next();
             const char* uid = iter.value();
             iter.next();

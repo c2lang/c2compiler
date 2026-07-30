@@ -15,15 +15,14 @@
 
 module other;
 
-import stdio;
+import stdio { printf }
 
 i32 counter = 10;
 
 public fn i32 test1() {
     counter++;
-    stdio.printf("counter %d\n", counter);
+    printf("counter %d\n", counter);
 
     return 0;
 }
-
 

@@ -15,10 +15,10 @@
 
 module toml;
 
-import stdio { snprintf, printf }
-import stdlib { * }
-import string { * }
 import csetjmp { JmpBufTag, setjmp, longjmp }
+import stdio { printf, snprintf }
+import stdlib { calloc, malloc, free, exit }
+import string { memcpy, memset, pstrcpy, strerror, strlen }
 
 import file_utils;
 

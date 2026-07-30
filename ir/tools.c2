@@ -28,7 +28,6 @@ import usage_counter;
 
 import stdlib { malloc, free }
 
-
 public type PrintFn fn void (const void* arg1, const void* arg2, const FunctionInfo* fi, const char* label);
 
 public type Tools struct {

@@ -18,8 +18,8 @@ module plugin_main;
 import ast;
 import console;
 import constants { Refs_filename }
-import refs_generator;
 import plugin_info;
+import refs_generator;
 import utils;
 
 import stdlib { calloc, free }

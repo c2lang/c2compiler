@@ -15,17 +15,17 @@
 
 module events;
 
-import stdlib { exit, EXIT_FAILURE }
-import unistd { read, write, pipe2 }
-import sys_time;
 import stdio { printf, fprintf, stderr }
-import string { memset }
-import libc_poll { * }
-import libc_fcntl { * }
+import stdlib { calloc, free, exit, EXIT_FAILURE }
+import libc_fcntl { O_CLOEXEC, O_NONBLOCK }
+import libc_poll { Pollfd, poll, POLLIN, POLLOUT }
+import sys_time { Timeval, gettimeofday }
+import unistd { pipe2, read, write }
 
+// TODO should come from a library
 public fn u64 current_time() {
-    sys_time.Timeval tv;
-    sys_time.gettimeofday(&tv, nil);
+    Timeval tv;
+    gettimeofday(&tv, nil);
     u64 now64 = (u64)tv.tv_sec;
     now64 *= 1000000;
     now64 += tv.tv_usec;
@@ -78,7 +78,7 @@ public fn Base* Base.create() {
         return nil;
     }
 
-    Base* base = stdlib.calloc(1, sizeof(Base));
+    Base* base = calloc(1, sizeof(Base));
     base.read_pipe = pipefd[0];
     base.write_pipe = pipefd[1];
     base.selfpipe.assign(base, base.read_pipe, READ, handlePipe, base);
@@ -88,7 +88,7 @@ public fn Base* Base.create() {
 }
 
 public fn void Base.destroy(Base* base) {
-    stdlib.free(base);
+    free(base);
 }
 
 public fn u8 Base.mainloop(Base* base) {
@@ -105,8 +105,7 @@ public fn void Base.loopbreak(Base* base, u8 return_value) {
     base.return_value = return_value;
     base.loop_break = 1;
     if (base.running_loop) {
-        Cmd cmd;
-        memset(&cmd, 0, sizeof(Cmd));
+        Cmd cmd = {}
         cmd.kind = CmdKind.LoopBreak;
         base.writeCmd(&cmd);
     }
@@ -200,7 +199,7 @@ fn void Base.internal_loop(Base* base) {
             }
         }
         printf("no event found.. error\n");
-        stdlib.exit(stdlib.EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -212,8 +211,7 @@ fn void Base.updateEvents(Base* base)
 public type Function fn void (void* arg1, void* arg2);
 
 public fn void Base.schedule_safe(Base* base, Function func, void* arg1, void* arg2) {
-    Cmd cmd;
-    memset(&cmd, 0, sizeof(Cmd));
+    Cmd cmd = {}
     cmd.kind = CmdKind.Callback;
     cmd.callback.func = func;
     cmd.callback.arg1 = arg1;
@@ -377,8 +375,7 @@ public fn void Timer.del(Timer* timer)
 
 public fn void Timer.add_sync(Timer* timer, u64 delay_us)
 {
-    Cmd cmd;
-    memset(&cmd, 0, sizeof(Cmd));
+    Cmd cmd = {}
     cmd.kind = CmdKind.TimerAdd;
     cmd.timer.timer = timer;
     cmd.timer.delay_us = delay_us;
@@ -387,8 +384,7 @@ public fn void Timer.add_sync(Timer* timer, u64 delay_us)
 
 public fn void Timer.del_sync(Timer* timer)
 {
-    Cmd cmd;
-    memset(&cmd, 0, sizeof(Cmd));
+    Cmd cmd = {}
     cmd.kind = CmdKind.TimerDel;
     cmd.timer.timer = timer;
     timer.base.writeCmd(&cmd);

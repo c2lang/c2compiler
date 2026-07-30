@@ -1,6 +1,6 @@
 module c2_assert;
 
-import stdio { * }
+import stdio { dprintf, vdprintf }
 import stdlib { abort }
 
 public fn i32 c2_assert_fail(const char* filename @(auto_file),

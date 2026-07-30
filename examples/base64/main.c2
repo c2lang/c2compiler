@@ -17,8 +17,9 @@ module tester;
 
 import c_errno { errno }
 import stdio { * }
-import stdlib { * }
-import string { * }
+import stdlib { atoi, free }
+import string { strchr, strcmp, strlen, strerror }
+
 import base64;
 
 /*

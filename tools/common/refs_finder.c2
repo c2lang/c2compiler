@@ -19,10 +19,10 @@ import file_utils;
 import string_pool { Pool }
 
 import c_errno { errno }
-import libc_dirent { * }
 import stdio { fprintf, stderr }
 import stdlib { malloc, free, exit, EXIT_FAILURE }
 import string { memcpy, strerror }
+import libc_dirent { * }
 
 public type Finder struct @(opaque) {
     const char* dirname;

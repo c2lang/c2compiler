@@ -17,8 +17,8 @@ module source_mgr;
 
 import color { Red, Normal, useColor }
 import file_utils;
-import string_pool { Pool }
 import src_loc { SrcLoc }
+import string_pool { Pool }
 
 import stdio { * }
 import stdlib { malloc, calloc, free }

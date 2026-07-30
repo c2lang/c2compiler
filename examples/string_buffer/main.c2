@@ -16,7 +16,7 @@
 module tester;
 
 import stdio { printf }
-import utils { StringBuffer }
+import utils { StringBuffer }   // should be implicit
 
 //type Callback fn void (StringBuffer* buf, const char* text);
 
@@ -35,8 +35,6 @@ public fn i32 main() {
 
     printf("size = %d\n", buf.size());
     printf("data = '%s'\n", buf.data());
-
-    //Callback cb = StringBuffer.add;
 
     buf.clear();
     buf.destroy();

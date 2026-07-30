@@ -18,7 +18,7 @@ module test;
 import file_utils;
 import xml;
 
-import stdio { * }
+import stdio { fprintf, printf, stderr }
 import string { strerror }
 
 public fn i32 main(i32 argc, char** argv) {
@@ -28,7 +28,6 @@ public fn i32 main(i32 argc, char** argv) {
     }
     const char* filename = argv[1];
     bool verbose = (argc == 3);
-
     printf("parsing %s\n", filename);
     file_utils.Reader file;
     if (!file.open(filename)) {

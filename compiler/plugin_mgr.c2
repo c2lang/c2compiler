@@ -23,11 +23,11 @@ import string_pool { Pool }
 import string_utils;
 
 import c_errno { errno }
-import dlfcn { * }
-import libc_dirent { * }
 import stdio { snprintf }
 import stdlib { malloc, calloc, free }
 import string { memcpy, strerror }
+import dlfcn { * }
+import libc_dirent { * }
 
 #if SYSTEM_DARWIN
 const char* lib_ext = ".dylib";

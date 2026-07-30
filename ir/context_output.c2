@@ -21,7 +21,7 @@ import file_utils;
 import console;
 import string_buffer;
 
-import stdio;
+import stdio { puts }
 
 public fn void Context.writeOutput(Context* c, const char* output_dir, const char* target_name) {
     // generate create Makefile
@@ -64,7 +64,7 @@ public fn void Context.writeOutput(Context* c, const char* output_dir, const cha
     //.section   TODO
 
     if (1) {
-        stdio.puts(out.data());
+        puts(out.data());
     }
 
     c.write(output_dir, "output.s", out);

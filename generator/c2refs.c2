@@ -17,7 +17,6 @@ module c2refs;
 
 import radix_tree { Tree }
 
-import libc_fcntl { * }
 #if C2TagsGenerate
 #else
 import stdio { printf }
@@ -25,6 +24,7 @@ import sys_stat { Stat, stat }
 #endif
 import stdlib { * }
 import string { * }
+import libc_fcntl { * }
 import sys_mman { * }
 import unistd { * }
 

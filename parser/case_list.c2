@@ -17,8 +17,8 @@ module case_list;
 
 import ast { SwitchCase }
 
-import string { memset, memcpy }
 import stdlib { malloc, free }
+import string { memset, memcpy }
 
 // Use stack for small lists, heap for larger ones
 

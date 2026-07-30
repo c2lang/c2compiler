@@ -14,7 +14,8 @@
  */
 
 module test;
-import stdio;
+
+import stdio { printf }
 
 fn u64 rdtsc() @(inline) {
 #if ARCH_X86_64
@@ -35,9 +36,9 @@ fn u64 rdtsc() @(inline) {
 }
 
 public fn i32 main() {
-    stdio.printf("time is now: %d\n", rdtsc());
-    stdio.printf("time is now: %d\n", rdtsc());
-    stdio.printf("time is now: %d\n", rdtsc());
+    printf("time is now: %d\n", rdtsc());
+    printf("time is now: %d\n", rdtsc());
+    printf("time is now: %d\n", rdtsc());
     return 0;
 }
 

@@ -16,9 +16,9 @@
 module build_file_parser;
 
 import build_file { Info }
-import string_pool { Pool }
 import source_mgr { SourceMgr }
 import src_loc { SrcLoc }
+import string_pool { Pool }
 import yaml { Parser, Node, Iter }
 
 import stdio { fprintf, stderr }

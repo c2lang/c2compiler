@@ -18,8 +18,8 @@ module incr_array_list;
 import ast { Expr, ExprList }
 import src_loc { SrcLoc }
 
-import string { memcpy }
 import stdlib { malloc, free }
+import string { memcpy }
 
 public type Info struct {
     u32 name;

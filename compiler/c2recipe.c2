@@ -15,10 +15,10 @@
 
 module c2recipe;
 
-import string_pool { Pool }
+import build_target { Target, PluginList }
 import source_mgr { SourceMgr }
 import src_loc { SrcLoc }
-import build_target { Target, PluginList }
+import string_pool { Pool }
 
 import stdlib { malloc, calloc, free }
 import string { memcpy }

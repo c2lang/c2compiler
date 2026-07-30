@@ -16,8 +16,9 @@
 module string_map;
 
 import string_pool { Pool }
-import string { memset, memcpy, strcmp }
+
 import stdlib { malloc, free }
+import string { memset, memcpy, strcmp }
 
 public type Map struct {
     Pool* pool;

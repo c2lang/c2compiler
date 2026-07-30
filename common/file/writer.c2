@@ -15,8 +15,8 @@
 
 module file_utils;
 
-import libc_fcntl { * }
 import c_errno { errno, EINTR }
+import libc_fcntl { * }
 import unistd { write, close }
 
 fn isize write2(i32 hd, const void* data, usize len) {
