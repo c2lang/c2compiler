@@ -40,8 +40,7 @@ fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
         StringLiteral* s = (StringLiteral*)e;
 
         SymbolId id = gen.ctx.addStringLiteral(gen.createStringVar(), gen.idx2name(s.getText()), s.getSize());
-        ir.Ref ref;
-        ref.init(RefKind.Symbol, id);
+        ir.Ref ref.init(RefKind.Symbol, id);
         *result = ref;
         break;
     case Nil:
@@ -165,8 +164,7 @@ fn void Generator.emitIdentifier(Generator* gen, ir.Ref* result, const Expr* e) 
 
 fn void Generator.emitSymbol(Generator* gen, ir.Ref* result, Decl* d) {
     SymbolId sid = gen.createSymbol(d);
-    ir.Ref ref;
-    ref.init(RefKind.Symbol, sid);
+    ir.Ref ref.init(RefKind.Symbol, sid);
     *result = ref;
 }
 
@@ -181,8 +179,7 @@ fn void Generator.emitVarDecl(Generator* gen, ir.Ref* result, Decl* d) {
             gen_idx = gen.ctx.addGlobalVar(gen.createLocalName(d), qt.getAlignment(), gen.isExternal(d));
             d.setGenIdx(gen_idx);
         }
-        ir.Ref ref;
-        ref.init(RefKind.Symbol, gen_idx);
+        ir.Ref ref.init(RefKind.Symbol, gen_idx);
         *result = ref;
     } else if (vd.isLocal() || vd.isParameter()) {
         StackVar* var = gen.locals.find(vd);
@@ -245,8 +242,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, ir.Ref* result, const Expr* 
         ir.Ref left_val = gen.ctx.addLoadInstr(t, left);
 
         // add/sub
-        ir.Ref value;
-        value.init(RefKind.Value, 1);
+        ir.Ref value.init(RefKind.Value, 1);
         InstrKind k;
         if (uo.getOpcode() == PostInc || uo.getOpcode() == PreInc) {
             k = InstrKind.Add;
@@ -277,8 +273,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, ir.Ref* result, const Expr* 
         // Expr like '-f' still come here, where f is non-CTV
         assert(!e.isCtv());
         // emit: sub 0, <expr>
-        ir.Ref left;
-        left.init(RefKind.Value, 0);
+        ir.Ref left.init(RefKind.Value, 0);
         ir.Ref right;
         gen.emitExpr(&right, uo.getInner());
         *result = gen.ctx.addBinaryInstr(InstrKind.Sub, left, right);
@@ -296,13 +291,11 @@ fn void Generator.emitUnaryOperator(Generator* gen, ir.Ref* result, const Expr* 
         gen.emitExpr(&lhs, uo.getInner());
 
         // convert integer to bool: compare to 0
-        ir.Ref zero;
-        zero.init(RefKind.Value, 0);
+        ir.Ref zero.init(RefKind.Value, 0);
         ir.Ref rhs = gen.ctx.addBinaryInstr(InstrKind.CmpNe, lhs, zero);
 
         // invert: xor with 1
-        ir.Ref one;
-        one.init(RefKind.Value, 1);
+        ir.Ref one.init(RefKind.Value, 1);
         rhs = gen.ctx.addBinaryInstr(InstrKind.Xor, rhs, one);
 
         // TODO zext i1 -> i32
@@ -386,8 +379,7 @@ fn void Generator.emitCond(Generator* gen, const Expr* e, BlockId true_blk, Bloc
         break;
     }
     gen.emitExpr(&ref, e);
-    ir.Ref zero;
-    zero.init(RefKind.Value, 0);
+    ir.Ref zero.init(RefKind.Value, 0);
     ir.Ref cond = gen.ctx.addBinaryInstr(InstrKind.CmpNe, ref, zero);
     c.addJmpIfInstr(cond, true_blk, false_blk);
     c.endBlock();
@@ -401,8 +393,7 @@ fn void Generator.emitAssignCond(Generator* gen, ir.Type t, ir.Ref lhs, ir.Ref r
     //   store a, %x
     //   icmp ne %x, 0
     c.addStoreInstr(t, rhs, lhs);
-    ir.Ref zero;
-    zero.init(RefKind.Value, 0);
+    ir.Ref zero.init(RefKind.Value, 0);
     ir.Ref cond = gen.ctx.addBinaryInstr(InstrKind.CmpNe, rhs, zero);
     c.addJmpIfInstr(cond, left, right);
     c.endBlock();
@@ -574,8 +565,7 @@ fn void Generator.emitStructInitExpr(Generator* gen, const StackVar* var, const 
     }
 
     if (ile.hasDesignators()) {
-        FieldStructLayouter layouter;
-        layouter.init(gen, std.getSize(), std.getDesigMemberCount());
+        FieldStructLayouter layouter.init(gen, std.getSize(), std.getDesigMemberCount());
         for (u32 i=0; i<num_values; i++) {
             FieldDesignatedInitExpr* fdi = (FieldDesignatedInitExpr*)values[i];
             const FieldInitField* fif = fdi.getMemberInfo();

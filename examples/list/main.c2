@@ -55,10 +55,8 @@ fn void Module.addDep(Module* m, Module* dep) {
 }
 
 fn void check(Element* all, Module* top) {
-    Element todo;
-    Element done;
-    todo.init();
-    done.init();
+    Element todo.init();
+    Element done.init();
 
     i32 max_depth = (i32)all.size();
     top.list.remove();
@@ -88,8 +86,7 @@ fn void check(Element* all, Module* top) {
 public fn i32 main() {
     printf("this program orders a DAG by depth, using List\n");
 
-    Element modules;
-    modules.init();
+    Element modules.init();
 
     Module* a = createModule(&modules, "A");
     Module* b = createModule(&modules, "B");

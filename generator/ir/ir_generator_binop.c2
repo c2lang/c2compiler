@@ -166,8 +166,7 @@ fn void Generator.emitLogicalAnd(Generator* gen, ir.Ref* result, const Expr* e) 
     ir.Ref left;
     gen.emitExpr(&left, b.getLHS());
 
-    ir.Ref zero;
-    zero.init(RefKind.Value, 0);
+    ir.Ref zero.init(RefKind.Value, 0);
 
     ir.Ref cond1 = c.addBinaryInstr(InstrKind.CmpNe, left, zero);
 
@@ -217,8 +216,7 @@ fn void Generator.emitLogicalOr(Generator* gen, ir.Ref* result, const Expr* e) {
     ir.Ref left;
     gen.emitExpr(&left, b.getLHS());
 
-    ir.Ref zero;
-    zero.init(RefKind.Value, 0);
+    ir.Ref zero.init(RefKind.Value, 0);
 
     ir.Ref cond1 = gen.ctx.addBinaryInstr(InstrKind.CmpNe, left, zero);
 
@@ -244,8 +242,7 @@ fn void Generator.emitLogicalOr(Generator* gen, ir.Ref* result, const Expr* e) {
     c.endBlock();
     c.startBlock(join_blk);
 
-    ir.Ref one;
-    one.init(RefKind.Value, 1);
+    ir.Ref one.init(RefKind.Value, 1);
 
     *result = gen.ctx.addPhi2Instr(block1, one, false_blk, cond2);
 }

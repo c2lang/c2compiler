@@ -32,11 +32,9 @@ fn void timeout_func(void*) {
 }
 
 public fn i32 main() {
-    logger.Base logbase;
-    logbase.init(logger.Level.Info, unistd.isatty(1), true);
+    logger.Base logbase.init(logger.Level.Info, unistd.isatty(1), true);
 
-    logger.Log log;
-    log.init(&logbase, "main");
+    logger.Log log.init(&logbase, "main");
     mainlog = &log;
 
     log.info("starting");
