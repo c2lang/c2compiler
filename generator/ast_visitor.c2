@@ -18,7 +18,6 @@ module ast_visitor;
 import ast local;
 
 import stdlib;
-
 public type OnRef fn void (void* arg, const Ref* ref);
 
 public type Visitor struct @(opaque) {
@@ -51,7 +50,21 @@ public fn void Visitor.handle(Visitor* v, Decl* d) {
         v.handleFunction((FunctionDecl*)d);
         break;
     case Import:
-        // TODO
+        ImportDecl* id = (ImportDecl*)d;
+        u32 size = id.getSymlistSize();
+        if (size) {
+            const Symbol* symbols = id.getSymlistData();
+            for (u32 i = 0; i < size; i++) {
+                const Symbol* s = &symbols[i];
+                Ref ref = {
+                    .name_idx = s.name_idx,
+                    .loc = s.loc,
+                    .decl = s.decl,
+                }
+                v.on_ref(v.arg, &ref);
+            }
+        }
+
         break;
     case StructType:
         StructTypeDecl* s = (StructTypeDecl*)d;

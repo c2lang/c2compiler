@@ -127,7 +127,10 @@ fn const char* Generator.getName(const Generator* gen, const Decl* d) {
 fn void Generator.on_decl(void* arg, Decl* d, bool global) {
     Generator* gen = arg;
 
-    if (d.isImport()) return;
+    if (d.isImport()) {
+        gen.visitor.handle(d);
+        return;
+    }
 
     const char* name = gen.getName(d);
     if (name && global) {

@@ -75,6 +75,7 @@ public fn SrcLoc ImportDecl.getLoc(const ImportDecl* d) {
 }
 
 public fn Symbol* ImportDecl.getSymlistData(ImportDecl* d) { return d.symlist; }
+
 public fn u32 ImportDecl.getSymlistSize(const ImportDecl* d) { return d.base.importDeclBits.symlist_count; }
 
 public fn void ImportDecl.setDest(ImportDecl* d, Module* mod) { d.dest = mod; }
