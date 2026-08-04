@@ -18,6 +18,7 @@ module warning_flags;
 public type Flags struct {
     bool no_unused;
     bool no_unused_variable;
+    bool no_unused_struct_member;
     bool no_unused_function;
     bool no_unused_parameter;
     bool no_unused_type;

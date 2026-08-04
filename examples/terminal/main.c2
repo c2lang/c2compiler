@@ -19,7 +19,7 @@ import ctermios local;
 import stdio local;
 import unistd local;
 
-public fn void init(Termios *save) {
+fn void init(Termios *save) {
     tcgetattr(0, save);
     Termios new = *save;
     new.c_lflag &= ~(ICANON | ECHO);
@@ -28,11 +28,11 @@ public fn void init(Termios *save) {
     tcsetattr(0, TCSANOW, &new);
 }
 
-public fn void reset(Termios *old) {
+fn void reset(Termios *old) {
     tcsetattr(0, TCSANOW, old);
 }
 
-public fn char read_char() {
+fn char read_char() {
     char c;
     isize numread = read(0, &c, 1);
     if (numread == 1) return c;

@@ -191,6 +191,7 @@ public fn void Target.addLib(Target* t, u32 lib, Kind kind) {
 public fn void Target.disableWarnings(Target* t) {
     t.warnings.no_unused = true;
     t.warnings.no_unused_variable = true;
+    t.warnings.no_unused_struct_member = true;
     t.warnings.no_unused_function = true;
     t.warnings.no_unused_parameter = true;
     t.warnings.no_unused_type = true;
@@ -208,6 +209,7 @@ public fn void Target.disableWarnings(Target* t) {
 public fn void Target.enableWarnings(Target* t) {
     t.warnings.no_unused = false;
     t.warnings.no_unused_variable = false;
+    t.warnings.no_unused_struct_member = false;
     t.warnings.no_unused_function = false;
     t.warnings.no_unused_parameter = false;
     t.warnings.no_unused_type = false;

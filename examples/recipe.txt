@@ -15,7 +15,10 @@ executable cstrip
 end
 
 executable event
-    $warnings no-unused
+    $warnings no-unused-parameter
+    $warnings no-unused-variable
+    $warnings no-unused-public
+    $warnings no-unused-function
     $backend c
     common/color.c2
     common/logger.c2
@@ -37,7 +40,10 @@ executable inline_asm
 end
 
 executable json_parser
-    $warnings no-unused
+    $warnings no-unused-parameter
+    $warnings no-unused-struct-member
+    $warnings no-unused-function
+    $warnings no-unused-public
     $backend c
     common/file/reader.c2
     common/file/writer.c2
@@ -72,7 +78,7 @@ end
 # Disabled because location of lua.a/lua.so needs to be specified
 #executable lua_test
 #    $warnings no-unused-parameter
-#	$backend c
+#    $backend c
 #    $use lua dynamic
 #    common/color.c2
 #    lua/script.c2
@@ -96,7 +102,8 @@ executable string
 end
 
 executable toml_parser
-    $warnings no-unused
+    $warnings no-unused-function
+    $warnings no-unused-struct-member
     $backend c
 #    $config DEBUG_NODES
     common/file/reader.c2
@@ -106,7 +113,10 @@ executable toml_parser
 end
 
 executable yaml_parser
-    $warnings no-unused
+    $warnings no-unused-function
+    $warnings no-unused-parameter
+    $warnings no-unused-public
+    $warnings no-unused-struct-member
     $backend c
 #    $config YAML_PRINT_TOKENS
     common/file/reader.c2
@@ -119,7 +129,8 @@ executable yaml_parser
 end
 
 executable xml_parser
-    $warnings no-unused
+    $warnings no-unused-function
+    $warnings no-unused-variable
     $backend c
     common/color.c2
     common/file/reader.c2
@@ -145,14 +156,14 @@ lib plugin1 dynamic
 end
 
 lib plugin2 dynamic
-    $warnings no-unused-public
+#    $warnings no-unused-public
     $backend c
     $export plugin_main
     plugin/plugin2.c2
 end
 
 executable plugin_mgr
-    $warnings no-unused-public
+#    $warnings no-unused-public
     $backend c
     $use dl dynamic
     plugin/other.c2
@@ -180,7 +191,10 @@ executable load_file
 end
 
 executable unit_test
-    $warnings no-unused
+    $warnings no-unused-function
+    $warnings no-unused-parameter
+    $warnings no-unused-public
+    $warnings no-unused-struct-member
     $backend c
     $plugin unit_test []
 
@@ -216,7 +230,6 @@ executable dir_walker
 end
 
 executable terminal
-    $warnings no-unused-public
     $backend c
 
     terminal/main.c2

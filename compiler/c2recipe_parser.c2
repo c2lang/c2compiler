@@ -522,6 +522,7 @@ fn void Parser.parseWarnings(Parser* p) {
         case "unused":
             warnings.no_unused = disable;
             warnings.no_unused_variable = disable;
+            warnings.no_unused_struct_member = disable;
             warnings.no_unused_function = disable;
             warnings.no_unused_parameter = disable;
             warnings.no_unused_type = disable;
@@ -534,6 +535,10 @@ fn void Parser.parseWarnings(Parser* p) {
             break;
         case "unused-variable":
             warnings.no_unused_variable = disable;
+            warnings.no_unused_struct_member = disable;  // temporary until new bootstrap
+            break;
+        case "unused-struct-member":
+            warnings.no_unused_struct_member = disable;
             break;
         case "unused-function":
             warnings.no_unused_function = disable;
