@@ -1,13 +1,13 @@
 // @warnings{no-unused}
 module test;
 
-u32[] a1 = {1, 2, 3};     // @error{no semicolon allowed after initializer list}
+u32[] a1 = {1, 2, 3};     // @warning{no semicolon allowed after initializer list}
 
 u32[+] b;
-a += {1, 2, 3};     // @error{no semicolon allowed after initializer list}
+a += {1, 2, 3};     // @warning{no semicolon allowed after initializer list}
 
 fn void fn1() {
-    u32[] a = {1, 2, 3};     // @error{no semicolon allowed after initializer list}
+    u32[] a = {1, 2, 3};     // @warning{no semicolon allowed after initializer list}
 }
 
 public fn i32 main() {
