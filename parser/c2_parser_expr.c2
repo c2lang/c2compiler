@@ -617,7 +617,7 @@ fn Expr* Parser.parseInitList(Parser* p) {
     if (p.tok.kind == LBrace) p.expect(Comma); // always gives error
 
     SrcLoc endLoc = p.tok.loc;
-    p.expectAndConsume(RBrace);
+    p.consumeRBrace("initializer list");
     Expr* e = (Expr*)p.builder.actOnInitList(loc, endLoc, values.getExprs(), values.size());
     values.free();
     return e;
