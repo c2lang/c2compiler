@@ -2,12 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [ master, dev, ci_testing, bb_next ]
+    branches: [ header ]
   pull_request:
-    branches: [ master ]
+    branches: [ header ]
 
 jobs:
-
   linux:
     name: Linux (Ubuntu)
     runs-on: ubuntu-latest
@@ -21,15 +20,8 @@ jobs:
       - name: clone repo
         uses: actions/checkout@v6
 
-      - name: bootstrap + compile
-        run: |
-          . env.sh
-          make all
-
-      - name: run unit-tests
-        run: |
-          . env.sh
-          make test
+      - name: header dump
+        run: make globals
 
 #  linux-32bits:
 #    name: Linux 32-bits
@@ -43,10 +35,8 @@ jobs:
 #        with:
 #          arch: x86
 #          packages: "build-base make"
-#      - name: bootstrap + compile + tests
-#        run: |
-#          . env.sh
-#          make all test CONFIG_32BIT=y
+#      - name: header dump
+#        run: make globals CONFIG_32BIT=y
 
   macos:
     name: macOS
@@ -57,30 +47,27 @@ jobs:
         os: [macos-14, macos-15]
     steps:
       - uses: actions/checkout@v6
-      - name: bootstrap + compile + tests
-        run: |
-          . env.sh
-          make all test
+      - name: header dump
+        run: make globals
 
   openbsd:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: bootstrap + compile + tests
+      - name: header dump
         uses: vmactions/openbsd-vm@v1
         with:
           usesh: true
           prepare: |
             pkg_add gmake
           run: |
-            . ./env.sh
-            gmake all test MAKE=gmake
+            gmake globals MAKE=gmake
 
   freebsd:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: bootstrap + compile + tests
+      - name: header dump
         uses: vmactions/freebsd-vm@v1
         with:
           usesh: true
@@ -88,5 +75,4 @@ jobs:
             pkg install -y gmake
           run: |
             . env.sh
-            gmake all test MAKE=gmake
-
+            gmake globals MAKE=gmake
