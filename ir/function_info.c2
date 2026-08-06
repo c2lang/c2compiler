@@ -29,7 +29,7 @@ public type FunctionInfo struct {
     u8[1 + constants.MaxCallArgs/2] args;   // stores 2 ir.Types per u8, first low, then high bits
     u32 id;
 }
-static_assert(88, sizeof(FunctionInfo));
+static_assert(sizeof(void*) == 4 ? 68 : 88, sizeof(FunctionInfo));
 
 public fn FunctionInfo* FunctionInfo.create(u32 id, u32 num_blks, u32 num_instr, u32 num_refs) {
     FunctionInfo* fi = stdlib.malloc(sizeof(FunctionInfo));

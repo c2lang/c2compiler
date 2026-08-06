@@ -79,6 +79,7 @@ public type Options struct {
     bool asan;
     bool msan;
     bool ubsan;
+    bool m32;
     const char* libdir; // no ownership, from environment variable C2_LIBDIR
     const char* target_triple;
 }
@@ -255,7 +256,7 @@ fn void Compiler.build(Compiler* c,
             // parse into multiple, add each to string-pool
             string_utils.split_paths(c.opts.libdir, c, Compiler.addLibPath);
         }
-        getNativeTarget(&c.targetInfo);
+        getNativeTarget(&c.targetInfo, opts.m32);
     }
     if (target_str) {
         if (!fromString(&c.targetInfo, target_str)) {
@@ -263,7 +264,7 @@ fn void Compiler.build(Compiler* c,
             stdlib.exit(-1);
         }
     } else {
-        getNativeTarget(&c.targetInfo);
+        getNativeTarget(&c.targetInfo, opts.m32);
     }
     console.debug("triple: %s", c.targetInfo.str());
 
@@ -285,7 +286,7 @@ fn void Compiler.build(Compiler* c,
 
     // TODO: reorganize these objects:
     //  ast.AstContext should the global object
-    c.context = ast_context.create(16*1024, c.targetInfo.ptrWidth / 8);
+    c.context = ast_context.create(16*1024, c.targetInfo.ptrWidth / 8, c.targetInfo.longWidth / 8);
     ast.initialize(c.context, c.astPool, color.useColor());
 
     c.attr_handler = attr_handler.create(diags, c.astPool, target.getWarnings());
