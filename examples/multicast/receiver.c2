@@ -25,8 +25,7 @@ const u16 MULTICAST_PORT = 12345;
 public fn i32 main() {
     events.Base* evbase = events.Base.create();
 
-    Receiver receiver;
-    receiver.init(evbase, MULTICAST_IP, MULTICAST_PORT);
+    Receiver receiver.init(evbase, MULTICAST_IP, MULTICAST_PORT);
 
     u8 ret = evbase.mainloop();
 

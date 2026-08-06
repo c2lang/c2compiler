@@ -18,12 +18,10 @@ import logger;
 import unistd;
 
 public fn i32 main(i32 argc, char** argv) {
-    logger.Base logbase;
     bool relative_times = (argc == 2 && !*argv[1] == 'r');
-    logbase.init(logger.Level.Info, unistd.isatty(1), relative_times);
+    logger.Base logbase.init(logger.Level.Info, unistd.isatty(1), relative_times);
 
-    logger.Log log;
-    log.init(&logbase, "main");
+    logger.Log log.init(&logbase, "main");
 
     log.info("call this example with an extra argument to show relative times");
     log.debug("debug msg");
@@ -32,8 +30,7 @@ public fn i32 main(i32 argc, char** argv) {
     log.error("Error number %d", 10);
 
     // meanwhile in another component..
-    logger.Log log2;
-    log2.init(&logbase, "server");
+    logger.Log log2.init(&logbase, "server");
     log2.setLevel(logger.Level.Debug);
     log2.info("got new connection");
     log2.debug("client connected from %s, fd %d", "127.0.0.1", 34);

@@ -377,8 +377,7 @@ fn void Generator.emitGlobalStructInit(Generator* gen, const Expr* e) {
     StructTypeDecl* std = st.getDecl();
 
     if (ile.hasDesignators()) {
-        FieldStructLayouter layouter;
-        layouter.init(gen, std.getSize(), std.getDesigMemberCount());
+        FieldStructLayouter layouter.init(gen, std.getSize(), std.getDesigMemberCount());
         for (u32 i=0; i<num_values; i++) {
             FieldDesignatedInitExpr* fdi = (FieldDesignatedInitExpr*)values[i];
             const FieldInitField* fif = fdi.getMemberInfo();
@@ -388,8 +387,7 @@ fn void Generator.emitGlobalStructInit(Generator* gen, const Expr* e) {
         }
         layouter.finalize();
     } else {
-        BasicStructLayouter layouter;
-        layouter.init(gen, std.getLayout());
+        BasicStructLayouter layouter.init(gen, std.getLayout());
         for (u32 i=0; i<num_values; i++) layouter.add(i, values[i]);
         layouter.finalize();
     }
@@ -597,8 +595,7 @@ public fn void generate(const char* target,
         return;
     }
 
-    Generator gen;
-    gen.init(sm, astPool, targetInfo, buildInfo, target, ir_dir, enable_asserts, print, print_all);
+    Generator gen.init(sm, astPool, targetInfo, buildInfo, target, ir_dir, enable_asserts, print, print_all);
     gen.mainFunc = mainFunc;
 
     // TODO also generate source libs, inline functions for interface files

@@ -26,8 +26,7 @@ const u16 MULTICAST_PORT = 12345;
 
 
 public fn i32 main() {
-    Sender sender;
-    sender.init(MULTICAST_IP, MULTICAST_PORT);
+    Sender sender.init(MULTICAST_IP, MULTICAST_PORT);
 
     u32 nr = 0;
     while (1) {

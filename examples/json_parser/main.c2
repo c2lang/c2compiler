@@ -161,8 +161,7 @@ public fn i32 main(i32 argc, char** argv) {
     parser.destroy();
 
 #if 0
-    json.Builder builder;
-    builder.init(1024);
+    json.Builder builder.init(1024);
     builder.addArray(nil);
     builder.addNumber(nil, 2);
     builder.addValue(nil, "19223201");

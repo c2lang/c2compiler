@@ -29,8 +29,7 @@ public fn i32 main(i32 argc, char** argv) {
     const char* scriptName = "lua/script1.lua";
     if (argc == 2) scriptName = argv[1];
 
-    script.LuaState ls;
-    ls.init();
+    script.LuaState ls.init();
 
     lua.atpanic(ls.l, atpanic);
     ls.registerFunc("startScript", script.startScript);
