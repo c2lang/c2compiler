@@ -339,7 +339,8 @@ fn void Generator.emitInit(Generator* gen, const Expr* e, u32 size) {
         gen.ctx.addInitSymbol(sid);
         break;
     case Paren:
-    case BitOffset:
+    case ArraySelection:
+    case BitSelection:
         e.dump();
         assert(0);  // should be CTV
         break;

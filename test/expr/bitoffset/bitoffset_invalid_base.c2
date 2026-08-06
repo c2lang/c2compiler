@@ -8,21 +8,22 @@ u32 b = 0;
 i32 a = 1;
 fn void test1() {
     b = b[2:1];
-    b = a[2:1];      // @error{bitoffsets are only allowed on unsigned integer type}
+    b = a[2:1];      // @error{bitoffsets are only allowed on unsigned integer types}
 }
 
 fn void test2() {
     bool c = true;
-    b = c[0:0];      // @error{bitoffsets are only allowed on unsigned integer type}
+    b = c[0:0];      // @error{bitoffsets are only allowed on unsigned integer types}
 }
 
 fn void test3() {
     const u8* text = "hallo";
-    b = text[4:2];   // @error{bitoffsets are only allowed on unsigned integer type}
+    b = text[4:2];   // @error{array selections are not supported yet}
 }
 
 fn void test4() {
-    b = test1[4:2];  // @error{bitoffsets are only allowed on unsigned integer type}
+    // should reject because neither a builtin nor an array nor a pointer
+    b = test1[4:2];  // @error{array selections are not supported yet}
 }
 
 fn void test5() {
@@ -33,6 +34,6 @@ fn void test5() {
     b = f[2:1];
 
     Int e = 1;
-    b = e[2:1];      // @error{bitoffsets are only allowed on unsigned integer type}
+    b = e[2:1];      // @error{bitoffsets are only allowed on unsigned integer types}
 }
 
