@@ -47,7 +47,7 @@ type Point struct {
 static inline
 void test1_myfunc(const test2_Point* p)
 {
-  test2_Point points[3];
+  test2_Point points[3] = { 0 };
   points[1] = *p;
 }
 
