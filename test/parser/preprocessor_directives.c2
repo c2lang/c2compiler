@@ -28,9 +28,9 @@ static_assert(Z, 1);
 #warning /* comment */ this is a disabled warning
 #endif
 
-/**/ // @warning{this is a warning} +1
+     // @warning{this is a warning} +1
 #warning this is a warning
-/**/ // @warning{this is a warning} +1
+     // @warning{this is a warning} +1
 #warning /* comment */ this is a warning
 
 public fn i32 main() {

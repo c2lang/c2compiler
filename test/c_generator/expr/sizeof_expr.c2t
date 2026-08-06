@@ -40,7 +40,7 @@ public fn i32 main(i32 argc, const char** argv) {
 }
 
 
-// @expect{atleast, cgen/build.c}
+// @expect64{atleast, cgen/build.c}
 
 int main(int argc, const char** argv)
 {
@@ -49,6 +49,29 @@ int main(int argc, const char** argv)
     //int c = 8;
     int d = 4;
     int e = 8;
+    //int f = 12;
+    int g = 24;
+    int h = 4;
+    int i = 8;
+    int j = 24;
+    int k = 4;
+    int l = 8;
+    int o1 = 10;
+    int o2 = 20;
+    int o3 = 40;
+
+    return 0;
+}
+
+// @expect32{atleast, cgen/build.c}
+
+int main(int argc, const char** argv)
+{
+    int a = 4;
+    int b = 4;
+    //int c = 4;
+    int d = 4;
+    int e = 4;
     //int f = 12;
     int g = 24;
     int h = 4;
