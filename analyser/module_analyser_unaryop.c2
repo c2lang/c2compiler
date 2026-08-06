@@ -92,6 +92,10 @@ fn QualType Analyser.analyseUnaryOperator(Analyser* ma, Expr** e_ptr, u32 side) 
         if (!ma.getIdentifierKind(inner)) return QualType_Invalid;
         if (canon.isConst() && (inner.isIdentifier() || inner.isMember())) {
             VarDecl* vd = getVarDecl(inner);
+            if (vd.isUntypedGlobal()) {
+                ma.errorRange(e.getLoc(), e.getRange(), "cannot take the address of an untyped global constant");
+                return QualType_Invalid;
+            }
             if (vd) vd.setAddrUsed();
         }
         t = ma.builder.actOnPointerType(canon);

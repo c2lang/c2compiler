@@ -544,6 +544,12 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
     TypeRefHolder ref.init();
     p.parseTypeSpecifier(&ref);
 
+    bool has_block = false;
+    if (p.tok.kind == LBrace) {
+        has_block = true;
+        p.consumeToken();
+    }
+
     for (;;) {
         p.expectIdentifier();
 
@@ -602,6 +608,8 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
         if (p.tok.kind != Comma)
             break;
         p.consumeToken();
+        if (has_block && p.tok.kind == RBrace)
+            break;
         if (isCondition)
             p.error("cannot define multiple variables in a condition");
         if (ref.isPointer() || ref.isArray())
@@ -609,6 +617,9 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
         if (num_decls >= elemsof(decls))
             p.error("too many variables defined in a single statement");
     }
+    if (has_block) {
+        p.expectAndConsume(RBrace);
+    } else
     if (checkSemi) {
         p.consumeSemicolon(need_semi);
     }

@@ -448,14 +448,34 @@ fn QualType Analyser.analyseDecl(Analyser* ma, VarDecl* vd) {
         return QualType_Invalid;
     }
 
+    Expr* init_expr = vd.getInit();
+
     QualType res = ma.analyseTypeRef(ref, true);
     if (res.isInvalid()) return QualType_Invalid;
-    d.setType(res);
 
     if (res.isVoid()) {
-        ma.error(ref.getLoc(), "variable has invalid type 'void'");
-        return QualType_Invalid;
+        if (!ref.isUntyped()) {
+            ma.error(ref.getLoc(), "variable has invalid type 'void'");
+            return QualType_Invalid;
+        }
+        if (!init_expr) {
+            ma.error(ref.getLoc(), "untyped constant requires an initializer");
+            return QualType_Invalid;
+        }
+        if (init_expr.isInitList()) {
+            ma.error(ref.getLoc(), "untyped constant initializer cannot be an init list");
+            return QualType_Invalid;
+        }
+        QualType qt = ma.analyseExpr(vd.getInit2(), false, RHS);
+        if (qt.isInvalid() || qt.isVoid()) {
+            ma.error(vd.getInit().getLoc(), "invalid initializer");
+            return QualType_Invalid;
+        }
+        qt.copyQuals(res);
+        res = qt;
+        vd.setUntyped();
     }
+    d.setType(res);
 
     if (!d.getAST().isInterface())
         ma.checkName(d, false);

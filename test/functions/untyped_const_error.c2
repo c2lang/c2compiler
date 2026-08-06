@@ -1,0 +1,26 @@
+// @warnings{no-unused}
+module test;
+
+import string local;
+
+fn void foo1() {
+    const invalid = (     // @error{invalid initializer}
+        1 / 0             // @error{division by zero is undefined}
+    );
+}
+
+fn void foo2() {
+    const inv2 = {}       // @error{untyped constant initializer cannot be an init list}
+}
+
+fn void foo3() {
+    const inv3 = { 1 }    // @error{untyped constant initializer cannot be an init list}
+}
+
+fn void foo4() {
+    const inv4 = { test } // @error{untyped constant initializer cannot be an init list}
+}
+
+fn void foo5() {
+    const { inv5 }        // @error{untyped constant requires an initializer}
+}
