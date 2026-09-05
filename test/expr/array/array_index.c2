@@ -12,3 +12,9 @@ fn void test1() {
     s.c[(Enum)10] = 20; // @error{array out-of-bounds access [10] in array of [3]}
 }
 
+fn i32 test2(bool b) {
+    i32[2] bb = {}
+    return bb[b];
+}
+
+

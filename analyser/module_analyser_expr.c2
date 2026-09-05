@@ -531,7 +531,7 @@ fn QualType Analyser.analyseArraySubscriptExpr(Analyser* ma, Expr** e_ptr, u32 s
     if (qidx.isInvalid()) return qidx;
     QualType canon = qidx.getCanonicalType();
     index = sub.getIndex();
-    if (!canon.isInteger() && !canon.isEnum()) {
+    if (!canon.isInteger() && !canon.isEnum() && !canon.isBool()) {
         ma.error(index.getLoc(), "array subscript is not an integer");
         return QualType_Invalid;
     }
