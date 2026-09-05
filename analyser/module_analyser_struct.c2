@@ -35,9 +35,8 @@ fn void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
 
     ma.analyseStructMembers(d);
 
-    if (!ma.has_error && d.getSize() == 0 && !d.isOpaque() && !ma.mod.isExternal()) {
+    if (!ma.has_error && d.isEmpty() && !d.isOpaque() && !ma.mod.isExternal()) {
         Decl* dd = (Decl*)d;
-        dd.dump();
         ma.error(dd.getLoc(), "empty structs are only allowed in interface files");
     }
 }

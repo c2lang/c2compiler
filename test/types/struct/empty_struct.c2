@@ -1,6 +1,10 @@
 // @warnings{no-unused}
 module test;
 
-public type A struct { // @error{empty structs are only allowed in interface files}
+public type A struct {
+    i32[0] a;
+}
+
+public type B struct { // @error{empty structs are only allowed in interface files}
 }
 

@@ -145,6 +145,19 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     return d;
 }
 
+public fn bool StructTypeDecl.isEmpty(const StructTypeDecl* d) {
+    // true if no members or only empty sub-structs. sub[0] a; is not empty
+    // Note: does not check sub-structs
+    if (d.num_members == 0) return true;
+    if (d.getSize() != 0) return false;
+
+    for (u32 i = 0; i < d.num_members; i++) {
+        const Decl* member = d.members[i];
+        if (member.isVariable()) return false;
+    }
+    return true;
+}
+
 public fn Decl* StructTypeDecl.asDecl(StructTypeDecl* d) {
     return &d.base;
 }
