@@ -5,7 +5,7 @@ import sdl;
 int init() @(cname="TTF_Init");
 void quit() @(cname="TTF_Quit");
 
-type Font struct @(cname="TTF_FONT", opaque);
+type Font struct @(cname="TTF_Font", opaque);
 
 Font* openFont(const char* file, int ptsize) @(cname="TTF_OpenFont");
 void Font.close(Font* font) @(cname="TTF_CloseFont");
