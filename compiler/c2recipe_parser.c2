@@ -437,8 +437,8 @@ fn void Parser.parseTop(Parser* p) {
             p.parsePlugin(true);
             break;
         case PluginOptions:
-            break;
         case Text:
+            p.error("expected target or set");
             break;
         case Executable:
             p.parseExecutable();
@@ -453,6 +453,7 @@ fn void Parser.parseTop(Parser* p) {
             p.error("syntax error");
             break;
         case End:
+            p.error("expected target or set");
             break;
         case Warnings:
         case Backend:
