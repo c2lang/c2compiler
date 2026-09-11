@@ -592,6 +592,7 @@ fn void Parser.parseExecutable(Parser* p) {
     p.consumeToken();
     p.expect(Text, "expect target name");
     p.target = p.recipe.addTarget(p.token.value, p.token.loc, Executable);
+    if (!p.target) p.error("duplicate target '%s", p.pool.idx2str(p.token.value));
     p.consumeToken();
 
     p.parseTarget();

@@ -59,6 +59,12 @@ fn void Recipe.addPlugin(Recipe* r, u32 name, u32 options, SrcLoc loc) {
 }
 
 public fn build_target.Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_target.Kind kind) {
+    // search for duplicates
+    for (u32 i = 0; i < r.num_targets; i++) {
+        build_target.Target* t = r.targets[i];
+        if (t.getNameIdx() == name) return nil;
+    }
+
     if (r.num_targets == r.max_targets) {
         r.max_targets *= 2;
         build_target.Target** targets2 = stdlib.malloc(r.max_targets * sizeof(build_target.Target*));
