@@ -6,13 +6,13 @@ u32 b = 0;
 const u32 Index = 4;
 
 fn void test1() {
-    b = a[1:2];         // @error{left bitoffset index is smaller than right index}
+    b = a[1:2];         // @error{left bitoffset index 1 is smaller than right index 2}
     b = a[a:10];
 }
 
 fn void test2() {
     b = a[Index:2];
-    b = a[2:Index];     // @error{left bitoffset index is smaller than right index}
+    b = a[2:Index];     // @error{left bitoffset index 2 is smaller than right index 4}
 }
 
 fn bool u8_topbit(u8 v) { return v[7:7]; }

@@ -1,0 +1,111 @@
+/* Copyright 2022-2025 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ast;
+
+import ast_context;
+import string_buffer;
+import src_loc local;
+
+type ArraySelectionExprBits struct {
+    u32 : NumExprBits;
+    u32 src_len : 32 - NumExprBits;
+}
+
+public type ArraySelectionExpr struct @(opaque) {
+    // Note: loc is that of left bracket
+    Expr base;
+    Expr* lhs;
+    Expr* idx;
+    Expr* count;
+    Expr* step;
+}
+
+public fn ArraySelectionExpr* ArraySelectionExpr.create(ast_context.Context* c,
+                                                        SrcLoc loc, u32 src_len,
+                                                        Expr* lhs, Expr* idx, Expr* count, Expr* step)
+{
+    ArraySelectionExpr* e = c.alloc(sizeof(ArraySelectionExpr));
+    e.base.init(ExprKind.ArraySelection, loc, 0, 0, 0, ValType.LValue);
+    e.base.base.arraySelectionExprBits.src_len = src_len;
+    e.lhs = lhs;
+    e.idx = idx;
+    e.count = count;
+    e.step = step;
+#if AstStatistics
+    Stats.addExpr(ExprKind.ArraySelection, sizeof(ArraySelectionExpr));
+#endif
+    return e;
+}
+
+fn Expr* ArraySelectionExpr.instantiate(ArraySelectionExpr* e, Instantiator* inst) {
+    ArraySelectionExpr* a = ArraySelectionExpr.create(inst.c,
+                                                      e.base.base.loc,
+                                                      e.base.base.arraySelectionExprBits.src_len,
+                                                      e.lhs.instantiate(inst),
+                                                      e.idx ? e.idx.instantiate(inst) : nil,
+                                                      e.count ? e.count.instantiate(inst) : nil,
+                                                      e.step ? e.step.instantiate(inst) : nil);
+    return (Expr*)a;
+}
+
+public fn Expr* ArraySelectionExpr.getBase(const ArraySelectionExpr* e) { return e.lhs; }
+public fn Expr** ArraySelectionExpr.getBase2(ArraySelectionExpr* e) { return &e.lhs; }
+
+public fn Expr* ArraySelectionExpr.getIndex(const ArraySelectionExpr* e) { return e.idx; }
+public fn Expr** ArraySelectionExpr.getIndex2(ArraySelectionExpr* e) { return &e.idx; }
+
+public fn Expr* ArraySelectionExpr.getCount(const ArraySelectionExpr* e) { return e.count; }
+public fn Expr** ArraySelectionExpr.getCount2(ArraySelectionExpr* e) { return &e.count; }
+
+public fn Expr* ArraySelectionExpr.getStep(const ArraySelectionExpr* e) { return e.step; }
+//public fn Expr** ArraySelectionExpr.getStep2(ArraySelectionExpr* e) { return &e.step; }
+
+fn SrcLoc ArraySelectionExpr.getStartLoc(const ArraySelectionExpr* e) {
+    return e.getBase().getStartLoc();
+}
+
+public fn u32 ArraySelectionExpr.getSrcLen(const ArraySelectionExpr* e) {
+    return e.base.base.arraySelectionExprBits.src_len;
+}
+
+fn SrcLoc ArraySelectionExpr.getEndLoc(const ArraySelectionExpr* e) {
+    return e.base.base.loc + e.base.base.arraySelectionExprBits.src_len;
+}
+
+fn void ArraySelectionExpr.printLiteral(const ArraySelectionExpr* e, string_buffer.Buf* out) {
+    e.lhs.printLiteral(out);
+    out.add1('[');
+    if (e.idx) e.idx.printLiteral(out);
+    out.add(" : ");
+    if (e.count) e.count.printLiteral(out);
+    out.add(" : ");
+    if (e.step) e.step.printLiteral(out);
+    out.add1(']');
+}
+
+fn void ArraySelectionExpr.print(const ArraySelectionExpr* e, string_buffer.Buf* out, u32 indent) {
+    e.base.printKind(out, indent);
+    e.base.printTypeBits(out);
+    out.newline();
+    e.lhs.print(out, indent + 1);
+    if (e.idx) e.idx.print(out, indent + 1);
+    else { out.indent(indent + 1); out.print("(no index)\n"); }
+    if (e.count) e.count.print(out, indent + 1);
+    else { out.indent(indent + 1); out.print("(no count)\n"); }
+    if (e.step) e.step.print(out, indent + 1);
+    else { out.indent(indent + 1); out.print("(no step)\n"); }
+}
+

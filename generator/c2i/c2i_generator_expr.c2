@@ -98,11 +98,27 @@ fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, const Expr* e
         gen.emitExpr(out, p.getInner());
         out.rparen();
         break;
-    case BitOffset:
-        const BitOffsetExpr* bo = (BitOffsetExpr*)e;
-        gen.emitExpr(out, bo.getLHS());
-        out.add(" : ");
-        gen.emitExpr(out, bo.getRHS());
+    case ArraySelection:
+        const ArraySelectionExpr* a = (ArraySelectionExpr*)e;
+        gen.emitExpr(out, a.getBase());
+        out.add1('[');
+        if (Expr* index = a.getIndex()) gen.emitExpr(out, index);
+        out.add1(':');
+        if (Expr* count = a.getCount()) gen.emitExpr(out, count);
+        if (Expr* step = a.getStep()) {
+            out.add1(':');
+            gen.emitExpr(out, step);
+        }
+        out.add1(']');
+        break;
+    case BitSelection:
+        const BitSelectionExpr* bs = (BitSelectionExpr*)e;
+        gen.emitExpr(out, bs.getBase());
+        out.add1('[');
+        gen.emitExpr(out, bs.getHigh());
+        out.add1(':');
+        gen.emitExpr(out, bs.getLow());
+        out.add1(']');
         break;
     case ExplicitCast:
         ExplicitCastExpr* c = (ExplicitCastExpr*)e;

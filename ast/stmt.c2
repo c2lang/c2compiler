@@ -57,9 +57,10 @@ public type Stmt struct @(opaque) {
 
         ExprBits exprBits;
         ArrayDesignatedInitExprBits arrayDesignatedInitExprBits;
+        ArraySelectionExprBits arraySelectionExprBits;
         ArraySubscriptExprBits arraySubscriptExprBits;
         BinaryOperatorBits binaryOperatorBits;
-        BitOffsetExprBits bitOffsetBits;
+        BitSelectionExprBits bitSelectionExprBits;
         BooleanLiteralBits booleanLiteralBits;
         BuiltinExprBits builtinExprBits;
         CallExprBits callExprBits;

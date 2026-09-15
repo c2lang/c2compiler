@@ -38,7 +38,8 @@ public type ExprKind enum u8 (const char* const name) {
     ArraySubscript        : { "ArraySubscript" },
     Member                : { "Member" },
     Paren                 : { "Paren" },
-    BitOffset             : { "BitOffset" },
+    ArraySelection        : { "ArraySelection" },
+    BitSelection          : { "BitSelection" },
     ExplicitCast          : { "ExplicitCast" },
     ImplicitCast          : { "ImplicitCast" },
     Range                 : { "RangeExpr" },
@@ -140,8 +141,10 @@ fn Expr* Expr.instantiate(Expr* e, Instantiator* inst) {
         return MemberExpr.instantiate((MemberExpr*)e, inst);
     case Paren:
         return ParenExpr.instantiate((ParenExpr*)e, inst);
-    case BitOffset:
-        return BitOffsetExpr.instantiate((BitOffsetExpr*)e, inst);
+    case ArraySelection:
+        return ArraySelectionExpr.instantiate((ArraySelectionExpr*)e, inst);
+    case BitSelection:
+        return BitSelectionExpr.instantiate((BitSelectionExpr*)e, inst);
     case ExplicitCast:
         return ExplicitCastExpr.instantiate((ExplicitCastExpr*)e, inst);
     case ImplicitCast:
@@ -244,10 +247,6 @@ public fn bool Expr.isFieldDesignatedInit(const Expr* e) {
 
 public fn bool Expr.isArrayDesignatedInit(const Expr* e) {
     return e.getKind() == ArrayDesignatedInit;
-}
-
-public fn bool Expr.isBitOffset(const Expr* e) {
-    return e.getKind() == BitOffset;
 }
 
 fn bool Expr.isParen(const Expr* e) {
@@ -422,7 +421,8 @@ public fn bool Expr.isPositiveOrUB(const Expr* e) {
         break;
     case Paren:
         return ((ParenExpr*)e).getInner().isPositiveOrUB();
-    case BitOffset:
+    case ArraySelection:
+    case BitSelection:
         break;
     case ExplicitCast:
     case ImplicitCast:
@@ -469,8 +469,10 @@ public fn SrcLoc Expr.getStartLoc(const Expr* e) {
         return ((MemberExpr*)e).getStartLoc();
     case Paren:
         break;
-    case BitOffset:
-        return ((BitOffsetExpr*)e).getStartLoc();
+    case ArraySelection:
+        return ((ArraySelectionExpr*)e).getStartLoc();
+    case BitSelection:
+        return ((BitSelectionExpr*)e).getStartLoc();
     case ExplicitCast:
         break;
     case ImplicitCast:
@@ -525,8 +527,10 @@ public fn SrcLoc Expr.getEndLoc(const Expr* e) {
         return ((MemberExpr*)e).getEndLoc();
     case Paren:
         return ((ParenExpr*)e).getEndLoc();
-    case BitOffset:
-        return ((BitOffsetExpr*)e).getEndLoc();
+    case ArraySelection:
+        return ((ArraySelectionExpr*)e).getEndLoc();
+    case BitSelection:
+        return ((BitSelectionExpr*)e).getEndLoc();
     case ExplicitCast:
         return ((ExplicitCastExpr*)e).getEndLoc();
     case ImplicitCast:
@@ -578,7 +582,8 @@ public fn bool Expr.needsSemi(const Expr* e) {
     case ArraySubscript:
     case Member:
     case Paren:
-    case BitOffset:
+    case ArraySelection:
+    case BitSelection:
     case ExplicitCast:
     case ImplicitCast:
     case Range:
@@ -658,8 +663,11 @@ fn void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
     case Paren:
         ParenExpr.print((ParenExpr*)e, out, indent);
         break;
-    case BitOffset:
-        BitOffsetExpr.print((BitOffsetExpr*)e, out, indent);
+    case ArraySelection:
+        ArraySelectionExpr.print((ArraySelectionExpr*)e, out, indent);
+        break;
+    case BitSelection:
+        BitSelectionExpr.print((BitSelectionExpr*)e, out, indent);
         break;
     case ExplicitCast:
         ExplicitCastExpr.print((ExplicitCastExpr*)e, out, indent);
@@ -739,8 +747,11 @@ public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     case Paren:
         ParenExpr.printLiteral((ParenExpr*)e, out);
         return;
-    case BitOffset:
-        BitOffsetExpr.printLiteral((BitOffsetExpr*)e, out);
+    case ArraySelection:
+        ArraySelectionExpr.printLiteral((ArraySelectionExpr*)e, out);
+        return;
+    case BitSelection:
+        BitSelectionExpr.printLiteral((BitSelectionExpr*)e, out);
         return;
     case ExplicitCast:
         ExplicitCastExpr.printLiteral((ExplicitCastExpr*)e, out);
