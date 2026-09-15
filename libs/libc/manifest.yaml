@@ -38,6 +38,7 @@ modules:
     - sys_socket
     - sys_stat
     - sys_time
+    - sys_types
     - sys_utsname
     - uio
     - unistd

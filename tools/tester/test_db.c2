@@ -21,6 +21,7 @@ import stdio local;
 import stdarg local;
 import stdlib local;
 import string local;
+import sys_types local; // pid_t
 import unistd local;
 
 import constants;
@@ -129,15 +130,37 @@ public fn void Db.destroy(Db* db) {
     db.errors.destroy();
 }
 
-public fn Issues* Db.getIssues(const Db* db, const char* name) {
+public fn Issues* Db.getIssues(const Db* db, const char* name, bool* add) {
     switch (name) {
-    case "error":
+    case "error32":
+        *add = (sizeof(void*) == 4);
         return db.errors;
-    case "warning":
+    case "error64":
+        *add = (sizeof(void*) == 8);
+        return db.errors;
+    case "error":
+        *add = true;
+        return db.errors;
+    case "warning32":
+        *add = (sizeof(void*) == 4);
         return db.warnings;
+    case "warning64":
+        *add = (sizeof(void*) == 8);
+        return db.warnings;
+    case "warning":
+        *add = true;
+        return db.warnings;
+    case "note32":
+        *add = (sizeof(void*) == 4);
+        return db.notes;
+    case "note64":
+        *add = (sizeof(void*) == 8);
+        return db.notes;
     case "note":
+        *add = true;
         return db.notes;
     default:
+        *add = false;
         return nil;
     }
 }
@@ -296,7 +319,7 @@ fn bool Db.parseFile(Db* db) {
     return true;
 }
 
-fn bool Db.parseExpect(Db* db) {
+fn bool Db.parseExpect(Db* db, bool add) {
     char[128] args;
     // Syntax expect{mode, name}
     if (!db.readArgument(args, elemsof(args), "expect"))
@@ -324,11 +347,14 @@ fn bool Db.parseExpect(Db* db) {
     }
     db.skipLine();
 
-    ExpectFile* currentExpect = expect_file.create(filename, em);
-    // TODO check for name duplicates
-    db.addExpected(currentExpect);
+    ExpectFile* currentExpect = nil;
+    if (add) {
+        // TODO check for name duplicates
+        currentExpect = expect_file.create(filename, em);
+        db.addExpected(currentExpect);
+    }
     while (*db.cur && !strstart(db.cur, "// @")) {
-        currentExpect.addLine(db.line_nr, db.cur, lineEnd(db.cur));
+        if (add) currentExpect.addLine(db.line_nr, db.cur, lineEnd(db.cur));
         db.skipLine();
     }
     return true;
@@ -344,6 +370,7 @@ fn bool Db.checkKind(Db* db, const char* keyword, TestKind k1, TestKind k2 = Non
 
 fn bool Db.parseKeyword(Db* db) {
     // NOTE: cur points to start of keyword after // @
+    bool add = true;
     const char* keyword = db.readWord();
     switch (keyword) {
     case "skip":
@@ -379,12 +406,25 @@ fn bool Db.parseKeyword(Db* db) {
     case "file":
         if (!db.checkKind(keyword, C2T, C2A)) return false;
         return db.parseFile();
+    case "expect32":
+        add = (sizeof(void*) == 4);
+        goto expect;
+    case "expect64":
+        add = (sizeof(void*) == 8);
+        goto expect;
     case "expect":
+    expect:
         if (!db.checkKind(keyword, C2T, C2A)) return false;
-        return db.parseExpect();
+        return db.parseExpect(add);
     case "error":
+    case "error32":
+    case "error64":
     case "warning":
+    case "warning32":
+    case "warning64":
     case "note":
+    case "note32":
+    case "note64":
         if (!db.checkKind(keyword, C2)) return false;
         db.cur = db.bol;
         db.parseTags(db.current_file, db.line_nr);
@@ -441,7 +481,8 @@ fn void Db.parseTags(Db* db, const char* filename, u32 line_nr) {
     }
 
     const char* tag = db.readWord();
-    Issues* ip = db.getIssues(tag);
+    bool add;
+    Issues* ip = db.getIssues(tag, &add);
     if (!ip) {
         db.error("unknown tag '%s', expected note/warning/error", tag);
         return;
@@ -455,10 +496,12 @@ fn void Db.parseTags(Db* db, const char* filename, u32 line_nr) {
     // syntax: '// @error{message} +1' specifies an error on the next line
     const char* p = skipBlanks(db.cur);
     if (*p && *p != '\n') line_nr += atoi(p);
+    if (add) {
 #if TesterDebug
-    color_print(color.Blue, "  expecting %s '%s' at %s:%d", ip.name, msg, filename, line_nr);
+        color_print(color.Blue, "  expecting %s '%s' at %s:%d", ip.name, msg, filename, line_nr);
 #endif
-    ip.add(filename, line_nr, msg);
+        ip.add(filename, line_nr, msg);
+    }
 }
 
 public fn bool Db.parse(Db* db) {
@@ -519,7 +562,7 @@ public fn void Db.testFile(Db* db) {
     }
 
     // spawn a child to run c2c
-    Pid pid = fork();
+    pid_t pid = fork();
     if (pid == -1) {
         fprintf(stderr, "fork() failed: %s\n", strerror(errno));
         exit(1);
@@ -610,7 +653,8 @@ fn void Db.checkDiagnosticLine(Db* db, const char* line) {
         filename = p + 1;
     }
 
-    if (Issues* ip = db.getIssues(tag)) {
+    bool add;
+    if (Issues* ip = db.getIssues(tag, &add)) {
 #if TesterDebug
         color_print(color.Cyan, "%s:%d:%d: %s '%s'", filename, error_line, col, tag, msg);
 #endif

@@ -114,5 +114,9 @@ type S12 struct {
     u32 c;
     void* b;
 }
+#if ARCH_32BIT
+static_assert(12, sizeof(S12));
+#else
 static_assert(24, sizeof(S12));
+#endif
 

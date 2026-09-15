@@ -1,18 +1,12 @@
 module unistd extern "C";
 
 import libc_fcntl local;
+import sys_types local;  // 
 
 /* Standard file descriptors.  */
 const int STDIN_FILENO  = 0;
 const int STDOUT_FILENO = 1;
 const int STDERR_FILENO = 2;
-
-// ifdef USE_XOPEN_EXTENDED ..
-typedef unsigned gid_t;
-typedef long long off_t;
-typedef int pid_t;
-typedef unsigned uid_t;
-typedef unsigned useconds_t;
 
 /* POSIX.1-1990 */
 
@@ -206,7 +200,6 @@ int pipe2(int* pipefd, int flags) {
 
 #endif
 
-typedef int Pid @(cname="pid_t");
 Pid wait(int* wstatus);
 Pid waitpid(Pid pid, int* wstatus, int options);
 int kill(Pid pid, int sig);

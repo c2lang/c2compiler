@@ -278,7 +278,11 @@ public type Tokenizer struct {
 
     char[256] error_msg;
 }
+#if ARCH_32BIT
+static_assert(360, sizeof(Tokenizer));
+#else
 static_assert(408, sizeof(Tokenizer));
+#endif
 
 public fn void Tokenizer.init(Tokenizer* t,
                               string_pool.Pool* pool,

@@ -69,7 +69,11 @@ public type Attr struct {
     AttrValueKind value_kind;
     AttrValue value;
 }
+#if ARCH_32BIT
+static_assert(24, sizeof(Attr));
+#else
 static_assert(32, sizeof(Attr));
+#endif
 
 // Note: only meant for printing (since not allocated in StringPool)
 public fn const char* Attr.kind2name(const Attr* a) {

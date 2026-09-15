@@ -52,7 +52,11 @@ public type Tools struct {
     const void* arg2;   // Symbol*
     FunctionInfo* fi;   // no ownership
 }
+#if ARCH_32BIT
+static_assert(728, sizeof(Tools));
+#else
 static_assert(816, sizeof(Tools));
+#endif
 
 public fn void Tools.init(Tools* t, const Target* target, const void* arg1, PrintFn print) {
     t.conversion.init(64);
@@ -229,7 +233,7 @@ public fn void Tools.reorder_blocks(Tools* t, FunctionInfo* fi, const index_list
             Instr* switch_instr = fi.instructions.get(instr_idx);
             assert(switch_instr.isSwitch());
             Ref* join_ref = &switch_instr.args[1];
-            join_ref.value = (i32) t.conversion.get((u32)join_ref.value);
+            join_ref.value = (i32)t.conversion.get((u32)join_ref.value);
         } else {
             b.dests[0] = t.conversion.get(b.dests[0]);
             b.dests[1] = t.conversion.get(b.dests[1]);

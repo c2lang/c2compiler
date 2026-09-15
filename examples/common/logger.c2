@@ -21,7 +21,7 @@ import string local;
 import stdio local;
 import stdlib local;
 import sys_time local;
-import libc_time;
+import libc_time local;
 
 import utils local;
 
@@ -152,7 +152,7 @@ fn void Log.internal(Log* log, Level level, const char* color_, const char* form
         Timeval tv;
         gettimeofday(&tv, nil);
         Time now = tv.tv_sec;
-        libc_time.Tm* now2 = libc_time.localtime(&now);
+        Tm* now2 = localtime(&now);
         buf.printf("%02d/%02d/%02d %02d:%02d:%02d.%d",
                    now2.tm_year % 100, now2.tm_mon + 1, now2.tm_mday,
                    now2.tm_hour, now2.tm_min, now2.tm_sec, tv.tv_usec / 1000);

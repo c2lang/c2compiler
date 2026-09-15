@@ -50,14 +50,22 @@ static_assert(sizeof(sp), sizeof(MyStruct*));
 static_assert(sizeof(sp), sizeof(sp));
 //static_assert(sizeof(const MyStruct[10]), sizeof(MyStruct) * 10);
 //static_assert(sizeof(MyStruct[10]), sizeof(MyStruct) * 10);
+#if ARCH_32BIT
+static_assert(sizeof(s), 24);
+#else
 static_assert(sizeof(s), 32);
+#endif
 //static_assert(sizeof(*&s), 32);
 static_assert(sizeof(s), sizeof(s));
 static_assert(sizeof(s), sizeof(MyStruct));
 //static_assert(sizeof(s), sizeof(MyStruct[1]));
 static_assert(sizeof(MyStruct), sizeof(s));
 static_assert(sizeof(MyStruct), sizeof(MyStruct));
+#if ARCH_32BIT
+static_assert(24, sizeof(MyStruct));
+#else
 static_assert(32, sizeof(MyStruct));
+#endif
 static_assert(sizeof(s.p), sizeof(usize));
 static_assert(sizeof(s.def), 16);
 //static_assert(sizeof(*s.def), 1);

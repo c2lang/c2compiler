@@ -1,10 +1,11 @@
 module ctermios extern "C";
 
+import sys_types local;
+
 #if SYSTEM_LINUX
 typedef unsigned char cc_t;
 typedef unsigned int speed_t;
 typedef unsigned int tcflag_t;
-typedef int pid_t;
 
 const u32 NCCS = 32;
 
@@ -163,7 +164,6 @@ const unsigned EXTPROC = 0200000;
 typedef unsigned long tcflag_t;
 typedef unsigned char cc_t;
 typedef unsigned long speed_t;
-typedef int pid_t;
 
 const u32 NCCS = 20;
 

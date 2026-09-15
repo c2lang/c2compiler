@@ -1,0 +1,60 @@
+module sys_types extern "C";
+
+typedef int pid_t;
+typedef int Pid @(cname="pid_t");
+typedef i64 off64_t;
+typedef i64 off_t;
+typedef i64 Offset @(cname="off_t");
+typedef off_t fpos_t;
+//NOTE: _G_fpos_t is some struct(_G_fpos_t.h)
+//typedef _G_fpos_t fpos_t;
+typedef int clockid_t;
+typedef int wchar_t;
+
+#if SYSTEM_LINUX
+typedef long clock_t;
+typedef long time_t;
+typedef long suseconds_t;
+typedef unsigned useconds_t;
+typedef unsigned int mode_t;
+typedef unsigned gid_t;
+typedef unsigned uid_t;
+#endif
+#if SYSTEM_DARWIN
+typedef long clock_t;
+typedef long time_t;
+typedef int suseconds_t;
+typedef unsigned useconds_t;
+typedef unsigned int mode_t;
+typedef unsigned gid_t;
+typedef unsigned uid_t;
+#endif
+#if SYSTEM_FREEBSD
+#if ARCH_32BIT
+typedef unsigned long clock_t;
+typedef i32 time_t;
+#else
+typedef i32 clock_t;
+typedef i64 time_t;
+#endif
+typedef long suseconds_t;
+typedef unsigned int useconds_t;
+typedef u32 uid_t;
+typedef i64 blkcnt_t;
+typedef i32 blksize_t;
+typedef u64 dev_t;
+typedef u32 fflags_t;
+typedef u32 gid_t;
+typedef u64 ino_t;
+typedef u16 mode_t;
+typedef u64 nlink_t;
+#endif
+#if SYSTEM_OPENBSD
+typedef long clock_t;
+typedef long time_t;
+typedef long suseconds_t;
+typedef unsigned useconds_t;
+typedef unsigned int mode_t;
+typedef unsigned gid_t;
+typedef unsigned uid_t;
+#endif

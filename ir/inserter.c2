@@ -51,7 +51,11 @@ public type Inserter struct {
     u32 split_count;
     u32 split_cap;
 }
+#if ARCH_32BIT
+static_assert(56, sizeof(Inserter));
+#else
 static_assert(72, sizeof(Inserter));
+#endif
 
 public fn void Inserter.create(Inserter* ins) {
     string.memset(ins, 0, sizeof(Inserter));
