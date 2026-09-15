@@ -57,7 +57,7 @@ type MemberRef union {
     usize bits;
 }
 
-static_assert(8, sizeof(MemberRef));
+static_assert(sizeof(void*) == 4 ? 4 : 8, sizeof(MemberRef));
 
 public type MemberExpr struct @(opaque) {
     // base.loc points to the beginning of the member name in refs[1]

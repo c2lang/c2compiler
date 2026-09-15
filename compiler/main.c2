@@ -202,6 +202,7 @@ Options:
   -I                use IR backend and print generated IR
   -lm               link the math module
   -m                print modules
+  -m32              generate 32-bit code on selected targets
   -o [file]         force the output name for a single target
   -r                print reports
   -s                print symbols
@@ -358,6 +359,12 @@ fn void parse_arguments(ArgumentParser* ap, compiler.Options* comp_opts, Options
                         exit(EXIT_SUCCESS);
                     case "lm":
                         opts.use_math_library = true;
+                        continue;
+                    case "m32":
+                        comp_opts.m32 = true;
+                        continue;
+                    case "m64":
+                        comp_opts.m32 = false;
                         continue;
                     }
                     ap.unknownOption(arg);

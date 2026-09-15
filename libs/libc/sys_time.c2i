@@ -13,7 +13,11 @@ struct Timeval @(cname="timeval") {
     Time tv_sec;
     SuSeconds tv_usec;
 }
+#if ARCH_32BIT
+static_assert(8, sizeof(Timeval));
+#else
 static_assert(16, sizeof(Timeval));
+#endif
 
 struct Timezone @(cname="timezone") {
     int tz_minuteswest;

@@ -13,8 +13,9 @@ ARCH:=$(shell uname -m)
 ifeq (Linux,$(SYSTEM))
 CC:=gcc
 LDFLAGS:=-ldl
-ifdef CONFIG_32BIT
+ifeq (y,$(CONFIG_M32))
 BOOTSTRAP_FILE:=../output/bootstrap/bootstrap-linux-i686.c
+ARCH:=i686
 else
 BOOTSTRAP_FILE:=bootstrap.c
 endif
@@ -43,7 +44,7 @@ LDFLAGS:=
 BOOTSTRAP_FILE:=../output/bootstrap/bootstrap-openbsd-amd64.c
 endif
 
-ifeq (y,$(CONFIG_32BIT))
+ifeq (y,$(CONFIG_M32))
 CFLAGS += -m32
 LDFLAGS += -m32
 endif
@@ -58,7 +59,8 @@ all: ../output/bootstrap/bootstrap
 ../output/bootstrap/%.c: %.patch bootstrap.c
 	@echo "---- patching bootstrap code for $(SYSTEM)-$(ARCH) ----"
 	@mkdir -p ../output/bootstrap
-	@patch -s -o $@ bootstrap.c $<
+	@cp -f bootstrap.c $@
+	@patch -s $@ $<
 
 ../output/bootstrap/globals: globals.c
 	@echo "---- compiling header extractor ----"
@@ -67,6 +69,7 @@ all: ../output/bootstrap/bootstrap
 
 globals: ../output/bootstrap/globals
 	../output/bootstrap/globals
+	rm ../output/bootstrap/globals
 
 clean:
 	@rm -rf ../output/

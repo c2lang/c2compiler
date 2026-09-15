@@ -306,7 +306,7 @@ fn void Tools.checkBlockLiveness(Tools* t, u32 blk_id, LiveVector* v) {
             //v.interferences.enable((u16)i);
             // TODO add to LiveOut for Clause Blocks (filter dups)
             const PhiClause* clauses = fi.phis.get((u32)ii.args[0].value);
-            for (u32 c=0; c<ii.args[1].value; c++) {
+            for (u32 c = 0; c < (u32)ii.args[1].value; c++) {
                 const PhiClause* pc = &clauses[c];
                 v.live_out.addFiltered((u16)pc.src, (u16)pc.dest_idx);
                 //printf(" PHI ADD OUT B%d  %d\n", pc.src, pc.dest_idx);
@@ -371,12 +371,12 @@ fn void Tools.replacePhis(Tools* t) {
             if (!ii.isPhi()) break; // phi-instructions are always at start of block
 
             const PhiClause* clauses = fi.phis.get((u32)ii.args[0].value);
-            for (u32 c=0; c<ii.args[1].value; c++) {
+            for (u32 c = 0; c < (u32)ii.args[1].value; c++) {
                 const PhiClause* pc = &clauses[c];
                 Block* src = &blocks[pc.src];
 
                 // dont insert Rx = copy Rx
-                if (pc.dest_idx == pc.ref.value && pc.ref.isRegister()) continue;
+                if (pc.dest_idx == (u32)pc.ref.value && pc.ref.isRegister()) continue;
 
                 u32 insert_loc = src.instr.start + src.instr.count - 1;
                 u32 instr_idx = t.inserter.addInstr(insert_loc);
@@ -466,7 +466,7 @@ fn void Tools.insertSplitEdges(Tools* t) {
             if (!ii.isPhi()) continue;  // TODO can also break? (if all phi's are at start, comments?)
 
             PhiClause* clauses = fi.phis.get((u32)ii.args[0].value);
-            for (u32 c = 0; c < ii.args[1].value; c++) {
+            for (u32 c = 0; c < (u32)ii.args[1].value; c++) {
                 PhiClause* pc = &clauses[c];
 
                 Block* src = fi.blocks.get(pc.src);
@@ -550,7 +550,7 @@ fn void Tools.removeSameCopies(Tools* t) {
         Instr* ii = &instrs[i];
         if (ii.isCopy()) {
             assert(ii.hasRegister());
-            if (ii.args[0].isRegister() && ii.getRegister() == ii.args[0].value) {
+            if (ii.args[0].isRegister() && ii.getRegister() == (u32)ii.args[0].value) {
                 ii.clear();
             }
         }

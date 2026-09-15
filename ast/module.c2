@@ -40,7 +40,7 @@ public type Module struct @(opaque) {
     SymbolTable symbols;
     InstanceTable instances;
 }
-static_assert(80, sizeof(Module));
+static_assert(sizeof(void*) == 4 ? 56 : 80, sizeof(Module));
 
 // Note: name must be allocated in target StringPool
 public fn Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_external) {

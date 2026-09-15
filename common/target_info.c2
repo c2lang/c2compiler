@@ -18,15 +18,15 @@ module target_info;
 import stdio local;
 import string local;
 
-public type Arch enum u8 (const char* const name) {
-    Unknown  : { "unknown" },
-    I686     : { "i686" },
-    Arm      : { "arm" },
-    X86_64   : { "x86_64" },
-    Amd64    : { "amd64" },
-    Arm64    : { "arm64" },
-    Riscv_32 : { "riscv32" },
-    Riscv_64 : { "riscv64" },
+public type Arch enum u8 (const char* const name, Arch m32_version) {
+    Unknown  : { "unknown", Unknown },
+    I686     : { "i686",    I686 },
+    Arm      : { "arm",     Arm },
+    X86_64   : { "x86_64",  I686 },
+    Amd64    : { "amd64",   I686 },
+    Arm64    : { "arm64",   Arm },
+    Riscv_32 : { "riscv32", Riscv_32 },
+    Riscv_64 : { "riscv64", Riscv_32 },
 }
 
 public type System enum u8 (const char* const name) {
@@ -60,9 +60,9 @@ public fn System str2sys(const char* name) {
     return Unknown;
 }
 
-public fn Arch str2arch(const char* name) {
-    for (Arch i = Arch.min; i <= Arch.max; i++) {
-        if (strcasecmp(i.name, name) == 0) return i;
+public fn Arch str2arch(const char* name, bool m32 = false) {
+    for (Arch a = Arch.min; a <= Arch.max; a++) {
+        if (strcasecmp(a.name, name) == 0) return m32 ? a.m32_version : a;
     }
     return Unknown;
 }
