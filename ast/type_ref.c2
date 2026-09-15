@@ -23,6 +23,7 @@ import string;
 public type TypeRefKind enum u8 (const char* const name) {
     Builtin   : { "builtin" },
     Void      : { "void" },
+    Untyped   : { "untyped" },
     User      : { "user" },
     Function  : { "function" },
 }
@@ -33,7 +34,7 @@ type TypeRefBits struct {
     u32 num_arrays : 2; // limit to 3-dimensional arrays
     u32 incr_array : 1;
     u32 has_prefix : 1;
-    TypeRefKind kind : 2;
+    TypeRefKind kind : 3;
     BuiltinKind builtin_kind : 4;   // only if builtin (!is_user)
 }
 
@@ -162,6 +163,12 @@ public fn void TypeRefHolder.rotateArrays(TypeRefHolder* h, u32 r) {
     }
 }
 
+public fn void TypeRefHolder.setUntyped(TypeRefHolder* h, SrcLoc loc) {
+    TypeRef* r = (TypeRef*)&h.ref;
+    r.flags.kind = Untyped;
+    r.loc = loc;
+}
+
 public fn void TypeRefHolder.setBuiltin(TypeRefHolder* h, BuiltinKind kind, SrcLoc loc) {
     TypeRef* r = (TypeRef*)&h.ref;
     r.flags.builtin_kind = kind;
@@ -221,6 +228,7 @@ fn void TypeRef.init(TypeRef* dest, const TypeRefHolder* h) {
 
     // copy for tail-allocated info
     switch (r.getKind()) {
+    case Untyped:
     case Builtin:
     case Void:
         break;
@@ -288,7 +296,7 @@ public fn void TypeRef.setDest(TypeRef* r, u32 dest) {
 
 fn u32 TypeRef.getExtraSize(const TypeRef* r) {
     // User, StructMemberType use Ref
-    u32 numrefs = (r.flags.kind != Builtin) + r.flags.has_prefix;
+    u32 numrefs = (r.flags.kind >= User) + r.flags.has_prefix;
     u32 extra = numrefs * sizeof(Ref);
     extra += r.flags.num_arrays * sizeof(Expr*);
     return extra;
@@ -318,6 +326,10 @@ public fn u32 TypeRef.getQuals(const TypeRef* r, u32 level) {
 
 public fn bool TypeRef.isUser(const TypeRef* r) {
     return r.flags.kind == User;
+}
+
+public fn bool TypeRef.isUntyped(const TypeRef* r) {
+    return r.flags.kind == Untyped;
 }
 
 fn bool TypeRef.isBuiltin(const TypeRef* r) {
@@ -364,6 +376,7 @@ public fn TypeRefKind TypeRef.getKind(const TypeRef* r) {
 
 public fn SrcLoc TypeRef.getLoc(const TypeRef* r) {
     switch (r.getKind()) {
+    case Untyped:
     case Builtin:
     case Void:
         break;
@@ -450,6 +463,8 @@ fn void TypeRef.printLiteral(const TypeRef* r, string_buffer.Buf* out, bool prin
     if (r.isVolatile(num_ptrs)) out.add("volatile ");
 
     switch (r.flags.kind) {
+    case Untyped:
+        break;
     case Builtin:
         out.add(r.getBuiltinKind().name);
         break;
@@ -497,6 +512,8 @@ fn void TypeRef.print(const TypeRef* r, string_buffer.Buf* out, bool filled) {
     if (r.isVolatile(num_ptrs)) out.add("volatile ");
 
     switch (r.flags.kind) {
+    case Untyped:
+        break;
     case Builtin:
         out.add(r.getBuiltinKind().name);
         break;

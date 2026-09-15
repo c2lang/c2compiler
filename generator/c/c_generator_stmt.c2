@@ -175,8 +175,15 @@ fn void Generator.emitStmt(Generator* gen, string_buffer.Buf* out, Stmt* s, u32 
         DeclStmt* ds = (DeclStmt*)s;
         u32 count = ds.getDeclCount();
         bool first = true;
+        QualType qt = QualType_Invalid;
         for (u32 i = 0; i < count; i++) {
             VarDecl* vd = ds.getDecl(i);
+            QualType qt1 = vd.getType();
+            if (!first && qt1.ptr != qt.ptr) {
+                out.add(";\n");
+                first = true;
+            }
+            qt = qt1;
             gen.emitVarDecl(vd, out, true, first);
             first = false;
         }

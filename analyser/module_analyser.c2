@@ -713,8 +713,29 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
 
     QualType canon = res.getCanonicalType();
     if (canon.isVoid()) {
-        ma.error(ref.getLoc(), "%s has invalid type 'void'", res.isConst() ? "constant" : "variable");
-        return;
+        if (!ref.isUntyped()) {
+            ma.error(ref.getLoc(), "%s has invalid type 'void'", res.isConst() ? "constant" : "variable");
+            return;
+        }
+        if (!init_expr) {
+            ma.error(ref.getLoc(), "untyped global constant requires an initializer");
+            return;
+        }
+        if (init_expr.isInitList()) {
+            ma.error(ref.getLoc(), "untyped global constant initializer cannot be an init list");
+            return;
+        }
+        ma.global_initializer++;
+        QualType qt = ma.analyseExpr(v.getInit2(), false, RHS);
+        ma.global_initializer--;
+        if (qt.isInvalid() || qt.isVoid()) {
+            ma.error(v.getInit().getLoc(), "invalid constant value");
+            return;
+        }
+        qt.copyQuals(res);
+        res = qt;
+        canon = res.getCanonicalType();
+        v.setUntyped();
     }
 
     const Attr* embed = d.getAttr(Embed);

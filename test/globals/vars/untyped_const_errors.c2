@@ -1,0 +1,24 @@
+// @warnings{no-unused}
+module test;
+
+import string local;
+
+const TRUE = true;
+const ZERO = 0;
+const ONE = ZERO + 1;
+const MAX = u64.max;
+const F1 = 1.0F;
+const D1 = 1.0;
+const NULL = nil;
+const HELLO = "Hello";
+const INVALID = (     // @error{invalid constant value}
+    1 / 0             // @error{division by zero is undefined}
+);
+const INV2 = {}       // @error{untyped global constant initializer cannot be an init list}
+const INV3 = { 1 }    // @error{untyped global constant initializer cannot be an init list}
+const INV4 = { test } // @error{untyped global constant initializer cannot be an init list}
+const { INV6 }        // @error{untyped global constant requires an initializer}
+
+const char* p1 = HELLO;  // this one is OK
+
+const i32* p2 = &ONE;   // @error{cannot take the address of an untyped global constant}

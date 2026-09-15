@@ -199,6 +199,7 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref, bool full) {
         base = ma.builder.actOnBuiltinType(kind);
         assert(base.isValid());
         break;
+    case Untyped:
     case Void:
         base = ma.builder.actOnVoidType();
         assert(base.isValid());
