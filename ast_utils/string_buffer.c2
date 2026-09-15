@@ -177,7 +177,7 @@ public fn void Buf.print(Buf* buf, const char* format @(printf_format), ...) @(u
 
 public fn void Buf.vprintf(Buf* buf, const char* format, va_list args) @(unused) {
     // formatted output is limited to 4095 bytes
-    char[4096] tmp;
+    char[4096] tmp /*@(noinit)*/;
     char* dest = tmp;
     u32 dest_size = elemsof(tmp);
     u32 avail = buf.capacity - buf.size_;

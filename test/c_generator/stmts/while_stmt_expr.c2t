@@ -30,7 +30,7 @@ int main(int argc, const char** argv)
     }
 
     {
-        int b;
+        int b = { 0 };
         while ((b = 0)) {
         }
     }
