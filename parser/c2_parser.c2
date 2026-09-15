@@ -226,11 +226,6 @@ fn Kind Parser.peekToken2(Parser* p, u32 n, Token* tok) {
 fn void Parser.consumeSemicolon(Parser* p, bool need_semi) {
     if (need_semi) {
         p.expectAndConsume(Semicolon);
-    } else {
-        if (p.tok.kind == Semicolon) {
-            p.diags.error(p.tok.loc, "no semicolon allowed after initializer list");
-            p.consumeToken();
-        }
     }
 }
 
@@ -240,6 +235,14 @@ fn void Parser.expectAndConsume(Parser* p, Kind kind) {
         return;
     }
     p.expectError(kind);
+}
+
+fn void Parser.consumeRBrace(Parser* p, const char* context) {
+    p.expectAndConsume(RBrace);
+    if (p.tok.kind == Semicolon) {
+        p.diags.warn(p.tok.loc, "no semicolon allowed after %s", context);
+        p.consumeToken();
+    }
 }
 
 fn void Parser.expect(Parser* p, Kind kind) {
@@ -377,7 +380,7 @@ fn void Parser.parseImports(Parser* p) {
                     p.consumeToken();
                 }
             }
-            p.expectAndConsume(RBrace);
+            p.consumeRBrace("import list");
         } else {
             p.expectAndConsume(Semicolon);
         }
@@ -1103,7 +1106,7 @@ fn void Parser.parseExternDecl(Parser* p) {
             p.parseTopLevel();
         }
         p.tokenizer.c_mode--; // must set before consuming the token
-        p.consumeToken();
+        p.consumeRBrace("extern \"C\" block");
     } else {
         p.parseTopLevel();
     }
