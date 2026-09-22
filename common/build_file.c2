@@ -15,12 +15,12 @@
 
 module build_file;
 
-import string_pool;
-import src_loc local;
+import string_pool { Pool }
+import src_loc { SrcLoc }
 import string_list;
 
-import stdlib;
-import string;
+import stdlib { malloc, free }
+import string { memcpy }
 
 public type Plugin struct {
     u32 name;    //  index into pool
@@ -29,7 +29,7 @@ public type Plugin struct {
 }
 
 public type Info struct {
-    string_pool.Pool* pool; // no ownership
+    Pool* pool; // no ownership
     const char* filename;   // no ownership
 
     // all indexes into pool
@@ -54,10 +54,10 @@ public type Info struct {
 public fn void Info.addPlugin(Info* info, const char* name, const char* options, SrcLoc loc) {
     if (info.plugin_count == info.plugin_max) {
         info.plugin_max += 2;
-        Plugin* plugins2 = stdlib.malloc(info.plugin_max * sizeof(Plugin));
+        Plugin* plugins2 = malloc(info.plugin_max * sizeof(Plugin));
         if (info.plugins) {
-            string.memcpy(plugins2, info.plugins, info.plugin_count * sizeof(Plugin));
-            stdlib.free(info.plugins);
+            memcpy(plugins2, info.plugins, info.plugin_count * sizeof(Plugin));
+            free(info.plugins);
         }
         info.plugins = plugins2;
     }
@@ -135,6 +135,6 @@ public fn void Info.free(Info* info) {
     info.lib_dirs.free();
     info.lib_dirs_bin.free();
     info.plugin_dirs.free();
-    stdlib.free(info);
+    free(info);
 }
 

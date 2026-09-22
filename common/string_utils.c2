@@ -15,8 +15,8 @@
 
 module string_utils;
 
-import ctype local;
-import string local;
+import ctype { toupper }
+import string { strlen, memcmp }
 
 public fn char* toLower(const char* input, char* output) @(unused) {
     usize i;

@@ -17,15 +17,14 @@ module process_utils;
 
 import file_utils;
 
-import c_errno local;
-import ctype local;
-import libc_fcntl local;
-import stdarg local;
-import stdio local;
-import stdlib local;
-import string local;
-import sys_stat local;
-import unistd local;
+import c_errno { errno, EINTR }
+import ctype { isspace }
+import libc_fcntl { * }
+import stdio { * }
+import stdlib { * }
+import string { * }
+import sys_stat { Stat, stat }
+import unistd { * }
 
 const u32 MAX_ARG_LEN = 512;
 const u32 MAX_ARGS = 16;

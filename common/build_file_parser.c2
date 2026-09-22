@@ -15,22 +15,22 @@
 
 module build_file_parser;
 
-import build_file local;
-import string_pool;
-import source_mgr;
-import src_loc local;
-import yaml;
+import build_file { Info }
+import string_pool { Pool }
+import source_mgr { SourceMgr }
+import src_loc { SrcLoc }
+import yaml { Parser, Node, Iter }
 
-import stdio local;
-import stdlib;
-import string;
+import stdio { fprintf, stderr }
+import stdlib { getenv, malloc, exit }
+import string { strncmp, memcpy }
 
 fn u32 expandField(Info* info, const char* raw) {
     if (!raw) return 0;
 
     if (raw[0] == '$') {
         // TODO expand with environment variable
-        const char* expand = stdlib.getenv(raw + 1);
+        const char* expand = getenv(raw + 1);
         if (!expand) {
             fprintf(stderr, "[build-file] warning: environment variable '%s' not set!\n", raw + 1);
             return 0;
@@ -41,7 +41,7 @@ fn u32 expandField(Info* info, const char* raw) {
     return info.pool.addStr(raw, false);
 }
 
-fn bool getYamlInfo(yaml.Parser* parser, Info* info) {
+fn bool getYamlInfo(Parser* parser, Info* info) {
     const char* target = parser.getScalarValue("target");
     info.target = expandField(info, target);
 
@@ -66,8 +66,8 @@ fn bool getYamlInfo(yaml.Parser* parser, Info* info) {
     const char* linkerscript = parser.getScalarValue("toolchain.linkerscript");
     info.linkerscript = expandField(info, linkerscript);
 
-    const yaml.Node* dirs = parser.findNode("libdir");
-    yaml.Iter iter = parser.getNodeChildIter(dirs);
+    const Node* dirs = parser.findNode("libdir");
+    Iter iter = parser.getNodeChildIter(dirs);
     while (!iter.done()) {
         const char* dir = iter.getValue();
         info.lib_dirs.add(expandField(info, dir));
@@ -91,15 +91,15 @@ fn bool getYamlInfo(yaml.Parser* parser, Info* info) {
     }
 
     // TODO iterate all nodes, extract all that start with 'plugin.'
-    const yaml.Node* root = parser.getRoot();
+    const Node* root = parser.getRoot();
     iter = parser.getNodeChildIter(root);
     while (!iter.done()) {
         const char* name = iter.getName();
-        if (string.strncmp(name, "plugin.,", 7) == 0) {
+        if (strncmp(name, "plugin.,", 7) == 0) {
             const char* options = iter.getChildScalarValue("options");
             if (!options) {
                 fprintf(stderr, "[build-file] missing options for %s\n", name);
-                stdlib.exit(-1);
+                exit(-1);
             }
             SrcLoc loc = 0; // TODO
             info.addPlugin(name+7, options, loc);
@@ -111,7 +111,7 @@ fn bool getYamlInfo(yaml.Parser* parser, Info* info) {
 }
 
 fn bool parseInfo(Info* info, const char* data) {
-    yaml.Parser* parser = yaml.Parser.create();
+    Parser* parser = Parser.create();
     bool ok = parser.parse(data);
     if (ok) {
         //parser.dump(true);
@@ -124,7 +124,7 @@ fn bool parseInfo(Info* info, const char* data) {
     return ok;
 }
 
-public fn Info* parse(source_mgr.SourceMgr* sm, string_pool.Pool* pool, const char* filename) {
+public fn Info* parse(SourceMgr* sm, Pool* pool, const char* filename) {
     // create on stack first. After successful parse, alloc on heap and return
     Info info = {}
     info.pool = pool;
@@ -140,8 +140,8 @@ public fn Info* parse(source_mgr.SourceMgr* sm, string_pool.Pool* pool, const ch
 
     if (!ok) return nil;
 
-    Info* result = stdlib.malloc(sizeof(Info));
-    string.memcpy(result, &info, sizeof(Info));
+    Info* result = malloc(sizeof(Info));
+    memcpy(result, &info, sizeof(Info));
     return result;
 }
 

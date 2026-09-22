@@ -15,18 +15,18 @@
 
 module utils;
 
-import constants;
-import file_utils local;
+import constants { recipe_name, buildfile_name }
+import file_utils { Max_path }
 
-import stdio local;
-import string local;
-import sys_stat local;
-import sys_time;
-import unistd;
+import stdio { perror }
+import string { strlen, pstrcpy, pstrcat }
+import sys_stat { *}
+import sys_time { Timeval, gettimeofday }
+import unistd { getcwd, chdir }
 
 public fn u64 now() @(unused) {
-    sys_time.Timeval tv;
-    sys_time.gettimeofday(&tv, nil);
+    Timeval tv;
+    gettimeofday(&tv, nil);
     u64 now64 = (u64)tv.tv_sec;
     now64 *= 1000000;
     now64 += tv.tv_usec;
@@ -54,7 +54,7 @@ fn bool checkFile(const char* filename) {
 }
 
 public fn u32 changeToProjectDir(PathInfo* info, const char* other_dir) {
-    char* path = unistd.getcwd(info.orig2root, sizeof(info.orig2root)-1);   // -1 to add /
+    char* path = getcwd(info.orig2root, sizeof(info.orig2root)-1);   // -1 to add /
     if (path == nil) {
         perror("getcwd");
         return 2;
@@ -72,9 +72,9 @@ public fn u32 changeToProjectDir(PathInfo* info, const char* other_dir) {
         info.root2orig[len+1] = 0;
     }
 
-    if (unistd.chdir(other_dir)) return 2;
+    if (chdir(other_dir)) return 2;
 
-    if (!checkFile(constants.recipe_name)) return 3;
+    if (!checkFile(recipe_name)) return 3;
     return 0;
 }
 
@@ -93,7 +93,7 @@ public fn bool findProjectDir(PathInfo* info) {
 
     char[Max_path] buffer;
     while (1) {
-        char* path = unistd.getcwd(buffer, elemsof(buffer)-1);  // -1 for trailing slash
+        char* path = getcwd(buffer, elemsof(buffer)-1);  // -1 for trailing slash
         if (path == nil) {
             perror("getcwd");
             return false;
@@ -103,7 +103,7 @@ public fn bool findProjectDir(PathInfo* info) {
             pstrcpy(base_path + pos, elemsof(base_path) - pos, "/");
         }
 
-        if (checkFile(constants.recipe_name)) {
+        if (checkFile(recipe_name)) {
             char* path_prefix = base_path + strlen(path);
             if (*path_prefix == '/') path_prefix++;
             if (info) {
@@ -113,7 +113,7 @@ public fn bool findProjectDir(PathInfo* info) {
             return true;
         }
         if (path[0] == '/' && path[1] == '\0') return false;
-        if (unistd.chdir("..")) {
+        if (chdir("..")) {
             perror("chdir");
             return false;
         }
@@ -122,7 +122,7 @@ public fn bool findProjectDir(PathInfo* info) {
 }
 
 public fn const char* findBuildFile() @(unused) {
-    if (!checkFile(constants.buildfile_name)) return nil;
-    return constants.buildfile_name;
+    if (!checkFile(buildfile_name)) return nil;
+    return buildfile_name;
 }
 

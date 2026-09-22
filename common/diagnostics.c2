@@ -15,28 +15,27 @@
 
 module diagnostics;
 
-import color local;
-import source_mgr;
-import string_buffer;
-import src_loc local;
+import color { Color }
+import source_mgr { SourceMgr, Location }
+import string_buffer { Buf }
+import src_loc { SrcLoc, SrcRange }
 import utf8;
-import utils;
+import utils { PathInfo }
 
-import stdarg local;
-import stdio local;
-import stdlib;
+import stdio { fputs, stderr }
+import stdlib { calloc, free }
 
 public type Diags struct @(opaque) {
-    source_mgr.SourceMgr* sm;   // no ownership
-    string_buffer.Buf* out;     // owned
+    SourceMgr* sm;   // no ownership
+    Buf* out;     // owned
     u32 num_errors;
     u32 num_warnings;
     bool promote_warnings;
-    const utils.PathInfo* path_info;  // no ownership
+    const PathInfo* path_info;  // no ownership
 }
 
-public fn Diags* create(source_mgr.SourceMgr* sm, bool use_color, const utils.PathInfo* path_info) {
-    Diags* diags = stdlib.calloc(1, sizeof(Diags));
+public fn Diags* create(SourceMgr* sm, bool use_color, const PathInfo* path_info) {
+    Diags* diags = calloc(1, sizeof(Diags));
     diags.sm = sm;
     diags.out = string_buffer.create(512, use_color, 1);
     diags.path_info = path_info;
@@ -45,7 +44,7 @@ public fn Diags* create(source_mgr.SourceMgr* sm, bool use_color, const utils.Pa
 
 public fn void Diags.free(Diags* diags) {
     diags.out.free();
-    stdlib.free(diags);
+    free(diags);
 }
 
 public fn void Diags.clear(Diags* diags) {
@@ -124,7 +123,7 @@ public fn void Diags.errorRange2(Diags* diags,
     diags.internal(Error, loc, range, format, args);
 }
 
-public fn source_mgr.Location Diags.locate(Diags* diags, SrcLoc sloc) {
+public fn Location Diags.locate(Diags* diags, SrcLoc sloc) {
     return diags.sm.locate(sloc);
 }
 
@@ -140,10 +139,10 @@ fn void Diags.internal(Diags* diags,
         diags.num_warnings++;
     }
 
-    string_buffer.Buf* out = diags.out;
+    Buf* out = diags.out;
     out.clear();
 
-    source_mgr.Location loc = diags.sm.locate(sloc);
+    Location loc = diags.sm.locate(sloc);
     if (sloc && !loc.line_start) {
         out.print("<invalid location %d>: ", sloc);
         sloc = 0;
@@ -176,8 +175,8 @@ fn void Diags.internal(Diags* diags,
         u32 range_end_col = loc_col + 1; // column number for end of the ~~~ area
         u32 end_col = loc_col + 1;      // column number where to stop the cursor
         if (range.start && range.end) {
-            source_mgr.Location startLoc = diags.sm.locate(range.start);
-            source_mgr.Location endLoc = diags.sm.locate(range.end);
+            Location startLoc = diags.sm.locate(range.start);
+            Location endLoc = diags.sm.locate(range.end);
             // ignore range if spanning more than one line or not on the same line as error
             if (loc.line == startLoc.line && loc.line == endLoc.line && startLoc.column < endLoc.column) {
                 range_start_col = startLoc.column;
@@ -245,7 +244,7 @@ public fn u32 Diags.getNumErrors(const Diags* diags) { return diags.num_errors; 
 //public fn u32 Diags.getNumWarnings(const Diags* diags) { return diags.num_warnings; }
 
 public fn void Diags.printStatus(const Diags* diags) {
-    string_buffer.Buf* out = diags.out;
+    Buf* out = diags.out;
     out.clear();
 
     if (diags.num_warnings) {

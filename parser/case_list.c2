@@ -15,10 +15,10 @@
 
 module case_list;
 
-import ast local;
+import ast { SwitchCase }
 
-import string local;
-import stdlib local;
+import string { memset, memcpy }
+import stdlib { malloc, free }
 
 // Use stack for small lists, heap for larger ones
 

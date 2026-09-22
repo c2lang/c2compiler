@@ -15,8 +15,8 @@
 
 module build_target;
 
-import stdlib;
-import string;
+import stdlib { malloc, free }
+import string { memset, memcpy }
 
 type Lib struct {
     u32 name; // into auxPool
@@ -31,12 +31,12 @@ type List struct {
 }
 
 fn void List.init(List* l) {
-    string.memset(l, 0, sizeof(List));
+    memset(l, 0, sizeof(List));
     l.resize(2);
 }
 
 fn void List.free(List* l) {
-    stdlib.free(l.libs);
+    free(l.libs);
 }
 
 fn void List.visit(const List* l, Visitor visitor, void* arg) {
@@ -66,10 +66,10 @@ fn bool List.contains(const List* l, u32 name) {
 
 fn void List.resize(List* l, u32 cap) {
     l.capacity = cap;
-    Lib* libs2 = stdlib.malloc(l.capacity * sizeof(Lib));
+    Lib* libs2 = malloc(l.capacity * sizeof(Lib));
     if (l.libs) {
-        string.memcpy(libs2, l.libs, l.count * sizeof(Lib));
-        stdlib.free(l.libs);
+        memcpy(libs2, l.libs, l.count * sizeof(Lib));
+        free(l.libs);
     }
     l.libs = libs2;
 }

@@ -15,7 +15,7 @@
 
 module file_utils;
 
-import string local;
+import string { pstrcpy }
 
 // NOTE: depends on reader + writer
 public fn i32 copy_file(const char* source, const char* dest) {

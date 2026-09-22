@@ -15,15 +15,15 @@
 
 module build_target;
 
-import file_list local;
-import src_loc local;
+import file_list { FileList, File }
+import src_loc { SrcLoc }
 import string_list;
-import string_map;
-import string_pool;
-import warning_flags;
+import string_map { Map }
+import string_pool { Pool }
+import warning_flags { Flags }
 
-import stdlib;
-import string;
+import stdlib { calloc, malloc, free }
+import string { memset, memcpy }
 
 public type BackEndKind enum u8 {
     None,
@@ -68,11 +68,11 @@ public type PluginList struct {
 }
 
 public fn void PluginList.init(PluginList* l) {
-    string.memset(l, 0, sizeof(PluginList));
+    memset(l, 0, sizeof(PluginList));
 }
 
 public fn void PluginList.free(PluginList* l) {
-    stdlib.free(l.plugins);
+    free(l.plugins);
 }
 
 public fn u32 PluginList.size(const PluginList* l) { return l.count; }
@@ -84,10 +84,10 @@ public fn const Plugin* PluginList.get(const PluginList* l, u32 idx) {
 public fn void PluginList.add(PluginList* l, u32 name, u32 options, SrcLoc loc) {
     if (l.count == l.capacity) {
         l.capacity = l.capacity ? l.capacity * 2 : 4;
-        Plugin* plugins2 = stdlib.malloc(l.capacity * sizeof(Plugin));
+        Plugin* plugins2 = malloc(l.capacity * sizeof(Plugin));
         if (l.count) {
-            string.memcpy(plugins2, l.plugins, l.count * sizeof(Plugin));
-            stdlib.free(l.plugins);
+            memcpy(plugins2, l.plugins, l.count * sizeof(Plugin));
+            free(l.plugins);
         }
         l.plugins = plugins2;
     }
@@ -101,7 +101,7 @@ public fn void PluginList.add(PluginList* l, u32 name, u32 options, SrcLoc loc) 
 public type Target struct @(opaque) {
     u32 name_idx;       // index into auxPool
     SrcLoc loc;
-    warning_flags.Flags warnings;
+    Flags warnings;
     Kind kind;
 
     bool disable_asserts;
@@ -111,7 +111,7 @@ public type Target struct @(opaque) {
     bool backend_fast;
     bool optional;
 
-    string_map.Map features;
+    Map features;
     List libs;
     string_list.List exports;
     PluginList plugins;
@@ -120,8 +120,8 @@ public type Target struct @(opaque) {
     FileList asm_files;
 }
 
-public fn Target* create(u32 name_idx, SrcLoc loc, Kind kind, string_pool.Pool* pool) {
-    Target* t = stdlib.calloc(1, sizeof(Target));
+public fn Target* create(u32 name_idx, SrcLoc loc, Kind kind, Pool* pool) {
+    Target* t = calloc(1, sizeof(Target));
     t.name_idx = name_idx;
     t.loc = loc;
     t.kind = kind;
@@ -140,7 +140,7 @@ public fn void Target.free(Target* t) {
     t.features.free();
     t.asm_files.free();
     t.files.free();
-    stdlib.free(t);
+    free(t);
 }
 
 public fn u32 Target.getNameIdx(const Target* t) { return t.name_idx; }
@@ -153,7 +153,7 @@ public fn u32 Target.numFiles(const Target* t) { return t.files.getCount(); }
 
 public fn u32 Target.numAsmFiles(const Target* t) { return t.asm_files.getCount(); }
 
-public fn const string_map.Map* Target.getFeatures(const Target* t) { return &t.features; }
+public fn const Map* Target.getFeatures(const Target* t) { return &t.features; }
 
 public fn void Target.addFeature(Target* t, u32 feature) {
     t.features.addNameValue(feature, "1");
@@ -224,11 +224,11 @@ public fn void Target.enableWarnings(Target* t) {
     t.warnings.no_deprecated = false;
 }
 
-public fn const warning_flags.Flags* Target.getWarnings(const Target* t) {
+public fn const Flags* Target.getWarnings(const Target* t) {
     return &t.warnings;
 }
 
-public fn warning_flags.Flags* Target.getWarnings2(Target* t) {
+public fn Flags* Target.getWarnings2(Target* t) {
     return &t.warnings;
 }
 

@@ -15,10 +15,9 @@
 
 module console;
 
-import color local;
+import color { * }
 
-import stdarg local;
-import stdio local;
+import stdio { vsnprintf, printf, fprintf, stderr }
 
 public type Config struct @(opaque) {
     // TODO: add color customisation

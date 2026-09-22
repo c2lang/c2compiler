@@ -15,22 +15,22 @@
 
 module c2_parser;
 
-import ast_builder local;
+import ast_builder { Builder }
 import ast local;
 import attr local;
-import c2_tokenizer;
+import c2_tokenizer { Tokenizer, ErrorLevel }
 import color;
 import constants;
-import diagnostics;
+import diagnostics { Diags }
 import keywords;
-import source_mgr local;
-import src_loc local;
+import source_mgr { SourceMgr }
+import src_loc { SrcLoc }
 import stmt_list;
-import string_buffer;
-import string_map;
-import string_pool;
-import token local;
-import value_type local;
+import string_buffer { Buf }
+import string_map { Map }
+import string_pool { Pool }
+import token { Token, Kind }
+import value_type { ftoa }
 //import number_radix;    // should have have to be imported
 #if DumpTokens
 import utils;
@@ -46,7 +46,7 @@ const u32 NumStmtLists = 16; // max used for c2c is 8
 const u32 MaxLookahead = 64; // must be power of 2
 
 public type Parser struct @(opaque) {
-    c2_tokenizer.Tokenizer tokenizer;
+    Tokenizer tokenizer;
     Token tok;
     SrcLoc prev_loc;
     i32 file_id;
@@ -56,10 +56,10 @@ public type Parser struct @(opaque) {
     Token[MaxLookahead] next;
 
     SourceMgr* sm;
-    diagnostics.Diags* diags;
-    string_pool.Pool* pool;
+    Diags* diags;
+    Pool* pool;
     Builder* builder;
-    const string_map.Map* features;
+    const Map* features;
     const keywords.Info* kwinfo;
     bool is_interface;
     bool is_generated;
@@ -81,11 +81,11 @@ public type Parser struct @(opaque) {
 }
 
 public fn Parser* create(SourceMgr* sm,
-                         diagnostics.Diags* diags,
-                         string_pool.Pool* pool,
+                         Diags* diags,
+                         Pool* pool,
                          ast_builder.Builder* builder,
                          const keywords.Info* kwinfo,
-                         const string_map.Map* features,
+                         const Map* features,
                          bool has_asserts)
 {
     Parser* p = calloc(1, sizeof(Parser));
@@ -126,7 +126,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
     p.is_interface = is_interface;
     p.is_generated = is_generated;
 
-    string_buffer.Buf* buf = string_buffer.create(1024, false, 0);
+    Buf* buf = string_buffer.create(1024, false, 0);
 #if DumpTokens
     u64 t1 = utils.now();
     p.tokenizer.init(p.pool,
@@ -174,7 +174,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
     buf.free();
 }
 
-fn void Parser.on_tokenizer_error(void* arg, c2_tokenizer.ErrorLevel level, SrcLoc loc, const char* msg) {
+fn void Parser.on_tokenizer_error(void* arg, ErrorLevel level, SrcLoc loc, const char* msg) {
     Parser* p = arg;
 
     switch (level) {
@@ -979,7 +979,7 @@ fn void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
 
 // TODO: should be a Tokenizer function
 fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
-    string_buffer.Buf* out = p.tokenizer.buf;
+    Buf* out = p.tokenizer.buf;
     out.clear();
 
     if (tok.kind.isKeyword())

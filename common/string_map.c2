@@ -15,19 +15,19 @@
 
 module string_map;
 
-import string_pool;
-import string local;
-import stdlib local;
+import string_pool { Pool }
+import string { memset, memcpy, strcmp }
+import stdlib { malloc, free }
 
 public type Map struct {
-    string_pool.Pool* pool;
+    Pool* pool;
     u32* names;    // into pool
     u32* values;   // into pool
     u32 count;
     u32 capacity;
 }
 
-public fn void Map.init(Map* m, string_pool.Pool* pool) {
+public fn void Map.init(Map* m, Pool* pool) {
     memset(m, 0, sizeof(Map));
     m.pool = pool;
     m.resize(16);

@@ -15,10 +15,10 @@
 
 module file_utils;
 
-import c_errno local;
-import stdlib local;
-import string local;
-import sys_stat local;
+import c_errno { * }
+import stdlib { free }
+import string { pstrcpy, strerror }
+import sys_stat { * }
 
 public const u32 Max_path = 512;
 
@@ -148,7 +148,7 @@ public fn bool File.init(File* file, const char* dir, const char* filename = nil
 
 public fn void File.close(File* file) @(unused) {
     if (file.contents) {
-        stdlib.free(file.contents);
+        free(file.contents);
         file.contents = nil;
     }
 }

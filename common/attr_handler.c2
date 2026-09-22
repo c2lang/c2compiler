@@ -15,35 +15,35 @@
 
 module attr_handler;
 
-import ast;
-import attr local;
-import diagnostics;
-import string_pool;
-import warning_flags;
+import ast { AttrHandlerFn, Decl }
+import attr { Attr }
+import diagnostics { Diags }
+import string_pool { Pool }
+import warning_flags { Flags }
 
-import stdlib;
-import string;
+import stdlib { calloc, malloc, free }
+import string { memcpy }
 
 type Entry struct {
     u32 name;
-    ast.AttrHandlerFn func;
+    AttrHandlerFn func;
     void* arg;
 }
 
 public type Handler struct @(opaque) {
-    diagnostics.Diags* diags;   // no ownership
-    string_pool.Pool* astPool;
-    const warning_flags.Flags* warnings;
+    Diags* diags;   // no ownership
+    Pool* astPool;
+    const Flags* warnings;
 
     Entry* entries;
     u32 count;
     u32 capacity;
 }
 
-public fn Handler* create(diagnostics.Diags* diags,
-                          string_pool.Pool* astPool,
-                          const warning_flags.Flags* warnings) {
-    Handler* h = stdlib.calloc(1, sizeof(Handler));
+public fn Handler* create(Diags* diags,
+                          Pool* astPool,
+                          const Flags* warnings) {
+    Handler* h = calloc(1, sizeof(Handler));
     h.diags = diags;
     h.astPool = astPool;
     h.warnings = warnings;
@@ -51,19 +51,19 @@ public fn Handler* create(diagnostics.Diags* diags,
 }
 
 public fn void Handler.free(Handler* h) {
-    if (h.entries) stdlib.free(h.entries);
-    stdlib.free(h);
+    if (h.entries) free(h.entries);
+    free(h);
 }
 
-public fn bool Handler.register(Handler* h, u32 name, ast.AttrHandlerFn func, void* arg) {
+public fn bool Handler.register(Handler* h, u32 name, AttrHandlerFn func, void* arg) {
     // TODO check for duplicates
 
     if (h.count == h.capacity) {
         h.capacity += 2;
-        Entry* entries2 = stdlib.malloc(h.capacity * sizeof(Entry));
+        Entry* entries2 = malloc(h.capacity * sizeof(Entry));
         if (h.count) {
-            string.memcpy(entries2, h.entries, h.count * sizeof(Entry));
-            stdlib.free(h.entries);
+            memcpy(entries2, h.entries, h.count * sizeof(Entry));
+            free(h.entries);
         }
         h.entries = entries2;
     }
@@ -76,7 +76,7 @@ public fn bool Handler.register(Handler* h, u32 name, ast.AttrHandlerFn func, vo
     return true;
 }
 
-public fn bool Handler.handle(Handler* h, ast.Decl* d, const Attr* a) {
+public fn bool Handler.handle(Handler* h, Decl* d, const Attr* a) {
     for (u32 i=0; i<h.count; i++) {
         Entry* e = &h.entries[i];
         if (e.name == a.name) return e.func(e.arg, d, a);

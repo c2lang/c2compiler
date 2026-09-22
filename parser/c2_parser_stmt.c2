@@ -17,12 +17,12 @@ module c2_parser;
 
 import stmt_list;
 import ast local;
-import constants local;
-import token local;
-import src_loc local;
+import constants { MaxMultiDecl }
+import token { Token, Kind }
+import src_loc { SrcLoc }
 import string_list;
 
-import ctype;
+import ctype { islower }
 
 fn Stmt* Parser.parseStmt(Parser* p) {
     // TODO use Jump Table (combined one for multiple purposes?)
@@ -626,7 +626,7 @@ fn Stmt* Parser.parseLabelStmt(Parser* p) {
     u32 name = p.tok.name_idx;
 
     const char* label_name = p.pool.idx2str(name);
-    if (!ctype.islower(label_name[0])) {
+    if (!islower(label_name[0])) {
         p.error("a label name must start with a lower case character");
     }
     SrcLoc loc = p.tok.loc;

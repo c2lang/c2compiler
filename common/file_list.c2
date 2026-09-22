@@ -15,10 +15,10 @@
 
 module file_list;
 
-import src_loc local;
+import src_loc { SrcLoc }
 
-import stdlib;
-import string;
+import stdlib { malloc, free }
+import string { memcpy }
 
 public type File struct {
     u32 name;       // index into auxPool
@@ -35,11 +35,11 @@ public fn void FileList.init(FileList* l, u32 cap) {
     l.count = 0;
     l.capacity = cap;
     l.files = nil;
-    if (l.capacity) l.files = stdlib.malloc(l.capacity * sizeof(File));
+    if (l.capacity) l.files = malloc(l.capacity * sizeof(File));
 }
 
 public fn void FileList.free(FileList* l) {
-    stdlib.free(l.files);
+    free(l.files);
 }
 
 public fn bool FileList.add(FileList* l, u32 filename, SrcLoc loc) {
@@ -51,10 +51,10 @@ public fn bool FileList.add(FileList* l, u32 filename, SrcLoc loc) {
     if (l.count == l.capacity) {
         if (l.capacity) l.capacity *= 2;
         else l.capacity += 4;
-        File* files2 = stdlib.malloc(l.capacity * sizeof(File));
+        File* files2 = malloc(l.capacity * sizeof(File));
         if (l.count) {
-            string.memcpy(files2, l.files, l.count * sizeof(File));
-            stdlib.free(l.files);
+            memcpy(files2, l.files, l.count * sizeof(File));
+            free(l.files);
         }
         l.files = files2;
     }

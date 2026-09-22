@@ -15,7 +15,7 @@
 
 module c_prec;
 
-import ast local;
+import ast { BinaryOpcode }
 
 public type C_Prec enum u8 {
     Unknown,        // Not binary operator.

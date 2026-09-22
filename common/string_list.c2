@@ -15,25 +15,25 @@
 
 module string_list;
 
-import string_pool;
-import string local;
-import stdlib;
+import string_pool { Pool }
+import string { memset, memcpy, strcmp }
+import stdlib { malloc, free }
 
 public type List struct {
-    string_pool.Pool* pool;
+    Pool* pool;
     u32* indexes;   // into pool
     u32 count;
     u32 capacity;
 }
 
-public fn void List.init(List* l, string_pool.Pool* pool) {
+public fn void List.init(List* l, Pool* pool) {
     memset(l, 0, sizeof(List));
     l.pool = pool;
     l.resize(16);
 }
 
 public fn void List.free(List* l) {
-    stdlib.free(l.indexes);
+    free(l.indexes);
     l.indexes = nil;
 }
 
@@ -43,10 +43,10 @@ public fn void List.clear(List* l) {
 
 fn void List.resize(List* l, u32 capacity) {
     l.capacity = capacity;
-    u32* indexes2 = stdlib.malloc(capacity * sizeof(u32));
+    u32* indexes2 = malloc(capacity * sizeof(u32));
     if (l.count) {
         memcpy(indexes2, l.indexes, l.count * sizeof(u32));
-        stdlib.free(l.indexes);
+        free(l.indexes);
     }
     l.indexes = indexes2;
 }

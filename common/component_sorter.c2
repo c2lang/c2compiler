@@ -15,13 +15,13 @@
 
 module component_sorter;
 
-import component local;
-import diagnostics;
-import dsm_sorter;
+import component { Component }
+import diagnostics { Diags }
+import dsm_sorter { Sorter }
 import string_list;
 
-import stdlib;
-import string;
+import stdlib { exit, malloc, free }
+import string { memcpy }
 
 fn u32 find_idx(Component** comps, u32 count, u32 name) {
     for (u32 i=0; i<count; i++) {
@@ -32,11 +32,11 @@ fn u32 find_idx(Component** comps, u32 count, u32 name) {
 }
 
 // Note: Component dependencies are not transitive, so we cannot use regular sort function!
-public fn void sort(Component** orig, u32 count, diagnostics.Diags* diags) {
+public fn void sort(Component** orig, u32 count, Diags* diags) {
     if (count <= 1) return;
 
     // preparation
-    dsm_sorter.Sorter dsm.init(count);
+    Sorter dsm.init(count);
 
     // fill deps
     for (u32 i=0; i<count; i++) {
@@ -55,14 +55,14 @@ public fn void sort(Component** orig, u32 count, diagnostics.Diags* diags) {
         diags.error(0, "circular dependency between libraries");
         //s.print();
         // TODO print dependency
-        stdlib.exit(-1);
+        exit(-1);
     }
 
     // re-order
-    Component** copy = stdlib.malloc(count * sizeof(Component*));
-    string.memcpy(copy, orig, count * sizeof(Component*));
+    Component** copy = malloc(count * sizeof(Component*));
+    memcpy(copy, orig, count * sizeof(Component*));
     for (u32 i=0; i<count; i++) orig[i] = copy[sorted[i]];
-    stdlib.free(copy);
+    free(copy);
 
     dsm.free();
 }

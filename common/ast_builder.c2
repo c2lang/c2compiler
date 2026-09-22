@@ -15,25 +15,25 @@
 
 module ast_builder;
 
-import ast local;
-import ast_context local;
-import attr_handler;
-import attr local;
-import component;
-import diagnostics;
-import number_radix local;
-import src_loc local;
-import string_buffer;
-import string_pool;
+import ast { * }
+import ast_context { Context }
+import attr_handler { Handler }
+import attr { Attr }
+import component { Component }
+import diagnostics { Diags }
+import number_radix { Radix }
+import src_loc { SrcLoc }
+import string_buffer { Buf }
+import string_pool { Pool }
 
-import stdlib local;
+import stdlib { calloc, free }
 
 public type Builder struct @(opaque) {
     Context* context;           // no ownership
-    diagnostics.Diags* diags;   // no ownership
-    string_pool.Pool* astPool;  // no ownership
-    string_pool.Pool* auxPool;  // no ownership
-    component.Component* comp;  // no ownership
+    Diags* diags;   // no ownership
+    Pool* astPool;  // no ownership
+    Pool* auxPool;  // no ownership
+    Component* comp;  // no ownership
     Module* mod;                // no ownership
     AST* ast;
     u32 ast_idx;
@@ -46,16 +46,16 @@ public type Builder struct @(opaque) {
     Attr[8] attrs;
     u32 num_attrs;
 
-    attr_handler.Handler* attr_handler; // no ownership
+    Handler* attr_handler; // no ownership
 }
 
 public fn Builder* create(Context* context,
-                          diagnostics.Diags* diags,
-                          string_pool.Pool* astPool,
-                          string_pool.Pool* auxPool,
+                          Diags* diags,
+                          Pool* astPool,
+                          Pool* auxPool,
                           u32 c2_name,
                           u32 main_name,
-                          attr_handler.Handler* attr_handler_)
+                          Handler* attr_handler_)
 {
     Builder* b = calloc(1, sizeof(Builder));
     b.context = context;
@@ -78,7 +78,7 @@ fn const char* Builder.idx2name(const Builder* b, u32 name_idx) {
     return b.astPool.idx2str(name_idx);
 }
 
-public fn void Builder.setComponent(Builder* b, component.Component* comp) {
+public fn void Builder.setComponent(Builder* b, Component* comp) {
     b.comp = comp;
     b.mod = nil;
     b.is_interface = !comp.hasSources();
@@ -372,7 +372,7 @@ public fn VarDecl* Builder.createEnumAssocDecl(Builder* b,
     QualType a = b.createEnumAssocTypeAccess(esv.getType(), etd);
 
     // name is Enum__<name> for now. The first letter is always capital-cased, even if not const
-    string_buffer.Buf* out = string_buffer.create(128, false, 0);
+    Buf* out = string_buffer.create(128, false, 0);
     out.add(b.idx2name(d.getNameIdx()));
     out.add("__");
     out.add(b.idx2name(esv.getNameIdx()));

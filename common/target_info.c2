@@ -15,8 +15,8 @@
 
 module target_info;
 
-import stdio local;
-import string local;
+import stdio { snprintf }
+import string { strcasecmp }
 
 public type Arch enum u8 (const char* const name) {
     Unknown  : { "unknown" },

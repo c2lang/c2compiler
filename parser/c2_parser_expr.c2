@@ -17,13 +17,13 @@ module c2_parser;
 
 //import ast_builder local;   // BUG: should have to be imported
 import ast local;
-import c2_prec local;
-import constants;
-import token local;
-import src_loc local;
+import c2_prec { Prec }
+import constants { MaxMultiString }
+import token { Kind, Token }
+import src_loc { SrcLoc }
 
-import ctype local;
-import string;
+import ctype { isupper }
+import string { memcpy }
 
 fn Expr* Parser.parseExpr(Parser* p) {
     Expr* lhs = p.parseAssignmentExpression();
@@ -457,18 +457,18 @@ fn Expr* Parser.parseStringLiteral(Parser* p) {
     if (p.tok.kind == StringLiteral) {
         char* tmp = p.multi_string;
         const char* p1 = p.pool.idx2str(idx);
-        if (len > constants.MaxMultiString) {
+        if (len > MaxMultiString) {
             p.error("multi-string literal too long");
         }
-        string.memcpy(tmp, p1, len);
+        memcpy(tmp, p1, len);
 
         while (p.tok.kind == StringLiteral) {
             const char* p2 = p.pool.idx2str(p.tok.text_idx);
             usize len2 = p.tok.text_len;
-            if (len + len2 > constants.MaxMultiString) {
+            if (len + len2 > MaxMultiString) {
                 p.error("multi-string literal too long");
             }
-            string.memcpy(tmp + len, p2, len2);
+            memcpy(tmp + len, p2, len2);
             len += len2;
             src_len = p.tok.loc + p.tok.len - loc;
             p.consumeToken();

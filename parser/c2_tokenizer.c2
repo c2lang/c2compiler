@@ -16,20 +16,19 @@
 module c2_tokenizer;
 
 import constants;
-import keywords;
-import src_loc local;
-import string_buffer;
-import string_map;
-import string_pool;
-import token local;
+import keywords { Info }
+import src_loc { SrcLoc }
+import string_buffer { Buf }
+import string_map { Map }
+import string_pool { Pool }
+import token { Token, Kind }
 import utf8;
-import value_type local;
+import value_type { Value }
 
-import ctype local;
-import stdarg local;
+import ctype { isdigit, isalnum, isalpha, isxdigit, isblank }
 import stdio local;
-import stdlib;
-import string;
+import stdlib { strtol, strtod }
+import string { memset, memcpy, memcmp, strncmp }
 
 type Action enum u8 {
     INVALID = 0,  // ensure the default Action in Char_lookup is INVALID
@@ -260,18 +259,18 @@ public type Tokenizer struct {
     SrcLoc loc_start;
     const char* input_start;
 
-    const keywords.Info* kwinfo;
+    const Info* kwinfo;
     const char* line_start;
 
-    string_pool.Pool* pool; // no ownership
-    string_buffer.Buf* buf; // no ownership, used for strings and character constants
+    Pool* pool; // no ownership
+    Buf* buf; // no ownership, used for strings and character constants
     ErrorFn on_error;
     void* on_error_arg;
 
     // Feature handling
     Feature[constants.MaxFeatureDepth+1] feature_stack;
     u32 feature_count;
-    const string_map.Map* features;
+    const Map* features;
     bool raw_mode;  // also emit comments and invalid characters
     bool stop_at_eol; // restrict lexing to single line for preprocessor
     u8 c_mode;      // inside a module extern "C" or an extern "C" {} block
@@ -281,17 +280,17 @@ public type Tokenizer struct {
 static_assert(408, sizeof(Tokenizer));
 
 public fn void Tokenizer.init(Tokenizer* t,
-                              string_pool.Pool* pool,
-                              string_buffer.Buf* buf,
+                              Pool* pool,
+                              Buf* buf,
                               const char* input,
                               SrcLoc loc_start,
-                              const keywords.Info* kwinfo,
-                              const string_map.Map* features,
+                              const Info* kwinfo,
+                              const Map* features,
                               ErrorFn on_error,
                               void* on_error_arg,
                               bool raw_mode)
 {
-    string.memset(t, 0, sizeof(Tokenizer));
+    memset(t, 0, sizeof(Tokenizer));
     t.cur = input;
     t.loc_start = loc_start;
     t.input_start = input;
@@ -328,7 +327,7 @@ public fn void Tokenizer.lex(Tokenizer* t, Token* result) {
                 if (t.raw_mode) {
                     result.kind = Invalid;
                     result.len = (u16)len;
-                    string.memcpy(result.invalid, t.cur, len);
+                    memcpy(result.invalid, t.cur, len);
                     t.cur += len;
                     return;
                 }
@@ -933,7 +932,7 @@ fn void Tokenizer.lex_floating_point(Tokenizer* t, Token* result, const char* st
     t.cur = p;
     buf[pos] = '\0';
     result.len = (u16)(p - start);
-    result.float_value = stdlib.strtod(buf, nil);
+    result.float_value = strtod(buf, nil);
     return;
 too_large:
     t.num_error(result, p, "floating point constant too large");
@@ -996,7 +995,7 @@ fn void Tokenizer.lex_floating_point_hex(Tokenizer* t, Token* result, const char
     buf[pos] = '\0';
     // FIXME: do not use strtod() on platforms that do not support the syntax
     result.len = (u16)(p - start);
-    result.float_value = stdlib.strtod(buf, nil);
+    result.float_value = strtod(buf, nil);
     return;
 too_large:
     t.num_error(result, p, "floating point constant too large");
@@ -1184,7 +1183,7 @@ fn void Tokenizer.lex_raw_string_literal(Tokenizer* t, Token* result) {
     if (count >= 3) {
         // check if the rawstring is multi-line
         for (; *p && *p != '\n'; p++) {
-            if (*p == '`' && !string.memcmp(p, start, count))
+            if (*p == '`' && !memcmp(p, start, count))
                 break;
         }
         if (*p == '\n') {
@@ -1222,7 +1221,7 @@ fn void Tokenizer.lex_raw_string_literal(Tokenizer* t, Token* result) {
             t.cur = p;
             if (i < indent) {
                 // if blank line or end line, just skip the insufficient indentation
-                if (*p == '\n' || *p == '\r' || !*p || !string.strncmp(p, start, count)) continue;
+                if (*p == '\n' || *p == '\r' || !*p || !strncmp(p, start, count)) continue;
                 t.error(result, "raw string indentation error: expected %d %s%.*s", indent,
                         *bol == '\t' ? "tab" : "space", indent > 1 ? 1 : 0, "s");
                 return;
@@ -1465,7 +1464,7 @@ fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, Kind kind) {
     Token tok;
 
     // parse pptokens instead of raw text
-    string_buffer.Buf msg.init(t.error_msg, elemsof(t.error_msg), false, false, 0);
+    Buf msg.init(t.error_msg, elemsof(t.error_msg), false, false, 0);
     SrcLoc last_loc = 0;
     while (t.lex_preproc(&tok) != Eof) {
         // replace blanks with a single space
@@ -1550,7 +1549,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token* result) {
                     i64 value = 0;
                     u32 idx = 0;
                     if (t.features.contains(id, &idx)) {
-                        value = stdlib.strtol(t.features.getValue(idx), nil, 0);
+                        value = strtol(t.features.getValue(idx), nil, 0);
                     }
                     val.setSigned(value);
                 }
@@ -1826,7 +1825,7 @@ fn bool Tokenizer.handle_if(Tokenizer* t, Token* result, Kind kind) {
             i64 value = 0;
             u32 idx = 0;
             if (t.features.contains(t.pool.idx2str(result.name_idx), &idx)) {
-                value = stdlib.strtol(t.features.getValue(idx), nil, 0);
+                value = strtol(t.features.getValue(idx), nil, 0);
             }
             if (!value)
                 top.skipping = 1;
