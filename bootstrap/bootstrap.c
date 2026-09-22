@@ -47,8 +47,8 @@ typedef unsigned short u16;
 typedef unsigned int u32;
 typedef signed long i64;
 typedef unsigned long u64;
-typedef signed long ssize_t;
-typedef unsigned long size_t;
+typedef signed long long ssize_t;
+typedef unsigned long long size_t;
 
 #define NULL ((void*)0)
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))
@@ -80,10 +80,6 @@ int c2_strswitch(const char* s1, const char* s2)
    }
    return idx;
 }
-
-
-
-// --- module c_types ---
 
 
 
@@ -130,7 +126,6 @@ int c2_strswitch(const char* s1, const char* s2)
 // --- module c_errno ---
 
 extern int* __errno_location(void);
-#define c_errno_ENOENT 2
 #define c_errno_EINTR 4
 #define c_errno_ENOMEM 12
 #define c_errno_EEXIST 17
@@ -212,6 +207,8 @@ __attribute__((__format__(printf, 2, 3)))
 int fprintf(FILE* __stream, const char* __format, ...);
 __attribute__((__format__(printf, 1, 2)))
 int printf(const char* __format, ...);
+__attribute__((__format__(printf, 2, 3)))
+int sprintf(char* __s, const char* __format, ...);
 __attribute__((__format__(printf, 3, 4)))
 int snprintf(char* __s, size_t size, const char* __format, ...);
 __attribute__((__format__(scanf, 2, 3)))
@@ -232,6 +229,7 @@ void* realloc(void* ptr, size_t size);
 void free(void* ptr);
 double atof(const char* nptr);
 double strtod(const char* nptr, char** endptr);
+i64 strtol(const char* nptr, char** endptr, int base);
 __attribute__((noreturn))
 void exit(int __status);
 char* getenv(const char* __name);
@@ -240,9 +238,7 @@ char* getenv(const char* __name);
 // --- module string ---
 
 void* memcpy(void* dest, const void* src, size_t n);
-char* strcpy(char* dest, const char* src);
 char* strdup(const char* s);
-char* strcat(char* dest, const char* src);
 int memcmp(const void* s1, const void* s2, size_t n);
 int strcmp(const char* s1, const char* s2);
 int strncmp(const char* s1, const char* s2, size_t n);
@@ -252,6 +248,33 @@ void* memset(void* s, int c, size_t n);
 char* strerror(int errnum);
 size_t strlen(const char* s);
 int strcasecmp(const char* s1, const char* s2);
+static inline
+size_t pstrcpy(char* dest, size_t size, const char* src)
+{
+   size_t i = 0;
+   while (i < size) {
+      if ((dest[i] = *src++) == '\0') return i;
+      i++;
+   }
+   if (i) dest[i - 1] = '\0';
+   return i;
+}
+
+static inline
+size_t pstrcat(char* dest, size_t size, const char* src)
+{
+   size_t i = 0;
+   while (i < size && dest[i] != '\0') {
+      i++;
+   }
+   while (i < size) {
+      if ((dest[i] = *src++) == '\0') return i;
+      i++;
+   }
+   if (i) dest[i - 1] = '\0';
+   return i;
+}
+
 
 
 // --- module sys_stat ---
@@ -306,7 +329,7 @@ int gettimeofday(timeval* tv, timezone* tz);
 // --- module sys_utsname ---
 typedef struct utsname_ utsname;
 
-#define sys_utsname_NAME_LEN 65
+#define _UTSNAME_LENGTH 65
 struct utsname_ {
    char sysname[65];
    char nodename[65];
@@ -330,7 +353,7 @@ void _exit(int _arg0);
 int chdir(const char* path);
 int close(int fd);
 int dup2(int oldfd, int newfd);
-int execv(const char* path, char** argv);
+int execv(const char* path, char* const* argv);
 pid_t fork(void);
 char* getcwd(char* buf, size_t size);
 int isatty(int fd);
@@ -438,6 +461,7 @@ static const char* constants_manifest_name = "manifest.yaml";
 
 // --- module ast_context ---
 typedef struct ast_context_Block_ ast_context_Block;
+typedef struct ast_context_TailAllocator_ ast_context_TailAllocator;
 typedef struct ast_context_Context_ ast_context_Context;
 
 struct ast_context_Block_ {
@@ -447,7 +471,7 @@ struct ast_context_Block_ {
    u8 data[0];
 };
 
-struct ast_context_Context_ {
+struct ast_context_TailAllocator_ {
    ast_context_Block* blk_head;
    ast_context_Block* blk_tail;
    u32 blk_size;
@@ -457,14 +481,23 @@ struct ast_context_Context_ {
    u32 cur_allocated;
 };
 
+struct ast_context_Context_ {
+   ast_context_TailAllocator allocator;
+   u32 blk_size;
+   u32 wordsize;
+};
+
 static ast_context_Block* ast_context_Block_create(u32 blk_size);
 static ast_context_Block* ast_context_Block_free(ast_context_Block* b);
-static void ast_context_Context_init(ast_context_Context* c, u32 blk_size);
-static ast_context_Context* ast_context_create(u32 blk_size);
-static void ast_context_Context_freeBlocks(ast_context_Context* c);
+static void ast_context_TailAllocator_init(ast_context_TailAllocator* c, u32 blk_size);
+static void ast_context_TailAllocator_freeBlocks(ast_context_TailAllocator* c);
+static void* ast_context_TailAllocator_alloc(ast_context_TailAllocator* c, u32 len);
+static void ast_context_TailAllocator_report(const ast_context_TailAllocator* c);
+static ast_context_Context* ast_context_create(u32 blk_size, u32 wordsize);
 static void ast_context_Context_free(ast_context_Context* c);
+static u32 ast_context_Context_getWordSize(ast_context_Context* c);
 static void* ast_context_Context_alloc(ast_context_Context* c, u32 len);
-static void ast_context_Context_report(const ast_context_Context* c);
+static void ast_context_Context_report(ast_context_Context* c);
 
 static ast_context_Block* ast_context_Block_create(u32 blk_size)
 {
@@ -482,7 +515,7 @@ static ast_context_Block* ast_context_Block_free(ast_context_Block* b)
    return next;
 }
 
-static void ast_context_Context_init(ast_context_Context* c, u32 blk_size)
+static void ast_context_TailAllocator_init(ast_context_TailAllocator* c, u32 blk_size)
 {
    c->blk_head = NULL;
    c->blk_tail = NULL;
@@ -493,27 +526,14 @@ static void ast_context_Context_init(ast_context_Context* c, u32 blk_size)
    c->cur_allocated = 0;
 }
 
-static ast_context_Context* ast_context_create(u32 blk_size)
-{
-   ast_context_Context* c = malloc(40);
-   ast_context_Context_init(c, blk_size);
-   return c;
-}
-
-static void ast_context_Context_freeBlocks(ast_context_Context* c)
+static void ast_context_TailAllocator_freeBlocks(ast_context_TailAllocator* c)
 {
    ast_context_Block* blk = c->blk_head;
    while (blk) blk = ast_context_Block_free(blk);
    c->blk_head = c->blk_tail = NULL;
 }
 
-static void ast_context_Context_free(ast_context_Context* c)
-{
-   ast_context_Context_freeBlocks(c);
-   free(c);
-}
-
-static void* ast_context_Context_alloc(ast_context_Context* c, u32 len)
+static void* ast_context_TailAllocator_alloc(ast_context_TailAllocator* c, u32 len)
 {
    len = (len + 7) & ~0x7;
    c->num_allocs++;
@@ -537,7 +557,7 @@ static void* ast_context_Context_alloc(ast_context_Context* c, u32 len)
    return cur;
 }
 
-static void ast_context_Context_report(const ast_context_Context* c)
+static void ast_context_TailAllocator_report(const ast_context_TailAllocator* c)
 {
    u32 blocks = 0;
    u32 total = 0;
@@ -553,6 +573,36 @@ static void ast_context_Context_report(const ast_context_Context* c)
    u32 avg = 0;
    if (c->num_allocs) avg = total / c->num_allocs;
    printf("context: %u allocs, total %u (%u KB), avg %u bytes, %u blocks (%u), slack %u, avail %u\n", c->num_allocs, total, (total + 1023) / 1024, avg, blocks, c->blk_size, slack, avail);
+}
+
+static ast_context_Context* ast_context_create(u32 blk_size, u32 wordsize)
+{
+   ast_context_Context* c = malloc(48);
+   ast_context_TailAllocator_init(&c->allocator, blk_size);
+   c->blk_size = blk_size;
+   c->wordsize = wordsize;
+   return c;
+}
+
+static void ast_context_Context_free(ast_context_Context* c)
+{
+   ast_context_TailAllocator_freeBlocks(&c->allocator);
+   free(c);
+}
+
+static u32 ast_context_Context_getWordSize(ast_context_Context* c)
+{
+   return c->wordsize;
+}
+
+static void* ast_context_Context_alloc(ast_context_Context* c, u32 len)
+{
+   return ast_context_TailAllocator_alloc(&c->allocator, len);
+}
+
+static void ast_context_Context_report(ast_context_Context* c)
+{
+   ast_context_TailAllocator_report(&c->allocator);
 }
 
 
@@ -774,21 +824,45 @@ static void string_buffer_Buf_rparen(string_buffer_Buf* buf)
 __attribute__((__format__(printf, 2, 3)))
 static void string_buffer_Buf_print(string_buffer_Buf* buf, const char* format, ...)
 {
-   char tmp[4096];
    va_list args;
    va_start(args, format);
-   int len = vsnprintf(tmp, 4096, format, args);
+   string_buffer_Buf_vprintf(buf, format, args);
    va_end(args);
-   ;//assert(len < 4096);
-   string_buffer_Buf_add2(buf, tmp, (u32)len);
 }
 
 static void string_buffer_Buf_vprintf(string_buffer_Buf* buf, const char* format, va_list args)
 {
    char tmp[4096];
-   int len = vsnprintf(tmp, 4096, format, args);
-   ;//assert(len < 4096);
-   string_buffer_Buf_add2(buf, tmp, (u32)len);
+   char* dest = tmp;
+   u32 dest_size = 4096;
+   u32 avail = buf->capacity - buf->size_;
+   if (!buf->grow || avail >= 4096) {
+      if (!avail) {
+         buf->truncated = true;
+         return;
+      }
+      dest = &buf->data_[buf->size_];
+      dest_size = avail;
+   }
+   int ret = vsnprintf(dest, dest_size, format, args);
+   if (ret < 0) {
+      return;
+   }
+   u32 len = (u32)ret;
+   if (len >= dest_size) {
+      buf->truncated = true;
+      len = dest_size - 1;
+   }
+   if (dest == tmp) {
+      if (len >= avail) {
+         string_buffer_Buf_add2(buf, tmp, len);
+      } else {
+         memcpy(&buf->data_[buf->size_], tmp, len);
+         buf->size_ += len;
+      }
+   } else {
+      buf->size_ += len;
+   }
 }
 
 static void string_buffer_Buf_unindent(string_buffer_Buf* buf)
@@ -824,6 +898,7 @@ static u32 string_buffer_Buf_getColumn(const string_buffer_Buf* buf)
 static u32 string_buffer_Buf_encodeBytes(string_buffer_Buf* buf, const char* p, u32 len, char sep)
 {
    u32 size = buf->size_;
+   if (sep) string_buffer_Buf_add1(buf, sep);
    u32 copy = 0;
    const char* end = p + len;
    while (p < end) {
@@ -852,7 +927,7 @@ static u32 string_buffer_Buf_encodeBytes(string_buffer_Buf* buf, const char* p, 
          goto add_char;
       case '"':
       case '\'':
-         if (sep && sep != c) goto normal;
+         if (sep && c != sep) goto normal;
          fallthrough;
       case '\\':
       add_char:
@@ -881,6 +956,7 @@ static u32 string_buffer_Buf_encodeBytes(string_buffer_Buf* buf, const char* p, 
       }
    }
    if (copy) string_buffer_Buf_add2(buf, p - copy, copy);
+   if (sep) string_buffer_Buf_add1(buf, sep);
    return buf->size_ - size;
 }
 
@@ -891,15 +967,26 @@ static void string_buffer_Buf_trim(string_buffer_Buf* buf, u32 len)
 
 
 // --- module string_pool ---
+typedef struct string_pool_Block_ string_pool_Block;
 typedef struct string_pool_Pool_ string_pool_Pool;
 
 typedef u32 string_pool_HashEntry;
-struct string_pool_Pool_ {
-   u32 data_size;
-   u32 data_capacity;
+struct string_pool_Block_ {
+   u32 size;
+   u32 capacity;
    char* data;
+};
+
+struct string_pool_Pool_ {
+   u32 blocks_count;
+   u32 blocks_capacity;
+   string_pool_Block* blocks;
    u32 num_adds;
    u32 total_size;
+   u32 num_strs;
+   u32 data_size;
+   u32 data_capacity;
+   u32 pad;
    u32 hash_count;
    u32 hash_mask;
    u32 entry_size;
@@ -911,33 +998,34 @@ struct string_pool_Pool_ {
 #define string_pool_INDEX_BITS ((1 << string_pool_NEXT_SHIFT) - 1)
 #define string_pool_INDEX_SHIFT 2
 #define string_pool_DATA_ALIGN (1 << string_pool_INDEX_SHIFT)
+#define string_pool_BLOCK_SIZE 16384
 #define string_pool_HASH_INITIAL 13
 #define string_pool_HASH_PRIME 17
 static string_pool_Pool* string_pool_create(u32 data_capacity, u32 hash_size);
 static void string_pool_Pool_free(string_pool_Pool* p);
-static u32 string_pool_hash(const char* text, size_t len);
+static u32 string_pool_Pool_hash(const char* text, size_t len);
 static const char* string_pool_Pool_idx2str(const string_pool_Pool* p, u32 idx);
-static bool string_pool_same_string(const char* left, const char* right, size_t rlen);
+static bool string_pool_Pool_same_string(const char* left, const char* right, size_t rlen);
 static u32 string_pool_Pool_add(string_pool_Pool* p, const char* text, size_t len, bool filter);
 static u32 string_pool_Pool_addStr(string_pool_Pool* p, const char* text, bool filter);
-static void string_pool_Pool_resize_data(string_pool_Pool* p, u32 capacity);
 static void string_pool_Pool_resize_entries(string_pool_Pool* p, u32 capacity);
 static void string_pool_Pool_report(const string_pool_Pool* p, const char* name);
 
 static string_pool_Pool* string_pool_create(u32 data_capacity, u32 hash_size)
 {
-   string_pool_Pool* p = calloc(1, 48);
-   string_pool_Pool_resize_data(p, data_capacity);
-   p->data[0] = 0;
+   string_pool_Pool* p = calloc(1, 64);
+   data_capacity = string_pool_BLOCK_SIZE;
+   string_pool_Block* bp = malloc(4 * 16);
+   p->blocks = bp;
+   p->blocks_capacity = 4;
+   p->blocks_count = 1;
+   bp->data = malloc(data_capacity);
+   bp->data[0] = 0;
+   bp->size = string_pool_DATA_ALIGN;
+   bp->capacity = data_capacity;
    p->data_size = string_pool_DATA_ALIGN;
-   if (hash_size & (hash_size - 1)) {
-      hash_size |= hash_size >> 16;
-      hash_size |= hash_size >> 8;
-      hash_size |= hash_size >> 4;
-      hash_size |= hash_size >> 2;
-      hash_size |= hash_size >> 1;
-      hash_size += 1;
-   }
+   p->data_capacity = data_capacity;
+   while (hash_size & (hash_size - 1)) hash_size = (hash_size | (hash_size - 1)) + 1;
    if (hash_size < 256) hash_size = 256;
    p->hash_mask = hash_size - 1;
    p->entry_size = hash_size;
@@ -949,11 +1037,12 @@ static string_pool_Pool* string_pool_create(u32 data_capacity, u32 hash_size)
 static void string_pool_Pool_free(string_pool_Pool* p)
 {
    free(p->entries);
-   free(p->data);
+   while (p->blocks_count) free(p->blocks[--p->blocks_count].data);
+   free(p->blocks);
    free(p);
 }
 
-static u32 string_pool_hash(const char* text, size_t len)
+static u32 string_pool_Pool_hash(const char* text, size_t len)
 {
    u32 result = string_pool_HASH_INITIAL;
    for (u32 i = 0; i < len; i++) {
@@ -965,10 +1054,10 @@ static u32 string_pool_hash(const char* text, size_t len)
 
 static const char* string_pool_Pool_idx2str(const string_pool_Pool* p, u32 idx)
 {
-   return p->data + idx;
+   return p->blocks[idx / string_pool_BLOCK_SIZE].data + idx % string_pool_BLOCK_SIZE;
 }
 
-static bool string_pool_same_string(const char* left, const char* right, size_t rlen)
+static bool string_pool_Pool_same_string(const char* left, const char* right, size_t rlen)
 {
    for (u32 i = 0; i < rlen; i++) {
       if (left[i] != right[i]) return false;
@@ -980,45 +1069,60 @@ static u32 string_pool_Pool_add(string_pool_Pool* p, const char* text, size_t le
 {
    p->num_adds++;
    p->total_size += len + 1;
+   string_pool_HashEntry hh;
+   string_pool_HashEntry* hp = &hh;
    if (filter) {
-      size_t i = string_pool_hash(text, len) & p->hash_mask;
-      string_pool_HashEntry v = p->entries[i];
+      size_t h = string_pool_Pool_hash(text, len) & p->hash_mask;
+      string_pool_HashEntry v = p->entries[h];
       if (v != 0) {
          string_pool_HashEntry next;
          for (;;) {
             u32 index = (v & string_pool_INDEX_BITS) << string_pool_INDEX_SHIFT;
-            const char* word = p->data + index;
-            if (string_pool_same_string(word, text, len)) return index;
+            if (string_pool_Pool_same_string(string_pool_Pool_idx2str(p, index), text, len)) return index;
             next = v >> string_pool_NEXT_SHIFT;
             if (next == 0) break;
-            i = next;
-            v = p->entries[i];
+            h = next;
+            v = p->entries[h];
          }
          next = p->entry_size;
          if (next == p->entry_capacity) {
             string_pool_Pool_resize_entries(p, p->entry_capacity * 2);
          }
-         p->entries[i] = v | (next << string_pool_NEXT_SHIFT);
+         p->entries[h] = v | (next << string_pool_NEXT_SHIFT);
          p->entry_size++;
-         i = next;
+         h = next;
       }
-      p->entries[i] = (p->data_size >> string_pool_INDEX_SHIFT);
+      hp = &p->entries[h];
       p->hash_count++;
    }
-   while (p->data_size + len + 1 > p->data_capacity) {
-      if (text >= p->data && text < p->data + p->data_size) {
-         ssize_t offset = text - p->data;
-         string_pool_Pool_resize_data(p, p->data_capacity * 2);
-         text = p->data + offset;
-      } else {
-         string_pool_Pool_resize_data(p, p->data_capacity * 2);
-      }
+   p->num_strs++;
+   p->data_size += len + 1;
+   u32 b = p->blocks_count - 1;
+   string_pool_Block* bp = &p->blocks[b];
+   if (bp->size + len < bp->capacity) goto has_bp;
+   while (b-- > 0) {
+      bp--;
+      if (bp->size + len < bp->capacity) goto has_bp;
    }
-   u32 idx = p->data_size;
-   char* dest = p->data + idx;
+   if (p->blocks_count == p->blocks_capacity) {
+      p->blocks_capacity *= 2;
+      p->blocks = realloc(p->blocks, p->blocks_capacity * 16);
+   }
+   b = p->blocks_count++;
+   bp = &p->blocks[b];
+   u32 block_size = string_pool_BLOCK_SIZE;
+   if (len >= string_pool_BLOCK_SIZE) block_size = (u32)len / string_pool_DATA_ALIGN * string_pool_DATA_ALIGN + string_pool_DATA_ALIGN;
+   p->data_capacity += block_size;
+   bp->data = malloc(block_size);
+   bp->size = 0;
+   bp->capacity = block_size;
+has_bp:;
+   u32 idx = b * string_pool_BLOCK_SIZE + bp->size;
+   char* dest = bp->data + bp->size;
    memcpy(dest, text, len);
    dest[len] = 0;
-   p->data_size += len / string_pool_DATA_ALIGN * string_pool_DATA_ALIGN + string_pool_DATA_ALIGN;
+   bp->size += (u32)len / string_pool_DATA_ALIGN * string_pool_DATA_ALIGN + string_pool_DATA_ALIGN;
+   *hp = (idx >> string_pool_INDEX_SHIFT);
    return idx;
 }
 
@@ -1027,26 +1131,10 @@ static u32 string_pool_Pool_addStr(string_pool_Pool* p, const char* text, bool f
    return string_pool_Pool_add(p, text, strlen(text), filter);
 }
 
-static void string_pool_Pool_resize_data(string_pool_Pool* p, u32 capacity)
-{
-   p->data_capacity = capacity;
-   char* data2 = malloc(capacity);
-   if (p->data_size) {
-      memcpy(data2, p->data, p->data_size);
-      free(p->data);
-   }
-   p->data = data2;
-}
-
 static void string_pool_Pool_resize_entries(string_pool_Pool* p, u32 capacity)
 {
-   string_pool_HashEntry* entries = malloc(capacity * 4);
-   if (p->entries) {
-      memcpy(entries, p->entries, p->entry_size * 4);
-      free(p->entries);
-   }
+   p->entries = realloc(p->entries, capacity * 4);
    p->entry_capacity = capacity;
-   p->entries = entries;
 }
 
 static void string_pool_Pool_report(const string_pool_Pool* p, const char* name)
@@ -1066,13 +1154,11 @@ static void string_pool_Pool_report(const string_pool_Pool* p, const char* name)
          }
          count += num;
          if (num < 256) cc[num]++;
-         if (num) {
-            if (num > max) max = num;
-            if (num < min) min = num;
-         }
+         if (num > max) max = num;
+         if (num < min) min = num;
       }
    }
-   printf("%s: count %u, adds %u, data %u/%u\n", name, p->hash_count, p->num_adds, p->data_size, p->data_capacity);
+   printf("%s: count %u/%u, adds %u/%u, data %u/%u\n", name, p->hash_count, p->num_strs, p->num_adds, p->total_size, p->data_size, p->data_capacity);
    printf("  hash: entries: %u/%u/%u/%u, min %u, max %u, avg %.2f, memory %u\n", hash_size, count, p->entry_size, p->entry_capacity, min, max, count ? (count + 0.0) / (hash_size - cc[0]) : 0.0, p->entry_capacity * 4);
    printf("  buckets: %u", cc[0]);
    for (u32 i = 1; i <= max; i++) printf(", %u", cc[i]);
@@ -2079,11 +2165,11 @@ struct yaml_Data_ {
 #define yaml_MaxDepth 8
 #define yaml_MinText 256
 #define yaml_MinNodes 32
-static const char* yaml_node_names[4] = {
-   [yaml_NodeKind_Unknown] = "UNK",
-   [yaml_NodeKind_Scalar] = "SCA",
-   [yaml_NodeKind_Map] = "MAP",
-   [yaml_NodeKind_Sequence] = "SEQ"
+static const char* const yaml_NodeKind__name[4] = { "UNK", "SCA", "MAP", "SEQ" };
+static const char* const yaml_TokenKind__name[13] = {
+   "none",       "scalar",     "'scalar'",   "\"scalar\"", ":",
+   "-",          "indent",     "dedent",     "---",        "...",
+   "%",          "eof",        "error"
 };
 static void yaml_Data_init(yaml_Data* d, u32 text_size, u32 nodes_count, yaml_StackLevel* stack);
 static void yaml_Data_destroy(yaml_Data* d);
@@ -2150,6 +2236,7 @@ struct yaml_Tokenizer_ {
    const char* input_start;
    const char* line_start;
    char* error_msg;
+   size_t error_msg_size;
    u32 line_number;
    int cur_indent;
    bool same_line;
@@ -2157,23 +2244,8 @@ struct yaml_Tokenizer_ {
    yaml_Token next;
 };
 
-static const char* yaml_token_names[13] = {
-   [yaml_TokenKind_None] = "none",
-   [yaml_TokenKind_Plain_Scalar] = "scalar",
-   [yaml_TokenKind_Single_Quoted_Scalar] = "'scalar'",
-   [yaml_TokenKind_Double_Quoted_Scalar] = "\"scalar\"",
-   [yaml_TokenKind_Colon] = ":",
-   [yaml_TokenKind_Dash] = "-",
-   [yaml_TokenKind_Indent] = "indent",
-   [yaml_TokenKind_Dedent] = "dedent",
-   [yaml_TokenKind_Doc_Start] = "---",
-   [yaml_TokenKind_Doc_End] = "...",
-   [yaml_TokenKind_Directive] = "%",
-   [yaml_TokenKind_Eof] = "eof",
-   [yaml_TokenKind_Error] = "error"
-};
 static const char* yaml_Token_str(const yaml_Token* tok);
-static void yaml_Tokenizer_init(yaml_Tokenizer* t, const char* input, yaml_Data* d, char* error_msg);
+static void yaml_Tokenizer_init(yaml_Tokenizer* t, const char* input, yaml_Data* d, char* error_msg, size_t error_msg_size);
 static void yaml_Tokenizer_lex(yaml_Tokenizer* t, yaml_Token* result);
 static yaml_Token* yaml_Tokenizer_lex_next(yaml_Tokenizer* t);
 static bool yaml_Tokenizer_lex_indent(yaml_Tokenizer* t, yaml_Token* result);
@@ -2416,16 +2488,17 @@ static const char* yaml_starts_with(const char* full, const char* start)
 
 static const char* yaml_Token_str(const yaml_Token* tok)
 {
-   return yaml_token_names[tok->kind];
+   return yaml_TokenKind__name[tok->kind];
 }
 
-static void yaml_Tokenizer_init(yaml_Tokenizer* t, const char* input, yaml_Data* d, char* error_msg)
+static void yaml_Tokenizer_init(yaml_Tokenizer* t, const char* input, yaml_Data* d, char* error_msg, size_t error_msg_size)
 {
-   memset(t, 0, 80);
+   memset(t, 0, 88);
    t->cur = input;
    t->input_start = input;
    t->line_start = input;
    t->error_msg = error_msg;
+   t->error_msg_size = error_msg_size;
    t->line_number = 1;
    t->data = d;
    t->next.kind = yaml_TokenKind_None;
@@ -2619,9 +2692,9 @@ static void yaml_Tokenizer_error(yaml_Tokenizer* t, yaml_Token* result, const ch
 {
    va_list args;
    va_start(args, format);
-   int len = vsnprintf(t->error_msg, yaml_MaxDiag, format, args);
-   if ((u32)len < yaml_MaxDiag) {
-      snprintf(t->error_msg + len, yaml_MaxDiag - len, "at line %u:%u", result->loc.line, result->loc.column);
+   int len = vsnprintf(t->error_msg, t->error_msg_size, format, args);
+   if ((u32)len < t->error_msg_size) {
+      snprintf(t->error_msg + len, t->error_msg_size - len, "at line %u:%u", result->loc.line, result->loc.column);
    }
    va_end(args);
    result->kind = yaml_TokenKind_Error;
@@ -2630,7 +2703,7 @@ static void yaml_Tokenizer_error(yaml_Tokenizer* t, yaml_Token* result, const ch
 
 static yaml_Parser* yaml_Parser_create(void)
 {
-   yaml_Parser* p = calloc(1, 808);
+   yaml_Parser* p = calloc(1, 816);
    yaml_Data_init(&p->data, 1024, 32, p->stack);
    return p;
 }
@@ -2643,7 +2716,7 @@ static void yaml_Parser_destroy(yaml_Parser* p)
 
 static bool yaml_Parser_parse(yaml_Parser* p, const char* input)
 {
-   yaml_Tokenizer_init(&p->tokenizer, input, &p->data, p->message);
+   yaml_Tokenizer_init(&p->tokenizer, input, &p->data, p->message, 256);
    p->token.kind = yaml_TokenKind_None;
    int res = setjmp(&p->jmp_err);
    if (res == 0) {
@@ -2666,10 +2739,11 @@ static void yaml_Parser_error(yaml_Parser* p, const char* format, ...)
    va_list args;
    va_start(args, format);
    char* cp = p->message;
-   int len = vsnprintf(cp, yaml_MaxDiag, format, args);
+   size_t size = 256;
+   int len = vsnprintf(cp, size, format, args);
    va_end(args);
-   if ((u32)len < yaml_MaxDiag) {
-      snprintf(cp + len, yaml_MaxDiag - len, "at line %u:%u", p->token.loc.line, p->token.loc.column);
+   if ((u32)len < size) {
+      snprintf(cp + len, size - len, " at line %u:%u", p->token.loc.line, p->token.loc.column);
    }
    longjmp(&p->jmp_err, 1);
 }
@@ -2683,7 +2757,7 @@ static void yaml_Parser_consumeToken(yaml_Parser* p)
 static void yaml_Parser_expectAndConsume(yaml_Parser* p, yaml_TokenKind kind)
 {
    if (p->token.kind != kind) {
-      yaml_Parser_error(p, "expected '%s', got '%s'", yaml_token_names[kind], yaml_Token_str(&p->token));
+      yaml_Parser_error(p, "expected '%s', got '%s'", yaml_TokenKind__name[kind], yaml_Token_str(&p->token));
    }
    yaml_Parser_consumeToken(p);
 }
@@ -2919,21 +2993,30 @@ static void yaml_Parser_push_node(yaml_Parser* p, yaml_Node* n, yaml_NodeKind pa
       if (parent->kind == yaml_NodeKind_Sequence) {
          yaml_Parser_error(p, "invalid scalar after sequence");
       } else {
-         yaml_Parser_error(p, "invalid scalar after %s", yaml_node_names[parent->kind]);
+         yaml_Parser_error(p, "invalid scalar after %s", yaml_NodeKind__name[parent->kind]);
       }
    }
 }
 
 
 // --- module console ---
+typedef struct console_Config_ console_Config;
 
-static bool console_use_color = false;
-static bool console_show_debug = false;
-static bool console_show_timing = false;
+struct console_Config_ {
+   bool use_color;
+   bool quiet_mode;
+   bool show_debug;
+   bool show_timing;
+};
+
+static console_Config console_config = { };
 #define console_BUF_SIZE 4096
-static void console_init(void);
+static void console_init(const console_Config* c);
+static void console_setQuiet(bool enable);
 static void console_setDebug(bool enable);
 static void console_setTiming(bool enable);
+static console_Config* console_getConfig(void);
+static void console_setConfig(const console_Config* c);
 __attribute__((__format__(printf, 1, 2)))
 static void console_debug(const char* format, ...);
 __attribute__((__format__(printf, 1, 2)))
@@ -2946,31 +3029,50 @@ __attribute__((__format__(printf, 2, 3)))
 static void console_error_diag(const char* loc, const char* format, ...);
 static void console_log_time(const char* item, u64 duration);
 
-static void console_init(void)
+static void console_init(const console_Config* c)
 {
-   console_use_color = color_useColor();
+   if (c) {
+      console_setConfig(c);
+   } else {
+      console_config.use_color = color_useColor();
+   }
+}
+
+static void console_setQuiet(bool enable)
+{
+   console_config.quiet_mode = enable;
 }
 
 static void console_setDebug(bool enable)
 {
-   console_show_debug = enable;
+   console_config.show_debug = enable;
 }
 
 static void console_setTiming(bool enable)
 {
-   console_show_timing = enable;
+   console_config.show_timing = enable;
+}
+
+static console_Config* console_getConfig(void)
+{
+   return &console_config;
+}
+
+static void console_setConfig(const console_Config* c)
+{
+   console_config = *c;
 }
 
 __attribute__((__format__(printf, 1, 2)))
 static void console_debug(const char* format, ...)
 {
-   if (!console_show_debug) return;
+   if (!console_config.show_debug) return;
    char buf[4096];
    va_list args;
    va_start(args, format);
    vsnprintf(buf, 4096, format, args);
    va_end(args);
-   if (console_use_color) {
+   if (console_config.use_color) {
       printf("%s%s%s\n", color_Color_str(color_Blue), buf, color_Color_str(color_Normal));
    } else {
       printf("%s\n", buf);
@@ -2980,6 +3082,7 @@ static void console_debug(const char* format, ...)
 __attribute__((__format__(printf, 1, 2)))
 static void console_log(const char* format, ...)
 {
+   if (console_config.quiet_mode) return;
    char buf[4096];
    va_list args;
    va_start(args, format);
@@ -2996,7 +3099,7 @@ static void console_warn(const char* format, ...)
    va_start(args, format);
    vsnprintf(buf, 4096, format, args);
    va_end(args);
-   if (console_use_color) {
+   if (console_config.use_color) {
       fprintf(stderr, "%swarning: %s%s\n", color_Color_str(color_Yellow), buf, color_Color_str(color_Normal));
    } else {
       fprintf(stderr, "warning: %s\n", buf);
@@ -3011,7 +3114,7 @@ static void console_error(const char* format, ...)
    va_start(args, format);
    vsnprintf(buf, 4096, format, args);
    va_end(args);
-   if (console_use_color) {
+   if (console_config.use_color) {
       fprintf(stderr, "%serror: %s%s\n", color_Color_str(color_Red), buf, color_Color_str(color_Normal));
    } else {
       fprintf(stderr, "error: %s\n", buf);
@@ -3026,7 +3129,7 @@ static void console_error_diag(const char* loc, const char* format, ...)
    va_start(args, format);
    vsnprintf(buf, 4096, format, args);
    va_end(args);
-   if (console_use_color) {
+   if (console_config.use_color) {
       fprintf(stderr, "%s%s: error: %s%s\n", color_Color_str(color_Red), loc, buf, color_Color_str(color_Normal));
    } else {
       fprintf(stderr, "%s: error: %s\n", loc, buf);
@@ -3035,8 +3138,8 @@ static void console_error_diag(const char* loc, const char* format, ...)
 
 static void console_log_time(const char* item, u64 duration)
 {
-   if (!console_show_timing) return;
-   if (console_use_color) {
+   if (!console_config.show_timing) return;
+   if (console_config.use_color) {
       printf("%s%s took %lu usec%s\n", color_Color_str(color_Blue), item, duration, color_Color_str(color_Normal));
    } else {
       printf("%s took %lu usec\n", item, duration);
@@ -3128,7 +3231,6 @@ struct file_utils_File_ {
 #define file_utils_Err_write_error 2004
 static const char* file_utils_get_basename(const char* s);
 static const char* file_utils_get_extension(const char* s);
-static size_t file_utils_pstrcpy(char* dest, size_t size, const char* src);
 static size_t file_utils_copy_dirname(char* buf, size_t size, const char* dir);
 static const char* file_utils_make_path(char* buf, size_t size, const char* path, const char* filename, const char* ext);
 static const char* file_utils_make_path3(char* buf, size_t size, const char* dir, const char* subdir, const char* filename);
@@ -3165,19 +3267,9 @@ static const char* file_utils_get_extension(const char* s)
    return ext ? ext : s;
 }
 
-static size_t file_utils_pstrcpy(char* dest, size_t size, const char* src)
-{
-   size_t i;
-   for (i = 0; i < size; i++) {
-      if ((dest[i] = src[i]) == '\0') return i;
-   }
-   if (size) dest[size - 1] = '\0';
-   return size;
-}
-
 static size_t file_utils_copy_dirname(char* buf, size_t size, const char* dir)
 {
-   size_t pos = file_utils_pstrcpy(buf, size, dir);
+   size_t pos = pstrcpy(buf, size, dir);
    if (pos && pos < size && dir[pos - 1] != '/') {
       if (pos + 1 < size) {
          buf[pos] = '/';
@@ -3193,10 +3285,10 @@ static const char* file_utils_make_path(char* buf, size_t size, const char* path
    size_t pos = 0;
    if (filename) {
       if (*filename != '/') pos = file_utils_copy_dirname(buf, size, path);
-      pos += file_utils_pstrcpy(buf + pos, size - pos, filename);
-      if (ext) pos += file_utils_pstrcpy(buf + pos, size - pos, ext);
+      pos += pstrcpy(buf + pos, size - pos, filename);
+      if (ext) pos += pstrcpy(buf + pos, size - pos, ext);
    } else {
-      pos = file_utils_pstrcpy(buf, size, path);
+      pos = pstrcpy(buf, size, path);
    }
    if (pos < size) return buf;
    (*__errno_location()) = c_errno_ENAMETOOLONG;
@@ -3210,7 +3302,7 @@ static const char* file_utils_make_path3(char* buf, size_t size, const char* dir
       if (*subdir != '/') pos = file_utils_copy_dirname(buf, size, dir);
       pos += file_utils_copy_dirname(buf + pos, size - pos, subdir);
    }
-   pos += file_utils_pstrcpy(buf + pos, size - pos, filename);
+   pos += pstrcpy(buf + pos, size - pos, filename);
    if (pos < size) return buf;
    (*__errno_location()) = c_errno_ENAMETOOLONG;
    return NULL;
@@ -3503,17 +3595,15 @@ static void process_utils_child_error(int fd, const char* format, ...)
    char msg[256];
    va_list args;
    va_start(args, format);
-   int res = vsnprintf(msg, 256, format, args);
+   int res = vsnprintf(msg, 256 - 1, format, args);
    va_end(args);
-   if (res >= 0) {
-      size_t len = (size_t)res;
-      msg[len++] = '\n';
-      msg[len] = '\0';
-      write(fd, msg, len);
-      fsync(fd);
-      fprintf(stderr, "[exec] %s\n", msg);
-      fflush(stderr);
-   }
+   if (res < 0) pstrcpy(msg, 256, "formatting error");
+   pstrcat(msg, 256, "\n");
+   write(fd, msg, strlen(msg));
+   fsync(fd);
+   fputs("[exec] ", stderr);
+   fputs(msg, stderr);
+   fflush(stderr);
    _exit(stdlib_EXIT_FAILURE);
 }
 
@@ -3969,7 +4059,6 @@ static void string_list_List_resize(string_list_List* l, u32 capacity);
 static void string_list_List_add(string_list_List* l, u32 name_idx);
 static u32 string_list_List_del(string_list_List* l, u32 idx);
 static void string_list_List_addStr(string_list_List* l, const char* str);
-static bool string_list_List_contains(const string_list_List* l, const char* name);
 static bool string_list_List_contains_idx(const string_list_List* l, u32 idx);
 static u32 string_list_List_length(const string_list_List* l);
 static const char* string_list_List_get(const string_list_List* l, u32 idx);
@@ -4028,14 +4117,6 @@ static void string_list_List_addStr(string_list_List* l, const char* str)
    string_list_List_add(l, string_pool_Pool_addStr(l->pool, str, true));
 }
 
-static bool string_list_List_contains(const string_list_List* l, const char* name)
-{
-   for (u32 i = 0; i < l->count; i++) {
-      if (strcmp(string_pool_Pool_idx2str(l->pool, l->indexes[i]), name) == 0) return true;
-   }
-   return false;
-}
-
 static bool string_list_List_contains_idx(const string_list_List* l, u32 idx)
 {
    for (u32 i = 0; i < l->count; i++) {
@@ -4062,6 +4143,114 @@ static u32 string_list_List_get_idx(const string_list_List* l, u32 idx)
 static u32* string_list_List_getData(string_list_List* l)
 {
    return l->indexes;
+}
+
+
+// --- module string_map ---
+typedef struct string_map_Map_ string_map_Map;
+
+struct string_map_Map_ {
+   string_pool_Pool* pool;
+   u32* names;
+   u32* values;
+   u32 count;
+   u32 capacity;
+};
+
+static void string_map_Map_init(string_map_Map* m, string_pool_Pool* pool);
+static void string_map_Map_free(string_map_Map* m);
+static void string_map_Map_resize(string_map_Map* m, u32 capacity);
+static void string_map_Map_add(string_map_Map* m, u32 name_idx, u32 value_idx);
+static u32 string_map_Map_del(string_map_Map* m, u32 name_idx);
+static void string_map_Map_addNameValue(string_map_Map* m, u32 idx, const char* def);
+static bool string_map_Map_contains(const string_map_Map* m, const char* name, u32* indexp);
+static const char* string_map_Map_getValue(const string_map_Map* m, u32 i);
+
+static void string_map_Map_init(string_map_Map* m, string_pool_Pool* pool)
+{
+   memset(m, 0, 32);
+   m->pool = pool;
+   string_map_Map_resize(m, 16);
+}
+
+static void string_map_Map_free(string_map_Map* m)
+{
+   free(m->names);
+   free(m->values);
+   m->names = NULL;
+   m->values = NULL;
+   m->count = 0;
+   m->capacity = 0;
+}
+
+static void string_map_Map_resize(string_map_Map* m, u32 capacity)
+{
+   m->capacity = capacity;
+   u32* names2 = malloc(capacity * 4);
+   u32* values2 = malloc(capacity * 4);
+   if (m->count) {
+      memcpy(names2, m->names, m->count * 4);
+      memcpy(values2, m->values, m->count * 4);
+      free(m->names);
+      free(m->values);
+   }
+   m->names = names2;
+   m->values = values2;
+}
+
+static void string_map_Map_add(string_map_Map* m, u32 name_idx, u32 value_idx)
+{
+   if (m->count == m->capacity) string_map_Map_resize(m, m->capacity * 2);
+   m->names[m->count] = name_idx;
+   m->values[m->count] = value_idx;
+   m->count++;
+}
+
+static u32 string_map_Map_del(string_map_Map* m, u32 name_idx)
+{
+   u32 j = 0;
+   u32 count = m->count;
+   for (u32 i = 0; i < count; i++) {
+      if (m->names[i] != name_idx) {
+         m->names[j] = m->names[i];
+         m->values[j] = m->values[i];
+         j++;
+      }
+   }
+   m->count = j;
+   return count - j;
+}
+
+static void string_map_Map_addNameValue(string_map_Map* m, u32 idx, const char* def)
+{
+   const char* str = string_pool_Pool_idx2str(m->pool, idx);
+   u32 len;
+   const char* value = def;
+   for (len = 0; str[len]; len++) {
+      if (str[len] == '=') {
+         u32 new_idx = string_pool_Pool_add(m->pool, str, len, true);
+         value = string_pool_Pool_idx2str(m->pool, idx) + len + 1;
+         idx = new_idx;
+         break;
+      }
+   }
+   string_map_Map_add(m, idx, string_pool_Pool_addStr(m->pool, value, true));
+}
+
+static bool string_map_Map_contains(const string_map_Map* m, const char* name, u32* indexp)
+{
+   for (u32 i = 0; i < m->count; i++) {
+      if (!strcmp(string_pool_Pool_idx2str(m->pool, m->names[i]), name)) {
+         if (indexp) *indexp = i;
+         return true;
+      }
+   }
+   return false;
+}
+
+static const char* string_map_Map_getValue(const string_map_Map* m, u32 i)
+{
+   return string_pool_Pool_idx2str(m->pool, m->values[i]);
 }
 
 
@@ -4192,6 +4381,8 @@ struct utils_PathInfo_ {
 
 static u64 utils_now(void);
 static bool utils_PathInfo_hasSubdir(const utils_PathInfo* pi);
+static bool utils_checkFile(const char* filename);
+static u32 utils_changeToProjectDir(utils_PathInfo* info, const char* other_dir);
 static bool utils_findProjectDir(utils_PathInfo* info);
 static const char* utils_findBuildFile(void);
 
@@ -4210,6 +4401,36 @@ static bool utils_PathInfo_hasSubdir(const utils_PathInfo* pi)
    return pi->orig2root[0] != 0;
 }
 
+static bool utils_checkFile(const char* filename)
+{
+   struct stat buf;
+   int error = stat(filename, &buf);
+   if (error) return false;
+   if ((buf.st_mode & sys_stat_S_IFMT) != sys_stat_S_IFREG) return false;
+   return true;
+}
+
+static u32 utils_changeToProjectDir(utils_PathInfo* info, const char* other_dir)
+{
+   char* path = getcwd(info->orig2root, 512 - 1);
+   if (path == NULL) {
+      perror("getcwd");
+      return 2;
+   }
+   size_t len = strlen(path);
+   info->orig2root[len] = '/';
+   info->orig2root[len + 1] = 0;
+   pstrcpy(info->root2orig, 512, other_dir);
+   len = strlen(other_dir);
+   if (other_dir[len - 1] != '/') {
+      info->root2orig[len] = '/';
+      info->root2orig[len + 1] = 0;
+   }
+   if (chdir(other_dir)) return 2;
+   if (!utils_checkFile(constants_recipe_name)) return 3;
+   return 0;
+}
+
 static bool utils_findProjectDir(utils_PathInfo* info)
 {
    if (info) {
@@ -4222,43 +4443,36 @@ static bool utils_findProjectDir(utils_PathInfo* info)
    rel_path[0] = 0;
    char buffer[512];
    while (1) {
-      char* path = getcwd(buffer, 512);
+      char* path = getcwd(buffer, 512 - 1);
       if (path == NULL) {
          perror("getcwd");
          return false;
       }
-      if (base_path[0] == 0) strcpy(base_path, path);
-      struct stat buf;
-      if (stat(constants_recipe_name, &buf)) {
-         if (path[0] == '/' && path[1] == '\0') return false;
-         if ((*__errno_location()) != c_errno_ENOENT) {
-            perror("stat");
-            return false;
-         }
-      } else {
-         if ((buf.st_mode & sys_stat_S_IFMT) == sys_stat_S_IFREG) {
-            char* path_prefix = base_path + strlen(path);
-            if (*path_prefix == '/') path_prefix++;
-            if (info) {
-               strcpy(info->orig2root, path_prefix);
-               strcpy(info->root2orig, rel_path);
-            }
-            return true;
-         }
+      if (base_path[0] == 0) {
+         size_t pos = pstrcpy(base_path, 512, path);
+         pstrcpy(base_path + pos, 512 - pos, "/");
       }
+      if (utils_checkFile(constants_recipe_name)) {
+         char* path_prefix = base_path + strlen(path);
+         if (*path_prefix == '/') path_prefix++;
+         if (info) {
+            pstrcpy(info->orig2root, 512, path_prefix);
+            pstrcpy(info->root2orig, 512, rel_path);
+         }
+         return true;
+      }
+      if (path[0] == '/' && path[1] == '\0') return false;
       if (chdir("..")) {
          perror("chdir");
          return false;
       }
-      strcat(rel_path, "../");
+      pstrcat(rel_path, 512, "../");
    }
 }
 
 static const char* utils_findBuildFile(void)
 {
-   struct stat buf;
-   int error = stat(constants_buildfile_name, &buf);
-   if (error) return NULL;
+   if (!utils_checkFile(constants_buildfile_name)) return NULL;
    return constants_buildfile_name;
 }
 
@@ -4269,6 +4483,7 @@ typedef struct warning_flags_Flags_ warning_flags_Flags;
 struct warning_flags_Flags_ {
    bool no_unused;
    bool no_unused_variable;
+   bool no_unused_struct_member;
    bool no_unused_function;
    bool no_unused_parameter;
    bool no_unused_type;
@@ -4308,6 +4523,7 @@ struct build_file_Info_ {
    u32 asmflags;
    u32 linkerscript;
    string_list_List lib_dirs;
+   string_list_List lib_dirs_bin;
    string_list_List plugin_dirs;
    build_file_Plugin* plugins;
    u32 plugin_count;
@@ -4323,6 +4539,7 @@ static const char* build_file_Info_getLinkerFlags(const build_file_Info* info);
 static const char* build_file_Info_getLdFlags2(const build_file_Info* info);
 static const char* build_file_Info_getAsmFlags(const build_file_Info* info);
 static const string_list_List* build_file_Info_getLibDirs(const build_file_Info* info);
+static const string_list_List* build_file_Info_getLibDirsBin(const build_file_Info* info);
 static const string_list_List* build_file_Info_getPluginDirs(const build_file_Info* info);
 static const build_file_Plugin* build_file_Info_getPlugin(const build_file_Info* info, u32 idx);
 static u32 build_file_Info_getNumPlugins(const build_file_Info* info);
@@ -4393,6 +4610,11 @@ static const string_list_List* build_file_Info_getLibDirs(const build_file_Info*
    return &info->lib_dirs;
 }
 
+static const string_list_List* build_file_Info_getLibDirsBin(const build_file_Info* info)
+{
+   return &info->lib_dirs_bin;
+}
+
 static const string_list_List* build_file_Info_getPluginDirs(const build_file_Info* info)
 {
    return &info->plugin_dirs;
@@ -4411,6 +4633,7 @@ static u32 build_file_Info_getNumPlugins(const build_file_Info* info)
 static void build_file_Info_free(build_file_Info* info)
 {
    string_list_List_free(&info->lib_dirs);
+   string_list_List_free(&info->lib_dirs_bin);
    string_list_List_free(&info->plugin_dirs);
    free(info);
 }
@@ -4462,6 +4685,13 @@ static bool build_file_parser_getYamlInfo(yaml_Parser* parser, build_file_Info* 
       string_list_List_add(&info->lib_dirs, build_file_parser_expandField(info, dir));
       yaml_Iter_next(&iter);
    }
+   dirs = yaml_Parser_findNode(parser, "libdir_bin");
+   iter = yaml_Parser_getNodeChildIter(parser, dirs);
+   while (!yaml_Iter_done(&iter)) {
+      const char* dir = yaml_Iter_getValue(&iter);
+      string_list_List_add(&info->lib_dirs_bin, build_file_parser_expandField(info, dir));
+      yaml_Iter_next(&iter);
+   }
    dirs = yaml_Parser_findNode(parser, "plugindir");
    iter = yaml_Parser_getNodeChildIter(parser, dirs);
    while (!yaml_Iter_done(&iter)) {
@@ -4506,13 +4736,14 @@ static build_file_Info* build_file_parser_parse(source_mgr_SourceMgr* sm, string
    info.pool = pool;
    info.filename = filename;
    string_list_List_init(&info.lib_dirs, pool);
+   string_list_List_init(&info.lib_dirs_bin, pool);
    string_list_List_init(&info.plugin_dirs, pool);
    int file_id = source_mgr_SourceMgr_loadFile(sm, filename, 0);
    if (file_id == -1) return NULL;
    bool ok = build_file_parser_parseInfo(&info, source_mgr_SourceMgr_get_content(sm, file_id));
    if (!ok) return NULL;
-   build_file_Info* result = malloc(112);
-   memcpy(result, &info, 112);
+   build_file_Info* result = malloc(136);
+   memcpy(result, &info, 136);
    return result;
 }
 
@@ -4650,18 +4881,21 @@ struct target_info_Info_ {
    target_info_System sys;
    target_info_Vendor vendor;
    target_info_Abi abi;
-   u32 intWidth;
+   u32 ptrWidth;
+   u32 longWidth;
    char triple[80];
 };
 
-static const char* target_info_system_names[6] = {
-   "unknown", "linux", "darwin", "cygwin", "freebsd", "openbsd"
-};
-static const char* target_info_arch_names[8] = {
+static const char* const target_info_Arch__name[8] = {
    "unknown", "i686", "arm", "x86_64", "amd64", "arm64", "riscv32", "riscv64"
 };
-static const char* target_info_vendor_names[2] = { "unknown", "apple" };
-static const char* target_info_abi_names[7] = { "unknown", "gnu", "gnueabi", "macho", "win32", "rv32", "bsd" };
+static const char* const target_info_System__name[6] = {
+   "unknown", "linux", "darwin", "cygwin", "freebsd", "openbsd"
+};
+static const char* const target_info_Vendor__name[2] = { "unknown", "apple" };
+static const char* const target_info_Abi__name[7] = {
+   "unknown", "gnu", "gnueabi", "macho", "win32", "rv32", "bsd"
+};
 static target_info_System target_info_str2sys(const char* name);
 static target_info_Arch target_info_str2arch(const char* name);
 static target_info_Vendor target_info_str2vendor(const char* name);
@@ -4674,7 +4908,7 @@ static const char* target_info_Info_getArchName(const target_info_Info* info);
 static target_info_System target_info_str2sys(const char* name)
 {
    for (target_info_System i = target_info_System_Unknown; i <= target_info_System_OpenBSD; i++) {
-      if (strcasecmp(target_info_system_names[i], name) == 0) return i;
+      if (strcasecmp(target_info_System__name[i], name) == 0) return i;
    }
    return target_info_System_Unknown;
 }
@@ -4682,7 +4916,7 @@ static target_info_System target_info_str2sys(const char* name)
 static target_info_Arch target_info_str2arch(const char* name)
 {
    for (target_info_Arch i = target_info_Arch_Unknown; i <= target_info_Arch_Riscv_64; i++) {
-      if (strcasecmp(target_info_arch_names[i], name) == 0) return i;
+      if (strcasecmp(target_info_Arch__name[i], name) == 0) return i;
    }
    return target_info_Arch_Unknown;
 }
@@ -4690,7 +4924,7 @@ static target_info_Arch target_info_str2arch(const char* name)
 static target_info_Vendor target_info_str2vendor(const char* name)
 {
    for (target_info_Vendor i = target_info_Vendor_Unknown; i <= target_info_Vendor_Apple; i++) {
-      if (strcasecmp(target_info_vendor_names[i], name) == 0) return i;
+      if (strcasecmp(target_info_Vendor__name[i], name) == 0) return i;
    }
    return target_info_Vendor_Unknown;
 }
@@ -4698,7 +4932,7 @@ static target_info_Vendor target_info_str2vendor(const char* name)
 static target_info_Abi target_info_str2abi(const char* name)
 {
    for (target_info_Abi i = target_info_Abi_Unknown; i <= target_info_Abi_BSD; i++) {
-      if (strcasecmp(target_info_abi_names[i], name) == 0) return i;
+      if (strcasecmp(target_info_Abi__name[i], name) == 0) return i;
    }
    return target_info_Abi_Unknown;
 }
@@ -4707,25 +4941,30 @@ static void target_info_Info_init(target_info_Info* info)
 {
    switch (info->arch) {
    case target_info_Arch_Unknown:
-      info->intWidth = 64;
+      info->ptrWidth = 64;
+      info->longWidth = 64;
       break;
    case target_info_Arch_I686:
    case target_info_Arch_Arm:
-      info->intWidth = 32;
+      info->ptrWidth = 32;
+      info->longWidth = 32;
       break;
    case target_info_Arch_X86_64:
    case target_info_Arch_Arm64:
    case target_info_Arch_Amd64:
-      info->intWidth = 64;
+      info->ptrWidth = 64;
+      info->longWidth = 64;
       break;
    case target_info_Arch_Riscv_32:
-      info->intWidth = 32;
+      info->ptrWidth = 32;
+      info->longWidth = 32;
       break;
    case target_info_Arch_Riscv_64:
-      info->intWidth = 64;
+      info->ptrWidth = 64;
+      info->longWidth = 64;
       break;
    }
-   snprintf(info->triple, 80, "%s-%s-%s-%s", target_info_arch_names[info->arch], target_info_vendor_names[info->vendor], target_info_system_names[info->sys], target_info_abi_names[info->abi]);
+   snprintf(info->triple, 80, "%s-%s-%s-%s", target_info_Arch__name[info->arch], target_info_Vendor__name[info->vendor], target_info_System__name[info->sys], target_info_Abi__name[info->abi]);
 }
 
 static const char* target_info_Info_str(const target_info_Info* info)
@@ -4735,17 +4974,13 @@ static const char* target_info_Info_str(const target_info_Info* info)
 
 static const char* target_info_Info_getSystemName(const target_info_Info* info)
 {
-   return target_info_system_names[info->sys];
+   return target_info_System__name[info->sys];
 }
 
 static const char* target_info_Info_getArchName(const target_info_Info* info)
 {
-   return target_info_arch_names[info->arch];
+   return target_info_Arch__name[info->arch];
 }
-
-
-// --- module value_maplist ---
-
 
 
 // --- module token ---
@@ -4839,14 +5074,11 @@ enum token_Kind {
    token_Kind_KW_assert,
    token_Kind_KW_break,
    token_Kind_KW_case,
-   token_Kind_KW_cast,
    token_Kind_KW_const,
    token_Kind_KW_continue,
    token_Kind_KW_default,
    token_Kind_KW_elemsof,
    token_Kind_KW_else,
-   token_Kind_KW_enum_max,
-   token_Kind_KW_enum_min,
    token_Kind_KW_enum,
    token_Kind_KW_extern,
    token_Kind_KW_fallthrough,
@@ -4913,148 +5145,39 @@ struct token_Token_ {
    };
 };
 
-static const char* token_token_names[135] = {
-   [token_Kind_None] = "none",
-   [token_Kind_Identifier] = "identifier",
-   [token_Kind_IntegerLiteral] = "integer",
-   [token_Kind_FloatLiteral] = "float",
-   [token_Kind_CharLiteral] = "character",
-   [token_Kind_StringLiteral] = "string",
-   [token_Kind_LParen] = "(",
-   [token_Kind_RParen] = ")",
-   [token_Kind_LSquare] = "[",
-   [token_Kind_RSquare] = "]",
-   [token_Kind_LBrace] = "{",
-   [token_Kind_RBrace] = "}",
-   [token_Kind_Exclaim] = "!",
-   [token_Kind_ExclaimEqual] = "!=",
-   [token_Kind_Star] = "*",
-   [token_Kind_StarEqual] = "*=",
-   [token_Kind_Amp] = "&",
-   [token_Kind_AmpAmp] = "&&",
-   [token_Kind_AmpEqual] = "&=",
-   [token_Kind_Pipe] = "|",
-   [token_Kind_PipePipe] = "||",
-   [token_Kind_PipeEqual] = "|=",
-   [token_Kind_Equal] = "=",
-   [token_Kind_EqualEqual] = "==",
-   [token_Kind_Semicolon] = ";",
-   [token_Kind_Colon] = ":",
-   [token_Kind_At] = "@",
-   [token_Kind_Caret] = "^",
-   [token_Kind_CaretEqual] = "^=",
-   [token_Kind_Question] = "?",
-   [token_Kind_Dot] = ".",
-   [token_Kind_Ellipsis] = "...",
-   [token_Kind_Comma] = ",",
-   [token_Kind_Plus] = "+",
-   [token_Kind_PlusPlus] = "++",
-   [token_Kind_PlusEqual] = "+=",
-   [token_Kind_Minus] = "-",
-   [token_Kind_MinusMinus] = "--",
-   [token_Kind_MinusEqual] = "-=",
-   [token_Kind_Tilde] = "~",
-   [token_Kind_Slash] = "/",
-   [token_Kind_SlashEqual] = "/=",
-   [token_Kind_Percent] = "%",
-   [token_Kind_PercentEqual] = "%=",
-   [token_Kind_Less] = "<",
-   [token_Kind_LessLess] = "<<",
-   [token_Kind_LessEqual] = "<=",
-   [token_Kind_LessLessEqual] = "<<=",
-   [token_Kind_Greater] = ">",
-   [token_Kind_GreaterGreater] = ">>",
-   [token_Kind_GreaterEqual] = ">=",
-   [token_Kind_GreaterGreaterEqual] = ">>=",
-   [token_Kind_KW_bool] = "bool",
-   [token_Kind_KW_char] = "char",
-   [token_Kind_KW_i8] = "i8",
-   [token_Kind_KW_i16] = "i16",
-   [token_Kind_KW_i32] = "i32",
-   [token_Kind_KW_i64] = "i64",
-   [token_Kind_KW_u8] = "u8",
-   [token_Kind_KW_u16] = "u16",
-   [token_Kind_KW_u32] = "u32",
-   [token_Kind_KW_u64] = "u64",
-   [token_Kind_KW_reg8] = "reg8",
-   [token_Kind_KW_reg16] = "reg16",
-   [token_Kind_KW_reg32] = "reg32",
-   [token_Kind_KW_reg64] = "reg64",
-   [token_Kind_KW_isize] = "isize",
-   [token_Kind_KW_usize] = "usize",
-   [token_Kind_KW_f32] = "f32",
-   [token_Kind_KW_f64] = "f64",
-   [token_Kind_KW_void] = "void",
-   [token_Kind_KW_int] = "int",
-   [token_Kind_KW_ssize_t] = "ssize_t",
-   [token_Kind_KW_size_t] = "size_t",
-   [token_Kind_KW_float] = "float",
-   [token_Kind_KW_double] = "double",
-   [token_Kind_KW_short] = "short",
-   [token_Kind_KW_long] = "long",
-   [token_Kind_KW_signed] = "signed",
-   [token_Kind_KW_unsigned] = "unsigned",
-   [token_Kind_KW_typedef] = "typedef",
-   [token_Kind_KW_as] = "as",
-   [token_Kind_KW_asm] = "asm",
-   [token_Kind_KW_assert] = "assert",
-   [token_Kind_KW_break] = "break",
-   [token_Kind_KW_case] = "case",
-   [token_Kind_KW_cast] = "cast",
-   [token_Kind_KW_const] = "const",
-   [token_Kind_KW_continue] = "continue",
-   [token_Kind_KW_default] = "default",
-   [token_Kind_KW_elemsof] = "elemsof",
-   [token_Kind_KW_else] = "else",
-   [token_Kind_KW_enum_max] = "enum_max",
-   [token_Kind_KW_enum_min] = "enum_min",
-   [token_Kind_KW_enum] = "enum",
-   [token_Kind_KW_extern] = "extern",
-   [token_Kind_KW_fallthrough] = "fallthrough",
-   [token_Kind_KW_false] = "false",
-   [token_Kind_KW_fn] = "fn",
-   [token_Kind_KW_for] = "for",
-   [token_Kind_KW_goto] = "goto",
-   [token_Kind_KW_if] = "if",
-   [token_Kind_KW_import] = "import",
-   [token_Kind_KW_local] = "local",
-   [token_Kind_KW_module] = "module",
-   [token_Kind_KW_nil] = "nil",
-   [token_Kind_KW_offsetof] = "offsetof",
-   [token_Kind_KW_public] = "public",
-   [token_Kind_KW_return] = "return",
-   [token_Kind_KW_sizeof] = "sizeof",
-   [token_Kind_KW_static] = "static",
-   [token_Kind_KW_static_assert] = "static_assert",
-   [token_Kind_KW_struct] = "struct",
-   [token_Kind_KW_switch] = "switch",
-   [token_Kind_KW_template] = "template",
-   [token_Kind_KW_tlocal] = "tlocal",
-   [token_Kind_KW_to_container] = "to_container",
-   [token_Kind_KW_true] = "true",
-   [token_Kind_KW_type] = "type",
-   [token_Kind_KW_union] = "union",
-   [token_Kind_KW_volatile] = "volatile",
-   [token_Kind_KW_while] = "while",
-   [token_Kind_Feat_if] = "#if",
-   [token_Kind_Feat_ifdef] = "#ifdef",
-   [token_Kind_Feat_ifndef] = "#ifndef",
-   [token_Kind_Feat_elif] = "#elif",
-   [token_Kind_Feat_else] = "#else",
-   [token_Kind_Feat_endif] = "#endif",
-   [token_Kind_Feat_error] = "#error",
-   [token_Kind_Feat_warning] = "#warning",
-   [token_Kind_Invalid] = "invalid",
-   [token_Kind_LineComment] = "l-comment",
-   [token_Kind_BlockComment] = "b-comment",
-   [token_Kind_Eof] = "eof",
-   [token_Kind_Error] = "error"
+static const char* const token_Kind__name[132] = {
+   "none",          "identifier",    "integer",       "float",         "character",
+   "string",        "(",             ")",             "[",             "]",
+   "{",             "}",             "!",             "!=",            "*",
+   "*=",            "&",             "&&",            "&=",            "|",
+   "||",            "|=",            "=",             "==",            ";",
+   ":",             "@",             "^",             "^=",            "?",
+   ".",             "...",           ",",             "+",             "++",
+   "+=",            "-",             "--",            "-=",            "~",
+   "/",             "/=",            "%",             "%=",            "<",
+   "<<",            "<=",            "<<=",           ">",             ">>",
+   ">=",            ">>=",           "bool",          "char",          "i8",
+   "i16",           "i32",           "i64",           "u8",            "u16",
+   "u32",           "u64",           "reg8",          "reg16",         "reg32",
+   "reg64",         "isize",         "usize",         "f32",           "f64",
+   "void",          "int",           "ssize_t",       "size_t",        "float",
+   "double",        "short",         "long",          "signed",        "unsigned",
+   "typedef",       "as",            "asm",           "assert",        "break",
+   "case",          "const",         "continue",      "default",       "elemsof",
+   "else",          "enum",          "extern",        "fallthrough",   "false",
+   "fn",            "for",           "goto",          "if",            "import",
+   "local",         "module",        "nil",           "offsetof",      "public",
+   "return",        "sizeof",        "static",        "static_assert", "struct",
+   "switch",        "template",      "tlocal",        "to_container",  "true",
+   "type",          "union",         "volatile",      "while",         "#if",
+   "#ifdef",        "#ifndef",       "#elif",         "#else",         "#endif",
+   "#error",        "#warning",      "invalid",       "l-comment",     "b-comment",
+   "eof",           "error"
 };
 static bool token_Kind_isQualifier(token_Kind kind);
 static bool token_Kind_isBuiltinType(token_Kind kind);
 static bool token_Kind_isTypeKeyword(token_Kind kind);
 static bool token_Kind_isCType(token_Kind kind);
-static const char* token_Kind_str(token_Kind k);
 static void token_Token_init(token_Token* tok);
 static number_radix_Radix token_Token_getRadix(const token_Token* tok);
 
@@ -5076,11 +5199,6 @@ static bool token_Kind_isTypeKeyword(token_Kind kind)
 static bool token_Kind_isCType(token_Kind kind)
 {
    return kind >= token_Kind_KW_int && kind <= token_Kind_KW_unsigned;
-}
-
-static const char* token_Kind_str(token_Kind k)
-{
-   return token_token_names[k];
 }
 
 static void token_Token_init(token_Token* tok)
@@ -5577,7 +5695,7 @@ static printf_utils_ScanfSpecifier printf_utils_getScanfSpecifier(const char* fo
    case '[': {
       u32 pos = 1;
       if (cp[pos] == '^') pos++;
-      if (cp[pos] == '[') pos++;
+      if (cp[pos] == ']') pos++;
       while (cp[pos] && cp[pos++] != ']') continue;
       conv->len2 = pos - 1;
       return printf_utils_ScanfSpecifier_Scanset;
@@ -5727,38 +5845,19 @@ enum attr_AttrReq {
    attr_AttrReq_Ok,
 };
 
-static const char* attr_attrKind_names[24] = {
+static const char* const attr_AttrKind__name[24] = {
    "?",             "export",        "packed",        "unused",        "unused_params",
    "section",       "noreturn",      "inline",        "printf_format", "scanf_format",
    "aligned",       "weak",          "opaque",        "cname",         "cdef",
    "no_typedef",    "constructor",   "destructor",    "pure",          "auto_file",
    "auto_line",     "auto_func",     "embed",         "deprecated"
 };
-static const attr_AttrReq attr_Required_arg[24] = {
-   [attr_AttrKind_Unknown] = attr_AttrReq_NoArg,
-   [attr_AttrKind_Export] = attr_AttrReq_NoArg,
-   [attr_AttrKind_Packed] = attr_AttrReq_NoArg,
-   [attr_AttrKind_Unused] = attr_AttrReq_NoArg,
-   [attr_AttrKind_UnusedParams] = attr_AttrReq_NoArg,
-   [attr_AttrKind_Section] = attr_AttrReq_String,
-   [attr_AttrKind_NoReturn] = attr_AttrReq_NoArg,
-   [attr_AttrKind_Inline] = attr_AttrReq_NoArg,
-   [attr_AttrKind_PrintfFormat] = attr_AttrReq_NoArg,
-   [attr_AttrKind_ScanfFormat] = attr_AttrReq_NoArg,
-   [attr_AttrKind_Aligned] = attr_AttrReq_Number,
-   [attr_AttrKind_Weak] = attr_AttrReq_NoArg,
-   [attr_AttrKind_Opaque] = attr_AttrReq_NoArg,
-   [attr_AttrKind_CName] = attr_AttrReq_String,
-   [attr_AttrKind_CDef] = attr_AttrReq_String,
-   [attr_AttrKind_NoTypeDef] = attr_AttrReq_NoArg,
-   [attr_AttrKind_Constructor] = attr_AttrReq_NoArg,
-   [attr_AttrKind_Destructor] = attr_AttrReq_NoArg,
-   [attr_AttrKind_Pure] = attr_AttrReq_NoArg,
-   [attr_AttrKind_AutoFile] = attr_AttrReq_NoArg,
-   [attr_AttrKind_AutoLine] = attr_AttrReq_NoArg,
-   [attr_AttrKind_AutoFunc] = attr_AttrReq_NoArg,
-   [attr_AttrKind_Embed] = attr_AttrReq_String,
-   [attr_AttrKind_Deprecated] = attr_AttrReq_String
+static const attr_AttrReq attr_AttrKind__required_arg[24] = {
+   attr_AttrReq_NoArg,  attr_AttrReq_NoArg,  attr_AttrReq_NoArg,  attr_AttrReq_NoArg,  attr_AttrReq_NoArg,
+   attr_AttrReq_String, attr_AttrReq_NoArg,  attr_AttrReq_NoArg,  attr_AttrReq_NoArg,  attr_AttrReq_NoArg,
+   attr_AttrReq_Number, attr_AttrReq_NoArg,  attr_AttrReq_NoArg,  attr_AttrReq_String, attr_AttrReq_String,
+   attr_AttrReq_NoArg,  attr_AttrReq_NoArg,  attr_AttrReq_NoArg,  attr_AttrReq_NoArg,  attr_AttrReq_NoArg,
+   attr_AttrReq_NoArg,  attr_AttrReq_NoArg,  attr_AttrReq_String, attr_AttrReq_String
 };
 static const char* attr_Attr_kind2name(const attr_Attr* a);
 static void attr_AttrRegistry_init(attr_AttrRegistry* ar, string_pool_Pool* pool);
@@ -5768,14 +5867,15 @@ static attr_AttrReq attr_Attr_checkArgument(const attr_Attr* a);
 
 static const char* attr_Attr_kind2name(const attr_Attr* a)
 {
-   return attr_attrKind_names[a->kind];
+   return attr_AttrKind__name[a->kind];
 }
 
 static void attr_AttrRegistry_init(attr_AttrRegistry* ar, string_pool_Pool* pool)
 {
-   ar->name_indexes[0] = 0;
-   for (attr_AttrKind kind = (attr_AttrKind)1; kind <= attr_AttrKind_Deprecated; kind++) {
-      ar->name_indexes[kind] = string_pool_Pool_addStr(pool, attr_attrKind_names[kind], true);
+   attr_AttrKind kind = (attr_AttrKind)0;
+   ar->name_indexes[kind++] = 0;
+   for (; kind <= attr_AttrKind_Deprecated; kind++) {
+      ar->name_indexes[kind] = string_pool_Pool_addStr(pool, attr_AttrKind__name[kind], true);
    }
 }
 
@@ -5794,7 +5894,7 @@ static bool attr_isPowerOf2(u32 val)
 
 static attr_AttrReq attr_Attr_checkArgument(const attr_Attr* a)
 {
-   switch (attr_Required_arg[a->kind]) {
+   switch (attr_AttrKind__required_arg[a->kind]) {
    case attr_AttrReq_NoArg:
       if (a->value_kind != attr_AttrValueKind_None) return attr_AttrReq_NoArg;
       break;
@@ -5916,14 +6016,19 @@ typedef struct ast_BitFieldLayout_ ast_BitFieldLayout;
 typedef struct ast_BitFieldInfo_ ast_BitFieldInfo;
 typedef struct ast_VarDeclInit_ ast_VarDeclInit;
 typedef struct ast_VarDecl_ ast_VarDecl;
+typedef struct ast_VarDeclList_ ast_VarDeclList;
+typedef struct ast_Symbol_ ast_Symbol;
+typedef struct ast_SymbolList_ ast_SymbolList;
 typedef struct ast_StmtBits_ ast_StmtBits;
 typedef struct ast_Stmt_ ast_Stmt;
 typedef struct ast_AsmStmtBits_ ast_AsmStmtBits;
 typedef struct ast_AsmStmt_ ast_AsmStmt;
 typedef struct ast_AssertStmt_ ast_AssertStmt;
+typedef struct ast_BreakStmtBits_ ast_BreakStmtBits;
 typedef struct ast_BreakStmt_ ast_BreakStmt;
 typedef struct ast_CompoundStmtBits_ ast_CompoundStmtBits;
 typedef struct ast_CompoundStmt_ ast_CompoundStmt;
+typedef struct ast_ContinueStmtBits_ ast_ContinueStmtBits;
 typedef struct ast_ContinueStmt_ ast_ContinueStmt;
 typedef struct ast_FallthroughStmt_ ast_FallthroughStmt;
 typedef struct ast_ForStmt_ ast_ForStmt;
@@ -6062,6 +6167,7 @@ struct ast_DeclBits_ {
 struct ast_ImportDeclBits_ {
    u32  : 15;
    u32 is_local : 1;
+   u32 symlist_count : 16;
 };
 
 typedef u8 ast_CallKind;
@@ -6197,12 +6303,83 @@ struct ast_Decl_ {
    ast_QualType qt;
 };
 
-static const char* ast_declKind_names[8] = {
+#define ast_NumDeclBits 15
+static const char* const ast_DeclKind__name[8] = {
    "FunctionDecl",     "ImportDecl",       "StructTypeDecl",   "EnumTypeDecl",
    "EnumConstantDecl", "FunctionType",     "AliasTypeDecl",    "VarDecl"
 };
-static const char* ast_declCheckState_names[3] = { "unchecked", "in-progress", "checked" };
-#define ast_NumDeclBits 15
+static const char* const ast_DeclCheckState__name[3] = { "unchecked", "in-progress", "checked" };
+static const char* const ast_CallKind__name[4] = { "Invalid", "Normal", "SF", "SSF" };
+static const char* const ast_DefKind__name[6] = {
+   "global", "type", "struct-member", "param", "enum-value", "template"
+};
+static const char* const ast_VarDeclKind__name[5] = { "global", "local", "parameter", "member", "enum-value" };
+static const char* const ast_StmtKind__name[15] = {
+   "ReturnStmt",      "ExprStmt",        "IfStmt",          "WhileStmt",       "ForStmt",
+   "SwitchStmt",      "BreakStmt",       "ContinueStmt",    "FallthroughStmt", "LabelStmt",
+   "GotoStmt",        "CompoundStmt",    "DeclStmt",        "Asm",             "AssertStmt"
+};
+static const char* const ast_ExprKind__name[25] = {
+   "IntegerLiteral",      "FloatLiteral",        "BooleanLiteral",      "CharLiteral",
+   "StringLiteral",       "Nil",                 "Identifier",          "TypeExpr",
+   "Call",                "InitList",            "FieldDesignatedInit", "ArrayDesignatedInit",
+   "BinaryOperator",      "UnaryOperator",       "ConditionalOp",       "Builtin",
+   "ArraySubscript",      "Member",              "Paren",               "BitOffset",
+   "ExplicitCast",        "ImplicitCast",        "RangeExpr",           "NamedArgument",
+   "Alternate"
+};
+static const char* const ast_ValType__name[3] = { "nvalue", "rvalue", "lvalue" };
+static const char* const ast_BinaryOpcode__name[29] = {
+   "*",   "/",   "%",   "+",   "-",   "<<",  ">>",  "<",   ">",   "<=",
+   ">=",  "==",  "!=",  "&",   "^",   "|",   "&&",  "||",  "=",   "*=",
+   "/=",  "%=",  "+=",  "-=",  "<<=", ">>=", "&=",  "^=",  "|="
+};
+#define ast_RHS 0x02
+#define ast_LHS 0x01
+static const u32 ast_BinaryOpcode__side[29] = {
+   ast_RHS,           ast_RHS,           ast_RHS,           ast_RHS,           ast_RHS,
+   ast_RHS,           ast_RHS,           ast_RHS,           ast_RHS,           ast_RHS,
+   ast_RHS,           ast_RHS,           ast_RHS,           ast_RHS,           ast_RHS,
+   ast_RHS,           ast_RHS,           ast_RHS,           ast_LHS,           ast_LHS | ast_RHS,
+   ast_LHS | ast_RHS, ast_LHS | ast_RHS, ast_LHS | ast_RHS, ast_LHS | ast_RHS, ast_LHS | ast_RHS,
+   ast_LHS | ast_RHS, ast_LHS | ast_RHS, ast_LHS | ast_RHS, ast_LHS | ast_RHS
+};
+static const char* const ast_BuiltinExprKind__name[4] = { "sizeof", "elemsof", "offsetof", "to_container" };
+static const char* const ast_IdentifierKind__name[8] = {
+   "Unresolved",   "Module",       "Function",     "Type",
+   "Var",          "EnumConstant", "StructMember", "Label"
+};
+static const char* const ast_ImplicitCastKind__name[6] = {
+   "ArrayToPointerDecay", "LValueToRValue",      "PointerToBoolean",    "PointerToInteger",
+   "IntegralCast",        "BitCast"
+};
+static const char* const ast_MemberKind__name[8] = {
+   "Unresolved",        "Module",            "StructMember",      "TypeFunc",
+   "StaticTypeFunc",    "EnumConstant",      "EnumAssocValue",    "EnumConstantValue"
+};
+static const char* const ast_UnaryOpcode__name[10] = { "++", "--", "++", "--", "&", "*", "+", "-", "~", "!" };
+static const char* const ast_TypeKind__name[9] = {
+   "Builtin",  "Pointer",  "Array",    "Struct",   "Enum",     "Function", "Void",     "Alias",
+   "Module"
+};
+static const char* const ast_BuiltinKind__name[14] = {
+   "bool",  "char",  "i8",    "i16",   "i32",   "i64",   "u8",    "u16",   "u32",   "u64",
+   "f32",   "f64",   "isize", "usize"
+};
+static const bool ast_BuiltinKind__promotable[14] = {
+   true, true, true, true, false, false, true, true, false, false, false, false, false, false
+};
+static const bool ast_BuiltinKind__is_signed[14] = {
+   false, false, true, true, true, true, false, false, false, false, true, true, true, false
+};
+static const bool ast_BuiltinKind__is_unsigned[14] = {
+   false, true, false, false, false, false, true, true, true, true, false, false, false, true
+};
+static const bool ast_BuiltinKind__is_integer[14] = {
+   false, true, true, true, true, true, true, true, true, true, false, false, true, true
+};
+static const u8 ast_BuiltinKind__align[14] = { 1, 1, 1, 2, 4, 8, 1, 2, 4, 8, 4, 8, 0, 0 };
+static const u8 ast_BuiltinKind__width[14] = { 1, 8, 8, 16, 32, 64, 8, 16, 32, 64, 0, 0, 0, 0 };
 static void ast_Decl_init(ast_Decl* d, ast_DeclKind k, u32 name_idx, src_loc_SrcLoc loc, bool is_public, ast_QualType qt, u32 ast_idx);
 static ast_DeclKind ast_Decl_getKind(const ast_Decl* d);
 static ast_DeclCheckState ast_Decl_getCheckState(const ast_Decl* d);
@@ -6232,7 +6409,6 @@ static src_loc_SrcLoc ast_Decl_getLoc(const ast_Decl* d);
 static ast_QualType ast_Decl_getType(const ast_Decl* d);
 static void ast_Decl_setType(ast_Decl* d, ast_QualType qt);
 static ast_AST* ast_Decl_getAST(const ast_Decl* d);
-static u32 ast_Decl_getASTIdx(const ast_Decl* d);
 static void ast_Decl_setOffset(ast_Decl* d, u32 offset);
 static ast_Module* ast_Decl_getModule(const ast_Decl* d);
 static const attr_Attr* ast_Decl_getAttr(const ast_Decl* d, attr_AttrKind kind);
@@ -6247,14 +6423,13 @@ static void ast_Decl_setExternal(ast_Decl* d);
 static bool ast_Decl_isGenerated(const ast_Decl* d);
 static void ast_Decl_setGenerated(ast_Decl* d);
 static void ast_Decl_clearGenerated(ast_Decl* d);
-static void ast_Decl_dump(const ast_Decl* d);
 static bool ast_Decl_isTypeDecl(const ast_Decl* d);
 static bool ast_Decl_isVarDecl(const ast_Decl* d);
 static const char* ast_Decl_getKindName(const ast_Decl* d);
-static const char* ast_Decl_getCName(const ast_Decl* d);
+static u32 ast_Decl_getCName(const ast_Decl* d);
 static bool ast_Decl_hasCName(const ast_Decl* d);
-static const char* ast_Decl_getCDef(const ast_Decl* d);
-static const char* ast_Decl_getSection(const ast_Decl* d);
+static u32 ast_Decl_getCDef(const ast_Decl* d);
+static u32 ast_Decl_getSection(const ast_Decl* d);
 static const char* ast_Decl_getFullName(const ast_Decl* d);
 static void ast_Decl_print(const ast_Decl* d, string_buffer_Buf* out, u32 indent);
 static void ast_Decl_printKind(const ast_Decl* d, string_buffer_Buf* out, u32 indent, bool print_type);
@@ -6272,6 +6447,7 @@ enum ast_TypeRefKind {
 
 typedef u8 ast_BuiltinKind;
 enum ast_BuiltinKind {
+   ast_BuiltinKind_Bool,
    ast_BuiltinKind_Char,
    ast_BuiltinKind_Int8,
    ast_BuiltinKind_Int16,
@@ -6285,7 +6461,6 @@ enum ast_BuiltinKind {
    ast_BuiltinKind_Float64,
    ast_BuiltinKind_ISize,
    ast_BuiltinKind_USize,
-   ast_BuiltinKind_Bool,
 };
 
 struct ast_TypeRefBits_ {
@@ -6369,19 +6544,34 @@ struct ast_AsmStmtBits_ {
    u32 is_volatile : 1;
 };
 
+struct ast_BreakStmtBits_ {
+   u32  : 4;
+   u32 has_name : 1;
+};
+
 struct ast_CompoundStmtBits_ {
    u32  : 4;
    u32 count : 28;
 };
 
+struct ast_ContinueStmtBits_ {
+   u32  : 4;
+   u32 has_name : 1;
+};
+
 struct ast_IfStmtBits_ {
    u32  : 4;
+   u32 has_decl : 1;
+   u32 has_source_cond : 1;
    u32 has_else : 1;
 };
 
 struct ast_LabelStmtBits_ {
    u32  : 4;
    u32 is_used : 1;
+   u32 has_goto : 1;
+   u32 has_break : 1;
+   u32 has_continue : 1;
 };
 
 struct ast_ReturnStmtBits_ {
@@ -6394,7 +6584,7 @@ struct ast_SwitchStmtBits_ {
    u32 is_string : 1;
    u32 has_default : 1;
    u32 has_decl : 1;
-   u32 has_cond : 1;
+   u32 has_source_cond : 1;
    u32 num_cases : 24;
 };
 
@@ -6515,16 +6705,14 @@ typedef u8 ast_BuiltinExprKind;
 enum ast_BuiltinExprKind {
    ast_BuiltinExprKind_Sizeof,
    ast_BuiltinExprKind_Elemsof,
-   ast_BuiltinExprKind_EnumMin,
-   ast_BuiltinExprKind_EnumMax,
    ast_BuiltinExprKind_OffsetOf,
    ast_BuiltinExprKind_ToContainer,
 };
 
 struct ast_BuiltinExprBits_ {
    u32  : 14;
-   u8  : 2;
-   ast_BuiltinExprKind kind : 3;
+   ast_BuiltinExprKind kind : 2;
+   bool use_literal : 1;
    u32 src_len : 13;
 };
 
@@ -6680,7 +6868,9 @@ struct ast_Stmt_ {
    union {
       ast_StmtBits stmtBits;
       ast_AsmStmtBits asmStmtBits;
+      ast_BreakStmtBits breakStmtBits;
       ast_CompoundStmtBits compoundStmtBits;
+      ast_ContinueStmtBits continueStmtBits;
       ast_DeclStmtBits declStmtBits;
       ast_IfStmtBits ifStmtBits;
       ast_LabelStmtBits labelStmtBits;
@@ -6803,10 +6993,6 @@ struct ast_FunctionDecl_ {
    ast_TypeRef rtype;
 };
 
-static const char* ast_callKind_names[4] = { "Invalid", "Normal", "SF", "SSF" };
-static const char* ast_defKind_names[6] = {
-   "global", "type", "struct-member", "param", "enum-value", "template"
-};
 static ast_FunctionDecl* ast_FunctionDecl_create(ast_context_Context* c, u32 name, src_loc_SrcLoc loc, bool is_public, u32 ast_idx, const ast_TypeRefHolder* rtype, const ast_Ref* prefix, ast_VarDecl** params, u32 num_params, bool is_variadic, ast_DefKind def_kind);
 static ast_FunctionDecl* ast_FunctionDecl_createTemplate(ast_context_Context* c, u32 name, src_loc_SrcLoc loc, bool is_public, u32 ast_idx, const ast_TypeRefHolder* rtype, u32 template_name, src_loc_SrcLoc template_loc, ast_VarDecl** params, u32 num_params, bool is_variadic);
 static ast_FunctionDecl* ast_FunctionDecl_instantiate(const ast_FunctionDecl* fd, ast_Instantiator* inst);
@@ -6836,8 +7022,8 @@ static u16 ast_FunctionDecl_getTemplateInstanceIdx(const ast_FunctionDecl* d);
 static void ast_FunctionDecl_setInstanceName(ast_FunctionDecl* d, u32 name_idx);
 static ast_Module* ast_FunctionDecl_getInstanceModule(ast_FunctionDecl* d);
 static ast_Ref* ast_FunctionDecl_getPrefix(ast_FunctionDecl* d);
-static const char* ast_FunctionDecl_getCName(const ast_FunctionDecl* d);
-static const char* ast_FunctionDecl_getPrefixName(const ast_FunctionDecl* d);
+static u32 ast_FunctionDecl_getCName(const ast_FunctionDecl* d);
+static u32 ast_FunctionDecl_getPrefixNameIdx(const ast_FunctionDecl* d);
 static void ast_FunctionDecl_setCallKind(ast_FunctionDecl* d, ast_CallKind kind);
 static bool ast_FunctionDecl_isTypeFunc(const ast_FunctionDecl* d);
 static ast_CallKind ast_FunctionDecl_getCallKind(const ast_FunctionDecl* d);
@@ -6868,44 +7054,20 @@ static bool ast_FunctionDecl_hasAttrDeprecated(const ast_FunctionDecl* d);
 static const char* ast_FunctionDecl_getDiagKind(const ast_FunctionDecl* d);
 static void ast_FunctionDecl_print(const ast_FunctionDecl* d, string_buffer_Buf* out, u32 indent);
 static void ast_FunctionDecl_printType(const ast_FunctionDecl* d, string_buffer_Buf* out);
-typedef int (*ast_FunII)(int a);
-
-typedef int (*ast_FunIF)(float a);
-
-typedef int (*ast_FunID)(double a);
-
-typedef i64 (*ast_FunLL)(i64 a);
-
-typedef i64 (*ast_FunLF)(float a);
-
-typedef i64 (*ast_FunLD)(double a);
-
-typedef float (*ast_FunFF)(float a);
-
-typedef double (*ast_FunDD)(double a);
-
-typedef float (*ast_FunFFF)(float a, float b);
-
-typedef double (*ast_FunDDD)(double a, double b);
-
-typedef float (*ast_FunFFFF)(float a, float b, float c);
-
-typedef double (*ast_FunDDDD)(double a, double b, double c);
-
 union ast_FunctionDispatcher_ {
    void* address;
-   ast_FunII funII;
-   ast_FunIF funIF;
-   ast_FunID funID;
-   ast_FunLL funLL;
-   ast_FunLF funLF;
-   ast_FunLD funLD;
-   ast_FunFF funFF;
-   ast_FunDD funDD;
-   ast_FunFFF funFFF;
-   ast_FunDDD funDDD;
-   ast_FunFFFF funFFFF;
-   ast_FunDDDD funDDDD;
+   int (*funII)(int a);
+   int (*funIF)(float a);
+   int (*funID)(double a);
+   i64 (*funLL)(i64 a);
+   i64 (*funLF)(float a);
+   i64 (*funLD)(double a);
+   float (*funFF)(float a);
+   double (*funDD)(double a);
+   float (*funFFF)(float a, float b);
+   double (*funDDD)(double a, double b);
+   float (*funFFFF)(float a, float b, float c);
+   double (*funDDDD)(double a, double b, double c);
 };
 
 static ast_FunctionSignature ast_FunctionDecl_computeSignature(ast_FunctionDecl* fd);
@@ -6914,26 +7076,37 @@ struct ast_FunctionTypeDecl_ {
    ast_FunctionDecl* func;
 };
 
-static ast_FunctionTypeDecl* ast_FunctionTypeDecl_create(ast_context_Context* c, ast_FunctionDecl* func);
+static ast_FunctionTypeDecl* ast_FunctionTypeDecl_create(ast_context_Context* c, ast_FunctionDecl* func, u32 ast_idx);
 static ast_Decl* ast_FunctionTypeDecl_asDecl(ast_FunctionTypeDecl* t);
 static ast_FunctionDecl* ast_FunctionTypeDecl_getDecl(const ast_FunctionTypeDecl* d);
 static void ast_FunctionTypeDecl_print(const ast_FunctionTypeDecl* d, string_buffer_Buf* out, u32 indent);
+struct ast_Symbol_ {
+   u32 name_idx;
+   src_loc_SrcLoc loc;
+   u32 as_name_idx;
+   bool used;
+   ast_Decl* decl;
+};
+
 struct ast_ImportDecl_ {
    ast_Decl base;
    u32 alias_idx;
    src_loc_SrcLoc alias_loc;
    ast_Module* dest;
+   ast_Symbol symlist[0];
 };
 
-static ast_ImportDecl* ast_ImportDecl_create(ast_context_Context* c, u32 name, src_loc_SrcLoc loc, u32 alias_name, src_loc_SrcLoc alias_loc, u32 ast_idx, bool is_local);
+static ast_ImportDecl* ast_ImportDecl_create(ast_context_Context* c, u32 name, src_loc_SrcLoc loc, u32 alias_name, src_loc_SrcLoc alias_loc, u32 ast_idx, bool is_local, ast_Symbol* symlist, u32 symlist_count);
 static ast_Decl* ast_ImportDecl_asDecl(ast_ImportDecl* d);
-static const char* ast_ImportDecl_getAliasName(const ast_ImportDecl* d);
 static u32 ast_ImportDecl_getAliasNameIdx(const ast_ImportDecl* d);
 static u32 ast_ImportDecl_getImportNameIdx(const ast_ImportDecl* d);
 static src_loc_SrcLoc ast_ImportDecl_getLoc(const ast_ImportDecl* d);
+static ast_Symbol* ast_ImportDecl_getSymlistData(ast_ImportDecl* d);
+static u32 ast_ImportDecl_getSymlistSize(const ast_ImportDecl* d);
 static void ast_ImportDecl_setDest(ast_ImportDecl* d, ast_Module* mod);
 static ast_Module* ast_ImportDecl_getDest(const ast_ImportDecl* d);
 static bool ast_ImportDecl_isLocal(const ast_ImportDecl* d);
+static ast_Decl* ast_ImportDecl_findSymbol(ast_ImportDecl* d, u32 name_idx);
 static void ast_ImportDecl_print(const ast_ImportDecl* d, string_buffer_Buf* out, u32 indent);
 struct ast_StaticAssert_ {
    u32 ast_idx;
@@ -6993,6 +7166,7 @@ struct ast_StructTypeDecl_ {
 static void ast_FieldInitField_print(const ast_FieldInitField* f, string_buffer_Buf* out);
 static const ast_FieldInitField* ast_FieldInitInfo_find(const ast_FieldInitInfo* fi, u32 name);
 static ast_StructTypeDecl* ast_StructTypeDecl_create(ast_context_Context* c, u32 name, src_loc_SrcLoc loc, bool is_public, u32 ast_idx, bool is_struct, bool is_global, ast_Decl** members, u32 num_members);
+static bool ast_StructTypeDecl_isEmpty(const ast_StructTypeDecl* d);
 static ast_Decl* ast_StructTypeDecl_asDecl(ast_StructTypeDecl* d);
 static u32 ast_StructTypeDecl_getNumMembers(const ast_StructTypeDecl* d);
 static ast_Decl** ast_StructTypeDecl_getMembers(ast_StructTypeDecl* d);
@@ -7041,12 +7215,9 @@ struct ast_VarDecl_ {
    ast_TypeRef typeRef;
 };
 
-static const char* ast_varDeclNames[5] = { " global", " local", " parameter", " member", " enum-value" };
 static ast_VarDecl* ast_VarDecl_create(ast_context_Context* c, ast_VarDeclKind kind, u32 name, src_loc_SrcLoc loc, bool is_public, const ast_TypeRefHolder* ref, u32 ast_idx, src_loc_SrcLoc assignLoc, bool has_embed, ast_Expr* initValue);
 static ast_VarDecl* ast_VarDecl_createStructMember(ast_context_Context* c, u32 name, src_loc_SrcLoc loc, bool is_public, const ast_TypeRefHolder* ref, u32 ast_idx, ast_Expr* bitfield);
 static ast_VarDecl* ast_VarDecl_instantiate(const ast_VarDecl* vd, ast_Instantiator* inst);
-static const char* ast_VarDecl_getEnumAssocValueName(const ast_VarDecl* d, const char* enum_name);
-static const char* ast_VarDecl_getName(const ast_VarDecl* d);
 static u32 ast_VarDecl_getNameIdx(const ast_VarDecl* d);
 static ast_Decl* ast_VarDecl_asDecl(ast_VarDecl* d);
 static ast_QualType ast_VarDecl_getType(const ast_VarDecl* d);
@@ -7091,11 +7262,31 @@ static void ast_VarDecl_setFormatAttr(ast_VarDecl* d, ast_FormatAttr kind);
 static ast_FormatAttr ast_VarDecl_getFormatAttr(const ast_VarDecl* d);
 static void ast_VarDecl_print(const ast_VarDecl* d, string_buffer_Buf* out, u32 indent);
 static void ast_VarDecl_printType(const ast_VarDecl* d, string_buffer_Buf* out);
-static const char* ast_stmtKind_names[15] = {
-   "ReturnStmt",      "ExprStmt",        "IfStmt",          "WhileStmt",       "ForStmt",
-   "SwitchStmt",      "BreakStmt",       "ContinueStmt",    "FallthroughStmt", "LabelStmt",
-   "GotoStmt",        "CompoundStmt",    "DeclStmt",        "Asm",             "AssertStmt"
+struct ast_VarDeclList_ {
+   u32 count;
+   u32 capacity;
+   ast_VarDecl** data;
+   ast_VarDecl* stash[4];
 };
+
+static void ast_VarDeclList_init(ast_VarDeclList* l);
+static void ast_VarDeclList_free(ast_VarDeclList* l);
+static void ast_VarDeclList_resize(ast_VarDeclList* l);
+static void ast_VarDeclList_add(ast_VarDeclList* l, ast_VarDecl* d);
+static u32 ast_VarDeclList_size(const ast_VarDeclList* l);
+static ast_VarDecl** ast_VarDeclList_getData(const ast_VarDeclList* l);
+struct ast_SymbolList_ {
+   u32 count;
+   u32 capacity;
+   ast_Symbol* data;
+   ast_Symbol stash[16];
+};
+
+static void ast_SymbolList_init(ast_SymbolList* l);
+static void ast_SymbolList_add(ast_SymbolList* l, ast_Symbol sym);
+static void ast_SymbolList_free(ast_SymbolList* l);
+static u32 ast_SymbolList_size(const ast_SymbolList* l);
+static ast_Symbol* ast_SymbolList_getData(ast_SymbolList* l);
 #define ast_NumStmtBits 4
 static void ast_Stmt_init(ast_Stmt* s, ast_StmtKind k, src_loc_SrcLoc loc);
 static ast_Stmt* ast_Stmt_instantiate(ast_Stmt* s, ast_Instantiator* inst);
@@ -7151,9 +7342,12 @@ static ast_Expr** ast_AssertStmt_getCall2(ast_AssertStmt* s);
 static void ast_AssertStmt_print(const ast_AssertStmt* s, string_buffer_Buf* out, u32 indent);
 struct ast_BreakStmt_ {
    ast_Stmt base;
+   u32 name_idx[0];
 };
 
-static ast_BreakStmt* ast_BreakStmt_create(ast_context_Context* c, src_loc_SrcLoc loc);
+static ast_BreakStmt* ast_BreakStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, u32 name_idx);
+static bool ast_BreakStmt_hasName(const ast_BreakStmt* s);
+static u32 ast_BreakStmt_getName(const ast_BreakStmt* s);
 static void ast_BreakStmt_print(const ast_BreakStmt* s, string_buffer_Buf* out, u32 indent);
 struct ast_CompoundStmt_ {
    ast_Stmt base;
@@ -7168,9 +7362,12 @@ static src_loc_SrcLoc ast_CompoundStmt_getEndLoc(const ast_CompoundStmt* e);
 static void ast_CompoundStmt_print(const ast_CompoundStmt* s, string_buffer_Buf* out, u32 indent);
 struct ast_ContinueStmt_ {
    ast_Stmt base;
+   u32 name_idx[0];
 };
 
-static ast_ContinueStmt* ast_ContinueStmt_create(ast_context_Context* c, src_loc_SrcLoc loc);
+static ast_ContinueStmt* ast_ContinueStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, u32 name_idx);
+static bool ast_ContinueStmt_hasName(const ast_ContinueStmt* s);
+static u32 ast_ContinueStmt_getName(const ast_ContinueStmt* s);
 static void ast_ContinueStmt_print(const ast_ContinueStmt* s, string_buffer_Buf* out, u32 indent);
 struct ast_FallthroughStmt_ {
    ast_Stmt base;
@@ -7203,22 +7400,26 @@ struct ast_GotoStmt_ {
 };
 
 static ast_GotoStmt* ast_GotoStmt_create(ast_context_Context* c, u32 name, src_loc_SrcLoc loc);
-static const char* ast_GotoStmt_getName(const ast_GotoStmt* g);
 static u32 ast_GotoStmt_getNameIdx(const ast_GotoStmt* g);
 static void ast_GotoStmt_print(const ast_GotoStmt* s, string_buffer_Buf* out, u32 indent);
 struct ast_IfStmt_ {
    ast_Stmt base;
-   ast_Stmt* cond;
+   ast_Expr* cond;
    ast_Stmt* then;
-   ast_Stmt* else_stmt[0];
+   ast_Stmt* tail[0];
 };
 
-static ast_IfStmt* ast_IfStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Stmt* cond, ast_Stmt* then, ast_Stmt* else_stmt);
+static ast_IfStmt* ast_IfStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Stmt* decl, ast_Expr* cond, ast_Stmt* then, ast_Stmt* else_stmt);
 static ast_Stmt* ast_IfStmt_instantiate(ast_IfStmt* s, ast_Instantiator* inst);
-static ast_Stmt* ast_IfStmt_getCond(const ast_IfStmt* s);
-static ast_Stmt** ast_IfStmt_getCond2(ast_IfStmt* s);
+static bool ast_IfStmt_hasDecl(const ast_IfStmt* s);
+static ast_Stmt* ast_IfStmt_getDecl(const ast_IfStmt* s);
+static ast_Stmt** ast_IfStmt_getDecl2(ast_IfStmt* s);
+static bool ast_IfStmt_hasSourceCond(const ast_IfStmt* s);
+static ast_Expr* ast_IfStmt_getCond(const ast_IfStmt* s);
+static ast_Expr** ast_IfStmt_getCond2(ast_IfStmt* s);
 static ast_Stmt* ast_IfStmt_getThen(const ast_IfStmt* s);
 static ast_Stmt** ast_IfStmt_getThen2(ast_IfStmt* s);
+static bool ast_IfStmt_hasElse(const ast_IfStmt* s);
 static ast_Stmt* ast_IfStmt_getElse(const ast_IfStmt* s);
 static ast_Stmt** ast_IfStmt_getElse2(ast_IfStmt* s);
 static void ast_IfStmt_print(const ast_IfStmt* s, string_buffer_Buf* out, u32 indent);
@@ -7232,7 +7433,12 @@ static ast_LabelStmt* ast_LabelStmt_create(ast_context_Context* c, u32 name, src
 static ast_Stmt* ast_LabelStmt_instantiate(ast_LabelStmt* s, ast_Instantiator* inst);
 static void ast_LabelStmt_setUsed(ast_LabelStmt* s);
 static bool ast_LabelStmt_isUsed(const ast_LabelStmt* s);
-static const char* ast_LabelStmt_getName(const ast_LabelStmt* s);
+static bool ast_LabelStmt_hasGoto(const ast_LabelStmt* s);
+static void ast_LabelStmt_setGoto(ast_LabelStmt* s);
+static bool ast_LabelStmt_hasBreak(const ast_LabelStmt* s);
+static void ast_LabelStmt_setBreak(ast_LabelStmt* s);
+static bool ast_LabelStmt_hasContinue(const ast_LabelStmt* s);
+static void ast_LabelStmt_setContinue(ast_LabelStmt* s);
 static u32 ast_LabelStmt_getNameIdx(const ast_LabelStmt* s);
 static ast_Stmt* ast_LabelStmt_getStmt(const ast_LabelStmt* s);
 static ast_Stmt** ast_LabelStmt_getStmt2(ast_LabelStmt* s);
@@ -7290,7 +7496,7 @@ static ast_Stmt* ast_SwitchStmt_instantiate(ast_SwitchStmt* s, ast_Instantiator*
 static bool ast_SwitchStmt_hasDecl(const ast_SwitchStmt* s);
 static ast_Stmt* ast_SwitchStmt_getDecl(const ast_SwitchStmt* s);
 static ast_Stmt** ast_SwitchStmt_getDecl2(ast_SwitchStmt* s);
-static bool ast_SwitchStmt_hasCond(const ast_SwitchStmt* s);
+static bool ast_SwitchStmt_hasSourceCond(const ast_SwitchStmt* s);
 static ast_Expr* ast_SwitchStmt_getCond(const ast_SwitchStmt* s);
 static ast_Expr** ast_SwitchStmt_getCond2(ast_SwitchStmt* s);
 static bool ast_SwitchStmt_isString(const ast_SwitchStmt* s);
@@ -7317,16 +7523,6 @@ struct ast_Expr_ {
    ast_QualType qt;
 };
 
-static const char* ast_exprKind_names[25] = {
-   "IntegerLiteral",      "FloatLiteral",        "BooleanLiteral",      "CharLiteral",
-   "StringLiteral",       "Nil",                 "Identifier",          "TypeExpr",
-   "Call",                "InitList",            "FieldDesignatedInit", "ArrayDesignatedInit",
-   "BinaryOperator",      "UnaryOperator",       "ConditionalOp",       "Builtin",
-   "ArraySubscript",      "Member",              "Paren",               "BitOffset",
-   "ExplicitCast",        "ImplicitCast",        "RangeExpr",           "NamedArgument",
-   "Alternate"
-};
-static const char* ast_valType_names[3] = { "nvalue", "rvalue", "lvalue" };
 #define ast_NumExprBits (ast_NumStmtBits + 10)
 static void ast_Expr_init(ast_Expr* e, ast_ExprKind k, src_loc_SrcLoc loc, bool ctv, bool ctc, bool has_effect, ast_ValType valtype);
 static ast_Expr* ast_Expr_instantiate(ast_Expr* e, ast_Instantiator* inst);
@@ -7446,13 +7642,7 @@ struct ast_BinaryOperator_ {
    ast_Expr* rhs;
 };
 
-static const char* ast_binaryOpcode_names[29] = {
-   "*",   "/",   "%",   "+",   "-",   "<<",  ">>",  "<",   ">",   "<=",
-   ">=",  "==",  "!=",  "&",   "^",   "|",   "&&",  "||",  "=",   "*=",
-   "/=",  "%=",  "+=",  "-=",  "<<=", ">>=", "&=",  "^=",  "|="
-};
 static bool ast_BinaryOpcode_isComparison(ast_BinaryOpcode opcode);
-static const char* ast_BinaryOpcode_str(ast_BinaryOpcode opcode);
 static ast_BinaryOperator* ast_BinaryOperator_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_BinaryOpcode kind, ast_Expr* lhs, ast_Expr* rhs);
 static ast_Expr* ast_BinaryOperator_instantiate(ast_BinaryOperator* e, ast_Instantiator* inst);
 static ast_BinaryOpcode ast_BinaryOperator_getOpcode(const ast_BinaryOperator* e);
@@ -7504,22 +7694,19 @@ struct ast_OffsetOfData_ {
 struct ast_BuiltinExpr_ {
    ast_Expr base;
    ast_Expr* inner;
-   value_type_Value value;
+   u64 value;
    ast_OffsetOfData offset[0];
    ast_ToContainerData container[0];
 };
 
-static const char* ast_builtin_names[6] = {
-   "sizeof", "elemsof", "enum_min", "enum_max", "offsetof", "to_container"
-};
 static ast_BuiltinExpr* ast_BuiltinExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, u32 src_len, ast_Expr* inner, ast_BuiltinExprKind kind);
 static ast_BuiltinExpr* ast_BuiltinExpr_createOffsetOf(ast_context_Context* c, src_loc_SrcLoc loc, u32 src_len, ast_Expr* typeExpr, ast_Expr* member);
 static ast_BuiltinExpr* ast_BuiltinExpr_createToContainer(ast_context_Context* c, src_loc_SrcLoc loc, u32 src_len, ast_Expr* typeExpr, ast_Expr* member, ast_Expr* pointer);
 static ast_Expr* ast_BuiltinExpr_instantiate(ast_BuiltinExpr* e, ast_Instantiator* inst);
 static ast_BuiltinExprKind ast_BuiltinExpr_getKind(const ast_BuiltinExpr* e);
-static value_type_Value ast_BuiltinExpr_getValue(const ast_BuiltinExpr* e);
-static void ast_BuiltinExpr_setValue(ast_BuiltinExpr* e, value_type_Value value);
-static void ast_BuiltinExpr_setUValue(ast_BuiltinExpr* e, u64 val);
+static u64 ast_BuiltinExpr_useLiteral(const ast_BuiltinExpr* e);
+static u64 ast_BuiltinExpr_getValue(const ast_BuiltinExpr* e);
+static void ast_BuiltinExpr_setValue(ast_BuiltinExpr* e, u64 val);
 static ast_Expr* ast_BuiltinExpr_getInner(const ast_BuiltinExpr* e);
 static src_loc_SrcLoc ast_BuiltinExpr_getEndLoc(const ast_BuiltinExpr* e);
 static ast_Expr* ast_BuiltinExpr_getOffsetOfMember(const ast_BuiltinExpr* b);
@@ -7641,7 +7828,6 @@ struct ast_IdentifierExpr_ {
    };
 };
 
-static const char* ast_IdentifierKind_str(ast_IdentifierKind k);
 static ast_IdentifierExpr* ast_IdentifierExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, u32 name, u32 name_len);
 static ast_Expr* ast_IdentifierExpr_instantiate(ast_IdentifierExpr* e, ast_Instantiator* inst);
 static ast_Expr* ast_IdentifierExpr_asExpr(ast_IdentifierExpr* e);
@@ -7661,10 +7847,6 @@ struct ast_ImplicitCastExpr_ {
    ast_Expr* inner;
 };
 
-static const char* ast_implicitCastKind_names[6] = {
-   "ArrayToPointerDecay", "LValueToRValue",      "PointerToBoolean",    "PointerToInteger",
-   "IntegralCast",        "BitCast"
-};
 static ast_ImplicitCastExpr* ast_ImplicitCastExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_ImplicitCastKind kind, ast_Expr* inner);
 static ast_ImplicitCastKind ast_ImplicitCastExpr_getKind(const ast_ImplicitCastExpr* e);
 static bool ast_ImplicitCastExpr_isArrayToPointerDecay(const ast_ImplicitCastExpr* e);
@@ -7719,7 +7901,6 @@ struct ast_MemberExpr_ {
    ast_MemberRef refs[2];
 };
 
-static const char* ast_MemberKind_str(ast_MemberKind k);
 static ast_MemberExpr* ast_MemberExpr_create(ast_context_Context* c, ast_Expr* base, u32 base_name_idx, u32 base_len, src_loc_SrcLoc loc, u32 member_name_idx);
 static ast_Expr* ast_MemberExpr_instantiate(ast_MemberExpr* e, ast_Instantiator* inst);
 static bool ast_MemberExpr_hasExpr(const ast_MemberExpr* e);
@@ -7807,13 +7988,12 @@ static void ast_RangeExpr_printLiteral(const ast_RangeExpr* e, string_buffer_Buf
 struct ast_StringLiteral_ {
    ast_Expr base;
    u32 value;
-   u32 size;
+   u32 len;
 };
 
-static ast_StringLiteral* ast_StringLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, u32 src_len, u32 value, u32 len);
-static const char* ast_StringLiteral_getText(const ast_StringLiteral* e);
-static u32 ast_StringLiteral_getTextIndex(const ast_StringLiteral* e);
-static u32 ast_StringLiteral_getSize(const ast_StringLiteral* e);
+static ast_StringLiteral* ast_StringLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, u32 src_len, u32 value, u32 len, bool addnull);
+static u32 ast_StringLiteral_getText(const ast_StringLiteral* e);
+static u32 ast_StringLiteral_getLength(const ast_StringLiteral* e);
 static src_loc_SrcLoc ast_StringLiteral_getEndLoc(const ast_StringLiteral* e);
 static void ast_StringLiteral_printLiteral(const ast_StringLiteral* e, string_buffer_Buf* out);
 static void ast_StringLiteral_print(const ast_StringLiteral* e, string_buffer_Buf* out, u32 indent);
@@ -7833,7 +8013,6 @@ struct ast_UnaryOperator_ {
    ast_Expr* inner;
 };
 
-static const char* ast_unaryOpcode_names[10] = { "++", "--", "++", "--", "&", "*", "+", "-", "~", "!" };
 static ast_UnaryOperator* ast_UnaryOperator_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_UnaryOpcode kind, ast_Expr* inner);
 static ast_Expr* ast_UnaryOperator_instantiate(ast_UnaryOperator* e, ast_Instantiator* inst);
 static ast_UnaryOpcode ast_UnaryOperator_getOpcode(const ast_UnaryOperator* e);
@@ -7860,15 +8039,18 @@ enum ast_TypeKind {
 
 struct ast_TypeBits_ {
    ast_TypeKind kind : 8;
+   u32 align : 8;
 };
 
 struct ast_BuiltinTypeBits_ {
-   u32  : 8;
+   u32  : 16;
    ast_BuiltinKind kind : 4;
+   ast_BuiltinKind base_kind : 4;
+   u32 width : 8;
 };
 
 struct ast_ArrayTypeBits_ {
-   u32  : 8;
+   u32  : 16;
    u32 has_size : 1;
    u32 is_incremental : 1;
    u32 is_enum_index : 1;
@@ -7885,9 +8067,10 @@ struct ast_Type_ {
    ast_QualType canonicalType;
 };
 
-#define ast_NumTypeBits 8
+#define ast_NumTypeBits 16
 static void ast_Type_init(ast_Type* t, ast_TypeKind k);
 static ast_TypeKind ast_Type_getKind(const ast_Type* t);
+static ast_QualType ast_Type_getCanonicalType(const ast_Type* t);
 static void ast_Type_setCanonicalType(ast_Type* t, ast_QualType canon);
 static u32 ast_Type_getIndex(const ast_Type* t);
 static bool ast_Type_isBuiltinType(const ast_Type* t);
@@ -7897,6 +8080,8 @@ static bool ast_Type_isPointerType(const ast_Type* t);
 static bool ast_Type_isFunctionType(const ast_Type* t);
 static bool ast_Type_isEnumType(const ast_Type* t);
 static bool ast_Type_isVoidType(const ast_Type* t);
+static void ast_Type_setAlignment(ast_Type* t, u32 align);
+static u32 ast_Type_getAlignment(const ast_Type* t);
 static void ast_Type_print(const ast_Type* t, string_buffer_Buf* out);
 static void ast_Type_fullPrint(const ast_Type* t, string_buffer_Buf* out, u32 indent);
 struct ast_AliasType_ {
@@ -7931,126 +8116,11 @@ struct ast_BuiltinType_ {
    ast_Type base;
 };
 
-static const char* ast_builtinType_names[14] = {
-   [ast_BuiltinKind_Char] = "char",
-   [ast_BuiltinKind_Int8] = "i8",
-   [ast_BuiltinKind_Int16] = "i16",
-   [ast_BuiltinKind_Int32] = "i32",
-   [ast_BuiltinKind_Int64] = "i64",
-   [ast_BuiltinKind_UInt8] = "u8",
-   [ast_BuiltinKind_UInt16] = "u16",
-   [ast_BuiltinKind_UInt32] = "u32",
-   [ast_BuiltinKind_UInt64] = "u64",
-   [ast_BuiltinKind_Float32] = "f32",
-   [ast_BuiltinKind_Float64] = "f64",
-   [ast_BuiltinKind_ISize] = "isize",
-   [ast_BuiltinKind_USize] = "usize",
-   [ast_BuiltinKind_Bool] = "bool"
-};
-static const bool ast_BuiltinType_promotable[14] = {
-   [ast_BuiltinKind_Char] = true,
-   [ast_BuiltinKind_Int8] = true,
-   [ast_BuiltinKind_Int16] = true,
-   [ast_BuiltinKind_Int32] = false,
-   [ast_BuiltinKind_Int64] = false,
-   [ast_BuiltinKind_UInt8] = true,
-   [ast_BuiltinKind_UInt16] = true,
-   [ast_BuiltinKind_UInt32] = false,
-   [ast_BuiltinKind_UInt64] = false,
-   [ast_BuiltinKind_Float32] = false,
-   [ast_BuiltinKind_Float64] = false,
-   [ast_BuiltinKind_ISize] = false,
-   [ast_BuiltinKind_USize] = false,
-   [ast_BuiltinKind_Bool] = true
-};
-static const bool ast_BuiltinType_signed[14] = {
-   [ast_BuiltinKind_Char] = false,
-   [ast_BuiltinKind_Int8] = true,
-   [ast_BuiltinKind_Int16] = true,
-   [ast_BuiltinKind_Int32] = true,
-   [ast_BuiltinKind_Int64] = true,
-   [ast_BuiltinKind_UInt8] = false,
-   [ast_BuiltinKind_UInt16] = false,
-   [ast_BuiltinKind_UInt32] = false,
-   [ast_BuiltinKind_UInt64] = false,
-   [ast_BuiltinKind_Float32] = true,
-   [ast_BuiltinKind_Float64] = true,
-   [ast_BuiltinKind_ISize] = true,
-   [ast_BuiltinKind_USize] = false,
-   [ast_BuiltinKind_Bool] = false
-};
-static const bool ast_BuiltinType_unsigned[14] = {
-   [ast_BuiltinKind_Char] = true,
-   [ast_BuiltinKind_Int8] = false,
-   [ast_BuiltinKind_Int16] = false,
-   [ast_BuiltinKind_Int32] = false,
-   [ast_BuiltinKind_Int64] = false,
-   [ast_BuiltinKind_UInt8] = true,
-   [ast_BuiltinKind_UInt16] = true,
-   [ast_BuiltinKind_UInt32] = true,
-   [ast_BuiltinKind_UInt64] = true,
-   [ast_BuiltinKind_Float32] = false,
-   [ast_BuiltinKind_Float64] = false,
-   [ast_BuiltinKind_ISize] = false,
-   [ast_BuiltinKind_USize] = true,
-   [ast_BuiltinKind_Bool] = false
-};
-static const bool ast_BuiltinType_integer[14] = {
-   [ast_BuiltinKind_Char] = true,
-   [ast_BuiltinKind_Int8] = true,
-   [ast_BuiltinKind_Int16] = true,
-   [ast_BuiltinKind_Int32] = true,
-   [ast_BuiltinKind_Int64] = true,
-   [ast_BuiltinKind_UInt8] = true,
-   [ast_BuiltinKind_UInt16] = true,
-   [ast_BuiltinKind_UInt32] = true,
-   [ast_BuiltinKind_UInt64] = true,
-   [ast_BuiltinKind_Float32] = false,
-   [ast_BuiltinKind_Float64] = false,
-   [ast_BuiltinKind_ISize] = true,
-   [ast_BuiltinKind_USize] = true,
-   [ast_BuiltinKind_Bool] = false
-};
-static const u32 ast_BuiltinType_default_sizes[14] = {
-   [ast_BuiltinKind_Char] = 1,
-   [ast_BuiltinKind_Int8] = 1,
-   [ast_BuiltinKind_Int16] = 2,
-   [ast_BuiltinKind_Int32] = 4,
-   [ast_BuiltinKind_Int64] = 8,
-   [ast_BuiltinKind_UInt8] = 1,
-   [ast_BuiltinKind_UInt16] = 2,
-   [ast_BuiltinKind_UInt32] = 4,
-   [ast_BuiltinKind_UInt64] = 8,
-   [ast_BuiltinKind_Float32] = 4,
-   [ast_BuiltinKind_Float64] = 8,
-   [ast_BuiltinKind_ISize] = 8,
-   [ast_BuiltinKind_USize] = 8,
-   [ast_BuiltinKind_Bool] = 1
-};
-static const u32 ast_BuiltinType_default_widths[14] = {
-   [ast_BuiltinKind_Char] = 8,
-   [ast_BuiltinKind_Int8] = 8,
-   [ast_BuiltinKind_Int16] = 16,
-   [ast_BuiltinKind_Int32] = 32,
-   [ast_BuiltinKind_Int64] = 64,
-   [ast_BuiltinKind_UInt8] = 8,
-   [ast_BuiltinKind_UInt16] = 16,
-   [ast_BuiltinKind_UInt32] = 32,
-   [ast_BuiltinKind_UInt64] = 64,
-   [ast_BuiltinKind_Float32] = 0,
-   [ast_BuiltinKind_Float64] = 0,
-   [ast_BuiltinKind_ISize] = 64,
-   [ast_BuiltinKind_USize] = 64,
-   [ast_BuiltinKind_Bool] = 1
-};
-static const char* ast_BuiltinKind_str(ast_BuiltinKind kind);
 static ast_BuiltinType* ast_BuiltinType_create(ast_context_Context* c, ast_BuiltinKind kind);
 static ast_BuiltinKind ast_BuiltinType_getKind(const ast_BuiltinType* b);
 static ast_BuiltinKind ast_BuiltinType_getBaseKind(const ast_BuiltinType* b);
-static ast_BuiltinKind ast_BuiltinType_getBuiltinKind(const ast_BuiltinType* b);
 static bool ast_BuiltinType_isInt32(const ast_BuiltinType* b);
 static bool ast_BuiltinType_isBool(const ast_BuiltinType* b);
-static const char* ast_BuiltinType_kind2str(const ast_BuiltinType* b);
 static bool ast_BuiltinType_isPromotableIntegerType(const ast_BuiltinType* b);
 static bool ast_BuiltinType_isInteger(const ast_BuiltinType* b);
 static bool ast_BuiltinType_isIntegerOrBool(const ast_BuiltinType* b);
@@ -8069,7 +8139,6 @@ struct ast_EnumType_ {
 static ast_EnumType* ast_EnumType_create(ast_context_Context* c, ast_EnumTypeDecl* decl);
 static ast_EnumTypeDecl* ast_EnumType_getDecl(const ast_EnumType* t);
 static ast_QualType ast_EnumType_getImplType(const ast_EnumType* t);
-static const char* ast_EnumType_getName(const ast_EnumType* t);
 static void ast_EnumType_print(const ast_EnumType* t, string_buffer_Buf* out);
 static void ast_EnumType_fullPrint(const ast_EnumType* t, string_buffer_Buf* out, u32 indent);
 struct ast_FunctionType_ {
@@ -8128,6 +8197,7 @@ static void ast_QualType_setCanonicalType(ast_QualType* qt, ast_QualType canon);
 static ast_QualType ast_QualType_getImplType(const ast_QualType* qt);
 static ast_TypeKind ast_QualType_getKind(const ast_QualType qt);
 static u32 ast_QualType_getIndex(const ast_QualType qt);
+static u32 ast_QualType_getAlignment(const ast_QualType qt);
 static bool ast_QualType_isBool(const ast_QualType qt);
 static bool ast_QualType_isBuiltin(const ast_QualType qt);
 static bool ast_QualType_isArray(const ast_QualType qt);
@@ -8161,6 +8231,7 @@ static bool ast_QualType_isChar(const ast_QualType qt);
 static bool ast_QualType_isUInt8(const ast_QualType qt);
 static bool ast_QualType_promotesToInt32(const ast_QualType qt);
 static bool ast_QualType_needsCtvInit(const ast_QualType qt);
+static void ast_QualType_setTypeUsedPublic(ast_QualType qt);
 static const char* ast_QualType_diagName(const ast_QualType qt);
 static const char* ast_QualType_diagNameBare(const ast_QualType qt);
 static void ast_QualType_dump_full(const ast_QualType qt);
@@ -8185,8 +8256,9 @@ struct ast_TypeRefHolder_ {
    ast_Expr* arrays[3];
 };
 
-static const char* ast_Ref_getName(const ast_Ref* r);
+static u32 ast_Ref_getNameIdx(const ast_Ref* r);
 static void ast_TypeRefHolder_init(ast_TypeRefHolder* h);
+static void ast_TypeRefHolder_copy(ast_TypeRefHolder* h, const ast_TypeRef* ref);
 static u32 ast_TypeRefHolder_getExtraSize(const ast_TypeRefHolder* h);
 static void ast_TypeRefHolder_setQuals(ast_TypeRefHolder* h, u32 qualifiers);
 static void ast_TypeRefHolder_setVolatile(ast_TypeRefHolder* h);
@@ -8268,7 +8340,7 @@ struct ast_ImportDeclList_ {
 struct ast_DeclList_ {
    u32 count;
    u32 capacity;
-   ast_Decl** decls;
+   ast_Decl** data;
    ast_Decl* stash[4];
 };
 
@@ -8319,7 +8391,6 @@ static ast_AST* ast_AST_create(string_pool_Pool* auxPool, u32 name, ast_Module* 
 static void ast_AST_free(ast_AST* a);
 static const char* ast_AST_getFilename(const ast_AST* a);
 static u32 ast_AST_getIdx(const ast_AST* a);
-static const char* ast_AST_getName(const ast_AST* a);
 static u32 ast_AST_getNameIdx(const ast_AST* a);
 static src_loc_SrcLoc ast_AST_getLoc(const ast_AST* a);
 static void ast_AST_setPtr(ast_AST* a, void* ptr);
@@ -8350,11 +8421,12 @@ static void ast_AST_print(const ast_AST* a, string_buffer_Buf* out, bool show_fu
 static void ast_AST_setExported(ast_AST* a);
 static void ast_DeclList_init(ast_DeclList* l);
 static void ast_DeclList_free(ast_DeclList* l);
-static void ast_DeclList_add(ast_DeclList* l, ast_Decl* d);
 static void ast_DeclList_clear(ast_DeclList* l);
+static void ast_DeclList_resize(ast_DeclList* l);
+static void ast_DeclList_add(ast_DeclList* l, ast_Decl* d);
 static u32 ast_DeclList_size(const ast_DeclList* l);
 static ast_Decl* ast_DeclList_get(const ast_DeclList* l, u32 idx);
-static ast_Decl** ast_DeclList_getDecls(const ast_DeclList* l);
+static ast_Decl** ast_DeclList_getData(const ast_DeclList* l);
 struct ast_ExprList_ {
    u32 count;
    u32 capacity;
@@ -8504,6 +8576,7 @@ static void ast_PointerPool_init(ast_PointerPool* p, ast_context_Context* c);
 static void ast_PointerPool_clear(ast_PointerPool* p);
 static void ast_PointerPool_resize(ast_PointerPool* p, u32 cap);
 static ast_Type* ast_PointerPool_getPointer(ast_PointerPool* p, ast_QualType qt);
+static void ast_PointerPool_report(const ast_PointerPool* p);
 static void ast_StaticAssertList_init(ast_StaticAssertList* l, u32 initial_size);
 static void ast_StaticAssertList_free(ast_StaticAssertList* l);
 static void ast_StaticAssertList_add(ast_StaticAssertList* l, ast_StaticAssert* v);
@@ -8526,6 +8599,7 @@ static void ast_StringTypePool_init(ast_StringTypePool* p, ast_context_Context* 
 static void ast_StringTypePool_clear(ast_StringTypePool* p);
 static void ast_StringTypePool_resize(ast_StringTypePool* p, u32 cap);
 static ast_QualType ast_StringTypePool_get(ast_StringTypePool* p, u32 len);
+static void ast_StringTypePool_report(const ast_StringTypePool* p);
 static void ast_SymbolTable_init(ast_SymbolTable* t, u32 initial);
 static void ast_SymbolTable_free(ast_SymbolTable* t);
 static u32 ast_SymbolTable_size(const ast_SymbolTable* t);
@@ -8543,14 +8617,10 @@ struct ast_Globals_ {
    string_pool_Pool* names_pool;
    ast_PointerPool pointers;
    ast_StringTypePool string_types;
-   u32 wordsize;
    bool use_color;
    u32 ast_count;
    u32 ast_capacity;
    ast_AST** ast_list;
-   u32 builtinType_sizes[14];
-   u32 builtinType_width[14];
-   ast_BuiltinKind builtinType_baseTypes[14];
    string_buffer_Buf* dump_buf;
 };
 
@@ -8561,7 +8631,7 @@ static ast_Globals* ast_globals = NULL;
 static color_Color ast_col_Stmt = color_Color_Bmagenta;
 static color_Color ast_col_Decl = color_Color_Bgreen;
 static color_Color ast_col_Expr = color_Color_Bmagenta;
-static color_Color ast_col_Attr = color_Color_Blue;
+static color_Color ast_col_Attr = color_Color_Bblue;
 static color_Color ast_col_Template = color_Color_Green;
 static color_Color ast_col_Type = color_Color_Green;
 static color_Color ast_col_Value = color_Color_Bcyan;
@@ -8569,21 +8639,19 @@ static color_Color ast_col_Error = color_Color_Red;
 static color_Color ast_col_Calc = color_Color_Yellow;
 static color_Color ast_col_Normal = color_Color_Normal;
 static ast_Globals* ast_getGlobals(void);
-static void ast_initialize(ast_context_Context* c, string_pool_Pool* astPool, u32 wordsize, bool use_color);
-static void ast_deinit(bool print_stats);
-static u32 ast_getWordSize(void);
+static void ast_initialize(ast_context_Context* c, string_pool_Pool* astPool, bool use_color);
+static void ast_report(void);
+static void ast_deinit(void);
 static ast_QualType ast_getStringType(u32 len);
 static const char* ast_idx2name(u32 idx);
 static ast_QualType ast_getVoidPtr(void);
 static ast_Type* ast_getPointerType(ast_QualType inner);
 static ast_QualType ast_getVoidQT(void);
 static ast_QualType ast_getBuiltinQT(ast_BuiltinKind kind);
-static u32 ast_addAST(ast_AST* ast_);
-static ast_AST* ast_idx2ast(u32 idx);
+static u32 ast_Globals_addAST(ast_Globals* g, ast_AST* a);
+static ast_AST* ast_Globals_idx2ast(ast_Globals* g, u32 idx);
 static string_buffer_Buf* ast_getDumpBuf(void);
 static void ast_flushDumpBuf(string_buffer_Buf* out);
-static void ast_setTypePublicUsed(ast_QualType qt);
-static ast_BuiltinKind ast_getNativeKind(void);
 struct ast_Evaluator_ {
    value_type_Value result;
    ast_Evaluator* prev;
@@ -8691,12 +8759,16 @@ static bool ast_Decl_hasAttr(const ast_Decl* d)
 
 static void ast_Decl_setAttrExport(ast_Decl* d)
 {
+   d->declBits.has_attr = 1;
    d->declBits.attr_export = 1;
 }
 
 static void ast_Decl_setExportedIfPublic(ast_Decl* d)
 {
-   if (d->declBits.is_public) d->declBits.attr_export = 1;
+   if (d->declBits.is_public) {
+      d->declBits.has_attr = 1;
+      d->declBits.attr_export = 1;
+   }
 }
 
 static bool ast_Decl_isExported(const ast_Decl* d)
@@ -8720,6 +8792,7 @@ static bool ast_Decl_isBitfield(const ast_Decl* d)
 
 static void ast_Decl_setAttrUnused(ast_Decl* d)
 {
+   d->declBits.has_attr = 1;
    d->declBits.attr_unused = 1;
 }
 
@@ -8793,12 +8866,7 @@ static void ast_Decl_setType(ast_Decl* d, ast_QualType qt)
 
 static ast_AST* ast_Decl_getAST(const ast_Decl* d)
 {
-   return ast_idx2ast(d->ast_idx);
-}
-
-static u32 ast_Decl_getASTIdx(const ast_Decl* d)
-{
-   return d->ast_idx;
+   return ast_Globals_idx2ast(ast_globals, d->ast_idx);
 }
 
 static void ast_Decl_setOffset(ast_Decl* d, u32 offset)
@@ -8876,13 +8944,6 @@ static void ast_Decl_clearGenerated(ast_Decl* d)
    d->declBits.is_generated = 0;
 }
 
-static void ast_Decl_dump(const ast_Decl* d)
-{
-   string_buffer_Buf* out = ast_getDumpBuf();
-   ast_Decl_print(d, out, 0);
-   ast_flushDumpBuf(out);
-}
-
 static bool ast_Decl_isTypeDecl(const ast_Decl* d)
 {
    switch (ast_Decl_getKind(d)) {
@@ -8934,11 +8995,11 @@ static const char* ast_Decl_getKindName(const ast_Decl* d)
    return "";
 }
 
-static const char* ast_Decl_getCName(const ast_Decl* d)
+static u32 ast_Decl_getCName(const ast_Decl* d)
 {
    const attr_Attr* cname = ast_Decl_getAttr(d, attr_AttrKind_CName);
-   if (cname) return ast_idx2name(cname->value.text);
-   return NULL;
+   if (cname) return cname->value.text;
+   return 0;
 }
 
 static bool ast_Decl_hasCName(const ast_Decl* d)
@@ -8946,18 +9007,18 @@ static bool ast_Decl_hasCName(const ast_Decl* d)
    return ast_Decl_getAttr(d, attr_AttrKind_CName);
 }
 
-static const char* ast_Decl_getCDef(const ast_Decl* d)
+static u32 ast_Decl_getCDef(const ast_Decl* d)
 {
    const attr_Attr* cdef = ast_Decl_getAttr(d, attr_AttrKind_CDef);
-   if (cdef) return ast_idx2name(cdef->value.text);
-   return NULL;
+   if (cdef) return cdef->value.text;
+   return 0;
 }
 
-static const char* ast_Decl_getSection(const ast_Decl* d)
+static u32 ast_Decl_getSection(const ast_Decl* d)
 {
    const attr_Attr* section = ast_Decl_getAttr(d, attr_AttrKind_Section);
-   if (section) return ast_idx2name(section->value.text);
-   return NULL;
+   if (section) return section->value.text;
+   return 0;
 }
 
 static const char* ast_Decl_getFullName(const ast_Decl* d)
@@ -8971,14 +9032,15 @@ static const char* ast_Decl_getFullName(const ast_Decl* d)
    case ast_DeclKind_Function: {
       const ast_FunctionDecl* fd = (ast_FunctionDecl*)d;
       if (ast_FunctionDecl_hasPrefix(fd)) {
-         snprintf(tmp, tmp_size, "%s.%s.%s", modname, ast_FunctionDecl_getPrefixName(fd), ast_Decl_getName(d));
+         const char* prefix_name = ast_idx2name(ast_FunctionDecl_getPrefixNameIdx(fd));
+         snprintf(tmp, tmp_size, "%s.%s.%s", modname, prefix_name, ast_Decl_getName(d));
       } else {
          snprintf(tmp, tmp_size, "%s.%s", modname, ast_Decl_getName(d));
       }
       break;
    }
    case ast_DeclKind_Import:
-      snprintf(tmp, tmp_size, "%s", ast_Decl_getName(d));
+      pstrcpy(tmp, tmp_size, ast_Decl_getName(d));
       break;
    case ast_DeclKind_EnumConstant: {
       ast_QualType qt = ast_Decl_getType(d);
@@ -9029,7 +9091,7 @@ static void ast_Decl_printKind(const ast_Decl* d, string_buffer_Buf* out, u32 in
 {
    string_buffer_Buf_indent(out, indent);
    string_buffer_Buf_color(out, ast_col_Decl);
-   string_buffer_Buf_add(out, ast_declKind_names[ast_Decl_getKind(d)]);
+   string_buffer_Buf_add(out, ast_DeclKind__name[ast_Decl_getKind(d)]);
    if (print_type) {
       string_buffer_Buf_space(out);
       ast_QualType_printQuoted(d->qt, out);
@@ -9054,7 +9116,7 @@ static void ast_Decl_printBits(const ast_Decl* d, string_buffer_Buf* out)
    ast_DeclCheckState cs = ast_Decl_getCheckState(d);
    if (cs != ast_DeclCheckState_Checked) {
       string_buffer_Buf_space(out);
-      string_buffer_Buf_add(out, ast_declCheckState_names[cs]);
+      string_buffer_Buf_add(out, ast_DeclCheckState__name[cs]);
    }
    if (d->declBits.attr_unused) {
       string_buffer_Buf_add(out, " unused");
@@ -9690,7 +9752,7 @@ static void ast_FunctionDecl_setInstanceName(ast_FunctionDecl* d, u32 name_idx)
 
 static ast_Module* ast_FunctionDecl_getInstanceModule(ast_FunctionDecl* d)
 {
-   if (d->flags.instance_ast_idx) return ast_AST_getMod(ast_idx2ast(d->flags.instance_ast_idx));
+   if (d->flags.instance_ast_idx) return ast_AST_getMod(ast_Globals_idx2ast(ast_globals, d->flags.instance_ast_idx));
    return NULL;
 }
 
@@ -9700,17 +9762,17 @@ static ast_Ref* ast_FunctionDecl_getPrefix(ast_FunctionDecl* d)
    return NULL;
 }
 
-static const char* ast_FunctionDecl_getCName(const ast_FunctionDecl* d)
+static u32 ast_FunctionDecl_getCName(const ast_FunctionDecl* d)
 {
-   const char* cname = ast_Decl_getCName(&d->base);
-   if (!cname) cname = ast_Decl_getName(&d->base);
-   return cname;
+   u32 cname = ast_Decl_getCName(&d->base);
+   if (cname) return cname;
+   return ast_Decl_getNameIdx(&d->base);
 }
 
-static const char* ast_FunctionDecl_getPrefixName(const ast_FunctionDecl* d)
+static u32 ast_FunctionDecl_getPrefixNameIdx(const ast_FunctionDecl* d)
 {
-   if (!ast_FunctionDecl_hasPrefix(d)) return NULL;
-   return ast_Ref_getName(&d->prefix);
+   if (!ast_FunctionDecl_hasPrefix(d)) return 0;
+   return ast_Ref_getNameIdx(&d->prefix);
 }
 
 static void ast_FunctionDecl_setCallKind(ast_FunctionDecl* d, ast_CallKind kind)
@@ -9868,10 +9930,10 @@ static void ast_FunctionDecl_print(const ast_FunctionDecl* d, string_buffer_Buf*
    ast_Decl_printBits(&d->base, out);
    string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Attr);
-   string_buffer_Buf_add(out, ast_callKind_names[ast_FunctionDecl_getCallKind(d)]);
+   string_buffer_Buf_add(out, ast_CallKind__name[ast_FunctionDecl_getCallKind(d)]);
    ast_Decl_printAttrs(&d->base, out);
    string_buffer_Buf_add(out, " def:");
-   string_buffer_Buf_add(out, ast_defKind_names[ast_FunctionDecl_getDefKind(d)]);
+   string_buffer_Buf_add(out, ast_DefKind__name[ast_FunctionDecl_getDefKind(d)]);
    string_buffer_Buf_color(out, ast_col_Expr);
    if (ast_FunctionDecl_hasAttrUnusedParams(d)) string_buffer_Buf_add(out, " unused-params");
    if (ast_FunctionDecl_hasAttrNoReturn(d)) string_buffer_Buf_add(out, " noreturn");
@@ -9898,7 +9960,7 @@ static void ast_FunctionDecl_print(const ast_FunctionDecl* d, string_buffer_Buf*
    string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Value);
    if (ast_FunctionDecl_hasPrefix(d)) {
-      string_buffer_Buf_add(out, ast_Ref_getName(&d->prefix));
+      string_buffer_Buf_add(out, ast_idx2name(ast_Ref_getNameIdx(&d->prefix)));
       string_buffer_Buf_add1(out, '.');
    }
    const char* name = ast_Decl_getName(&d->base);
@@ -10000,11 +10062,11 @@ static ast_FunctionSignature ast_FunctionDecl_computeSignature(ast_FunctionDecl*
    }
 }
 
-static ast_FunctionTypeDecl* ast_FunctionTypeDecl_create(ast_context_Context* c, ast_FunctionDecl* func)
+static ast_FunctionTypeDecl* ast_FunctionTypeDecl_create(ast_context_Context* c, ast_FunctionDecl* func, u32 ast_idx)
 {
    ast_FunctionTypeDecl* ftd = ast_context_Context_alloc(c, 32);
    ast_Decl* d = ast_FunctionDecl_asDecl(func);
-   ast_Decl_init(&ftd->base, ast_DeclKind_FunctionType, ast_Decl_getNameIdx(d), ast_Decl_getLoc(d), ast_Decl_isPublic(d), ast_Decl_getType(d), ast_Decl_getASTIdx(d));
+   ast_Decl_init(&ftd->base, ast_DeclKind_FunctionType, ast_Decl_getNameIdx(d), ast_Decl_getLoc(d), ast_Decl_isPublic(d), ast_Decl_getType(d), ast_idx);
    ftd->func = func;
    return ftd;
 }
@@ -10029,25 +10091,23 @@ static void ast_FunctionTypeDecl_print(const ast_FunctionTypeDecl* d, string_buf
    ast_FunctionDecl_print(d->func, out, indent + 1);
 }
 
-static ast_ImportDecl* ast_ImportDecl_create(ast_context_Context* c, u32 name, src_loc_SrcLoc loc, u32 alias_name, src_loc_SrcLoc alias_loc, u32 ast_idx, bool is_local)
+static ast_ImportDecl* ast_ImportDecl_create(ast_context_Context* c, u32 name, src_loc_SrcLoc loc, u32 alias_name, src_loc_SrcLoc alias_loc, u32 ast_idx, bool is_local, ast_Symbol* symlist, u32 symlist_count)
 {
-   ast_ImportDecl* d = ast_context_Context_alloc(c, 40);
+   u32 size = 40 + symlist_count * 24;
+   ast_ImportDecl* d = ast_context_Context_alloc(c, size);
    ast_Decl_init(&d->base, ast_DeclKind_Import, name, loc, false, ast_QualType_Invalid, ast_idx);
    d->base.importDeclBits.is_local = is_local;
+   d->base.importDeclBits.symlist_count = symlist_count;
    d->alias_idx = alias_name;
    d->alias_loc = alias_loc;
    d->dest = NULL;
+   memcpy(d->symlist, symlist, symlist_count * 24);
    return d;
 }
 
 static ast_Decl* ast_ImportDecl_asDecl(ast_ImportDecl* d)
 {
    return &d->base;
-}
-
-static const char* ast_ImportDecl_getAliasName(const ast_ImportDecl* d)
-{
-   return ast_idx2name(d->alias_idx);
 }
 
 static u32 ast_ImportDecl_getAliasNameIdx(const ast_ImportDecl* d)
@@ -10067,6 +10127,16 @@ static src_loc_SrcLoc ast_ImportDecl_getLoc(const ast_ImportDecl* d)
    return ast_Decl_getLoc(&d->base);
 }
 
+static ast_Symbol* ast_ImportDecl_getSymlistData(ast_ImportDecl* d)
+{
+   return d->symlist;
+}
+
+static u32 ast_ImportDecl_getSymlistSize(const ast_ImportDecl* d)
+{
+   return d->base.importDeclBits.symlist_count;
+}
+
 static void ast_ImportDecl_setDest(ast_ImportDecl* d, ast_Module* mod)
 {
    d->dest = mod;
@@ -10080,6 +10150,17 @@ static ast_Module* ast_ImportDecl_getDest(const ast_ImportDecl* d)
 static bool ast_ImportDecl_isLocal(const ast_ImportDecl* d)
 {
    return d->base.importDeclBits.is_local;
+}
+
+static ast_Decl* ast_ImportDecl_findSymbol(ast_ImportDecl* d, u32 name_idx)
+{
+   for (u32 i = 0; i < d->base.importDeclBits.symlist_count; i++) {
+      if (d->symlist[i].as_name_idx == name_idx) {
+         d->symlist[i].used = true;
+         return d->symlist[i].decl;
+      }
+   }
+   return NULL;
 }
 
 static void ast_ImportDecl_print(const ast_ImportDecl* d, string_buffer_Buf* out, u32 indent)
@@ -10105,6 +10186,18 @@ static void ast_ImportDecl_print(const ast_ImportDecl* d, string_buffer_Buf* out
       string_buffer_Buf_color(out, ast_col_Value);
       string_buffer_Buf_add(out, ast_idx2name(d->alias_idx));
    }
+   if (d->base.importDeclBits.symlist_count) {
+      string_buffer_Buf_color(out, ast_col_Normal);
+      string_buffer_Buf_add(out, " {");
+      for (u32 i = 0; i < d->base.importDeclBits.symlist_count; i++) {
+         const ast_Symbol* sp = &d->symlist[i];
+         string_buffer_Buf_print(out, " %s", ast_idx2name(sp->name_idx));
+         if (sp->name_idx != sp->as_name_idx) {
+            string_buffer_Buf_print(out, " as %s", ast_idx2name(sp->as_name_idx));
+         }
+      }
+      string_buffer_Buf_add(out, " }");
+   }
    string_buffer_Buf_newline(out);
 }
 
@@ -10120,7 +10213,7 @@ static ast_StaticAssert* ast_StaticAssert_create(ast_context_Context* c, u32 ast
 
 static ast_AST* ast_StaticAssert_getAST(const ast_StaticAssert* d)
 {
-   return ast_idx2ast(d->ast_idx);
+   return ast_Globals_idx2ast(ast_globals, d->ast_idx);
 }
 
 static ast_Expr* ast_StaticAssert_getLHS(const ast_StaticAssert* d)
@@ -10185,6 +10278,17 @@ static ast_StructTypeDecl* ast_StructTypeDecl_create(ast_context_Context* c, u32
       memset(layout->members, 0, num_members * 12);
    }
    return d;
+}
+
+static bool ast_StructTypeDecl_isEmpty(const ast_StructTypeDecl* d)
+{
+   if (d->num_members == 0) return true;
+   if (ast_StructTypeDecl_getSize(d) != 0) return false;
+   for (u32 i = 0; i < d->num_members; i++) {
+      const ast_Decl* member = d->members[i];
+      if (ast_Decl_isVariable(member)) return false;
+   }
+   return true;
 }
 
 static ast_Decl* ast_StructTypeDecl_asDecl(ast_StructTypeDecl* d)
@@ -10499,21 +10603,6 @@ static ast_VarDecl* ast_VarDecl_instantiate(const ast_VarDecl* vd, ast_Instantia
    return vd2;
 }
 
-static const char* ast_VarDecl_getEnumAssocValueName(const ast_VarDecl* d, const char* enum_name)
-{
-   static char tmp_buf[2][128];
-   static u32 tmp_id = 0;
-   u32 tmp_size = 128;
-   char* tmp = tmp_buf[tmp_id++ & 1];
-   snprintf(tmp, tmp_size, "%s.%s", enum_name, ast_VarDecl_getName(d));
-   return tmp;
-}
-
-static const char* ast_VarDecl_getName(const ast_VarDecl* d)
-{
-   return ast_idx2name(d->base.name_idx);
-}
-
 static u32 ast_VarDecl_getNameIdx(const ast_VarDecl* d)
 {
    return d->base.name_idx;
@@ -10687,6 +10776,7 @@ static bool ast_VarDecl_hasInitCall(const ast_VarDecl* d)
 
 static void ast_VarDecl_setAttrWeak(ast_VarDecl* d)
 {
+   d->base.declBits.has_attr = 1;
    d->base.varDeclBits.attr_weak = 1;
 }
 
@@ -10702,6 +10792,7 @@ static ast_AutoAttr ast_VarDecl_getAutoAttr(const ast_VarDecl* d)
 
 static void ast_VarDecl_setAttrAutoFile(ast_VarDecl* d)
 {
+   d->base.declBits.has_attr = 1;
    d->base.varDeclBits.auto_attr = ast_AutoAttr_File;
 }
 
@@ -10712,6 +10803,7 @@ static bool ast_VarDecl_hasAttrAutoFile(const ast_VarDecl* d)
 
 static void ast_VarDecl_setAttrAutoLine(ast_VarDecl* d)
 {
+   d->base.declBits.has_attr = 1;
    d->base.varDeclBits.auto_attr = ast_AutoAttr_Line;
 }
 
@@ -10722,6 +10814,7 @@ static bool ast_VarDecl_hasAttrAutoLine(const ast_VarDecl* d)
 
 static void ast_VarDecl_setAttrAutoFunc(ast_VarDecl* d)
 {
+   d->base.declBits.has_attr = 1;
    d->base.varDeclBits.auto_attr = ast_AutoAttr_Func;
 }
 
@@ -10737,6 +10830,7 @@ static bool ast_VarDecl_hasAutoAttr(const ast_VarDecl* d)
 
 static void ast_VarDecl_setFormatAttr(ast_VarDecl* d, ast_FormatAttr kind)
 {
+   d->base.declBits.has_attr = 1;
    d->base.varDeclBits.format_attr = kind;
 }
 
@@ -10755,7 +10849,8 @@ static void ast_VarDecl_print(const ast_VarDecl* d, string_buffer_Buf* out, u32 
    }
    string_buffer_Buf_color(out, ast_col_Attr);
    ast_VarDeclKind k = ast_VarDecl_getKind(d);
-   string_buffer_Buf_add(out, ast_varDeclNames[k]);
+   string_buffer_Buf_space(out);
+   string_buffer_Buf_add(out, ast_VarDeclKind__name[k]);
    if (d->base.varDeclBits.is_bitfield) {
       ast_BitFieldLayout* layout = ast_VarDecl_getBitfieldLayout(d);
       string_buffer_Buf_print(out, " bitfield(%d, %d)", layout->bit_offset, layout->bit_width);
@@ -10805,6 +10900,88 @@ static void ast_VarDecl_printType(const ast_VarDecl* d, string_buffer_Buf* out)
    } else {
       ast_TypeRef_print(&d->typeRef, out, true);
    }
+}
+
+static void ast_VarDeclList_init(ast_VarDeclList* l)
+{
+   l->count = 0;
+   l->capacity = 4;
+   l->data = l->stash;
+}
+
+static void ast_VarDeclList_free(ast_VarDeclList* l)
+{
+   if (l->capacity > 4) free(l->data);
+   l->data = NULL;
+   l->count = 0;
+   l->capacity = 0;
+}
+
+static void ast_VarDeclList_resize(ast_VarDeclList* l)
+{
+   if (l->capacity < 4) {
+      l->capacity = 4;
+      l->data = l->stash;
+   } else if (l->capacity == 4) {
+      l->capacity = l->capacity * 2;
+      l->data = malloc(l->capacity * 8);
+      memcpy(l->data, l->stash, 4 * 8);
+   } else {
+      l->capacity = l->capacity * 2;
+      l->data = realloc(l->data, l->capacity * 8);
+   }
+}
+
+static void ast_VarDeclList_add(ast_VarDeclList* l, ast_VarDecl* d)
+{
+   if (l->count >= l->capacity) ast_VarDeclList_resize(l);
+   l->data[l->count] = d;
+   l->count++;
+}
+
+static u32 ast_VarDeclList_size(const ast_VarDeclList* l)
+{
+   return l->count;
+}
+
+static ast_VarDecl** ast_VarDeclList_getData(const ast_VarDeclList* l)
+{
+   return l->data;
+}
+
+static void ast_SymbolList_init(ast_SymbolList* l)
+{
+   memset(l, 0, 400);
+   l->data = l->stash;
+   l->capacity = 16;
+}
+
+static void ast_SymbolList_add(ast_SymbolList* l, ast_Symbol sym)
+{
+   if (l->count == l->capacity) {
+      l->capacity *= 2;
+      ast_Symbol* data2 = malloc(l->capacity * 24);
+      memcpy(data2, l->data, l->count * 24);
+      if (l->data != l->stash) free(l->data);
+      l->data = data2;
+   }
+   l->data[l->count] = sym;
+   l->count++;
+}
+
+static void ast_SymbolList_free(ast_SymbolList* l)
+{
+   if (l->data != l->stash) free(l->data);
+}
+
+static u32 ast_SymbolList_size(const ast_SymbolList* l)
+{
+   return l->count;
+}
+
+static ast_Symbol* ast_SymbolList_getData(ast_SymbolList* l)
+{
+   return l->data;
 }
 
 static void ast_Stmt_init(ast_Stmt* s, ast_StmtKind k, src_loc_SrcLoc loc)
@@ -10943,7 +11120,7 @@ static void ast_Stmt_printKind(const ast_Stmt* s, string_buffer_Buf* out, u32 in
 {
    string_buffer_Buf_indent(out, indent);
    string_buffer_Buf_color(out, ast_col_Stmt);
-   string_buffer_Buf_add(out, ast_stmtKind_names[ast_Stmt_getKind(s)]);
+   string_buffer_Buf_add(out, ast_StmtKind__name[ast_Stmt_getKind(s)]);
 }
 
 static ast_AsmStmt* ast_AsmStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, bool is_basic, bool is_volatile, u32 num_outputs, u32 num_inputs, const u32* names, ast_ExprList* constraints, ast_ExprList* exprs, ast_ExprList* clobbers, ast_Expr* str)
@@ -11154,16 +11331,34 @@ static void ast_AssertStmt_print(const ast_AssertStmt* s, string_buffer_Buf* out
    if (s->call) ast_Expr_print(s->call, out, indent + 1);
 }
 
-static ast_BreakStmt* ast_BreakStmt_create(ast_context_Context* c, src_loc_SrcLoc loc)
+static ast_BreakStmt* ast_BreakStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, u32 name_idx)
 {
-   ast_BreakStmt* s = ast_context_Context_alloc(c, 8);
+   u32 size = 8;
+   if (name_idx) size += 4;
+   ast_BreakStmt* s = ast_context_Context_alloc(c, size);
    ast_Stmt_init(&s->base, ast_StmtKind_Break, loc);
+   if (name_idx) {
+      s->base.breakStmtBits.has_name = true;
+      s->name_idx[0] = name_idx;
+   }
    return s;
+}
+
+static bool ast_BreakStmt_hasName(const ast_BreakStmt* s)
+{
+   return s->base.breakStmtBits.has_name;
+}
+
+static u32 ast_BreakStmt_getName(const ast_BreakStmt* s)
+{
+   if (s->base.breakStmtBits.has_name) return s->name_idx[0];
+   return 0;
 }
 
 static void ast_BreakStmt_print(const ast_BreakStmt* s, string_buffer_Buf* out, u32 indent)
 {
    ast_Stmt_printKind(&s->base, out, indent);
+   if (ast_BreakStmt_hasName(s)) string_buffer_Buf_print(out, " %s", ast_idx2name(s->name_idx[0]));
    string_buffer_Buf_newline(out);
 }
 
@@ -11218,16 +11413,34 @@ static void ast_CompoundStmt_print(const ast_CompoundStmt* s, string_buffer_Buf*
    }
 }
 
-static ast_ContinueStmt* ast_ContinueStmt_create(ast_context_Context* c, src_loc_SrcLoc loc)
+static ast_ContinueStmt* ast_ContinueStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, u32 name_idx)
 {
-   ast_ContinueStmt* s = ast_context_Context_alloc(c, 8);
+   u32 size = 8;
+   if (name_idx) size += 4;
+   ast_ContinueStmt* s = ast_context_Context_alloc(c, size);
    ast_Stmt_init(&s->base, ast_StmtKind_Continue, loc);
+   if (name_idx) {
+      s->base.breakStmtBits.has_name = true;
+      s->name_idx[0] = name_idx;
+   }
    return s;
+}
+
+static bool ast_ContinueStmt_hasName(const ast_ContinueStmt* s)
+{
+   return s->base.continueStmtBits.has_name;
+}
+
+static u32 ast_ContinueStmt_getName(const ast_ContinueStmt* s)
+{
+   if (s->base.continueStmtBits.has_name) return s->name_idx[0];
+   return 0;
 }
 
 static void ast_ContinueStmt_print(const ast_ContinueStmt* s, string_buffer_Buf* out, u32 indent)
 {
    ast_Stmt_printKind(&s->base, out, indent);
+   if (ast_ContinueStmt_hasName(s)) string_buffer_Buf_print(out, " %s", ast_idx2name(s->name_idx[0]));
    string_buffer_Buf_newline(out);
 }
 
@@ -11322,11 +11535,6 @@ static ast_GotoStmt* ast_GotoStmt_create(ast_context_Context* c, u32 name, src_l
    return s;
 }
 
-static const char* ast_GotoStmt_getName(const ast_GotoStmt* g)
-{
-   return ast_idx2name(g->name);
-}
-
 static u32 ast_GotoStmt_getNameIdx(const ast_GotoStmt* g)
 {
    return g->name;
@@ -11339,36 +11547,67 @@ static void ast_GotoStmt_print(const ast_GotoStmt* s, string_buffer_Buf* out, u3
    string_buffer_Buf_print(out, " %s\n", ast_idx2name(s->name));
 }
 
-static ast_IfStmt* ast_IfStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Stmt* cond, ast_Stmt* then, ast_Stmt* else_stmt)
+static ast_IfStmt* ast_IfStmt_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_Stmt* decl, ast_Expr* cond, ast_Stmt* then, ast_Stmt* else_stmt)
 {
-   u32 size = 24;
-   if (else_stmt) size += 8;
+   u32 has_decl = (decl != NULL);
+   u32 has_else = (else_stmt != NULL);
+   u32 size = 24 + (has_decl + has_else) * 8;
    ast_IfStmt* s = ast_context_Context_alloc(c, size);
    ast_Stmt_init(&s->base, ast_StmtKind_If, loc);
+   s->base.ifStmtBits.has_source_cond = (cond != NULL);
    s->cond = cond;
    s->then = then;
-   if (else_stmt) {
+   if (has_else) {
       s->base.ifStmtBits.has_else = 1;
-      s->else_stmt[0] = else_stmt;
+      s->tail[0] = else_stmt;
+   }
+   if (has_decl) {
+      s->base.ifStmtBits.has_decl = 1;
+      s->tail[has_else] = decl;
    }
    return s;
 }
 
 static ast_Stmt* ast_IfStmt_instantiate(ast_IfStmt* s, ast_Instantiator* inst)
 {
-   ast_Stmt* cond2 = ast_Stmt_instantiate(s->cond, inst);
+   ast_Expr* cond2 = NULL;
+   if (s->base.ifStmtBits.has_source_cond) cond2 = ast_Expr_instantiate(s->cond, inst);
    ast_Stmt* then2 = ast_Stmt_instantiate(s->then, inst);
    ast_Stmt* else2 = NULL;
-   if (s->base.ifStmtBits.has_else) else2 = ast_Stmt_instantiate(s->else_stmt[0], inst);
-   return (ast_Stmt*)ast_IfStmt_create(inst->c, s->base.loc, cond2, then2, else2);
+   if (s->base.ifStmtBits.has_else) else2 = ast_Stmt_instantiate(ast_IfStmt_getElse(s), inst);
+   ast_Stmt* decl2 = NULL;
+   if (s->base.ifStmtBits.has_decl) else2 = ast_Stmt_instantiate(ast_IfStmt_getDecl(s), inst);
+   return (ast_Stmt*)ast_IfStmt_create(inst->c, s->base.loc, decl2, cond2, then2, else2);
 }
 
-static ast_Stmt* ast_IfStmt_getCond(const ast_IfStmt* s)
+static bool ast_IfStmt_hasDecl(const ast_IfStmt* s)
+{
+   return s->base.ifStmtBits.has_decl;
+}
+
+static ast_Stmt* ast_IfStmt_getDecl(const ast_IfStmt* s)
+{
+   if (!s->base.ifStmtBits.has_decl) return NULL;
+   return s->tail[s->base.ifStmtBits.has_else];
+}
+
+static ast_Stmt** ast_IfStmt_getDecl2(ast_IfStmt* s)
+{
+   if (!s->base.ifStmtBits.has_decl) return NULL;
+   return &s->tail[s->base.ifStmtBits.has_else];
+}
+
+static bool ast_IfStmt_hasSourceCond(const ast_IfStmt* s)
+{
+   return s->base.ifStmtBits.has_source_cond;
+}
+
+static ast_Expr* ast_IfStmt_getCond(const ast_IfStmt* s)
 {
    return s->cond;
 }
 
-static ast_Stmt** ast_IfStmt_getCond2(ast_IfStmt* s)
+static ast_Expr** ast_IfStmt_getCond2(ast_IfStmt* s)
 {
    return &s->cond;
 }
@@ -11383,25 +11622,36 @@ static ast_Stmt** ast_IfStmt_getThen2(ast_IfStmt* s)
    return &s->then;
 }
 
+static bool ast_IfStmt_hasElse(const ast_IfStmt* s)
+{
+   return s->base.ifStmtBits.has_else;
+}
+
 static ast_Stmt* ast_IfStmt_getElse(const ast_IfStmt* s)
 {
-   if (s->base.ifStmtBits.has_else) return s->else_stmt[0];
+   if (s->base.ifStmtBits.has_else) return s->tail[0];
    return NULL;
 }
 
 static ast_Stmt** ast_IfStmt_getElse2(ast_IfStmt* s)
 {
-   if (s->base.ifStmtBits.has_else) return &s->else_stmt[0];
+   if (s->base.ifStmtBits.has_else) return &s->tail[0];
    return NULL;
 }
 
 static void ast_IfStmt_print(const ast_IfStmt* s, string_buffer_Buf* out, u32 indent)
 {
    ast_Stmt_printKind(&s->base, out, indent);
+   string_buffer_Buf_color(out, ast_col_Attr);
+   if (ast_IfStmt_hasDecl(s)) {
+      string_buffer_Buf_add(out, " decl");
+      if (ast_IfStmt_hasSourceCond(s)) string_buffer_Buf_add(out, " ; cond");
+   }
    string_buffer_Buf_newline(out);
-   ast_Stmt_print(s->cond, out, indent + 1);
+   if (ast_IfStmt_hasDecl(s)) ast_Stmt_print(ast_IfStmt_getDecl(s), out, indent + 1);
+   ast_Expr_print(s->cond, out, indent + 1);
    ast_Stmt_print(s->then, out, indent + 1);
-   if (s->base.ifStmtBits.has_else) ast_Stmt_print(s->else_stmt[0], out, indent + 1);
+   if (ast_IfStmt_hasElse(s)) ast_Stmt_print(ast_IfStmt_getElse(s), out, indent + 1);
 }
 
 static ast_LabelStmt* ast_LabelStmt_create(ast_context_Context* c, u32 name, src_loc_SrcLoc loc, ast_Stmt* stmt)
@@ -11429,9 +11679,34 @@ static bool ast_LabelStmt_isUsed(const ast_LabelStmt* s)
    return s->base.labelStmtBits.is_used;
 }
 
-static const char* ast_LabelStmt_getName(const ast_LabelStmt* s)
+static bool ast_LabelStmt_hasGoto(const ast_LabelStmt* s)
 {
-   return ast_idx2name(s->name);
+   return s->base.labelStmtBits.has_goto;
+}
+
+static void ast_LabelStmt_setGoto(ast_LabelStmt* s)
+{
+   s->base.labelStmtBits.has_goto = true;
+}
+
+static bool ast_LabelStmt_hasBreak(const ast_LabelStmt* s)
+{
+   return s->base.labelStmtBits.has_break;
+}
+
+static void ast_LabelStmt_setBreak(ast_LabelStmt* s)
+{
+   s->base.labelStmtBits.has_break = true;
+}
+
+static bool ast_LabelStmt_hasContinue(const ast_LabelStmt* s)
+{
+   return s->base.labelStmtBits.has_continue;
+}
+
+static void ast_LabelStmt_setContinue(ast_LabelStmt* s)
+{
+   s->base.labelStmtBits.has_continue = true;
 }
 
 static u32 ast_LabelStmt_getNameIdx(const ast_LabelStmt* s)
@@ -11456,11 +11731,11 @@ static void ast_LabelStmt_print(const ast_LabelStmt* s, string_buffer_Buf* out, 
    string_buffer_Buf_color(out, ast_col_Value);
    string_buffer_Buf_space(out);
    string_buffer_Buf_add(out, ast_idx2name(s->name));
-   if (!ast_LabelStmt_isUsed(s)) {
-      string_buffer_Buf_space(out);
-      string_buffer_Buf_color(out, ast_col_Attr);
-      string_buffer_Buf_add(out, "unused");
-   }
+   string_buffer_Buf_color(out, ast_col_Attr);
+   if (!ast_LabelStmt_isUsed(s)) string_buffer_Buf_add(out, " unused");
+   if (ast_LabelStmt_hasGoto(s)) string_buffer_Buf_add(out, " has_goto");
+   if (ast_LabelStmt_hasBreak(s)) string_buffer_Buf_add(out, " has_break");
+   if (ast_LabelStmt_hasContinue(s)) string_buffer_Buf_add(out, " has_continue");
    string_buffer_Buf_newline(out);
    if (s->stmt) ast_Stmt_print(s->stmt, out, indent + 1);
 }
@@ -11644,7 +11919,7 @@ static ast_SwitchStmt* ast_SwitchStmt_create(ast_context_Context* c, src_loc_Src
    s->base.switchStmtBits.has_default = has_default;
    s->base.switchStmtBits.num_cases = numCases;
    s->base.switchStmtBits.has_decl = has_decl;
-   s->base.switchStmtBits.has_cond = cond != NULL;
+   s->base.switchStmtBits.has_source_cond = cond != NULL;
    s->cond = cond;
    if (has_decl) s->decl[0] = decl;
    ast_SwitchCase** cases_dest = (void*)(s->decl + has_decl);
@@ -11686,9 +11961,9 @@ static ast_Stmt** ast_SwitchStmt_getDecl2(ast_SwitchStmt* s)
    return s->decl;
 }
 
-static bool ast_SwitchStmt_hasCond(const ast_SwitchStmt* s)
+static bool ast_SwitchStmt_hasSourceCond(const ast_SwitchStmt* s)
 {
-   return s->base.switchStmtBits.has_cond;
+   return s->base.switchStmtBits.has_source_cond;
 }
 
 static ast_Expr* ast_SwitchStmt_getCond(const ast_SwitchStmt* s)
@@ -12523,7 +12798,7 @@ static void ast_Expr_printKind(const ast_Expr* e, string_buffer_Buf* out, u32 in
 {
    string_buffer_Buf_indent(out, indent);
    string_buffer_Buf_color(out, ast_col_Expr);
-   string_buffer_Buf_add(out, ast_exprKind_names[ast_Expr_getKind(e)]);
+   string_buffer_Buf_add(out, ast_ExprKind__name[ast_Expr_getKind(e)]);
 }
 
 static void ast_Expr_printTypeBits(const ast_Expr* e, string_buffer_Buf* out)
@@ -12534,7 +12809,7 @@ static void ast_Expr_printTypeBits(const ast_Expr* e, string_buffer_Buf* out)
    if (e->base.exprBits.is_ctc) string_buffer_Buf_add(out, " CTC");
    if (e->base.exprBits.is_ctv) string_buffer_Buf_add(out, " CTV");
    string_buffer_Buf_space(out);
-   string_buffer_Buf_add(out, ast_valType_names[ast_Expr_getValType(e)]);
+   string_buffer_Buf_add(out, ast_ValType__name[ast_Expr_getValType(e)]);
 }
 
 static ast_AlternateExpr* ast_AlternateExpr_create(ast_context_Context* c, ast_Expr* original, ast_Expr* generated)
@@ -12792,11 +13067,6 @@ static bool ast_BinaryOpcode_isComparison(ast_BinaryOpcode opcode)
    return opcode >= ast_BinaryOpcode_LessThan && opcode <= ast_BinaryOpcode_NotEqual;
 }
 
-static const char* ast_BinaryOpcode_str(ast_BinaryOpcode opcode)
-{
-   return ast_binaryOpcode_names[opcode];
-}
-
 static ast_BinaryOperator* ast_BinaryOperator_create(ast_context_Context* c, src_loc_SrcLoc loc, ast_BinaryOpcode kind, ast_Expr* lhs, ast_Expr* rhs)
 {
    ast_BinaryOperator* e = ast_context_Context_alloc(c, 32);
@@ -12839,7 +13109,7 @@ static ast_Expr** ast_BinaryOperator_getRHS2(ast_BinaryOperator* e)
 
 static const char* ast_BinaryOperator_getOpcodeStr(const ast_BinaryOperator* e)
 {
-   return ast_binaryOpcode_names[ast_BinaryOperator_getOpcode(e)];
+   return ast_BinaryOpcode__name[ast_BinaryOperator_getOpcode(e)];
 }
 
 static src_loc_SrcLoc ast_BinaryOperator_getStartLoc(const ast_BinaryOperator* e)
@@ -12858,7 +13128,7 @@ static void ast_BinaryOperator_print(const ast_BinaryOperator* e, string_buffer_
    ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Value);
-   string_buffer_Buf_add(out, ast_binaryOpcode_names[ast_BinaryOperator_getOpcode(e)]);
+   string_buffer_Buf_add(out, ast_BinaryOpcode__name[ast_BinaryOperator_getOpcode(e)]);
    string_buffer_Buf_newline(out);
    ast_Expr_print(e->lhs, out, indent + 1);
    ast_Expr_print(e->rhs, out, indent + 1);
@@ -12868,7 +13138,7 @@ static void ast_BinaryOperator_printLiteral(const ast_BinaryOperator* e, string_
 {
    ast_Expr_printLiteral(e->lhs, out);
    string_buffer_Buf_space(out);
-   string_buffer_Buf_add(out, ast_binaryOpcode_names[ast_BinaryOperator_getOpcode(e)]);
+   string_buffer_Buf_add(out, ast_BinaryOpcode__name[ast_BinaryOperator_getOpcode(e)]);
    string_buffer_Buf_space(out);
    ast_Expr_printLiteral(e->rhs, out);
 }
@@ -12982,38 +13252,38 @@ static void ast_BooleanLiteral_printLiteral(const ast_BooleanLiteral* e, string_
 
 static ast_BuiltinExpr* ast_BuiltinExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, u32 src_len, ast_Expr* inner, ast_BuiltinExprKind kind)
 {
-   const u32 size = 40;
+   const u32 size = 32;
    ast_BuiltinExpr* e = ast_context_Context_alloc(c, size);
    ast_Expr_init(&e->base, ast_ExprKind_Builtin, loc, true, true, false, ast_ValType_RValue);
    e->base.base.builtinExprBits.kind = kind;
    e->base.base.builtinExprBits.src_len = src_len;
    e->inner = inner;
-   value_type_Value_setUnsigned(&e->value, 0);
+   e->value = 0;
    return e;
 }
 
 static ast_BuiltinExpr* ast_BuiltinExpr_createOffsetOf(ast_context_Context* c, src_loc_SrcLoc loc, u32 src_len, ast_Expr* typeExpr, ast_Expr* member)
 {
-   const u32 size = 40 + 8;
+   const u32 size = 32 + 8;
    ast_BuiltinExpr* e = ast_context_Context_alloc(c, size);
    ast_Expr_init(&e->base, ast_ExprKind_Builtin, loc, true, true, false, ast_ValType_RValue);
    e->base.base.builtinExprBits.kind = ast_BuiltinExprKind_OffsetOf;
    e->base.base.builtinExprBits.src_len = src_len;
    e->inner = typeExpr;
-   value_type_Value_setUnsigned(&e->value, 0);
+   e->value = 0;
    e->offset[0].member = member;
    return e;
 }
 
 static ast_BuiltinExpr* ast_BuiltinExpr_createToContainer(ast_context_Context* c, src_loc_SrcLoc loc, u32 src_len, ast_Expr* typeExpr, ast_Expr* member, ast_Expr* pointer)
 {
-   const u32 size = 40 + 16;
+   const u32 size = 32 + 16;
    ast_BuiltinExpr* e = ast_context_Context_alloc(c, size);
    ast_Expr_init(&e->base, ast_ExprKind_Builtin, loc, false, false, false, ast_ValType_RValue);
    e->base.base.builtinExprBits.kind = ast_BuiltinExprKind_ToContainer;
    e->base.base.builtinExprBits.src_len = src_len;
    e->inner = typeExpr;
-   value_type_Value_setUnsigned(&e->value, 0);
+   e->value = 0;
    e->container[0].member = member;
    e->container[0].pointer = pointer;
    return e;
@@ -13024,8 +13294,6 @@ static ast_Expr* ast_BuiltinExpr_instantiate(ast_BuiltinExpr* e, ast_Instantiato
    switch (ast_BuiltinExpr_getKind(e)) {
    case ast_BuiltinExprKind_Sizeof:
    case ast_BuiltinExprKind_Elemsof:
-   case ast_BuiltinExprKind_EnumMin:
-   case ast_BuiltinExprKind_EnumMax:
       return (ast_Expr*)ast_BuiltinExpr_create(inst->c, e->base.base.loc, e->base.base.builtinExprBits.src_len, ast_Expr_instantiate(e->inner, inst), ast_BuiltinExpr_getKind(e));
    case ast_BuiltinExprKind_OffsetOf:
       return (ast_Expr*)ast_BuiltinExpr_createOffsetOf(inst->c, e->base.base.loc, e->base.base.builtinExprBits.src_len, ast_Expr_instantiate(e->inner, inst), ast_Expr_instantiate(e->offset[0].member, inst));
@@ -13040,19 +13308,19 @@ static ast_BuiltinExprKind ast_BuiltinExpr_getKind(const ast_BuiltinExpr* e)
    return e->base.base.builtinExprBits.kind;
 }
 
-static value_type_Value ast_BuiltinExpr_getValue(const ast_BuiltinExpr* e)
+static u64 ast_BuiltinExpr_useLiteral(const ast_BuiltinExpr* e)
+{
+   return e->base.base.builtinExprBits.use_literal;
+}
+
+static u64 ast_BuiltinExpr_getValue(const ast_BuiltinExpr* e)
 {
    return e->value;
 }
 
-static void ast_BuiltinExpr_setValue(ast_BuiltinExpr* e, value_type_Value value)
+static void ast_BuiltinExpr_setValue(ast_BuiltinExpr* e, u64 val)
 {
-   e->value = value;
-}
-
-static void ast_BuiltinExpr_setUValue(ast_BuiltinExpr* e, u64 val)
-{
-   value_type_Value_setUnsigned(&e->value, val);
+   e->value = val;
 }
 
 static ast_Expr* ast_BuiltinExpr_getInner(const ast_BuiltinExpr* e)
@@ -13094,19 +13362,14 @@ static void ast_BuiltinExpr_print(const ast_BuiltinExpr* e, string_buffer_Buf* o
    ast_Expr_printKind(&e->base, out, indent);
    ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_color(out, ast_col_Value);
-   string_buffer_Buf_print(out, " %s", ast_builtin_names[ast_BuiltinExpr_getKind(e)]);
+   string_buffer_Buf_print(out, " %s", ast_BuiltinExprKind__name[ast_BuiltinExpr_getKind(e)]);
    string_buffer_Buf_color(out, ast_col_Calc);
-   string_buffer_Buf_print(out, " %s", value_type_Value_str(&e->value));
+   string_buffer_Buf_print(out, " %lu", e->value);
    string_buffer_Buf_newline(out);
    ast_Expr_print(e->inner, out, indent + 1);
    switch (ast_BuiltinExpr_getKind(e)) {
    case ast_BuiltinExprKind_Sizeof:
-      break;
    case ast_BuiltinExprKind_Elemsof:
-      break;
-   case ast_BuiltinExprKind_EnumMin:
-      break;
-   case ast_BuiltinExprKind_EnumMax:
       break;
    case ast_BuiltinExprKind_OffsetOf:
       ast_Expr_print(e->offset[0].member, out, indent + 1);
@@ -13120,14 +13383,12 @@ static void ast_BuiltinExpr_print(const ast_BuiltinExpr* e, string_buffer_Buf* o
 
 static void ast_BuiltinExpr_printLiteral(const ast_BuiltinExpr* e, string_buffer_Buf* out)
 {
-   string_buffer_Buf_add(out, ast_builtin_names[ast_BuiltinExpr_getKind(e)]);
+   string_buffer_Buf_add(out, ast_BuiltinExprKind__name[ast_BuiltinExpr_getKind(e)]);
    string_buffer_Buf_lparen(out);
    ast_Expr_printLiteral(e->inner, out);
    switch (ast_BuiltinExpr_getKind(e)) {
    case ast_BuiltinExprKind_Sizeof:
    case ast_BuiltinExprKind_Elemsof:
-   case ast_BuiltinExprKind_EnumMin:
-   case ast_BuiltinExprKind_EnumMax:
       break;
    case ast_BuiltinExprKind_OffsetOf:
       string_buffer_Buf_add(out, ", ");
@@ -13348,10 +13609,8 @@ static void ast_CharLiteral_printLiteral(const ast_CharLiteral* e, string_buffer
       string_buffer_Buf_print(out, "'\\x%02x'", c);
       return;
    default: {
-      string_buffer_Buf_add1(out, '\'');
       char cc = c;
       string_buffer_Buf_encodeBytes(out, &cc, 1, '\'');
-      string_buffer_Buf_add1(out, '\'');
       return;
    }
    }
@@ -13646,29 +13905,6 @@ static void ast_FloatLiteral_printLiteral(const ast_FloatLiteral* e, string_buff
    if (ast_QualType_isFloat32(qt)) string_buffer_Buf_add1(out, 'F');
 }
 
-static const char* ast_IdentifierKind_str(ast_IdentifierKind k)
-{
-   switch (k) {
-   case ast_IdentifierKind_Unresolved:
-      return "Unresolved";
-   case ast_IdentifierKind_Module:
-      return "Module";
-   case ast_IdentifierKind_Function:
-      return "Function";
-   case ast_IdentifierKind_Type:
-      return "Type";
-   case ast_IdentifierKind_Var:
-      return "Var";
-   case ast_IdentifierKind_EnumConstant:
-      return "EnumConstant";
-   case ast_IdentifierKind_StructMember:
-      return "StructMember";
-   case ast_IdentifierKind_Label:
-      return "Label";
-   }
-   return "";
-}
-
 static ast_IdentifierExpr* ast_IdentifierExpr_create(ast_context_Context* c, src_loc_SrcLoc loc, u32 name, u32 name_len)
 {
    ast_IdentifierExpr* e = ast_context_Context_alloc(c, 24);
@@ -13746,7 +13982,7 @@ static void ast_IdentifierExpr_print(const ast_IdentifierExpr* e, string_buffer_
    ast_IdentifierKind kind = ast_IdentifierExpr_getKind(e);
    if (kind == ast_IdentifierKind_Unresolved) string_buffer_Buf_color(out, ast_col_Error);
    else string_buffer_Buf_color(out, ast_col_Attr);
-   string_buffer_Buf_add(out, ast_IdentifierKind_str(kind));
+   string_buffer_Buf_add(out, ast_IdentifierKind__name[kind]);
    string_buffer_Buf_space(out);
    if (e->base.base.identifierExprBits.has_decl) {
       string_buffer_Buf_color(out, ast_col_Value);
@@ -13830,7 +14066,7 @@ static void ast_ImplicitCastExpr_print(const ast_ImplicitCastExpr* e, string_buf
    ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Calc);
-   string_buffer_Buf_add(out, ast_implicitCastKind_names[ast_ImplicitCastExpr_getKind(e)]);
+   string_buffer_Buf_add(out, ast_ImplicitCastKind__name[ast_ImplicitCastExpr_getKind(e)]);
    string_buffer_Buf_newline(out);
    ast_Expr_print(e->inner, out, indent + 1);
 }
@@ -14035,29 +14271,6 @@ static void ast_IntegerLiteral_printLiteral(const ast_IntegerLiteral* e, string_
       if (kind == ast_BuiltinKind_UInt32 || kind == ast_BuiltinKind_UInt64) string_buffer_Buf_add1(out, 'U');
       if (kind == ast_BuiltinKind_Int64 || kind == ast_BuiltinKind_UInt64) string_buffer_Buf_add1(out, 'L');
    }
-}
-
-static const char* ast_MemberKind_str(ast_MemberKind k)
-{
-   switch (k) {
-   case ast_MemberKind_Unresolved:
-      return "Unresolved";
-   case ast_MemberKind_Module:
-      return "Module";
-   case ast_MemberKind_StructMember:
-      return "StructMember";
-   case ast_MemberKind_TypeFunc:
-      return "TypeFunc";
-   case ast_MemberKind_StaticTypeFunc:
-      return "StaticTypeFunc";
-   case ast_MemberKind_EnumConstant:
-      return "EnumConstant";
-   case ast_MemberKind_EnumAssocValue:
-      return "EnumAssocValue";
-   case ast_MemberKind_EnumConstantValue:
-      return "EnumConstantValue";
-   }
-   return "";
 }
 
 static ast_MemberExpr* ast_MemberExpr_create(ast_context_Context* c, ast_Expr* base, u32 base_name_idx, u32 base_len, src_loc_SrcLoc loc, u32 member_name_idx)
@@ -14327,7 +14540,7 @@ static void ast_MemberExpr_print(const ast_MemberExpr* e, string_buffer_Buf* out
    ast_MemberKind kind = ast_MemberExpr_getKind(e);
    if (kind == ast_MemberKind_Unresolved) string_buffer_Buf_color(out, ast_col_Error);
    else string_buffer_Buf_color(out, ast_col_Attr);
-   string_buffer_Buf_add(out, ast_MemberKind_str(kind));
+   string_buffer_Buf_add(out, ast_MemberKind__name[kind]);
    string_buffer_Buf_color(out, ast_col_Attr);
    if (ast_MemberExpr_isBitfield(e)) string_buffer_Buf_add(out, " bitfield");
    if (ast_MemberExpr_isTypeFunc(e)) string_buffer_Buf_add(out, " TF");
@@ -14548,30 +14761,25 @@ static void ast_RangeExpr_printLiteral(const ast_RangeExpr* e, string_buffer_Buf
    }
 }
 
-static ast_StringLiteral* ast_StringLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, u32 src_len, u32 value, u32 len)
+static ast_StringLiteral* ast_StringLiteral_create(ast_context_Context* c, src_loc_SrcLoc loc, u32 src_len, u32 value, u32 len, bool addnull)
 {
    ast_StringLiteral* e = ast_context_Context_alloc(c, 24);
    ast_Expr_init(&e->base, ast_ExprKind_StringLiteral, loc, 0, 1, 0, ast_ValType_LValue);
    e->base.base.stringLiteralBits.src_len = src_len;
    e->value = value;
-   e->size = len + 1;
-   ast_Expr_setType(&e->base, ast_getStringType(len + 1));
+   e->len = len;
+   ast_Expr_setType(&e->base, ast_getStringType(len + addnull));
    return e;
 }
 
-static const char* ast_StringLiteral_getText(const ast_StringLiteral* e)
-{
-   return ast_idx2name(e->value);
-}
-
-static u32 ast_StringLiteral_getTextIndex(const ast_StringLiteral* e)
+static u32 ast_StringLiteral_getText(const ast_StringLiteral* e)
 {
    return e->value;
 }
 
-static u32 ast_StringLiteral_getSize(const ast_StringLiteral* e)
+static u32 ast_StringLiteral_getLength(const ast_StringLiteral* e)
 {
-   return e->size;
+   return e->len;
 }
 
 static src_loc_SrcLoc ast_StringLiteral_getEndLoc(const ast_StringLiteral* e)
@@ -14581,9 +14789,7 @@ static src_loc_SrcLoc ast_StringLiteral_getEndLoc(const ast_StringLiteral* e)
 
 static void ast_StringLiteral_printLiteral(const ast_StringLiteral* e, string_buffer_Buf* out)
 {
-   string_buffer_Buf_add1(out, '"');
-   string_buffer_Buf_encodeBytes(out, ast_idx2name(e->value), e->size - 1, '"');
-   string_buffer_Buf_add1(out, '"');
+   string_buffer_Buf_encodeBytes(out, ast_idx2name(e->value), e->len, '"');
 }
 
 static void ast_StringLiteral_print(const ast_StringLiteral* e, string_buffer_Buf* out, u32 indent)
@@ -14703,7 +14909,7 @@ static src_loc_SrcLoc ast_UnaryOperator_getEndLoc(const ast_UnaryOperator* e)
 
 static const char* ast_UnaryOperator_getOpcodeStr(const ast_UnaryOperator* e)
 {
-   return ast_unaryOpcode_names[ast_UnaryOperator_getOpcode(e)];
+   return ast_UnaryOpcode__name[ast_UnaryOperator_getOpcode(e)];
 }
 
 static void ast_UnaryOperator_print(const ast_UnaryOperator* e, string_buffer_Buf* out, u32 indent)
@@ -14712,14 +14918,14 @@ static void ast_UnaryOperator_print(const ast_UnaryOperator* e, string_buffer_Bu
    ast_Expr_printTypeBits(&e->base, out);
    string_buffer_Buf_space(out);
    string_buffer_Buf_color(out, ast_col_Value);
-   string_buffer_Buf_add(out, ast_unaryOpcode_names[ast_UnaryOperator_getOpcode(e)]);
+   string_buffer_Buf_add(out, ast_UnaryOpcode__name[ast_UnaryOperator_getOpcode(e)]);
    string_buffer_Buf_newline(out);
    ast_Expr_print(e->inner, out, indent + 1);
 }
 
 static void ast_UnaryOperator_printLiteral(const ast_UnaryOperator* e, string_buffer_Buf* out)
 {
-   const char* opcode = ast_unaryOpcode_names[ast_UnaryOperator_getOpcode(e)];
+   const char* opcode = ast_UnaryOpcode__name[ast_UnaryOperator_getOpcode(e)];
    if (ast_UnaryOperator_isBefore(e)) {
       string_buffer_Buf_add(out, opcode);
       ast_Expr_printLiteral(e->inner, out);
@@ -14733,6 +14939,7 @@ static void ast_Type_init(ast_Type* t, ast_TypeKind k)
 {
    t->bits = 0;
    t->typeBits.kind = k;
+   t->typeBits.align = 0;
    t->ptr_pool_idx = 0;
    t->canonicalType.ptr = 0;
 }
@@ -14740,6 +14947,11 @@ static void ast_Type_init(ast_Type* t, ast_TypeKind k)
 static ast_TypeKind ast_Type_getKind(const ast_Type* t)
 {
    return t->typeBits.kind;
+}
+
+static ast_QualType ast_Type_getCanonicalType(const ast_Type* t)
+{
+   return t->canonicalType;
 }
 
 static void ast_Type_setCanonicalType(ast_Type* t, ast_QualType canon)
@@ -14785,6 +14997,46 @@ static bool ast_Type_isEnumType(const ast_Type* t)
 static bool ast_Type_isVoidType(const ast_Type* t)
 {
    return (ast_Type_getKind(t) == ast_TypeKind_Void);
+}
+
+static void ast_Type_setAlignment(ast_Type* t, u32 align)
+{
+   t->typeBits.align = align;
+}
+
+static u32 ast_Type_getAlignment(const ast_Type* t)
+{
+   switch (ast_Type_getKind(t)) {
+   case ast_TypeKind_Builtin:
+   case ast_TypeKind_Pointer:
+   case ast_TypeKind_Function:
+      return t->typeBits.align;
+   case ast_TypeKind_Array: {
+      const ast_ArrayType* at = (ast_ArrayType*)t;
+      ast_QualType elem = ast_ArrayType_getElemType(at);
+      return ast_QualType_getAlignment(elem);
+   }
+   case ast_TypeKind_Struct: {
+      const ast_StructType* s = (ast_StructType*)t;
+      const ast_StructTypeDecl* std = ast_StructType_getDecl(s);
+      return ast_StructTypeDecl_getAlignment(std);
+   }
+   case ast_TypeKind_Enum: {
+      const ast_EnumType* e = (ast_EnumType*)t;
+      const ast_EnumTypeDecl* etd = ast_EnumType_getDecl(e);
+      ast_QualType it = ast_EnumTypeDecl_getImplType(etd);
+      return ast_Type_getAlignment(ast_QualType_getTypeOrNil(it));
+   }
+   case ast_TypeKind_Void:
+      return 0;
+   case ast_TypeKind_Alias: {
+      ast_QualType canon = ast_Type_getCanonicalType(t);
+      return ast_QualType_getAlignment(canon);
+   }
+   case ast_TypeKind_Module:
+      return 0;
+   }
+   return 0;
 }
 
 static void ast_Type_print(const ast_Type* t, string_buffer_Buf* out)
@@ -14986,16 +15238,17 @@ static void ast_ArrayType_fullPrint(const ast_ArrayType* t, string_buffer_Buf* o
    ast_QualType_fullPrint(t->elem, out, indent + 1);
 }
 
-static const char* ast_BuiltinKind_str(ast_BuiltinKind kind)
-{
-   return ast_builtinType_names[kind];
-}
-
 static ast_BuiltinType* ast_BuiltinType_create(ast_context_Context* c, ast_BuiltinKind kind)
 {
+   ast_BuiltinKind base_kind = kind;
+   if (kind == ast_BuiltinKind_ISize) base_kind = (ast_context_Context_getWordSize(c) == 4) ? ast_BuiltinKind_Int32 : ast_BuiltinKind_Int64;
+   if (kind == ast_BuiltinKind_USize) base_kind = (ast_context_Context_getWordSize(c) == 4) ? ast_BuiltinKind_UInt32 : ast_BuiltinKind_UInt64;
    ast_BuiltinType* b = ast_context_Context_alloc(c, 16);
    ast_Type_init(&b->base, ast_TypeKind_Builtin);
    b->base.builtinTypeBits.kind = kind;
+   b->base.builtinTypeBits.base_kind = base_kind;
+   b->base.builtinTypeBits.width = ast_BuiltinKind__width[base_kind];
+   ast_Type_setAlignment(&b->base, ast_BuiltinKind__align[base_kind]);
    ast_Type_setCanonicalType(&b->base, ast_QualType_create(&b->base));
    return b;
 }
@@ -15007,37 +15260,27 @@ static ast_BuiltinKind ast_BuiltinType_getKind(const ast_BuiltinType* b)
 
 static ast_BuiltinKind ast_BuiltinType_getBaseKind(const ast_BuiltinType* b)
 {
-   return ast_globals->builtinType_baseTypes[ast_BuiltinType_getKind(b)];
-}
-
-static ast_BuiltinKind ast_BuiltinType_getBuiltinKind(const ast_BuiltinType* b)
-{
-   return b->base.builtinTypeBits.kind;
+   return b->base.builtinTypeBits.base_kind;
 }
 
 static bool ast_BuiltinType_isInt32(const ast_BuiltinType* b)
 {
-   return ast_BuiltinType_getBuiltinKind(b) == ast_BuiltinKind_Int32;
+   return ast_BuiltinType_getKind(b) == ast_BuiltinKind_Int32;
 }
 
 static bool ast_BuiltinType_isBool(const ast_BuiltinType* b)
 {
-   return ast_BuiltinType_getBuiltinKind(b) == ast_BuiltinKind_Bool;
-}
-
-static const char* ast_BuiltinType_kind2str(const ast_BuiltinType* b)
-{
-   return ast_builtinType_names[ast_BuiltinType_getKind(b)];
+   return ast_BuiltinType_getKind(b) == ast_BuiltinKind_Bool;
 }
 
 static bool ast_BuiltinType_isPromotableIntegerType(const ast_BuiltinType* b)
 {
-   return ast_BuiltinType_promotable[ast_BuiltinType_getKind(b)];
+   return ast_BuiltinKind__promotable[ast_BuiltinType_getKind(b)];
 }
 
 static bool ast_BuiltinType_isInteger(const ast_BuiltinType* b)
 {
-   return ast_BuiltinType_integer[ast_BuiltinType_getKind(b)];
+   return ast_BuiltinKind__is_integer[ast_BuiltinType_getKind(b)];
 }
 
 static bool ast_BuiltinType_isIntegerOrBool(const ast_BuiltinType* b)
@@ -15052,33 +15295,33 @@ static bool ast_BuiltinType_isFloatingPoint(const ast_BuiltinType* b)
 
 static bool ast_BuiltinType_isSigned(const ast_BuiltinType* b)
 {
-   return ast_BuiltinType_signed[ast_BuiltinType_getKind(b)];
+   return ast_BuiltinKind__is_signed[ast_BuiltinType_getKind(b)];
 }
 
 static bool ast_BuiltinType_isUnsigned(const ast_BuiltinType* b)
 {
-   return ast_BuiltinType_unsigned[ast_BuiltinType_getKind(b)];
+   return ast_BuiltinKind__is_unsigned[ast_BuiltinType_getKind(b)];
 }
 
 static u32 ast_BuiltinType_getAlignment(const ast_BuiltinType* b)
 {
-   return ast_globals->builtinType_sizes[ast_BuiltinType_getKind(b)];
+   return b->base.typeBits.align;
 }
 
 static u32 ast_BuiltinType_getWidth(const ast_BuiltinType* b)
 {
-   return ast_globals->builtinType_width[ast_BuiltinType_getKind(b)];
+   return b->base.builtinTypeBits.width;
 }
 
 static void ast_BuiltinType_print(const ast_BuiltinType* b, string_buffer_Buf* out)
 {
-   string_buffer_Buf_add(out, ast_builtinType_names[ast_BuiltinType_getKind(b)]);
+   string_buffer_Buf_add(out, ast_BuiltinKind__name[ast_BuiltinType_getKind(b)]);
 }
 
 static void ast_BuiltinType_fullPrint(const ast_BuiltinType* t, string_buffer_Buf* out, u32 indent)
 {
    string_buffer_Buf_indent(out, indent);
-   string_buffer_Buf_print(out, "BuiltinType [%p] %s\n", t, ast_BuiltinType_kind2str(t));
+   string_buffer_Buf_print(out, "BuiltinType [%p] %s\n", t, ast_BuiltinKind__name[ast_BuiltinType_getKind(t)]);
 }
 
 static ast_EnumType* ast_EnumType_create(ast_context_Context* c, ast_EnumTypeDecl* decl)
@@ -15100,11 +15343,6 @@ static ast_QualType ast_EnumType_getImplType(const ast_EnumType* t)
    return ast_EnumTypeDecl_getImplType(t->decl);
 }
 
-static const char* ast_EnumType_getName(const ast_EnumType* t)
-{
-   return ast_Decl_getName(&t->decl->base);
-}
-
 static void ast_EnumType_print(const ast_EnumType* t, string_buffer_Buf* out)
 {
    string_buffer_Buf_add(out, ast_Decl_getModuleName(&t->decl->base));
@@ -15122,6 +15360,7 @@ static ast_FunctionType* ast_FunctionType_create(ast_context_Context* c, ast_Fun
 {
    ast_FunctionType* t = ast_context_Context_alloc(c, 24);
    ast_Type_init(&t->base, ast_TypeKind_Function);
+   ast_Type_setAlignment(&t->base, ast_context_Context_getWordSize(c));
    t->decl = decl;
    ast_Type_setCanonicalType(&t->base, ast_QualType_create(&t->base));
    return t;
@@ -15177,6 +15416,7 @@ static ast_PointerType* ast_PointerType_create(ast_context_Context* c, ast_QualT
 {
    ast_PointerType* t = ast_context_Context_alloc(c, 24);
    ast_Type_init(&t->base, ast_TypeKind_Pointer);
+   ast_Type_setAlignment(&t->base, ast_context_Context_getWordSize(c));
    t->inner = inner;
    return t;
 }
@@ -15392,6 +15632,12 @@ static u32 ast_QualType_getIndex(const ast_QualType qt)
 {
    const ast_Type* t = ast_QualType_getType(qt);
    return ast_Type_getIndex(t);
+}
+
+static u32 ast_QualType_getAlignment(const ast_QualType qt)
+{
+   const ast_Type* t = ast_QualType_getType(qt);
+   return ast_Type_getAlignment(t);
 }
 
 static bool ast_QualType_isBool(const ast_QualType qt)
@@ -15633,6 +15879,47 @@ static bool ast_QualType_needsCtvInit(const ast_QualType qt)
    return false;
 }
 
+static void ast_QualType_setTypeUsedPublic(ast_QualType qt)
+{
+   const ast_Type* t = ast_QualType_getType(qt);
+   ast_Decl* d = NULL;
+   switch (ast_Type_getKind(t)) {
+   case ast_TypeKind_Builtin:
+   case ast_TypeKind_Void:
+      return;
+   case ast_TypeKind_Pointer: {
+      ast_PointerType* pt = (ast_PointerType*)t;
+      ast_QualType_setTypeUsedPublic(pt->inner);
+      return;
+   }
+   case ast_TypeKind_Array: {
+      ast_ArrayType* at = (ast_ArrayType*)t;
+      ast_QualType_setTypeUsedPublic(at->elem);
+      return;
+   }
+   case ast_TypeKind_Struct: {
+      ast_StructType* st = (ast_StructType*)t;
+      d = (ast_Decl*)st->decl;
+      break;
+   }
+   case ast_TypeKind_Enum: {
+      ast_EnumType* et = (ast_EnumType*)t;
+      d = (ast_Decl*)et->decl;
+      break;
+   }
+   case ast_TypeKind_Function:
+      return;
+   case ast_TypeKind_Alias: {
+      ast_AliasType* at = (ast_AliasType*)t;
+      d = (ast_Decl*)at->decl;
+      break;
+   }
+   case ast_TypeKind_Module:
+      return;
+   }
+   if (d) ast_Decl_setUsedPublic(d);
+}
+
 static const char* ast_QualType_diagName(const ast_QualType qt)
 {
    static char msgs[4][128];
@@ -15762,9 +16049,9 @@ static void ast_StructType_fullPrint(const ast_StructType* t, string_buffer_Buf*
    string_buffer_Buf_print(out, "StructType [%p] %s\n", t, ast_Decl_getName(ast_StructTypeDecl_asDecl(t->decl)));
 }
 
-static const char* ast_Ref_getName(const ast_Ref* r)
+static u32 ast_Ref_getNameIdx(const ast_Ref* r)
 {
-   return ast_idx2name(r->name_idx);
+   return r->name_idx;
 }
 
 static void ast_TypeRefHolder_init(ast_TypeRefHolder* h)
@@ -15772,6 +16059,12 @@ static void ast_TypeRefHolder_init(ast_TypeRefHolder* h)
    ast_TypeRef* r = (ast_TypeRef*)&h->ref;
    r->flagBits = 0;
    r->dest = 0;
+}
+
+static void ast_TypeRefHolder_copy(ast_TypeRefHolder* h, const ast_TypeRef* ref)
+{
+   u32 size = 8 + ast_TypeRef_getExtraSize(ref);
+   memcpy(&h->ref, ref, size);
 }
 
 static u32 ast_TypeRefHolder_getExtraSize(const ast_TypeRefHolder* h)
@@ -16144,7 +16437,7 @@ static void ast_TypeRef_printLiteral(const ast_TypeRef* r, string_buffer_Buf* ou
    if (ast_TypeRef_isVolatile(r, num_ptrs)) string_buffer_Buf_add(out, "volatile ");
    switch (r->flags.kind) {
    case ast_TypeRefKind_Builtin:
-      string_buffer_Buf_add(out, ast_builtinType_names[ast_TypeRef_getBuiltinKind(r)]);
+      string_buffer_Buf_add(out, ast_BuiltinKind__name[ast_TypeRef_getBuiltinKind(r)]);
       break;
    case ast_TypeRefKind_Void:
       string_buffer_Buf_add(out, "void");
@@ -16185,7 +16478,7 @@ static void ast_TypeRef_print(const ast_TypeRef* r, string_buffer_Buf* out, bool
    if (ast_TypeRef_isVolatile(r, num_ptrs)) string_buffer_Buf_add(out, "volatile ");
    switch (r->flags.kind) {
    case ast_TypeRefKind_Builtin:
-      string_buffer_Buf_add(out, ast_builtinType_names[ast_TypeRef_getBuiltinKind(r)]);
+      string_buffer_Buf_add(out, ast_BuiltinKind__name[ast_TypeRef_getBuiltinKind(r)]);
       break;
    case ast_TypeRefKind_Void:
       string_buffer_Buf_add(out, "void");
@@ -16295,7 +16588,7 @@ static ast_AST* ast_AST_create(string_pool_Pool* auxPool, u32 name, ast_Module* 
    a->mod = mod;
    a->auxPool = auxPool;
    a->name = name;
-   a->idx = ast_addAST(a);
+   a->idx = ast_Globals_addAST(ast_globals, a);
    a->is_interface = is_interface;
    a->is_generated = is_generated;
    ast_ImportDeclList_init(&a->imports);
@@ -16327,11 +16620,6 @@ static const char* ast_AST_getFilename(const ast_AST* a)
 static u32 ast_AST_getIdx(const ast_AST* a)
 {
    return a->idx;
-}
-
-static const char* ast_AST_getName(const ast_AST* a)
-{
-   return ast_Module_getName(a->mod);
 }
 
 static u32 ast_AST_getNameIdx(const ast_AST* a)
@@ -16556,38 +16844,42 @@ static void ast_DeclList_init(ast_DeclList* l)
 {
    l->count = 0;
    l->capacity = 4;
-   l->decls = l->stash;
+   l->data = l->stash;
 }
 
 static void ast_DeclList_free(ast_DeclList* l)
 {
-   if (l->capacity > 4) free(l->decls);
+   if (l->capacity > 4) free(l->data);
+   l->data = NULL;
    l->count = 0;
    l->capacity = 0;
-}
-
-static void ast_DeclList_add(ast_DeclList* l, ast_Decl* d)
-{
-   if (l->count >= l->capacity) {
-      if (l->capacity == 0) {
-         l->capacity = 4;
-         l->decls = l->stash;
-      } else {
-         u32 capacity2 = l->capacity + l->capacity / 2 + 2;
-         void* decls2 = malloc(capacity2 * 8);
-         memcpy(decls2, l->decls, l->count * 8);
-         if (l->capacity > 4) free(l->decls);
-         l->capacity = capacity2;
-         l->decls = decls2;
-      }
-   }
-   l->decls[l->count] = d;
-   l->count++;
 }
 
 static void ast_DeclList_clear(ast_DeclList* l)
 {
    l->count = 0;
+}
+
+static void ast_DeclList_resize(ast_DeclList* l)
+{
+   if (l->capacity < 4) {
+      l->capacity = 4;
+      l->data = l->stash;
+   } else if (l->capacity == 4) {
+      l->capacity = l->capacity * 2;
+      l->data = malloc(l->capacity * 8);
+      memcpy(l->data, l->stash, 4 * 8);
+   } else {
+      l->capacity = l->capacity * 2;
+      l->data = realloc(l->data, l->capacity * 8);
+   }
+}
+
+static void ast_DeclList_add(ast_DeclList* l, ast_Decl* d)
+{
+   if (l->count >= l->capacity) ast_DeclList_resize(l);
+   l->data[l->count] = d;
+   l->count++;
 }
 
 static u32 ast_DeclList_size(const ast_DeclList* l)
@@ -16597,12 +16889,12 @@ static u32 ast_DeclList_size(const ast_DeclList* l)
 
 static ast_Decl* ast_DeclList_get(const ast_DeclList* l, u32 idx)
 {
-   return l->decls[idx];
+   return l->data[idx];
 }
 
-static ast_Decl** ast_DeclList_getDecls(const ast_DeclList* l)
+static ast_Decl** ast_DeclList_getData(const ast_DeclList* l)
 {
-   return l->decls;
+   return l->data;
 }
 
 static void ast_ExprList_init(ast_ExprList* l)
@@ -17121,11 +17413,12 @@ static void ast_Module_print(const ast_Module* m, string_buffer_Buf* out, bool s
 
 static void ast_PointerPool_init(ast_PointerPool* p, ast_context_Context* c)
 {
+   p->context = c;
    p->count = 1;
    p->capacity = 0;
    p->slots = NULL;
-   p->context = c;
    ast_PointerPool_resize(p, 64);
+   memset(p->slots, 0, 32);
 }
 
 static void ast_PointerPool_clear(ast_PointerPool* p)
@@ -17167,6 +17460,11 @@ static ast_Type* ast_PointerPool_getPointer(ast_PointerPool* p, ast_QualType qt)
    ptr = (ast_Type*)ast_PointerType_create(p->context, qt);
    slot->ptrs[quals] = ptr;
    return ptr;
+}
+
+static void ast_PointerPool_report(const ast_PointerPool* p)
+{
+   printf("pointer_pool: %u/%u, %u bytes\n", p->count, p->capacity, 24 + p->capacity * 32);
 }
 
 static void ast_StaticAssertList_init(ast_StaticAssertList* l, u32 initial_size)
@@ -17263,6 +17561,11 @@ static ast_QualType ast_StringTypePool_get(ast_StringTypePool* p, u32 len)
    ast_Type_setCanonicalType(t, qt);
    ast_QualType_setConst(&qt);
    return qt;
+}
+
+static void ast_StringTypePool_report(const ast_StringTypePool* p)
+{
+   printf("string_pool: %u/%u, %u bytes\n", p->count, p->capacity, 24 + p->capacity * 16);
 }
 
 static void ast_SymbolTable_init(ast_SymbolTable* t, u32 initial)
@@ -17386,60 +17689,49 @@ static ast_Globals* ast_getGlobals(void)
    return ast_globals;
 }
 
-static void ast_initialize(ast_context_Context* c, string_pool_Pool* astPool, u32 wordsize, bool use_color)
+static void ast_initialize(ast_context_Context* c, string_pool_Pool* astPool, bool use_color)
 {
-   ast_globals = malloc(344);
-   ast_PointerPool_init(&ast_globals->pointers, c);
-   ast_StringTypePool_init(&ast_globals->string_types, c);
-   ast_globals->wordsize = wordsize;
-   ast_globals->use_color = use_color;
-   ast_globals->names_pool = astPool;
-   ast_globals->ast_count = 1;
-   ast_globals->ast_capacity = 0;
-   ast_globals->ast_list = NULL;
-   ast_globals->dump_buf = string_buffer_create(4096, use_color, 2);
-   for (ast_BuiltinKind kind = ast_BuiltinKind_Char; kind <= ast_BuiltinKind_Bool; kind++) {
-      ast_QualType_set(&ast_globals->builtins[kind], (ast_Type*)ast_BuiltinType_create(c, kind));
+   ast_Globals* g = calloc(216, 1);
+   ast_PointerPool_init(&g->pointers, c);
+   ast_StringTypePool_init(&g->string_types, c);
+   g->use_color = use_color;
+   g->names_pool = astPool;
+   g->ast_count = 0;
+   g->ast_capacity = 0;
+   g->ast_list = NULL;
+   g->dump_buf = string_buffer_create(4096, use_color, 2);
+   ast_globals = g;
+   ast_Globals_addAST(g, NULL);
+   for (ast_BuiltinKind kind = ast_BuiltinKind_Bool; kind <= ast_BuiltinKind_USize; kind++) {
+      ast_QualType_set(&g->builtins[kind], (ast_Type*)ast_BuiltinType_create(c, kind));
    }
-   ast_QualType_set(&ast_globals->void_type, (ast_Type*)ast_VoidType_create(c));
-   ast_Type* void_ptr = ast_getPointerType(ast_globals->void_type);
-   ast_QualType_set(&ast_globals->void_ptr_type, void_ptr);
-   ast_Type_setCanonicalType(void_ptr, ast_globals->void_ptr_type);
-   memcpy(ast_globals->builtinType_sizes, ast_BuiltinType_default_sizes, 56);
-   ast_globals->builtinType_sizes[ast_BuiltinKind_ISize] = wordsize;
-   ast_globals->builtinType_sizes[ast_BuiltinKind_USize] = wordsize;
-   memcpy(ast_globals->builtinType_width, ast_BuiltinType_default_widths, 56);
-   ast_globals->builtinType_width[ast_BuiltinKind_ISize] = wordsize * 8;
-   ast_globals->builtinType_width[ast_BuiltinKind_USize] = wordsize * 8;
-   for (ast_BuiltinKind kind = ast_BuiltinKind_Char; kind <= ast_BuiltinKind_Bool; kind++) {
-      ast_globals->builtinType_baseTypes[kind] = kind;
-   }
-   if (wordsize == 4) {
-      ast_globals->builtinType_baseTypes[ast_BuiltinKind_ISize] = ast_BuiltinKind_Int32;
-      ast_globals->builtinType_baseTypes[ast_BuiltinKind_USize] = ast_BuiltinKind_UInt32;
-   } else {
-      ast_globals->builtinType_baseTypes[ast_BuiltinKind_ISize] = ast_BuiltinKind_Int64;
-      ast_globals->builtinType_baseTypes[ast_BuiltinKind_USize] = ast_BuiltinKind_UInt64;
-   }
+   ast_QualType_set(&g->void_type, (ast_Type*)ast_VoidType_create(c));
+   ast_Type* void_ptr = ast_PointerPool_getPointer(&g->pointers, g->void_type);
+   ast_QualType_set(&g->void_ptr_type, void_ptr);
+   ast_Type_setCanonicalType(void_ptr, g->void_ptr_type);
 }
 
-static void ast_deinit(bool print_stats)
+static void ast_report(void)
 {
-   ast_globals->names_pool = NULL;
-   ast_globals->ast_count = 0;
-   ast_globals->ast_capacity = 0;
-   free(ast_globals->ast_list);
-   ast_globals->ast_list = NULL;
-   ast_PointerPool_clear(&ast_globals->pointers);
-   ast_StringTypePool_clear(&ast_globals->string_types);
-   string_buffer_Buf_free(ast_globals->dump_buf);
-   free(ast_globals);
+   ast_Globals* g = ast_globals;
+   printf("ast_list: %u/%u, %u bytes\n", g->ast_count, g->ast_capacity, g->ast_capacity * 8);
+   ast_StringTypePool_report(&g->string_types);
+   ast_PointerPool_report(&g->pointers);
+}
+
+static void ast_deinit(void)
+{
+   ast_Globals* g = ast_globals;
+   g->names_pool = NULL;
+   g->ast_count = 0;
+   g->ast_capacity = 0;
+   free(g->ast_list);
+   g->ast_list = NULL;
+   ast_PointerPool_clear(&g->pointers);
+   ast_StringTypePool_clear(&g->string_types);
+   string_buffer_Buf_free(g->dump_buf);
+   free(g);
    ast_globals = NULL;
-}
-
-static u32 ast_getWordSize(void)
-{
-   return ast_globals->wordsize;
 }
 
 static ast_QualType ast_getStringType(u32 len)
@@ -17473,29 +17765,28 @@ static ast_QualType ast_getBuiltinQT(ast_BuiltinKind kind)
    return ast_globals->builtins[kind];
 }
 
-static u32 ast_addAST(ast_AST* ast_)
+static u32 ast_Globals_addAST(ast_Globals* g, ast_AST* a)
 {
-   if (ast_globals->ast_count >= ast_globals->ast_capacity) {
-      if (ast_globals->ast_capacity == 0) ast_globals->ast_capacity = 16;
-      else ast_globals->ast_capacity *= 2;
-      void* buf = malloc(ast_globals->ast_capacity * 8);
-      if (ast_globals->ast_list) {
-         void* old = ast_globals->ast_list;
-         memcpy(buf, old, ast_globals->ast_count * 8);
+   if (g->ast_count >= g->ast_capacity) {
+      if (g->ast_capacity == 0) g->ast_capacity = 16;
+      else g->ast_capacity *= 2;
+      void* buf = malloc(g->ast_capacity * 8);
+      if (g->ast_list) {
+         void* old = g->ast_list;
+         memcpy(buf, old, g->ast_count * 8);
          free(old);
       }
-      ast_globals->ast_list = buf;
+      g->ast_list = buf;
    }
-   u32 idx = ast_globals->ast_count;
-   ast_globals->ast_list[idx] = ast_;
-   ast_globals->ast_count++;
+   u32 idx = g->ast_count;
+   g->ast_list[idx] = a;
+   g->ast_count++;
    return idx;
 }
 
-static ast_AST* ast_idx2ast(u32 idx)
+static ast_AST* ast_Globals_idx2ast(ast_Globals* g, u32 idx)
 {
-   if (idx == 0) return NULL;
-   return ast_globals->ast_list[idx];
+   return g->ast_list[idx];
 }
 
 static string_buffer_Buf* ast_getDumpBuf(void)
@@ -17508,52 +17799,6 @@ static void ast_flushDumpBuf(string_buffer_Buf* out)
    string_buffer_Buf_color(out, ast_col_Normal);
    puts(string_buffer_Buf_data(out));
    string_buffer_Buf_clear(out);
-}
-
-static void ast_setTypePublicUsed(ast_QualType qt)
-{
-   const ast_Type* t = ast_QualType_getType(qt);
-   ast_Decl* d = NULL;
-   switch (ast_Type_getKind(t)) {
-   case ast_TypeKind_Builtin:
-   case ast_TypeKind_Void:
-      return;
-   case ast_TypeKind_Pointer: {
-      ast_PointerType* pt = (ast_PointerType*)t;
-      ast_setTypePublicUsed(pt->inner);
-      return;
-   }
-   case ast_TypeKind_Array: {
-      ast_ArrayType* at = (ast_ArrayType*)t;
-      ast_setTypePublicUsed(at->elem);
-      return;
-   }
-   case ast_TypeKind_Struct: {
-      ast_StructType* st = (ast_StructType*)t;
-      d = (ast_Decl*)st->decl;
-      break;
-   }
-   case ast_TypeKind_Enum: {
-      ast_EnumType* et = (ast_EnumType*)t;
-      d = (ast_Decl*)et->decl;
-      break;
-   }
-   case ast_TypeKind_Function:
-      return;
-   case ast_TypeKind_Alias: {
-      ast_AliasType* at = (ast_AliasType*)t;
-      d = (ast_Decl*)at->decl;
-      break;
-   }
-   case ast_TypeKind_Module:
-      return;
-   }
-   if (d) ast_Decl_setUsedPublic(d);
-}
-
-static ast_BuiltinKind ast_getNativeKind(void)
-{
-   return ast_globals->wordsize == 8 ? ast_BuiltinKind_UInt64 : ast_BuiltinKind_UInt32;
 }
 
 static value_type_Value ast_Evaluator_get_value(ast_Evaluator* eval, const ast_Expr* e)
@@ -17608,7 +17853,7 @@ static value_type_Value ast_Evaluator_get_value(ast_Evaluator* eval, const ast_E
    }
    case ast_ExprKind_Builtin: {
       const ast_BuiltinExpr* bi = (ast_BuiltinExpr*)e;
-      return ast_BuiltinExpr_getValue(bi);
+      return value_type_Value_createUnsigned(ast_BuiltinExpr_getValue(bi));
    }
    case ast_ExprKind_ArraySubscript: {
       ast_ArraySubscriptExpr* a = (ast_ArraySubscriptExpr*)e;
@@ -17968,9 +18213,9 @@ static value_type_Value ast_Evaluator_eval_call(ast_Evaluator* caller, const ast
       .address = ast_FunctionDecl_getAddress(fd)
    };
    if (!fun.address) {
-      const char* cname = ast_FunctionDecl_getCName(fd);
+      u32 cname = ast_FunctionDecl_getCName(fd);
       if (!cname) return value_type_Value_error("no function name");
-      fun.address = dlsym(dlfcn_RTLD_DEFAULT, cname);
+      fun.address = dlsym(dlfcn_RTLD_DEFAULT, ast_idx2name(cname));
       if (!fun.address) {
          return value_type_Value_error("function not found");
       }
@@ -18004,7 +18249,7 @@ static value_type_Value ast_Evaluator_eval_call(ast_Evaluator* caller, const ast
    case ast_FunctionSignature_FunDDDD:
       return value_type_Value_createFloat(fun.funDDDD(value_type_Value_toFloat(&args[0]), value_type_Value_toFloat(&args[1]), value_type_Value_toFloat(&args[2])));
    default:
-      fprintf(stderr, "unsupported function prototype: %s\n", ast_FunctionDecl_getCName(fd));
+      fprintf(stderr, "unsupported function prototype: %s\n", ast_idx2name(ast_FunctionDecl_getCName(fd)));
       return value_type_Value_error("unsupported function prototype");
    }
 }
@@ -18101,7 +18346,11 @@ static ast_Cont ast_Expr_eval(ast_Expr* e, ast_Evaluator* sf)
 
 static ast_Cont ast_IfStmt_eval(ast_IfStmt* s, ast_Evaluator* sf)
 {
-   ast_Cont cont = ast_Stmt_eval(ast_IfStmt_getCond(s), sf);
+   if (ast_IfStmt_hasDecl(s)) {
+      ast_Cont cont = ast_Stmt_eval(ast_IfStmt_getDecl(s), sf);
+      if (cont != ast_Cont_Normal) return cont;
+   }
+   ast_Cont cont = ast_Expr_eval(ast_IfStmt_getCond(s), sf);
    if (cont != ast_Cont_Normal) return cont;
    if (!value_type_Value_isZero(&sf->result)) {
       return ast_Stmt_eval(ast_IfStmt_getThen(s), sf);
@@ -18341,7 +18590,7 @@ struct build_target_Target_ {
    bool backend_no_build;
    bool backend_fast;
    bool optional;
-   string_list_List features;
+   string_map_Map features;
    build_target_List libs;
    string_list_List exports;
    build_target_PluginList plugins;
@@ -18363,7 +18612,7 @@ static u32 build_target_Target_getNameIdx(const build_target_Target* t);
 static void build_target_Target_setNameIdx(build_target_Target* t, u32 name_idx);
 static u32 build_target_Target_numFiles(const build_target_Target* t);
 static u32 build_target_Target_numAsmFiles(const build_target_Target* t);
-static const string_list_List* build_target_Target_getFeatures(const build_target_Target* t);
+static const string_map_Map* build_target_Target_getFeatures(const build_target_Target* t);
 static void build_target_Target_addFeature(build_target_Target* t, u32 feature);
 static void build_target_Target_removeFeature(build_target_Target* t, u32 feature);
 static void build_target_Target_addPlugin(build_target_Target* t, u32 name, u32 options, src_loc_SrcLoc loc);
@@ -18465,11 +18714,11 @@ static void build_target_PluginList_add(build_target_PluginList* l, u32 name, u3
 
 static build_target_Target* build_target_create(u32 name_idx, src_loc_SrcLoc loc, build_target_Kind kind, string_pool_Pool* pool)
 {
-   build_target_Target* t = calloc(1, 144);
+   build_target_Target* t = calloc(1, 152);
    t->name_idx = name_idx;
    t->loc = loc;
    t->kind = kind;
-   string_list_List_init(&t->features, pool);
+   string_map_Map_init(&t->features, pool);
    build_target_List_init(&t->libs);
    string_list_List_init(&t->exports, pool);
    file_list_FileList_init(&t->files, 8);
@@ -18482,7 +18731,7 @@ static void build_target_Target_free(build_target_Target* t)
    string_list_List_free(&t->exports);
    build_target_PluginList_free(&t->plugins);
    build_target_List_free(&t->libs);
-   string_list_List_free(&t->features);
+   string_map_Map_free(&t->features);
    file_list_FileList_free(&t->asm_files);
    file_list_FileList_free(&t->files);
    free(t);
@@ -18508,19 +18757,19 @@ static u32 build_target_Target_numAsmFiles(const build_target_Target* t)
    return file_list_FileList_getCount(&t->asm_files);
 }
 
-static const string_list_List* build_target_Target_getFeatures(const build_target_Target* t)
+static const string_map_Map* build_target_Target_getFeatures(const build_target_Target* t)
 {
    return &t->features;
 }
 
 static void build_target_Target_addFeature(build_target_Target* t, u32 feature)
 {
-   string_list_List_add(&t->features, feature);
+   string_map_Map_addNameValue(&t->features, feature, "1");
 }
 
 static void build_target_Target_removeFeature(build_target_Target* t, u32 feature)
 {
-   string_list_List_del(&t->features, feature);
+   string_map_Map_del(&t->features, feature);
 }
 
 static void build_target_Target_addPlugin(build_target_Target* t, u32 name, u32 options, src_loc_SrcLoc loc)
@@ -18562,6 +18811,7 @@ static void build_target_Target_disableWarnings(build_target_Target* t)
 {
    t->warnings.no_unused = true;
    t->warnings.no_unused_variable = true;
+   t->warnings.no_unused_struct_member = true;
    t->warnings.no_unused_function = true;
    t->warnings.no_unused_parameter = true;
    t->warnings.no_unused_type = true;
@@ -18580,6 +18830,7 @@ static void build_target_Target_enableWarnings(build_target_Target* t)
 {
    t->warnings.no_unused = false;
    t->warnings.no_unused_variable = false;
+   t->warnings.no_unused_struct_member = false;
    t->warnings.no_unused_function = false;
    t->warnings.no_unused_parameter = false;
    t->warnings.no_unused_type = false;
@@ -18774,8 +19025,8 @@ enum diagnostics_Category {
    diagnostics_Category_Error,
 };
 
-static const char* diagnostics_category_names[3] = { "note", "warning", "error" };
-static color_Color diagnostics_category_colors[3] = {
+static const char* const diagnostics_Category__name[3] = { "note", "warning", "error" };
+static const color_Color diagnostics_Category__color[3] = {
    color_Color_Grey, color_Color_Bmagenta, color_Color_Bred
 };
 static diagnostics_Diags* diagnostics_create(source_mgr_SourceMgr* sm, bool use_color, const utils_PathInfo* path_info);
@@ -18918,8 +19169,8 @@ static void diagnostics_Diags_internal(diagnostics_Diags* diags, diagnostics_Cat
       }
       string_buffer_Buf_print(out, "%s:%u:%u: ", loc.filename, loc.line, loc.column);
    }
-   string_buffer_Buf_color(out, diagnostics_category_colors[category]);
-   string_buffer_Buf_add(out, diagnostics_category_names[category]);
+   string_buffer_Buf_color(out, diagnostics_Category__color[category]);
+   string_buffer_Buf_add(out, diagnostics_Category__name[category]);
    string_buffer_Buf_add(out, ": ");
    string_buffer_Buf_color(out, color_Normal);
    string_buffer_Buf_vprintf(out, format, args);
@@ -19380,7 +19631,7 @@ static void keywords_Info_init(keywords_Info* info, string_pool_Pool* pool)
       while (*p == ' ') p++;
    }
    for (token_Kind k = token_Kind_KW_bool; k <= token_Kind_KW_while; k++) {
-      const char* s = token_Kind_str(k);
+      const char* s = token_Kind__name[k];
       idx = string_pool_Pool_add(pool, s, strlen(s), true);
       ;//assert(idx < 660);
       info->indexes[idx] = k;
@@ -19599,6 +19850,11 @@ struct label_vector_Label_ {
    src_loc_SrcLoc loc;
    bool used;
    bool is_label;
+   bool can_break;
+   bool can_continue;
+   bool has_goto;
+   bool has_break;
+   bool has_continue;
    ast_LabelStmt* stmt;
 };
 
@@ -19678,8 +19934,9 @@ struct scope_Level_ {
 };
 
 struct scope_Scope_ {
-   const module_list_List* allmodules;
    diagnostics_Diags* diags;
+   string_pool_Pool* astPool;
+   const module_list_List* allmodules;
    const ast_ImportDeclList* imports;
    const ast_Module* mod;
    const ast_SymbolTable* symbols;
@@ -19705,9 +19962,12 @@ struct scope_Scope_ {
 #define scope_Decl 0x8
 #define scope_Control 0x10
 #define scope_Unreachable 0x80
-static scope_Scope* scope_create(module_list_List* allmodules, diagnostics_Diags* diags, const ast_ImportDeclList* imports, ast_Module* mod, const ast_SymbolTable* symbols, bool warn_on_unused);
+static scope_Scope* scope_create(module_list_List* allmodules, diagnostics_Diags* diags, string_pool_Pool* astPool, const ast_ImportDeclList* imports, ast_Module* mod, const ast_SymbolTable* symbols, bool warn_on_unused);
 static void scope_Scope_free(scope_Scope* s);
 static void scope_Scope_reset(scope_Scope* s);
+static const char* scope_Scope_idx2name(const scope_Scope* s, u32 name_idx);
+static const char* scope_Scope_getName(const scope_Scope* s, const ast_Decl* d);
+static const char* scope_Scope_getFullName(const scope_Scope* s, const ast_Decl* d);
 static void scope_Scope_addImports(scope_Scope* s);
 static void scope_Scope_enter(scope_Scope* s, u32 flags);
 static void scope_Scope_exit(scope_Scope* s, bool has_error);
@@ -19732,11 +19992,12 @@ static ast_Decl* scope_Scope_findGlobalSymbol(scope_Scope* s, u32 name_idx, src_
 static bool scope_Scope_checkAccess(scope_Scope* s, ast_Decl* d, src_loc_SrcLoc loc);
 static u32 scope_Scope_getStackMax(scope_Scope* s);
 
-static scope_Scope* scope_create(module_list_List* allmodules, diagnostics_Diags* diags, const ast_ImportDeclList* imports, ast_Module* mod, const ast_SymbolTable* symbols, bool warn_on_unused)
+static scope_Scope* scope_create(module_list_List* allmodules, diagnostics_Diags* diags, string_pool_Pool* astPool, const ast_ImportDeclList* imports, ast_Module* mod, const ast_SymbolTable* symbols, bool warn_on_unused)
 {
-   scope_Scope* s = calloc(1, 376);
-   s->allmodules = allmodules;
+   scope_Scope* s = calloc(1, 384);
    s->diags = diags;
+   s->astPool = astPool;
+   s->allmodules = allmodules;
    s->imports = imports;
    s->mod = mod;
    s->symbols = symbols;
@@ -19764,6 +20025,21 @@ static void scope_Scope_reset(scope_Scope* s)
    s->stack_max = s->stack_base = s->stack_count = first_index;
 }
 
+static const char* scope_Scope_idx2name(const scope_Scope* s, u32 name_idx)
+{
+   return string_pool_Pool_idx2str(s->astPool, name_idx);
+}
+
+static const char* scope_Scope_getName(const scope_Scope* s, const ast_Decl* d)
+{
+   return string_pool_Pool_idx2str(s->astPool, ast_Decl_getNameIdx(d));
+}
+
+static const char* scope_Scope_getFullName(const scope_Scope* s, const ast_Decl* d)
+{
+   return ast_Decl_getFullName(d);
+}
+
 static void scope_Scope_addImports(scope_Scope* s)
 {
    for (u32 i = 0; i < ast_ImportDeclList_size(s->imports); i++) {
@@ -19772,7 +20048,7 @@ static void scope_Scope_addImports(scope_Scope* s)
       u32 name_idx = ast_ImportDecl_getImportNameIdx(id);
       ast_Decl* decl = scope_Scope_stack_find(s, name_idx);
       if (decl) {
-         diagnostics_Diags_error(s->diags, ast_ImportDecl_getLoc(id), "duplicate import name '%s'", ast_idx2name(name_idx));
+         diagnostics_Diags_error(s->diags, ast_ImportDecl_getLoc(id), "duplicate import name '%s'", scope_Scope_idx2name(s, name_idx));
          ;//assert(ast_Decl_isImport(decl));
          ast_ImportDecl* other = (ast_ImportDecl*)decl;
          diagnostics_Diags_note(s->diags, ast_ImportDecl_getLoc(other), "previous definition is here");
@@ -19780,7 +20056,7 @@ static void scope_Scope_addImports(scope_Scope* s)
       }
       decl = ast_SymbolTable_find(s->symbols, name_idx);
       if (decl) {
-         diagnostics_Diags_error(s->diags, ast_ImportDecl_getLoc(id), "import redefinition of '%s'", ast_idx2name(name_idx));
+         diagnostics_Diags_error(s->diags, ast_ImportDecl_getLoc(id), "import redefinition of '%s'", scope_Scope_idx2name(s, name_idx));
          diagnostics_Diags_note(s->diags, ast_Decl_getLoc(decl), "previous definition is here");
          continue;
       }
@@ -19817,7 +20093,7 @@ static void scope_Scope_exit(scope_Scope* s, bool has_error)
          ast_Decl* d = s->stack_decls[i];
          if (!ast_Decl_isUsed(d)) {
             ast_VarDecl* vd = (ast_VarDecl*)d;
-            if (ast_VarDecl_isLocal(vd)) diagnostics_Diags_warn(s->diags, ast_Decl_getLoc(d), "unused variable '%s'", ast_Decl_getName(d));
+            if (ast_VarDecl_isLocal(vd)) diagnostics_Diags_warn(s->diags, ast_Decl_getLoc(d), "unused variable '%s'", scope_Scope_getName(s, d));
          }
       }
    }
@@ -19921,14 +20197,14 @@ static bool scope_Scope_add(scope_Scope* s, ast_Decl* d, bool set_offset)
    const u32 name_idx = ast_Decl_getNameIdx(d);
    ast_Decl* decl = scope_Scope_stack_find(s, name_idx);
    if (decl) {
-      diagnostics_Diags_error(s->diags, ast_Decl_getLoc(d), "redefinition of '%s'", ast_Decl_getName(decl));
+      diagnostics_Diags_error(s->diags, ast_Decl_getLoc(d), "redefinition of '%s'", scope_Scope_idx2name(s, name_idx));
       diagnostics_Diags_note(s->diags, ast_Decl_getLoc(decl), "previous definition is here");
       return true;
    }
    bool other_error = false;
    decl = scope_Scope_findGlobalSymbol(s, name_idx, ast_Decl_getLoc(d), &other_error, false, false);
    if (decl) {
-      diagnostics_Diags_error(s->diags, ast_Decl_getLoc(d), "redefinition of '%s'", ast_Decl_getName(decl));
+      diagnostics_Diags_error(s->diags, ast_Decl_getLoc(d), "redefinition of '%s'", scope_Scope_idx2name(s, name_idx));
       diagnostics_Diags_note(s->diags, ast_Decl_getLoc(decl), "previous definition is here");
       return true;
    }
@@ -19945,7 +20221,7 @@ static const char* scope_Scope_findBestMatch(const scope_Scope* s, u32 name_idx,
    size_t best_dist = usize_max;
    const char* hint = NULL;
    for (u32 i = 0; i < s->stack_count; i++) {
-      const char* name2 = ast_idx2name(s->stack_symbols[i]);
+      const char* name2 = scope_Scope_idx2name(s, s->stack_symbols[i]);
       size_t len2 = strlen(name2);
       size_t dist = levenshtein_dist(name1, len1, name2, len2);
       if (dist < best_dist) {
@@ -19960,7 +20236,7 @@ static const char* scope_Scope_findBestMatch(const scope_Scope* s, u32 name_idx,
       if (ast_ImportDecl_isLocal(id)) continue;
       const ast_Module* m = ast_ImportDecl_getDest(id);
       ast_Decl* d = ast_Module_findSymbol(m, name_idx);
-      if (d) return ast_Decl_getFullName(d);
+      if (d) return scope_Scope_getFullName(s, d);
    }
    for (u32 i = 0; i < ast_ImportDeclList_size(s->imports); i++) {
       ast_ImportDecl* id = ast_ImportDeclList_get(s->imports, i);
@@ -19969,7 +20245,7 @@ static const char* scope_Scope_findBestMatch(const scope_Scope* s, u32 name_idx,
       const ast_SymbolTable* st = ast_Module_getSymbols(m);
       u32 num_syms = st->num_public + st->num_private;
       for (u32 j = 0; j < num_syms; j++) {
-         const char* name2 = ast_idx2name(st->symbols[j]);
+         const char* name2 = scope_Scope_idx2name(s, st->symbols[j]);
          size_t len2 = strlen(name2);
          size_t dist = levenshtein_dist(name1, len1, name2, len2);
          if (dist < best_dist) {
@@ -19996,17 +20272,23 @@ static ast_Decl* scope_Scope_find(scope_Scope* s, u32 name_idx, src_loc_SrcLoc l
    bool other_error = false;
    decl = scope_Scope_findGlobalSymbol(s, name_idx, loc, &other_error, usedPublic, true);
    if (!decl && !other_error) {
+      const char* name = scope_Scope_idx2name(s, name_idx);
       ast_ImportDecl* id = ast_ImportDeclList_findAny(s->imports, name_idx);
       if (id) {
-         diagnostics_Diags_error(s->diags, loc, "module '%s' is imported with alias '%s'", ast_Decl_getName(ast_ImportDecl_asDecl(id)), ast_ImportDecl_getAliasName(id));
+         const char* alias_name = scope_Scope_idx2name(s, ast_ImportDecl_getAliasNameIdx(id));
+         diagnostics_Diags_error(s->diags, loc, "module '%s' is imported with alias '%s'", name, alias_name);
+         return NULL;
+      }
+      ast_Module* m = module_list_List_find(s->allmodules, name_idx);
+      if (m) {
+         diagnostics_Diags_error(s->diags, loc, "use of unimported module '%s'", name);
+         return NULL;
+      }
+      const char* hint = scope_Scope_findBestMatch(s, name_idx, name, strlen(name));
+      if (hint) {
+         diagnostics_Diags_error(s->diags, loc, "use of undeclared identifier '%s'; did you mean '%s'?", name, hint);
       } else {
-         const char* name = ast_idx2name(name_idx);
-         const char* hint = scope_Scope_findBestMatch(s, name_idx, name, strlen(name));
-         if (hint) {
-            diagnostics_Diags_error(s->diags, loc, "use of undeclared identifier '%s'; did you mean '%s'?", name, hint);
-         } else {
-            diagnostics_Diags_error(s->diags, loc, "use of undeclared identifier '%s'", name);
-         }
+         diagnostics_Diags_error(s->diags, loc, "use of undeclared identifier '%s'", name);
       }
       return NULL;
    }
@@ -20022,6 +20304,8 @@ static bool scope_Scope_checkGlobalSymbol(scope_Scope* s, u32 name_idx, src_loc_
          decl = (ast_Decl*)id;
          break;
       }
+      decl = ast_ImportDecl_findSymbol(id, name_idx);
+      if (decl) break;
       if (ast_ImportDecl_isLocal(id)) {
          ast_Module* dest = ast_ImportDecl_getDest(id);
          decl = ast_Module_findSymbol(dest, name_idx);
@@ -20029,7 +20313,7 @@ static bool scope_Scope_checkGlobalSymbol(scope_Scope* s, u32 name_idx, src_loc_
       }
    }
    if (decl) {
-      diagnostics_Diags_error(s->diags, loc, "redefinition of '%s'", ast_idx2name(name_idx));
+      diagnostics_Diags_error(s->diags, loc, "redefinition of '%s'", scope_Scope_idx2name(s, name_idx));
       diagnostics_Diags_note(s->diags, ast_Decl_getLoc(decl), "previous definition is here");
       return false;
    }
@@ -20046,14 +20330,15 @@ static ast_ImportDecl* scope_Scope_findModule(scope_Scope* s, u32 name_idx, src_
    }
    d = ast_ImportDeclList_findAny(s->imports, name_idx);
    if (d) {
-      diagnostics_Diags_error(s->diags, loc, "module '%s' is imported with alias '%s'", ast_Decl_getName(ast_ImportDecl_asDecl(d)), ast_ImportDecl_getAliasName(d));
+      const char* alias_name = scope_Scope_idx2name(s, ast_ImportDecl_getAliasNameIdx(d));
+      diagnostics_Diags_error(s->diags, loc, "module '%s' is imported with alias '%s'", scope_Scope_idx2name(s, name_idx), alias_name);
       return NULL;
    }
    ast_Module* mod = module_list_List_find(s->allmodules, name_idx);
    if (mod) {
-      diagnostics_Diags_error(s->diags, loc, "module %s not imported", ast_idx2name(name_idx));
+      diagnostics_Diags_error(s->diags, loc, "use of unimported module '%s'", scope_Scope_idx2name(s, name_idx));
    } else {
-      diagnostics_Diags_error(s->diags, loc, "unknown module: '%s'", ast_idx2name(name_idx));
+      diagnostics_Diags_error(s->diags, loc, "unknown module: '%s'", scope_Scope_idx2name(s, name_idx));
    }
    return NULL;
 }
@@ -20063,12 +20348,12 @@ static ast_Decl* scope_Scope_findSymbolInModule(scope_Scope* s, ast_Module* mod,
    ;//assert(s);
    ast_Decl* d = ast_Module_findSymbol(mod, name_idx);
    if (!d) {
-      diagnostics_Diags_error(s->diags, loc, "module '%s' has no symbol '%s'", ast_Module_getName(mod), ast_idx2name(name_idx));
+      diagnostics_Diags_error(s->diags, loc, "module '%s' has no symbol '%s'", ast_Module_getName(mod), scope_Scope_idx2name(s, name_idx));
       return NULL;
    }
    if (mod != s->mod) {
       if (!ast_Decl_isPublic(d)) {
-         diagnostics_Diags_error(s->diags, loc, "symbol '%s' is not public", ast_Decl_getFullName(d));
+         diagnostics_Diags_error(s->diags, loc, "symbol '%s' is not public", scope_Scope_getFullName(s, d));
          diagnostics_Diags_note(s->diags, ast_Decl_getLoc(d), "symbol definition is here");
          return NULL;
       }
@@ -20085,7 +20370,7 @@ static ast_Decl* scope_Scope_findType(scope_Scope* s, u32 name_idx, src_loc_SrcL
    bool other_error = false;
    decl = scope_Scope_findGlobalSymbol(s, name_idx, loc, &other_error, usedPublic, true);
    if (!decl && !other_error) {
-      diagnostics_Diags_error(s->diags, loc, "unknown type '%s'", ast_idx2name(name_idx));
+      diagnostics_Diags_error(s->diags, loc, "unknown type '%s'", scope_Scope_idx2name(s, name_idx));
    }
    return decl;
 }
@@ -20111,25 +20396,27 @@ static ast_Decl* scope_Scope_findGlobalSymbol(scope_Scope* s, u32 name_idx, src_
    bool ambiguous = false;
    for (u32 i = 0; i < ast_ImportDeclList_size(s->imports); i++) {
       ast_ImportDecl* id = ast_ImportDeclList_get(s->imports, i);
-      if (!ast_ImportDecl_isLocal(id)) continue;
-      ast_Module* dest = ast_ImportDecl_getDest(id);
-      ast_Decl* d;
-      if (s->mod == dest) {
-         d = ast_Module_findSymbol(dest, name_idx);
-      } else {
-         d = ast_Module_findPublicSymbol(dest, name_idx);
+      ast_Decl* d = ast_ImportDecl_findSymbol(id, name_idx);
+      if (!d) {
+         if (!ast_ImportDecl_isLocal(id)) continue;
+         ast_Module* dest = ast_ImportDecl_getDest(id);
+         if (s->mod == dest) {
+            d = ast_Module_findSymbol(dest, name_idx);
+         } else {
+            d = ast_Module_findPublicSymbol(dest, name_idx);
+         }
+         if (!d) continue;
       }
-      if (!d) continue;
       if (decl) {
-         const char* name = ast_idx2name(name_idx);
+         const char* name = scope_Scope_idx2name(s, name_idx);
          if (!ambiguous) {
             diagnostics_Diags_error(s->diags, loc, "symbol '%s' is ambiguous", name);
-            diagnostics_Diags_note(s->diags, ast_Decl_getLoc(decl), "did you mean '%s'?", ast_Decl_getFullName(decl));
-            diagnostics_Diags_note(s->diags, ast_Decl_getLoc(d), "did you mean '%s'?", ast_Decl_getFullName(d));
+            diagnostics_Diags_note(s->diags, ast_Decl_getLoc(decl), "did you mean '%s'?", scope_Scope_getFullName(s, decl));
+            diagnostics_Diags_note(s->diags, ast_Decl_getLoc(d), "did you mean '%s'?", scope_Scope_getFullName(s, d));
             ambiguous = true;
             *other_error = true;
          } else {
-            diagnostics_Diags_note(s->diags, ast_Decl_getLoc(d), "did you mean '%s'?", ast_Decl_getFullName(d));
+            diagnostics_Diags_note(s->diags, ast_Decl_getLoc(d), "did you mean '%s'?", scope_Scope_getFullName(s, d));
          }
          continue;
       } else {
@@ -20162,7 +20449,8 @@ static ast_Decl* scope_Scope_findGlobalSymbol(scope_Scope* s, u32 name_idx, src_
             ast_Module* dest = ast_ImportDecl_getDest(id);
             ast_Decl* d = ast_Module_findPrivateSymbol(dest, name_idx);
             if (d) {
-               diagnostics_Diags_error(s->diags, loc, "symbol '%s' is not public", ast_Decl_getFullName(d));
+               diagnostics_Diags_error(s->diags, loc, "symbol '%s' is not public", scope_Scope_getFullName(s, d));
+               diagnostics_Diags_note(s->diags, ast_Decl_getLoc(d), "symbol definition is here");
                *other_error = true;
                return NULL;
             }
@@ -20182,11 +20470,13 @@ static bool scope_Scope_checkAccess(scope_Scope* s, ast_Decl* d, src_loc_SrcLoc 
          if (ast_Decl_isVariable(d)) {
             ast_VarDecl* vd = (ast_VarDecl*)d;
             if (ast_VarDecl_isEnumValue(vd)) {
-               diagnostics_Diags_error(s->diags, loc, "enum-associated value '%s' is not public", ast_Decl_getName(d));
+               diagnostics_Diags_error(s->diags, loc, "enum-associated value '%s' is not public", scope_Scope_getName(s, d));
+               diagnostics_Diags_note(s->diags, ast_Decl_getLoc(d), "symbol definition is here");
                return false;
             }
          }
-         diagnostics_Diags_error(s->diags, loc, "symbol '%s' is not public", ast_Decl_getFullName(d));
+         diagnostics_Diags_error(s->diags, loc, "symbol '%s' is not public", scope_Scope_getFullName(s, d));
+         diagnostics_Diags_note(s->diags, ast_Decl_getLoc(d), "symbol definition is here");
          return false;
       }
    }
@@ -20319,20 +20609,20 @@ static size_analyser_TypeSize size_analyser_sizeOfType(ast_QualType qt)
 {
    size_analyser_TypeSize result = { 0, 1, 0 };
    if (ast_QualType_isInvalid(qt)) return result;
-   u32 pointerSize = ast_getWordSize();
    qt = ast_QualType_getCanonicalType(qt);
    ast_Type* t = ast_QualType_getType(qt);
    switch (ast_Type_getKind(t)) {
    case ast_TypeKind_Builtin: {
       const ast_BuiltinType* bi = (ast_BuiltinType*)t;
-      result.size = ast_BuiltinType_getAlignment(bi);
-      result.align = result.size;
+      result.align = ast_BuiltinType_getAlignment(bi);
+      result.size = result.align;
       result.is_signed = ast_BuiltinType_isSigned(bi);
       break;
    }
    case ast_TypeKind_Pointer:
-      result.size = pointerSize;
-      result.align = result.size;
+   case ast_TypeKind_Function:
+      result.align = ast_Type_getAlignment(t);
+      result.size = result.align;
       break;
    case ast_TypeKind_Array: {
       ast_ArrayType* arrayType = (ast_ArrayType*)t;
@@ -20353,10 +20643,6 @@ static size_analyser_TypeSize size_analyser_sizeOfType(ast_QualType qt)
       ast_EnumTypeDecl* etd = ast_EnumType_getDecl(et);
       return size_analyser_sizeOfType(ast_EnumTypeDecl_getImplType(etd));
    }
-   case ast_TypeKind_Function:
-      result.size = pointerSize;
-      result.align = pointerSize;
-      break;
    case ast_TypeKind_Void:
       result.size = 0;
       result.align = 0;
@@ -20451,34 +20737,56 @@ typedef struct unused_checker_Checker_ unused_checker_Checker;
 
 struct unused_checker_Checker_ {
    diagnostics_Diags* diags;
+   string_pool_Pool* astPool;
    const warning_flags_Flags* warnings;
 };
 
-static void unused_checker_check(diagnostics_Diags* diags, const warning_flags_Flags* warnings, ast_Module* mod);
+static void unused_checker_check(diagnostics_Diags* diags, string_pool_Pool* astPool, const warning_flags_Flags* warnings, ast_Module* mod);
+static const char* unused_checker_Checker_idx2name(const unused_checker_Checker* c, u32 name_idx);
+static const char* unused_checker_Checker_getName(const unused_checker_Checker* c, const ast_Decl* d);
+static const char* unused_checker_Checker_getFullName(const unused_checker_Checker* c, const ast_Decl* d);
 static void unused_checker_Checker_unused_module(void* arg, ast_AST* a);
 static void unused_checker_Checker_check(void* arg, ast_Decl* d);
+static void unused_checker_Checker_checkImportList(void* arg, ast_ImportDecl* id);
 static void unused_checker_Checker_checkEnumConstants(unused_checker_Checker* c, ast_EnumTypeDecl* d);
 static void unused_checker_Checker_checkEnumAssocValues(unused_checker_Checker* c, ast_EnumTypeDecl* etd);
 static void unused_checker_Checker_checkStructMembers(unused_checker_Checker* c, ast_Decl* d);
 
-static void unused_checker_check(diagnostics_Diags* diags, const warning_flags_Flags* warnings, ast_Module* mod)
+static void unused_checker_check(diagnostics_Diags* diags, string_pool_Pool* astPool, const warning_flags_Flags* warnings, ast_Module* mod)
 {
    unused_checker_Checker c = {
       .diags = diags,
+      .astPool = astPool,
       .warnings = warnings
    };
    if (ast_Module_isUsed(mod)) {
       ast_Module_visitDecls(mod, unused_checker_Checker_check, &c);
+      ast_Module_visitImports(mod, unused_checker_Checker_checkImportList, &c);
    } else {
       ast_Module_visitASTs(mod, unused_checker_Checker_unused_module, &c);
    }
+}
+
+static const char* unused_checker_Checker_idx2name(const unused_checker_Checker* c, u32 name_idx)
+{
+   return string_pool_Pool_idx2str(c->astPool, name_idx);
+}
+
+static const char* unused_checker_Checker_getName(const unused_checker_Checker* c, const ast_Decl* d)
+{
+   return string_pool_Pool_idx2str(c->astPool, ast_Decl_getNameIdx(d));
+}
+
+static const char* unused_checker_Checker_getFullName(const unused_checker_Checker* c, const ast_Decl* d)
+{
+   return ast_Decl_getFullName(d);
 }
 
 static void unused_checker_Checker_unused_module(void* arg, ast_AST* a)
 {
    unused_checker_Checker* c = arg;
    if (!c->warnings->no_unused_module) {
-      diagnostics_Diags_warn(c->diags, ast_AST_getLoc(a), "unused module '%s'", ast_AST_getName(a));
+      diagnostics_Diags_warn(c->diags, ast_AST_getLoc(a), "unused module '%s'", unused_checker_Checker_idx2name(c, ast_AST_getNameIdx(a)));
    }
 }
 
@@ -20487,7 +20795,7 @@ static void unused_checker_Checker_check(void* arg, ast_Decl* d)
    unused_checker_Checker* c = arg;
    bool used = ast_Decl_isUsed(d);
    if (used && ast_Decl_isPublic(d) && !ast_Decl_isUsedPublic(d) && !c->warnings->no_unused_public && !ast_Decl_hasAttrUnused(d)) {
-      diagnostics_Diags_warn(c->diags, ast_Decl_getLoc(d), "%s '%s' is not used public", ast_Decl_getKindName(d), ast_Decl_getFullName(d));
+      diagnostics_Diags_warn(c->diags, ast_Decl_getLoc(d), "%s '%s' is not used public", ast_Decl_getKindName(d), unused_checker_Checker_getFullName(c, d));
    }
    switch (ast_Decl_getKind(d)) {
    case ast_DeclKind_Function:
@@ -20528,8 +20836,23 @@ static void unused_checker_Checker_check(void* arg, ast_Decl* d)
       break;
    }
    if (!used && !ast_Decl_hasAttrUnused(d) && !ast_Decl_isExported(d)) {
-      diagnostics_Diags_warn(c->diags, ast_Decl_getLoc(d), "unused %s '%s'", ast_Decl_getKindName(d), ast_Decl_getFullName(d));
+      diagnostics_Diags_warn(c->diags, ast_Decl_getLoc(d), "unused %s '%s'", ast_Decl_getKindName(d), unused_checker_Checker_getFullName(c, d));
       return;
+   }
+}
+
+static void unused_checker_Checker_checkImportList(void* arg, ast_ImportDecl* id)
+{
+   unused_checker_Checker* c = arg;
+   u32 symlist_count = ast_ImportDecl_getSymlistSize(id);
+   ast_Symbol* symlist = ast_ImportDecl_getSymlistData(id);
+   for (u32 i = 0; i < symlist_count; i++) {
+      ast_Decl* d = symlist[i].decl;
+      if (!symlist[i].used) {
+         if (!c->warnings->no_unused_import) {
+            diagnostics_Diags_warn(c->diags, symlist[i].loc, "unused import '%s'", unused_checker_Checker_getFullName(c, d));
+         }
+      }
    }
 }
 
@@ -20541,7 +20864,7 @@ static void unused_checker_Checker_checkEnumConstants(unused_checker_Checker* c,
       ast_EnumConstantDecl* ecd = constants[i];
       ast_Decl* dd = (ast_Decl*)ecd;
       if (!ast_Decl_isUsed(dd)) {
-         diagnostics_Diags_warn(c->diags, ast_Decl_getLoc(dd), "unused %s '%s'", ast_Decl_getKindName(dd), ast_Decl_getName(dd));
+         diagnostics_Diags_warn(c->diags, ast_Decl_getLoc(dd), "unused %s '%s'", ast_Decl_getKindName(dd), unused_checker_Checker_getName(c, dd));
       }
    }
 }
@@ -20557,14 +20880,12 @@ static void unused_checker_Checker_checkEnumAssocValues(unused_checker_Checker* 
       if (used) {
          if (ast_Decl_isPublic(d) && !ast_Decl_isUsedPublic(d) && !c->warnings->no_unused_public && !ast_Decl_hasAttrUnused(d)) {
             ast_Decl* ed = (ast_Decl*)etd;
-            const char* enum_name = ast_Decl_getFullName(ed);
-            diagnostics_Diags_warn(c->diags, ast_Decl_getLoc(d), "enum-associated value '%s' is not used public", ast_VarDecl_getEnumAssocValueName(vd, enum_name));
+            diagnostics_Diags_warn(c->diags, ast_Decl_getLoc(d), "enum-associated value '%s.%s' is not used public", unused_checker_Checker_getFullName(c, ed), unused_checker_Checker_getName(c, d));
          }
       } else {
          if (!ast_Decl_hasAttrUnused(d)) {
             ast_Decl* ed = (ast_Decl*)etd;
-            const char* enum_name = ast_Decl_getFullName(ed);
-            diagnostics_Diags_warn(c->diags, ast_Decl_getLoc(d), "unused enum-associated value '%s'", ast_VarDecl_getEnumAssocValueName(vd, enum_name));
+            diagnostics_Diags_warn(c->diags, ast_Decl_getLoc(d), "unused enum-associated value '%s.%s'", unused_checker_Checker_getFullName(c, ed), unused_checker_Checker_getName(c, d));
          }
       }
    }
@@ -20580,8 +20901,8 @@ static void unused_checker_Checker_checkStructMembers(unused_checker_Checker* c,
       if (ast_Decl_isStructType(member)) {
          unused_checker_Checker_checkStructMembers(c, member);
       } else {
-         if (!ast_Decl_isUsed(member) && !c->warnings->no_unused_variable) {
-            diagnostics_Diags_warn(c->diags, ast_Decl_getLoc(member), "unused %s member '%s'", ast_StructTypeDecl_isStruct(std) ? "struct" : "union", ast_Decl_getName(member));
+         if (!ast_Decl_isUsed(member) && !ast_Decl_hasAttrUnused(member) && !c->warnings->no_unused_struct_member) {
+            diagnostics_Diags_warn(c->diags, ast_Decl_getLoc(member), "unused %s member '%s'", ast_StructTypeDecl_isStruct(std) ? "struct" : "union", unused_checker_Checker_getName(c, member));
          }
       }
    }
@@ -20725,6 +21046,10 @@ static void c2recipe_Recipe_addPlugin(c2recipe_Recipe* r, u32 name, u32 options,
 
 static build_target_Target* c2recipe_Recipe_addTarget(c2recipe_Recipe* r, u32 name, src_loc_SrcLoc loc, build_target_Kind kind)
 {
+   for (u32 i = 0; i < r->num_targets; i++) {
+      build_target_Target* t = r->targets[i];
+      if (build_target_Target_getNameIdx(t) == name) return NULL;
+   }
    if (r->num_targets == r->max_targets) {
       r->max_targets *= 2;
       build_target_Target** targets2 = malloc(r->max_targets * 8);
@@ -21088,8 +21413,8 @@ static void c2recipe_Parser_parseTop(c2recipe_Parser* p)
          c2recipe_Parser_parsePlugin(p, true);
          break;
       case c2recipe_Kind_PluginOptions:
-         break;
       case c2recipe_Kind_Text:
+         c2recipe_Parser_error(p, "expected target or set");
          break;
       case c2recipe_Kind_Executable:
          c2recipe_Parser_parseExecutable(p);
@@ -21104,6 +21429,7 @@ static void c2recipe_Parser_parseTop(c2recipe_Parser* p)
          c2recipe_Parser_error(p, "syntax error");
          break;
       case c2recipe_Kind_End:
+         c2recipe_Parser_error(p, "expected target or set");
          break;
       case c2recipe_Kind_Warnings:
       case c2recipe_Kind_Backend:
@@ -21169,11 +21495,12 @@ static void c2recipe_Parser_parseWarnings(c2recipe_Parser* p)
          disable = true;
          option += 3;
       }
-      switch (c2_strswitch(option, "\006unused\017unused-variable\017unused-function\020unused-parameter\vunused-type\runused-module\runused-import\runused-public\funused-label\024unused-enum-constant\027unused-enum-assoc-value\020unreachable-code\021unknown-attribute\n"
+      switch (c2_strswitch(option, "\006unused\017unused-variable\024unused-struct-member\017unused-function\020unused-parameter\vunused-type\runused-module\runused-import\runused-public\funused-label\024unused-enum-constant\027unused-enum-assoc-value\020unreachable-code\021unknown-attribute\n"
                                    "deprecated\020promote-to-error")) {
       case 2: // "unused"
          warnings->no_unused = disable;
          warnings->no_unused_variable = disable;
+         warnings->no_unused_struct_member = disable;
          warnings->no_unused_function = disable;
          warnings->no_unused_parameter = disable;
          warnings->no_unused_type = disable;
@@ -21186,44 +21513,48 @@ static void c2recipe_Parser_parseWarnings(c2recipe_Parser* p)
          break;
       case 3: // "unused-variable"
          warnings->no_unused_variable = disable;
+         warnings->no_unused_struct_member = disable;
          break;
-      case 4: // "unused-function"
+      case 4: // "unused-struct-member"
+         warnings->no_unused_struct_member = disable;
+         break;
+      case 5: // "unused-function"
          warnings->no_unused_function = disable;
          break;
-      case 5: // "unused-parameter"
+      case 6: // "unused-parameter"
          warnings->no_unused_parameter = disable;
          break;
-      case 6: // "unused-type"
+      case 7: // "unused-type"
          warnings->no_unused_type = disable;
          break;
-      case 7: // "unused-module"
+      case 8: // "unused-module"
          warnings->no_unused_module = disable;
          break;
-      case 8: // "unused-import"
+      case 9: // "unused-import"
          warnings->no_unused_import = disable;
          break;
-      case 9: // "unused-public"
+      case 10: // "unused-public"
          warnings->no_unused_public = disable;
          break;
-      case 10: // "unused-label"
+      case 11: // "unused-label"
          warnings->no_unused_label = disable;
          break;
-      case 11: // "unused-enum-constant"
+      case 12: // "unused-enum-constant"
          warnings->no_unused_enum_constant = disable;
          break;
-      case 12: // "unused-enum-assoc-value"
+      case 13: // "unused-enum-assoc-value"
          warnings->no_unused_enum_assoc_value = disable;
          break;
-      case 13: // "unreachable-code"
+      case 14: // "unreachable-code"
          warnings->no_unreachable_code = disable;
          break;
-      case 14: // "unknown-attribute"
+      case 15: // "unknown-attribute"
          warnings->no_unknown_attribute = disable;
          break;
-      case 15: // "deprecated"
+      case 16: // "deprecated"
          warnings->no_deprecated = disable;
          break;
-      case 16: // "promote-to-error"
+      case 17: // "promote-to-error"
          warnings->are_errors = !disable;
          break;
       default:
@@ -21239,6 +21570,7 @@ static void c2recipe_Parser_parseExecutable(c2recipe_Parser* p)
    c2recipe_Parser_consumeToken(p);
    c2recipe_Parser_expect(p, c2recipe_Kind_Text, "expect target name");
    p->target = c2recipe_Recipe_addTarget(p->recipe, p->token.value, p->token.loc, build_target_Kind_Executable);
+   if (!p->target) c2recipe_Parser_error(p, "duplicate target '%s", string_pool_Pool_idx2str(p->pool, p->token.value));
    c2recipe_Parser_consumeToken(p);
    c2recipe_Parser_parseTarget(p);
 }
@@ -21544,8 +21876,23 @@ static void ast_visitor_Visitor_handle(ast_visitor_Visitor* v, ast_Decl* d)
    case ast_DeclKind_Function:
       ast_visitor_Visitor_handleFunction(v, (ast_FunctionDecl*)d);
       break;
-   case ast_DeclKind_Import:
+   case ast_DeclKind_Import: {
+      ast_ImportDecl* id = (ast_ImportDecl*)d;
+      u32 size = ast_ImportDecl_getSymlistSize(id);
+      if (size) {
+         const ast_Symbol* symbols = ast_ImportDecl_getSymlistData(id);
+         for (u32 i = 0; i < size; i++) {
+            const ast_Symbol* s = &symbols[i];
+            ast_Ref ref = {
+               .name_idx = s->name_idx,
+               .loc = s->loc,
+               .decl = s->decl
+            };
+            v->on_ref(v->arg, &ref);
+         }
+      }
       break;
+   }
    case ast_DeclKind_StructType: {
       ast_StructTypeDecl* s = (ast_StructTypeDecl*)d;
       u32 num_members = ast_StructTypeDecl_getNumMembers(s);
@@ -21635,10 +21982,10 @@ static void ast_visitor_Visitor_handleStmt(ast_visitor_Visitor* v, ast_Stmt* s)
       break;
    case ast_StmtKind_If: {
       ast_IfStmt* i = (ast_IfStmt*)s;
-      ast_visitor_Visitor_handleStmt(v, ast_IfStmt_getCond(i));
+      if (ast_IfStmt_hasDecl(i)) ast_visitor_Visitor_handleStmt(v, ast_IfStmt_getDecl(i));
+      if (ast_IfStmt_getCond(i)) ast_visitor_Visitor_handleExpr(v, ast_IfStmt_getCond(i));
       ast_visitor_Visitor_handleStmt(v, ast_IfStmt_getThen(i));
-      ast_Stmt* e = ast_IfStmt_getElse(i);
-      if (e) ast_visitor_Visitor_handleStmt(v, e);
+      if (ast_IfStmt_hasElse(i)) ast_visitor_Visitor_handleStmt(v, ast_IfStmt_getElse(i));
       break;
    }
    case ast_StmtKind_While: {
@@ -21878,12 +22225,7 @@ static void ast_visitor_Visitor_handleBuiltinExpr(ast_visitor_Visitor* v, ast_Bu
    ast_visitor_Visitor_handleExpr(v, ast_BuiltinExpr_getInner(b));
    switch (ast_BuiltinExpr_getKind(b)) {
    case ast_BuiltinExprKind_Sizeof:
-      break;
    case ast_BuiltinExprKind_Elemsof:
-      break;
-   case ast_BuiltinExprKind_EnumMin:
-      break;
-   case ast_BuiltinExprKind_EnumMax:
       break;
    case ast_BuiltinExprKind_OffsetOf:
       ast_visitor_Visitor_handleExpr(v, ast_BuiltinExpr_getOffsetOfMember(b));
@@ -21910,11 +22252,11 @@ struct dep_finder_Finder_ {
 
 static void dep_finder_Finder_init(dep_finder_Finder* f, ast_Module* mod, void* arg, dep_finder_OnDecl on_decl);
 static void dep_finder_Finder_check(dep_finder_Finder* s, ast_Decl* d);
-static void dep_finder_Finder_handleFunction(dep_finder_Finder* s, ast_FunctionDecl* d);
+static void dep_finder_Finder_handleFunction(dep_finder_Finder* s, ast_FunctionDecl* d, bool full);
 static void dep_finder_Finder_handleStruct(dep_finder_Finder* s, ast_StructTypeDecl* d);
 static void dep_finder_Finder_handleEnumType(dep_finder_Finder* s, ast_EnumTypeDecl* etd);
-static void dep_finder_Finder_handleTypeRef(dep_finder_Finder* f, ast_TypeRef* r);
-static void dep_finder_Finder_handleVarDecl(dep_finder_Finder* s, ast_VarDecl* d);
+static void dep_finder_Finder_handleTypeRef(dep_finder_Finder* f, ast_TypeRef* r, bool full);
+static void dep_finder_Finder_handleVarDecl(dep_finder_Finder* s, ast_VarDecl* d, bool full);
 static void dep_finder_Finder_handleExpr(dep_finder_Finder* s, ast_Expr* e);
 static void dep_finder_Finder_handleInitList(dep_finder_Finder* s, ast_InitListExpr* ile);
 static void dep_finder_Finder_handleMemberExpr(dep_finder_Finder* s, ast_MemberExpr* m);
@@ -21933,7 +22275,7 @@ static void dep_finder_Finder_check(dep_finder_Finder* s, ast_Decl* d)
    s->current = d;
    switch (ast_Decl_getKind(d)) {
    case ast_DeclKind_Function:
-      dep_finder_Finder_handleFunction(s, (ast_FunctionDecl*)d);
+      dep_finder_Finder_handleFunction(s, (ast_FunctionDecl*)d, true);
       break;
    case ast_DeclKind_Import:
       break;
@@ -21943,32 +22285,36 @@ static void dep_finder_Finder_check(dep_finder_Finder* s, ast_Decl* d)
    case ast_DeclKind_EnumType:
       dep_finder_Finder_handleEnumType(s, (ast_EnumTypeDecl*)d);
       break;
-   case ast_DeclKind_EnumConstant:
-      ast_Decl_dump(d);
+   case ast_DeclKind_EnumConstant: {
+      ast_QualType qt = ast_Decl_getType(d);
+      ast_EnumType* et = ast_QualType_getEnumTypeOrNil(qt);
+      ast_EnumTypeDecl* etd = ast_EnumType_getDecl(et);
+      dep_finder_Finder_handleEnumType(s, etd);
       break;
+   }
    case ast_DeclKind_FunctionType: {
       ast_FunctionTypeDecl* ftd = (ast_FunctionTypeDecl*)d;
-      dep_finder_Finder_handleFunction(s, ast_FunctionTypeDecl_getDecl(ftd));
+      dep_finder_Finder_handleFunction(s, ast_FunctionTypeDecl_getDecl(ftd), false);
       break;
    }
    case ast_DeclKind_AliasType: {
       ast_AliasTypeDecl* at = (ast_AliasTypeDecl*)d;
-      dep_finder_Finder_handleTypeRef(s, ast_AliasTypeDecl_getTypeRef(at));
+      dep_finder_Finder_handleTypeRef(s, ast_AliasTypeDecl_getTypeRef(at), false);
       break;
    }
    case ast_DeclKind_Variable:
-      dep_finder_Finder_handleVarDecl(s, (ast_VarDecl*)d);
+      dep_finder_Finder_handleVarDecl(s, (ast_VarDecl*)d, true);
       break;
    }
 }
 
-static void dep_finder_Finder_handleFunction(dep_finder_Finder* s, ast_FunctionDecl* d)
+static void dep_finder_Finder_handleFunction(dep_finder_Finder* s, ast_FunctionDecl* d, bool full)
 {
    if (ast_FunctionDecl_isTemplate(d)) return;
-   dep_finder_Finder_handleTypeRef(s, ast_FunctionDecl_getReturnTypeRef(d));
+   dep_finder_Finder_handleTypeRef(s, ast_FunctionDecl_getReturnTypeRef(d), full);
    u32 num_params = ast_FunctionDecl_getNumParams(d);
    ast_VarDecl** args = ast_FunctionDecl_getParams(d);
-   for (u32 i = 0; i < num_params; i++) dep_finder_Finder_handleVarDecl(s, args[i]);
+   for (u32 i = 0; i < num_params; i++) dep_finder_Finder_handleVarDecl(s, args[i], full);
 }
 
 static void dep_finder_Finder_handleStruct(dep_finder_Finder* s, ast_StructTypeDecl* d)
@@ -21981,7 +22327,7 @@ static void dep_finder_Finder_handleStruct(dep_finder_Finder* s, ast_StructTypeD
          dep_finder_Finder_handleStruct(s, (ast_StructTypeDecl*)m);
       } else {
          ;//assert(ast_Decl_isVariable(m));
-         dep_finder_Finder_handleVarDecl(s, (ast_VarDecl*)m);
+         dep_finder_Finder_handleVarDecl(s, (ast_VarDecl*)m, true);
       }
    }
 }
@@ -21998,11 +22344,11 @@ static void dep_finder_Finder_handleEnumType(dep_finder_Finder* s, ast_EnumTypeD
    }
 }
 
-static void dep_finder_Finder_handleTypeRef(dep_finder_Finder* f, ast_TypeRef* r)
+static void dep_finder_Finder_handleTypeRef(dep_finder_Finder* f, ast_TypeRef* r, bool full)
 {
    const ast_Decl* refDecl = ast_TypeRef_getUserDecl(r);
    if (refDecl) {
-      if (ast_TypeRef_isPointer(r) && ast_Decl_isStructType(refDecl)) {
+      if ((ast_TypeRef_isPointer(r) || !full) && ast_Decl_isStructType(refDecl)) {
       } else {
          dep_finder_Finder_onDep(f, refDecl, !ast_TypeRef_isPointer(r));
       }
@@ -22014,9 +22360,9 @@ static void dep_finder_Finder_handleTypeRef(dep_finder_Finder* f, ast_TypeRef* r
    }
 }
 
-static void dep_finder_Finder_handleVarDecl(dep_finder_Finder* s, ast_VarDecl* d)
+static void dep_finder_Finder_handleVarDecl(dep_finder_Finder* s, ast_VarDecl* d, bool full)
 {
-   dep_finder_Finder_handleTypeRef(s, ast_VarDecl_getTypeRef(d));
+   dep_finder_Finder_handleTypeRef(s, ast_VarDecl_getTypeRef(d), full);
    ast_Expr* init_expr = ast_VarDecl_getInit(d);
    if (init_expr) dep_finder_Finder_handleExpr(s, init_expr);
 }
@@ -22039,7 +22385,7 @@ static void dep_finder_Finder_handleExpr(dep_finder_Finder* s, ast_Expr* e)
    }
    case ast_ExprKind_Type: {
       ast_TypeExpr* t = (ast_TypeExpr*)e;
-      dep_finder_Finder_handleTypeRef(s, ast_TypeExpr_getTypeRef(t));
+      dep_finder_Finder_handleTypeRef(s, ast_TypeExpr_getTypeRef(t), true);
       break;
    }
    case ast_ExprKind_Call:
@@ -22101,7 +22447,7 @@ static void dep_finder_Finder_handleExpr(dep_finder_Finder* s, ast_Expr* e)
    case ast_ExprKind_ExplicitCast: {
       ast_ExplicitCastExpr* c = (ast_ExplicitCastExpr*)e;
       dep_finder_Finder_handleExpr(s, ast_ExplicitCastExpr_getInner(c));
-      dep_finder_Finder_handleTypeRef(s, ast_ExplicitCastExpr_getTypeRef(c));
+      dep_finder_Finder_handleTypeRef(s, ast_ExplicitCastExpr_getTypeRef(c), true);
       break;
    }
    case ast_ExprKind_ImplicitCast: {
@@ -22164,6 +22510,10 @@ static void dep_finder_Finder_onDep(dep_finder_Finder* s, const ast_Decl* d, boo
 
 
 
+// --- module label_map ---
+
+
+
 // --- module ref_list ---
 
 
@@ -22184,21 +22534,23 @@ struct attr_handler_Entry_ {
 
 struct attr_handler_Handler_ {
    diagnostics_Diags* diags;
+   string_pool_Pool* astPool;
    const warning_flags_Flags* warnings;
    attr_handler_Entry* entries;
    u32 count;
    u32 capacity;
 };
 
-static attr_handler_Handler* attr_handler_create(diagnostics_Diags* diags, const warning_flags_Flags* warnings);
+static attr_handler_Handler* attr_handler_create(diagnostics_Diags* diags, string_pool_Pool* astPool, const warning_flags_Flags* warnings);
 static void attr_handler_Handler_free(attr_handler_Handler* h);
 static bool attr_handler_Handler_register(attr_handler_Handler* h, u32 name, ast_AttrHandlerFn func, void* arg);
 static bool attr_handler_Handler_handle(attr_handler_Handler* h, ast_Decl* d, const attr_Attr* a);
 
-static attr_handler_Handler* attr_handler_create(diagnostics_Diags* diags, const warning_flags_Flags* warnings)
+static attr_handler_Handler* attr_handler_create(diagnostics_Diags* diags, string_pool_Pool* astPool, const warning_flags_Flags* warnings)
 {
-   attr_handler_Handler* h = calloc(1, 32);
+   attr_handler_Handler* h = calloc(1, 40);
    h->diags = diags;
+   h->astPool = astPool;
    h->warnings = warnings;
    return h;
 }
@@ -22235,7 +22587,7 @@ static bool attr_handler_Handler_handle(attr_handler_Handler* h, ast_Decl* d, co
       if (e->name == a->name) return e->func(e->arg, d, a);
    }
    if (!h->warnings->no_unknown_attribute) {
-      diagnostics_Diags_warn(h->diags, a->loc, "unknown attribute '%s'", ast_idx2name(a->name));
+      diagnostics_Diags_warn(h->diags, a->loc, "unknown attribute '%s'", string_pool_Pool_idx2str(h->astPool, a->name));
    }
    return false;
 }
@@ -22261,6 +22613,7 @@ enum component_Kind {
 struct component_Component_ {
    u32 name_idx;
    u32 dirname_idx;
+   u32 bindir_idx;
    u32 linkname;
    component_Kind kind;
    bool is_foreign;
@@ -22282,7 +22635,7 @@ struct component_List_ {
    u32 capacity;
 };
 
-static const char* component_kind_names[9] = {
+static const char* const component_Kind__name[9] = {
    "internal",                 "image",
    "executable",               "static library",
    "dynamic library",          "source library",
@@ -22295,6 +22648,9 @@ static const char* component_Component_getName(const component_Component* c);
 static u32 component_Component_getNameIdx(const component_Component* c);
 static void component_Component_setPath(component_Component* c, u32 dirname);
 static const char* component_Component_getPath(const component_Component* c);
+static u32 component_Component_getPathIdx(const component_Component* c);
+static void component_Component_setBinPath(component_Component* c, u32 path);
+static const char* component_Component_getBinPath(const component_Component* c);
 static void component_Component_setForeign(component_Component* c, bool is_foreign);
 static bool component_Component_isForeign(const component_Component* c);
 static void component_Component_setLinkName(component_Component* c, const char* name);
@@ -22371,6 +22727,21 @@ static void component_Component_setPath(component_Component* c, u32 dirname)
 static const char* component_Component_getPath(const component_Component* c)
 {
    return string_pool_Pool_idx2str(c->auxPool, c->dirname_idx);
+}
+
+static u32 component_Component_getPathIdx(const component_Component* c)
+{
+   return c->dirname_idx;
+}
+
+static void component_Component_setBinPath(component_Component* c, u32 path)
+{
+   c->bindir_idx = path;
+}
+
+static const char* component_Component_getBinPath(const component_Component* c)
+{
+   return string_pool_Pool_idx2str(c->auxPool, c->bindir_idx);
 }
 
 static void component_Component_setForeign(component_Component* c, bool is_foreign)
@@ -22491,7 +22862,7 @@ static void component_Component_print(const component_Component* c, bool show_fu
 static void component_Component_printModules(const component_Component* c)
 {
    string_buffer_Buf* out = string_buffer_create(4096, color_useColor(), 1);
-   string_buffer_Buf_print(out, "--- %s [%s]", component_Component_getName(c), component_kind_names[c->kind]);
+   string_buffer_Buf_print(out, "--- %s [%s]", component_Component_getName(c), component_Kind__name[c->kind]);
    string_buffer_Buf_add(out, " ---\n");
    const ast_Module** mods = module_list_List_getConst(&c->mods);
    for (u32 i = 0; i < module_list_List_length(&c->mods); i++) {
@@ -22510,7 +22881,7 @@ static void component_Component_printSymbols(const component_Component* c, bool 
 {
    if (component_Component_isExternal(c) != print_external) return;
    string_buffer_Buf* out = string_buffer_create(4096, color_useColor(), 1);
-   string_buffer_Buf_print(out, "--- %s [%s] ---\n", component_Component_getName(c), component_kind_names[c->kind]);
+   string_buffer_Buf_print(out, "--- %s [%s] ---\n", component_Component_getName(c), component_Kind__name[c->kind]);
    const ast_Module** mods = module_list_List_getConst(&c->mods);
    for (u32 i = 0; i < module_list_List_length(&c->mods); i++) {
       string_buffer_Buf_color(out, color_Cyan);
@@ -22632,6 +23003,7 @@ struct ast_builder_Builder_ {
    u32 main_name;
    bool is_interface;
    bool is_private;
+   ast_BuiltinKind native_kind;
    attr_Attr attrs[8];
    u32 num_attrs;
    attr_handler_Handler* attr_handler;
@@ -22639,11 +23011,13 @@ struct ast_builder_Builder_ {
 
 static ast_builder_Builder* ast_builder_create(ast_context_Context* context, diagnostics_Diags* diags, string_pool_Pool* astPool, string_pool_Pool* auxPool, u32 c2_name, u32 main_name, attr_handler_Handler* attr_handler_);
 static void ast_builder_Builder_free(ast_builder_Builder* b);
+static const char* ast_builder_Builder_idx2name(const ast_builder_Builder* b, u32 name_idx);
 static void ast_builder_Builder_setComponent(ast_builder_Builder* b, component_Component* comp);
 static void ast_builder_Builder_setModule(ast_builder_Builder* b, ast_Module* mod);
 static bool ast_builder_Builder_setExternal(ast_builder_Builder* b, bool is_interface);
+static ast_BuiltinKind ast_builder_Builder_getNativeKind(ast_builder_Builder* b);
 static void ast_builder_Builder_actOnModule(ast_builder_Builder* b, u32 mod_name, src_loc_SrcLoc mod_loc, u32 filename, bool is_interface, bool is_generated);
-static ast_Decl* ast_builder_Builder_actOnImport(ast_builder_Builder* b, u32 mod_name, src_loc_SrcLoc mod_loc, u32 alias_name, src_loc_SrcLoc alias_loc, bool islocal);
+static ast_Decl* ast_builder_Builder_actOnImport(ast_builder_Builder* b, u32 mod_name, src_loc_SrcLoc mod_loc, u32 alias_name, src_loc_SrcLoc alias_loc, bool islocal, ast_Symbol* symlist, u32 symlist_count);
 static ast_Decl* ast_builder_Builder_actOnAliasType(ast_builder_Builder* b, u32 name, src_loc_SrcLoc loc, bool is_public, const ast_TypeRefHolder* ref);
 static ast_Decl* ast_builder_Builder_actOnFunctionTypeDecl(ast_builder_Builder* b, u32 name, src_loc_SrcLoc loc, bool is_public, const ast_TypeRefHolder* rtype, ast_VarDecl** params, u32 num_params, bool is_variadic);
 static ast_Decl* ast_builder_Builder_actOnFunctionType(ast_builder_Builder* b, const ast_TypeRefHolder* rtype, ast_VarDecl** params, u32 num_params, bool is_variadic, ast_DefKind def_kind);
@@ -22684,14 +23058,14 @@ static ast_EnumTypeDecl* ast_builder_Builder_actOnEnumType(ast_builder_Builder* 
 static ast_Stmt* ast_builder_Builder_actOnAsmStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, bool is_basic, bool is_volatile, u32 num_outputs, u32 num_inputs, const u32* names, ast_ExprList* constraints, ast_ExprList* exprs, ast_ExprList* clobbers, ast_Expr* asm_string);
 static ast_CompoundStmt* ast_builder_Builder_actOnCompoundStmt(ast_builder_Builder* b, src_loc_SrcLoc endLoc, ast_Stmt** stmts, u32 count);
 static ast_Stmt* ast_builder_Builder_actOnReturnStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* ret);
-static ast_Stmt* ast_builder_Builder_actOnIfStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt* cond, ast_Stmt* then, ast_Stmt* else_stmt);
+static ast_Stmt* ast_builder_Builder_actOnIfStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt* decl, ast_Expr* cond, ast_Stmt* then, ast_Stmt* else_stmt);
 static ast_Stmt* ast_builder_Builder_actOnWhileStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt* cond, ast_Stmt* then);
 static ast_Stmt* ast_builder_Builder_actOnForStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt* init, ast_Expr* cond, ast_Expr* incr, ast_Stmt* body);
 static ast_Stmt* ast_builder_Builder_actOnSwitchStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt* decl, ast_Expr* cond, ast_SwitchCase** cases, u32 num_cases, bool has_default);
 static ast_SwitchCase* ast_builder_Builder_actOnCase(ast_builder_Builder* b, src_loc_SrcLoc loc, bool is_default, ast_Expr** conds, u32 num_conds, ast_Stmt** stmts, u32 num_stmts);
 static ast_Stmt* ast_builder_Builder_actOnAssertStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Expr* inner, ast_Expr* call);
-static ast_Stmt* ast_builder_Builder_actOnBreakStmt(ast_builder_Builder* b, src_loc_SrcLoc loc);
-static ast_Stmt* ast_builder_Builder_actOnContinueStmt(ast_builder_Builder* b, src_loc_SrcLoc loc);
+static ast_Stmt* ast_builder_Builder_actOnBreakStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, u32 name_idx);
+static ast_Stmt* ast_builder_Builder_actOnContinueStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, u32 name_idx);
 static ast_Stmt* ast_builder_Builder_actOnFallthroughStmt(ast_builder_Builder* b, src_loc_SrcLoc loc);
 static ast_Stmt* ast_builder_Builder_actOnLabelStmt(ast_builder_Builder* b, u32 name, src_loc_SrcLoc loc, ast_Stmt* stmt);
 static ast_Stmt* ast_builder_Builder_actOnGotoStmt(ast_builder_Builder* b, u32 name, src_loc_SrcLoc loc);
@@ -22699,7 +23073,7 @@ static ast_Expr* ast_builder_Builder_actOnIdentifier(ast_builder_Builder* b, src
 static ast_Expr* ast_builder_Builder_actOnIntegerLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, u32 src_len, u64 value, number_radix_Radix radix);
 static ast_Expr* ast_builder_Builder_actOnFloatLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, u32 src_len, double value, number_radix_Radix radix, ast_BuiltinKind kind);
 static ast_Expr* ast_builder_Builder_actOnCharLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, u32 src_len, u8 value, number_radix_Radix radix);
-static ast_Expr* ast_builder_Builder_actOnStringLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, u32 src_len, u32 value, u32 len);
+static ast_Expr* ast_builder_Builder_actOnStringLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, u32 src_len, u32 value, u32 len, bool addnull);
 static ast_Expr* ast_builder_Builder_actOnNilExpr(ast_builder_Builder* b, src_loc_SrcLoc loc);
 static ast_Expr* ast_builder_Builder_actOnParenExpr(ast_builder_Builder* b, src_loc_SrcLoc loc, u32 src_len, ast_Expr* inner);
 static ast_Expr* ast_builder_Builder_actOnUnaryOperator(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_UnaryOpcode opcode, ast_Expr* inner);
@@ -22735,6 +23109,7 @@ static ast_builder_Builder* ast_builder_create(ast_context_Context* context, dia
    b->auxPool = auxPool;
    b->c2_name = c2_name;
    b->main_name = main_name;
+   b->native_kind = ast_context_Context_getWordSize(context) == 8 ? ast_BuiltinKind_UInt64 : ast_BuiltinKind_UInt32;
    b->attr_handler = attr_handler_;
    return b;
 }
@@ -22742,6 +23117,11 @@ static ast_builder_Builder* ast_builder_create(ast_context_Context* context, dia
 static void ast_builder_Builder_free(ast_builder_Builder* b)
 {
    free(b);
+}
+
+static const char* ast_builder_Builder_idx2name(const ast_builder_Builder* b, u32 name_idx)
+{
+   return string_pool_Pool_idx2str(b->astPool, name_idx);
 }
 
 static void ast_builder_Builder_setComponent(ast_builder_Builder* b, component_Component* comp)
@@ -22766,6 +23146,11 @@ static bool ast_builder_Builder_setExternal(ast_builder_Builder* b, bool is_inte
    return was_interface;
 }
 
+static ast_BuiltinKind ast_builder_Builder_getNativeKind(ast_builder_Builder* b)
+{
+   return b->native_kind;
+}
+
 static void ast_builder_Builder_actOnModule(ast_builder_Builder* b, u32 mod_name, src_loc_SrcLoc mod_loc, u32 filename, bool is_interface, bool is_generated)
 {
    ;//assert(b->comp);
@@ -22780,7 +23165,7 @@ static void ast_builder_Builder_actOnModule(ast_builder_Builder* b, u32 mod_name
    b->mod = component_Component_getOrAddModule(b->comp, mod_name, b->is_private);
    b->ast = ast_Module_add(b->mod, b->auxPool, filename, is_interface, is_generated);
    b->ast_idx = ast_AST_getIdx(b->ast);
-   ast_ImportDecl* i = ast_ImportDecl_create(b->context, mod_name, mod_loc, 0, 0, b->ast_idx, true);
+   ast_ImportDecl* i = ast_ImportDecl_create(b->context, mod_name, mod_loc, 0, 0, b->ast_idx, true, NULL, 0);
    ast_Decl* d = (ast_Decl*)i;
    ast_Decl_setUsed(d);
    ast_Decl_setChecked(d);
@@ -22789,18 +23174,18 @@ static void ast_builder_Builder_actOnModule(ast_builder_Builder* b, u32 mod_name
    ast_AST_addImport(b->ast, i);
 }
 
-static ast_Decl* ast_builder_Builder_actOnImport(ast_builder_Builder* b, u32 mod_name, src_loc_SrcLoc mod_loc, u32 alias_name, src_loc_SrcLoc alias_loc, bool islocal)
+static ast_Decl* ast_builder_Builder_actOnImport(ast_builder_Builder* b, u32 mod_name, src_loc_SrcLoc mod_loc, u32 alias_name, src_loc_SrcLoc alias_loc, bool islocal, ast_Symbol* symlist, u32 symlist_count)
 {
    if (ast_AST_getNameIdx(b->ast) == mod_name) {
       if (mod_loc) {
-         diagnostics_Diags_error(b->diags, mod_loc, "cannot import own module '%s'", ast_idx2name(mod_name));
+         diagnostics_Diags_error(b->diags, mod_loc, "cannot import own module '%s'", ast_builder_Builder_idx2name(b, mod_name));
       }
       return NULL;
    }
    ast_ImportDecl* old = ast_AST_findImport(b->ast, mod_name);
    if (old) {
       if (mod_loc) {
-         diagnostics_Diags_error(b->diags, mod_loc, "duplicate import of module '%s'", ast_idx2name(mod_name));
+         diagnostics_Diags_error(b->diags, mod_loc, "duplicate import of module '%s'", ast_builder_Builder_idx2name(b, mod_name));
          diagnostics_Diags_note(b->diags, ast_Decl_getLoc(ast_ImportDecl_asDecl(old)), "previous import is here");
       }
       return (ast_Decl*)old;
@@ -22811,7 +23196,7 @@ static ast_Decl* ast_builder_Builder_actOnImport(ast_builder_Builder* b, u32 mod
          return NULL;
       }
    }
-   ast_ImportDecl* d = ast_ImportDecl_create(b->context, mod_name, mod_loc, alias_name, alias_loc, b->ast_idx, islocal);
+   ast_ImportDecl* d = ast_ImportDecl_create(b->context, mod_name, mod_loc, alias_name, alias_loc, b->ast_idx, islocal, symlist, symlist_count);
    ast_AST_addImport(b->ast, d);
    return (ast_Decl*)d;
 }
@@ -22831,7 +23216,7 @@ static ast_Decl* ast_builder_Builder_actOnFunctionTypeDecl(ast_builder_Builder* 
 {
    is_public |= b->is_interface;
    ast_FunctionDecl* fd = ast_FunctionDecl_create(b->context, name, loc, is_public, b->ast_idx, rtype, NULL, params, num_params, is_variadic, ast_DefKind_Type);
-   ast_FunctionTypeDecl* d = ast_FunctionTypeDecl_create(b->context, fd);
+   ast_FunctionTypeDecl* d = ast_FunctionTypeDecl_create(b->context, fd, b->ast_idx);
    ast_AST_addTypeDecl(b->ast, ast_FunctionTypeDecl_asDecl(d));
    ast_Decl* dd = (ast_Decl*)d;
    if (b->is_interface) {
@@ -22899,13 +23284,14 @@ static ast_VarDecl* ast_builder_Builder_createEnumAssocDecl(ast_builder_Builder*
    ast_Decl* d = ast_EnumTypeDecl_asDecl(etd);
    ast_QualType a = ast_builder_Builder_createEnumAssocTypeAccess(b, ast_Decl_getType(esv), etd);
    string_buffer_Buf* out = string_buffer_create(128, false, 0);
-   string_buffer_Buf_add(out, ast_Decl_getName(d));
+   string_buffer_Buf_add(out, ast_builder_Builder_idx2name(b, ast_Decl_getNameIdx(d)));
    string_buffer_Buf_add(out, "__");
-   string_buffer_Buf_add(out, ast_idx2name(ast_Decl_getNameIdx(esv)));
+   string_buffer_Buf_add(out, ast_builder_Builder_idx2name(b, ast_Decl_getNameIdx(esv)));
    u32 name_idx = string_pool_Pool_add(b->astPool, string_buffer_Buf_str(out), string_buffer_Buf_size(out), true);
    string_buffer_Buf_free(out);
-   ast_TypeRefHolder ref; ast_TypeRefHolder_init(&ref);
-   ast_TypeRefHolder_setBuiltin(&ref, ast_BuiltinKind_Char, 0);
+   ast_VarDecl* vd_esv = (ast_VarDecl*)esv;
+   ast_TypeRefHolder ref; ast_TypeRefHolder_copy(&ref, ast_VarDecl_getTypeRef(vd_esv));
+   ast_TypeRefHolder_addPointer(&ref);
    ast_EnumConstantDecl** constants = ast_EnumTypeDecl_getConstants(etd);
    ast_ExprList values; ast_ExprList_init(&values);
    for (u32 i = 0; i < ast_EnumTypeDecl_getNumConstants(etd); i++) {
@@ -23176,7 +23562,7 @@ static bool ast_builder_Builder_actOnParamAttr(ast_builder_Builder* b, ast_VarDe
       ast_VarDecl_setAttrAutoFunc(d);
       return true;
    default:
-      diagnostics_Diags_error(b->diags, a->loc, "attribute '%s' cannot be applied to function parameters", ast_idx2name(a->name));
+      diagnostics_Diags_error(b->diags, a->loc, "attribute '%s' cannot be applied to function parameters", ast_builder_Builder_idx2name(b, a->name));
       return false;
    }
    diagnostics_Diags_error(b->diags, a->loc, "invalid combination of attributes");
@@ -23384,9 +23770,9 @@ static ast_Stmt* ast_builder_Builder_actOnReturnStmt(ast_builder_Builder* b, src
    return (ast_Stmt*)ast_ReturnStmt_create(b->context, loc, ret);
 }
 
-static ast_Stmt* ast_builder_Builder_actOnIfStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt* cond, ast_Stmt* then, ast_Stmt* else_stmt)
+static ast_Stmt* ast_builder_Builder_actOnIfStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt* decl, ast_Expr* cond, ast_Stmt* then, ast_Stmt* else_stmt)
 {
-   return (ast_Stmt*)ast_IfStmt_create(b->context, loc, cond, then, else_stmt);
+   return (ast_Stmt*)ast_IfStmt_create(b->context, loc, decl, cond, then, else_stmt);
 }
 
 static ast_Stmt* ast_builder_Builder_actOnWhileStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, ast_Stmt* cond, ast_Stmt* then)
@@ -23414,14 +23800,14 @@ static ast_Stmt* ast_builder_Builder_actOnAssertStmt(ast_builder_Builder* b, src
    return (ast_Stmt*)ast_AssertStmt_create(b->context, loc, inner, call);
 }
 
-static ast_Stmt* ast_builder_Builder_actOnBreakStmt(ast_builder_Builder* b, src_loc_SrcLoc loc)
+static ast_Stmt* ast_builder_Builder_actOnBreakStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, u32 name_idx)
 {
-   return (ast_Stmt*)ast_BreakStmt_create(b->context, loc);
+   return (ast_Stmt*)ast_BreakStmt_create(b->context, loc, name_idx);
 }
 
-static ast_Stmt* ast_builder_Builder_actOnContinueStmt(ast_builder_Builder* b, src_loc_SrcLoc loc)
+static ast_Stmt* ast_builder_Builder_actOnContinueStmt(ast_builder_Builder* b, src_loc_SrcLoc loc, u32 name_idx)
 {
-   return (ast_Stmt*)ast_ContinueStmt_create(b->context, loc);
+   return (ast_Stmt*)ast_ContinueStmt_create(b->context, loc, name_idx);
 }
 
 static ast_Stmt* ast_builder_Builder_actOnFallthroughStmt(ast_builder_Builder* b, src_loc_SrcLoc loc)
@@ -23464,9 +23850,9 @@ static ast_Expr* ast_builder_Builder_actOnCharLiteral(ast_builder_Builder* b, sr
    return (ast_Expr*)ast_CharLiteral_create(b->context, loc, src_len, value, radix);
 }
 
-static ast_Expr* ast_builder_Builder_actOnStringLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, u32 src_len, u32 value, u32 len)
+static ast_Expr* ast_builder_Builder_actOnStringLiteral(ast_builder_Builder* b, src_loc_SrcLoc loc, u32 src_len, u32 value, u32 len, bool addnull)
 {
-   return (ast_Expr*)ast_StringLiteral_create(b->context, loc, src_len, value, len);
+   return (ast_Expr*)ast_StringLiteral_create(b->context, loc, src_len, value, len, addnull);
 }
 
 static ast_Expr* ast_builder_Builder_actOnNilExpr(ast_builder_Builder* b, src_loc_SrcLoc loc)
@@ -23587,7 +23973,7 @@ static void ast_builder_Builder_addSymbol(ast_builder_Builder* b, u32 name_idx, 
 {
    ast_Decl* old = ast_Module_findSymbol(b->mod, name_idx);
    if (old) {
-      diagnostics_Diags_error(b->diags, ast_Decl_getLoc(d), "redefinition of '%s'", ast_idx2name(name_idx));
+      diagnostics_Diags_error(b->diags, ast_Decl_getLoc(d), "redefinition of '%s'", ast_builder_Builder_idx2name(b, name_idx));
       diagnostics_Diags_note(b->diags, ast_Decl_getLoc(old), "previous definition is here");
    } else {
       ast_Module_addSymbol(b->mod, name_idx, d);
@@ -23801,7 +24187,7 @@ struct c2_tokenizer_Tokenizer_ {
    void* on_error_arg;
    c2_tokenizer_Feature feature_stack[7];
    u32 feature_count;
-   const string_list_List* features;
+   const string_map_Map* features;
    bool raw_mode;
    bool stop_at_eol;
    u8 c_mode;
@@ -23980,7 +24366,7 @@ static const u8 c2_tokenizer_Identifier_char[256] = {
    ['z'] = 1
 };
 #define c2_tokenizer_MAX_LEVEL 16
-static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, string_buffer_Buf* buf, const char* input, src_loc_SrcLoc loc_start, const keywords_Info* kwinfo, const string_list_List* features, c2_tokenizer_ErrorFn on_error, void* on_error_arg, bool raw_mode);
+static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, string_buffer_Buf* buf, const char* input, src_loc_SrcLoc loc_start, const keywords_Info* kwinfo, const string_map_Map* features, c2_tokenizer_ErrorFn on_error, void* on_error_arg, bool raw_mode);
 static void c2_tokenizer_Tokenizer_lex(c2_tokenizer_Tokenizer* t, token_Token* result);
 __attribute__((__format__(printf, 3, 4)))
 static void c2_tokenizer_Tokenizer_error(c2_tokenizer_Tokenizer* t, token_Token* result, const char* format, ...);
@@ -24019,7 +24405,7 @@ static const char* c2_tokenizer_skip_block_comment(const char* p);
 static u32 c2_tokenizer_hexconv(const char* p, u32 maxn, u32* pc);
 static u32 c2_tokenizer_octconv(const char* p, u32 maxn, u32* pc);
 
-static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, string_buffer_Buf* buf, const char* input, src_loc_SrcLoc loc_start, const keywords_Info* kwinfo, const string_list_List* features, c2_tokenizer_ErrorFn on_error, void* on_error_arg, bool raw_mode)
+static void c2_tokenizer_Tokenizer_init(c2_tokenizer_Tokenizer* t, string_pool_Pool* pool, string_buffer_Buf* buf, const char* input, src_loc_SrcLoc loc_start, const keywords_Info* kwinfo, const string_map_Map* features, c2_tokenizer_ErrorFn on_error, void* on_error_arg, bool raw_mode)
 {
    memset(t, 0, 408);
    t->cur = input;
@@ -24372,7 +24758,7 @@ static void c2_tokenizer_Tokenizer_lex(c2_tokenizer_Tokenizer* t, token_Token* r
          if (t->feature_count) {
             c2_tokenizer_Feature* top = &t->feature_stack[t->feature_count];
             t->cur = t->input_start + (top->loc - t->loc_start);
-            c2_tokenizer_Tokenizer_error(t, result, "un-terminated %s", token_Kind_str(top->kind));
+            c2_tokenizer_Tokenizer_error(t, result, "un-terminated %s", token_Kind__name[top->kind]);
             return;
          }
          result->kind = token_Kind_Eof;
@@ -25094,7 +25480,7 @@ static bool c2_tokenizer_Tokenizer_lex_feature_cmd(c2_tokenizer_Tokenizer* t, to
    t->cur = c2_tokenizer_skip_blanks(t->cur + 1);
    token_Kind kind;
    for (kind = token_Kind_Feat_if; kind < token_Kind_Invalid; kind++) {
-      const char* word = token_Kind_str(kind) + 1;
+      const char* word = token_Kind__name[kind] + 1;
       if (c2_tokenizer_compare_word(t->cur, word)) {
          t->cur += strlen(word);
          break;
@@ -25214,9 +25600,14 @@ static i64 c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t, token_
                if (has_paren) {
                   if (c2_tokenizer_Tokenizer_lex_preproc(t, result) != token_Kind_RParen) goto syntax_error;
                }
-               value_type_Value_setUnsigned(&val, string_list_List_contains(t->features, id));
+               value_type_Value_setUnsigned(&val, string_map_Map_contains(t->features, id, NULL));
             } else {
-               value_type_Value_setUnsigned(&val, string_list_List_contains(t->features, id));
+               i64 value = 0;
+               u32 idx = 0;
+               if (string_map_Map_contains(t->features, id, &idx)) {
+                  value = strtol(string_map_Map_getValue(t->features, idx), NULL, 0);
+               }
+               value_type_Value_setSigned(&val, value);
             }
             prefix = false;
             continue;
@@ -25333,7 +25724,7 @@ static i64 c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t, token_
          prec = 13;
          break;
       default:
-         c2_tokenizer_Tokenizer_error(t, result, "invalid token in preprocessor expression '%s'", token_Kind_str(result->kind));
+         c2_tokenizer_Tokenizer_error(t, result, "invalid token in preprocessor expression '%s'", token_Kind__name[result->kind]);
          return 0;
       }
       while (sp > stack && prec >= sp[-1].prec) {
@@ -25410,7 +25801,7 @@ static i64 c2_tokenizer_Tokenizer_parse_ppexpr(c2_tokenizer_Tokenizer* t, token_
             }
             fallthrough;
          default:
-            c2_tokenizer_Tokenizer_error(t, result, "invalid token in preprocessor expression '%s'", token_Kind_str(sp->op));
+            c2_tokenizer_Tokenizer_error(t, result, "invalid token in preprocessor expression '%s'", token_Kind__name[sp->op]);
             return 0;
          }
          if (value_type_Value_isError(&val)) {
@@ -25461,11 +25852,11 @@ static bool c2_tokenizer_Tokenizer_handle_if(c2_tokenizer_Tokenizer* t, token_To
       }
    } else {
       if (t->feature_count == 0) {
-         c2_tokenizer_Tokenizer_error(t, result, "%s without #if", token_Kind_str(kind));
+         c2_tokenizer_Tokenizer_error(t, result, "%s without #if", token_Kind__name[kind]);
          return true;
       }
       if (top->is_else) {
-         c2_tokenizer_Tokenizer_error(t, result, "%s in #else", token_Kind_str(kind));
+         c2_tokenizer_Tokenizer_error(t, result, "%s in #else", token_Kind__name[kind]);
          return true;
       }
       top->skipping ^= 1;
@@ -25478,10 +25869,15 @@ static bool c2_tokenizer_Tokenizer_handle_if(c2_tokenizer_Tokenizer* t, token_To
       if (!c2_tokenizer_Tokenizer_parse_ppexpr(t, result)) top->skipping = 1;
    } else {
       if (c2_tokenizer_Tokenizer_lex_preproc(t, result) == token_Kind_Identifier) {
-         if (!string_list_List_contains(t->features, string_pool_Pool_idx2str(t->pool, result->name_idx))) top->skipping = 1;
+         i64 value = 0;
+         u32 idx = 0;
+         if (string_map_Map_contains(t->features, string_pool_Pool_idx2str(t->pool, result->name_idx), &idx)) {
+            value = strtol(string_map_Map_getValue(t->features, idx), NULL, 0);
+         }
+         if (!value) top->skipping = 1;
          if (kind == token_Kind_Feat_ifndef) top->skipping ^= 1;
       } else {
-         c2_tokenizer_Tokenizer_error(t, result, "missing identifier after %s, got %s", token_Kind_str(kind), token_Kind_str(result->kind));
+         c2_tokenizer_Tokenizer_error(t, result, "missing identifier after %s, got %s", token_Kind__name[kind], token_Kind__name[result->kind]);
          return true;
       }
    }
@@ -25522,7 +25918,7 @@ static bool c2_tokenizer_Tokenizer_skip_feature(c2_tokenizer_Tokenizer* t, token
       case '\0': {
          c2_tokenizer_Feature* top = &t->feature_stack[t->feature_count];
          t->cur = t->input_start + (top->loc - t->loc_start);
-         c2_tokenizer_Tokenizer_error(t, result, "un-terminated %s", token_Kind_str(top->kind));
+         c2_tokenizer_Tokenizer_error(t, result, "un-terminated %s", token_Kind__name[top->kind]);
          return true;
       }
       case '\n':
@@ -25672,22 +26068,12 @@ struct plugin_info_Info_ {
    char output_dir[512];
 };
 
-typedef void* (*plugin_info_LoadFn)(const char* options, bool console_timing, bool console_debug);
-
-typedef void (*plugin_info_UnloadFn)(void* arg);
-
-typedef void (*plugin_info_InitFn)(void* arg, plugin_info_Info* info);
-
-typedef void (*plugin_info_PostParseFn)(void* arg);
-
-typedef void (*plugin_info_PostAnalysisFn)(void* arg);
-
 struct plugin_info_Plugin_ {
-   plugin_info_LoadFn load;
-   plugin_info_UnloadFn unload;
-   plugin_info_InitFn init;
-   plugin_info_PostParseFn post_parse;
-   plugin_info_PostAnalysisFn post_analysis;
+   void* (*load)(const char* options, console_Config* config);
+   void (*unload)(void* arg);
+   void (*init)(void* arg, plugin_info_Info* info);
+   void (*post_parse)(void* arg);
+   void (*post_analysis)(void* arg);
    const char* name;
 };
 
@@ -25719,56 +26105,198 @@ static const u8 conversion_checker_Conversions[9][9] = {
    { 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
 static const u8 conversion_checker_BuiltinConversions[14][14] = {
-   { 0, 3, 1, 1, 1, 7, 1, 1, 1, 1, 1, 1, 1, 7 },
-   { 3, 0, 1, 1, 1, 3, 3, 3, 3, 1, 1, 1, 3, 7 },
-   { 4, 4, 0, 1, 1, 4, 3, 3, 3, 1, 1, 1, 3, 7 },
-   { 4, 4, 4, 7, 1, 4, 4, 3, 3, 1, 1, 1, 3, 7 },
-   { 4, 4, 4, 4, 7, 4, 4, 4, 3, 1, 1, 7, 3, 7 },
-   { 1, 3, 1, 1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 7 },
-   { 4, 4, 3, 1, 1, 4, 0, 1, 1, 1, 1, 3, 1, 7 },
-   { 4, 4, 4, 3, 1, 4, 4, 7, 1, 1, 1, 3, 1, 7 },
-   { 4, 4, 4, 4, 3, 4, 4, 4, 7, 1, 1, 3, 7, 7 },
-   { 5, 5, 5, 5, 5, 5, 5, 5, 5, 0, 1, 5, 5, 2 },
-   { 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 0, 5, 5, 2 },
-   { 4, 4, 4, 4, 7, 4, 4, 4, 3, 1, 1, 0, 3, 7 },
-   { 4, 4, 4, 4, 3, 4, 4, 4, 7, 1, 1, 3, 0, 7 },
-   { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 }
+   { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+   { 7, 0, 3, 1, 1, 1, 7, 1, 1, 1, 1, 1, 1, 1 },
+   { 7, 3, 0, 1, 1, 1, 3, 3, 3, 3, 1, 1, 1, 3 },
+   { 7, 4, 4, 0, 1, 1, 4, 3, 3, 3, 1, 1, 1, 3 },
+   { 7, 4, 4, 4, 7, 1, 4, 4, 3, 3, 1, 1, 1, 3 },
+   { 7, 4, 4, 4, 4, 7, 4, 4, 4, 3, 1, 1, 7, 3 },
+   { 7, 1, 3, 1, 1, 1, 0, 1, 1, 1, 1, 1, 3, 1 },
+   { 7, 4, 4, 3, 1, 1, 4, 0, 1, 1, 1, 1, 3, 1 },
+   { 7, 4, 4, 4, 3, 1, 4, 4, 7, 1, 1, 1, 3, 1 },
+   { 7, 4, 4, 4, 4, 3, 4, 4, 4, 7, 1, 1, 3, 7 },
+   { 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 0, 1, 5, 5 },
+   { 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 0, 5, 5 },
+   { 7, 4, 4, 4, 4, 7, 4, 4, 4, 3, 1, 1, 0, 3 },
+   { 7, 4, 4, 4, 4, 3, 4, 4, 4, 7, 1, 1, 3, 0 }
 };
-static const u8 conversion_checker_ConditionalOperatorResult[14][14] = {
-   { 0, 2, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0 },
-   { 2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1 },
-   { 2, 2, 2, 3, 4, 2, 6, 7, 8, 9, 10, 11, 12, 2 },
-   { 3, 3, 3, 3, 4, 3, 3, 7, 8, 9, 10, 11, 12, 3 },
-   { 4, 4, 4, 4, 4, 4, 4, 4, 8, 9, 10, 11, 12, 4 },
-   { 5, 5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 5 },
-   { 6, 6, 6, 3, 4, 6, 6, 7, 8, 9, 10, 11, 12, 6 },
-   { 7, 7, 7, 7, 7, 7, 7, 7, 8, 9, 10, 11, 12, 7 },
-   { 8, 8, 8, 8, 8, 8, 8, 8, 8, 9, 10, 11, 12, 8 },
-   { 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 10, 9, 9, 9 },
-   { 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 },
-   { 11, 11, 11, 11, 11, 11, 11, 11, 8, 9, 10, 11, 12, 11 },
-   { 12, 12, 12, 12, 12, 12, 12, 12, 8, 9, 10, 12, 12, 12 },
-   { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 }
+#define conversion_checker_X ast_BuiltinKind_Bool
+static const ast_BuiltinKind conversion_checker_ConditionalOperatorResult[14][14] = {
+   {
+      ast_BuiltinKind_Bool,    ast_BuiltinKind_Char,    ast_BuiltinKind_Int8,    ast_BuiltinKind_Int16,
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int64,   ast_BuiltinKind_UInt8,   ast_BuiltinKind_UInt16,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Char,    ast_BuiltinKind_Char,    ast_BuiltinKind_Int16,   ast_BuiltinKind_Int16,
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int64,   ast_BuiltinKind_UInt8,   ast_BuiltinKind_UInt16,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Int8,    ast_BuiltinKind_Int16,   ast_BuiltinKind_Int8,    ast_BuiltinKind_Int16,
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int64,   ast_BuiltinKind_UInt8,   ast_BuiltinKind_UInt16,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Int16,   ast_BuiltinKind_Int16,   ast_BuiltinKind_Int16,   ast_BuiltinKind_Int16,
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int16,   ast_BuiltinKind_UInt16,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Int64,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int64,
+      ast_BuiltinKind_Int64,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int64,
+      ast_BuiltinKind_Int64,   ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_UInt8,   ast_BuiltinKind_UInt8,   ast_BuiltinKind_UInt8,   ast_BuiltinKind_Int16,
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int64,   ast_BuiltinKind_UInt8,   ast_BuiltinKind_UInt16,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_UInt16,  ast_BuiltinKind_UInt16,  ast_BuiltinKind_UInt16,  ast_BuiltinKind_UInt16,
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int64,   ast_BuiltinKind_UInt16,  ast_BuiltinKind_UInt16,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt32,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_Int64,   ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt32,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_UInt64,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_UInt64,
+      ast_BuiltinKind_UInt64,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_UInt64,
+      ast_BuiltinKind_UInt64,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Float32, ast_BuiltinKind_Float32, ast_BuiltinKind_Float32, ast_BuiltinKind_Float32,
+      ast_BuiltinKind_Float32, ast_BuiltinKind_Float32, ast_BuiltinKind_Float32, ast_BuiltinKind_Float32,
+      ast_BuiltinKind_Float32, ast_BuiltinKind_Float32, ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Float64, ast_BuiltinKind_Float64, ast_BuiltinKind_Float64, ast_BuiltinKind_Float64,
+      ast_BuiltinKind_Float64, ast_BuiltinKind_Float64, ast_BuiltinKind_Float64, ast_BuiltinKind_Float64,
+      ast_BuiltinKind_Float64, ast_BuiltinKind_Float64, ast_BuiltinKind_Float64, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      conversion_checker_X, conversion_checker_X, conversion_checker_X, conversion_checker_X,
+      conversion_checker_X, conversion_checker_X, conversion_checker_X, conversion_checker_X,
+      conversion_checker_X, conversion_checker_X, conversion_checker_X, conversion_checker_X,
+      conversion_checker_X, conversion_checker_X
+   },
+   {
+      conversion_checker_X, conversion_checker_X, conversion_checker_X, conversion_checker_X,
+      conversion_checker_X, conversion_checker_X, conversion_checker_X, conversion_checker_X,
+      conversion_checker_X, conversion_checker_X, conversion_checker_X, conversion_checker_X,
+      conversion_checker_X, conversion_checker_X
+   }
 };
-static const u8 conversion_checker_UsualArithmeticConversions[14][14] = {
-   { 0, 0, 0, 0, 2, 0, 0, 1, 3, 4, 5, 6, 6, 0 },
-   { 0, 0, 0, 0, 2, 0, 0, 1, 3, 4, 5, 6, 6, 0 },
-   { 0, 0, 0, 0, 2, 0, 0, 1, 3, 4, 5, 6, 6, 0 },
-   { 0, 0, 0, 0, 2, 0, 0, 1, 3, 4, 5, 6, 6, 0 },
-   { 2, 2, 2, 3, 2, 2, 2, 2, 3, 4, 5, 6, 6, 2 },
-   { 0, 0, 0, 0, 2, 0, 0, 1, 3, 4, 5, 6, 6, 0 },
-   { 0, 0, 0, 0, 2, 0, 0, 1, 3, 4, 5, 6, 6, 0 },
-   { 1, 1, 1, 1, 3, 1, 1, 1, 3, 4, 5, 6, 6, 1 },
-   { 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 5, 6, 6, 3 },
-   { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 4, 4, 4 },
-   { 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 },
-   { 6, 6, 6, 6, 6, 6, 6, 6, 3, 4, 5, 6, 6, 6 },
-   { 6, 6, 6, 6, 6, 6, 6, 6, 6, 4, 5, 6, 6, 6 },
-   { 0, 0, 0, 0, 2, 0, 0, 1, 3, 4, 5, 6, 6, 0 }
+static const ast_BuiltinKind conversion_checker_UsualArithmeticConversions[14][14] = {
+   {
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Int64,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int64,
+      ast_BuiltinKind_Int64,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int64,
+      ast_BuiltinKind_Int64,   ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_Int32,   ast_BuiltinKind_Int64,   ast_BuiltinKind_Int32,   ast_BuiltinKind_Int32,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt32,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_Int64,   ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt32,
+      ast_BuiltinKind_UInt32,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_UInt64,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_UInt64,
+      ast_BuiltinKind_UInt64,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_UInt64,
+      ast_BuiltinKind_UInt64,  ast_BuiltinKind_UInt64,  ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Float32, ast_BuiltinKind_Float32, ast_BuiltinKind_Float32, ast_BuiltinKind_Float32,
+      ast_BuiltinKind_Float32, ast_BuiltinKind_Float32, ast_BuiltinKind_Float32, ast_BuiltinKind_Float32,
+      ast_BuiltinKind_Float32, ast_BuiltinKind_Float32, ast_BuiltinKind_Float32, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      ast_BuiltinKind_Float64, ast_BuiltinKind_Float64, ast_BuiltinKind_Float64, ast_BuiltinKind_Float64,
+      ast_BuiltinKind_Float64, ast_BuiltinKind_Float64, ast_BuiltinKind_Float64, ast_BuiltinKind_Float64,
+      ast_BuiltinKind_Float64, ast_BuiltinKind_Float64, ast_BuiltinKind_Float64, ast_BuiltinKind_Float64,
+      conversion_checker_X,    conversion_checker_X
+   },
+   {
+      conversion_checker_X, conversion_checker_X, conversion_checker_X, conversion_checker_X,
+      conversion_checker_X, conversion_checker_X, conversion_checker_X, conversion_checker_X,
+      conversion_checker_X, conversion_checker_X, conversion_checker_X, conversion_checker_X,
+      conversion_checker_X, conversion_checker_X
+   },
+   {
+      conversion_checker_X, conversion_checker_X, conversion_checker_X, conversion_checker_X,
+      conversion_checker_X, conversion_checker_X, conversion_checker_X, conversion_checker_X,
+      conversion_checker_X, conversion_checker_X, conversion_checker_X, conversion_checker_X,
+      conversion_checker_X, conversion_checker_X
+   }
 };
 static void conversion_checker_Checker_init(conversion_checker_Checker* c, diagnostics_Diags* diags, ast_builder_Builder* builder);
 static bool conversion_checker_Checker_conversionError(conversion_checker_Checker* c, const char* msg);
-static bool conversion_checker_Checker_check(conversion_checker_Checker* c, ast_QualType lhs, ast_QualType rhs, ast_Expr** e_ptr, src_loc_SrcLoc loc);
+static bool conversion_checker_Checker_shouldNotHappen(conversion_checker_Checker* c, const char* from, const ast_Type* lcanon, const ast_Type* rcanon, u8 res);
+static bool conversion_checker_Checker_checkAssign(conversion_checker_Checker* c, ast_QualType lhs, ast_QualType rhs, ast_Expr** e_ptr, src_loc_SrcLoc loc);
 static bool conversion_checker_Checker_checkTypes(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon);
 static bool conversion_checker_Checker_checkBuiltins(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon);
 static bool conversion_checker_Checker_checkBuiltin2Pointer(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon);
@@ -25787,7 +26315,7 @@ static bool conversion_checker_Checker_checkCast(conversion_checker_Checker* c, 
 static bool conversion_checker_Checker_checkBuiltin2PointerCast(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon);
 static bool conversion_checker_Checker_checkPointer2BuiltinCast(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon);
 static ast_QualType conversion_checker_get_common_arithmetic_type(ast_BuiltinType* bi1, ast_BuiltinType* bi2);
-static ast_QualType conversion_checker_usual_arithmetic_conversion(const ast_BuiltinType* b1, const ast_BuiltinType* b2);
+static ast_QualType conversion_checker_usual_arithmetic_conversion(const ast_BuiltinType* bi1, const ast_BuiltinType* bi2);
 struct conversion_checker_ExprWidth_ {
    u8 width;
    bool is_signed;
@@ -25805,7 +26333,7 @@ static void conversion_checker_Checker_init(conversion_checker_Checker* c, diagn
 {
    c->diags = diags;
    c->builder = builder;
-   c->native_kind = ast_getNativeKind();
+   c->native_kind = ast_builder_Builder_getNativeKind(builder);
 }
 
 static bool conversion_checker_Checker_conversionError(conversion_checker_Checker* c, const char* msg)
@@ -25814,7 +26342,16 @@ static bool conversion_checker_Checker_conversionError(conversion_checker_Checke
    return false;
 }
 
-static bool conversion_checker_Checker_check(conversion_checker_Checker* c, ast_QualType lhs, ast_QualType rhs, ast_Expr** e_ptr, src_loc_SrcLoc loc)
+static bool conversion_checker_Checker_shouldNotHappen(conversion_checker_Checker* c, const char* from, const ast_Type* lcanon, const ast_Type* rcanon, u8 res)
+{
+   diagnostics_Diags_error(c->diags, c->loc, "%s: SHOULD NOT HAPPEN (%s -> %s, res=%d)\n", from, ast_TypeKind__name[ast_Type_getKind(rcanon)], ast_TypeKind__name[ast_Type_getKind(lcanon)], res);
+   ast_QualType_dump_full(c->lhs);
+   ast_QualType_dump_full(c->rhs);
+   ;//assert(0);
+   return false;
+}
+
+static bool conversion_checker_Checker_checkAssign(conversion_checker_Checker* c, ast_QualType lhs, ast_QualType rhs, ast_Expr** e_ptr, src_loc_SrcLoc loc)
 {
    ;//assert(lhs.ptr);
    ;//assert(rhs.ptr);
@@ -25827,9 +26364,7 @@ static bool conversion_checker_Checker_check(conversion_checker_Checker* c, ast_
    }
    const ast_Type* lcanon = ast_QualType_getTypeOrNil(t1);
    const ast_Type* rcanon = ast_QualType_getTypeOrNil(t2);
-   if (lcanon == rcanon) {
-      return true;
-   }
+   if (lcanon == rcanon) return true;
    c->lhs = lhs;
    c->rhs = rhs;
    c->expr_ptr = e_ptr;
@@ -25842,12 +26377,12 @@ static bool conversion_checker_Checker_checkTypes(conversion_checker_Checker* c,
    u8 res = conversion_checker_Conversions[ast_Type_getKind(rcanon)][ast_Type_getKind(lcanon)];
    switch (res) {
    case 0:
-      diagnostics_Diags_error(c->diags, c->loc, "SHOULD NOT HAPPEN (%d - %d)\n", ast_Type_getKind(lcanon), ast_Type_getKind(rcanon));
-      ast_QualType_dump_full(c->lhs);
-      ast_QualType_dump_full(c->rhs);
-      ;//assert(0);
-      return false;
+      break;
    case 1:
+   case 8:
+   case 13:
+   case 14:
+   case 15:
       return conversion_checker_Checker_conversionError(c, "invalid type conversion from");
    case 2:
       return conversion_checker_Checker_checkBuiltins(c, lcanon, rcanon);
@@ -25860,13 +26395,7 @@ static bool conversion_checker_Checker_checkTypes(conversion_checker_Checker* c,
    case 6:
       return conversion_checker_Checker_checkPointer2Func(c, lcanon, rcanon);
    case 7:
-      diagnostics_Diags_note(c->diags, c->loc, "SHOULD NOT HAPPEN (Array -> Ptr)");
-      ast_QualType_dump_full(c->lhs);
-      ast_QualType_dump_full(c->rhs);
-      ;//assert(0);
-      return false;
-   case 8:
-      return conversion_checker_Checker_conversionError(c, "invalid type conversion from");
+      break;
    case 9:
       return conversion_checker_Checker_conversionError(c, "conversion between struct of different types:");
    case 10:
@@ -25875,18 +26404,14 @@ static bool conversion_checker_Checker_checkTypes(conversion_checker_Checker* c,
       return conversion_checker_Checker_checkFunc2Pointer(c, lcanon, rcanon);
    case 12:
       return conversion_checker_Checker_checkFunc2Func(c, lcanon, rcanon);
-   case 13:
-   case 14:
-   case 15:
-      return conversion_checker_Checker_conversionError(c, "invalid type conversion from");
    case 16:
       return conversion_checker_Checker_checkFunc2Builtin(c, lcanon, rcanon, false);
    case 17:
       return true;
    default:
-      diagnostics_Diags_note(c->diags, c->loc, "TODO CONVERSION  %d)", res);
-      return false;
+      break;
    }
+   return conversion_checker_Checker_shouldNotHappen(c, "conversion_checker.Checker.checkTypes", lcanon, rcanon, res);
 }
 
 static bool conversion_checker_Checker_checkBuiltins(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon)
@@ -25899,12 +26424,10 @@ static bool conversion_checker_Checker_checkBuiltins(conversion_checker_Checker*
    u8 res = conversion_checker_BuiltinConversions[ast_BuiltinType_getBaseKind(rbuiltin)][ast_BuiltinType_getBaseKind(lbuiltin)];
    switch (res) {
    case 0:
-      diagnostics_Diags_error(c->diags, c->loc, "BUILTIN SHOULD NOT HAPPEN (%d - %d)\n", ast_Type_getKind(lcanon), ast_Type_getKind(rcanon));
-      ;//assert(0);
-      return false;
+      break;
    case 1:
       ast_builder_Builder_insertImplicitCast(c->builder, ast_ImplicitCastKind_IntegralCast, c->expr_ptr, c->lhs);
-      break;
+      return true;
    case 2:
       return conversion_checker_Checker_conversionError(c, "invalid type conversion from");
    case 3:
@@ -25913,31 +26436,30 @@ static bool conversion_checker_Checker_checkBuiltins(conversion_checker_Checker*
       } else {
          conversion_checker_Checker_conversionError(c, "implicit conversion changes signedness:");
       }
-      break;
+      return true;
    case 4:
       if (conversion_checker_Checker_checkIntConversion(c, lbuiltin)) {
          ast_builder_Builder_insertImplicitCast(c->builder, ast_ImplicitCastKind_IntegralCast, c->expr_ptr, c->lhs);
       } else {
          conversion_checker_Checker_conversionError(c, "implicit conversion loses integer precision:");
       }
-      break;
+      return true;
    case 5:
       conversion_checker_Checker_conversionError(c, "implicit conversion turns floating-point number into integer:");
-      break;
+      return true;
    case 6:
       if (ast_Expr_isCtv((*c->expr_ptr))) {
          ast_builder_Builder_insertImplicitCast(c->builder, ast_ImplicitCastKind_IntegralCast, c->expr_ptr, c->lhs);
       } else {
          conversion_checker_Checker_conversionError(c, "implicit conversion loses floating-point precision:");
       }
-      break;
+      return true;
    case 7:
-      break;
+      return true;
    default:
-      ;//assert(0);
-      return false;
+      break;
    }
-   return true;
+   return conversion_checker_Checker_shouldNotHappen(c, "conversion_checker.Checker.checkBuiltins", lcanon, rcanon, res);
 }
 
 static bool conversion_checker_Checker_checkBuiltin2Pointer(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon)
@@ -26079,7 +26601,7 @@ static bool conversion_checker_Checker_checkEnum2Int(conversion_checker_Checker*
       const ast_EnumType* et = (ast_EnumType*)rcanon;
       const ast_EnumTypeDecl* etd = ast_EnumType_getDecl(et);
       ast_QualType impl = ast_EnumTypeDecl_getImplType(etd);
-      return conversion_checker_Checker_check(c, c->lhs, impl, c->expr_ptr, c->loc);
+      return conversion_checker_Checker_checkAssign(c, c->lhs, impl, c->expr_ptr, c->loc);
    }
 }
 
@@ -26107,25 +26629,23 @@ static bool conversion_checker_checkFunc2Func(const ast_FunctionDecl* fdl, const
    u32 num1 = ast_FunctionDecl_getNumParams(fdl);
    u32 num2 = ast_FunctionDecl_getNumParams(fdr);
    if (num1 != num2) return false;
+   if (ast_FunctionDecl_isVariadic(fdl) != ast_FunctionDecl_isVariadic(fdr)) return false;
    ast_Decl** args1 = (ast_Decl**)ast_FunctionDecl_getParams(fdl);
    ast_Decl** args2 = (ast_Decl**)ast_FunctionDecl_getParams(fdr);
    for (u32 i = 0; i < num1; i++) {
       ast_Decl* a1 = args1[i];
       ast_Decl* a2 = args2[i];
-      ql = ast_Decl_getType(a1);
-      qr = ast_Decl_getType(a2);
-      if (ql.ptr != qr.ptr) {
-         if (ast_QualType_isFunction(ql) && ast_QualType_isFunction(qr)) {
-            ast_FunctionType* ft = ast_QualType_getFunctionType(ql);
-            ast_FunctionDecl* fd1 = ast_FunctionType_getDecl(ft);
-            ft = ast_QualType_getFunctionType(qr);
-            ast_FunctionDecl* fd2 = ast_FunctionType_getDecl(ft);
+      ast_QualType qt1 = ast_Decl_getType(a1);
+      ast_QualType qt2 = ast_Decl_getType(a2);
+      if (qt1.ptr != qt2.ptr) {
+         if (ast_QualType_isFunction(qt1) && ast_QualType_isFunction(qt2)) {
+            ast_FunctionDecl* fd1 = ast_FunctionType_getDecl(ast_QualType_getFunctionType(qt1));
+            ast_FunctionDecl* fd2 = ast_FunctionType_getDecl(ast_QualType_getFunctionType(qt2));
             if (conversion_checker_checkFunc2Func(fd1, fd2)) continue;
          }
          return false;
       }
    }
-   if (ast_FunctionDecl_isVariadic(fdl) != ast_FunctionDecl_isVariadic(fdr)) return false;
    return true;
 }
 
@@ -26143,7 +26663,7 @@ static bool conversion_checker_Checker_checkFunc2Builtin(conversion_checker_Chec
    }
    if (kind == c->native_kind) return true;
    if (explicit) {
-      diagnostics_Diags_error(c->diags, c->loc, "pointers may only be cast to integer type '%s'", ast_BuiltinKind_str(c->native_kind));
+      diagnostics_Diags_error(c->diags, c->loc, "pointers may only be cast to integer type '%s'", ast_BuiltinKind__name[c->native_kind]);
       return false;
    } else {
       return conversion_checker_Checker_conversionError(c, "invalid type conversion from");
@@ -26164,53 +26684,34 @@ static bool conversion_checker_Checker_checkCast(conversion_checker_Checker* c, 
    u8 res = conversion_checker_Conversions[ast_Type_getKind(rcanon)][ast_Type_getKind(lcanon)];
    switch (res) {
    case 0:
-      diagnostics_Diags_error(c->diags, lhsLoc, "SHOULD NOT HAPPEN (%d - %d)\n", ast_Type_getKind(lcanon), ast_Type_getKind(rcanon));
-      ast_QualType_dump_full(c->lhs);
-      ast_QualType_dump_full(c->rhs);
-      ;//assert(0);
-      return false;
+      break;
    case 1:
       return conversion_checker_Checker_conversionError(c, "invalid cast from");
    case 2:
+   case 5:
+   case 6:
+   case 10:
+   case 11:
+   case 12:
+   case 13:
+   case 14:
       return true;
    case 3:
       return conversion_checker_Checker_checkBuiltin2PointerCast(c, lcanon, rcanon);
    case 4:
       return conversion_checker_Checker_checkPointer2BuiltinCast(c, lcanon, rcanon);
-   case 5:
-      return true;
-   case 6:
-      return true;
    case 7:
-      diagnostics_Diags_note(c->diags, c->loc, "SHOULD NOT HAPPEN (Array -> Ptr)");
-      ;//assert(0);
-      return false;
    case 8:
-      diagnostics_Diags_error(c->diags, lhsLoc, "SHOULD NOT HAPPEN (%d - %d)\n", ast_Type_getKind(lcanon), ast_Type_getKind(rcanon));
-      ;//assert(0);
-      return false;
    case 9:
-      diagnostics_Diags_error(c->diags, lhsLoc, "SHOULD NOT HAPPEN (%d - %d)\n", ast_Type_getKind(lcanon), ast_Type_getKind(rcanon));
-      ;//assert(0);
-      return false;
-   case 10:
-      return true;
-   case 11:
-      return true;
-   case 12:
-      return true;
-   case 13:
-      return true;
-   case 14:
-      return true;
+      break;
    case 15:
       return conversion_checker_Checker_checkBuiltin2PointerCast(c, lcanon, rcanon);
    case 16:
       return conversion_checker_Checker_checkFunc2Builtin(c, lcanon, rcanon, true);
    default:
-      diagnostics_Diags_note(c->diags, c->loc, "TODO CONVERSION  %d)", res);
-      return false;
+      break;
    }
+   return conversion_checker_Checker_shouldNotHappen(c, "conversion_checker.Checker.checkCast", lcanon, rcanon, res);
 }
 
 static bool conversion_checker_Checker_checkBuiltin2PointerCast(conversion_checker_Checker* c, const ast_Type* lcanon, const ast_Type* rcanon)
@@ -26219,7 +26720,7 @@ static bool conversion_checker_Checker_checkBuiltin2PointerCast(conversion_check
    ast_BuiltinKind kind = ast_BuiltinType_getKind(bi);
    if (kind == ast_BuiltinKind_USize) return true;
    if (kind == c->native_kind) return true;
-   diagnostics_Diags_error(c->diags, c->loc, "only integers of type '%s' may be cast to a pointer", ast_BuiltinKind_str(c->native_kind));
+   diagnostics_Diags_error(c->diags, c->loc, "only integers of type '%s' may be cast to a pointer", ast_BuiltinKind__name[c->native_kind]);
    return false;
 }
 
@@ -26229,37 +26730,18 @@ static bool conversion_checker_Checker_checkPointer2BuiltinCast(conversion_check
    ast_BuiltinKind kind = ast_BuiltinType_getKind(bi);
    if (kind == ast_BuiltinKind_USize) return true;
    if (kind == c->native_kind) return true;
-   diagnostics_Diags_error(c->diags, c->loc, "pointers may only be cast to integer type '%s'", ast_BuiltinKind_str(c->native_kind));
+   diagnostics_Diags_error(c->diags, c->loc, "pointers may only be cast to integer type '%s'", ast_BuiltinKind__name[c->native_kind]);
    return false;
 }
 
 static ast_QualType conversion_checker_get_common_arithmetic_type(ast_BuiltinType* bi1, ast_BuiltinType* bi2)
 {
-   ast_BuiltinKind kind = (ast_BuiltinKind)conversion_checker_ConditionalOperatorResult[ast_BuiltinType_getBaseKind(bi2)][ast_BuiltinType_getBaseKind(bi1)];
-   return ast_getBuiltinQT(kind);
+   return ast_getBuiltinQT(conversion_checker_ConditionalOperatorResult[ast_BuiltinType_getBaseKind(bi2)][ast_BuiltinType_getBaseKind(bi1)]);
 }
 
-static ast_QualType conversion_checker_usual_arithmetic_conversion(const ast_BuiltinType* b1, const ast_BuiltinType* b2)
+static ast_QualType conversion_checker_usual_arithmetic_conversion(const ast_BuiltinType* bi1, const ast_BuiltinType* bi2)
 {
-   ast_BuiltinKind k1 = ast_BuiltinType_getBaseKind(b1);
-   ast_BuiltinKind k2 = ast_BuiltinType_getBaseKind(b2);
-   switch (conversion_checker_UsualArithmeticConversions[k2][k1]) {
-   case 0:
-      return ast_getBuiltinQT(ast_BuiltinKind_Int32);
-   case 1:
-      return ast_getBuiltinQT(ast_BuiltinKind_UInt32);
-   case 2:
-      return ast_getBuiltinQT(ast_BuiltinKind_Int64);
-   case 3:
-      return ast_getBuiltinQT(ast_BuiltinKind_UInt64);
-   case 4:
-      return ast_getBuiltinQT(ast_BuiltinKind_Float32);
-   case 5:
-      return ast_getBuiltinQT(ast_BuiltinKind_Float64);
-   case 6:
-      break;
-   }
-   return ast_QualType_Invalid;
+   return ast_getBuiltinQT(conversion_checker_UsualArithmeticConversions[ast_BuiltinType_getBaseKind(bi1)][ast_BuiltinType_getBaseKind(bi2)]);
 }
 
 static conversion_checker_ExprWidth conversion_checker_ExprWidth_mergeSmaller(conversion_checker_ExprWidth w1, conversion_checker_ExprWidth w2)
@@ -26367,9 +26849,6 @@ static conversion_checker_ExprWidth conversion_checker_getUnaryOpWidth(const ast
    case ast_UnaryOpcode_Plus:
       return conversion_checker_getExprWidth(ast_UnaryOperator_getInner(u));
    case ast_UnaryOpcode_AddrOf:
-      w.width = (u8)(ast_getWordSize() * 8);
-      w.is_signed = false;
-      break;
    case ast_UnaryOpcode_Deref: {
       ast_Expr* e = (ast_Expr*)u;
       return conversion_checker_getTypeWidth(ast_Expr_getType(e));
@@ -26481,7 +26960,7 @@ static conversion_checker_ExprWidth conversion_checker_getTypeWidth(ast_QualType
       return result;
    }
    conversion_checker_ExprWidth result = {
-      .width = (u8)(ast_getWordSize() * 8),
+      .width = (u8)(ast_QualType_getAlignment(qt) * 8),
       .is_signed = false
    };
    return result;
@@ -26507,7 +26986,7 @@ struct module_analyser_StackLayer_ {
 #define module_analyser_MaxDepth 8
 struct module_analyser_Analyser_ {
    diagnostics_Diags* diags;
-   conversion_checker_Checker checker;
+   conversion_checker_Checker conv_checker;
    ast_context_Context* context;
    string_pool_Pool* astPool;
    ast_builder_Builder* builder;
@@ -26543,12 +27022,13 @@ struct module_analyser_MainMarker_ {
    ast_Decl* main;
 };
 
-#define module_analyser_LHS 0x01
-#define module_analyser_RHS 0x02
 static module_analyser_Analyser* module_analyser_create(diagnostics_Diags* diags, ast_context_Context* context, string_pool_Pool* astPool, ast_builder_Builder* builder, module_list_List* allmodules, const warning_flags_Flags* warnings, bool has_asserts, bool check_only);
 static module_analyser_Analyser* module_analyser_Analyser_clone(module_analyser_Analyser* org);
 static void module_analyser_Analyser_free(module_analyser_Analyser* ma);
-static void module_analyser_Analyser_check(module_analyser_Analyser* ma, ast_Module* mod);
+static const char* module_analyser_Analyser_idx2name(const module_analyser_Analyser* ma, u32 name_idx);
+static const char* module_analyser_Analyser_getName(const module_analyser_Analyser* ma, const ast_Decl* d);
+static const char* module_analyser_Analyser_getFullName(const module_analyser_Analyser* ma, const ast_Decl* d);
+static void module_analyser_Analyser_checkModule(module_analyser_Analyser* ma, ast_Module* mod);
 static init_checker_Checker* module_analyser_Analyser_getInitChecker(module_analyser_Analyser* ma);
 static void module_analyser_Analyser_putInitChecker(module_analyser_Analyser* ma, init_checker_Checker* c);
 static void module_analyser_Analyser_collectTypeFunctions(module_analyser_Analyser* ma);
@@ -26556,6 +27036,7 @@ static void module_analyser_Analyser_handleArrayValue(void* arg, ast_ArrayValue*
 static void module_analyser_Analyser_collectIncrementalArrays(module_analyser_Analyser* ma);
 static void module_analyser_Analyser_handleIncrEntry(module_analyser_Analyser* ma, incr_array_list_Info* entry);
 static void module_analyser_Analyser_handleImport(void* arg, ast_ImportDecl* id);
+static void module_analyser_Analyser_handleImportList(void* arg, ast_ImportDecl* id);
 static void module_analyser_Analyser_setMod(module_analyser_Analyser* ma, ast_Module* mod);
 __attribute__((__format__(printf, 3, 4)))
 static void module_analyser_Analyser_note(module_analyser_Analyser* ma, src_loc_SrcLoc loc, const char* format, ...);
@@ -26585,37 +27066,6 @@ static void module_analyser_Analyser_popCheck(module_analyser_Analyser* ma);
 static bool module_analyser_Analyser_globalScope(const module_analyser_Analyser* ma);
 static void module_analyser_findMainFunction(void* arg, ast_FunctionDecl* fd);
 static ast_Decl* module_analyser_Analyser_findMain(module_analyser_Analyser* ma, ast_Module* top, u32 name_idx);
-static const u32 module_analyser_Binop_lhs[29] = {
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_RHS,
-   module_analyser_LHS,
-   module_analyser_LHS | module_analyser_RHS,
-   module_analyser_LHS | module_analyser_RHS,
-   module_analyser_LHS | module_analyser_RHS,
-   module_analyser_LHS | module_analyser_RHS,
-   module_analyser_LHS | module_analyser_RHS,
-   module_analyser_LHS | module_analyser_RHS,
-   module_analyser_LHS | module_analyser_RHS,
-   module_analyser_LHS | module_analyser_RHS,
-   module_analyser_LHS | module_analyser_RHS,
-   module_analyser_LHS | module_analyser_RHS
-};
 static const u8 module_analyser_BinOpConvAddSubAss[9][9] = {
    { 4, 2, 0, 2, 5, 2, 2, 0, 0 },
    { 6, 3, 0, 2, 6, 2, 2, 0, 0 },
@@ -26636,7 +27086,7 @@ static const u8 module_analyser_BinOpConvAdd[9][9] = {
 };
 static const u8 module_analyser_BinOpConvSub[9][9] = {
    { 4, 3, 0, 2, 5, 2, 2, 0, 0 },
-   { 8, 9, 0, 1, 8, 2, 2, 0, 0 },
+   { 8, 9, 0, 2, 8, 2, 2, 0, 0 },
    { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
    { 1, 1, 0, 3, 1, 3, 3, 0, 0 },
    { 6, 3, 0, 2, 7, 2, 2, 0, 0 },
@@ -26679,7 +27129,6 @@ struct module_analyser_FindMemberOffsetContext_ {
 static ast_QualType module_analyser_Analyser_analyseBuiltin(module_analyser_Analyser* ma, ast_Expr** e_ptr);
 static ast_QualType module_analyser_Analyser_analyseSizeof(module_analyser_Analyser* ma, ast_BuiltinExpr* e);
 static ast_QualType module_analyser_Analyser_analyseElemsof(module_analyser_Analyser* ma, ast_BuiltinExpr* b);
-static ast_QualType module_analyser_Analyser_analyseEnumMinMax(module_analyser_Analyser* ma, ast_BuiltinExpr* b);
 static ast_QualType module_analyser_Analyser_analyseOffsetOf(module_analyser_Analyser* ma, ast_BuiltinExpr* b);
 static ast_QualType module_analyser_Analyser_analyseToContainer(module_analyser_Analyser* ma, ast_BuiltinExpr* b);
 static ast_Decl* module_analyser_Analyser_findMemberOffsetAux(module_analyser_Analyser* ma, module_analyser_FindMemberOffsetContext* ctx, ast_Expr* member);
@@ -26701,9 +27150,9 @@ static const char module_analyser_NoteDeclaredHere[21] = "'%s' is defined here";
 static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr);
 static bool module_analyser_on_printf_specifier(void* context, u32 offset, printf_utils_PrintfSpecifier specifier, printf_utils_PrintfConversion* conv);
 static bool module_analyser_on_scanf_specifier(void* context, u32 offset, printf_utils_ScanfSpecifier specifier, printf_utils_ScanfConversion* conv);
-static const char* module_analyser_get_format(ast_Expr* format, src_loc_SrcLoc* format_loc);
+static const char* module_analyser_Analyser_get_format(module_analyser_Analyser* ma, ast_Expr* format, src_loc_SrcLoc* format_loc);
 static bool module_analyser_Analyser_checkFormatArgs(module_analyser_Analyser* ma, ast_Expr* format, ast_Expr** args, u32 num_args, ast_FormatAttr format_attr, ast_Expr** new_format_ptr);
-static void module_analyser_create_template_name(char* name, u32 size, const char* orig, u16 idx);
+static void module_analyser_Analyser_create_template_name(module_analyser_Analyser* ma, char* name, u32 size, u32 orig, u16 idx);
 static void module_analyser_Analyser_opaque_callback(void* arg, src_loc_SrcLoc loc, ast_Decl* d);
 static ast_FunctionDecl* module_analyser_Analyser_instantiateTemplateFunction(module_analyser_Analyser* ma, ast_CallExpr* call, ast_FunctionDecl* fd);
 static const u8 module_analyser_CondOpTable[9][9] = {
@@ -26729,13 +27178,13 @@ static ast_QualType module_analyser_Analyser_analyseExplicitCast(module_analyser
 static ast_QualType module_analyser_Analyser_analyseArraySubscriptExpr(module_analyser_Analyser* ma, ast_Expr** e_ptr, u32 side);
 static ast_QualType module_analyser_Analyser_analyseBitOffsetExpr(module_analyser_Analyser* ma, ast_QualType ltype, ast_Expr* base, ast_Expr* e);
 static bool module_analyser_Analyser_analyseBitOffsetIndex(module_analyser_Analyser* ma, ast_Expr** e_ptr, ast_QualType baseType, value_type_Value* result);
-static void module_analyser_get_best_match(const char* name1, size_t len1, ast_StructTypeDecl* s, size_t* best_dist, const char** result);
+static void module_analyser_Analyser_get_best_match(module_analyser_Analyser* ma, const char* name1, size_t len1, ast_StructTypeDecl* s, size_t* best_dist, const char** result);
 static void module_analyser_Analyser_memberError(module_analyser_Analyser* ma, u32 name_idx, src_loc_SrcLoc loc, ast_StructTypeDecl* s);
 static ast_Decl* module_analyser_Analyser_findStructMember(module_analyser_Analyser* ma, ast_StructTypeDecl* s, u32 name_idx, src_loc_SrcLoc loc);
 static ast_QualType module_analyser_getPointerFromArray(ast_builder_Builder* builder, ast_QualType q);
 static void module_analyser_Analyser_analyseEnumAssocValues(module_analyser_Analyser* ma, ast_EnumTypeDecl* etd);
 static bool module_analyser_Analyser_analyseEnumConstantAssocValues(module_analyser_Analyser* ma, ast_EnumConstantDecl* ecd, u32 num_assocs, ast_VarDecl** columns);
-static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* ma, ast_FunctionDecl* fd);
+static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* ma, ast_FunctionDecl* fd, bool full);
 static bool module_analyser_Analyser_analyseFunctionBody2(module_analyser_Analyser* ma, ast_FunctionDecl* fd, ast_Module* mod);
 static void module_analyser_Analyser_analyseFunctionBody(module_analyser_Analyser* ma, ast_FunctionDecl* fd, scope_Scope* s);
 static void module_analyser_Analyser_checkFormatArgument(module_analyser_Analyser* ma, ast_VarDecl* vd, ast_QualType qt, u32 idx, ast_FunctionDecl* fd, ast_FormatAttr format_attr);
@@ -26786,13 +27235,14 @@ typedef u32 module_analyser_FlowBits;
 static ast_Expr* module_analyser_getCondExpr(const ast_Stmt* cond);
 static bool module_analyser_Analyser_isNoReturn(module_analyser_Analyser* ma, ast_Expr* e);
 static module_analyser_FlowBits module_analyser_Analyser_analyseStmt(module_analyser_Analyser* ma, ast_Stmt** s_ptr, bool checkEffect);
-static void module_analyser_Analyser_analyseBreakStmt(module_analyser_Analyser* ma, ast_Stmt* s);
-static void module_analyser_Analyser_analyseContinueStmt(module_analyser_Analyser* ma, ast_Stmt* s);
+static module_analyser_FlowBits module_analyser_Analyser_analyseBreakStmt(module_analyser_Analyser* ma, ast_Stmt* s);
+static module_analyser_FlowBits module_analyser_Analyser_analyseContinueStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static void module_analyser_Analyser_analyseFallthroughStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static module_analyser_FlowBits module_analyser_Analyser_analyseLabelStmt(module_analyser_Analyser* ma, ast_Stmt* s);
-static void module_analyser_Analyser_analyseGotoStmt(module_analyser_Analyser* ma, ast_Stmt* s);
+static module_analyser_FlowBits module_analyser_Analyser_analyseGotoStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static module_analyser_FlowBits module_analyser_Analyser_analyseCompoundStmt(module_analyser_Analyser* ma, ast_CompoundStmt* c);
-static ast_QualType module_analyser_Analyser_analyseCondition(module_analyser_Analyser* ma, ast_Stmt** s_ptr, bool check_assign);
+static ast_QualType module_analyser_Analyser_analyseConditionDecl(module_analyser_Analyser* ma, ast_Stmt** s_ptr, const char* context);
+static ast_QualType module_analyser_Analyser_analyseCondition(module_analyser_Analyser* ma, ast_Stmt** s_ptr, const char* context, bool check_assign, bool check_bool);
 static module_analyser_FlowBits module_analyser_Analyser_analyseIfStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static module_analyser_FlowBits module_analyser_Analyser_analyseForStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static module_analyser_FlowBits module_analyser_Analyser_analyseWhileStmt(module_analyser_Analyser* ma, ast_Stmt* s);
@@ -26805,10 +27255,10 @@ static const char* module_analyser_get_type_format(ast_Expr* e);
 static void module_analyser_Analyser_analyseReturnStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static void module_analyser_Analyser_checkReturnAddrOfLocal(module_analyser_Analyser* ma, ast_Expr* arg);
 static void module_analyser_Analyser_analyseStructType(module_analyser_Analyser* ma, ast_StructTypeDecl* d);
+static const char* module_analyser_Analyser_bitfieldDesc(module_analyser_Analyser* ma, u32 name_idx);
 static void module_analyser_Analyser_analyseStructMembers(module_analyser_Analyser* ma, ast_StructTypeDecl* d);
 static void module_analyser_Analyser_analyseStructMember(module_analyser_Analyser* ma, ast_VarDecl* v);
 static void module_analyser_Analyser_analyseStructNames(module_analyser_Analyser* ma, ast_StructTypeDecl* d, name_map_NameMap* names);
-static ast_QualType module_analyser_Analyser_analyseSwitchDecl(module_analyser_Analyser* ma, ast_Stmt** s_ptr);
 static module_analyser_FlowBits module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser* ma, ast_Stmt* s);
 static module_analyser_FlowBits module_analyser_Analyser_analyseCase(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_string, bool is_last);
 static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analyser* ma, ast_SwitchCase* c, init_checker_Checker* checker, ast_EnumTypeDecl* etd, bool is_string);
@@ -26817,9 +27267,9 @@ static bool module_analyser_Analyser_checkEnumConstantCase(module_analyser_Analy
 static void module_analyser_Analyser_analyseFunctionType(module_analyser_Analyser* ma, ast_Decl* d);
 static void module_analyser_Analyser_analyseAliasType(module_analyser_Analyser* ma, ast_AliasTypeDecl* a);
 static void module_analyser_Analyser_analyseEnumType(module_analyser_Analyser* ma, ast_EnumTypeDecl* d);
-static ast_QualType module_analyser_Analyser_analyseStructMemberTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref);
-static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref);
-static ast_QualType module_analyser_Analyser_analyseTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref);
+static ast_QualType module_analyser_Analyser_analyseStructMemberFnTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref);
+static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref, bool full);
+static ast_QualType module_analyser_Analyser_analyseTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref, bool full);
 static ast_QualType module_analyser_Analyser_analyseIncrTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref, u32 size);
 static bool module_analyser_Analyser_checkOpaque(module_analyser_Analyser* ma, const ast_StructTypeDecl* std, src_loc_SrcLoc loc);
 static ast_VarDecl* module_analyser_getVarDecl(const ast_Expr* e);
@@ -26840,7 +27290,7 @@ static module_analyser_Analyser* module_analyser_create(diagnostics_Diags* diags
 {
    module_analyser_Analyser* ma = calloc(1, 576);
    ma->diags = diags;
-   conversion_checker_Checker_init(&ma->checker, diags, builder);
+   conversion_checker_Checker_init(&ma->conv_checker, diags, builder);
    ma->context = context;
    ma->astPool = astPool;
    ma->builder = builder;
@@ -26859,7 +27309,7 @@ static module_analyser_Analyser* module_analyser_Analyser_clone(module_analyser_
 {
    module_analyser_Analyser* ma = calloc(1, 576);
    ma->diags = org->diags;
-   conversion_checker_Checker_init(&ma->checker, org->diags, org->builder);
+   conversion_checker_Checker_init(&ma->conv_checker, org->diags, org->builder);
    ma->context = org->context;
    ma->astPool = org->astPool;
    ma->builder = org->builder;
@@ -26884,7 +27334,22 @@ static void module_analyser_Analyser_free(module_analyser_Analyser* ma)
    free(ma);
 }
 
-static void module_analyser_Analyser_check(module_analyser_Analyser* ma, ast_Module* mod)
+static const char* module_analyser_Analyser_idx2name(const module_analyser_Analyser* ma, u32 name_idx)
+{
+   return string_pool_Pool_idx2str(ma->astPool, name_idx);
+}
+
+static const char* module_analyser_Analyser_getName(const module_analyser_Analyser* ma, const ast_Decl* d)
+{
+   return string_pool_Pool_idx2str(ma->astPool, ast_Decl_getNameIdx(d));
+}
+
+static const char* module_analyser_Analyser_getFullName(const module_analyser_Analyser* ma, const ast_Decl* d)
+{
+   return ast_Decl_getFullName(d);
+}
+
+static void module_analyser_Analyser_checkModule(module_analyser_Analyser* ma, ast_Module* mod)
 {
    ma->mod = mod;
    ma->prefix_cache_name = 0;
@@ -26899,6 +27364,7 @@ static void module_analyser_Analyser_check(module_analyser_Analyser* ma, ast_Mod
    ast_builder_Builder_setModule(ma->builder, mod);
    ast_Module_visitASTs(mod, module_analyser_Analyser_createGlobalScope, ma);
    if (diagnostics_Diags_hasErrors(ma->diags)) return;
+   ast_Module_visitImports(mod, module_analyser_Analyser_handleImportList, ma);
    module_analyser_Analyser_collectTypeFunctions(ma);
    if (ma->has_error) return;
    module_analyser_Analyser_collectIncrementalArrays(ma);
@@ -26987,15 +27453,15 @@ static void module_analyser_Analyser_handleIncrEntry(module_analyser_Analyser* m
    u32 name = entry->name;
    ast_Decl* d = ast_Module_findSymbol(ma->mod, name);
    if (!d) {
-      module_analyser_Analyser_error(ma, entry->loc, "module '%s' has no symbol '%s'", ast_Module_getName(ma->mod), ast_idx2name(name));
+      module_analyser_Analyser_error(ma, entry->loc, "module '%s' has no symbol '%s'", ast_Module_getName(ma->mod), module_analyser_Analyser_idx2name(ma, name));
       return;
    }
    if (ast_Decl_isVariable(d)) {
       ast_VarDecl* vd = (ast_VarDecl*)d;
       ast_TypeRef* ref = ast_VarDecl_getTypeRef(vd);
       if (!ast_TypeRef_isIncrArray(ref)) {
-         module_analyser_Analyser_error(ma, entry->loc, "'%s' is not an incremental array", ast_idx2name(name));
-         module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "'%s' is defined here", ast_idx2name(name));
+         module_analyser_Analyser_error(ma, entry->loc, "'%s' is not an incremental array", module_analyser_Analyser_idx2name(ma, name));
+         module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "'%s' is defined here", module_analyser_Analyser_idx2name(ma, name));
          return;
       }
       u32 num_values = ast_ExprList_size(&entry->values);
@@ -27005,8 +27471,8 @@ static void module_analyser_Analyser_handleIncrEntry(module_analyser_Analyser* m
    } else if (ast_Decl_isEnum(d)) {
       ast_EnumTypeDecl* etd = (ast_EnumTypeDecl*)d;
       if (!ast_EnumTypeDecl_isIncremental(etd)) {
-         module_analyser_Analyser_error(ma, entry->loc, "'%s' is not an incremental enum", ast_idx2name(name));
-         module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "'%s' is defined here", ast_idx2name(name));
+         module_analyser_Analyser_error(ma, entry->loc, "'%s' is not an incremental enum", module_analyser_Analyser_idx2name(ma, name));
+         module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "'%s' is defined here", module_analyser_Analyser_idx2name(ma, name));
          return;
       }
       u32 num_values = ast_ExprList_size(&entry->values);
@@ -27020,8 +27486,8 @@ static void module_analyser_Analyser_handleIncrEntry(module_analyser_Analyser* m
       }
       ast_EnumTypeDecl_setIncrConstants(etd, ma->context, (ast_IdentifierExpr**)values, num_values);
    } else {
-      module_analyser_Analyser_error(ma, entry->loc, "'%s' is not an incremental array/enum", ast_idx2name(name));
-      module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "'%s' is defined here", ast_idx2name(name));
+      module_analyser_Analyser_error(ma, entry->loc, "'%s' is not an incremental array/enum", module_analyser_Analyser_idx2name(ma, name));
+      module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "'%s' is defined here", module_analyser_Analyser_idx2name(ma, name));
    }
 }
 
@@ -27034,6 +27500,30 @@ static void module_analyser_Analyser_handleImport(void* arg, ast_ImportDecl* id)
    if (ast_Module_isExternal(dest)) return;
    if (!ast_Module_isExported(dest)) {
       module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "exported module '%s' publicly uses non-exported module '%s'", ast_Module_getName(ma->mod), ast_Module_getName(dest));
+   }
+}
+
+static void module_analyser_Analyser_handleImportList(void* arg, ast_ImportDecl* id)
+{
+   module_analyser_Analyser* ma = arg;
+   ast_Module* dest = ast_ImportDecl_getDest(id);
+   u32 symlist_count = ast_ImportDecl_getSymlistSize(id);
+   ast_Symbol* symlist = ast_ImportDecl_getSymlistData(id);
+   for (u32 i = 0; i < symlist_count; i++) {
+      u32 name_idx = symlist[i].name_idx;
+      symlist[i].decl = ast_Module_findPublicSymbol(dest, name_idx);
+      if (!symlist[i].decl) {
+         u32 loc = symlist[i].loc;
+         {
+            ast_Decl* d = ast_Module_findSymbol(dest, name_idx);
+            if (d) {
+               module_analyser_Analyser_error(ma, loc, "symbol '%s' is not public", module_analyser_Analyser_getFullName(ma, d));
+               module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "symbol definition is here");
+            } else {
+               module_analyser_Analyser_error(ma, loc, "module '%s' has no symbol '%s'", module_analyser_Analyser_idx2name(ma, ast_Decl_getNameIdx(((ast_Decl*)id))), module_analyser_Analyser_idx2name(ma, name_idx));
+            }
+         }
+      }
    }
 }
 
@@ -27083,7 +27573,7 @@ static void module_analyser_Analyser_errorRange(module_analyser_Analyser* ma, sr
 static void module_analyser_Analyser_createGlobalScope(void* arg, ast_AST* a)
 {
    module_analyser_Analyser* ma = arg;
-   scope_Scope* s = scope_create(ma->allmodules, ma->diags, ast_AST_getImports(a), ma->mod, ast_Module_getSymbols(ma->mod), !ma->warnings->no_unused_variable);
+   scope_Scope* s = scope_create(ma->allmodules, ma->diags, ma->astPool, ast_AST_getImports(a), ma->mod, ast_Module_getSymbols(ma->mod), !ma->warnings->no_unused_variable);
    ast_AST_setPtr(a, s);
 }
 
@@ -27116,7 +27606,7 @@ static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDec
             if (decl) {
                module_analyser_Analyser_error(ma, prefix->loc, "%s", msg);
             } else {
-               module_analyser_Analyser_error(ma, prefix->loc, "module '%s' has no symbol '%s'", ast_Module_getName(ma->mod), ast_Ref_getName(prefix));
+               module_analyser_Analyser_error(ma, prefix->loc, "module '%s' has no symbol '%s'", ast_Module_getName(ma->mod), module_analyser_Analyser_idx2name(ma, ast_Ref_getNameIdx(prefix)));
             }
             return;
          }
@@ -27136,7 +27626,7 @@ static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDec
    }
    ast_FunctionDecl* other = struct_func_list_List_findFunc(ma->type_fn_decls, index, ast_Decl_getNameIdx(d));
    if (other) {
-      module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "redefinition of '%s'", ast_Decl_getFullName(d));
+      module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "redefinition of '%s'", module_analyser_Analyser_getFullName(ma, d));
       module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(other)), "previous definition is here");
       return;
    }
@@ -27145,7 +27635,7 @@ static void module_analyser_Analyser_handleStructFunc(void* arg, ast_FunctionDec
       ast_StructTypeDecl* std = (ast_StructTypeDecl*)prefix->decl;
       ast_Decl* match = ast_StructTypeDecl_findMember(std, ast_Decl_getNameIdx(d), NULL);
       if (match) {
-         module_analyser_Analyser_error(ma, ast_Decl_getLoc(match), "member '%s' conflicts with type-function '%s'", ast_Decl_getName(match), ast_Decl_getFullName(d));
+         module_analyser_Analyser_error(ma, ast_Decl_getLoc(match), "member '%s' conflicts with type-function '%s'", module_analyser_Analyser_getName(ma, match), module_analyser_Analyser_getFullName(ma, d));
          module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "previous declaration is here");
          return;
       }
@@ -27181,7 +27671,7 @@ static bool module_analyser_Analyser_analyseGlobalDecl(module_analyser_Analyser*
    ma->has_error = false;
    switch (ast_Decl_getKind(d)) {
    case ast_DeclKind_Function:
-      module_analyser_Analyser_analyseFunction(ma, (ast_FunctionDecl*)d);
+      module_analyser_Analyser_analyseFunction(ma, (ast_FunctionDecl*)d, true);
       break;
    case ast_DeclKind_Import:
       break;
@@ -27269,7 +27759,7 @@ static void module_analyser_Analyser_handleStaticAssert(void* arg, ast_StaticAss
    const char* msg = "static_assert failed";
    if (rhs && ast_Expr_isStringLiteral(rhs)) {
       ast_StringLiteral* s = (ast_StringLiteral*)rhs;
-      msg = string_pool_Pool_idx2str(ma->astPool, ast_StringLiteral_getTextIndex(s));
+      msg = module_analyser_Analyser_idx2name(ma, ast_StringLiteral_getText(s));
       rhs = NULL;
    }
    if (!module_analyser_Analyser_pushCheck(ma, NULL, ast_AST_getPtr(ast_StaticAssert_getAST(sa)), NULL)) return;
@@ -27321,7 +27811,7 @@ static void module_analyser_Analyser_handleStaticAssert(void* arg, ast_StaticAss
       } else {
          string_buffer_Buf_add(&buf, "expected ");
          ast_Expr_printLiteral(lhs, &buf);
-         string_buffer_Buf_print(&buf, " %s ", ast_BinaryOpcode_str(opcode));
+         string_buffer_Buf_print(&buf, " %s ", ast_BinaryOpcode__name[opcode]);
          ast_Expr_printLiteral(rhs, &buf);
          if (!module_analyser_isTrueLiteral(lhs)) {
             module_analyser_Analyser_printLiteral(ma, &buf, ", ", lhs, val1, true);
@@ -27347,7 +27837,7 @@ static void module_analyser_Analyser_handleVarDecl(void* arg, ast_VarDecl* v)
 
 static void module_analyser_Analyser_checkName(module_analyser_Analyser* ma, ast_Decl* d, bool is_constant)
 {
-   const char* name = ast_Decl_getName(d);
+   const char* name = module_analyser_Analyser_getName(ma, d);
    if (is_constant) {
       if (islower(name[0])) {
          module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "a global constant name must start with an upper case character");
@@ -27373,7 +27863,7 @@ static void module_analyser_Analyser_analyseGlobalVarDecl(module_analyser_Analys
       }
       res = module_analyser_Analyser_analyseIncrTypeRef(ma, ref, size);
    } else {
-      res = module_analyser_Analyser_analyseTypeRef(ma, ref);
+      res = module_analyser_Analyser_analyseTypeRef(ma, ref, true);
    }
    if (ast_QualType_isInvalid(res)) return;
    ast_QualType canon = ast_QualType_getCanonicalType(res);
@@ -27391,7 +27881,7 @@ static void module_analyser_Analyser_analyseGlobalVarDecl(module_analyser_Analys
          }
       } else {
          if (!init_expr && !ast_Decl_isExternal(d) && !embed) {
-            module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "array-type variable '%s' needs an explicit size or an initializer", ast_Decl_getFullName(d));
+            module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "array-type variable '%s' needs an explicit size or an initializer", module_analyser_Analyser_getFullName(ma, d));
             return;
          }
       }
@@ -27407,7 +27897,7 @@ static void module_analyser_Analyser_analyseGlobalVarDecl(module_analyser_Analys
          module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "variables with 'embed' attribute cannot have an initializer");
          return;
       }
-      const char* filename = string_pool_Pool_idx2str(ma->astPool, embed->value.text);
+      const char* filename = module_analyser_Analyser_idx2name(ma, embed->value.text);
       file_utils_File reader; file_utils_File_init(&reader, filename, NULL, NULL);
       if (!file_utils_File_load(&reader)) {
          module_analyser_Analyser_error(ma, embed->loc, "error opening embedded file '%s': %s", filename, file_utils_File_getError(&reader));
@@ -27416,14 +27906,13 @@ static void module_analyser_Analyser_analyseGlobalVarDecl(module_analyser_Analys
       u32 src_len = 8;
       u32 len = file_utils_File_data_size(&reader);
       u32 value = string_pool_Pool_add(ma->astPool, file_utils_File_data(&reader), len, false);
-      if (!is_char) len--;
-      ast_Expr* init = ast_builder_Builder_actOnStringLiteral(ma->builder, embed->loc, src_len, value, len);
+      ast_Expr* init = ast_builder_Builder_actOnStringLiteral(ma->builder, embed->loc, src_len, value, len, is_char);
       ast_VarDecl_setInit(v, init);
       ast_Decl_setType(d, ast_Expr_getType(init));
       file_utils_File_close(&reader);
    }
    if (!ast_AST_isInterface(ast_Decl_getAST(d))) module_analyser_Analyser_checkName(ma, d, ast_QualType_isConstant(res));
-   if (ast_Decl_isPublic(d)) ast_setTypePublicUsed(res);
+   if (ast_Decl_isPublic(d)) ast_QualType_setTypeUsedPublic(res);
    if (init_expr) {
       if (!ast_QualType_isConstant(res)) {
          ma->checkStack[ma->checkIndex - 1].usedPublic = false;
@@ -27434,7 +27923,7 @@ static void module_analyser_Analyser_analyseGlobalVarDecl(module_analyser_Analys
       ma->global_initializer--;
    } else {
       if (ast_QualType_isConstant(res) && !embed) {
-         module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "constant variable '%s' must be initialized", ast_Decl_getFullName(d));
+         module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "constant variable '%s' must be initialized", module_analyser_Analyser_getFullName(ma, d));
       }
    }
    module_analyser_Analyser_checkVarDeclAttributes(ma, v);
@@ -27468,7 +27957,7 @@ static bool module_analyser_Analyser_pushCheck(module_analyser_Analyser* ma, ast
             for (u32 j = i; j < ma->checkIndex; j++) {
                const ast_Decl* other = ma->checkStack[j].decl;
                if (other) {
-                  module_analyser_Analyser_error(ma, ast_Decl_getLoc(other), "circular declaration dependency '%s'", ast_Decl_getName(other));
+                  module_analyser_Analyser_error(ma, ast_Decl_getLoc(other), "circular declaration dependency '%s'", module_analyser_Analyser_getName(ma, other));
                }
             }
             return false;
@@ -27476,7 +27965,7 @@ static bool module_analyser_Analyser_pushCheck(module_analyser_Analyser* ma, ast
       }
    }
    ma->scope = s;
-   ;//assert(ma->checkIndex <= module_analyser_MaxDepth);
+   ;//assert(ma->checkIndex < module_analyser_MaxDepth);
    module_analyser_StackLayer* top = &ma->checkStack[ma->checkIndex];
    top->decl = d;
    top->scope = s;
@@ -27576,7 +28065,7 @@ static bool module_analyser_validTestType(ast_QualType t)
 
 static ast_QualType module_analyser_Analyser_invalidBinOp1(module_analyser_Analyser* ma, ast_BinaryOperator* b, ast_Expr* sub, ast_QualType qt)
 {
-   module_analyser_Analyser_error(ma, ast_Expr_getLoc(sub), "invalid operand type '%s' for binary expression '%s'", ast_QualType_diagName(qt), ast_BinaryOpcode_str(ast_BinaryOperator_getOpcode(b)));
+   module_analyser_Analyser_error(ma, ast_Expr_getLoc(sub), "invalid operand type '%s' for binary expression '%s'", ast_QualType_diagName(qt), ast_BinaryOpcode__name[ast_BinaryOperator_getOpcode(b)]);
    return ast_QualType_Invalid;
 }
 
@@ -27930,7 +28419,7 @@ static ast_QualType module_analyser_Analyser_checkFuncTest(module_analyser_Analy
 {
    ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
    if (ast_FunctionDecl_isType(fd) || ast_FunctionDecl_hasAttrWeak(fd)) return ast_getBuiltinQT(ast_BuiltinKind_Bool);
-   module_analyser_Analyser_error(ma, loc, "comparison of function '%s' will always be true", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+   module_analyser_Analyser_error(ma, loc, "comparison of function '%s' will always be true", module_analyser_Analyser_getFullName(ma, ast_FunctionDecl_asDecl(fd)));
    return ast_QualType_Invalid;
 }
 
@@ -27951,7 +28440,7 @@ static bool module_analyser_Analyser_checkAmbiguousOperators(module_analyser_Ana
       ast_BinaryOperator* b = (ast_BinaryOperator*)sub;
       ast_BinaryOpcode op1 = ast_BinaryOperator_getOpcode(b);
       if (module_analyser_incompatible_opcodes(opcode, op1)) {
-         module_analyser_Analyser_error(ma, ast_Expr_getLoc(sub), "operators '%s' and '%s' do not combine without parentheses", ast_BinaryOpcode_str(opcode), ast_BinaryOpcode_str(op1));
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(sub), "operators '%s' and '%s' do not combine without parentheses", ast_BinaryOpcode__name[opcode], ast_BinaryOpcode__name[op1]);
          return false;
       }
    }
@@ -27965,7 +28454,7 @@ static ast_QualType module_analyser_Analyser_analyseBinaryOperator(module_analys
    ast_BinaryOpcode opcode = ast_BinaryOperator_getOpcode(b);
    bool need_lhs_rvalue = true;
    if (opcode >= ast_BinaryOpcode_Assign) need_lhs_rvalue = false;
-   ast_QualType ltype = module_analyser_Analyser_analyseExpr(ma, ast_BinaryOperator_getLHS2(b), need_lhs_rvalue, module_analyser_Binop_lhs[opcode]);
+   ast_QualType ltype = module_analyser_Analyser_analyseExpr(ma, ast_BinaryOperator_getLHS2(b), need_lhs_rvalue, ast_BinaryOpcode__side[opcode]);
    if (ast_QualType_isInvalid(ltype)) return ast_QualType_Invalid;
    if (!need_lhs_rvalue) {
       if (!module_analyser_Analyser_checkAssignment(ma, ast_BinaryOperator_getLHS(b), ltype, "left operand of assignment", ast_Expr_getLoc(e))) {
@@ -27989,7 +28478,7 @@ static ast_QualType module_analyser_Analyser_analyseBinaryOperator(module_analys
       if (!module_analyser_Analyser_analyseInitExpr(ma, ast_BinaryOperator_getRHS2(b), ltype, ast_Expr_getLoc(e), false, false)) return ast_QualType_Invalid;
       return ltype;
    } else {
-      rtype = module_analyser_Analyser_analyseExpr(ma, ast_BinaryOperator_getRHS2(b), true, module_analyser_RHS);
+      rtype = module_analyser_Analyser_analyseExpr(ma, ast_BinaryOperator_getRHS2(b), true, ast_RHS);
    }
    if (ast_QualType_isInvalid(rtype)) return ast_QualType_Invalid;
    ast_Expr* lhs = ast_BinaryOperator_getLHS(b);
@@ -28091,9 +28580,6 @@ static ast_QualType module_analyser_Analyser_analyseBuiltin(module_analyser_Anal
       return module_analyser_Analyser_analyseSizeof(ma, b);
    case ast_BuiltinExprKind_Elemsof:
       return module_analyser_Analyser_analyseElemsof(ma, b);
-   case ast_BuiltinExprKind_EnumMin:
-   case ast_BuiltinExprKind_EnumMax:
-      return module_analyser_Analyser_analyseEnumMinMax(ma, b);
    case ast_BuiltinExprKind_OffsetOf:
       return module_analyser_Analyser_analyseOffsetOf(ma, b);
    case ast_BuiltinExprKind_ToContainer:
@@ -28112,7 +28598,7 @@ static ast_QualType module_analyser_Analyser_analyseSizeof(module_analyser_Analy
    if (ast_Expr_isType(inner)) {
       ast_TypeExpr* te = (ast_TypeExpr*)inner;
       ast_TypeRef* ref = ast_TypeExpr_getTypeRef(te);
-      qt = module_analyser_Analyser_analyseTypeRef(ma, ref);
+      qt = module_analyser_Analyser_analyseTypeRef(ma, ref, true);
       ast_Expr_setType(inner, qt);
    } else {
       qt = module_analyser_Analyser_analyseExpr(ma, &inner, false, 0);
@@ -28142,7 +28628,7 @@ static ast_QualType module_analyser_Analyser_analyseSizeof(module_analyser_Analy
    ma->usedPublic = savedPublic;
    if (ast_QualType_isInvalid(qt)) return ast_QualType_Invalid;
    size_analyser_TypeSize info = size_analyser_sizeOfType(qt);
-   ast_BuiltinExpr_setUValue(e, info.size);
+   ast_BuiltinExpr_setValue(e, info.size);
    return ast_getBuiltinQT(ast_BuiltinKind_UInt32);
 }
 
@@ -28151,7 +28637,7 @@ static ast_QualType module_analyser_Analyser_analyseElemsof(module_analyser_Anal
    ast_Expr* inner = ast_BuiltinExpr_getInner(b);
    bool savedPublic = ma->usedPublic;
    ma->usedPublic = false;
-   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, &inner, false, module_analyser_RHS);
+   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, &inner, false, ast_RHS);
    ma->usedPublic = savedPublic;
    if (ast_QualType_isInvalid(qt)) return qt;
    const ast_ArrayType* at = ast_QualType_getArrayTypeOrNil(qt);
@@ -28160,44 +28646,24 @@ static ast_QualType module_analyser_Analyser_analyseElemsof(module_analyser_Anal
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(inner), "elemsof cannot be used on arrays of unknown length");
          return ast_QualType_Invalid;
       }
-      ast_BuiltinExpr_setUValue(b, ast_ArrayType_getSize(at));
+      ast_BuiltinExpr_setValue(b, ast_ArrayType_getSize(at));
       return ast_getBuiltinQT(ast_BuiltinKind_UInt32);
    }
    const ast_EnumType* et = ast_QualType_getEnumTypeOrNil(qt);
    if (et) {
       const ast_EnumTypeDecl* etd = ast_EnumType_getDecl(et);
-      ast_BuiltinExpr_setUValue(b, ast_EnumTypeDecl_getNumConstants(etd));
+      ast_BuiltinExpr_setValue(b, ast_EnumTypeDecl_getNumConstants(etd));
       return ast_getBuiltinQT(ast_BuiltinKind_UInt32);
    }
    module_analyser_Analyser_error(ma, ast_Expr_getLoc(inner), "elemsof can only be used on arrays/enums");
    return ast_QualType_Invalid;
 }
 
-static ast_QualType module_analyser_Analyser_analyseEnumMinMax(module_analyser_Analyser* ma, ast_BuiltinExpr* b)
-{
-   ast_Expr* inner = ast_BuiltinExpr_getInner(b);
-   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, &inner, false, module_analyser_RHS);
-   if (ast_QualType_isInvalid(qt)) return ast_QualType_Invalid;
-   ast_EnumType* et = ast_QualType_getEnumTypeOrNil(qt);
-   if (!et) {
-      const char* kind = (ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_EnumMin) ? "enum_min" : "enum_max";
-      module_analyser_Analyser_error(ma, ast_Expr_getLoc(inner), "%s can only be used on enum types", kind);
-      return ast_QualType_Invalid;
-   }
-   ast_EnumTypeDecl* etd = ast_EnumType_getDecl(et);
-   u32 num = ast_EnumTypeDecl_getNumConstants(etd);
-   ast_EnumConstantDecl** constants = ast_EnumTypeDecl_getConstants(etd);
-   u32 index = 0;
-   if (ast_BuiltinExpr_getKind(b) == ast_BuiltinExprKind_EnumMax) index = num - 1;
-   ast_BuiltinExpr_setValue(b, ast_EnumConstantDecl_getValue(constants[index]));
-   return ast_EnumTypeDecl_getImplType(etd);
-}
-
 static ast_QualType module_analyser_Analyser_analyseOffsetOf(module_analyser_Analyser* ma, ast_BuiltinExpr* b)
 {
    ast_Expr* e = (ast_Expr*)b;
    ast_Expr* inner = ast_BuiltinExpr_getInner(b);
-   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, &inner, false, module_analyser_RHS);
+   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, &inner, false, ast_RHS);
    if (ast_QualType_isInvalid(qt)) return ast_QualType_Invalid;
    ast_Expr_setType(e, ast_getBuiltinQT(ast_BuiltinKind_UInt32));
    ast_StructType* st = ast_QualType_getStructTypeOrNil(qt);
@@ -28216,7 +28682,7 @@ static ast_QualType module_analyser_Analyser_analyseOffsetOf(module_analyser_Ana
 static ast_QualType module_analyser_Analyser_analyseToContainer(module_analyser_Analyser* ma, ast_BuiltinExpr* b)
 {
    ast_Expr* inner = ast_BuiltinExpr_getInner(b);
-   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, &inner, false, module_analyser_RHS);
+   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, &inner, false, ast_RHS);
    if (ast_QualType_isInvalid(qt)) return ast_QualType_Invalid;
    ast_StructType* st = ast_QualType_getStructTypeOrNil(qt);
    if (!st) {
@@ -28229,14 +28695,14 @@ static ast_QualType module_analyser_Analyser_analyseToContainer(module_analyser_
    ast_Decl* d = module_analyser_Analyser_findMemberOffset(ma, b, std, member);
    if (!d) return ast_QualType_Invalid;
    ast_Expr** pptr = ast_BuiltinExpr_getToContainerPointer2(b);
-   ast_QualType qptr = module_analyser_Analyser_analyseExpr(ma, pptr, false, module_analyser_RHS);
+   ast_QualType qptr = module_analyser_Analyser_analyseExpr(ma, pptr, false, ast_RHS);
    if (ast_QualType_isInvalid(qptr)) return ast_QualType_Invalid;
    ast_PointerType* pt = ast_QualType_getPointerType(qptr);
    ast_QualType_copyQuals(&qt, ast_PointerType_getInner(pt));
    ast_QualType qmem = ast_Decl_getType(d);
    ast_QualType_copyQuals(&qmem, ast_PointerType_getInner(pt));
    ast_QualType expectedType = ast_builder_Builder_actOnPointerType(ma->builder, qmem);
-   if (!conversion_checker_Checker_check(&ma->checker, expectedType, qptr, pptr, ast_Expr_getLoc((*pptr)))) {
+   if (!conversion_checker_Checker_checkAssign(&ma->conv_checker, expectedType, qptr, pptr, ast_Expr_getLoc((*pptr)))) {
       return ast_QualType_Invalid;
    }
    return ast_builder_Builder_actOnPointerType(ma->builder, qt);
@@ -28282,7 +28748,7 @@ static ast_Decl* module_analyser_Analyser_findMemberOffset(module_analyser_Analy
 {
    module_analyser_FindMemberOffsetContext ctx = { std, 0 };
    ast_Decl* d = module_analyser_Analyser_findMemberOffsetAux(ma, &ctx, member);
-   if (d) ast_BuiltinExpr_setUValue(b, ctx.base_offset);
+   if (d) ast_BuiltinExpr_setValue(b, ctx.base_offset);
    return d;
 }
 
@@ -28299,7 +28765,7 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
    ast_CallExpr* call = (ast_CallExpr*)e;
    ast_Expr** func = ast_CallExpr_getFunc2(call);
    ast_Expr* origFn = ast_CallExpr_getFunc(call);
-   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, func, true, module_analyser_RHS);
+   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, func, true, ast_RHS);
    if (ast_QualType_isInvalid(qt)) return ast_QualType_Invalid;
    if (ast_Expr_isNValue(origFn)) {
       module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(origFn), ast_Expr_getRange(origFn), "called object is not a function or function pointer");
@@ -28328,28 +28794,28 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
          }
       } else if (ma->global_initializer) {
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "only pure functions can be called in global initializers");
-         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), module_analyser_NoteDeclaredHere, ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), module_analyser_NoteDeclaredHere, module_analyser_Analyser_getFullName(ma, ast_FunctionDecl_asDecl(fd)));
          return ast_QualType_Invalid;
       }
    }
    if (ast_FunctionDecl_hasAttrNoReturn(fd)) ast_CallExpr_setNoreturn(call);
    if (ast_FunctionDecl_isTemplate(fd)) {
       if (!ast_CallExpr_getTemplateArg(call)) {
-         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "function %s requires a template argument", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "function %s requires a template argument", module_analyser_Analyser_getFullName(ma, ast_FunctionDecl_asDecl(fd)));
          return ast_QualType_Invalid;
       }
       fd = module_analyser_Analyser_instantiateTemplateFunction(ma, call, fd);
       if (!fd) return ast_QualType_Invalid;
    } else {
       if (ast_CallExpr_getTemplateArg(call)) {
-         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "function %s is not a template function", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+         module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "function %s is not a template function", module_analyser_Analyser_getFullName(ma, ast_FunctionDecl_asDecl(fd)));
          return ast_QualType_Invalid;
       }
    }
    if (ast_FunctionDecl_hasAttrDeprecated(fd) && !ma->warnings->no_deprecated) {
       const attr_Attr* deprecated = ast_Decl_getAttr(((ast_Decl*)fd), attr_AttrKind_Deprecated);
-      const char* msg = string_pool_Pool_idx2str(ma->astPool, deprecated->value.text);
-      module_analyser_Analyser_warn(ma, ast_Expr_getLoc(origFn), "function %s is deprecated: %s", ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)), msg);
+      const char* msg = module_analyser_Analyser_idx2name(ma, deprecated->value.text);
+      module_analyser_Analyser_warn(ma, ast_Expr_getLoc(origFn), "function %s is deprecated: %s", module_analyser_Analyser_getFullName(ma, ast_FunctionDecl_asDecl(fd)), msg);
    }
    bool isCtv = ast_FunctionDecl_hasAttrPure(fd);
    bool isCtc = isCtv;
@@ -28378,8 +28844,9 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
          break;
       case ast_CallKind_StaticTypeFunc:
          if (!ast_MemberExpr_isStaticTypeFunc(m)) {
-            module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "'%s' is a static type-function; use '%s()'", ast_Decl_getFullName(fdd), ast_Decl_getFullName(fdd));
-            module_analyser_Analyser_note(ma, ast_Decl_getLoc(fdd), "'%s' is defined here", ast_Decl_getFullName(fdd));
+            const char* full_name = module_analyser_Analyser_getFullName(ma, fdd);
+            module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "'%s' is a static type-function; use '%s()'", full_name, full_name);
+            module_analyser_Analyser_note(ma, ast_Decl_getLoc(fdd), "'%s' is defined here", full_name);
             return ast_QualType_Invalid;
          }
          ast_CallExpr_setCallsStaticTypeFunc(call);
@@ -28414,7 +28881,7 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
             ast_MemberExpr_setConversion(m, ast_MemberConversion_Deref);
          }
       }
-      bool ok = conversion_checker_Checker_check(&ma->checker, expectedType, baseType, e_ptr, loc);
+      bool ok = conversion_checker_Checker_checkAssign(&ma->conv_checker, expectedType, baseType, e_ptr, loc);
       if (!ok) return ast_QualType_Invalid;
       func_arg_index++;
       isCtv = isCtc = false;
@@ -28446,10 +28913,10 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
             func_arg_index++;
          }
          if (!found) {
-            module_analyser_Analyser_error(ma, ast_Expr_getLoc(arg), "unexpected named argument '%s'", string_pool_Pool_idx2str(ma->astPool, arg_name_idx));
+            module_analyser_Analyser_error(ma, ast_Expr_getLoc(arg), "unexpected named argument '%s'", module_analyser_Analyser_idx2name(ma, arg_name_idx));
             if (func_arg_index < func_num_args) {
                if (param_name_idx) {
-                  module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "expected argument '%s' instead", string_pool_Pool_idx2str(ma->astPool, param_name_idx));
+                  module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "expected argument '%s' instead", module_analyser_Analyser_idx2name(ma, param_name_idx));
                } else {
                   module_analyser_Analyser_note(ma, ast_Decl_getLoc(d), "expected unnamed argument");
                }
@@ -28473,7 +28940,7 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
       }
       if (missing_args) {
          module_analyser_Analyser_error(ma, ast_CallExpr_getEndLoc(call) - 1, "too few arguments to %sfunction call, expected %u, have %u", ast_FunctionDecl_getDiagKind(fd), expected_args, call_num_args);
-         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), module_analyser_NoteDeclaredHere, ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), module_analyser_NoteDeclaredHere, module_analyser_Analyser_getFullName(ma, ast_FunctionDecl_asDecl(fd)));
          return ast_QualType_Invalid;
       }
    }
@@ -28482,11 +28949,11 @@ static ast_QualType module_analyser_Analyser_analyseCallExpr(module_analyser_Ana
       if (!ast_FunctionDecl_isVariadic(fd)) {
          ast_Expr* call_arg = call_args[call_arg_index];
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(call_arg), "too many arguments to %sfunction call, expected %u, have %u", ast_FunctionDecl_getDiagKind(fd), expected_args, call_num_args);
-         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), module_analyser_NoteDeclaredHere, ast_Decl_getFullName(ast_FunctionDecl_asDecl(fd)));
+         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_FunctionDecl_asDecl(fd)), module_analyser_NoteDeclaredHere, module_analyser_Analyser_getFullName(ma, ast_FunctionDecl_asDecl(fd)));
          return ast_QualType_Invalid;
       }
       while (call_arg_index < call_num_args) {
-         ast_QualType callType = module_analyser_Analyser_analyseExpr(ma, &call_args[call_arg_index], true, module_analyser_RHS);
+         ast_QualType callType = module_analyser_Analyser_analyseExpr(ma, &call_args[call_arg_index], true, ast_RHS);
          ast_Expr* call_arg = call_args[call_arg_index];
          if (ast_QualType_isInvalid(callType)) return ast_QualType_Invalid;
          if (ast_QualType_isVoid(callType)) {
@@ -28710,6 +29177,7 @@ static bool module_analyser_on_scanf_specifier(void* context, u32 offset, printf
       case printf_utils_ScanfSpecifier_FloatingPoint:
          if (!bi || !ast_BuiltinType_isFloatingPoint(bi)) {
             module_analyser_Analyser_error(ma, ast_Expr_getStartLoc(arg), "conversion '%%%c' expects a floating-point pointer argument", c);
+            break;
          }
          if (ast_BuiltinType_getWidth(bi) > 32) string_buffer_Buf_add1(fa->out, 'l');
          break;
@@ -28728,7 +29196,7 @@ static bool module_analyser_on_scanf_specifier(void* context, u32 offset, printf
    return true;
 }
 
-static const char* module_analyser_get_format(ast_Expr* format, src_loc_SrcLoc* format_loc)
+static const char* module_analyser_Analyser_get_format(module_analyser_Analyser* ma, ast_Expr* format, src_loc_SrcLoc* format_loc)
 {
    if (!ast_Expr_isImplicitCast(format)) return NULL;
    ast_ImplicitCastExpr* ic = (ast_ImplicitCastExpr*)format;
@@ -28740,7 +29208,7 @@ static const char* module_analyser_get_format(ast_Expr* format, src_loc_SrcLoc* 
       case ast_ExprKind_StringLiteral: {
          *format_loc = ast_Expr_getLoc(format) + 1;
          ast_StringLiteral* s = (ast_StringLiteral*)format;
-         return ast_StringLiteral_getText(s);
+         return module_analyser_Analyser_idx2name(ma, ast_StringLiteral_getText(s));
       }
       case ast_ExprKind_Identifier: {
          ast_QualType qt = ast_Expr_getType(format);
@@ -28780,7 +29248,7 @@ static const char* module_analyser_get_format(ast_Expr* format, src_loc_SrcLoc* 
 static bool module_analyser_Analyser_checkFormatArgs(module_analyser_Analyser* ma, ast_Expr* format, ast_Expr** args, u32 num_args, ast_FormatAttr format_attr, ast_Expr** new_format_ptr)
 {
    src_loc_SrcLoc format_loc = ast_Expr_getLoc(format);
-   const char* format_text = module_analyser_get_format(format, &format_loc);
+   const char* format_text = module_analyser_Analyser_get_format(ma, format, &format_loc);
    if (!format_text) {
       module_analyser_Analyser_error(ma, format_loc, "format argument is not a constant string");
       return false;
@@ -28812,16 +29280,16 @@ static bool module_analyser_Analyser_checkFormatArgs(module_analyser_Analyser* m
    const char* new_format_text = string_buffer_Buf_data(out);
    if (strcmp(format_text, new_format_text)) {
       u32 len = string_buffer_Buf_size(out);
-      *new_format_ptr = ast_builder_Builder_actOnStringLiteral(ma->builder, 0, len, string_pool_Pool_add(ma->astPool, new_format_text, len, true), len);
+      *new_format_ptr = ast_builder_Builder_actOnStringLiteral(ma->builder, 0, len, string_pool_Pool_add(ma->astPool, new_format_text, len, true), len, true);
       ast_builder_Builder_insertImplicitCast(ma->builder, ast_ImplicitCastKind_ArrayToPointerDecay, new_format_ptr, ast_Expr_getType(format));
    }
    string_buffer_Buf_free(out);
    return true;
 }
 
-static void module_analyser_create_template_name(char* name, u32 size, const char* orig, u16 idx)
+static void module_analyser_Analyser_create_template_name(module_analyser_Analyser* ma, char* name, u32 size, u32 orig, u16 idx)
 {
-   snprintf(name, size, "%s_%d_", orig, idx);
+   snprintf(name, size, "%s_%d_", module_analyser_Analyser_idx2name(ma, orig), idx);
 }
 
 static void module_analyser_Analyser_opaque_callback(void* arg, src_loc_SrcLoc loc, ast_Decl* d)
@@ -28834,7 +29302,7 @@ static void module_analyser_Analyser_opaque_callback(void* arg, src_loc_SrcLoc l
 static ast_FunctionDecl* module_analyser_Analyser_instantiateTemplateFunction(module_analyser_Analyser* ma, ast_CallExpr* call, ast_FunctionDecl* fd)
 {
    ast_TypeRef* template_arg = ast_CallExpr_getTemplateArg(call);
-   ast_QualType templateType = module_analyser_Analyser_analyseTypeRef(ma, template_arg);
+   ast_QualType templateType = module_analyser_Analyser_analyseTypeRef(ma, template_arg, true);
    if (ast_QualType_isInvalid(templateType)) return NULL;
    ast_FunctionDecl* instance = ast_Module_findInstance(ma->mod, fd, templateType);
    if (!instance) {
@@ -28856,13 +29324,13 @@ static ast_FunctionDecl* module_analyser_Analyser_instantiateTemplateFunction(mo
       };
       instance = ast_FunctionDecl_instantiate(fd, &inst);
       ast_Decl* d = (ast_Decl*)instance;
-      module_analyser_Analyser_analyseFunction(ma, instance);
+      module_analyser_Analyser_analyseFunction(ma, instance, true);
       if (ma->has_error) return NULL;
       ast_Decl_setChecked(d);
       ast_Module* template_mod = ast_Decl_getModule(ast_FunctionDecl_asDecl(fd));
       module_analyser_Analyser* analyser = module_analyser_Analyser_clone(ma);
       module_analyser_Analyser_setMod(analyser, template_mod);
-      scope_Scope* tmpScope = scope_create(ma->allmodules, ma->diags, ast_AST_getImports(ast_Decl_getAST(d)), template_mod, ast_Module_getSymbols(template_mod), !ma->warnings->no_unused_variable);
+      scope_Scope* tmpScope = scope_create(ma->allmodules, ma->diags, ma->astPool, ast_AST_getImports(ast_Decl_getAST(d)), template_mod, ast_Module_getSymbols(template_mod), !ma->warnings->no_unused_variable);
       module_analyser_Analyser_analyseFunctionBody(analyser, instance, tmpScope);
       scope_Scope_free(tmpScope);
       module_analyser_Analyser_free(analyser);
@@ -28870,7 +29338,7 @@ static ast_FunctionDecl* module_analyser_Analyser_instantiateTemplateFunction(mo
       u16 instance_idx = ast_Module_addInstance(ma->mod, fd, templateType, instance);
       ast_FunctionDecl_setTemplateInstanceIdx(instance, instance_idx);
       char name[64];
-      module_analyser_create_template_name(name, 64, ast_Decl_getName(d), instance_idx);
+      module_analyser_Analyser_create_template_name(ma, name, 64, ast_Decl_getNameIdx(d), instance_idx);
       ast_FunctionDecl_setInstanceName(instance, string_pool_Pool_addStr(ma->astPool, name, true));
    }
    ast_CallExpr_setTemplateIdx(call, ast_FunctionDecl_getTemplateInstanceIdx(instance));
@@ -28881,7 +29349,7 @@ static ast_QualType module_analyser_Analyser_analyseConstExpr(module_analyser_An
 {
    ;//assert(e_ptr);
    ma->need_const_expr++;
-   ast_QualType result = module_analyser_Analyser_analyseExprInner(ma, e_ptr, module_analyser_RHS);
+   ast_QualType result = module_analyser_Analyser_analyseExprInner(ma, e_ptr, ast_RHS);
    ma->need_const_expr--;
    if (ast_QualType_isInvalid(result)) return result;
    ast_Expr_setType((*e_ptr), result);
@@ -29018,7 +29486,7 @@ static ast_Decl* module_analyser_Analyser_analyseIdentifier(module_analyser_Anal
    if (ast_QualType_isInvalid(qt)) return NULL;
    ast_Expr_setType(e, qt);
    ast_IdentifierExpr_setDecl(i, d);
-   if (side & module_analyser_RHS || side == 0) {
+   if (side & ast_RHS || side == 0) {
       if (d != (ast_Decl*)ma->curFunction) ast_Decl_setUsed(d);
    } else {
       if (ast_Decl_isVarDecl(d)) {
@@ -29031,9 +29499,9 @@ static ast_Decl* module_analyser_Analyser_analyseIdentifier(module_analyser_Anal
    if (ma->usedPublic && !ast_Decl_isPublic(d) && ast_Decl_isGlobal(d) && !ast_Decl_isImport(d)) {
       const char* kind_str = module_analyser_type2str(qt);
       if (scope_Scope_inFunction(ma->scope)) {
-         module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "public inline function using non-public %s '%s'", kind_str, ast_Decl_getFullName(d));
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "public inline function using non-public %s '%s'", kind_str, module_analyser_Analyser_getFullName(ma, d));
       } else {
-         module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "public declaration using non-public %s '%s'", kind_str, ast_Decl_getFullName(d));
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "public declaration using non-public %s '%s'", kind_str, module_analyser_Analyser_getFullName(ma, d));
       }
       return NULL;
    }
@@ -29104,14 +29572,14 @@ static ast_QualType module_analyser_Analyser_analyseConditionalOperator(module_a
 {
    ast_Expr* e = *e_ptr;
    ast_ConditionalOperator* cond = (ast_ConditionalOperator*)e;
-   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, ast_ConditionalOperator_getCond2(cond), true, module_analyser_RHS);
+   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, ast_ConditionalOperator_getCond2(cond), true, ast_RHS);
    if (ast_QualType_isInvalid(qt)) return ast_QualType_Invalid;
    if (!module_analyser_validTestType(qt)) {
       module_analyser_Analyser_error(ma, ast_Expr_getLoc(ast_ConditionalOperator_getCond(cond)), "invalid condition expression (%s)", ast_QualType_diagName(qt));
       return ast_QualType_Invalid;
    }
-   ast_QualType lhs = module_analyser_Analyser_analyseExpr(ma, ast_ConditionalOperator_getLHS2(cond), true, module_analyser_RHS);
-   ast_QualType rhs = module_analyser_Analyser_analyseExpr(ma, ast_ConditionalOperator_getRHS2(cond), true, module_analyser_RHS);
+   ast_QualType lhs = module_analyser_Analyser_analyseExpr(ma, ast_ConditionalOperator_getLHS2(cond), true, ast_RHS);
+   ast_QualType rhs = module_analyser_Analyser_analyseExpr(ma, ast_ConditionalOperator_getRHS2(cond), true, ast_RHS);
    if (ast_QualType_isInvalid(lhs) || ast_QualType_isInvalid(rhs)) return ast_QualType_Invalid;
    ast_QualType lcanon = ast_QualType_getCanonicalType(lhs);
    ast_QualType rcanon = ast_QualType_getCanonicalType(rhs);
@@ -29200,7 +29668,7 @@ static bool module_analyser_Analyser_checkAssignment(module_analyser_Analyser* m
    if (ast_QualType_isConst(tleft)) {
       if (ast_Expr_isIdentifier(assignee)) {
          ast_IdentifierExpr* i = (ast_IdentifierExpr*)assignee;
-         module_analyser_Analyser_error(ma, loc, "cannot assign to read-only variable '%s'", ast_Decl_getFullName(ast_IdentifierExpr_getDecl(i)));
+         module_analyser_Analyser_error(ma, loc, "cannot assign to read-only variable '%s'", module_analyser_Analyser_getFullName(ma, ast_IdentifierExpr_getDecl(i)));
          return false;
       }
       if (ast_Expr_isMember(assignee)) {
@@ -29250,8 +29718,8 @@ static ast_QualType module_analyser_Analyser_analyseExplicitCast(module_analyser
    ast_Expr* e = *e_ptr;
    ast_ExplicitCastExpr* c = (ast_ExplicitCastExpr*)e;
    ast_TypeRef* ref = ast_ExplicitCastExpr_getTypeRef(c);
-   ast_QualType destType = module_analyser_Analyser_analyseTypeRef(ma, ref);
-   ast_QualType srcType = module_analyser_Analyser_analyseExpr(ma, ast_ExplicitCastExpr_getInner2(c), true, module_analyser_RHS);
+   ast_QualType destType = module_analyser_Analyser_analyseTypeRef(ma, ref, true);
+   ast_QualType srcType = module_analyser_Analyser_analyseExpr(ma, ast_ExplicitCastExpr_getInner2(c), true, ast_RHS);
    if (ast_QualType_isInvalid(srcType) || ast_QualType_isInvalid(destType)) return ast_QualType_Invalid;
    ast_Expr* inner = ast_ExplicitCastExpr_getInner(c);
    ast_Expr_copyConstantFlags(e, inner);
@@ -29261,7 +29729,7 @@ static ast_QualType module_analyser_Analyser_analyseExplicitCast(module_analyser
       module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "used type '%s' where arithmetic or pointer type is required", ast_QualType_diagName(destType));
       return ast_QualType_Invalid;
    }
-   if (!conversion_checker_Checker_checkCast(&ma->checker, destType, srcType, ast_TypeRef_getLoc(ref), ast_Expr_getLoc(inner))) return ast_QualType_Invalid;
+   if (!conversion_checker_Checker_checkCast(&ma->conv_checker, destType, srcType, ast_TypeRef_getLoc(ref), ast_Expr_getLoc(inner))) return ast_QualType_Invalid;
    return destType;
 }
 
@@ -29270,11 +29738,11 @@ static ast_QualType module_analyser_Analyser_analyseArraySubscriptExpr(module_an
    ast_Expr* e = *e_ptr;
    ast_ArraySubscriptExpr* sub = (ast_ArraySubscriptExpr*)e;
    ast_Expr* orig = ast_ArraySubscriptExpr_getBase(sub);
-   ast_QualType q = module_analyser_Analyser_analyseExpr(ma, ast_ArraySubscriptExpr_getBase2(sub), true, side | module_analyser_RHS);
+   ast_QualType q = module_analyser_Analyser_analyseExpr(ma, ast_ArraySubscriptExpr_getBase2(sub), true, side | ast_RHS);
    if (ast_QualType_isInvalid(q)) return q;
    ast_Expr* index = ast_ArraySubscriptExpr_getIndex(sub);
    if (ast_Expr_isBitOffset(index)) {
-      if (side & module_analyser_LHS) {
+      if (side & ast_LHS) {
          module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(e), ast_Expr_getRange(e), "bitoffset cannot be used as left hand side expression");
          return ast_QualType_Invalid;
       }
@@ -29301,12 +29769,12 @@ static ast_QualType module_analyser_Analyser_analyseArraySubscriptExpr(module_an
    if (is_enum_index && module_analyser_Analyser_checkEnumArg(ma, ast_ArraySubscriptExpr_getIndex2(sub), index_type)) {
       qidx = index_type;
    } else {
-      qidx = module_analyser_Analyser_analyseExpr(ma, ast_ArraySubscriptExpr_getIndex2(sub), true, module_analyser_RHS);
+      qidx = module_analyser_Analyser_analyseExpr(ma, ast_ArraySubscriptExpr_getIndex2(sub), true, ast_RHS);
    }
    if (ast_QualType_isInvalid(qidx)) return qidx;
    ast_QualType canon = ast_QualType_getCanonicalType(qidx);
    index = ast_ArraySubscriptExpr_getIndex(sub);
-   if (!ast_QualType_isInteger(canon) && !ast_QualType_isEnum(canon)) {
+   if (!ast_QualType_isInteger(canon) && !ast_QualType_isEnum(canon) && !ast_QualType_isBool(canon)) {
       module_analyser_Analyser_error(ma, ast_Expr_getLoc(index), "array subscript is not an integer");
       return ast_QualType_Invalid;
    }
@@ -29315,8 +29783,7 @@ static ast_QualType module_analyser_Analyser_analyseArraySubscriptExpr(module_an
       return ast_QualType_Invalid;
    }
    if (ast_Expr_isCtv(index)) {
-      ast_QualType q2 = ast_Expr_getType(orig);
-      ast_ArrayType* at = ast_QualType_getArrayTypeOrNil(q2);
+      ast_ArrayType* at = ast_QualType_getArrayTypeOrNil(otype);
       if (at) {
          u32 size = ast_ArrayType_getSize(at);
          if (size != 0) {
@@ -29374,7 +29841,7 @@ static ast_QualType module_analyser_Analyser_analyseBitOffsetExpr(module_analyse
 static bool module_analyser_Analyser_analyseBitOffsetIndex(module_analyser_Analyser* ma, ast_Expr** e_ptr, ast_QualType baseType, value_type_Value* result)
 {
    ast_BuiltinType* base_bi = ast_QualType_getBuiltin(baseType);
-   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, e_ptr, true, module_analyser_RHS);
+   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, e_ptr, true, ast_RHS);
    if (ast_QualType_isInvalid(qt)) return false;
    ast_Expr* e = *e_ptr;
    ast_QualType canon = ast_QualType_getCanonicalType(qt);
@@ -29400,16 +29867,17 @@ static bool module_analyser_Analyser_analyseBitOffsetIndex(module_analyser_Analy
    return true;
 }
 
-static void module_analyser_get_best_match(const char* name1, size_t len1, ast_StructTypeDecl* s, size_t* best_dist, const char** result)
+static void module_analyser_Analyser_get_best_match(module_analyser_Analyser* ma, const char* name1, size_t len1, ast_StructTypeDecl* s, size_t* best_dist, const char** result)
 {
    ast_Decl** members = ast_StructTypeDecl_getMembers(s);
    u32 num_members = ast_StructTypeDecl_getNumMembers(s);
    for (u32 i = 0; i < num_members; i++) {
       ast_Decl* m = members[i];
-      const char* name2 = ast_Decl_getName(m);
-      if (name2 == NULL) {
-         module_analyser_get_best_match(name1, len1, (ast_StructTypeDecl*)m, best_dist, result);
+      u32 name_idx = ast_Decl_getNameIdx(m);
+      if (!name_idx) {
+         module_analyser_Analyser_get_best_match(ma, name1, len1, (ast_StructTypeDecl*)m, best_dist, result);
       } else {
+         const char* name2 = module_analyser_Analyser_idx2name(ma, name_idx);
          size_t len2 = strlen(name2);
          size_t dist = levenshtein_dist(name1, len1, name2, len2);
          if (dist < *best_dist) {
@@ -29423,17 +29891,17 @@ static void module_analyser_get_best_match(const char* name1, size_t len1, ast_S
 
 static void module_analyser_Analyser_memberError(module_analyser_Analyser* ma, u32 name_idx, src_loc_SrcLoc loc, ast_StructTypeDecl* s)
 {
-   const char* name1 = ast_idx2name(name_idx);
+   const char* name1 = module_analyser_Analyser_idx2name(ma, name_idx);
    size_t len1 = strlen(name1);
    const char* result = NULL;
    size_t dist = usize_max;
-   module_analyser_get_best_match(name1, len1, s, &dist, &result);
+   module_analyser_Analyser_get_best_match(ma, name1, len1, s, &dist, &result);
    u32 max_dist = (u32)len1 / 2;
    if (max_dist > 2) max_dist = 2;
    if (dist <= max_dist) {
-      module_analyser_Analyser_error(ma, loc, "no member named '%s' in %s '%s'; did you mean '%s'?", ast_idx2name(name_idx), ast_StructTypeDecl_isStruct(s) ? "struct" : "union", ast_Decl_getFullName(ast_StructTypeDecl_asDecl(s)), result);
+      module_analyser_Analyser_error(ma, loc, "no member named '%s' in %s '%s'; did you mean '%s'?", name1, ast_StructTypeDecl_isStruct(s) ? "struct" : "union", module_analyser_Analyser_getFullName(ma, ast_StructTypeDecl_asDecl(s)), result);
    } else {
-      module_analyser_Analyser_error(ma, loc, "no member named '%s' in %s '%s'", ast_idx2name(name_idx), ast_StructTypeDecl_isStruct(s) ? "struct" : "union", ast_Decl_getFullName(ast_StructTypeDecl_asDecl(s)));
+      module_analyser_Analyser_error(ma, loc, "no member named '%s' in %s '%s'", name1, ast_StructTypeDecl_isStruct(s) ? "struct" : "union", module_analyser_Analyser_getFullName(ma, ast_StructTypeDecl_asDecl(s)));
    }
 }
 
@@ -29468,7 +29936,7 @@ static void module_analyser_Analyser_analyseEnumAssocValues(module_analyser_Anal
       ast_Decl* d = (ast_Decl*)vd;
       ma->usedPublic = ast_Decl_isPublic(d);
       ast_TypeRef* ref = ast_VarDecl_getTypeRef(vd);
-      ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref);
+      ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref, true);
       ma->usedPublic = savedPublic;
       if (ast_QualType_isInvalid(res)) {
          has_error = true;
@@ -29480,7 +29948,7 @@ static void module_analyser_Analyser_analyseEnumAssocValues(module_analyser_Anal
          continue;
       }
       if (ast_Decl_isPublic(d)) {
-         ast_setTypePublicUsed(res);
+         ast_QualType_setTypeUsedPublic(res);
          if (!enum_public) {
             module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "public enum-associated value' with non-public enum type");
             has_error = true;
@@ -29499,18 +29967,18 @@ static void module_analyser_Analyser_analyseEnumAssocValues(module_analyser_Anal
          u32 name_idx2 = ast_VarDecl_getNameIdx(prev);
          if (name_idx == name_idx2) {
             has_error = true;
-            module_analyser_Analyser_error(ma, ast_Decl_getLoc(ast_VarDecl_asDecl(vd)), "redefinition of '%s'", ast_VarDecl_getName(prev));
+            module_analyser_Analyser_error(ma, ast_Decl_getLoc(ast_VarDecl_asDecl(vd)), "redefinition of '%s'", module_analyser_Analyser_idx2name(ma, name_idx2));
          }
       }
       if (name_idx == ma->min_idx || name_idx == ma->max_idx) {
          has_error = true;
-         module_analyser_Analyser_error(ma, ast_Decl_getLoc(ast_VarDecl_asDecl(vd)), "enum-associated name '%s' is reserved", ast_VarDecl_getName(vd));
+         module_analyser_Analyser_error(ma, ast_Decl_getLoc(ast_VarDecl_asDecl(vd)), "enum-associated name '%s' is reserved", module_analyser_Analyser_idx2name(ma, name_idx));
       }
       ast_Decl* fn_decl = ast_EnumTypeDecl_findFunction(etd, name_idx);
       if (fn_decl) {
          has_error = true;
-         module_analyser_Analyser_error(ma, ast_Decl_getLoc(fn_decl), "redefinition of '%s'", ast_Decl_getFullName(fn_decl));
-         module_analyser_Analyser_note(ma, ast_Decl_getLoc(ast_VarDecl_asDecl(vd)), "previous definition is here");
+         module_analyser_Analyser_error(ma, ast_Decl_getLoc(ast_VarDecl_asDecl(vd)), "redefinition of '%s'", module_analyser_Analyser_getFullName(ma, fn_decl));
+         module_analyser_Analyser_note(ma, ast_Decl_getLoc(fn_decl), "previous definition is here");
       }
       if (ast_VarDecl_hasInit(vd)) {
          ast_Expr* init = ast_VarDecl_getInit(vd);
@@ -29571,13 +30039,13 @@ static bool module_analyser_Analyser_analyseEnumConstantAssocValues(module_analy
    }
    if (num_values < num_assocs) {
       ast_Decl* col_decl = (ast_Decl*)columns[num_values];
-      module_analyser_Analyser_error(ma, ast_InitListExpr_getEndLoc(ile), "missing initializer for enum-associated value '%s'", ast_Decl_getName(col_decl));
+      module_analyser_Analyser_error(ma, ast_InitListExpr_getEndLoc(ile), "missing initializer for enum-associated value '%s'", module_analyser_Analyser_getName(ma, col_decl));
       return false;
    }
    return is_ok;
 }
 
-static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* ma, ast_FunctionDecl* fd)
+static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* ma, ast_FunctionDecl* fd, bool full)
 {
    if (ast_FunctionDecl_isTemplate(fd)) {
       scope_Scope_checkGlobalSymbol(ma->scope, ast_FunctionDecl_getTemplateNameIdx(fd), ast_FunctionDecl_getTemplateLoc(fd));
@@ -29597,7 +30065,7 @@ static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* m
       return;
    }
    ast_TypeRef* rtype = ast_FunctionDecl_getReturnTypeRef(fd);
-   ast_QualType qt = module_analyser_Analyser_analyseTypeRef(ma, rtype);
+   ast_QualType qt = module_analyser_Analyser_analyseTypeRef(ma, rtype, full);
    if (ast_QualType_isInvalid(qt)) return;
    ast_QualType canon = ast_QualType_getCanonicalType(qt);
    if (ast_QualType_isArray(canon)) {
@@ -29607,7 +30075,7 @@ static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* m
       module_analyser_Analyser_warn(ma, ast_TypeRef_getLoc(rtype), "'const' type qualifier on return type has no effect");
    }
    bool is_public = ast_Decl_isPublic(ast_FunctionDecl_asDecl(fd));
-   if (is_public) ast_setTypePublicUsed(qt);
+   if (is_public) ast_QualType_setTypeUsedPublic(qt);
    ast_FunctionDecl_setRType(fd, qt);
    u32 num_params = ast_FunctionDecl_getNumParams(fd);
    ast_VarDecl** params = ast_FunctionDecl_getParams(fd);
@@ -29616,7 +30084,7 @@ static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* m
    for (u32 i = 0; i < num_params; i++) {
       ast_VarDecl* vd = params[i];
       ast_TypeRef* ref = ast_VarDecl_getTypeRef(vd);
-      ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref);
+      ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref, full);
       if (ast_QualType_isInvalid(res)) continue;
       canon = ast_QualType_getCanonicalType(res);
       if (ast_QualType_isArray(canon)) {
@@ -29627,7 +30095,7 @@ static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* m
          module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "parameter has invalid type 'void'");
          continue;
       }
-      if (is_public) ast_setTypePublicUsed(res);
+      if (is_public) ast_QualType_setTypeUsedPublic(res);
       if (ast_VarDecl_hasInit(vd)) {
          if (ast_VarDecl_hasAutoAttr(vd)) {
             module_analyser_Analyser_error(ma, ast_VarDecl_getAssignLoc(vd), "automatic argument cannot have default value");
@@ -29641,14 +30109,16 @@ static void module_analyser_Analyser_analyseFunction(module_analyser_Analyser* m
          if (auto_arg_count > 3) {
             module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "too many automatic arguments");
          }
-         if (ast_VarDecl_hasAttrAutoFile(vd) && !ast_TypeRef_isConstCharPtr(ref)) {
-            module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "attribute 'auto_file' requires a parameter of type 'const char*'");
-         }
-         if (ast_VarDecl_hasAttrAutoLine(vd) && !ast_TypeRef_isU32(ref)) {
-            module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "attribute 'auto_line' requires a parameter of type 'u32'");
-         }
-         if (ast_VarDecl_hasAttrAutoFunc(vd) && !ast_TypeRef_isConstCharPtr(ref)) {
-            module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "attribute 'auto_func' requires a parameter of type 'const char*'");
+         if (ast_VarDecl_hasAutoAttr(vd)) {
+            if (ast_VarDecl_hasAttrAutoFile(vd) && !ast_TypeRef_isConstCharPtr(ref)) {
+               module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "attribute 'auto_file' requires a parameter of type 'const char*'");
+            }
+            if (ast_VarDecl_hasAttrAutoLine(vd) && !ast_TypeRef_isU32(ref)) {
+               module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "attribute 'auto_line' requires a parameter of type 'u32'");
+            }
+            if (ast_VarDecl_hasAttrAutoFunc(vd) && !ast_TypeRef_isConstCharPtr(ref)) {
+               module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "attribute 'auto_func' requires a parameter of type 'const char*'");
+            }
          }
       }
       {
@@ -29741,7 +30211,7 @@ static bool module_analyser_Analyser_analyseFunctionBody2(module_analyser_Analys
 {
    module_analyser_Analyser* analyser = module_analyser_Analyser_clone(ma);
    module_analyser_Analyser_setMod(analyser, mod);
-   scope_Scope* tmpScope = scope_create(ma->allmodules, ma->diags, ast_AST_getImports(ast_Decl_getAST(ast_FunctionDecl_asDecl(fd))), mod, ast_Module_getSymbols(mod), !ma->warnings->no_unused_variable);
+   scope_Scope* tmpScope = scope_create(ma->allmodules, ma->diags, ma->astPool, ast_AST_getImports(ast_Decl_getAST(ast_FunctionDecl_asDecl(fd))), mod, ast_Module_getSymbols(mod), !ma->warnings->no_unused_variable);
    module_analyser_Analyser_analyseFunctionBody(analyser, fd, tmpScope);
    bool has_error = analyser->has_error;
    scope_Scope_free(tmpScope);
@@ -29787,7 +30257,7 @@ static void module_analyser_Analyser_analyseFunctionBody(module_analyser_Analyse
       for (u32 i = 0; i < num_params; i++) {
          ast_Decl* p = (ast_Decl*)params[i];
          if (!ast_Decl_isUsed(p) && ast_Decl_getNameIdx(p)) {
-            module_analyser_Analyser_warn(ma, ast_Decl_getLoc(p), "unused parameter '%s'", ast_Decl_getName(p));
+            module_analyser_Analyser_warn(ma, ast_Decl_getLoc(p), "unused parameter '%s'", module_analyser_Analyser_getName(ma, p));
          }
       }
    }
@@ -29797,10 +30267,11 @@ static void module_analyser_Analyser_analyseFunctionBody(module_analyser_Analyse
       const label_vector_Label* l = &labels[i];
       if (l->is_label) {
          if (!l->used && !ma->warnings->no_unused_label) {
-            module_analyser_Analyser_warn(ma, l->loc, "unused label '%s'", ast_idx2name(l->name_idx));
+            module_analyser_Analyser_warn(ma, l->loc, "unused label '%s'", module_analyser_Analyser_idx2name(ma, l->name_idx));
          }
+         if (l->stmt && l->has_goto) ast_LabelStmt_setGoto(l->stmt);
       } else {
-         module_analyser_Analyser_error(ma, l->loc, "use of undeclared label '%s'", ast_idx2name(l->name_idx));
+         module_analyser_Analyser_error(ma, l->loc, "use of undeclared label '%s'", module_analyser_Analyser_idx2name(ma, l->name_idx));
       }
    }
 done:
@@ -29878,9 +30349,9 @@ static bool module_analyser_Analyser_analyseInitExpr(module_analyser_Analyser* m
             }
             ast_Expr_setRValue(e);
          } else {
-            ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, e_ptr, true, module_analyser_RHS);
+            ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, e_ptr, true, ast_RHS);
             e = *e_ptr;
-            if (!conversion_checker_Checker_check(&ma->checker, expectedType, ast_Expr_getType(e), e_ptr, assignLoc)) return false;
+            if (!conversion_checker_Checker_checkAssign(&ma->conv_checker, expectedType, ast_Expr_getType(e), e_ptr, assignLoc)) return false;
          }
          return true;
       }
@@ -29890,7 +30361,7 @@ static bool module_analyser_Analyser_analyseInitExpr(module_analyser_Analyser* m
       }
    }
    if (module_analyser_Analyser_checkEnumArg(ma, e_ptr, expectedType)) return true;
-   ast_QualType res = module_analyser_Analyser_analyseExpr(ma, e_ptr, true, module_analyser_RHS);
+   ast_QualType res = module_analyser_Analyser_analyseExpr(ma, e_ptr, true, ast_RHS);
    if (ast_QualType_isInvalid(res)) return false;
    e = *e_ptr;
    if (ast_Expr_isCtv(e)) {
@@ -29904,7 +30375,7 @@ static bool module_analyser_Analyser_analyseInitExpr(module_analyser_Analyser* m
          return true;
       }
    }
-   if (!conversion_checker_Checker_check(&ma->checker, expectedType, res, e_ptr, assignLoc)) return false;
+   if (!conversion_checker_Checker_checkAssign(&ma->conv_checker, expectedType, res, e_ptr, assignLoc)) return false;
    if (!ma->curFunction && !ast_Expr_isCtv(e)) {
       if (!ast_Expr_isCtc(e)) {
          if (is_default_param) {
@@ -30263,7 +30734,7 @@ static bool module_analyser_Analyser_analyseStructFieldInit(module_analyser_Anal
       ctc &= ast_Expr_isCtc(inner);
       ast_Expr_setType(value, ast_Expr_getType(inner));
       if (fif->is_bitfield && ast_Expr_isCtv(inner)) {
-         if (!ctv_analyser_checkBitfield(ma->diags, fif->bitfield_width, fif->bitfield_signed, inner)) return false;
+         if (!ctv_analyser_checkBitfield(ma->diags, fif->bitfield_width, fif->bitfield_signed, inner)) goto out;
       }
    }
    ast_QualType_clearQuals(&expectedType);
@@ -30304,15 +30775,14 @@ static bool module_analyser_Analyser_analyseInitListStruct(module_analyser_Analy
    u32 member_idx = 0;
    for (u32 i = 0; i < numValues; i++) {
       ast_Expr* value = values[i];
-      const ast_StructMemberLayout* ml = &layout->members[member_idx];
-      while (ml->is_bitfield && ml->bitfield_width == 0 && member_idx < num_members) {
+      while (member_idx < num_members && layout->members[member_idx].is_bitfield && layout->members[member_idx].bitfield_width == 0) {
          member_idx++;
-         ml = &layout->members[member_idx];
       }
       if (member_idx >= num_members) {
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(value), "excess initializer elements in struct");
          return false;
       }
+      const ast_StructMemberLayout* ml = &layout->members[member_idx];
       if (ast_Expr_isArrayDesignatedInit(value)) {
          module_analyser_Analyser_error(ma, ast_Expr_getLoc(value), "array designator cannot initialize non-array type '%s'", ast_QualType_diagName(expectedType));
          return false;
@@ -30344,7 +30814,7 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
    ast_ValType valtype = ast_ValType_NValue;
    ast_QualType baseType = ast_QualType_Invalid;
    ast_CallKind ck = ast_CallKind_Invalid;
-   u32 start = 0;
+   ast_Decl* d = NULL;
    if (ast_MemberExpr_hasExpr(m)) {
       ast_Expr** base_ptr = ast_MemberExpr_getBaseExpr2(m);
       ast_Expr* exprBase = *base_ptr;
@@ -30353,26 +30823,28 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
       if (ast_QualType_isInvalid(baseType)) return ast_QualType_Invalid;
       exprBase = *base_ptr;
       valtype = ast_Expr_getValType(exprBase);
-      start = 1;
+   } else {
+      u32 name_idx = ast_MemberExpr_getNameIdx(m, 0);
+      src_loc_SrcLoc loc = ast_MemberExpr_getLoc(m, 0);
+      d = scope_Scope_find(ma->scope, name_idx, loc, ma->usedPublic);
+      if (!d) {
+         ma->has_error = true;
+         return ast_QualType_Invalid;
+      }
+      if (!ast_Decl_isChecked(d)) {
+         if (!module_analyser_Analyser_analyseGlobalDecl(ma, d)) return ast_QualType_Invalid;
+      }
+      baseType = ast_Decl_getType(d);
+      valtype = module_analyser_decl2valtype(d);
+      baseLoc = loc;
+      ast_Decl_setUsed(d);
+      ast_MemberExpr_setDecl(m, d, 0);
    }
-   ast_Decl* d = NULL;
    bool is_substruct = false;
-   for (u32 i = start; i < 2; i++) {
-      is_substruct = false;
-      u32 name_idx = ast_MemberExpr_getNameIdx(m, i);
-      src_loc_SrcLoc loc = ast_MemberExpr_getLoc(m, i);
-      if (ast_QualType_isInvalid(baseType)) {
-         d = scope_Scope_find(ma->scope, name_idx, loc, ma->usedPublic);
-         if (!d) {
-            ma->has_error = true;
-            return ast_QualType_Invalid;
-         }
-         if (!ast_Decl_isChecked(d)) {
-            if (!module_analyser_Analyser_analyseGlobalDecl(ma, d)) return ast_QualType_Invalid;
-         }
-         baseType = ast_Decl_getType(d);
-         valtype = module_analyser_decl2valtype(d);
-      } else {
+   {
+      u32 name_idx = ast_MemberExpr_getNameIdx(m, 1);
+      src_loc_SrcLoc loc = ast_MemberExpr_getLoc(m, 1);
+      {
          ast_QualType canon = ast_QualType_getCanonicalType(baseType);
          ast_TypeKind kind = module_analyser_Analyser_analyseBaseType(ma, canon);
          bool is_ptr = ast_QualType_isPointer(canon);
@@ -30432,20 +30904,19 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
                } else {
                   ecd = ast_EnumTypeDecl_findConstant(etd, name_idx);
                   if (!ecd) {
-                     module_analyser_Analyser_error(ma, loc, "enum '%s' has no constant '%s'", ast_Decl_getFullName(d), name);
+                     module_analyser_Analyser_error(ma, loc, "enum '%s' has no constant '%s'", module_analyser_Analyser_getFullName(ma, d), name);
                      return ast_QualType_Invalid;
                   }
                }
                d = (ast_Decl*)ecd;
                if (!ast_Decl_isChecked(d)) {
-                  module_analyser_Analyser_error(ma, loc, "circular definition using enum constant '%s'", ast_Decl_getName(d));
+                  module_analyser_Analyser_error(ma, loc, "circular definition using enum constant '%s'", module_analyser_Analyser_getName(ma, d));
                   return ast_QualType_Invalid;
                }
                ast_MemberExpr_setKind(m, ast_MemberKind_EnumConstant);
             } else {
                ast_Decl* ef = ast_EnumTypeDecl_findFunction(etd, name_idx);
                if (ef) {
-                  ck = (valtype == ast_ValType_NValue) ? ast_CallKind_StaticTypeFunc : ast_CallKind_TypeFunc;
                   if (valtype == ast_ValType_NValue) {
                      ck = ast_CallKind_StaticTypeFunc;
                      ast_MemberExpr_setKind(m, ast_MemberKind_StaticTypeFunc);
@@ -30461,7 +30932,7 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
                }
                u32 idx = ast_EnumTypeDecl_findAssocValue(etd, name_idx);
                if (idx == u32_max) {
-                  module_analyser_Analyser_error(ma, loc, "enum '%s' has no function or associated value '%s'", ast_Decl_getFullName(d), name);
+                  module_analyser_Analyser_error(ma, loc, "enum '%s' has no function or associated value '%s'", module_analyser_Analyser_getFullName(ma, d), name);
                   return ast_QualType_Invalid;
                }
                ast_VarDecl* vd = ast_EnumTypeDecl_getAssocValue(etd, idx);
@@ -30480,13 +30951,16 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
                      vdd = (ast_Decl*)ast_EnumTypeDecl_getAssocDecl(etd, idx);
                      qt = ast_Decl_getType(vdd);
                   }
-                  ast_MemberExpr_setDecl(m, vdd, i);
+                  ast_MemberExpr_setDecl(m, vdd, 1);
                } else {
                   ast_MemberExpr_setKind(m, ast_MemberKind_EnumConstantValue);
-                  ast_MemberExpr_setDecl(m, vdd, i);
+                  ast_MemberExpr_setDecl(m, vdd, 1);
                   if (ma->check_only) {
                   } else {
                      ast_VarDecl* ad = ast_EnumTypeDecl_getAssocDecl(etd, idx);
+                     ast_Decl* add = (ast_Decl*)ad;
+                     ast_Decl_setUsed(add);
+                     if (ast_Decl_isPublic(add)) ast_Decl_setUsedPublic(add);
                      ast_builder_Builder_createEnumAssocValueAccess(ma->builder, e_ptr, etd, ad, ast_Decl_getType(vdd), m, ast_QualType_isPointer(baseType));
                   }
                }
@@ -30519,12 +30993,8 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
          }
       }
       baseLoc = loc;
-      if (i == 1) {
-         if (side & module_analyser_RHS) ast_Decl_setUsed(d);
-      } else {
-         ast_Decl_setUsed(d);
-      }
-      ast_MemberExpr_setDecl(m, d, i);
+      if (side & ast_RHS) ast_Decl_setUsed(d);
+      ast_MemberExpr_setDecl(m, d, 1);
    }
    if (is_substruct) {
       ast_Expr_setLValue(e);
@@ -30534,7 +31004,7 @@ static ast_QualType module_analyser_Analyser_analyseMemberExpr(module_analyser_A
    ast_Expr_setType(e, baseType);
    if (ast_Decl_isBitfield(d)) {
       ast_MemberExpr_setBitfield(m);
-      if (side == module_analyser_RHS) ast_Expr_setRValue(e);
+      if (side == ast_RHS) ast_Expr_setRValue(e);
    } else {
       if (ast_Expr_isCtv(e)) ast_Expr_setRValue(e);
    }
@@ -30684,7 +31154,7 @@ static void module_analyser_Analyser_rewriteCall(module_analyser_Analyser* ma, a
          if (ast_VarDecl_hasAttrAutoFile(vd)) {
             u32 len = (u32)strlen(loc.filename);
             u32 value = string_pool_Pool_add(ma->astPool, loc.filename, len, true);
-            ast_Expr* arg = ast_builder_Builder_actOnStringLiteral(ma->builder, 0, 0, value, len);
+            ast_Expr* arg = ast_builder_Builder_actOnStringLiteral(ma->builder, 0, 0, value, len, true);
             ast_ExprList_add(&args, arg);
          }
          if (ast_VarDecl_hasAttrAutoLine(vd)) {
@@ -30692,10 +31162,10 @@ static void module_analyser_Analyser_rewriteCall(module_analyser_Analyser* ma, a
             ast_ExprList_add(&args, arg);
          }
          if (ast_VarDecl_hasAttrAutoFunc(vd)) {
-            const char* func_name = ast_Decl_getFullName(ast_FunctionDecl_asDecl(ma->curFunction));
+            const char* func_name = module_analyser_Analyser_getFullName(ma, ast_FunctionDecl_asDecl(ma->curFunction));
             u32 len = (u32)strlen(func_name);
             u32 value = string_pool_Pool_add(ma->astPool, func_name, len, true);
-            ast_Expr* arg = ast_builder_Builder_actOnStringLiteral(ma->builder, 0, 0, value, len);
+            ast_Expr* arg = ast_builder_Builder_actOnStringLiteral(ma->builder, 0, 0, value, len, true);
             ast_ExprList_add(&args, arg);
          }
          func_arg_index++;
@@ -30814,13 +31284,11 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseStmt(module_anal
       flow = module_analyser_Analyser_analyseSwitchStmt(ma, s);
       break;
    case ast_StmtKind_Break:
-      module_analyser_Analyser_analyseBreakStmt(ma, s);
-      scope_Scope_setUnreachable(ma->scope);
-      return module_analyser_FlowBreak;
+      flow = module_analyser_Analyser_analyseBreakStmt(ma, s);
+      break;
    case ast_StmtKind_Continue:
-      module_analyser_Analyser_analyseContinueStmt(ma, s);
-      scope_Scope_setUnreachable(ma->scope);
-      return module_analyser_FlowContinue;
+      flow = module_analyser_Analyser_analyseContinueStmt(ma, s);
+      break;
    case ast_StmtKind_Fallthrough:
       module_analyser_Analyser_analyseFallthroughStmt(ma, s);
       return module_analyser_FlowNext;
@@ -30828,9 +31296,8 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseStmt(module_anal
       flow = module_analyser_Analyser_analyseLabelStmt(ma, s);
       break;
    case ast_StmtKind_Goto:
-      module_analyser_Analyser_analyseGotoStmt(ma, s);
-      scope_Scope_setUnreachable(ma->scope);
-      return module_analyser_FlowGoto;
+      flow = module_analyser_Analyser_analyseGotoStmt(ma, s);
+      break;
    case ast_StmtKind_Compound:
       scope_Scope_enter(ma->scope, scope_Decl);
       flow = module_analyser_Analyser_analyseCompoundStmt(ma, (ast_CompoundStmt*)s);
@@ -30850,18 +31317,44 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseStmt(module_anal
    return flow;
 }
 
-static void module_analyser_Analyser_analyseBreakStmt(module_analyser_Analyser* ma, ast_Stmt* s)
+static module_analyser_FlowBits module_analyser_Analyser_analyseBreakStmt(module_analyser_Analyser* ma, ast_Stmt* s)
 {
    if (!scope_Scope_allowBreak(ma->scope)) {
       module_analyser_Analyser_error(ma, ast_Stmt_getLoc(s), "'break' statement not in loop or switch statement");
+      return module_analyser_FlowError;
    }
+   ast_BreakStmt* bs = (ast_BreakStmt*)s;
+   if (ast_BreakStmt_hasName(bs)) {
+      label_vector_Label* label = label_vector_LabelVector_find(&ma->labels, ast_BreakStmt_getName(bs));
+      if (label && label->can_break) {
+         label->has_break = true;
+         label->used = true;
+         return module_analyser_FlowGoto;
+      }
+      module_analyser_Analyser_error(ma, ast_Stmt_getLoc(s), "'break' label does match an enclosing loop or switch statement");
+      return module_analyser_FlowError;
+   }
+   return module_analyser_FlowBreak;
 }
 
-static void module_analyser_Analyser_analyseContinueStmt(module_analyser_Analyser* ma, ast_Stmt* s)
+static module_analyser_FlowBits module_analyser_Analyser_analyseContinueStmt(module_analyser_Analyser* ma, ast_Stmt* s)
 {
    if (!scope_Scope_allowContinue(ma->scope)) {
       module_analyser_Analyser_error(ma, ast_Stmt_getLoc(s), "'continue' statement not in loop statement");
+      return module_analyser_FlowError;
    }
+   ast_ContinueStmt* cs = (ast_ContinueStmt*)s;
+   if (ast_ContinueStmt_hasName(cs)) {
+      label_vector_Label* label = label_vector_LabelVector_find(&ma->labels, ast_ContinueStmt_getName(cs));
+      if (label && label->can_continue) {
+         label->has_continue = true;
+         label->used = true;
+         return module_analyser_FlowGoto;
+      }
+      module_analyser_Analyser_error(ma, ast_Stmt_getLoc(s), "'continue' label does match an enclosing loop statement");
+      return module_analyser_FlowError;
+   }
+   return module_analyser_FlowContinue;
 }
 
 static void module_analyser_Analyser_analyseFallthroughStmt(module_analyser_Analyser* ma, ast_Stmt* s)
@@ -30876,7 +31369,7 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseLabelStmt(module
    label_vector_Label* label = label_vector_LabelVector_find(&ma->labels, name);
    if (label) {
       if (label->is_label) {
-         module_analyser_Analyser_error(ma, ast_Stmt_getLoc(s), "redefinition of label '%s'", ast_LabelStmt_getName(ls));
+         module_analyser_Analyser_error(ma, ast_Stmt_getLoc(s), "redefinition of label '%s'", module_analyser_Analyser_idx2name(ma, name));
          module_analyser_Analyser_note(ma, label->loc, "previous definition is here");
       } else {
          label->is_label = true;
@@ -30891,20 +31384,51 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseLabelStmt(module
          .used = false,
          .stmt = ls
       };
+      {
+         ast_Stmt* st = ast_LabelStmt_getStmt(ls);
+         if (st) {
+            switch (ast_Stmt_getKind(st)) {
+            case ast_StmtKind_For:
+            case ast_StmtKind_While:
+               lab.can_continue = true;
+               fallthrough;
+            case ast_StmtKind_Switch:
+               lab.can_break = true;
+               break;
+            default:
+               break;
+            }
+         }
+      }
       label_vector_LabelVector_add(&ma->labels, lab);
    }
    ast_Stmt** lss = ast_LabelStmt_getStmt2(ls);
    if (!lss) return module_analyser_FlowNext;
-   return module_analyser_Analyser_analyseStmt(ma, lss, true);
+   module_analyser_FlowBits flow = module_analyser_Analyser_analyseStmt(ma, lss, true);
+   label = label_vector_LabelVector_find(&ma->labels, name);
+   if (label->has_break) {
+      ast_LabelStmt_setUsed(ls);
+      ast_LabelStmt_setBreak(ls);
+      scope_Scope_setReachable(ma->scope);
+      flow |= module_analyser_FlowNext;
+   }
+   if (label->has_continue) {
+      ast_LabelStmt_setUsed(ls);
+      ast_LabelStmt_setContinue(ls);
+   }
+   label->can_break = false;
+   label->can_continue = false;
+   return flow;
 }
 
-static void module_analyser_Analyser_analyseGotoStmt(module_analyser_Analyser* ma, ast_Stmt* s)
+static module_analyser_FlowBits module_analyser_Analyser_analyseGotoStmt(module_analyser_Analyser* ma, ast_Stmt* s)
 {
    ast_GotoStmt* gs = (ast_GotoStmt*)s;
    u32 name = ast_GotoStmt_getNameIdx(gs);
    label_vector_Label* label = label_vector_LabelVector_find(&ma->labels, name);
    if (label) {
       label->used = true;
+      label->has_goto = true;
       if (label->stmt) ast_LabelStmt_setUsed(label->stmt);
    } else {
       label_vector_Label lab = {
@@ -30912,10 +31436,12 @@ static void module_analyser_Analyser_analyseGotoStmt(module_analyser_Analyser* m
          .loc = ast_Stmt_getLoc(s),
          .is_label = false,
          .used = true,
+         .has_goto = true,
          .stmt = NULL
       };
       label_vector_LabelVector_add(&ma->labels, lab);
    }
+   return module_analyser_FlowGoto;
 }
 
 static module_analyser_FlowBits module_analyser_Analyser_analyseCompoundStmt(module_analyser_Analyser* ma, ast_CompoundStmt* c)
@@ -30932,26 +31458,39 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseCompoundStmt(mod
    return flow | flow2;
 }
 
-static ast_QualType module_analyser_Analyser_analyseCondition(module_analyser_Analyser* ma, ast_Stmt** s_ptr, bool check_assign)
+static ast_QualType module_analyser_Analyser_analyseConditionDecl(module_analyser_Analyser* ma, ast_Stmt** s_ptr, const char* context)
+{
+   ast_Stmt* s = *s_ptr;
+   ;//assert(ast_Stmt_isDecl(s));
+   ast_QualType qt = module_analyser_Analyser_analyseDeclStmt(ma, s);
+   if (ast_QualType_isValid(qt)) {
+      ast_DeclStmt* ds = (ast_DeclStmt*)s;
+      ast_VarDecl* vd = ast_DeclStmt_getDecl(ds, 0);
+      if (ast_VarDecl_hasInitCall(vd)) {
+         module_analyser_Analyser_error(ma, ast_Decl_getLoc(ast_VarDecl_asDecl(vd)), "variable declaration in %s cannot have an init call", context);
+         return ast_QualType_Invalid;
+      }
+      if (!ast_VarDecl_hasInit(vd)) {
+         module_analyser_Analyser_error(ma, ast_Decl_getLoc(ast_VarDecl_asDecl(vd)), "variable declaration in %s must have an initializer", context);
+         return ast_QualType_Invalid;
+      }
+   }
+   return qt;
+}
+
+static ast_QualType module_analyser_Analyser_analyseCondition(module_analyser_Analyser* ma, ast_Stmt** s_ptr, const char* context, bool check_assign, bool check_bool)
 {
    ast_Stmt* s = *s_ptr;
    if (ast_Stmt_isDecl(s)) {
-      ast_QualType qt = module_analyser_Analyser_analyseDeclStmt(ma, s);
-      if (ast_QualType_isValid(qt)) {
-         ast_DeclStmt* ds = (ast_DeclStmt*)s;
-         ast_VarDecl* vd = ast_DeclStmt_getDecl(ds, 0);
-         if (!ast_VarDecl_getInit(vd)) {
-            module_analyser_Analyser_error(ma, ast_Decl_getLoc(ast_VarDecl_asDecl(vd)), "variable declaration in condition must have an initializer");
-            return ast_QualType_Invalid;
-         }
-      }
-      return qt;
+      return module_analyser_Analyser_analyseConditionDecl(ma, s_ptr, context);
    }
    ;//assert(ast_Stmt_isExpr(s));
-   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, (ast_Expr**)s_ptr, true, module_analyser_RHS);
+   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, (ast_Expr**)s_ptr, true, ast_RHS);
    ast_Expr* e = (ast_Expr*)*s_ptr;
-   if (ast_QualType_isValid(qt)) conversion_checker_Checker_check(&ma->checker, ast_getBuiltinQT(ast_BuiltinKind_Bool), qt, (ast_Expr**)s_ptr, ast_Expr_getLoc(e));
-   e = (ast_Expr*)*s_ptr;
+   if (check_bool) {
+      if (ast_QualType_isValid(qt)) conversion_checker_Checker_checkAssign(&ma->conv_checker, ast_getBuiltinQT(ast_BuiltinKind_Bool), qt, (ast_Expr**)s_ptr, ast_Expr_getLoc(e));
+      e = (ast_Expr*)*s_ptr;
+   }
    if (check_assign && ast_Expr_isAssignment(e)) {
       module_analyser_Analyser_warn(ma, ast_Expr_getLoc(e), "using the result of an assignment as a condition without parentheses");
    }
@@ -30963,16 +31502,39 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseIfStmt(module_an
    module_analyser_FlowBits flow = module_analyser_FlowNext;
    ast_IfStmt* i = (ast_IfStmt*)s;
    scope_Scope_enter(ma->scope, scope_Decl);
-   module_analyser_Analyser_analyseCondition(ma, ast_IfStmt_getCond2(i), true);
-   if (ma->has_error) goto done;
+   if (ast_IfStmt_hasDecl(i)) {
+      ast_QualType ct = module_analyser_Analyser_analyseConditionDecl(ma, ast_IfStmt_getDecl2(i), "'if' condition");
+      if (ast_QualType_isInvalid(ct)) {
+         scope_Scope_exit(ma->scope, ma->has_error);
+         return module_analyser_FlowNext | module_analyser_FlowError;
+      }
+   }
+   ast_VarDecl* vd = NULL;
+   ast_Expr** condp = ast_IfStmt_getCond2(i);
+   if (!*condp) {
+      ast_DeclStmt* ds = (ast_DeclStmt*)ast_IfStmt_getDecl(i);
+      ;//assert(ds);
+      vd = ast_DeclStmt_getDecl(ds, 0);
+      *condp = ast_builder_Builder_actOnIdentifier(ma->builder, 0, ast_Decl_getNameIdx(ast_VarDecl_asDecl(vd)), 0);
+   }
+   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, condp, true, ast_RHS);
+   if (ast_QualType_isInvalid(qt)) goto done;
+   if (vd) ast_Decl_clearUsed(ast_VarDecl_asDecl(vd));
+   ast_Expr* e = *condp;
+   bool ok = conversion_checker_Checker_checkAssign(&ma->conv_checker, ast_getBuiltinQT(ast_BuiltinKind_Bool), qt, condp, ast_Expr_getLoc(e));
+   e = *condp;
+   if (ast_Expr_isAssignment(e)) {
+      module_analyser_Analyser_warn(ma, ast_Expr_getLoc(e), "using the result of an assignment as a condition without parentheses");
+   }
+   if (!ok) goto done;
    scope_Scope_enter(ma->scope, scope_Decl);
    flow = module_analyser_Analyser_analyseStmt(ma, ast_IfStmt_getThen2(i), true);
    scope_Scope_exit(ma->scope, ma->has_error);
    module_analyser_FlowBits flow2 = module_analyser_FlowNext;
-   ast_Stmt** else_ = ast_IfStmt_getElse2(i);
-   if (else_) {
+   ast_Stmt** else_stmt = ast_IfStmt_getElse2(i);
+   if (else_stmt) {
       scope_Scope_enter(ma->scope, scope_Decl);
-      flow2 = module_analyser_Analyser_analyseStmt(ma, else_, true);
+      flow2 = module_analyser_Analyser_analyseStmt(ma, else_stmt, true);
       scope_Scope_exit(ma->scope, ma->has_error);
    }
    flow |= flow2;
@@ -30988,14 +31550,14 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseForStmt(module_a
    scope_Scope_enter(ma->scope, scope_Break | scope_Continue | scope_Decl | scope_Control);
    ast_Stmt** init = ast_ForStmt_getInit2(f);
    if (init) {
-      ast_QualType ct = module_analyser_Analyser_analyseCondition(ma, init, false);
+      ast_QualType ct = module_analyser_Analyser_analyseCondition(ma, init, "'for' init clause", false, false);
       if (ast_QualType_isInvalid(ct)) goto done;
    }
    ast_Expr** cond = ast_ForStmt_getCond2(f);
    if (cond) {
-      ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, cond, true, module_analyser_RHS);
+      ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, cond, true, ast_RHS);
       if (ast_QualType_isInvalid(qt)) goto done;
-      conversion_checker_Checker_check(&ma->checker, ast_getBuiltinQT(ast_BuiltinKind_Bool), qt, cond, ast_Expr_getLoc((*cond)));
+      conversion_checker_Checker_checkAssign(&ma->conv_checker, ast_getBuiltinQT(ast_BuiltinKind_Bool), qt, cond, ast_Expr_getLoc((*cond)));
       if (ast_Expr_isCtv((*cond))) {
          value_type_Value v = ast_evalExpr((*cond));
          if (value_type_Value_isZero(&v)) {
@@ -31008,7 +31570,7 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseForStmt(module_a
    }
    ast_Expr** cont = ast_ForStmt_getCont2(f);
    if (cont) {
-      ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, cont, true, module_analyser_RHS);
+      ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, cont, true, ast_RHS);
       if (ast_QualType_isInvalid(qt)) goto done;
    }
    module_analyser_FlowBits flow2 = module_analyser_Analyser_analyseStmt(ma, ast_ForStmt_getBody2(f), true);
@@ -31024,8 +31586,8 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseWhileStmt(module
    module_analyser_FlowBits flow = module_analyser_FlowNext;
    ast_WhileStmt* w = (ast_WhileStmt*)s;
    scope_Scope_enter(ma->scope, scope_Decl);
-   module_analyser_Analyser_analyseCondition(ma, ast_WhileStmt_getCond2(w), true);
-   if (ma->has_error) goto done;
+   ast_QualType ct = module_analyser_Analyser_analyseCondition(ma, ast_WhileStmt_getCond2(w), "'while' condition", true, true);
+   if (ast_QualType_isInvalid(ct)) goto done;
    ast_Expr* cond = module_analyser_getCondExpr(ast_WhileStmt_getCond(w));
    if (ast_Expr_isCtv(cond)) {
       value_type_Value v = ast_evalExpr(cond);
@@ -31075,7 +31637,7 @@ static ast_QualType module_analyser_Analyser_analyseDecl(module_analyser_Analyse
       module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "incremental arrays not allowed in function scope");
       return ast_QualType_Invalid;
    }
-   ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref);
+   ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref, true);
    if (ast_QualType_isInvalid(res)) return ast_QualType_Invalid;
    ast_Decl_setType(d, res);
    if (ast_QualType_isVoid(res)) {
@@ -31096,7 +31658,7 @@ static ast_QualType module_analyser_Analyser_analyseDecl(module_analyser_Analyse
       }
    } else {
       if (ast_QualType_isConstant(res)) {
-         module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "constant variable '%s' must be initialized", ast_Decl_getName(d));
+         module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "constant variable '%s' must be initialized", module_analyser_Analyser_getName(ma, d));
          return ast_QualType_Invalid;
       }
       const ast_ArrayType* at = ast_QualType_getArrayTypeOrNil(res);
@@ -31107,7 +31669,7 @@ static ast_QualType module_analyser_Analyser_analyseDecl(module_analyser_Analyse
                return ast_QualType_Invalid;
             }
          } else {
-            module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "array-type variable '%s' needs an explicit size or an initializer", ast_Decl_getName(d));
+            module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "array-type variable '%s' needs an explicit size or an initializer", module_analyser_Analyser_getName(ma, d));
             return ast_QualType_Invalid;
          }
       }
@@ -31131,10 +31693,10 @@ static void module_analyser_Analyser_analyseAsmStmt(module_analyser_Analyser* ma
       u32 side;
       if (i < num_outputs) {
          need_rvalue = false;
-         side = module_analyser_LHS;
+         side = ast_LHS;
       } else {
          need_rvalue = true;
-         side = module_analyser_RHS;
+         side = ast_RHS;
       }
       ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, &exprs[i], need_rvalue, side);
       if (ast_QualType_isInvalid(qt)) return;
@@ -31144,10 +31706,20 @@ static void module_analyser_Analyser_analyseAsmStmt(module_analyser_Analyser* ma
 static void module_analyser_Analyser_analyseAssertStmt(module_analyser_Analyser* ma, ast_Stmt* s)
 {
    ast_AssertStmt* a = (ast_AssertStmt*)s;
-   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, ast_AssertStmt_getInner2(a), true, module_analyser_RHS);
+   ast_QualType qt = module_analyser_Analyser_analyseExpr(ma, ast_AssertStmt_getInner2(a), true, ast_RHS);
    if (ast_QualType_isInvalid(qt)) return;
    ast_Expr* inner = ast_AssertStmt_getInner(a);
-   conversion_checker_Checker_check(&ma->checker, ast_getBuiltinQT(ast_BuiltinKind_Bool), qt, ast_AssertStmt_getInner2(a), ast_Expr_getLoc(inner));
+   if (ast_Expr_isAssignment(inner)) {
+      char tmp[128];
+      string_buffer_Buf buf; string_buffer_Buf_init(&buf, tmp, 128, true, false, 0);
+      string_buffer_Buf* out = &buf;
+      ast_BinaryOperator* b = (ast_BinaryOperator*)inner;
+      module_analyser_encode_expression(out, ast_BinaryOperator_getLHS(b));
+      string_buffer_Buf_add(out, " == ");
+      module_analyser_encode_expression(out, ast_BinaryOperator_getRHS(b));
+      module_analyser_Analyser_error(ma, ast_Expr_getLoc(inner), "invalid assignment, did you mean 'assert(%s)'?", string_buffer_Buf_str(out));
+   }
+   conversion_checker_Checker_checkAssign(&ma->conv_checker, ast_getBuiltinQT(ast_BuiltinKind_Bool), qt, ast_AssertStmt_getInner2(a), ast_Expr_getLoc(inner));
    if (ma->has_asserts) {
       src_loc_SrcLoc loc = ast_Stmt_getLoc(s);
       ast_Expr* func = ast_builder_Builder_actOnMemberExpr(ma->builder, NULL, ma->c2_assert_idx, 0, loc, ma->c2_assert_fail_idx);
@@ -31181,10 +31753,10 @@ static void module_analyser_Analyser_analyseAssertStmt(module_analyser_Analyser*
       string_buffer_Buf_deinit(&buf);
       src_loc_SrcLoc eloc = ast_Expr_getStartLoc(inner);
       src_loc_SrcLoc eloc_end = ast_Expr_getEndLoc(inner);
-      args[0] = ast_builder_Builder_actOnStringLiteral(ma->builder, eloc, eloc_end - eloc, msg_idx, msg_len);
+      args[0] = ast_builder_Builder_actOnStringLiteral(ma->builder, eloc, eloc_end - eloc, msg_idx, msg_len, true);
       ast_Expr** callp = ast_AssertStmt_getCall2(a);
       *callp = ast_builder_Builder_actOnCallExpr(ma->builder, loc, eloc_end + 1, func, args, num_args);
-      qt = module_analyser_Analyser_analyseExpr(ma, ast_AssertStmt_getCall2(a), true, module_analyser_RHS);
+      qt = module_analyser_Analyser_analyseExpr(ma, ast_AssertStmt_getCall2(a), true, ast_RHS);
       if (ast_QualType_isInvalid(qt)) return;
    }
 }
@@ -31220,13 +31792,13 @@ static void module_analyser_Analyser_analyseReturnStmt(module_analyser_Analyser*
    ast_Expr** arg = ast_ReturnStmt_getValue2(r);
    if (ast_FunctionDecl_hasReturn(ma->curFunction)) {
       if (!arg) {
-         module_analyser_Analyser_error(ma, ast_Stmt_getLoc(s) + 6, "non-void function %s should return a value", ast_Decl_getName(ast_FunctionDecl_asDecl(ma->curFunction)));
+         module_analyser_Analyser_error(ma, ast_Stmt_getLoc(s) + 6, "non-void function %s should return a value", module_analyser_Analyser_getName(ma, ast_FunctionDecl_asDecl(ma->curFunction)));
          return;
       }
    } else {
       if (arg) {
          ast_Expr* e = ast_ReturnStmt_getValue(r);
-         module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "void function %s should not return a value", ast_Decl_getName(ast_FunctionDecl_asDecl(ma->curFunction)));
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "void function %s should not return a value", module_analyser_Analyser_getName(ma, ast_FunctionDecl_asDecl(ma->curFunction)));
          return;
       }
    }
@@ -31263,10 +31835,20 @@ static void module_analyser_Analyser_analyseStructType(module_analyser_Analyser*
    module_analyser_Analyser_analyseStructNames(ma, d, &names);
    name_map_NameMap_free(&names);
    module_analyser_Analyser_analyseStructMembers(ma, d);
-   if (!ma->has_error && ast_StructTypeDecl_getSize(d) == 0 && !ast_StructTypeDecl_isOpaque(d) && !ast_Module_isExternal(ma->mod)) {
+   if (!ma->has_error && ast_StructTypeDecl_isEmpty(d) && !ast_StructTypeDecl_isOpaque(d) && !ast_Module_isExternal(ma->mod)) {
       ast_Decl* dd = (ast_Decl*)d;
-      ast_Decl_dump(dd);
       module_analyser_Analyser_error(ma, ast_Decl_getLoc(dd), "empty structs are only allowed in interface files");
+   }
+}
+
+static const char* module_analyser_Analyser_bitfieldDesc(module_analyser_Analyser* ma, u32 name_idx)
+{
+   if (name_idx) {
+      static char bitfield_desc[64];
+      snprintf(bitfield_desc, 64, "bit-field '%s'", module_analyser_Analyser_idx2name(ma, name_idx));
+      return bitfield_desc;
+   } else {
+      return "unnamed bit-field";
    }
 }
 
@@ -31285,10 +31867,9 @@ static void module_analyser_Analyser_analyseStructMembers(module_analyser_Analys
          if (bitfield) {
             ast_QualType qt = ast_Decl_getType(member);
             u32 type_width = ast_QualType_getBitFieldWidth(qt, false);
-            const char* name = ast_VarDecl_getName(vd);
+            u32 name_idx = ast_VarDecl_getNameIdx(vd);
             if (type_width == 0) {
-               if (name) module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "bit-field '%s' has invalid type", name);
-               else module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "unnamed bit-field has invalid type");
+               module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "%s has invalid type", module_analyser_Analyser_bitfieldDesc(ma, name_idx));
                return;
             }
             ast_QualType qt2 = module_analyser_Analyser_analyseConstExpr(ma, &bitfield, true);
@@ -31299,35 +31880,27 @@ static void module_analyser_Analyser_analyseStructMembers(module_analyser_Analys
             }
             value_type_Value value = ast_evalExpr(bitfield);
             if (value_type_Value_isZero(&value)) {
-               if (name) module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "zero width for bit-field '%s'", name);
+               if (name_idx) module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "zero width for %s", module_analyser_Analyser_bitfieldDesc(ma, name_idx));
                else if (ast_StructTypeDecl_isUnion(d)) module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "zero width bit-field not allowed in union");
-            }
-            if (value_type_Value_isNegative(&value)) {
-               if (name) module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "bit-field '%s' has negative width", name);
-               else module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "unnamed bit-field has negative width");
-            }
-            u32 field_width = value_type_Value_as_u32(&value);
-            ast_VarDecl_setBitfieldWidth(vd, (u8)field_width);
-            u32 minimum_type_width = ast_QualType_getBitFieldWidth(qt, true);
-            if (ast_QualType_isEnum(qt) && field_width < minimum_type_width) {
-               if (name) {
-                  module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "bit-field '%s' has insufficient bits for enum '%s' (need %u bits)", name, ast_QualType_diagName(qt), minimum_type_width);
-               } else {
-                  module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "unnamed bit-field has insufficient bits for enum '%s' (need %u bits)", ast_QualType_diagName(qt), minimum_type_width);
+            } else if (value_type_Value_isNegative(&value)) {
+               module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "%s has negative width", module_analyser_Analyser_bitfieldDesc(ma, name_idx));
+            } else {
+               u32 field_width = value_type_Value_as_u32(&value);
+               ast_VarDecl_setBitfieldWidth(vd, (u8)field_width);
+               u32 minimum_type_width = ast_QualType_getBitFieldWidth(qt, true);
+               if (ast_QualType_isEnum(qt) && field_width < minimum_type_width) {
+                  module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "%s has insufficient bits for enum '%s' (need %u bits)", module_analyser_Analyser_bitfieldDesc(ma, name_idx), ast_QualType_diagName(qt), minimum_type_width);
+                  return;
                }
-               return;
-            }
-            if (field_width > type_width) {
-               if (name) {
-                  module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "width of bit-field '%s' (%u bits) exceeds the width of its type (%u bit%s)", name, field_width, type_width, type_width > 1 ? "s" : "");
-               } else {
-                  module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "width of unnamed bit-field (%u bits) exceeds the width of its type (%u bit%s)", field_width, type_width, type_width > 1 ? "s" : "");
+               if (field_width > type_width) {
+                  module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(bitfield), ast_Expr_getRange(bitfield), "width of %s (%u bits) exceeds the width of its type (%u bit%s)", module_analyser_Analyser_bitfieldDesc(ma, name_idx), field_width, type_width, type_width > 1 ? "s" : "");
+                  return;
                }
-               return;
             }
          }
          ast_Decl_setChecked(member);
-      } else if (ast_Decl_isStructType(member)) {
+      } else {
+         ;//assert(ast_Decl_isStructType(member));
          ast_StructTypeDecl* sub = (ast_StructTypeDecl*)member;
          if (is_packed) ast_StructTypeDecl_setPacked(sub);
          module_analyser_Analyser_analyseStructMembers(ma, sub);
@@ -31344,7 +31917,7 @@ static void module_analyser_Analyser_analyseStructMember(module_analyser_Analyse
       module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "incremental arrays not allowed in as struct/union member");
       return;
    }
-   ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref);
+   ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref, true);
    if (ast_QualType_isInvalid(res)) return;
    if (ast_QualType_isArray(res)) {
       ast_ArrayType* at = ast_QualType_getArrayType(res);
@@ -31357,8 +31930,17 @@ static void module_analyser_Analyser_analyseStructMember(module_analyser_Analyse
       module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "member has invalid type 'void'");
       return;
    }
-   ast_Decl_setType(ast_VarDecl_asDecl(v), res);
-   if (ma->usedPublic) ast_setTypePublicUsed(res);
+   ast_Decl* d = (ast_Decl*)v;
+   ast_Decl_setType(d, res);
+   if (ma->usedPublic) ast_QualType_setTypeUsedPublic(res);
+   if (ast_Decl_hasAttr(d)) {
+      if (ast_VarDecl_hasAttrWeak(v)) {
+         module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "attribute 'weak' cannot be applied to struct members");
+      }
+      if (ast_Decl_isExported(d)) {
+         module_analyser_Analyser_error(ma, ast_Decl_getLoc(d), "attribute 'export' cannot be applied to struct members");
+      }
+   }
 }
 
 static void module_analyser_Analyser_analyseStructNames(module_analyser_Analyser* ma, ast_StructTypeDecl* d, name_map_NameMap* names)
@@ -31377,7 +31959,7 @@ static void module_analyser_Analyser_analyseStructNames(module_analyser_Analyser
       } else {
          u32 old_index;
          if (name_map_NameMap_find(names, name_idx, &old_index)) {
-            module_analyser_Analyser_error(ma, ast_Decl_getLoc(member), "duplicate struct/union member '%s'", ast_Decl_getName(member));
+            module_analyser_Analyser_error(ma, ast_Decl_getLoc(member), "duplicate struct/union member '%s'", module_analyser_Analyser_idx2name(ma, name_idx));
             module_analyser_Analyser_note(ma, name_map_NameMap_getLoc(names, old_index), "previous declaration is here");
             return;
          }
@@ -31391,22 +31973,6 @@ static void module_analyser_Analyser_analyseStructNames(module_analyser_Analyser
    }
 }
 
-static ast_QualType module_analyser_Analyser_analyseSwitchDecl(module_analyser_Analyser* ma, ast_Stmt** s_ptr)
-{
-   ast_Stmt* s = *s_ptr;
-   ;//assert(ast_Stmt_isDecl(s));
-   ast_QualType qt = module_analyser_Analyser_analyseDeclStmt(ma, s);
-   if (ast_QualType_isValid(qt)) {
-      ast_DeclStmt* ds = (ast_DeclStmt*)s;
-      ast_VarDecl* vd = ast_DeclStmt_getDecl(ds, 0);
-      if (!ast_VarDecl_getInit(vd)) {
-         module_analyser_Analyser_error(ma, ast_Decl_getLoc(ast_VarDecl_asDecl(vd)), "variable declaration in 'switch' expression must have an initializer");
-         return ast_QualType_Invalid;
-      }
-   }
-   return qt;
-}
-
 static module_analyser_FlowBits module_analyser_Analyser_analyseSwitchStmt(module_analyser_Analyser* ma, ast_Stmt* s)
 {
    module_analyser_FlowBits flow = 0;
@@ -31416,7 +31982,7 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseSwitchStmt(modul
    ast_EnumTypeDecl* etd = NULL;
    if (ast_SwitchStmt_hasDecl(sw)) {
       ast_Stmt** declp = ast_SwitchStmt_getDecl2(sw);
-      ast_QualType ct = module_analyser_Analyser_analyseSwitchDecl(ma, declp);
+      ast_QualType ct = module_analyser_Analyser_analyseConditionDecl(ma, declp, "'switch' expression");
       if (ast_QualType_isInvalid(ct)) {
          scope_Scope_exit(ma->scope, ma->has_error);
          return module_analyser_FlowNext | module_analyser_FlowError;
@@ -31430,7 +31996,7 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseSwitchStmt(modul
       vd = ast_DeclStmt_getDecl(ds, 0);
       *condp = ast_builder_Builder_actOnIdentifier(ma->builder, 0, ast_Decl_getNameIdx(ast_VarDecl_asDecl(vd)), 0);
    }
-   ast_QualType ct = module_analyser_Analyser_analyseExpr(ma, condp, true, module_analyser_RHS);
+   ast_QualType ct = module_analyser_Analyser_analyseExpr(ma, condp, true, ast_RHS);
    if (ast_QualType_isInvalid(ct)) {
       scope_Scope_exit(ma->scope, ma->has_error);
       return module_analyser_FlowNext | module_analyser_FlowError;
@@ -31494,7 +32060,7 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseSwitchStmt(modul
                      break;
                   }
                   missing++;
-                  string_buffer_Buf_add(out, ast_Decl_getName(ast_EnumConstantDecl_asDecl(ecd[i])));
+                  string_buffer_Buf_add(out, module_analyser_Analyser_getName(ma, ast_EnumConstantDecl_asDecl(ecd[i])));
                }
             }
             if (missing) {
@@ -31523,9 +32089,9 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseSwitchStmt(modul
             u32 index = 0;
             if (ast_Expr_isStringLiteral(e)) {
                ast_StringLiteral* lit = (ast_StringLiteral*)e;
-               const char* str = ast_StringLiteral_getText(lit);
+               const char* str = module_analyser_Analyser_idx2name(ma, ast_StringLiteral_getText(lit));
                index = 1;
-               u8 slen = (ast_StringLiteral_getSize(lit) - 1) & 0xFF;
+               u8 slen = ast_StringLiteral_getLength(lit) & 0xFF;
                if (slen) {
                   index = str_index++;
                   string_buffer_Buf_add1(casestr, slen);
@@ -31542,7 +32108,7 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseSwitchStmt(modul
       u32 casestr_len = string_buffer_Buf_size(casestr);
       u32 casestr_idx = string_pool_Pool_add(ma->astPool, string_buffer_Buf_data(casestr), casestr_len, false);
       string_buffer_Buf_free(casestr);
-      ast_Expr* casestr_expr = ast_builder_Builder_actOnStringLiteral(ma->builder, 0, 0, casestr_idx, casestr_len);
+      ast_Expr* casestr_expr = ast_builder_Builder_actOnStringLiteral(ma->builder, 0, 0, casestr_idx, casestr_len, true);
       u32 c2_strswitch_idx = string_pool_Pool_addStr(ma->astPool, "c2_strswitch", true);
       u32 c2_helper_idx = string_pool_Pool_addStr(ma->astPool, "c2_helper", true);
       ast_Expr* func = ast_builder_Builder_actOnMemberExpr(ma->builder, NULL, c2_helper_idx, 0, 0, c2_strswitch_idx);
@@ -31551,10 +32117,10 @@ static module_analyser_FlowBits module_analyser_Analyser_analyseSwitchStmt(modul
       args[0] = cond;
       args[1] = casestr_expr;
       ast_Expr* call = ast_builder_Builder_actOnCallExpr(ma->builder, ast_Expr_getStartLoc(cond), ast_Expr_getEndLoc(cond), func, args, 2);
-      ct = module_analyser_Analyser_analyseExpr(ma, &call, true, module_analyser_RHS);
+      ct = module_analyser_Analyser_analyseExpr(ma, &call, true, ast_RHS);
       if (ast_QualType_isInvalid(ct)) flow |= module_analyser_FlowError;
       else {
-         if (ast_SwitchStmt_hasCond(sw)) {
+         if (ast_SwitchStmt_hasSourceCond(sw)) {
             ast_Expr* alt = ast_builder_Builder_actOnAlternate(ma->builder, cond, call);
             ast_Expr_setType(alt, ast_Expr_getType(call));
             ast_Expr_copyFlags(alt, call);
@@ -31636,7 +32202,7 @@ static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analys
          if (res) {
             if (etd) {
                if (lhs_index > rhs_index) {
-                  module_analyser_Analyser_error(ma, loc, "enum constant '%s' does not come after '%s'", ast_idx2name(rhs_name_idx), ast_idx2name(lhs_name_idx));
+                  module_analyser_Analyser_error(ma, loc, "enum constant '%s' does not come after '%s'", module_analyser_Analyser_idx2name(ma, rhs_name_idx), module_analyser_Analyser_idx2name(ma, lhs_name_idx));
                   res = false;
                   continue;
                }
@@ -31649,7 +32215,7 @@ static bool module_analyser_Analyser_analyseCaseCondition(module_analyser_Analys
                      src_loc_SrcLoc duplicate = init_checker_Checker_find(checker, index);
                      if (duplicate && res) {
                         ast_Decl* d = (ast_Decl*)ecd;
-                        module_analyser_Analyser_error(ma, loc, "duplicate case value '%s'", ast_Decl_getName(d));
+                        module_analyser_Analyser_error(ma, loc, "duplicate case value '%s'", module_analyser_Analyser_getName(ma, d));
                         module_analyser_Analyser_note(ma, duplicate, "previous case is here");
                         res = false;
                      }
@@ -31693,7 +32259,7 @@ static bool module_analyser_Analyser_analyseCaseExpr(module_analyser_Analyser* m
          if (ast_Expr_isMember(cond)) {
             module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "enum constant may not be prefixed in case statement");
          } else {
-            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "condition is not a constant of enum type '%s'", ast_Decl_getFullName(ast_EnumTypeDecl_asDecl(etd)));
+            module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "condition is not a constant of enum type '%s'", module_analyser_Analyser_getFullName(ma, ast_EnumTypeDecl_asDecl(etd)));
          }
          return false;
       }
@@ -31719,16 +32285,16 @@ static bool module_analyser_Analyser_analyseCaseExpr(module_analyser_Analyser* m
             }
          } else if (ast_Expr_isStringLiteral(orig)) {
             ast_StringLiteral* lit = (ast_StringLiteral*)orig;
-            u32 len = ast_StringLiteral_getSize(lit) - 1;
+            u32 len = ast_StringLiteral_getLength(lit);
             if (len > 255) {
                module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "string switch case string is loo long (max 255 bytes)");
                return false;
             }
-            if (memchr(ast_StringLiteral_getText(lit), 0, len)) {
+            index = ast_StringLiteral_getText(lit);
+            if (memchr(module_analyser_Analyser_idx2name(ma, index), 0, len)) {
                module_analyser_Analyser_error(ma, ast_Expr_getLoc(cond), "case string value has embedded null byte");
                return false;
             }
-            index = ast_StringLiteral_getTextIndex(lit);
             *name_idxp = 0;
             if (loc) {
                src_loc_SrcLoc duplicate = init_checker_Checker_find(checker, index);
@@ -31769,10 +32335,11 @@ static bool module_analyser_Analyser_analyseCaseExpr(module_analyser_Analyser* m
 static bool module_analyser_Analyser_checkEnumConstantCase(module_analyser_Analyser* ma, ast_IdentifierExpr* id, init_checker_Checker* checker, ast_EnumTypeDecl* etd, src_loc_SrcLoc loc, u32* ip, u32* name_idxp)
 {
    ast_Expr* e = (ast_Expr*)id;
-   *name_idxp = ast_IdentifierExpr_getNameIdx(id);
-   ast_EnumConstantDecl* ecd = ast_EnumTypeDecl_findConstant(etd, *name_idxp);
+   u32 name_idx = ast_IdentifierExpr_getNameIdx(id);
+   *name_idxp = name_idx;
+   ast_EnumConstantDecl* ecd = ast_EnumTypeDecl_findConstant(etd, name_idx);
    if (!ecd) {
-      module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "enum '%s' has no constant '%s'", ast_Decl_getFullName(ast_EnumTypeDecl_asDecl(etd)), ast_IdentifierExpr_getName(id));
+      module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "enum '%s' has no constant '%s'", module_analyser_Analyser_getFullName(ma, ast_EnumTypeDecl_asDecl(etd)), module_analyser_Analyser_idx2name(ma, name_idx));
       return false;
    }
    ast_Decl* d = (ast_Decl*)ecd;
@@ -31790,7 +32357,7 @@ static bool module_analyser_Analyser_checkEnumConstantCase(module_analyser_Analy
    if (loc) {
       src_loc_SrcLoc duplicate = init_checker_Checker_find(checker, index);
       if (duplicate) {
-         module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "duplicate case value '%s'", ast_IdentifierExpr_getName(id));
+         module_analyser_Analyser_error(ma, ast_Expr_getLoc(e), "duplicate case value '%s'", module_analyser_Analyser_idx2name(ma, name_idx));
          module_analyser_Analyser_note(ma, duplicate, "previous case is here");
          return false;
       }
@@ -31803,14 +32370,14 @@ static void module_analyser_Analyser_analyseFunctionType(module_analyser_Analyse
 {
    ast_FunctionTypeDecl* ftd = (ast_FunctionTypeDecl*)d;
    ast_FunctionDecl* fd = ast_FunctionTypeDecl_getDecl(ftd);
-   module_analyser_Analyser_analyseFunction(ma, fd);
+   module_analyser_Analyser_analyseFunction(ma, fd, false);
 }
 
 static void module_analyser_Analyser_analyseAliasType(module_analyser_Analyser* ma, ast_AliasTypeDecl* a)
 {
    ast_TypeRef* ref = ast_AliasTypeDecl_getTypeRef(a);
    ast_Decl* d = (ast_Decl*)a;
-   ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref);
+   ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref, true);
    if (ast_QualType_isInvalid(res)) return;
    ast_QualType qt = ast_Decl_getType(d);
    ast_Type* at = ast_QualType_getTypeOrNil(qt);
@@ -31842,7 +32409,7 @@ static void module_analyser_Analyser_analyseEnumType(module_analyser_Analyser* m
       for (u32 j = 0; j < i; j++) {
          const ast_Decl* other = ast_EnumConstantDecl_asDecl(constants[j]);
          if (ast_Decl_getNameIdx(other) == name_idx) {
-            module_analyser_Analyser_error(ma, ast_Decl_getLoc(cd), "duplicate enum constant '%s'", ast_idx2name(name_idx));
+            module_analyser_Analyser_error(ma, ast_Decl_getLoc(cd), "duplicate enum constant '%s'", module_analyser_Analyser_idx2name(ma, name_idx));
             module_analyser_Analyser_note(ma, ast_Decl_getLoc(other), "previous definition is here");
             return;
          }
@@ -31886,18 +32453,18 @@ static void module_analyser_Analyser_analyseEnumType(module_analyser_Analyser* m
    if (is_regular || has_assoc) ast_EnumTypeDecl_setRegular(d);
 }
 
-static ast_QualType module_analyser_Analyser_analyseStructMemberTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref)
+static ast_QualType module_analyser_Analyser_analyseStructMemberFnTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref)
 {
    const ast_Ref* member = ast_TypeRef_getStructMemberType(ref);
    ;//assert(member->decl);
    ;//assert(ast_Decl_isFunction(member->decl));
    ast_FunctionDecl* fd = (ast_FunctionDecl*)member->decl;
-   module_analyser_Analyser_analyseFunction(ma, fd);
+   module_analyser_Analyser_analyseFunction(ma, fd, false);
    if (ma->has_error) return ast_QualType_Invalid;
    return ast_Decl_getType(member->decl);
 }
 
-static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref)
+static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref, bool full)
 {
    ;//assert(ma->mod);
    const ast_Ref* user = ast_TypeRef_getUser(ref);
@@ -31925,9 +32492,9 @@ static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_
    }
    if (ma->usedPublic && !ast_Decl_isPublic(d)) {
       if (scope_Scope_inFunction(ma->scope)) {
-         module_analyser_Analyser_error(ma, user->loc, "public inline function using non-public type '%s'", ast_Decl_getFullName(d));
+         module_analyser_Analyser_error(ma, user->loc, "public inline function using non-public type '%s'", module_analyser_Analyser_getFullName(ma, d));
       } else {
-         module_analyser_Analyser_error(ma, user->loc, "public declaration using non-public type '%s'", ast_Decl_getFullName(d));
+         module_analyser_Analyser_error(ma, user->loc, "public declaration using non-public type '%s'", module_analyser_Analyser_getFullName(ma, d));
       }
       return ast_QualType_Invalid;
    }
@@ -31936,14 +32503,14 @@ static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_
       module_analyser_Analyser_error(ma, user->loc, "'%s' is not a type", ast_TypeRef_diagName(ref));
       return ast_QualType_Invalid;
    }
-   bool full = !ast_TypeRef_isPointer(ref);
+   full &= !ast_TypeRef_isPointer(ref);
    ast_DeclCheckState state = ast_Decl_getCheckState(d);
-   if (full && state == ast_DeclCheckState_InProgress) {
-      module_analyser_Analyser_error(ma, user->loc, "circular declaration");
-      return ast_QualType_Invalid;
-   }
-   if (full && state != ast_DeclCheckState_Checked) {
-      module_analyser_Analyser_analyseGlobalDecl(ma, d);
+   if (full) {
+      if (state == ast_DeclCheckState_InProgress) {
+         module_analyser_Analyser_error(ma, user->loc, "circular declaration");
+         return ast_QualType_Invalid;
+      }
+      if (state != ast_DeclCheckState_Checked) module_analyser_Analyser_analyseGlobalDecl(ma, d);
    }
    ast_Decl_setUsed(d);
    bool external = (ma->mod != ast_Decl_getModule(d));
@@ -31951,7 +32518,7 @@ static ast_QualType module_analyser_Analyser_analyseUserTypeRef(module_analyser_
    return ast_Decl_getType(d);
 }
 
-static ast_QualType module_analyser_Analyser_analyseTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref)
+static ast_QualType module_analyser_Analyser_analyseTypeRef(module_analyser_Analyser* ma, ast_TypeRef* ref, bool full)
 {
    ast_QualType base;
    switch (ast_TypeRef_getKind(ref)) {
@@ -31966,12 +32533,12 @@ static ast_QualType module_analyser_Analyser_analyseTypeRef(module_analyser_Anal
       ;//assert(ast_QualType_isValid(base));
       break;
    case ast_TypeRefKind_User:
-      base = module_analyser_Analyser_analyseUserTypeRef(ma, ref);
+      base = module_analyser_Analyser_analyseUserTypeRef(ma, ref, full);
       if (ast_QualType_isInvalid(base)) return base;
       if (!ast_QualType_hasCanonicalType(base)) return ast_QualType_Invalid;
       break;
    case ast_TypeRefKind_Function:
-      base = module_analyser_Analyser_analyseStructMemberTypeRef(ma, ref);
+      base = module_analyser_Analyser_analyseStructMemberFnTypeRef(ma, ref);
       if (ast_QualType_isInvalid(base)) return base;
       if (!ast_QualType_hasCanonicalType(base)) return ast_QualType_Invalid;
       break;
@@ -32040,6 +32607,10 @@ static ast_QualType module_analyser_Analyser_analyseTypeRef(module_analyser_Anal
                module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(sizeExpr), ast_Expr_getRange(sizeExpr), "array size has negative value '%s'", value_type_Value_str(&value));
                return ast_QualType_Invalid;
             }
+            if (!value_type_Value_checkRange(&value, 0, u32_max)) {
+               module_analyser_Analyser_errorRange(ma, ast_Expr_getLoc(sizeExpr), ast_Expr_getRange(sizeExpr), "array size '%s' is too large", value_type_Value_str(&value));
+               return ast_QualType_Invalid;
+            }
             size = value_type_Value_as_u32(&value);
          }
       }
@@ -32067,7 +32638,7 @@ static ast_QualType module_analyser_Analyser_analyseIncrTypeRef(module_analyser_
       break;
    }
    case ast_TypeRefKind_User:
-      base = module_analyser_Analyser_analyseUserTypeRef(ma, ref);
+      base = module_analyser_Analyser_analyseUserTypeRef(ma, ref, true);
       if (ast_QualType_isInvalid(base)) return base;
       ;//assert(ast_QualType_hasCanonicalType(base));
       break;
@@ -32134,18 +32705,18 @@ static ast_QualType module_analyser_Analyser_analyseUnaryOperator(module_analyse
          return ast_QualType_Invalid;
       }
       need_rvalue = false;
-      side |= module_analyser_LHS;
+      side |= ast_LHS;
       break;
    case ast_UnaryOpcode_AddrOf:
       need_rvalue = false;
-      side |= module_analyser_LHS;
+      side |= ast_LHS;
       break;
    case ast_UnaryOpcode_Deref:
    case ast_UnaryOpcode_Plus:
    case ast_UnaryOpcode_Minus:
    case ast_UnaryOpcode_Not:
    case ast_UnaryOpcode_LNot:
-      side |= module_analyser_RHS;
+      side |= ast_RHS;
       break;
    }
    ast_QualType t = module_analyser_Analyser_analyseExpr(ma, ast_UnaryOperator_getInner2(u), need_rvalue, side);
@@ -32612,8 +33183,7 @@ struct plugin_mgr_Plugin_ {
 
 struct plugin_mgr_Mgr_ {
    string_pool_Pool* auxPool;
-   bool console_timing;
-   bool console_debug;
+   console_Config* console_config;
    bool no_plugins;
    plugin_mgr_Plugin* plugins;
    u32 plugin_count;
@@ -32623,7 +33193,7 @@ struct plugin_mgr_Mgr_ {
 };
 
 static const char* plugin_mgr_lib_ext = ".so";
-static plugin_mgr_Mgr* plugin_mgr_create(string_pool_Pool* auxPool, bool console_timing, bool console_debug, bool no_plugins);
+static plugin_mgr_Mgr* plugin_mgr_create(string_pool_Pool* auxPool, console_Config* console_config, bool no_plugins);
 static void plugin_mgr_Mgr_free(plugin_mgr_Mgr* m);
 static const char* plugin_mgr_Mgr_getError(const plugin_mgr_Mgr* m);
 static void plugin_mgr_Mgr_addPath(plugin_mgr_Mgr* m, u32 path);
@@ -32639,12 +33209,11 @@ static void plugin_mgr_Mgr_endTarget(plugin_mgr_Mgr* m);
 static void plugin_mgr_Mgr_postParse(plugin_mgr_Mgr* m);
 static void plugin_mgr_Mgr_postAnalysis(plugin_mgr_Mgr* m);
 
-static plugin_mgr_Mgr* plugin_mgr_create(string_pool_Pool* auxPool, bool console_timing, bool console_debug, bool no_plugins)
+static plugin_mgr_Mgr* plugin_mgr_create(string_pool_Pool* auxPool, console_Config* console_config, bool no_plugins)
 {
-   plugin_mgr_Mgr* m = calloc(1, 312);
+   plugin_mgr_Mgr* m = calloc(1, 320);
    m->auxPool = auxPool;
-   m->console_timing = console_timing;
-   m->console_debug = console_debug;
+   m->console_config = console_config;
    m->no_plugins = no_plugins;
    string_list_List_init(&m->paths, auxPool);
    return m;
@@ -32753,7 +33322,7 @@ static bool plugin_mgr_Mgr_loadPlugin(plugin_mgr_Mgr* m, u32 name, u32 options, 
    }
    p.functions = handle_symbol;
    console_debug("plugins: loading %s", fullname);
-   p.arg = p.functions->load(string_pool_Pool_idx2str(m->auxPool, options), m->console_timing, m->console_debug);
+   p.arg = p.functions->load(string_pool_Pool_idx2str(m->auxPool, options), m->console_config);
    if (!p.arg) {
       dlclose(p.handle);
       snprintf(m->error_msg, 256, "plugin %s failed to load", fullname);
@@ -32891,8 +33460,20 @@ struct c_generator_Generator_ {
 static const char c_generator_Dir[5] = "cgen";
 static const char c_generator_LogFile[10] = "build.log";
 static const char* c_generator_builtinType_cnames[14] = {
-   "char",    "i8",      "i16",     "int",     "i64",     "u8",      "u16",     "u32",
-   "u64",     "float",   "double",  "ssize_t", "size_t",  "bool"
+   [ast_BuiltinKind_Bool] = "bool",
+   [ast_BuiltinKind_Char] = "char",
+   [ast_BuiltinKind_Int8] = "i8",
+   [ast_BuiltinKind_Int16] = "i16",
+   [ast_BuiltinKind_Int32] = "int",
+   [ast_BuiltinKind_Int64] = "i64",
+   [ast_BuiltinKind_UInt8] = "u8",
+   [ast_BuiltinKind_UInt16] = "u16",
+   [ast_BuiltinKind_UInt32] = "u32",
+   [ast_BuiltinKind_UInt64] = "u64",
+   [ast_BuiltinKind_Float32] = "float",
+   [ast_BuiltinKind_Float64] = "double",
+   [ast_BuiltinKind_ISize] = "ssize_t",
+   [ast_BuiltinKind_USize] = "size_t"
 };
 static const char c_generator_Warning_control[999] = "#if defined(__clang__)\n"
                                                      "#  pragma clang diagnostic ignored \"-Wincompatible-library-redeclaration\"\n"
@@ -32942,13 +33523,15 @@ static const char c_generator_C_defines[104] = "\n"
 static c_generator_Fragment* c_generator_Fragment_create(void);
 static void c_generator_Fragment_clear(c_generator_Fragment* f);
 static void c_generator_Fragment_free(c_generator_Fragment* f);
+static const char* c_generator_Generator_idx2name(const c_generator_Generator* gen, u32 name_idx);
 static string_buffer_Buf* c_generator_Generator_getBuf(c_generator_Generator* gen, bool is_public);
 static c_generator_Fragment* c_generator_Generator_getFragment(c_generator_Generator* gen);
 static void c_generator_Generator_addFragment(c_generator_Generator* gen, c_generator_Fragment* f, bool is_public);
 static void c_generator_Generator_freeFragment(c_generator_Generator* gen, c_generator_Fragment* f);
 static void c_generator_Generator_emitCtv(c_generator_Generator* _arg0, string_buffer_Buf* out, const ast_Expr* e);
+static void c_generator_Generator_emitName(c_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d);
 static void c_generator_Generator_emitCName(c_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d);
-static void c_generator_Generator_emitCNameMod(c_generator_Generator* _arg0, string_buffer_Buf* out, const ast_Decl* d, ast_Module* mod);
+static void c_generator_Generator_emitCNameMod(c_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d, ast_Module* mod);
 static void c_generator_Generator_emitDeclName(c_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d);
 static void c_generator_Generator_emitEnumType(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d);
 static void c_generator_Generator_emitTypePre(c_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt, bool bitfield);
@@ -32957,6 +33540,7 @@ static void c_generator_Generator_genDeclIfNeeded(c_generator_Generator* gen, as
 static void c_generator_Generator_genTypeIfNeeded(c_generator_Generator* gen, ast_QualType qt, bool full);
 static void c_generator_Generator_emitStructMember(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d, u32 indent);
 static void c_generator_Generator_emitStruct(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d, u32 indent);
+static void c_generator_Generator_emitFunctionParam(c_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt, u32 name_idx, u32 arg_num);
 static void c_generator_Generator_emitFunctionType(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d);
 static bool c_generator_match_type(const char* s, const char* list, const char** sp);
 static bool c_generator_is_c_type(const char* s);
@@ -32966,7 +33550,7 @@ static void c_generator_Generator_emitConstExpr(c_generator_Generator* gen, stri
 static void c_generator_Generator_emitGlobalVarDeclCommon(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d);
 static bool c_generator_Generator_emitGlobalVarDecl(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d);
 static bool c_generator_Generator_emitExprValue(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
-static void c_generator_Generator_emitSectionAttr(c_generator_Generator* gen, string_buffer_Buf* out, const char* name);
+static void c_generator_Generator_emitSectionAttr(c_generator_Generator* gen, string_buffer_Buf* out, u32 name_idx);
 static void c_generator_Generator_emitAutoInit(c_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt);
 static void c_generator_Generator_on_public_import_decl(void* arg, ast_ImportDecl* i);
 static void c_generator_Generator_on_private_import_decl(void* arg, ast_ImportDecl* i);
@@ -33027,7 +33611,7 @@ static void c_generator_Generator_emitFieldDesigExpr(c_generator_Generator* gen,
 static void c_generator_Generator_emitArrayDesigExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
 static void c_generator_Generator_emitBuiltinExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* e);
 static void c_generator_Generator_emitInitListExpr(c_generator_Generator* gen, string_buffer_Buf* out, ast_InitListExpr* ile);
-static const char c_generator_C2_types_header[635] = "// WARNING: this file is auto-generated by the C2 compiler.\n"
+static const char c_generator_C2_types_header[633] = "// WARNING: this file is auto-generated by the C2 compiler.\n"
                                                      "// Any changes you make might be lost!\n\n"
                                                      "#ifndef C2TYPES_H\n"
                                                      "#define C2TYPES_H\n\n"
@@ -33036,7 +33620,7 @@ static const char c_generator_C2_types_header[635] = "// WARNING: this file is a
                                                      "#endif\n\n"
                                                      "#define NULL ((void*)0)\n"
                                                      "#define offsetof(type, member) __builtin_offsetof(type, member)\n"
-                                                     "#define to_container(type, member, ptr) ((type *)((char *)(ptr)-offsetof(type, member)))\n\n"
+                                                     "#define to_container(type, member, ptr) ((type*)((char*)(ptr)-offsetof(type, member)))\n\n"
                                                      "// NOTE: 64-bit only for now\n"
                                                      "typedef signed char i8;\n"
                                                      "typedef unsigned char u8;\n"
@@ -33055,10 +33639,13 @@ static void c_generator_Generator_createExportsFile(c_generator_Generator* gen, 
 static void c_generator_Generator_generateC2TypesHeader(c_generator_Generator* gen);
 static void c_generator_Generator_emitVarDecl(c_generator_Generator* gen, ast_VarDecl* vd, string_buffer_Buf* out, bool emit_init, bool first);
 static void c_generator_Generator_emitStmt(c_generator_Generator* gen, string_buffer_Buf* out, ast_Stmt* s, u32 indent, bool newline);
+static void c_generator_Generator_emitWhileStmt(c_generator_Generator* gen, string_buffer_Buf* out, ast_WhileStmt* w, u32 indent, ast_LabelStmt* ls);
+static void c_generator_Generator_emitForStmt(c_generator_Generator* gen, string_buffer_Buf* out, ast_ForStmt* f, u32 indent, ast_LabelStmt* ls);
+static void c_generator_Generator_emitLoopBody(c_generator_Generator* gen, string_buffer_Buf* out, ast_Stmt* body, u32 indent, u32 break_name, u32 continue_name);
 static void c_generator_emitAsmPart(string_buffer_Buf* out, bool multi_line, u32 indent);
 static void c_generator_Generator_emitAsmOperand(c_generator_Generator* gen, string_buffer_Buf* out, u32 name, const ast_Expr* c, ast_Expr* e);
 static void c_generator_Generator_emitAsmStmt(c_generator_Generator* gen, string_buffer_Buf* out, ast_AsmStmt* a, u32 indent);
-static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, string_buffer_Buf* out, ast_SwitchStmt* sw, u32 indent);
+static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, string_buffer_Buf* out, ast_SwitchStmt* sw, u32 indent, ast_LabelStmt* ls);
 static void c_generator_Generator_emitCase(c_generator_Generator* gen, string_buffer_Buf* out, ast_SwitchCase* c, u32 indent);
 struct c_generator_TraceCall_ {
    u8 filename_idx;
@@ -33099,6 +33686,11 @@ static void c_generator_Fragment_free(c_generator_Fragment* f)
    free(f);
 }
 
+static const char* c_generator_Generator_idx2name(const c_generator_Generator* gen, u32 name_idx)
+{
+   return string_pool_Pool_idx2str(gen->astPool, name_idx);
+}
+
 static string_buffer_Buf* c_generator_Generator_getBuf(c_generator_Generator* gen, bool is_public)
 {
    string_buffer_Buf* out = gen->out;
@@ -33137,18 +33729,23 @@ static void c_generator_Generator_emitCtv(c_generator_Generator* _arg0, string_b
    string_buffer_Buf_print(out, "%s", value_type_Value_str(&val));
 }
 
+static void c_generator_Generator_emitName(c_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d)
+{
+   string_buffer_Buf_add(out, c_generator_Generator_idx2name(gen, ast_Decl_getNameIdx(d)));
+}
+
 static void c_generator_Generator_emitCName(c_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d)
 {
    c_generator_Generator_emitCNameMod(gen, out, d, gen->mod);
 }
 
-static void c_generator_Generator_emitCNameMod(c_generator_Generator* _arg0, string_buffer_Buf* out, const ast_Decl* d, ast_Module* mod)
+static void c_generator_Generator_emitCNameMod(c_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d, ast_Module* mod)
 {
-   if (!ast_Decl_getName(d)) return;
+   if (!ast_Decl_getNameIdx(d)) return;
    if (ast_Decl_isExternal(d) && ast_Module_isForeign(ast_Decl_getModule(d))) {
-      const char* cname = ast_Decl_getCName(d);
+      u32 cname = ast_Decl_getCName(d);
       if (cname) {
-         string_buffer_Buf_add(out, cname);
+         string_buffer_Buf_add(out, c_generator_Generator_idx2name(gen, cname));
          return;
       }
       if (ast_Decl_isFunction(d)) {
@@ -33157,7 +33754,7 @@ static void c_generator_Generator_emitCNameMod(c_generator_Generator* _arg0, str
       }
       ast_QualType qt = ast_Decl_getType(d);
       if (!ast_QualType_isConst(qt)) {
-         string_buffer_Buf_add(out, ast_Decl_getName(d));
+         c_generator_Generator_emitName(gen, out, d);
          return;
       }
    }
@@ -33168,17 +33765,18 @@ c2_style:
       ast_FunctionDecl* fd = (ast_FunctionDecl*)d;
       ast_Ref* prefix = ast_FunctionDecl_getPrefix(fd);
       if (prefix) {
-         string_buffer_Buf_add(out, ast_idx2name(prefix->name_idx));
+         string_buffer_Buf_add(out, c_generator_Generator_idx2name(gen, prefix->name_idx));
          string_buffer_Buf_add1(out, '_');
       }
    }
    if (ast_Decl_isEnumConstant(d)) {
       ast_QualType qt = ast_Decl_getType(d);
       ast_EnumType* et = (ast_EnumType*)ast_QualType_getType(qt);
-      string_buffer_Buf_add(out, ast_EnumType_getName(et));
+      ast_EnumTypeDecl* etd = ast_EnumType_getDecl(et);
+      c_generator_Generator_emitName(gen, out, ast_EnumTypeDecl_asDecl(etd));
       string_buffer_Buf_add1(out, '_');
    }
-   string_buffer_Buf_add(out, ast_Decl_getName(d));
+   c_generator_Generator_emitName(gen, out, d);
 }
 
 static void c_generator_Generator_emitDeclName(c_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d)
@@ -33186,7 +33784,7 @@ static void c_generator_Generator_emitDeclName(c_generator_Generator* gen, strin
    if (ast_Decl_isVariable(d)) {
       ast_VarDecl* vd = (ast_VarDecl*)d;
       if (!ast_VarDecl_isGlobal(vd)) {
-         string_buffer_Buf_add(out, ast_Decl_getName(d));
+         c_generator_Generator_emitName(gen, out, d);
          return;
       }
    }
@@ -33213,9 +33811,9 @@ static void c_generator_Generator_emitEnumType(c_generator_Generator* gen, strin
       string_buffer_Buf_indent(out, 1);
       string_buffer_Buf_add(out, gen->mod_name);
       string_buffer_Buf_add1(out, '_');
-      string_buffer_Buf_add(out, ast_Decl_getName(d));
+      c_generator_Generator_emitName(gen, out, d);
       string_buffer_Buf_add1(out, '_');
-      string_buffer_Buf_add(out, ast_Decl_getName(ast_EnumConstantDecl_asDecl(ecd)));
+      c_generator_Generator_emitName(gen, out, ast_EnumConstantDecl_asDecl(ecd));
       ast_Decl_setGenerated(ast_EnumConstantDecl_asDecl(ecd));
       ast_Expr* ie = ast_EnumConstantDecl_getInit(ecd);
       if (ie && !has_assoc) {
@@ -33369,7 +33967,7 @@ static void c_generator_Generator_emitStructMember(c_generator_Generator* gen, s
          ast_FunctionType* ft = ast_QualType_getFunctionType(qt);
          ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
          if (ast_FunctionDecl_isMemberType(fd)) {
-            c_generator_Generator_gen_member_type_func(gen, fd, out, ast_Decl_getName(d));
+            c_generator_Generator_gen_member_type_func(gen, fd, out, c_generator_Generator_idx2name(gen, ast_Decl_getNameIdx(d)));
             string_buffer_Buf_add(out, ";\n");
             return;
          }
@@ -33379,7 +33977,7 @@ static void c_generator_Generator_emitStructMember(c_generator_Generator* gen, s
       ast_Expr* bitfield = ast_VarDecl_getBitfield(vd);
       c_generator_Generator_emitTypePre(gen, out, qt, bitfield != NULL);
       string_buffer_Buf_space(out);
-      if (ast_Decl_getNameIdx(d)) string_buffer_Buf_add(out, ast_Decl_getName(d));
+      c_generator_Generator_emitName(gen, out, d);
       c_generator_Generator_emitTypePost(gen, out, qt);
       if (bitfield) {
          string_buffer_Buf_add(out, " : ");
@@ -33420,10 +34018,33 @@ static void c_generator_Generator_emitStruct(c_generator_Generator* gen, string_
       string_buffer_Buf_add1(out, '}');
       if (ast_Decl_getNameIdx(d)) {
          string_buffer_Buf_space(out);
-         string_buffer_Buf_add(out, ast_Decl_getName(d));
+         c_generator_Generator_emitName(gen, out, d);
       }
       string_buffer_Buf_add(out, ";\n");
    }
+}
+
+static void c_generator_Generator_emitFunctionParam(c_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt, u32 name_idx, u32 arg_num)
+{
+   char temp[16];
+   const char* name;
+   if (name_idx) {
+      name = c_generator_Generator_idx2name(gen, name_idx);
+   } else {
+      snprintf(temp, 16, "_arg%u", arg_num);
+      name = temp;
+   }
+   if (ast_QualType_isFunction(qt)) {
+      ast_FunctionType* ft = ast_QualType_getFunctionType(qt);
+      ast_FunctionDecl* fd = ast_FunctionType_getDecl(ft);
+      if (ast_FunctionDecl_isParam(fd)) {
+         c_generator_Generator_gen_member_type_func(gen, fd, out, name);
+         return;
+      }
+   }
+   c_generator_Generator_emitTypePre(gen, out, qt, false);
+   string_buffer_Buf_space(out);
+   string_buffer_Buf_add(out, name);
 }
 
 static void c_generator_Generator_emitFunctionType(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d)
@@ -33439,13 +34060,9 @@ static void c_generator_Generator_emitFunctionType(c_generator_Generator* gen, s
    u32 num_params = ast_FunctionDecl_getNumParams(fd);
    ast_VarDecl** params = ast_FunctionDecl_getParams(fd);
    for (u32 i = 0; i < num_params; i++) {
-      ast_Decl* arg = (ast_Decl*)params[i];
       if (i != 0) string_buffer_Buf_add(out, ", ");
-      c_generator_Generator_emitTypePre(gen, out, ast_Decl_getType(arg), false);
-      const char* name = ast_Decl_getName(arg);
-      string_buffer_Buf_space(out);
-      if (name) string_buffer_Buf_add(out, name);
-      else string_buffer_Buf_print(out, "_arg%u", i);
+      ast_Decl* arg = (ast_Decl*)params[i];
+      c_generator_Generator_emitFunctionParam(gen, out, ast_Decl_getType(arg), ast_Decl_getNameIdx(arg), i);
    }
    if (ast_FunctionDecl_isVariadic(fd)) {
       if (num_params) string_buffer_Buf_add(out, ", ");
@@ -33486,8 +34103,8 @@ static bool c_generator_is_c_type(const char* s)
 
 static void c_generator_Generator_emitAliasType(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d)
 {
-   const char* cname = ast_Decl_getCName(d);
-   if (cname && c_generator_is_c_type(cname)) return;
+   u32 cname = ast_Decl_getCName(d);
+   if (cname && c_generator_is_c_type(c_generator_Generator_idx2name(gen, cname))) return;
    ast_QualType qt = ast_Decl_getType(d);
    qt = ast_QualType_getCanonicalType(qt);
    string_buffer_Buf_add(out, "typedef ");
@@ -33530,9 +34147,9 @@ static void c_generator_Generator_emitConstExpr(c_generator_Generator* gen, stri
 
 static void c_generator_Generator_emitGlobalVarDeclCommon(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d)
 {
-   const char* cdef = ast_Decl_getCDef(d);
+   u32 cdef = ast_Decl_getCDef(d);
    if (cdef) {
-      string_buffer_Buf_add(out, cdef);
+      string_buffer_Buf_add(out, c_generator_Generator_idx2name(gen, cdef));
    } else {
       ast_QualType qt = ast_Decl_getType(d);
       c_generator_Generator_emitTypePre(gen, out, qt, false);
@@ -33542,7 +34159,7 @@ static void c_generator_Generator_emitGlobalVarDeclCommon(c_generator_Generator*
    }
    ast_VarDecl* vd = (ast_VarDecl*)d;
    if (ast_VarDecl_hasAttrWeak(vd)) string_buffer_Buf_add(out, " __attribute__((weak))");
-   const char* section = ast_Decl_getSection(d);
+   u32 section = ast_Decl_getSection(d);
    if (section) {
       string_buffer_Buf_space(out);
       c_generator_Generator_emitSectionAttr(gen, out, section);
@@ -33600,9 +34217,9 @@ static bool c_generator_Generator_emitExprValue(c_generator_Generator* gen, stri
    return true;
 }
 
-static void c_generator_Generator_emitSectionAttr(c_generator_Generator* gen, string_buffer_Buf* out, const char* name)
+static void c_generator_Generator_emitSectionAttr(c_generator_Generator* gen, string_buffer_Buf* out, u32 name_idx)
 {
-   string_buffer_Buf_print(out, "__attribute__((section(\"%s\")))", name);
+   string_buffer_Buf_print(out, "__attribute__((section(\"%s\")))", c_generator_Generator_idx2name(gen, name_idx));
 }
 
 static void c_generator_Generator_emitAutoInit(c_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt)
@@ -33625,7 +34242,7 @@ static void c_generator_Generator_on_public_import_decl(void* arg, ast_ImportDec
    u32 name_idx = ast_Decl_getNameIdx(d);
    if (string_list_List_contains_idx(&gen->imports, name_idx)) return;
    string_list_List_add(&gen->imports, name_idx);
-   string_buffer_Buf_print(gen->header, "#include \"%s.h\"\n", ast_Decl_getName(d));
+   string_buffer_Buf_print(gen->header, "#include \"%s.h\"\n", c_generator_Generator_idx2name(gen, name_idx));
 }
 
 static void c_generator_Generator_on_private_import_decl(void* arg, ast_ImportDecl* i)
@@ -33636,7 +34253,7 @@ static void c_generator_Generator_on_private_import_decl(void* arg, ast_ImportDe
    u32 name_idx = ast_Decl_getNameIdx(d);
    if (string_list_List_contains_idx(&gen->imports, name_idx)) return;
    string_list_List_add(&gen->imports, name_idx);
-   string_buffer_Buf_print(gen->out, "#include \"%s.h\"\n", ast_Decl_getName(d));
+   string_buffer_Buf_print(gen->out, "#include \"%s.h\"\n", c_generator_Generator_idx2name(gen, name_idx));
 }
 
 static void c_generator_Generator_on_forward_structs(void* arg, ast_Decl* d)
@@ -33703,9 +34320,15 @@ static void c_generator_Generator_emitGlobalDecl(c_generator_Generator* gen, ast
       c_generator_Generator_addFragment(gen, f, ast_Decl_isPublic(d));
       break;
    }
-   case ast_DeclKind_EnumConstant:
-      console_warn("TODO gen enum %d", ast_Decl_isGenerated(d));
+   case ast_DeclKind_EnumConstant: {
+      c_generator_Fragment* f = c_generator_Generator_getFragment(gen);
+      ast_QualType qt = ast_Decl_getType(d);
+      ast_EnumType* et = ast_QualType_getEnumTypeOrNil(qt);
+      ast_EnumTypeDecl* etd = ast_EnumType_getDecl(et);
+      c_generator_Generator_emitEnumType(gen, f->buf, (ast_Decl*)etd);
+      c_generator_Generator_addFragment(gen, f, ast_Decl_isPublic(d));
       break;
+   }
    case ast_DeclKind_FunctionType: {
       c_generator_Fragment* f = c_generator_Generator_getFragment(gen);
       c_generator_Generator_emitFunctionType(gen, f->buf, d);
@@ -33777,7 +34400,7 @@ static void c_generator_Generator_gen_func_proto(c_generator_Generator* gen, ast
 {
    ast_Decl* d = (ast_Decl*)fd;
    if (ast_FunctionDecl_isTemplate(fd)) return;
-   const char* section = ast_Decl_getSection(d);
+   u32 section = ast_Decl_getSection(d);
    if (section) {
       c_generator_Generator_emitSectionAttr(gen, out, section);
       string_buffer_Buf_space(out);
@@ -33814,26 +34437,9 @@ static void c_generator_Generator_emitFuncParams(c_generator_Generator* gen, ast
    u32 num_params = ast_FunctionDecl_getNumParams(fd);
    ast_VarDecl** params = ast_FunctionDecl_getParams(fd);
    for (u32 i = 0; i < num_params; i++) {
-      ast_Decl* argx = (ast_Decl*)params[i];
       if (i != 0) string_buffer_Buf_add(out, ", ");
-      char temp[8];
-      const char* name = ast_Decl_getName(argx);
-      if (!name) {
-         snprintf(temp, 8, "_arg%u", i);
-         name = temp;
-      }
-      ast_QualType qt = ast_Decl_getType(argx);
-      if (ast_QualType_isFunction(qt)) {
-         ast_FunctionType* ft = ast_QualType_getFunctionType(qt);
-         ast_FunctionDecl* fd2 = ast_FunctionType_getDecl(ft);
-         if (ast_FunctionDecl_isParam(fd2)) {
-            c_generator_Generator_gen_member_type_func(gen, fd2, out, name);
-            continue;
-         }
-      }
-      c_generator_Generator_emitTypePre(gen, out, qt, false);
-      string_buffer_Buf_space(out);
-      string_buffer_Buf_add(out, name);
+      ast_Decl* arg = (ast_Decl*)params[i];
+      c_generator_Generator_emitFunctionParam(gen, out, ast_Decl_getType(arg), ast_Decl_getNameIdx(arg), i);
    }
    if (ast_FunctionDecl_isVariadic(fd)) {
       if (num_params) string_buffer_Buf_add(out, ", ");
@@ -33882,7 +34488,7 @@ static void c_generator_Generator_on_interface_import(void* arg, ast_ImportDecl*
    u32 name_idx = ast_Decl_getNameIdx(d);
    if (string_list_List_contains_idx(&gen->imports, name_idx)) return;
    string_list_List_add(&gen->imports, name_idx);
-   string_buffer_Buf_print(gen->header, "#include \"%s.h\"\n", ast_Decl_getName(d));
+   string_buffer_Buf_print(gen->header, "#include \"%s.h\"\n", c_generator_Generator_idx2name(gen, name_idx));
 }
 
 static void c_generator_Generator_create_interface_imports(void* arg, ast_AST* a)
@@ -34217,16 +34823,19 @@ static void c_generator_Generator_emit_external_header(c_generator_Generator* ge
    string_buffer_Buf_add(out, c_generator_Include_guard1);
    string_buffer_Buf_add(out, c_generator_Warning_control);
    string_buffer_Buf_add(out, c_generator_C_types);
-   if (ast_getWordSize() == 4) {
+   if (gen->targetInfo->longWidth == 32) {
       string_buffer_Buf_add(out, "typedef signed long long i64;\n"
-                                 "typedef unsigned long long u64;\n"
-                                 "typedef signed long ssize_t;\n"
-                                 "typedef unsigned long size_t;\n");
+                                 "typedef unsigned long long u64;\n");
    } else {
       string_buffer_Buf_add(out, "typedef signed long i64;\n"
-                                 "typedef unsigned long u64;\n"
-                                 "typedef signed long ssize_t;\n"
-                                 "typedef unsigned long size_t;\n");
+                                 "typedef unsigned long u64;\n");
+   }
+   if (gen->targetInfo->ptrWidth == 32) {
+      string_buffer_Buf_add(out, "typedef signed int ssize_t;\n"
+                                 "typedef unsigned int size_t;\n");
+   } else {
+      string_buffer_Buf_add(out, "typedef signed long long ssize_t;\n"
+                                 "typedef unsigned long long size_t;\n");
    }
    string_buffer_Buf_add(out, c_generator_C_defines);
    string_buffer_Buf_add(out, "#define offsetof(type, member) __builtin_offsetof(type, member)\n");
@@ -34496,8 +35105,8 @@ static void c_generator_Generator_emitExpr2(c_generator_Generator* gen, string_b
 
 static void c_generator_Generator_emitStringLiteral(c_generator_Generator* gen, string_buffer_Buf* out, const ast_StringLiteral* s, bool raw)
 {
-   const char* p = ast_idx2name(ast_StringLiteral_getTextIndex(s));
-   u32 len = ast_StringLiteral_getSize(s) - 1;
+   const char* p = c_generator_Generator_idx2name(gen, ast_StringLiteral_getText(s));
+   u32 len = ast_StringLiteral_getLength(s);
    if (!raw && len > 10) {
       for (;;) {
          u32 i = 0;
@@ -34505,18 +35114,14 @@ static void c_generator_Generator_emitStringLiteral(c_generator_Generator* gen, 
          while (i < len && p[i] == '\n') i++;
          if (i == len) break;
          u32 col = string_buffer_Buf_getColumn(out);
-         string_buffer_Buf_add1(out, '"');
          string_buffer_Buf_encodeBytes(out, p, i, '"');
-         string_buffer_Buf_add1(out, '"');
          string_buffer_Buf_newline(out);
          while (col-- > 0) string_buffer_Buf_add1(out, ' ');
          p += i;
          len -= i;
       }
    }
-   string_buffer_Buf_add1(out, '"');
    string_buffer_Buf_encodeBytes(out, p, len, '"');
-   string_buffer_Buf_add1(out, '"');
 }
 
 static void c_generator_Generator_emitBitOffset(c_generator_Generator* gen, string_buffer_Buf* out, ast_Expr* base, ast_Expr* index, c_prec_C_Prec prec)
@@ -34600,7 +35205,7 @@ static void c_generator_Generator_emitMemberDecl(c_generator_Generator* gen, str
       ast_StructTypeDecl* std = (ast_StructTypeDecl*)d;
       if (!ast_StructTypeDecl_isGlobal(std)) {
          mc->baseType = ast_Decl_getType(d);
-         string_buffer_Buf_add(out, ast_Decl_getName(d));
+         c_generator_Generator_emitName(gen, out, d);
          mc->need_dot = true;
       }
       break;
@@ -34621,7 +35226,7 @@ static void c_generator_Generator_emitMemberDecl(c_generator_Generator* gen, str
       if (mc->need_dot) c_generator_emitDotOrArrow(out, mc->baseType);
       mc->baseType = ast_Decl_getType(d);
       if (mc->is_local) {
-         string_buffer_Buf_add(out, ast_Decl_getName(d));
+         c_generator_Generator_emitName(gen, out, d);
       } else {
          c_generator_Generator_emitDeclName(gen, out, d);
       }
@@ -34677,31 +35282,35 @@ static void c_generator_Generator_emitBuiltinExpr(c_generator_Generator* gen, st
 {
    ast_BuiltinExpr* b = (ast_BuiltinExpr*)e;
    switch (ast_BuiltinExpr_getKind(b)) {
-   case ast_BuiltinExprKind_Sizeof: {
-      value_type_Value v = ast_BuiltinExpr_getValue(b);
-      string_buffer_Buf_print(out, "%s", value_type_Value_str(&v));
+   case ast_BuiltinExprKind_Sizeof:
+      if (ast_BuiltinExpr_useLiteral(b)) {
+         string_buffer_Buf_add(out, "sizeof(");
+         c_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getInner(b));
+         string_buffer_Buf_rparen(out);
+      } else {
+         string_buffer_Buf_print(out, "%lu", ast_BuiltinExpr_getValue(b));
+      }
       break;
-   }
-   case ast_BuiltinExprKind_Elemsof: {
-      value_type_Value v = ast_BuiltinExpr_getValue(b);
-      string_buffer_Buf_print(out, "%s", value_type_Value_str(&v));
+   case ast_BuiltinExprKind_Elemsof:
+      if (ast_BuiltinExpr_useLiteral(b)) {
+         string_buffer_Buf_add(out, "ARRAY_SIZE(");
+         c_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getInner(b));
+         string_buffer_Buf_rparen(out);
+      } else {
+         string_buffer_Buf_print(out, "%lu", ast_BuiltinExpr_getValue(b));
+      }
       break;
-   }
-   case ast_BuiltinExprKind_EnumMin: {
-      value_type_Value v = ast_BuiltinExpr_getValue(b);
-      string_buffer_Buf_print(out, "%s", value_type_Value_str(&v));
+   case ast_BuiltinExprKind_OffsetOf:
+      if (ast_BuiltinExpr_useLiteral(b)) {
+         string_buffer_Buf_add(out, "offsetof(");
+         c_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getInner(b));
+         string_buffer_Buf_add(out, ", ");
+         c_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getOffsetOfMember(b));
+         string_buffer_Buf_rparen(out);
+      } else {
+         string_buffer_Buf_print(out, "%lu", ast_BuiltinExpr_getValue(b));
+      }
       break;
-   }
-   case ast_BuiltinExprKind_EnumMax: {
-      value_type_Value v = ast_BuiltinExpr_getValue(b);
-      string_buffer_Buf_print(out, "%s", value_type_Value_str(&v));
-      break;
-   }
-   case ast_BuiltinExprKind_OffsetOf: {
-      value_type_Value v = ast_BuiltinExpr_getValue(b);
-      string_buffer_Buf_print(out, "%s", value_type_Value_str(&v));
-      break;
-   }
    case ast_BuiltinExprKind_ToContainer:
       string_buffer_Buf_add(out, "to_container(");
       c_generator_Generator_emitExpr(gen, out, ast_BuiltinExpr_getInner(b));
@@ -34802,6 +35411,7 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
    const char* ldflags = "";
    const char* ldflags2 = "";
    const char* asmflags = "";
+   const string_list_List* libdir_bin = NULL;
    if (gen->targetInfo->sys == target_info_System_FreeBSD || gen->targetInfo->sys == target_info_System_OpenBSD) {
       cc = "clang";
    }
@@ -34812,6 +35422,7 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
       if (build_file_Info_getLinkerFlags(info)) ldflags = build_file_Info_getLinkerFlags(info);
       if (build_file_Info_getLdFlags2(info)) ldflags2 = build_file_Info_getLdFlags2(info);
       if (build_file_Info_getAsmFlags(info)) asmflags = build_file_Info_getAsmFlags(info);
+      libdir_bin = build_file_Info_getLibDirsBin(info);
    }
    string_buffer_Buf_print(out, "CC?=%s\n", cc);
    string_buffer_Buf_add(out, "CFLAGS+=-Wall -Wextra -Wno-unused -Wno-switch\n");
@@ -34863,14 +35474,20 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
    switch (gen->target_kind) {
    case build_target_Kind_Image:
    case build_target_Kind_Executable: {
-      strcpy(target_name, gen->target);
+      pstrcpy(target_name, 512, gen->target);
       string_buffer_Buf_print(out, "all: ../%s\n\n", target_name);
       string_buffer_Buf_print(out, "../%s: $(objects) $(headers)\n", target_name);
       for (u32 i = 0; i < string_list_List_length(asm_files); i++) {
          const char* filename = string_list_List_get(asm_files, i);
          string_buffer_Buf_print(out, "\t\t$(CC) $(ASMFLAGS) -o %s.o -c ../../../%s\n", filename, filename);
       }
-      string_buffer_Buf_print(out, "\t\t$(CC) $(LDFLAGS) -o ../%s $(objects)", target_name);
+      string_buffer_Buf_add(out, "\t\t$(CC) $(LDFLAGS)");
+      if (libdir_bin) {
+         for (u32 i = 0; i < string_list_List_length(libdir_bin); i++) {
+            string_buffer_Buf_print(out, " -L%s", string_list_List_get(libdir_bin, i));
+         }
+      }
+      string_buffer_Buf_print(out, " -o ../%s $(objects)", target_name);
       for (u32 i = 0; i < string_list_List_length(asm_files); i++) {
          const char* filename = string_list_List_get(asm_files, i);
          string_buffer_Buf_print(out, " %s.o", filename);
@@ -34887,16 +35504,12 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
             if (component_Component_getNameIdx(c) == libc_name) {
                string_buffer_Buf_add(out, " --static");
             } else {
-               if (component_Component_isForeign(c)) {
-                  string_buffer_Buf_print(out, " /lib/%s/", triplet);
-                  if (linkname) {
-                     string_buffer_Buf_print(out, "lib%s.a", linkname);
-                  } else {
-                     string_buffer_Buf_print(out, "lib%s.a", component_Component_getName(c));
-                  }
-               } else {
-                  string_buffer_Buf_print(out, " %s/lib%s.a", component_Component_getPath(c), component_Component_getName(c));
+               const char* binpath = component_Component_getBinPath(c);
+               string_buffer_Buf_add(out, " -L");
+               if (binpath[0] != '/') {
+                  string_buffer_Buf_add(out, "../../../");
                }
+               string_buffer_Buf_print(out, "%s -l%s", binpath, component_Component_getName(c));
             }
          } else if (component_Component_getKind(c) == component_Kind_ExternalDynamicLib) {
             if (component_Component_getNameIdx(c) == libc_name) continue;
@@ -34906,7 +35519,7 @@ static void c_generator_Generator_createMakefile(c_generator_Generator* gen, con
             if (linkname) string_buffer_Buf_print(out, " -l%s", linkname);
          }
       }
-      string_buffer_Buf_add(out, " $(LDFLAGS2)\n");
+      string_buffer_Buf_add(out, " $(LDFLAGS2)");
       string_buffer_Buf_newline(out);
       break;
    }
@@ -34988,7 +35601,7 @@ static void c_generator_Generator_emitVarDecl(c_generator_Generator* gen, ast_Va
       string_buffer_Buf_add1(out, ',');
    }
    string_buffer_Buf_space(out);
-   string_buffer_Buf_add(out, ast_Decl_getName(d));
+   c_generator_Generator_emitName(gen, out, d);
    c_generator_Generator_emitTypePost(gen, out, ast_Decl_getType(d));
    ast_Decl_setGenerated(d);
    ast_Expr* ie = ast_VarDecl_getInit(vd);
@@ -35028,22 +35641,15 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, string_bu
       break;
    case ast_StmtKind_If: {
       ast_IfStmt* i = (ast_IfStmt*)s;
-      ast_Stmt* cond = ast_IfStmt_getCond(i);
-      bool is_decl = ast_Stmt_isDecl(cond);
+      bool is_decl = ast_IfStmt_hasDecl(i);
       if (is_decl) {
          string_buffer_Buf_add(out, "{\n");
          indent++;
-         c_generator_Generator_emitStmt(gen, out, cond, indent, true);
+         c_generator_Generator_emitStmt(gen, out, ast_IfStmt_getDecl(i), indent, true);
          string_buffer_Buf_indent(out, indent);
-         string_buffer_Buf_add(out, "if (");
-         ast_DeclStmt* ds = (ast_DeclStmt*)cond;
-         ast_VarDecl* vd = ast_DeclStmt_getDecl(ds, 0);
-         string_buffer_Buf_add(out, ast_Decl_getName(ast_VarDecl_asDecl(vd)));
-      } else {
-         ;//assert(ast_Stmt_isExpr(cond));
-         string_buffer_Buf_add(out, "if (");
-         c_generator_Generator_emitExpr(gen, out, (ast_Expr*)cond);
       }
+      string_buffer_Buf_add(out, "if (");
+      c_generator_Generator_emitExpr(gen, out, ast_IfStmt_getCond(i));
       string_buffer_Buf_add(out, ") ");
       ast_Stmt* thenStmt = ast_IfStmt_getThen(i);
       c_generator_Generator_emitStmt(gen, out, thenStmt, indent, true);
@@ -35065,71 +35671,27 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, string_bu
       }
       break;
    }
-   case ast_StmtKind_While: {
-      ast_WhileStmt* w = (ast_WhileStmt*)s;
-      ast_Stmt* cond = ast_WhileStmt_getCond(w);
-      bool is_decl = ast_Stmt_isDecl(cond);
-      if (is_decl) {
-         string_buffer_Buf_add(out, "{\n");
-         indent++;
-         ast_DeclStmt* ds = (ast_DeclStmt*)cond;
-         ast_VarDecl* vd = ast_DeclStmt_getDecl(ds, 0);
-         string_buffer_Buf_indent(out, indent);
-         c_generator_Generator_emitVarDecl(gen, vd, out, false, true);
-         string_buffer_Buf_add(out, ";\n");
-         string_buffer_Buf_indent(out, indent);
-         string_buffer_Buf_add(out, "while ((");
-         string_buffer_Buf_add(out, ast_Decl_getName(ast_VarDecl_asDecl(vd)));
-         string_buffer_Buf_add(out, " = ");
-         ast_Expr* ie = ast_VarDecl_getInit(vd);
-         ;//assert(ie);
-         c_generator_Generator_emitExpr(gen, out, ie);
-         string_buffer_Buf_add(out, ")) ");
-      } else {
-         ;//assert(ast_Stmt_isExpr(cond));
-         string_buffer_Buf_add(out, "while (");
-         c_generator_Generator_emitExpr(gen, out, (ast_Expr*)cond);
-         string_buffer_Buf_add(out, ") ");
-      }
-      c_generator_Generator_emitStmt(gen, out, ast_WhileStmt_getBody(w), indent, true);
-      if (is_decl) {
-         indent--;
-         string_buffer_Buf_indent(out, indent);
-         string_buffer_Buf_add(out, "}\n");
-      }
+   case ast_StmtKind_While:
+      c_generator_Generator_emitWhileStmt(gen, out, (ast_WhileStmt*)s, indent, NULL);
       break;
-   }
-   case ast_StmtKind_For: {
-      ast_ForStmt* f = (ast_ForStmt*)s;
-      string_buffer_Buf_add(out, "for (");
-      ast_Stmt* initStmt = ast_ForStmt_getInit(f);
-      if (initStmt) {
-         c_generator_Generator_emitStmt(gen, out, initStmt, 0, false);
-      }
-      string_buffer_Buf_add1(out, ';');
-      if (ast_ForStmt_getCond(f)) {
-         string_buffer_Buf_space(out);
-         c_generator_Generator_emitExpr(gen, out, ast_ForStmt_getCond(f));
-      }
-      string_buffer_Buf_add1(out, ';');
-      ast_Expr* cont = ast_ForStmt_getCont(f);
-      if (cont) {
-         string_buffer_Buf_space(out);
-         c_generator_Generator_emitExpr(gen, out, cont);
-      }
-      string_buffer_Buf_add(out, ") ");
-      c_generator_Generator_emitStmt(gen, out, ast_ForStmt_getBody(f), indent, true);
+   case ast_StmtKind_For:
+      c_generator_Generator_emitForStmt(gen, out, (ast_ForStmt*)s, indent, NULL);
       break;
-   }
    case ast_StmtKind_Switch:
-      c_generator_Generator_emitSwitchStmt(gen, out, (ast_SwitchStmt*)s, indent);
+      c_generator_Generator_emitSwitchStmt(gen, out, (ast_SwitchStmt*)s, indent, NULL);
       break;
-   case ast_StmtKind_Break:
-      string_buffer_Buf_add(out, "break;\n");
+   case ast_StmtKind_Break: {
+      ast_BreakStmt* bs = (ast_BreakStmt*)s;
+      if (ast_BreakStmt_hasName(bs)) string_buffer_Buf_print(out, "goto break__%s;\n", c_generator_Generator_idx2name(gen, ast_BreakStmt_getName(bs)));
+      else string_buffer_Buf_add(out, "break;\n");
       break;
-   case ast_StmtKind_Continue:
-      string_buffer_Buf_add(out, "continue;\n");
+   }
+   case ast_StmtKind_Continue: {
+      ast_ContinueStmt* cs = (ast_ContinueStmt*)s;
+      if (ast_ContinueStmt_hasName(cs)) string_buffer_Buf_print(out, "goto continue__%s;\n", c_generator_Generator_idx2name(gen, ast_ContinueStmt_getName(cs)));
+      else string_buffer_Buf_add(out, "continue;\n");
       break;
+   }
    case ast_StmtKind_Fallthrough:
       string_buffer_Buf_add(out, "fallthrough;\n");
       break;
@@ -35137,19 +35699,39 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, string_bu
       string_buffer_Buf_unindent(out);
       ast_LabelStmt* ls = (ast_LabelStmt*)s;
       ast_Stmt* stmt = ast_LabelStmt_getStmt(ls);
-      string_buffer_Buf_add(out, ast_LabelStmt_getName(ls));
-      string_buffer_Buf_add1(out, ':');
-      if (!stmt || ast_Stmt_isDecl(stmt)) {
-         string_buffer_Buf_add1(out, ';');
+      if (ast_LabelStmt_hasGoto(ls)) {
+         string_buffer_Buf_add(out, c_generator_Generator_idx2name(gen, ast_LabelStmt_getNameIdx(ls)));
+         string_buffer_Buf_add1(out, ':');
+         if (!stmt || ast_Stmt_isDecl(stmt)) {
+            string_buffer_Buf_add1(out, ';');
+         }
+         string_buffer_Buf_newline(out);
       }
-      string_buffer_Buf_newline(out);
-      if (stmt) c_generator_Generator_emitStmt(gen, out, stmt, indent, true);
+      if (stmt) {
+         switch (ast_Stmt_getKind(stmt)) {
+         case ast_StmtKind_For:
+            string_buffer_Buf_indent(out, indent);
+            c_generator_Generator_emitForStmt(gen, out, (ast_ForStmt*)stmt, indent, ls);
+            break;
+         case ast_StmtKind_While:
+            string_buffer_Buf_indent(out, indent);
+            c_generator_Generator_emitWhileStmt(gen, out, (ast_WhileStmt*)stmt, indent, ls);
+            break;
+         case ast_StmtKind_Switch:
+            string_buffer_Buf_indent(out, indent);
+            c_generator_Generator_emitSwitchStmt(gen, out, (ast_SwitchStmt*)stmt, indent, ls);
+            break;
+         default:
+            c_generator_Generator_emitStmt(gen, out, stmt, indent, true);
+            break;
+         }
+      }
       break;
    }
    case ast_StmtKind_Goto: {
       ast_GotoStmt* g = (ast_GotoStmt*)s;
       string_buffer_Buf_add(out, "goto ");
-      string_buffer_Buf_add(out, ast_GotoStmt_getName(g));
+      string_buffer_Buf_add(out, c_generator_Generator_idx2name(gen, ast_GotoStmt_getNameIdx(g)));
       string_buffer_Buf_add(out, ";\n");
       break;
    }
@@ -35197,6 +35779,116 @@ static void c_generator_Generator_emitStmt(c_generator_Generator* gen, string_bu
    }
 }
 
+static void c_generator_Generator_emitWhileStmt(c_generator_Generator* gen, string_buffer_Buf* out, ast_WhileStmt* w, u32 indent, ast_LabelStmt* ls)
+{
+   u32 break_name = 0;
+   u32 continue_name = 0;
+   if (ls) {
+      if (ast_LabelStmt_hasBreak(ls)) break_name = ast_LabelStmt_getNameIdx(ls);
+      if (ast_LabelStmt_hasContinue(ls)) continue_name = ast_LabelStmt_getNameIdx(ls);
+   }
+   ast_Stmt* cond = ast_WhileStmt_getCond(w);
+   bool is_decl = ast_Stmt_isDecl(cond);
+   if (is_decl || break_name) {
+      string_buffer_Buf_add(out, "{\n");
+      indent++;
+      string_buffer_Buf_indent(out, indent);
+   }
+   if (is_decl) {
+      ast_DeclStmt* ds = (ast_DeclStmt*)cond;
+      ast_VarDecl* vd = ast_DeclStmt_getDecl(ds, 0);
+      c_generator_Generator_emitVarDecl(gen, vd, out, false, true);
+      string_buffer_Buf_add(out, ";\n");
+      string_buffer_Buf_indent(out, indent);
+      string_buffer_Buf_add(out, "while ((");
+      c_generator_Generator_emitName(gen, out, ast_VarDecl_asDecl(vd));
+      string_buffer_Buf_add(out, " = ");
+      ast_Expr* ie = ast_VarDecl_getInit(vd);
+      ;//assert(ie);
+      c_generator_Generator_emitExpr(gen, out, ie);
+      string_buffer_Buf_add(out, ")) ");
+   } else {
+      ;//assert(ast_Stmt_isExpr(cond));
+      string_buffer_Buf_add(out, "while (");
+      c_generator_Generator_emitExpr(gen, out, (ast_Expr*)cond);
+      string_buffer_Buf_add(out, ") ");
+   }
+   c_generator_Generator_emitLoopBody(gen, out, ast_WhileStmt_getBody(w), indent, break_name, continue_name);
+   if (is_decl || break_name) {
+      indent--;
+      string_buffer_Buf_indent(out, indent);
+      string_buffer_Buf_add(out, "}\n");
+   }
+}
+
+static void c_generator_Generator_emitForStmt(c_generator_Generator* gen, string_buffer_Buf* out, ast_ForStmt* f, u32 indent, ast_LabelStmt* ls)
+{
+   u32 break_name = 0;
+   u32 continue_name = 0;
+   if (ls) {
+      if (ast_LabelStmt_hasBreak(ls)) break_name = ast_LabelStmt_getNameIdx(ls);
+      if (ast_LabelStmt_hasContinue(ls)) continue_name = ast_LabelStmt_getNameIdx(ls);
+   }
+   if (break_name) {
+      string_buffer_Buf_add(out, "{\n");
+      indent++;
+      string_buffer_Buf_indent(out, indent);
+   }
+   string_buffer_Buf_add(out, "for (");
+   ast_Stmt* initStmt = ast_ForStmt_getInit(f);
+   if (initStmt) {
+      c_generator_Generator_emitStmt(gen, out, initStmt, 0, false);
+   }
+   string_buffer_Buf_add1(out, ';');
+   if (ast_ForStmt_getCond(f)) {
+      string_buffer_Buf_space(out);
+      c_generator_Generator_emitExpr(gen, out, ast_ForStmt_getCond(f));
+   }
+   string_buffer_Buf_add1(out, ';');
+   ast_Expr* cont = ast_ForStmt_getCont(f);
+   if (cont) {
+      string_buffer_Buf_space(out);
+      c_generator_Generator_emitExpr(gen, out, cont);
+   }
+   string_buffer_Buf_add(out, ") ");
+   c_generator_Generator_emitLoopBody(gen, out, ast_ForStmt_getBody(f), indent, break_name, continue_name);
+   if (break_name) {
+      indent--;
+      string_buffer_Buf_indent(out, indent);
+      string_buffer_Buf_add(out, "}\n");
+   }
+}
+
+static void c_generator_Generator_emitLoopBody(c_generator_Generator* gen, string_buffer_Buf* out, ast_Stmt* body, u32 indent, u32 break_name, u32 continue_name)
+{
+   u32 count = 1;
+   ast_Stmt** stmts = &body;
+   if (ast_Stmt_isCompound(body)) {
+      ast_CompoundStmt* c = (ast_CompoundStmt*)body;
+      count = ast_CompoundStmt_getCount(c);
+      stmts = ast_CompoundStmt_getStmts(c);
+   } else {
+      if (!continue_name) {
+         c_generator_Generator_emitStmt(gen, out, body, indent, true);
+         return;
+      }
+   }
+   string_buffer_Buf_add(out, "{\n");
+   for (u32 i = 0; i < count; i++) {
+      c_generator_Generator_emitStmt(gen, out, stmts[i], indent + 1, true);
+   }
+   if (continue_name) {
+      string_buffer_Buf_indent(out, indent);
+      string_buffer_Buf_print(out, "continue__%s:;\n", c_generator_Generator_idx2name(gen, continue_name));
+   }
+   string_buffer_Buf_indent(out, indent);
+   string_buffer_Buf_add(out, "}\n");
+   if (break_name) {
+      string_buffer_Buf_indent(out, indent - 1);
+      string_buffer_Buf_print(out, "break__%s:;\n", c_generator_Generator_idx2name(gen, break_name));
+   }
+}
+
 static void c_generator_emitAsmPart(string_buffer_Buf* out, bool multi_line, u32 indent)
 {
    if (multi_line) {
@@ -35211,7 +35903,7 @@ static void c_generator_emitAsmPart(string_buffer_Buf* out, bool multi_line, u32
 static void c_generator_Generator_emitAsmOperand(c_generator_Generator* gen, string_buffer_Buf* out, u32 name, const ast_Expr* c, ast_Expr* e)
 {
    if (name) {
-      string_buffer_Buf_print(out, "[%s] ", ast_idx2name(name));
+      string_buffer_Buf_print(out, "[%s] ", c_generator_Generator_idx2name(gen, name));
    }
    c_generator_Generator_emitStringLiteral(gen, out, (const ast_StringLiteral*)c, false);
    string_buffer_Buf_add(out, " (");
@@ -35260,13 +35952,15 @@ static void c_generator_Generator_emitAsmStmt(c_generator_Generator* gen, string
    string_buffer_Buf_add(out, ";\n");
 }
 
-static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, string_buffer_Buf* out, ast_SwitchStmt* sw, u32 indent)
+static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, string_buffer_Buf* out, ast_SwitchStmt* sw, u32 indent, ast_LabelStmt* ls)
 {
+   u32 break_name = 0;
+   if (ls && ast_LabelStmt_hasBreak(ls)) break_name = ast_LabelStmt_getNameIdx(ls);
    bool is_decl = ast_SwitchStmt_hasDecl(sw);
-   if (is_decl) {
+   if (is_decl || break_name) {
       string_buffer_Buf_add(out, "{\n");
       indent++;
-      c_generator_Generator_emitStmt(gen, out, ast_SwitchStmt_getDecl(sw), indent, true);
+      if (is_decl) c_generator_Generator_emitStmt(gen, out, ast_SwitchStmt_getDecl(sw), indent, true);
       string_buffer_Buf_indent(out, indent);
    }
    string_buffer_Buf_add(out, "switch (");
@@ -35281,8 +35975,12 @@ static void c_generator_Generator_emitSwitchStmt(c_generator_Generator* gen, str
    }
    string_buffer_Buf_indent(out, indent);
    string_buffer_Buf_add(out, "}\n");
-   if (is_decl) {
+   if (is_decl || break_name) {
       indent--;
+      if (break_name) {
+         string_buffer_Buf_indent(out, indent);
+         string_buffer_Buf_print(out, "break__%s:;\n", c_generator_Generator_idx2name(gen, break_name));
+      }
       string_buffer_Buf_indent(out, indent);
       string_buffer_Buf_add(out, "}\n");
    }
@@ -35449,7 +36147,7 @@ static u32 c_generator_Generator_addCall(c_generator_Generator* gen, const char*
 static void c_generator_Generator_writeCalls(c_generator_Generator* gen, string_buffer_Buf* out)
 {
    if (!gen->trace_calls) return;
-   string_buffer_Buf_add(out, "const char *c2_filenames[] = {\n");
+   string_buffer_Buf_add(out, "const char* c2_filenames[] = {\n");
    u32 n = c_generator_StringList_length(&gen->filenames);
    for (u32 i = 0; i < n; i++) {
       string_buffer_Buf_print(out, "    \"%s\",\n", c_generator_StringList_get(&gen->filenames, i));
@@ -35599,7 +36297,7 @@ struct c2_parser_Parser_ {
    diagnostics_Diags* diags;
    string_pool_Pool* pool;
    ast_builder_Builder* builder;
-   const string_list_List* features;
+   const string_map_Map* features;
    const keywords_Info* kwinfo;
    bool is_interface;
    bool is_generated;
@@ -35673,7 +36371,7 @@ static const ast_BuiltinKind c2_parser_CType2builtin[21] = {
    [c2_parser_CTypeKind_Double] = ast_BuiltinKind_Float64,
    [c2_parser_CTypeKind_LongDouble] = ast_BuiltinKind_Float64
 };
-static c2_parser_Parser* c2_parser_create(source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, ast_builder_Builder* builder, const keywords_Info* kwinfo, const string_list_List* features, bool has_asserts);
+static c2_parser_Parser* c2_parser_create(source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, ast_builder_Builder* builder, const keywords_Info* kwinfo, const string_map_Map* features, bool has_asserts);
 static void c2_parser_Parser_free(c2_parser_Parser* p);
 static void c2_parser_Parser_parse(c2_parser_Parser* p, int file_id, bool is_interface, bool is_generated);
 static void c2_parser_Parser_on_tokenizer_error(void* arg, c2_tokenizer_ErrorLevel level, src_loc_SrcLoc loc, const char* msg);
@@ -35698,7 +36396,7 @@ static u32 c2_parser_Parser_parseOptionalAttributes(c2_parser_Parser* p);
 static void c2_parser_Parser_applyAttributes(c2_parser_Parser* p, ast_Decl* d, u32 count);
 static void c2_parser_Parser_parseFuncDecl(c2_parser_Parser* p, bool is_public);
 static void c2_parser_Parser_parseFunctionDecl2(c2_parser_Parser* p, u32 func_name, src_loc_SrcLoc func_loc, bool is_public, ast_TypeRefHolder* rtype);
-static bool c2_parser_Parser_parseFunctionParams(c2_parser_Parser* p, ast_DeclList* params, bool is_public, bool accept_default);
+static bool c2_parser_Parser_parseFunctionParams(c2_parser_Parser* p, ast_VarDeclList* params, bool is_public, bool accept_default);
 static ast_VarDecl* c2_parser_Parser_parseParamDecl(c2_parser_Parser* p, bool is_public, bool accept_default);
 static void c2_parser_Parser_parseTypeSpecifier(c2_parser_Parser* p, ast_TypeRefHolder* ref);
 static void c2_parser_Parser_parseOptionalArray(c2_parser_Parser* p, ast_TypeRefHolder* ref);
@@ -35716,7 +36414,7 @@ static void c2_parser_Parser_putStmtList(c2_parser_Parser* p);
 static void c2_parser_Parser_parseExternDecl(c2_parser_Parser* p);
 static ast_BuiltinKind c2_parser_cTypeToBuiltinKind(c2_parser_CTypeKind kind);
 static c2_parser_CTypeKind c2_parser_Parser_convertCType(c2_parser_Parser* p);
-static const c2_prec_Prec c2_parser_BinOpPrecLookup[135] = {
+static const c2_prec_Prec c2_parser_BinOpPrecLookup[132] = {
    [token_Kind_Comma] = c2_prec_Prec_Comma,
    [token_Kind_Equal] = c2_prec_Prec_Assignment,
    [token_Kind_StarEqual] = c2_prec_Prec_Assignment,
@@ -35749,7 +36447,7 @@ static const c2_prec_Prec c2_parser_BinOpPrecLookup[135] = {
    [token_Kind_Slash] = c2_prec_Prec_Multiplicative,
    [token_Kind_Star] = c2_prec_Prec_Multiplicative
 };
-static const ast_BinaryOpcode c2_parser_BinOpTokenLookup[135] = {
+static const ast_BinaryOpcode c2_parser_BinOpTokenLookup[132] = {
    [token_Kind_Star] = ast_BinaryOpcode_Multiply,
    [token_Kind_Slash] = ast_BinaryOpcode_Divide,
    [token_Kind_Percent] = ast_BinaryOpcode_Remainder,
@@ -35780,7 +36478,7 @@ static const ast_BinaryOpcode c2_parser_BinOpTokenLookup[135] = {
    [token_Kind_CaretEqual] = ast_BinaryOpcode_XorAssign,
    [token_Kind_PipeEqual] = ast_BinaryOpcode_OrAssign
 };
-static const u8 c2_parser_CastExprTokenLookup[135] = {
+static const u8 c2_parser_CastExprTokenLookup[132] = {
    [token_Kind_Identifier] = 1,
    [token_Kind_IntegerLiteral] = 2,
    [token_Kind_FloatLiteral] = 3,
@@ -35795,30 +36493,27 @@ static const u8 c2_parser_CastExprTokenLookup[135] = {
    [token_Kind_Amp] = 7,
    [token_Kind_PlusPlus] = 7,
    [token_Kind_MinusMinus] = 7,
-   [token_Kind_KW_cast] = 8,
-   [token_Kind_KW_elemsof] = 9,
-   [token_Kind_KW_enum_min] = 10,
-   [token_Kind_KW_enum_max] = 10,
-   [token_Kind_KW_false] = 11,
-   [token_Kind_KW_true] = 11,
-   [token_Kind_KW_nil] = 12,
-   [token_Kind_KW_offsetof] = 13,
-   [token_Kind_KW_sizeof] = 14,
-   [token_Kind_KW_to_container] = 15,
-   [token_Kind_KW_bool] = 16,
-   [token_Kind_KW_char] = 16,
-   [token_Kind_KW_i8] = 16,
-   [token_Kind_KW_i16] = 16,
-   [token_Kind_KW_i32] = 16,
-   [token_Kind_KW_i64] = 16,
-   [token_Kind_KW_u8] = 16,
-   [token_Kind_KW_u16] = 16,
-   [token_Kind_KW_u32] = 16,
-   [token_Kind_KW_u64] = 16,
-   [token_Kind_KW_isize] = 16,
-   [token_Kind_KW_usize] = 16,
-   [token_Kind_KW_f32] = 16,
-   [token_Kind_KW_f64] = 16
+   [token_Kind_KW_elemsof] = 8,
+   [token_Kind_KW_false] = 9,
+   [token_Kind_KW_true] = 9,
+   [token_Kind_KW_nil] = 10,
+   [token_Kind_KW_offsetof] = 11,
+   [token_Kind_KW_sizeof] = 12,
+   [token_Kind_KW_to_container] = 13,
+   [token_Kind_KW_bool] = 14,
+   [token_Kind_KW_char] = 14,
+   [token_Kind_KW_i8] = 14,
+   [token_Kind_KW_i16] = 14,
+   [token_Kind_KW_i32] = 14,
+   [token_Kind_KW_i64] = 14,
+   [token_Kind_KW_u8] = 14,
+   [token_Kind_KW_u16] = 14,
+   [token_Kind_KW_u32] = 14,
+   [token_Kind_KW_u64] = 14,
+   [token_Kind_KW_isize] = 14,
+   [token_Kind_KW_usize] = 14,
+   [token_Kind_KW_f32] = 14,
+   [token_Kind_KW_f64] = 14
 };
 static ast_Expr* c2_parser_Parser_parseExpr(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseAssignmentExpression(c2_parser_Parser* p);
@@ -35839,8 +36534,6 @@ static ast_Expr* c2_parser_Parser_parseInitValue(c2_parser_Parser* p, bool allow
 static ast_Expr* c2_parser_Parser_parseInitList(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseFieldDesignator(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseArrayDesignator(c2_parser_Parser* p);
-static ast_Expr* c2_parser_Parser_parseExplicitCastExpr(c2_parser_Parser* p);
-static ast_Expr* c2_parser_Parser_parseEnumMinMax(c2_parser_Parser* p, bool is_min);
 static ast_Expr* c2_parser_Parser_parseOffsetOfExpr(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseToContainerExpr(c2_parser_Parser* p);
 static ast_Expr* c2_parser_Parser_parseFullIdentifier(c2_parser_Parser* p);
@@ -35876,14 +36569,14 @@ static void c2_parser_Parser_parseStructType(c2_parser_Parser* p, bool is_struct
 static void c2_parser_Parser_checkMemberName(c2_parser_Parser* p);
 static void c2_parser_Parser_parseStructBlock(c2_parser_Parser* p, ast_DeclList* members, bool is_public);
 static void c2_parser_Parser_parseEnumType(c2_parser_Parser* p, u32 name, src_loc_SrcLoc loc, bool is_public);
-static void c2_parser_Parser_parseEnumAssocAttributes(c2_parser_Parser* p, ast_DeclList* params);
+static void c2_parser_Parser_parseEnumAssocAttributes(c2_parser_Parser* p, ast_VarDeclList* params);
 static ast_VarDecl* c2_parser_Parser_parseEnumAttribute(c2_parser_Parser* p);
 static void c2_parser_Parser_parseAliasType(c2_parser_Parser* p, u32 name, src_loc_SrcLoc loc, bool is_public);
 static void c2_parser_Parser_parseCEnum(c2_parser_Parser* p, bool is_public);
 static void c2_parser_Parser_parseCStruct(c2_parser_Parser* p, bool is_struct, bool is_public);
 static void c2_parser_Parser_parseTypedef(c2_parser_Parser* p, bool is_public);
 
-static c2_parser_Parser* c2_parser_create(source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, ast_builder_Builder* builder, const keywords_Info* kwinfo, const string_list_List* features, bool has_asserts)
+static c2_parser_Parser* c2_parser_create(source_mgr_SourceMgr* sm, diagnostics_Diags* diags, string_pool_Pool* pool, ast_builder_Builder* builder, const keywords_Info* kwinfo, const string_map_Map* features, bool has_asserts)
 {
    c2_parser_Parser* p = calloc(1, 67392);
    p->sm = sm;
@@ -36025,7 +36718,7 @@ static void c2_parser_Parser_expectError(c2_parser_Parser* p, token_Kind kind)
    } else {
       loc = p->tok.loc;
    }
-   c2_parser_Parser_errorAt(p, loc, "expected '%s'", token_Kind_str(kind));
+   c2_parser_Parser_errorAt(p, loc, "expected '%s'", token_Kind__name[kind]);
 }
 
 static void c2_parser_Parser_expectIdentifier(c2_parser_Parser* p)
@@ -36084,7 +36777,7 @@ static void c2_parser_Parser_parseModule(c2_parser_Parser* p)
 
 static void c2_parser_Parser_addImplicitImport(c2_parser_Parser* p, u32 mod_name, bool islocal)
 {
-   ast_Decl* d = ast_builder_Builder_actOnImport(p->builder, mod_name, 0, 0, 0, islocal);
+   ast_Decl* d = ast_builder_Builder_actOnImport(p->builder, mod_name, 0, 0, 0, islocal, NULL, 0);
    if (d) ast_Decl_setAttrUnused(d);
 }
 
@@ -36113,10 +36806,37 @@ static void c2_parser_Parser_parseImports(c2_parser_Parser* p)
          c2_parser_Parser_consumeToken(p);
          islocal = true;
       }
-      c2_parser_Parser_expectAndConsume(p, token_Kind_Semicolon);
-      if (mod_name != p->stdarg_idx) {
-         ast_builder_Builder_actOnImport(p->builder, mod_name, mod_loc, alias_name, alias_loc, islocal);
+      ast_SymbolList symlist; ast_SymbolList_init(&symlist);
+      if (p->tok.kind == token_Kind_LBrace) {
+         c2_parser_Parser_consumeToken(p);
+         if (p->tok.kind == token_Kind_Star) {
+            islocal = true;
+            c2_parser_Parser_consumeToken(p);
+         } else {
+            while (p->tok.kind == token_Kind_Identifier) {
+               u32 name_idx = p->tok.name_idx;
+               u32 as_name_idx = name_idx;
+               src_loc_SrcLoc loc = p->tok.loc;
+               c2_parser_Parser_consumeToken(p);
+               if (p->tok.kind == token_Kind_KW_as) {
+                  c2_parser_Parser_consumeToken(p);
+                  c2_parser_Parser_expectIdentifier(p);
+                  as_name_idx = p->tok.name_idx;
+                  c2_parser_Parser_consumeToken(p);
+               }
+               ast_SymbolList_add(&symlist, (ast_Symbol){ name_idx, loc, as_name_idx });
+               if (p->tok.kind != token_Kind_Comma) break;
+               c2_parser_Parser_consumeToken(p);
+            }
+         }
+         c2_parser_Parser_expectAndConsume(p, token_Kind_RBrace);
+      } else {
+         c2_parser_Parser_expectAndConsume(p, token_Kind_Semicolon);
       }
+      if (mod_name != p->stdarg_idx) {
+         ast_builder_Builder_actOnImport(p->builder, mod_name, mod_loc, alias_name, alias_loc, islocal, ast_SymbolList_getData(&symlist), ast_SymbolList_size(&symlist));
+      }
+      ast_SymbolList_free(&symlist);
    }
 }
 
@@ -36175,9 +36895,9 @@ static void c2_parser_Parser_parseTopLevel(c2_parser_Parser* p)
       c2_parser_Parser_parseVarDecl(p, is_public);
       break;
    invalid_c:
-      c2_parser_Parser_error(p, "invalid keyword '%s' in extern C code", token_Kind_str(p->tok.kind));
+      c2_parser_Parser_error(p, "invalid keyword '%s' in extern C code", token_Kind__name[p->tok.kind]);
    invalid_c2:
-      c2_parser_Parser_error(p, "invalid '%s' definition in C2 code", token_Kind_str(p->tok.kind));
+      c2_parser_Parser_error(p, "invalid '%s' definition in C2 code", token_Kind__name[p->tok.kind]);
    }
 }
 
@@ -36277,7 +36997,7 @@ static void c2_parser_Parser_parseFunctionDecl2(c2_parser_Parser* p, u32 func_na
    if (!c2_parser_Parser_checkName(p, func_name, p->is_interface)) {
       c2_parser_Parser_errorAt(p, func_loc, "a function name must start with a lower case character");
    }
-   ast_DeclList params; ast_DeclList_init(&params);
+   ast_VarDeclList params; ast_VarDeclList_init(&params);
    bool is_variadic = c2_parser_Parser_parseFunctionParams(p, &params, is_public, true);
    ast_FunctionDecl* f;
    if (p->tok.kind == token_Kind_KW_template) {
@@ -36286,11 +37006,11 @@ static void c2_parser_Parser_parseFunctionDecl2(c2_parser_Parser* p, u32 func_na
       u32 template_name = p->tok.name_idx;
       src_loc_SrcLoc template_loc = p->tok.loc;
       c2_parser_Parser_consumeToken(p);
-      f = ast_builder_Builder_actOnTemplateFunctionDecl(p->builder, func_name, func_loc, is_public, rtype, template_name, template_loc, (ast_VarDecl**)ast_DeclList_getDecls(&params), ast_DeclList_size(&params), is_variadic);
+      f = ast_builder_Builder_actOnTemplateFunctionDecl(p->builder, func_name, func_loc, is_public, rtype, template_name, template_loc, ast_VarDeclList_getData(&params), ast_VarDeclList_size(&params), is_variadic);
    } else {
-      f = ast_builder_Builder_actOnFunctionDecl(p->builder, func_name, func_loc, is_public, rtype, prefix, (ast_VarDecl**)ast_DeclList_getDecls(&params), ast_DeclList_size(&params), is_variadic);
+      f = ast_builder_Builder_actOnFunctionDecl(p->builder, func_name, func_loc, is_public, rtype, prefix, ast_VarDeclList_getData(&params), ast_VarDeclList_size(&params), is_variadic);
    }
-   ast_DeclList_free(&params);
+   ast_VarDeclList_free(&params);
    u32 num_attr = c2_parser_Parser_parseOptionalAttributes(p);
    c2_parser_Parser_applyAttributes(p, (ast_Decl*)f, num_attr);
    if (p->is_interface) {
@@ -36307,7 +37027,7 @@ static void c2_parser_Parser_parseFunctionDecl2(c2_parser_Parser* p, u32 func_na
    ast_builder_Builder_actOnFunctionBody(p->builder, f, body);
 }
 
-static bool c2_parser_Parser_parseFunctionParams(c2_parser_Parser* p, ast_DeclList* params, bool is_public, bool accept_default)
+static bool c2_parser_Parser_parseFunctionParams(c2_parser_Parser* p, ast_VarDeclList* params, bool is_public, bool accept_default)
 {
    c2_parser_Parser_expectAndConsume(p, token_Kind_LParen);
    if (p->tok.kind == token_Kind_RParen) {
@@ -36323,7 +37043,7 @@ static bool c2_parser_Parser_parseFunctionParams(c2_parser_Parser* p, ast_DeclLi
    while (p->tok.kind != token_Kind_RParen) {
       ast_VarDecl* decl = c2_parser_Parser_parseParamDecl(p, is_public, accept_default);
       ast_VarDecl_setOffset(decl, params->count);
-      ast_DeclList_add(params, ast_VarDecl_asDecl(decl));
+      ast_VarDeclList_add(params, decl);
       if (p->tok.kind != token_Kind_Comma) break;
       c2_parser_Parser_consumeToken(p);
       if (p->tok.kind == token_Kind_Ellipsis) {
@@ -36338,16 +37058,16 @@ static bool c2_parser_Parser_parseFunctionParams(c2_parser_Parser* p, ast_DeclLi
 
 static ast_VarDecl* c2_parser_Parser_parseParamDecl(c2_parser_Parser* p, bool is_public, bool accept_default)
 {
-   if (p->tok.kind == token_Kind_KW_local || p->tok.kind == token_Kind_KW_static || p->tok.kind == token_Kind_KW_tlocal) c2_parser_Parser_error(p, "keyword '%s' is not allowed here", token_Kind_str(p->tok.kind));
+   if (p->tok.kind == token_Kind_KW_local || p->tok.kind == token_Kind_KW_static || p->tok.kind == token_Kind_KW_tlocal) c2_parser_Parser_error(p, "keyword '%s' is not allowed here", token_Kind__name[p->tok.kind]);
    ast_TypeRefHolder ref; ast_TypeRefHolder_init(&ref);
    if (p->tok.kind == token_Kind_KW_fn) {
       c2_parser_Parser_consumeToken(p);
       ast_TypeRefHolder rtype; ast_TypeRefHolder_init(&rtype);
       c2_parser_Parser_parseSingleTypeSpecifier(p, &rtype);
-      ast_DeclList params; ast_DeclList_init(&params);
+      ast_VarDeclList params; ast_VarDeclList_init(&params);
       bool is_variadic = c2_parser_Parser_parseFunctionParams(p, &params, is_public, false);
-      ast_Decl* fd = ast_builder_Builder_actOnFunctionType(p->builder, &rtype, (ast_VarDecl**)ast_DeclList_getDecls(&params), ast_DeclList_size(&params), is_variadic, ast_DefKind_Param);
-      ast_DeclList_free(&params);
+      ast_Decl* fd = ast_builder_Builder_actOnFunctionType(p->builder, &rtype, ast_VarDeclList_getData(&params), ast_VarDeclList_size(&params), is_variadic, ast_DefKind_Param);
+      ast_VarDeclList_free(&params);
       ast_TypeRefHolder_setFunction(&ref, (ast_Decl*)fd);
       if (p->tok.kind == token_Kind_LSquare) {
          c2_parser_Parser_error(p, "array types are not allowed here");
@@ -36420,7 +37140,7 @@ static void c2_parser_Parser_parseArrayEntry(c2_parser_Parser* p)
 
 static void c2_parser_Parser_parseVarDecl(c2_parser_Parser* p, bool is_public)
 {
-   if (p->tok.kind == token_Kind_KW_local || p->tok.kind == token_Kind_KW_static) c2_parser_Parser_error(p, "keyword '%s' cannot be used at file scope", token_Kind_str(p->tok.kind));
+   if (p->tok.kind == token_Kind_KW_local || p->tok.kind == token_Kind_KW_static) c2_parser_Parser_error(p, "keyword '%s' cannot be used at file scope", token_Kind__name[p->tok.kind]);
    bool has_tlocal = (p->tok.kind == token_Kind_KW_tlocal);
    if (has_tlocal) c2_parser_Parser_consumeToken(p);
    bool need_semi = true;
@@ -36722,7 +37442,7 @@ static ast_Expr* c2_parser_Parser_parseRHSOfBinaryExpression(c2_parser_Parser* p
       ast_Expr* ternaryMiddle = NULL;
       if (nextTokPrec == c2_prec_Prec_Conditional) {
          if (p->tok.kind == token_Kind_Colon) {
-            c2_parser_Parser_error(p, "TODO conditional expr");
+            c2_parser_Parser_error(p, "expected expression after '?'");
          } else {
             ternaryMiddle = c2_parser_Parser_parseExpr(p);
          }
@@ -36821,29 +37541,24 @@ static ast_Expr* c2_parser_Parser_parseCastExpr(c2_parser_Parser* p, bool _arg1,
       return ast_builder_Builder_actOnUnaryOperator(p->builder, loc, opcode, res);
    }
    case 8:
-      res = c2_parser_Parser_parseExplicitCastExpr(p);
-      break;
-   case 9:
       res = c2_parser_Parser_parseElemsof(p);
       break;
-   case 10:
-      return c2_parser_Parser_parseEnumMinMax(p, savedKind == token_Kind_KW_enum_min);
-   case 11:
+   case 9:
       res = ast_builder_Builder_actOnBooleanConstant(p->builder, p->tok.loc, savedKind == token_Kind_KW_true);
       c2_parser_Parser_consumeToken(p);
       break;
-   case 12:
+   case 10:
       res = ast_builder_Builder_actOnNilExpr(p->builder, p->tok.loc);
       c2_parser_Parser_consumeToken(p);
       break;
-   case 13:
+   case 11:
       return c2_parser_Parser_parseOffsetOfExpr(p);
-   case 14:
+   case 12:
       return c2_parser_Parser_parseSizeof(p);
-   case 15:
+   case 13:
       res = c2_parser_Parser_parseToContainerExpr(p);
       break;
-   case 16:
+   case 14:
       if (c2_parser_Parser_peekToken(p, 1) == token_Kind_Dot) {
          c2_parser_Parser_addImplicitImport(p, p->tok.name_idx, false);
          res = c2_parser_Parser_parsePureMemberExpr(p);
@@ -37009,7 +37724,7 @@ static ast_Expr* c2_parser_Parser_parseStringLiteral(c2_parser_Parser* p)
       }
       idx = string_pool_Pool_add(p->pool, tmp, len, true);
    }
-   return ast_builder_Builder_actOnStringLiteral(p->builder, loc, src_len, idx, len);
+   return ast_builder_Builder_actOnStringLiteral(p->builder, loc, src_len, idx, len, true);
 }
 
 static ast_Expr* c2_parser_Parser_parseParenExpr(c2_parser_Parser* p)
@@ -37172,34 +37887,6 @@ static ast_Expr* c2_parser_Parser_parseArrayDesignator(c2_parser_Parser* p)
    return ast_builder_Builder_actOnArrayDesignatedInit(p->builder, loc, expr1, expr2, initValue, kind);
 }
 
-static ast_Expr* c2_parser_Parser_parseExplicitCastExpr(c2_parser_Parser* p)
-{
-   src_loc_SrcLoc loc = p->tok.loc;
-   c2_parser_Parser_consumeToken(p);
-   c2_parser_Parser_expectAndConsume(p, token_Kind_Less);
-   ast_TypeRefHolder ref; ast_TypeRefHolder_init(&ref);
-   c2_parser_Parser_parseTypeSpecifier(p, &ref);
-   c2_parser_Parser_expectAndConsume(p, token_Kind_Greater);
-   if (ast_TypeRefHolder_isArray(&ref)) c2_parser_Parser_error(p, "array types are not allowed here");
-   c2_parser_Parser_expectAndConsume(p, token_Kind_LParen);
-   ast_Expr* expr = c2_parser_Parser_parseExpr(p);
-   u32 src_len = p->tok.loc + 1 - loc;
-   c2_parser_Parser_expectAndConsume(p, token_Kind_RParen);
-   return ast_builder_Builder_actOnExplicitCast(p->builder, loc, src_len, &ref, expr, false);
-}
-
-static ast_Expr* c2_parser_Parser_parseEnumMinMax(c2_parser_Parser* p, bool is_min)
-{
-   src_loc_SrcLoc loc = p->tok.loc;
-   c2_parser_Parser_consumeToken(p);
-   c2_parser_Parser_expectAndConsume(p, token_Kind_LParen);
-   c2_parser_Parser_expectIdentifier(p);
-   ast_Expr* expr = c2_parser_Parser_parseExpr(p);
-   u32 src_len = p->tok.loc + 1 - loc;
-   c2_parser_Parser_expectAndConsume(p, token_Kind_RParen);
-   return ast_builder_Builder_actOnBuiltinExpr(p->builder, loc, src_len, expr, is_min ? ast_BuiltinExprKind_EnumMin : ast_BuiltinExprKind_EnumMax);
-}
-
 static ast_Expr* c2_parser_Parser_parseOffsetOfExpr(c2_parser_Parser* p)
 {
    src_loc_SrcLoc loc = p->tok.loc;
@@ -37317,10 +38004,7 @@ static u32 c2_parser_Parser_parseAsCastType(c2_parser_Parser* p, u32 ahead, toke
          case token_Kind_StringLiteral:
          case token_Kind_Tilde:
          case token_Kind_Exclaim:
-         case token_Kind_KW_cast:
          case token_Kind_KW_elemsof:
-         case token_Kind_KW_enum_min:
-         case token_Kind_KW_enum_max:
          case token_Kind_KW_false:
          case token_Kind_KW_true:
          case token_Kind_KW_nil:
@@ -37620,16 +38304,26 @@ static ast_Stmt* c2_parser_Parser_parseBreakStmt(c2_parser_Parser* p)
 {
    src_loc_SrcLoc loc = p->tok.loc;
    c2_parser_Parser_consumeToken(p);
+   u32 name_idx = 0;
+   if (p->tok.kind == token_Kind_Identifier) {
+      name_idx = p->tok.name_idx;
+      c2_parser_Parser_consumeToken(p);
+   }
    c2_parser_Parser_expectAndConsume(p, token_Kind_Semicolon);
-   return ast_builder_Builder_actOnBreakStmt(p->builder, loc);
+   return ast_builder_Builder_actOnBreakStmt(p->builder, loc, name_idx);
 }
 
 static ast_Stmt* c2_parser_Parser_parseContinueStmt(c2_parser_Parser* p)
 {
    src_loc_SrcLoc loc = p->tok.loc;
    c2_parser_Parser_consumeToken(p);
+   u32 name_idx = 0;
+   if (p->tok.kind == token_Kind_Identifier) {
+      name_idx = p->tok.name_idx;
+      c2_parser_Parser_consumeToken(p);
+   }
    c2_parser_Parser_expectAndConsume(p, token_Kind_Semicolon);
-   return ast_builder_Builder_actOnContinueStmt(p->builder, loc);
+   return ast_builder_Builder_actOnContinueStmt(p->builder, loc, name_idx);
 }
 
 static ast_Stmt* c2_parser_Parser_parseFallthroughStmt(c2_parser_Parser* p)
@@ -37658,14 +38352,26 @@ static ast_Stmt* c2_parser_Parser_parseIfStmt(c2_parser_Parser* p)
 {
    src_loc_SrcLoc loc = p->tok.loc;
    c2_parser_Parser_consumeToken(p);
-   ast_Stmt* cond = c2_parser_Parser_parseCondition(p);
+   c2_parser_Parser_expectAndConsume(p, token_Kind_LParen);
+   ast_Stmt* decl = NULL;
+   ast_Expr* cond = NULL;
+   if (c2_parser_Parser_isDeclaration(p)) {
+      decl = c2_parser_Parser_parseDeclStmt(p, false, false, true);
+      if (p->tok.kind == token_Kind_Semicolon) {
+         c2_parser_Parser_consumeToken(p);
+         cond = c2_parser_Parser_parseExpr(p);
+      }
+   } else {
+      cond = c2_parser_Parser_parseExpr(p);
+   }
+   c2_parser_Parser_expectAndConsume(p, token_Kind_RParen);
    ast_Stmt* then = c2_parser_Parser_parseStmt(p);
    ast_Stmt* else_stmt = NULL;
    if (p->tok.kind == token_Kind_KW_else) {
       c2_parser_Parser_consumeToken(p);
       else_stmt = c2_parser_Parser_parseStmt(p);
    }
-   return ast_builder_Builder_actOnIfStmt(p->builder, loc, cond, then, else_stmt);
+   return ast_builder_Builder_actOnIfStmt(p->builder, loc, decl, cond, then, else_stmt);
 }
 
 static ast_Stmt* c2_parser_Parser_parseReturnStmt(c2_parser_Parser* p)
@@ -37727,10 +38433,10 @@ static ast_Stmt* c2_parser_Parser_parseDeclStmt(c2_parser_Parser* p, bool checkS
 {
    ast_VarDecl* decls[15];
    u32 num_decls = 0;
-   bool is_static = (p->tok.kind == token_Kind_KW_local || p->tok.kind == token_Kind_KW_static);
+   bool is_static = p->tok.kind == token_Kind_KW_static;
    bool has_tlocal = (p->tok.kind == token_Kind_KW_tlocal);
-   if (is_static | has_tlocal) {
-      if (!allowLocal) c2_parser_Parser_error(p, "keyword '%s' is not allowed here", token_Kind_str(p->tok.kind));
+   if (is_static | has_tlocal || p->tok.kind == token_Kind_KW_local) {
+      if (!allowLocal || p->tok.kind == token_Kind_KW_local) c2_parser_Parser_error(p, "keyword '%s' is not allowed here", token_Kind__name[p->tok.kind]);
       c2_parser_Parser_consumeToken(p);
    }
    bool need_semi = true;
@@ -37739,6 +38445,7 @@ static ast_Stmt* c2_parser_Parser_parseDeclStmt(c2_parser_Parser* p, bool checkS
    for (;;) {
       c2_parser_Parser_expectIdentifier(p);
       u32 name = p->tok.name_idx;
+      u32 name_len = p->tok.len;
       src_loc_SrcLoc loc = p->tok.loc;
       if (p->tok.reserved) {
          diagnostics_Diags_error(p->diags, loc, "reserved word '%s' cannot be used as variable name", string_pool_Pool_idx2str(p->pool, name));
@@ -37762,7 +38469,6 @@ static ast_Stmt* c2_parser_Parser_parseDeclStmt(c2_parser_Parser* p, bool checkS
          if (c2_parser_Parser_peekToken(p, 1) == token_Kind_Identifier && c2_parser_Parser_peekToken(p, 2) == token_Kind_LParen) {
             if (is_static | has_tlocal) c2_parser_Parser_error(p, "static local variables cannot have an init call");
             if (isCondition) c2_parser_Parser_error(p, "cannot use an init call inside a condition");
-            u32 name_len = p->tok.len;
             c2_parser_Parser_consumeToken(p);
             ast_Expr* func = ast_builder_Builder_actOnMemberExpr(p->builder, NULL, name, name_len, p->tok.loc, p->tok.name_idx);
             c2_parser_Parser_consumeToken(p);
@@ -37774,6 +38480,7 @@ static ast_Stmt* c2_parser_Parser_parseDeclStmt(c2_parser_Parser* p, bool checkS
             c2_parser_Parser_consumeToken(p);
             c2_parser_Parser_errorAt(p, p->tok.loc + p->tok.len, "missing argument list for init call");
          }
+         c2_parser_Parser_error(p, "expected identifier after '.'");
          break;
       case token_Kind_LSquare:
          c2_parser_Parser_error(p, "array indices should go after type");
@@ -37806,6 +38513,10 @@ static ast_Stmt* c2_parser_Parser_parseExprStmt(c2_parser_Parser* p)
 static ast_Stmt* c2_parser_Parser_parseLabelStmt(c2_parser_Parser* p)
 {
    u32 name = p->tok.name_idx;
+   const char* label_name = string_pool_Pool_idx2str(p->pool, name);
+   if (!islower(label_name[0])) {
+      c2_parser_Parser_error(p, "a label name must start with a lower case character");
+   }
    src_loc_SrcLoc loc = p->tok.loc;
    c2_parser_Parser_consumeToken(p);
    c2_parser_Parser_expectAndConsume(p, token_Kind_Colon);
@@ -37964,11 +38675,11 @@ static void c2_parser_Parser_parseFunctionType(c2_parser_Parser* p, u32 name, sr
    c2_parser_Parser_consumeToken(p);
    ast_TypeRefHolder rtype; ast_TypeRefHolder_init(&rtype);
    c2_parser_Parser_parseSingleTypeSpecifier(p, &rtype);
-   ast_DeclList params; ast_DeclList_init(&params);
+   ast_VarDeclList params; ast_VarDeclList_init(&params);
    bool is_variadic = c2_parser_Parser_parseFunctionParams(p, &params, is_public, false);
-   ast_Decl* ftd = ast_builder_Builder_actOnFunctionTypeDecl(p->builder, name, loc, is_public, &rtype, (ast_VarDecl**)ast_DeclList_getDecls(&params), ast_DeclList_size(&params), is_variadic);
+   ast_Decl* ftd = ast_builder_Builder_actOnFunctionTypeDecl(p->builder, name, loc, is_public, &rtype, ast_VarDeclList_getData(&params), ast_VarDeclList_size(&params), is_variadic);
    u32 num_attr = c2_parser_Parser_parseOptionalAttributes(p);
-   ast_DeclList_free(&params);
+   ast_VarDeclList_free(&params);
    c2_parser_Parser_expectAndConsume(p, token_Kind_Semicolon);
    c2_parser_Parser_applyAttributes(p, ftd, num_attr);
 }
@@ -37984,8 +38695,10 @@ static void c2_parser_Parser_parseStructType(c2_parser_Parser* p, bool is_struct
       if (!p->is_interface) c2_parser_Parser_error(p, "undefined structs are only allowed in interface files");
       if (!ast_builder_Builder_hasOpaqueAttr(p->builder)) c2_parser_Parser_error(p, "undefined structs must have the opaque attribute");
       c2_parser_Parser_consumeToken(p);
+   } else {
+      c2_parser_Parser_expectError(p, token_Kind_LBrace);
    }
-   ast_StructTypeDecl* d = ast_builder_Builder_actOnStructType(p->builder, name, loc, is_public, is_struct, true, ast_DeclList_getDecls(&members), ast_DeclList_size(&members));
+   ast_StructTypeDecl* d = ast_builder_Builder_actOnStructType(p->builder, name, loc, is_public, is_struct, true, ast_DeclList_getData(&members), ast_DeclList_size(&members));
    ast_DeclList_free(&members);
    c2_parser_Parser_applyAttributes(p, (ast_Decl*)d, num_attr);
 }
@@ -38004,8 +38717,7 @@ static void c2_parser_Parser_checkMemberName(c2_parser_Parser* p)
 static void c2_parser_Parser_parseStructBlock(c2_parser_Parser* p, ast_DeclList* members, bool is_public)
 {
    c2_parser_Parser_expectAndConsume(p, token_Kind_LBrace);
-   while (1) {
-      if (p->tok.kind == token_Kind_RBrace) break;
+   while (p->tok.kind != token_Kind_RBrace) {
       if (p->tok.kind == token_Kind_KW_union || p->tok.kind == token_Kind_KW_struct) {
          bool is_struct = p->tok.kind == token_Kind_KW_struct;
          c2_parser_Parser_consumeToken(p);
@@ -38019,21 +38731,22 @@ static void c2_parser_Parser_parseStructBlock(c2_parser_Parser* p, ast_DeclList*
          }
          ast_DeclList sub_members; ast_DeclList_init(&sub_members);
          c2_parser_Parser_parseStructBlock(p, &sub_members, is_public);
-         ast_StructTypeDecl* member = ast_builder_Builder_actOnStructType(p->builder, name, loc, is_public, is_struct, false, ast_DeclList_getDecls(&sub_members), ast_DeclList_size(&sub_members));
+         ast_StructTypeDecl* member = ast_builder_Builder_actOnStructType(p->builder, name, loc, is_public, is_struct, false, ast_DeclList_getData(&sub_members), ast_DeclList_size(&sub_members));
          ast_DeclList_free(&sub_members);
          ast_DeclList_add(members, ast_StructTypeDecl_asDecl(member));
          continue;
       }
+      ast_Decl* d = NULL;
       if (p->tok.kind == token_Kind_KW_fn) {
          c2_parser_Parser_consumeToken(p);
          ast_TypeRefHolder rtype; ast_TypeRefHolder_init(&rtype);
          c2_parser_Parser_parseSingleTypeSpecifier(p, &rtype);
-         ast_DeclList params; ast_DeclList_init(&params);
+         ast_VarDeclList params; ast_VarDeclList_init(&params);
          bool is_variadic = c2_parser_Parser_parseFunctionParams(p, &params, is_public, false);
-         ast_Decl* fd = ast_builder_Builder_actOnFunctionType(p->builder, &rtype, (ast_VarDecl**)ast_DeclList_getDecls(&params), ast_DeclList_size(&params), is_variadic, ast_DefKind_StructMember);
-         ast_DeclList_free(&params);
+         ast_Decl* fd = ast_builder_Builder_actOnFunctionType(p->builder, &rtype, ast_VarDeclList_getData(&params), ast_VarDeclList_size(&params), is_variadic, ast_DefKind_StructMember);
+         ast_VarDeclList_free(&params);
          ast_TypeRefHolder ref; ast_TypeRefHolder_init(&ref);
-         ast_TypeRefHolder_setFunction(&ref, (ast_Decl*)fd);
+         ast_TypeRefHolder_setFunction(&ref, fd);
          if (p->tok.kind == token_Kind_LSquare) {
             c2_parser_Parser_error(p, "arrays are not allowed for untyped function type members");
          }
@@ -38043,11 +38756,14 @@ static void c2_parser_Parser_parseStructBlock(c2_parser_Parser* p, ast_DeclList*
          c2_parser_Parser_checkMemberName(p);
          c2_parser_Parser_consumeToken(p);
          ast_VarDecl* member = ast_builder_Builder_actOnStructMember(p->builder, name, loc, is_public, &ref, NULL);
-         ast_DeclList_add(members, ast_VarDecl_asDecl(member));
+         d = (ast_Decl*)member;
+         ast_DeclList_add(members, d);
+         c2_parser_Parser_applyAttributes(p, d, c2_parser_Parser_parseOptionalAttributes(p));
          goto semi_colon;
       }
       ast_TypeRefHolder ref; ast_TypeRefHolder_init(&ref);
       c2_parser_Parser_parseTypeSpecifier(p, &ref);
+      bool multiple_decls = false;
       for (;;) {
          u32 name = 0;
          src_loc_SrcLoc loc;
@@ -38066,8 +38782,18 @@ static void c2_parser_Parser_parseStructBlock(c2_parser_Parser* p, ast_DeclList*
             bitfield = c2_parser_Parser_parseExpr(p);
          }
          ast_VarDecl* member = ast_builder_Builder_actOnStructMember(p->builder, name, loc, is_public, &ref, bitfield);
-         ast_DeclList_add(members, ast_VarDecl_asDecl(member));
+         d = (ast_Decl*)member;
+         ast_DeclList_add(members, d);
+         src_loc_SrcLoc attr_loc = 0;
+         if (p->tok.kind == token_Kind_At) {
+            attr_loc = p->tok.loc;
+            c2_parser_Parser_applyAttributes(p, d, c2_parser_Parser_parseOptionalAttributes(p));
+         }
+         if (attr_loc && (multiple_decls || p->tok.kind == token_Kind_Comma)) {
+            c2_parser_Parser_error(p, "attributes cannot be to applied to multiple declarations");
+         }
          if (p->tok.kind != token_Kind_Comma) break;
+         multiple_decls = true;
          c2_parser_Parser_consumeToken(p);
          if (ast_TypeRefHolder_isPointer(&ref) || ast_TypeRefHolder_isArray(&ref)) c2_parser_Parser_error(p, "pointer and array members must be defined separately");
       }
@@ -38114,7 +38840,7 @@ static void c2_parser_Parser_parseEnumType(c2_parser_Parser* p, u32 name, src_lo
    ast_QualType implType = ast_builder_Builder_actOnBuiltinType(p->builder, c2_parser_tokKindToBuiltinKind(p->tok.kind));
    c2_parser_Parser_consumeToken(p);
    bool has_assoc_values = false;
-   ast_DeclList assoc_values; ast_DeclList_init(&assoc_values);
+   ast_VarDeclList assoc_values; ast_VarDeclList_init(&assoc_values);
    if (p->tok.kind == token_Kind_LParen) {
       has_assoc_values = true;
       c2_parser_Parser_parseEnumAssocAttributes(p, &assoc_values);
@@ -38159,20 +38885,20 @@ static void c2_parser_Parser_parseEnumType(c2_parser_Parser* p, u32 name, src_lo
       }
    }
    c2_parser_Parser_expectAndConsume(p, token_Kind_RBrace);
-   ast_EnumTypeDecl* d = ast_builder_Builder_actOnEnumType(p->builder, name, loc, is_public, is_incr, implType, (ast_EnumConstantDecl**)ast_DeclList_getDecls(&constants), ast_DeclList_size(&constants), (ast_VarDecl**)ast_DeclList_getDecls(&assoc_values), (u16)ast_DeclList_size(&assoc_values));
-   ast_DeclList_free(&assoc_values);
+   ast_EnumTypeDecl* d = ast_builder_Builder_actOnEnumType(p->builder, name, loc, is_public, is_incr, implType, (ast_EnumConstantDecl**)ast_DeclList_getData(&constants), ast_DeclList_size(&constants), ast_VarDeclList_getData(&assoc_values), (u16)ast_VarDeclList_size(&assoc_values));
+   ast_VarDeclList_free(&assoc_values);
    ast_DeclList_free(&constants);
    c2_parser_Parser_applyAttributes(p, (ast_Decl*)d, num_attr);
 }
 
-static void c2_parser_Parser_parseEnumAssocAttributes(c2_parser_Parser* p, ast_DeclList* params)
+static void c2_parser_Parser_parseEnumAssocAttributes(c2_parser_Parser* p, ast_VarDeclList* params)
 {
    c2_parser_Parser_expectAndConsume(p, token_Kind_LParen);
    if (p->tok.kind == token_Kind_RParen) c2_parser_Parser_error(p, "expected list of enum-associated value declarations");
    while (p->tok.kind != token_Kind_RParen) {
       ast_VarDecl* decl = c2_parser_Parser_parseEnumAttribute(p);
       ast_VarDecl_setOffset(decl, params->count);
-      ast_DeclList_add(params, ast_VarDecl_asDecl(decl));
+      ast_VarDeclList_add(params, decl);
       if (p->tok.kind != token_Kind_Comma) break;
       c2_parser_Parser_consumeToken(p);
    }
@@ -38181,7 +38907,7 @@ static void c2_parser_Parser_parseEnumAssocAttributes(c2_parser_Parser* p, ast_D
 
 static ast_VarDecl* c2_parser_Parser_parseEnumAttribute(c2_parser_Parser* p)
 {
-   if (p->tok.kind == token_Kind_KW_local || p->tok.kind == token_Kind_KW_static) c2_parser_Parser_error(p, "keyword '%s' is not allowed here", token_Kind_str(p->tok.kind));
+   if (p->tok.kind == token_Kind_KW_local || p->tok.kind == token_Kind_KW_static) c2_parser_Parser_error(p, "keyword '%s' is not allowed here", token_Kind__name[p->tok.kind]);
    bool is_public = false;
    if (p->tok.kind == token_Kind_KW_public) {
       is_public = true;
@@ -38192,10 +38918,10 @@ static ast_VarDecl* c2_parser_Parser_parseEnumAttribute(c2_parser_Parser* p)
       c2_parser_Parser_consumeToken(p);
       ast_TypeRefHolder rtype; ast_TypeRefHolder_init(&rtype);
       c2_parser_Parser_parseSingleTypeSpecifier(p, &rtype);
-      ast_DeclList params; ast_DeclList_init(&params);
+      ast_VarDeclList params; ast_VarDeclList_init(&params);
       bool is_variadic = c2_parser_Parser_parseFunctionParams(p, &params, is_public, false);
-      ast_Decl* fd = ast_builder_Builder_actOnFunctionType(p->builder, &rtype, (ast_VarDecl**)ast_DeclList_getDecls(&params), ast_DeclList_size(&params), is_variadic, ast_DefKind_EnumValue);
-      ast_DeclList_free(&params);
+      ast_Decl* fd = ast_builder_Builder_actOnFunctionType(p->builder, &rtype, ast_VarDeclList_getData(&params), ast_VarDeclList_size(&params), is_variadic, ast_DefKind_EnumValue);
+      ast_VarDeclList_free(&params);
       ast_TypeRefHolder_setFunction(&ref, (ast_Decl*)fd);
       if (p->tok.kind == token_Kind_LSquare) {
          c2_parser_Parser_error(p, "array types are not allowed here");
@@ -38284,10 +39010,10 @@ static void c2_parser_Parser_parseTypedef(c2_parser_Parser* p, bool is_public)
       c2_parser_Parser_consumeToken(p);
    }
    if (p->tok.kind == token_Kind_LParen) {
-      ast_DeclList params; ast_DeclList_init(&params);
+      ast_VarDeclList params; ast_VarDeclList_init(&params);
       bool is_variadic = c2_parser_Parser_parseFunctionParams(p, &params, is_public, false);
-      d = ast_builder_Builder_actOnFunctionTypeDecl(p->builder, type_name, loc, is_public, &ref, (ast_VarDecl**)ast_DeclList_getDecls(&params), ast_DeclList_size(&params), is_variadic);
-      ast_DeclList_free(&params);
+      d = ast_builder_Builder_actOnFunctionTypeDecl(p->builder, type_name, loc, is_public, &ref, ast_VarDeclList_getData(&params), ast_VarDeclList_size(&params), is_variadic);
+      ast_VarDeclList_free(&params);
    } else {
       if (p->tok.kind == token_Kind_LSquare) {
          u32 num_arrays = ast_TypeRefHolder_getNumArrays(&ref);
@@ -38383,6 +39109,7 @@ struct compiler_Compiler_ {
    ast_Decl* mainFunc;
    module_list_List parse_queue;
    string_list_List libdirs;
+   string_list_List libdirs_bin;
    component_Component* current;
 };
 
@@ -38405,7 +39132,7 @@ static const char compiler_C2_trace[5074] = "/* Copyright 2022-2026 Bas van den 
                                             "import stdio local;\n"
                                             "import stdlib local;\n"
                                             "import string local;\n\n"
-                                            "fn bool match_name(const char *name, const char *pattern) {\n"
+                                            "fn bool match_name(const char* name, const char* pattern) {\n"
                                             "    for (;;) {\n"
                                             "        char c1, c2;\n"
                                             "        while ((c1 = *name++) == (c2 = *pattern++)) {\n"
@@ -38426,9 +39153,9 @@ static const char compiler_C2_trace[5074] = "/* Copyright 2022-2026 Bas van den 
                                             "        return (!c1 && (c2 == ',' || c2 == ';'));\n"
                                             "    }\n"
                                             "}\n\n"
-                                            "fn bool match_pattern(const char *name, const char *pattern) {\n"
+                                            "fn bool match_pattern(const char* name, const char* pattern) {\n"
                                             "    if (!pattern || !*pattern) return true;\n"
-                                            "    for (const char *p = pattern; *p;) {\n"
+                                            "    for (const char* p = pattern; *p;) {\n"
                                             "        if (match_name(name, p)) return true;\n"
                                             "        char c;\n"
                                             "        while ((c = *p++) != 0 && c != ',' && c != ';') continue;\n"
@@ -38436,27 +39163,27 @@ static const char compiler_C2_trace[5074] = "/* Copyright 2022-2026 Bas van den 
                                             "    }\n"
                                             "    return false;\n"
                                             "}\n\n"
-                                            "fn i32 cmp_funcs(const void *a, const void *b) {\n"
-                                            "    const c2_trace_t *aa = a;\n"
-                                            "    const c2_trace_t *bb = b;\n"
-                                            "    const c2_func_t *fa = &c2_func_data[aa.callee_idx];\n"
-                                            "    const c2_func_t *fb = &c2_func_data[bb.callee_idx];\n"
+                                            "fn i32 cmp_funcs(const void* a, const void* b) {\n"
+                                            "    const c2_trace_t* aa = a;\n"
+                                            "    const c2_trace_t* bb = b;\n"
+                                            "    const c2_func_t* fa = &c2_func_data[aa.callee_idx];\n"
+                                            "    const c2_func_t* fb = &c2_func_data[bb.callee_idx];\n"
                                             "    if (fa.count != fb.count)\n"
                                             "        return fa.count < fb.count ? 1 : -1;\n"
                                             "    if (fa != fb)\n"
                                             "        return strcmp(fa.funcname, fb.funcname);\n"
                                             "    return (aa.count < bb.count) - (aa.count > bb.count);\n"
                                             "}\n\n"
-                                            "fn i32 cmp_calls(const void *a, const void *b) {\n"
-                                            "    const c2_trace_t *aa = a;\n"
-                                            "    const c2_trace_t *bb = b;\n"
+                                            "fn i32 cmp_calls(const void* a, const void* b) {\n"
+                                            "    const c2_trace_t* aa = a;\n"
+                                            "    const c2_trace_t* bb = b;\n"
                                             "    return (aa.count < bb.count) - (aa.count > bb.count);\n"
                                             "}\n\n"
                                             "fn void list_calls() @(destructor, unused) {\n"
-                                            "    const char *p = getenv(\"C2_TRACE\");\n"
-                                            "    const char *pattern = nil;\n"
-                                            "    const char *filename = nil;\n"
-                                            "    const char *caller = nil;\n"
+                                            "    const char* p = getenv(\"C2_TRACE\");\n"
+                                            "    const char* pattern = nil;\n"
+                                            "    const char* filename = nil;\n"
+                                            "    const char* caller = nil;\n"
                                             "    if (!p || !*p) return;\n"
                                             "    u32 min = 1, min2 = 1;\n"
                                             "    i32 pos = 0, mode = 3, fd = 1, indent = 2;\n"
@@ -38485,11 +39212,11 @@ static const char compiler_C2_trace[5074] = "/* Copyright 2022-2026 Bas van den 
                                             "        while (p[pos] && p[pos++] != ';') continue;\n"
                                             "    }\n"
                                             "    if (!mode) return;\n"
-                                            "    u32 *counts = c2_trace_counts;\n"
+                                            "    u32* counts = c2_trace_counts;\n"
                                             "    c2_trace_t* data = c2_trace_data;\n"
                                             "    u32 n = c2_trace_length;\n"
                                             "    for (u32 i = 0; i < n; i++) {\n"
-                                            "        c2_trace_t *cp = &data[i];\n"
+                                            "        c2_trace_t* cp = &data[i];\n"
                                             "        if (match_pattern(c2_func_data[cp.callee_idx].funcname, pattern)\n"
                                             "        &&  match_pattern(c2_filenames[cp.filename_idx], filename)\n"
                                             "        &&  match_pattern(c2_func_data[cp.caller_idx].funcname, caller)) {\n"
@@ -38504,11 +39231,11 @@ static const char compiler_C2_trace[5074] = "/* Copyright 2022-2026 Bas van den 
                                             "    } else {\n"
                                             "        qsort(data, n, sizeof(c2_trace_t), cmp_funcs);\n"
                                             "    }\n"
-                                            "    c2_func_t *last = nil;\n"
+                                            "    c2_func_t* last = nil;\n"
                                             "    i32 show = 0;\n"
                                             "    for (u32 i = 0; i < n; i++) {\n"
-                                            "        c2_trace_t *cp = &data[i];\n"
-                                            "        c2_func_t *func = &c2_func_data[cp.callee_idx];\n"
+                                            "        c2_trace_t* cp = &data[i];\n"
+                                            "        c2_func_t* func = &c2_func_data[cp.callee_idx];\n"
                                             "        u32 count1 = func.count;\n"
                                             "        u32 count2 = cp.count;\n"
                                             "        if (count1 < min) continue;\n"
@@ -38529,9 +39256,9 @@ static const char compiler_C2_trace[5074] = "/* Copyright 2022-2026 Bas van den 
                                             "        }\n"
                                             "    }\n"
                                             "}\n";
-static void compiler_build(string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts, compiler_PluginHandler* pluginHandler);
+static void compiler_build(string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts, string_list_List* features, compiler_PluginHandler* pluginHandler);
 static component_Kind compiler_target2compKind(build_target_Kind k);
-static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts, compiler_PluginHandler* pluginHandler, plugin_info_Info* info);
+static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts, string_list_List* features, compiler_PluginHandler* pluginHandler, plugin_info_Info* info);
 static void compiler_Compiler_free(compiler_Compiler* c);
 static bool compiler_Compiler_parseMainComponent(compiler_Compiler* c);
 static component_Component* compiler_Compiler_findModuleComponent(const compiler_Compiler* c, u32 name_idx);
@@ -38540,7 +39267,7 @@ static bool compiler_Compiler_register_attr(void* arg, u32 name, ast_AttrHandler
 static void compiler_Compiler_analyseModule(void* arg, ast_Module* m);
 static void compiler_Compiler_analyseUsedModule(void* arg, ast_Module* m);
 static void compiler_Compiler_findTopModule(void* arg, ast_Module* m);
-static void compiler_Compiler_addFeature(compiler_Compiler* c, const char* str, const char* value);
+static void compiler_Compiler_addFeature(compiler_Compiler* c, const char* str);
 static void compiler_Compiler_removeFeature(compiler_Compiler* c, const char* str);
 static void compiler_Compiler_addGlobalDefine(compiler_Compiler* c, const char* prefix, const char* tail);
 static void compiler_Compiler_addLibPath(void* arg, const char* path, u32 len);
@@ -38567,23 +39294,27 @@ static void compiler_Compiler_handleModuleImports(void* arg, ast_Module* m);
 static void compiler_Compiler_handleImport(void* arg, ast_ImportDecl* id);
 static bool compiler_Compiler_check_exports(compiler_Compiler* c);
 static void compiler_Compiler_analyse_component(compiler_Compiler* c, component_Component* comp);
+static void compiler_Compiler_findStaticLib(compiler_Compiler* c, component_Component* comp);
 static void compiler_Compiler_checkMain(compiler_Compiler* c);
 static void compiler_Compiler_checkUnused(void* arg, ast_Module* m);
 
-static void compiler_build(string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts, compiler_PluginHandler* pluginHandler)
+static void compiler_build(string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts, string_list_List* features, compiler_PluginHandler* pluginHandler)
 {
    compiler_Compiler c = {};
    plugin_info_Info info = {};
-   compiler_Compiler_build(&c, auxPool, sm, diags, build_info, target, opts, pluginHandler, &info);
+   compiler_Compiler_build(&c, auxPool, sm, diags, build_info, target, opts, features, pluginHandler, &info);
    if (opts->print_reports) {
       source_mgr_SourceMgr_report(c.sm, opts->print_reports > 1);
       ast_context_Context_report(c.context);
       string_pool_Pool_report(c.astPool, "astPool");
       string_pool_Pool_report(c.auxPool, "auxPool");
    }
+   if (opts->print_ast_stats) {
+      ast_report();
+   }
    diagnostics_Diags_printStatus(diags);
    pluginHandler->end_target(pluginHandler->arg);
-   ast_deinit(c.opts->print_ast_stats);
+   ast_deinit();
    compiler_Compiler_free(&c);
 }
 
@@ -38604,9 +39335,9 @@ static component_Kind compiler_target2compKind(build_target_Kind k)
    return component_Kind_Executable;
 }
 
-static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts, compiler_PluginHandler* pluginHandler, plugin_info_Info* info)
+static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxPool, source_mgr_SourceMgr* sm, diagnostics_Diags* diags, build_file_Info* build_info, build_target_Target* target, const compiler_Options* opts, string_list_List* features, compiler_PluginHandler* pluginHandler, plugin_info_Info* info)
 {
-   memset(c, 0, 992);
+   memset(c, 0, 1024);
    c->auxPool = auxPool;
    c->sm = sm;
    c->diags = diags;
@@ -38619,7 +39350,7 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
       build_target_Target_disableWarnings(c->target);
       build_target_Target_disableAsserts(c->target);
       compiler_Compiler_removeFeature(c, "AstStatistics");
-      compiler_Compiler_addFeature(c, "BOOTSTRAP", "1");
+      compiler_Compiler_addFeature(c, "BOOTSTRAP");
    }
    if (opts->no_build) {
       build_target_Target_setNoBuild(c->target);
@@ -38629,20 +39360,18 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
    }
    diagnostics_Diags_setWarningAsError(diags, build_target_Target_getWarnings(target)->are_errors);
    diagnostics_Diags_clear(c->diags);
-   c->context = ast_context_create(16 * 1024);
-   c->astPool = string_pool_create(128 * 1024, 4096);
+   c->astPool = string_pool_create(128 * 1024, 8192);
    keywords_Info_init(&c->kwinfo, c->astPool);
    c->main_idx = string_pool_Pool_addStr(c->astPool, "main", true);
    u32 c2_idx = string_pool_Pool_addStr(c->astPool, "c2", true);
    c->libc_name = string_pool_Pool_addStr(c->auxPool, "libc", true);
    c->c2_name = string_pool_Pool_addStr(c->auxPool, "c2", true);
    module_list_List_init(&c->parse_queue, false, 64);
-   c->attr_handler = attr_handler_create(diags, build_target_Target_getWarnings(target));
-   c->builder = ast_builder_create(c->context, diags, c->astPool, c->auxPool, c2_idx, c->main_idx, c->attr_handler);
    module_list_List_init(&c->allmodules, false, 128);
    component_List_init(&c->components);
    c->is_image = build_target_Target_getKind(target) == build_target_Kind_Image;
    string_list_List_init(&c->libdirs, c->auxPool);
+   string_list_List_init(&c->libdirs_bin, c->auxPool);
    const char* target_str = opts->target_triple;
    const char* output_base = constants_output_dir;
    if (c->build_info) {
@@ -38657,6 +39386,10 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
       const string_list_List* dirs = build_file_Info_getLibDirs(c->build_info);
       for (u32 i = 0; i < string_list_List_length(dirs); i++) {
          string_list_List_add(&c->libdirs, string_list_List_get_idx(dirs, i));
+      }
+      dirs = build_file_Info_getLibDirsBin(c->build_info);
+      for (u32 i = 0; i < string_list_List_length(dirs); i++) {
+         string_list_List_add(&c->libdirs_bin, string_list_List_get_idx(dirs, i));
       }
       target_str = build_file_Info_getTarget(c->build_info);
    } else {
@@ -38680,16 +39413,19 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
    console_debug("triple: %s", target_info_Info_str(&c->targetInfo));
    compiler_Compiler_addGlobalDefine(c, "SYSTEM", target_info_Info_getSystemName(&c->targetInfo));
    compiler_Compiler_addGlobalDefine(c, "ARCH", target_info_Info_getArchName(&c->targetInfo));
-   if (c->targetInfo.intWidth == 64) {
-      compiler_Compiler_addFeature(c, "ARCH_64BIT", "1");
-   } else {
-      compiler_Compiler_addFeature(c, "ARCH_32BIT", "1");
+   compiler_Compiler_addFeature(c, c->targetInfo.ptrWidth == 32 ? "ARCH_32BIT" : "ARCH_64BIT");
+   compiler_Compiler_addFeature(c, c->targetInfo.longWidth == 32 ? "LONG_32BIT" : "LONG_64BIT");
+   if (opts->asan) compiler_Compiler_addFeature(c, "__ASAN__");
+   if (opts->msan) compiler_Compiler_addFeature(c, "__MSAN__");
+   if (opts->ubsan) compiler_Compiler_addFeature(c, "__UBSAN__");
+   for (u32 i = 0; i < string_list_List_length(features); i++) {
+      compiler_Compiler_addFeature(c, string_list_List_get(features, i));
    }
-   if (opts->asan) compiler_Compiler_addFeature(c, "__ASAN__", "1");
-   if (opts->msan) compiler_Compiler_addFeature(c, "__MSAN__", "1");
-   if (opts->ubsan) compiler_Compiler_addFeature(c, "__UBSAN__", "1");
+   c->context = ast_context_create(16 * 1024, c->targetInfo.ptrWidth / 8);
+   ast_initialize(c->context, c->astPool, color_useColor());
+   c->attr_handler = attr_handler_create(diags, c->astPool, build_target_Target_getWarnings(target));
+   c->builder = ast_builder_create(c->context, diags, c->astPool, c->auxPool, c2_idx, c->main_idx, c->attr_handler);
    c->parser = c2_parser_create(sm, diags, c->astPool, c->builder, &c->kwinfo, build_target_Target_getFeatures(c->target), build_target_Target_hasAsserts(c->target));
-   ast_initialize(c->context, c->astPool, c->targetInfo.intWidth / 8, color_useColor());
    c->analyser = module_analyser_create(c->diags, c->context, c->astPool, c->builder, &c->allmodules, build_target_Target_getWarnings(c->target), build_target_Target_hasAsserts(c->target), c->opts->check_only);
    if (opts->show_libs) {
       compiler_Compiler_showAllLibs(c);
@@ -38719,7 +39455,7 @@ static void compiler_Compiler_build(compiler_Compiler* c, string_pool_Pool* auxP
    info->addSource = compiler_Compiler_add_source;
    info->register_attr = compiler_Compiler_register_attr;
    info->fn_arg = c;
-   strcpy(info->target_name, string_pool_Pool_idx2str(c->auxPool, build_target_Target_getNameIdx(target)));
+   pstrcpy(info->target_name, 32, string_pool_Pool_idx2str(c->auxPool, build_target_Target_getNameIdx(target)));
    if (!file_utils_make_path(info->output_dir, 512, output_base, string_pool_Pool_idx2str(c->auxPool, build_target_Target_getNameIdx(target)), NULL) || file_utils_create_path(info->output_dir)) {
       console_error("cannot create directory %s: %s", info->output_dir, strerror((*__errno_location())));
       exit(-1);
@@ -38763,6 +39499,7 @@ static void compiler_Compiler_free(compiler_Compiler* c)
    string_pool_Pool_free(c->astPool);
    ast_context_Context_free(c->context);
    string_list_List_free(&c->libdirs);
+   string_list_List_free(&c->libdirs_bin);
 }
 
 static bool compiler_Compiler_parseMainComponent(compiler_Compiler* c)
@@ -38819,14 +39556,14 @@ static void compiler_Compiler_analyseModule(void* arg, ast_Module* m)
 {
    compiler_Compiler* c = arg;
    console_debug("analysing module %s", ast_Module_getName(m));
-   module_analyser_Analyser_check(c->analyser, m);
+   module_analyser_Analyser_checkModule(c->analyser, m);
 }
 
 static void compiler_Compiler_analyseUsedModule(void* arg, ast_Module* m)
 {
    compiler_Compiler* c = arg;
    if (ast_Module_isUsed(m)) {
-      module_analyser_Analyser_check(c->analyser, m);
+      module_analyser_Analyser_checkModule(c->analyser, m);
    }
 }
 
@@ -38838,7 +39575,7 @@ static void compiler_Compiler_findTopModule(void* arg, ast_Module* m)
    c->mainFunc = module_analyser_Analyser_findMain(c->analyser, m, c->main_idx);
 }
 
-static void compiler_Compiler_addFeature(compiler_Compiler* c, const char* str, const char* value)
+static void compiler_Compiler_addFeature(compiler_Compiler* c, const char* str)
 {
    build_target_Target_addFeature(c->target, string_pool_Pool_addStr(c->auxPool, str, true));
 }
@@ -38856,7 +39593,7 @@ static void compiler_Compiler_addGlobalDefine(compiler_Compiler* c, const char* 
       u8 ch = (u8)tmp[i];
       tmp[i] = (ch == '-') ? '_' : (char)toupper(ch);
    }
-   compiler_Compiler_addFeature(c, tmp, "1");
+   compiler_Compiler_addFeature(c, tmp);
 }
 
 static void compiler_Compiler_addLibPath(void* arg, const char* path, u32 len)
@@ -38883,8 +39620,7 @@ static void compiler_Compiler_generate(compiler_Compiler* c, const char* target_
    case build_target_BackEndKind_C: {
       console_debug("generating C");
       u64 gen3 = utils_now();
-      string_list_List asm_files;
-      string_list_List_init(&asm_files, c->auxPool);
+      string_list_List asm_files; string_list_List_init(&asm_files, c->auxPool);
       for (u32 i = 0; i < build_target_Target_numAsmFiles(c->target); i++) {
          const file_list_File* file = build_target_Target_getAsmFile(c->target, i);
          string_list_List_add(&asm_files, file->name);
@@ -39321,14 +40057,15 @@ static void compiler_Compiler_handleImport(void* arg, ast_ImportDecl* id)
    ast_Module* m = module_list_List_find(&c->allmodules, name_idx);
    if (!m) {
       component_Component* comp = compiler_Compiler_findModuleComponent(c, name_idx);
+      const char* mod_name = string_pool_Pool_idx2str(c->astPool, name_idx);
       if (comp) {
          if (component_Component_hasDep(c->current, component_Component_getNameIdx(comp))) {
-            diagnostics_Diags_error(c->diags, ast_Decl_getLoc(d), "module '%s' is private to component %s", ast_idx2name(name_idx), component_Component_getName(comp));
+            diagnostics_Diags_error(c->diags, ast_Decl_getLoc(d), "module '%s' is private to component %s", mod_name, component_Component_getName(comp));
          } else {
-            diagnostics_Diags_error(c->diags, ast_Decl_getLoc(d), "module '%s' is defined in component %s that is not a dependency of component %s", ast_idx2name(name_idx), component_Component_getName(comp), component_Component_getName(c->current));
+            diagnostics_Diags_error(c->diags, ast_Decl_getLoc(d), "module '%s' is defined in component %s that is not a dependency of component %s", mod_name, component_Component_getName(comp), component_Component_getName(c->current));
          }
       } else {
-         diagnostics_Diags_error(c->diags, ast_Decl_getLoc(d), "unknown module: '%s'", ast_idx2name(name_idx));
+         diagnostics_Diags_error(c->diags, ast_Decl_getLoc(d), "unknown module: '%s'", mod_name);
       }
       return;
    }
@@ -39375,10 +40112,24 @@ static void compiler_Compiler_analyse_component(compiler_Compiler* c, component_
    module_sorter_sort(comp, c->diags);
    if (component_Component_isExternal(comp)) {
       component_Component_visitModules(comp, compiler_Compiler_analyseUsedModule, c);
+      if (component_Component_getKind(comp) == component_Kind_ExternalStaticLib) compiler_Compiler_findStaticLib(c, comp);
       if (c->opts->print_lib_ast) component_Component_print(comp, true);
    } else {
       component_Component_visitModules(comp, compiler_Compiler_analyseModule, c);
    }
+}
+
+static void compiler_Compiler_findStaticLib(compiler_Compiler* c, component_Component* comp)
+{
+   char filename[512];
+   sprintf(filename, "lib%s.a", component_Component_getName(comp));
+   char fullname[512];
+   if (file_utils_make_path(fullname, 512, component_Component_getPath(comp), filename, NULL) && file_utils_is_file(fullname)) {
+      console_debug("found %s in %s", component_Component_getName(comp), component_Component_getPath(comp));
+      component_Component_setBinPath(comp, component_Component_getPathIdx(comp));
+      return;
+   }
+   diagnostics_Diags_error(c->diags, 0, "static library '%s' cannot be found", component_Component_getName(comp));
 }
 
 static void compiler_Compiler_checkMain(compiler_Compiler* c)
@@ -39414,7 +40165,7 @@ static void compiler_Compiler_checkMain(compiler_Compiler* c)
 static void compiler_Compiler_checkUnused(void* arg, ast_Module* m)
 {
    compiler_Compiler* c = arg;
-   unused_checker_check(c->diags, build_target_Target_getWarnings(c->target), m);
+   unused_checker_check(c->diags, c->astPool, build_target_Target_getWarnings(c->target), m);
 }
 
 
@@ -39429,6 +40180,7 @@ struct c2c_main_Options_ {
    bool print_timing;
    bool show_targets;
    bool show_plugins;
+   bool quiet_mode;
    bool no_plugins;
    bool use_ir_backend;
    bool trace_calls;
@@ -39438,6 +40190,7 @@ struct c2c_main_Options_ {
    const char* output_name;
    string_list_List targets;
    string_list_List files;
+   string_list_List features;
 };
 
 struct c2c_main_ArgumentParser_ {
@@ -39457,6 +40210,7 @@ struct c2c_main_Context_ {
    compiler_Options comp_opts;
    c2recipe_Recipe* recipe;
    build_file_Info* build_info;
+   char build_filename[512];
    int recipe_id;
    plugin_mgr_Mgr* plugins;
    const build_target_PluginList* pl;
@@ -39464,7 +40218,18 @@ struct c2c_main_Context_ {
    u32 plugins_feature;
 };
 
-static const char c2c_main_Recipe_help[979] = "---- recipe.txt ----\n\n"
+static const char c2c_main_GenMain[78] = "module %s_main;\n\n"
+                                         "public fn i32 main(i32 argc, char** argv) {\n"
+                                         "    return 0;\n"
+                                         "}\n";
+static const char c2c_main_GenRecipe[158] = "plugin deps_generator [all-targets files private]\n"
+                                            "plugin refs_generator [all-targets]\n\n"
+                                            "executable %s\n"
+                                            "    $warnings no-unused\n"
+                                            "    $backend c\n\n"
+                                            "    main.c2\n"
+                                            "end\n";
+static const char c2c_main_Recipe_help[975] = "---- recipe.txt ----\n\n"
                                               "plugin <name> [<plugin-options>]\n\n"
                                               "config <options>\n\n"
                                               "set <name>\n"
@@ -39478,14 +40243,14 @@ static const char c2c_main_Recipe_help[979] = "---- recipe.txt ----\n\n"
                                               "             <no-unused-parameter>\n"
                                               "             <no-unused-type>\n"
                                               "             <no-unused-module>\n"
-                                              "             <no-unused-import> \n"
+                                              "             <no-unused-import>\n"
                                               "             <no-unused-public>\n"
-                                              "             <no-unused-label> \n"
+                                              "             <no-unused-label>\n"
                                               "             <no-unused-enum-constant>\n"
                                               "             <no-unused-enum-assoc-value>\n"
                                               "             <no-unreachable-code>\n"
-                                              "             <unknown-attribute> \n"
-                                              "             <deprecated> \n"
+                                              "             <unknown-attribute>\n"
+                                              "             <deprecated>\n"
                                               "   $backend [c|ir] <check>\n"
                                               "                   <fast>\n"
                                               "                   <no-build>\n"
@@ -39503,13 +40268,14 @@ static const char c2c_main_Recipe_help[979] = "---- recipe.txt ----\n\n"
                                               "   other options same as executable\n"
                                               "end\n\n"
                                               "--------------------\n";
-static const char c2c_main_Usage_help[1831] = "Usage: c2c <options> [<targets>]\n"
+static const char c2c_main_Usage_help[1948] = "Usage: c2c <options> [<targets>]\n"
                                               "       c2c <options> <filenames>\n"
                                               "Options:\n"
                                               "  -a                print ASTs\n"
                                               "  -A                print Library ASTs\n"
                                               "  -b [file]         use specified build file\n"
                                               "  -d [dir]          change to [dir] first\n"
+                                              "  -Dfeature[=value] define global feature with optional value\n"
                                               "  -h                print this help\n"
                                               "  -i                use IR backend\n"
                                               "  -I                use IR backend and print generated IR\n"
@@ -39539,9 +40305,10 @@ static const char c2c_main_Usage_help[1831] = "Usage: c2c <options> [<targets>]\
                                               "  --showplugins     print available plugins\n"
                                               "  --target [triple] cross compile for a specified architecture\n"
                                               "  --targets         show available targets in recipe\n"
+                                              "  -q  --quiet       prevent compiler logging messages\n"
                                               "  --test            test mode (do not check for main() function)\n"
                                               "  --trace-calls     generate code that traces function calls\n"
-                                              "  --version         print version\n";
+                                              "  --version         print version;\n";
 static void c2c_main_Options_init(c2c_main_Options* opts, string_pool_Pool* pool);
 static void c2c_main_Options_free(c2c_main_Options* opts);
 static void c2c_main_write_file_or_die(const char* filename, string_buffer_Buf* buf);
@@ -39573,15 +40340,17 @@ int main(int argc, char** argv);
 
 static void c2c_main_Options_init(c2c_main_Options* opts, string_pool_Pool* pool)
 {
-   memset(opts, 0, 88);
+   memset(opts, 0, 112);
    string_list_List_init(&opts->targets, pool);
    string_list_List_init(&opts->files, pool);
+   string_list_List_init(&opts->features, pool);
 }
 
 static void c2c_main_Options_free(c2c_main_Options* opts)
 {
    string_list_List_free(&opts->targets);
    string_list_List_free(&opts->files);
+   string_list_List_free(&opts->features);
 }
 
 static void c2c_main_write_file_or_die(const char* filename, string_buffer_Buf* buf)
@@ -39600,19 +40369,10 @@ static void c2c_main_create_project(const char* name)
       exit(stdlib_EXIT_FAILURE);
    }
    string_buffer_Buf* buf = string_buffer_create(4096, false, 2);
-   string_buffer_Buf_print(buf, "module %s_main;\n\n"
-                                "public fn i32 main(i32 argc, char** argv) {\n\n"
-                                "    return 0;\n"
-                                "}\n", name);
+   string_buffer_Buf_print(buf, c2c_main_GenMain, name);
    c2c_main_write_file_or_die("main.c2", buf);
    string_buffer_Buf_clear(buf);
-   string_buffer_Buf_print(buf, "plugin deps_generator [all-targets files private]\n"
-                                "plugin refs_generator [all-targets]\n\n"
-                                "executable %s\n"
-                                "    $warnings no-unused\n"
-                                "    $backend c\n\n"
-                                "    main.c2\n"
-                                "end\n", name);
+   string_buffer_Buf_print(buf, c2c_main_GenRecipe, name);
    c2c_main_write_file_or_die("recipe.txt", buf);
    string_buffer_Buf_free(buf);
    console_log("created new project files");
@@ -39670,7 +40430,7 @@ static void c2c_main_ArgumentParser_unknownOption(c2c_main_ArgumentParser* ap, c
 
 static void c2c_main_parse_long_opt(c2c_main_ArgumentParser* ap, const char* arg, compiler_Options* comp_opts, c2c_main_Options* opts)
 {
-   switch (c2_strswitch(arg + 2, "\002I2\tbootstrap\005check\006create\004fast\bno-build\004help\vhelp-recipe\tnoplugins\bshowlibs\vshowplugins\006target\atargets\004test\vtrace-calls\004asan\004msan\005ubsan\aversion")) {
+   switch (c2_strswitch(arg + 2, "\002I2\tbootstrap\005check\006create\004fast\bno-build\004help\vhelp-recipe\tnoplugins\005quiet\bshowlibs\vshowplugins\006target\atargets\004test\vtrace-calls\004asan\004msan\005ubsan\aversion")) {
    case 2: // "I2"
       opts->use_ir_backend = true;
       comp_opts->print_all_ir = true;
@@ -39699,34 +40459,37 @@ static void c2c_main_parse_long_opt(c2c_main_ArgumentParser* ap, const char* arg
    case 10: // "noplugins"
       opts->no_plugins = true;
       break;
-   case 11: // "showlibs"
+   case 11: // "quiet"
+      opts->quiet_mode = true;
+      break;
+   case 12: // "showlibs"
       comp_opts->show_libs = true;
       break;
-   case 12: // "showplugins"
+   case 13: // "showplugins"
       opts->show_plugins = true;
       break;
-   case 13: // "target"
+   case 14: // "target"
       comp_opts->target_triple = c2c_main_ArgumentParser_getOptionArgument(ap, arg);
       break;
-   case 14: // "targets"
+   case 15: // "targets"
       opts->show_targets = true;
       break;
-   case 15: // "test"
+   case 16: // "test"
       comp_opts->test_mode = true;
       break;
-   case 16: // "trace-calls"
+   case 17: // "trace-calls"
       opts->trace_calls = true;
       break;
-   case 17: // "asan"
+   case 18: // "asan"
       comp_opts->asan = true;
       break;
-   case 18: // "msan"
+   case 19: // "msan"
       comp_opts->msan = true;
       break;
-   case 19: // "ubsan"
+   case 20: // "ubsan"
       comp_opts->ubsan = true;
       break;
-   case 20: // "version"
+   case 21: // "version"
       c2c_main_print_version();
       exit(stdlib_EXIT_SUCCESS);
    default:
@@ -39743,7 +40506,10 @@ static void c2c_main_parse_arguments(c2c_main_ArgumentParser* ap, compiler_Optio
             if (arg[1] == '-') {
                c2c_main_parse_long_opt(ap, arg, comp_opts, opts);
             } else {
-               if (strlen(arg) != 2) {
+               const char* argarg = NULL;
+               if (memchr("Ddbo", arg[1], 4)) {
+                  argarg = arg[2] ? &arg[2] : c2c_main_ArgumentParser_getOptionArgument(ap, arg);
+               } else if (strlen(arg) != 2) {
                   switch (c2_strswitch(arg + 1, "\004help\002lm")) {
                   case 2: // "help"
                      c2c_main_ArgumentParser_showHelp(ap);
@@ -39761,6 +40527,9 @@ static void c2c_main_parse_arguments(c2c_main_ArgumentParser* ap, compiler_Optio
                case 'A':
                   comp_opts->print_lib_ast = true;
                   break;
+               case 'D':
+                  string_list_List_addStr(&opts->features, argarg);
+                  break;
                case 'I':
                   opts->use_ir_backend = true;
                   comp_opts->print_ir = true;
@@ -39775,10 +40544,10 @@ static void c2c_main_parse_arguments(c2c_main_ArgumentParser* ap, compiler_Optio
                   comp_opts->print_ast = true;
                   break;
                case 'b':
-                  opts->build_file = c2c_main_ArgumentParser_getOptionArgument(ap, arg);
+                  opts->build_file = argarg;
                   break;
                case 'd':
-                  opts->other_dir = c2c_main_ArgumentParser_getOptionArgument(ap, arg);
+                  opts->other_dir = argarg;
                   break;
                case '?':
                case 'h':
@@ -39791,7 +40560,10 @@ static void c2c_main_parse_arguments(c2c_main_ArgumentParser* ap, compiler_Optio
                   comp_opts->print_modules = true;
                   break;
                case 'o':
-                  opts->output_name = c2c_main_ArgumentParser_getOptionArgument(ap, arg);
+                  opts->output_name = argarg;
+                  break;
+               case 'q':
+                  opts->quiet_mode = true;
                   break;
                case 'r':
                   comp_opts->print_reports += 1;
@@ -39856,7 +40628,7 @@ static void c2c_main_plugins_end_target(void* arg)
 
 static void c2c_main_Context_init(c2c_main_Context* c)
 {
-   memset(c, 0, 1264);
+   memset(c, 0, 1800);
    c->auxPool = string_pool_create(32 * 1024, 256);
    c->sm = source_mgr_create(c->auxPool);
    c->diags = diagnostics_create(c->sm, color_useColor(), &c->path_info);
@@ -39871,10 +40643,27 @@ static void c2c_main_Context_handle_args(c2c_main_Context* c, int argc, char** a
    c2c_main_parse_arguments(&ap, &c->comp_opts, &c->opts);
    console_setTiming(c->opts.print_timing);
    console_setDebug(c->opts.log_verbose);
+   console_setQuiet(c->opts.quiet_mode);
+   const char notFound[163] = "c2c: error: cannot find project root directory\n"
+                              "     c2c requires a %s file in the project root,\n"
+                              "     Use argument -h for c2c usage and a list of available options";
    if (c->opts.other_dir) {
-      if (chdir(c->opts.other_dir)) {
+      if (string_list_List_length(&c->opts.files)) {
+         console_error("c2c: The -d option cannot be combined with <files>");
+         exit(stdlib_EXIT_FAILURE);
+      }
+      u32 err = utils_changeToProjectDir(&c->path_info, c->opts.other_dir);
+      switch (err) {
+      case 0:
+         break;
+      case 2:
          console_error("c2c: cannot chdir to %s: %s", c->opts.other_dir, strerror((*__errno_location())));
          exit(stdlib_EXIT_FAILURE);
+         break;
+      case 3:
+         console_error(notFound, constants_recipe_name);
+         exit(stdlib_EXIT_FAILURE);
+         break;
       }
    }
    if (string_list_List_length(&c->opts.files)) {
@@ -39893,26 +40682,34 @@ static void c2c_main_Context_handle_args(c2c_main_Context* c, int argc, char** a
          console_error("c2c: the IR backend is currently experimental and only works on individual files, not recipes");
          exit(stdlib_EXIT_FAILURE);
       }
-      if (!utils_findProjectDir(&c->path_info)) {
-         console_error("c2c: error: cannot find project root directory\n"
-                       "     c2c requires a %s file in the project root,\n"
-                       "     Use argument -h for c2c usage and a list of available options", constants_recipe_name);
+      if (!c->opts.other_dir && !utils_findProjectDir(&c->path_info)) {
+         console_error(notFound, constants_recipe_name);
          exit(stdlib_EXIT_FAILURE);
       }
       c->recipe_id = source_mgr_SourceMgr_loadFile(c->sm, constants_recipe_name, 0);
       if (c->recipe_id == -1) exit(stdlib_EXIT_FAILURE);
       if (!c2recipe_Recipe_parse(c->recipe, c->recipe_id)) exit(stdlib_EXIT_FAILURE);
    }
+   bool auto_found_buildfile = false;
    if (!c->opts.build_file) {
       c->opts.build_file = utils_findBuildFile();
+      auto_found_buildfile = true;
    }
-   c->plugins = plugin_mgr_create(c->auxPool, c->opts.print_timing, c->opts.log_verbose, c->opts.no_plugins);
+   c->plugins = plugin_mgr_create(c->auxPool, console_getConfig(), c->opts.no_plugins);
+   bool have_plugin_dir = false;
    if (c->opts.build_file) {
-      console_log("using build-file %s", c->opts.build_file);
-      c->build_info = build_file_parser_parse(c->sm, c->auxPool, c->opts.build_file);
+      if (auto_found_buildfile) {
+         pstrcpy(c->build_filename, 512, c->opts.build_file);
+      } else {
+         size_t pos = pstrcpy(c->build_filename, 512, c->path_info.orig2root);
+         pstrcpy(c->build_filename + pos, 512 - pos, c->opts.build_file);
+      }
+      console_log("using build-file %s", c->build_filename);
+      c->build_info = build_file_parser_parse(c->sm, c->auxPool, c->build_filename);
       if (!c->build_info) exit(stdlib_EXIT_FAILURE);
       const string_list_List* plugin_dirs = build_file_Info_getPluginDirs(c->build_info);
       for (u32 i = 0; i < string_list_List_length(plugin_dirs); i++) {
+         have_plugin_dir = true;
          plugin_mgr_Mgr_addPath(c->plugins, string_list_List_get_idx(plugin_dirs, i));
       }
       if (!c->opts.show_plugins) {
@@ -39927,9 +40724,11 @@ static void c2c_main_Context_handle_args(c2c_main_Context* c, int argc, char** a
             }
          }
       }
-   } else {
+   }
+   if (!have_plugin_dir) {
       const char* plugin_dir = getenv("C2_PLUGINDIR");
       if (plugin_dir) string_utils_split_paths(plugin_dir, c, c2c_main_on_plugin_dir);
+      else console_warn("environment variable C2_PLUGINDIR not set!");
    }
    c->comp_opts.libdir = getenv("C2_LIBDIR");
    if (!c->comp_opts.libdir && !c->opts.build_file) {
@@ -40008,7 +40807,7 @@ static bool c2c_main_Context_build_target(c2c_main_Context* c, build_target_Targ
          return false;
       }
    }
-   compiler_build(c->auxPool, c->sm, c->diags, c->build_info, target, &c->comp_opts, &c->pluginHandler);
+   compiler_build(c->auxPool, c->sm, c->diags, c->build_info, target, &c->comp_opts, &c->opts.features, &c->pluginHandler);
    if (c->recipe_id != -1) source_mgr_SourceMgr_clear(c->sm, c->recipe_id);
    return diagnostics_Diags_getNumErrors(c->diags) > num_errors;
 }
@@ -40055,7 +40854,7 @@ static void c2c_main_Context_free(c2c_main_Context* c)
 
 int main(int argc, char** argv)
 {
-   console_init();
+   console_init(NULL);
    c2c_main_Context c; c2c_main_Context_init(&c);
    c2c_main_Context_handle_args(&c, argc, argv);
    c2c_main_Context_handle_plugins(&c);
