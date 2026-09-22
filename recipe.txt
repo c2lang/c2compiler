@@ -398,7 +398,12 @@ executable tester
 end
 
 executable c2cat
-	$warnings no-unused
+	#$warnings no-unused
+    $warnings no-unused-variable
+    $warnings no-unused-function
+    $warnings no-unused-parameter
+    $warnings no-unused-public
+    $warnings no-unused-enum-constant
 	$backend c
 
     ast_utils/attr.c2

@@ -17,8 +17,8 @@ module plugin_mgr;
 
 import other;
 
-import dlfcn local;
-import stdio local;
+import dlfcn { * }
+import stdio { * }
 
 type LoadFn fn void(i32 arg);
 

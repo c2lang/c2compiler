@@ -15,10 +15,11 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
-import string;
+import ast_context { Context }
+import string_buffer { Buf}
+import src_loc { SrcLoc }
+
+import string { memcpy }
 
 type InitListKind enum u8 {
     Struct,
@@ -39,14 +40,14 @@ public type InitListExpr struct @(opaque) {
     Expr*[0] values; // tail-allocated
 }
 
-public fn InitListExpr* InitListExpr.create(ast_context.Context* c, SrcLoc loc, SrcLoc endLoc, Expr** values, u32 num_values) {
+public fn InitListExpr* InitListExpr.create(Context* c, SrcLoc loc, SrcLoc endLoc, Expr** values, u32 num_values) {
     u32 size = sizeof(InitListExpr) + num_values * sizeof(Expr*);
     InitListExpr* e = c.alloc(size);
     e.base.init(InitList, loc, 0, 0, 0, RValue);
     e.endLoc = endLoc;
     e.num_values = num_values;
     if (num_values) {
-        string.memcpy(e.values, values, num_values * sizeof(Expr*));
+        memcpy(e.values, values, num_values * sizeof(Expr*));
     }
 #if AstStatistics
     Stats.addExpr(InitList, size);
@@ -110,7 +111,7 @@ public fn SrcLoc InitListExpr.getEndLoc(const InitListExpr* e) {
     return e.endLoc;
 }
 
-fn void InitListExpr.print(const InitListExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void InitListExpr.print(const InitListExpr* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     switch (e.getKind()) {
@@ -132,7 +133,7 @@ fn void InitListExpr.print(const InitListExpr* e, string_buffer.Buf* out, u32 in
     }
 }
 
-fn void InitListExpr.printLiteral(const InitListExpr* e, string_buffer.Buf* out) {
+fn void InitListExpr.printLiteral(const InitListExpr* e, Buf* out) {
     out.add("{ ");
     for (u32 i = 0; i < e.num_values; i++) {
         if (i != 0) out.add(", ");

@@ -15,9 +15,10 @@
 
 module ast_visitor;
 
-import ast local;
+import ast { * }
 
-import stdlib;
+import stdlib { calloc, free }
+
 public type OnRef fn void (void* arg, const Ref* ref);
 
 public type Visitor struct @(opaque) {
@@ -27,7 +28,7 @@ public type Visitor struct @(opaque) {
 }
 
 public fn Visitor* create(void* arg, OnRef on_ref, bool use_generated = false) {
-    Visitor* v = stdlib.calloc(1, sizeof(Visitor));
+    Visitor* v = calloc(1, sizeof(Visitor));
     v.arg = arg;
     v.on_ref = on_ref;
     v.use_generated = use_generated;
@@ -35,7 +36,7 @@ public fn Visitor* create(void* arg, OnRef on_ref, bool use_generated = false) {
 }
 
 public fn void Visitor.free(Visitor* v) {
-    stdlib.free(v);
+    free(v);
 }
 
 // only used by plugins

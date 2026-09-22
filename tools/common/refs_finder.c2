@@ -16,13 +16,13 @@
 module refs_finder;
 
 import file_utils;
-import string_pool;
+import string_pool { Pool }
 
-import c_errno local;
-import libc_dirent local;
-import stdio local;
-import stdlib local;
-import string;
+import c_errno { errno }
+import libc_dirent { * }
+import stdio { fprintf, stderr }
+import stdlib { malloc, free, exit, EXIT_FAILURE }
+import string { memcpy, strerror }
 
 public type Finder struct @(opaque) {
     const char* dirname;
@@ -31,7 +31,7 @@ public type Finder struct @(opaque) {
     u32 capacity;
     u32* results;
 
-    string_pool.Pool* pool;
+    Pool* pool;
 }
 
 public fn Finder* create(const char* dirname, const char* filename) {
@@ -63,7 +63,7 @@ public fn u32 Finder.search(Finder* f, const char* target) {
     }
     DIR* dir = opendir(f.dirname);
     if (dir == nil) {
-        fprintf(stderr, "cannot open library dir '%s': %s", f.dirname, string.strerror(errno));
+        fprintf(stderr, "cannot open library dir '%s': %s", f.dirname, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -89,7 +89,7 @@ fn void Finder.resize(Finder* f, u32 capacity) {
     f.capacity = capacity;
     u32* res2 = malloc(capacity * sizeof(u32));
     if (f.count) {
-        string.memcpy(res2, f.results, f.count * sizeof(u32));
+        memcpy(res2, f.results, f.count * sizeof(u32));
         free(f.results);
     }
     f.results = res2;

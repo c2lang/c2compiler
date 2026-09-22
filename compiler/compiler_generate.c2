@@ -17,7 +17,7 @@ module compiler;
 
 import c_generator;
 import c2i_generator;
-import component;
+import component { Component }
 import console;
 import file_list;
 import generator_utils;
@@ -28,7 +28,7 @@ import utils;
 
 fn void Compiler.generate(Compiler* c, const char* target_name, const char* output_dir) {
     // mark toplevel components
-    component.Component* mainComp = c.components.getLast();
+    Component* mainComp = c.components.getLast();
     generator_utils.mark_used(mainComp, &c.allmodules, c.opts.test_mode);
 
     if (c.mainComp.isSourceLib()) {

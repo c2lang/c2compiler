@@ -15,16 +15,16 @@
 
 module incr_array_list;
 
-import ast;
-import src_loc local;
+import ast { Expr, ExprList }
+import src_loc { SrcLoc }
 
-import string;
-import stdlib;
+import string { memcpy }
+import stdlib { malloc, free }
 
 public type Info struct {
     u32 name;
     SrcLoc loc; // only for first entry
-    ast.ExprList values;
+    ExprList values;
 }
 
 public type List struct {
@@ -37,7 +37,7 @@ public fn void List.free(List* v) {
     for (u32 i=0; i<v.count; i++) {
         v.entries[i].values.free();
     }
-    stdlib.free(v.entries);
+    free(v.entries);
     v.count = 0;
     v.capacity = 0;
     v.entries = nil;
@@ -45,15 +45,15 @@ public fn void List.free(List* v) {
 
 fn void List.resize(List* v) {
     v.capacity = v.capacity == 0 ? 4 : v.capacity * 2;
-    Info* entries2 = stdlib.malloc(v.capacity * sizeof(Info));
+    Info* entries2 = malloc(v.capacity * sizeof(Info));
     if (v.entries) {
-        string.memcpy(entries2, v.entries, v.count * sizeof(Info));
-        stdlib.free(v.entries);
+        memcpy(entries2, v.entries, v.count * sizeof(Info));
+        free(v.entries);
     }
     v.entries = entries2;
 }
 
-fn ast.ExprList* List.find(List* v, u32 name) {
+fn ExprList* List.find(List* v, u32 name) {
     for (u32 i=0; i<v.count; i++) {
         Info* info = &v.entries[i];
         if (info.name == name) return &info.values;
@@ -61,9 +61,9 @@ fn ast.ExprList* List.find(List* v, u32 name) {
     return nil;
 }
 
-public fn void List.add(List* v, u32 name, SrcLoc loc, ast.Expr* value) {
+public fn void List.add(List* v, u32 name, SrcLoc loc, Expr* value) {
     // search of Entry first
-    ast.ExprList* values = v.find(name);
+    ExprList* values = v.find(name);
 
     if (!values) {
         if (v.count == v.capacity) v.resize();

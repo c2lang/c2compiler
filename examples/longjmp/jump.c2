@@ -15,8 +15,8 @@
 
 module jump;
 
-import stdio local;
-import csetjmp local;
+import stdio { printf }
+import csetjmp { JmpBufTag, setjmp, longjmp }
 
 JmpBufTag env1;
 JmpBufTag env2;

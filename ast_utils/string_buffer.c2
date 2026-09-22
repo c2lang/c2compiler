@@ -15,12 +15,11 @@
 
 module string_buffer;
 
-import color local;
+import color { Color }
 
-import stdarg local;
-import stdio local;
-import stdlib local;
-import string local;
+import stdio { vsnprintf }
+import stdlib { malloc, realloc, free }
+import string { memcpy, strlen }
 
 public type Buf struct {
     u32 capacity;

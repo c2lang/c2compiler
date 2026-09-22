@@ -15,11 +15,11 @@
 
 module ast;
 
-import ast_context;
+import ast_context { Context }
 
-import stdio local;
-import stdlib local;
-import string local;
+import stdio { printf }
+import stdlib { malloc, free }
+import string { memcpy }
 
 /*
     This pool is used to lookup pointers to a certain type. It keeps 4 variants:
@@ -39,10 +39,10 @@ type StringTypePool struct {
     u32 capacity;
     StringTypeSlot* slots;
 
-    ast_context.Context* context;
+    Context* context;
 }
 
-fn void StringTypePool.init(StringTypePool* p, ast_context.Context* c) {
+fn void StringTypePool.init(StringTypePool* p, Context* c) {
     p.count = 0;
     p.capacity = 0;
     p.slots = nil;

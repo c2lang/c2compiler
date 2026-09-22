@@ -15,7 +15,7 @@
 
 module ir;
 
-import string local;
+import string { memset, memcpy }
 
 public type InstrBits struct {
     InstrKind kind : 8;

@@ -16,17 +16,17 @@
 module module_sorter;
 
 import ast;
-import component;
-import diagnostics;
+import component { Component }
+import diagnostics { Diags }
 import module_list;
-import dsm_sorter;
+import dsm_sorter { Sorter }
 
-import stdio local;
-import stdlib;
-import string;
+import stdio { printf }
+import stdlib { exit, malloc, free }
+import string { memcpy }
 
 // Sort modules according to imports. Modules without dependencies (inside this component) come first
-public fn void sort(component.Component* c, diagnostics.Diags* diags) {
+public fn void sort(Component* c, Diags* diags) {
     module_list.List* mods = c.getModules();
     const u32 count = mods.length();
     if (count <= 1) return;
@@ -39,7 +39,7 @@ public fn void sort(component.Component* c, diagnostics.Diags* diags) {
 
     // preparation
     ast.Module** orig = mods.get();
-    dsm_sorter.Sorter dsm.init(count);
+    Sorter dsm.init(count);
     s.modules = orig;
     s.dsm = &dsm;
 
@@ -52,24 +52,24 @@ public fn void sort(component.Component* c, diagnostics.Diags* diags) {
         diags.error(0, "circular dependency between modules");
         s.print();
         // TODO print dependency
-        stdlib.exit(-1);
+        exit(-1);
     }
 
     // re-order results
-    ast.Module** copy = stdlib.malloc(count * sizeof(ast.Module*));
-    string.memcpy(copy, orig, count * sizeof(ast.Module*));
+    ast.Module** copy = malloc(count * sizeof(ast.Module*));
+    memcpy(copy, orig, count * sizeof(ast.Module*));
     for (u32 i=0; i<count; i++) orig[i] = copy[sorted[i]];
-    stdlib.free(copy);
+    free(copy);
 
     dsm.free();
 }
 
 type ModuleSorter struct {
-    diagnostics.Diags* diags;
-    component.Component* comp;
+    Diags* diags;
+    Component* comp;
     u32 num_mods;
     ast.Module** modules;
-    dsm_sorter.Sorter* dsm;
+    Sorter* dsm;
     u32 cur_mod_idx;
 }
 

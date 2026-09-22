@@ -15,13 +15,13 @@
 
 module ir_generator;
 
-import ast local;
-import ir local;
-import ir_context;
-import value_type local;
+import ast { * }
+import ir { BlockId, BlockKind, CaseId }
+import ir_context { Context }
+import value_type { Value }
 
 fn void Generator.emitSwitchStmt(Generator* gen, const Stmt* s, u32 label_name) {
-    ir_context.Context* c = gen.ctx;
+    Context* c = gen.ctx;
     SwitchStmt* sw = (SwitchStmt*)s;
 
     // TODO handle switch (Decl* d = ..) ..
@@ -80,7 +80,7 @@ fn bool Generator.emitSwitchCase(Generator* gen,
                                  BlockId join_blk,
                                  CaseId caseId,
                                  bool prev_fallthrough) {
-    ir_context.Context* c = gen.ctx;
+    Context* c = gen.ctx;
 
     Expr* case_cond = sc.getCond(0);
     Value v = { }

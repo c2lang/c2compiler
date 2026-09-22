@@ -15,8 +15,8 @@
 
 module c2_parser;
 
-//import ast_builder local;   // BUG: should have to be imported
-import ast local;
+//import ast_builder { Builder }
+import ast { * }
 import c2_prec { Prec }
 import constants { MaxMultiString }
 import token { Kind, Token }

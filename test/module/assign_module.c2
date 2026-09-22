@@ -1,6 +1,6 @@
 module test;
 
-import string local;
+import string { * }
 
 fn void test1() {
     string++;   // @error{lvalue required as increment operand}

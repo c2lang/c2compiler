@@ -15,13 +15,13 @@
 
 module ir_context;
 
-import ir local;
-import color local;
-import string_buffer;
+import ir { * }
+import color { * }
+import string_buffer { Buf }
 
-import stdio;
-import stdlib;
-import string;
+import stdio { puts }
+import stdlib { calloc, free }
+import string { memset, strlen }
 
 Color col_Instr       = Normal;
 Color col_PseudoInstr = Bred;
@@ -47,7 +47,7 @@ type PrintHelper struct {
     const Context* c;
     const BlockList* blocks;
 
-    string_buffer.Buf* out;
+    Buf* out;
     // TODO resize (must be at least same size as nr of instructions in function
     u32* temp_ids; // index = instr_idx[from start of func), value is temp%
     u32 temp_count;
@@ -65,7 +65,7 @@ fn void PrintHelper.init(PrintHelper* ph, const Context* c) {
 
     ph.blocks = nil;
     ph.c = c;
-    ph.temp_ids = stdlib.calloc(MaxTemps, sizeof(u32));
+    ph.temp_ids = calloc(MaxTemps, sizeof(u32));
     ph.temp_count = 0;
     ph.cur_block = nil;
     ph.cur_info = nil;
@@ -73,18 +73,18 @@ fn void PrintHelper.init(PrintHelper* ph, const Context* c) {
 
 fn void PrintHelper.free(PrintHelper* ph) {
     ph.out.free();
-    stdlib.free(ph.temp_ids);
+    free(ph.temp_ids);
 }
 
 fn void PrintHelper.print(const PrintHelper* ph) {
     ph.out.color(color.Normal);
-    stdio.puts(ph.out.data());
+    puts(ph.out.data());
 }
 
 fn void PrintHelper.resetTemps(PrintHelper* ph, u32 num_args, u32 num_instr) {
     ph.temp_count = num_args;
     assert(num_instr < MaxTemps);
-    string.memset(ph.temp_ids, 0, num_instr*sizeof(u32));
+    memset(ph.temp_ids, 0, num_instr*sizeof(u32));
 }
 
 fn u32 PrintHelper.addTemp(PrintHelper* ph, u32 local_instr_idx) {
@@ -102,7 +102,7 @@ fn u32 PrintHelper.findTemp(PrintHelper* ph, u32 instr_idx) {
 }
 
 #if DebugIr
-fn void print_dest(string_buffer.Buf* out, BlockId id) {
+fn void print_dest(Buf* out, BlockId id) {
     if (id == 0) {
         out.add1('-');
     } else {
@@ -128,7 +128,7 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
     ph.blocks = &info.blocks;
     ph.cur_info = info;
 
-    string_buffer.Buf* out = ph.out;
+    Buf* out = ph.out;
 
     // Always start temps at 1
     ph.resetTemps(1, info.instructions.getCount());
@@ -248,7 +248,7 @@ fn void Context.print_function(const Context* c,
 
 public fn void Context.print(const Context* c) {
     PrintHelper ph.init(c);
-    string_buffer.Buf* out = ph.out;
+    Buf* out = ph.out;
 
     bool prev_is_var = false;
     for (u32 i=1; i<c.symbols.getCount(); i++) {
@@ -289,7 +289,7 @@ public fn void Context.print(const Context* c) {
     ph.free();
 }
 
-fn void PrintHelper.printInitValue(PrintHelper* ph, const InitValue* v, string_buffer.Buf* out) {
+fn void PrintHelper.printInitValue(PrintHelper* ph, const InitValue* v, Buf* out) {
     switch (v.getKind()) {
     case None:
         break;
@@ -327,7 +327,7 @@ fn void PrintHelper.printInitValue(PrintHelper* ph, const InitValue* v, string_b
         out.color(col_Data);
         // TODO: handle potential embelled null bytes
         const char* text = ph.c.pool.idx2str(v.value);
-        out.encodeBytes(text, (u32)string.strlen(text) + 1, '"');
+        out.encodeBytes(text, (u32)strlen(text) + 1, '"');
         break;
     case Zero:
         out.color(col_Data);
@@ -338,7 +338,7 @@ fn void PrintHelper.printInitValue(PrintHelper* ph, const InitValue* v, string_b
 
 fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk_instr_idx, u32 gbl_idx) {
     const Instr* i = &blk_instrs[blk_instr_idx];
-    string_buffer.Buf* out = ph.out;
+    Buf* out = ph.out;
 
     InstrKind k = i.getKind();
 
@@ -473,7 +473,7 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
 }
 
 fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
-    string_buffer.Buf* out = ph.out;
+    Buf* out = ph.out;
     switch (r.getKind()) {
     case None:
         out.add("(none)");
@@ -552,14 +552,14 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
 
 
 fn void dump_function(const FunctionInfo* info, const char* name) @(unused) {
-    string_buffer.Buf* out = string_buffer.create(16*1024, false, 1);
+    Buf* out = string_buffer.create(16*1024, false, 1);
     out.print("function %s:\n", name);
     dump_function_info(out, info);
-    stdio.puts(out.data());
+    puts(out.data());
     out.free();
 }
 
-fn void dump_function_info(string_buffer.Buf* out, const FunctionInfo* info) @(unused) {
+fn void dump_function_info(Buf* out, const FunctionInfo* info) @(unused) {
     out.add("  blocks:\n");
     for (u32 j=0; j<info.blocks.getCount(); j++) {
         const Block* b = info.blocks.get(j);
@@ -605,7 +605,7 @@ fn void dump_function_info(string_buffer.Buf* out, const FunctionInfo* info) @(u
 }
 
 public fn void Context.dump(const Context* c) @(unused) {
-    string_buffer.Buf* out = string_buffer.create(16*1024, false, 1);
+    Buf* out = string_buffer.create(16*1024, false, 1);
 
     out.print("symbols: (%d)\n", c.symbols.getCount());
     for (u32 i=1; i<c.symbols.getCount(); i++) {
@@ -644,7 +644,7 @@ public fn void Context.dump(const Context* c) @(unused) {
         out.newline();
     }
 
-    stdio.puts(out.data());
+    puts(out.data());
     out.free();
 }
 
@@ -652,7 +652,7 @@ public fn void Context.dump(const Context* c) @(unused) {
 public fn void Context.dump_temps(const Context* c) @(unused) {
     if (c.tmp_info.blocks.getCount() == 0) return;
 
-    string_buffer.Buf* out = string_buffer.create(16*1024, false, 1);
+    Buf* out = string_buffer.create(16*1024, false, 1);
 
     out.add("temp blocks:\n");
     for (u32 i=0; i<c.tmp_info.blocks.getCount(); i++) {
@@ -676,13 +676,13 @@ public fn void Context.dump_temps(const Context* c) @(unused) {
     }
     out.newline();
 
-    stdio.puts(out.data());
+    puts(out.data());
     out.free();
 }
 #endif
 
 public fn void Context.report(const Context* c) @(unused) {
-    string_buffer.Buf* out = string_buffer.create(256, false, 1);
+    Buf* out = string_buffer.create(256, false, 1);
 
     u32 total_blocks = 0;
     u32 total_instr = 0;
@@ -708,7 +708,7 @@ public fn void Context.report(const Context* c) @(unused) {
         c.symbols.count, total_globals, total_functions, c.constants.count,
         total_blocks, total_instr, c.init_values.getCount());
 
-    stdio.puts(out.data());
+    puts(out.data());
     out.free();
 }
 

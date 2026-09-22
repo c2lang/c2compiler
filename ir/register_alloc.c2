@@ -15,13 +15,13 @@
 
 module ir_tools;
 
-import ir_rpo;
-import ir local;
-import ir_interference_graph local;
+import ir_rpo { Rpo }
+import ir { * }
+import ir_interference_graph { InterferenceGraph }
 import ir_live_map;
 
-import stdio local;
-import stdlib;
+import stdio { printf }
+import stdlib { malloc, free }
 
 type LiveVector struct {
     u32 count;
@@ -39,7 +39,7 @@ fn void LiveVector.init(LiveVector* v, u32 num_blocks, u32 num_instr) {
     v.count = 0;
     v.cap = 1024;
     v.num_instr = num_instr;
-    v.temps = stdlib.malloc(v.cap * sizeof(u32));
+    v.temps = malloc(v.cap * sizeof(u32));
     assert(num_instr <= u16.max);
     u16 num_regs = 8;  // always 8 for now (just for call return+args)
 
@@ -54,7 +54,7 @@ fn void LiveVector.free(LiveVector* v) {
     v.live_out.free();
     v.live_in.free();
     v.interferences.free();
-    stdlib.free(v.temps);
+    free(v.temps);
 }
 
 fn void LiveVector.add(LiveVector* v, u32 idx) {
@@ -569,7 +569,7 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
     Block* blocks = fi.blocks.get(0);
 
     // Liveness part 1: initial LiveIn/Out
-    ir_rpo.Rpo rpo.create(fi); // TODO re-use
+    Rpo rpo.create(fi); // TODO re-use
 
     LiveVector v.init(num_blocks, fi.instructions.getCount());  // TODO re-use
 

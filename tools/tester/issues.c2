@@ -15,9 +15,9 @@
 
 module issues;
 
-import stdio local; // for dump()
-import stdlib local;
-import string local;
+import stdio { printf } // for dump()
+import stdlib { calloc, malloc, free }
+import string { strcmp, memcpy, strlen }
 
 type Issue struct {
     u32 filename; // into Issues' string pool

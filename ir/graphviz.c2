@@ -15,15 +15,14 @@
 
 module ir_tools;
 
-import ir local;
+import ir { * }
+import string_buffer { Buf }
 
-import string_buffer;
-
-import stdio;
+import stdio { puts }
 
 // Note: Tools not used
 fn void Tools.generate_graphviz(Tools* t, FunctionInfo* fi) @(unused) {
-    string_buffer.Buf * out = string_buffer.create(16*1024, false, 2);
+    Buf * out = string_buffer.create(16*1024, false, 2);
 
     out.add("-------------\n");
     out.add(
@@ -50,7 +49,7 @@ fn void Tools.generate_graphviz(Tools* t, FunctionInfo* fi) @(unused) {
     out.add("}\n");
     out.add("-------------\n");
 
-    stdio.puts(out.data());
+    puts(out.data());
     out.free();
 }
 

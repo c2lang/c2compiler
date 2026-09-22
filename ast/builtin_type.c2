@@ -15,8 +15,8 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
+import ast_context { Context }
+import string_buffer { Buf }
 
 // Note: dont change positions, since they are used to check interval
 public type BuiltinKind enum u8 (public const char* const name,
@@ -56,7 +56,7 @@ public type BuiltinType struct @(opaque) {
     Type base;
 }
 
-fn BuiltinType* BuiltinType.create(ast_context.Context* c, BuiltinKind kind) {
+fn BuiltinType* BuiltinType.create(Context* c, BuiltinKind kind) {
     BuiltinKind base_kind = kind;
     if (kind == ISize) base_kind = (c.getWordSize() == 4) ? Int32 : Int64;
     if (kind == USize) base_kind = (c.getWordSize() == 4) ? UInt32 : UInt64;
@@ -126,11 +126,11 @@ public fn u32 BuiltinType.getWidth(const BuiltinType* b) {
     return b.base.builtinTypeBits.width;
 }
 
-fn void BuiltinType.print(const BuiltinType* b, string_buffer.Buf* out) {
+fn void BuiltinType.print(const BuiltinType* b, Buf* out) {
     out.add(b.getKind().name);
 }
 
-fn void BuiltinType.fullPrint(const BuiltinType* t, string_buffer.Buf* out, u32 indent) {
+fn void BuiltinType.fullPrint(const BuiltinType* t, Buf* out, u32 indent) {
     out.indent(indent);
     out.print("BuiltinType [%p] %s\n", t, t.getKind().name);
 }

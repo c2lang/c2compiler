@@ -15,12 +15,12 @@
 
 module multicast_sender;
 
-import stdio local;
-import stdlib local;
-import unistd local;
-import c_errno local;
-import string local;
-import sys_socket local;
+import c_errno { errno }
+import stdio { fprintf, stderr }
+import stdlib { exit, EXIT_FAILURE }
+import string { strerror, memset, pstrcpy }
+import sys_socket { * }
+import unistd { close }
 
 public type Sender struct {
     i32 fd;

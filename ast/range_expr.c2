@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 public type RangeExpr struct @(opaque) {
     Expr base;
@@ -25,7 +25,7 @@ public type RangeExpr struct @(opaque) {
     Expr* rhs;
 }
 
-public fn RangeExpr* RangeExpr.create(ast_context.Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) {
+public fn RangeExpr* RangeExpr.create(Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) {
     RangeExpr* e = c.alloc(sizeof(RangeExpr));
     e.base.init(Range, loc, 0, 0, false, RValue);
     e.lhs = lhs;
@@ -58,7 +58,7 @@ fn SrcLoc RangeExpr.getEndLoc(const RangeExpr* e) {
     return e.base.base.loc + 3;
 }
 
-fn void RangeExpr.print(const RangeExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void RangeExpr.print(const RangeExpr* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.newline();
@@ -67,7 +67,7 @@ fn void RangeExpr.print(const RangeExpr* e, string_buffer.Buf* out, u32 indent) 
     if (e.rhs) e.rhs.print(out, indent + 1);
 }
 
-fn void RangeExpr.printLiteral(const RangeExpr* e, string_buffer.Buf* out) {
+fn void RangeExpr.printLiteral(const RangeExpr* e, Buf* out) {
     if (e.lhs && e.lhs.getLoc()) {
         e.lhs.printLiteral(out);
         out.space();

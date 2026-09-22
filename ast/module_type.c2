@@ -15,8 +15,8 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
+import ast_context { Context }
+import string_buffer { Buf }
 
 public type ModuleType struct @(opaque) {
     Type base;
@@ -24,7 +24,7 @@ public type ModuleType struct @(opaque) {
 }
 
 // Note: non-public since only Module.create will create a ModuleType
-fn ModuleType* ModuleType.create(ast_context.Context* c, Module* mod) {
+fn ModuleType* ModuleType.create(Context* c, Module* mod) {
     ModuleType* t = c.alloc(sizeof(ModuleType));
     t.base.init(Module);
     t.mod = mod;
@@ -41,11 +41,11 @@ public fn Module* ModuleType.getModule(const ModuleType* t) {
     return t.mod;
 }
 
-fn void ModuleType.print(const ModuleType* t, string_buffer.Buf* out) {
+fn void ModuleType.print(const ModuleType* t, Buf* out) {
     out.print("Module %s", t.mod.getName());
 }
 
-fn void ModuleType.fullPrint(const ModuleType* t, string_buffer.Buf* out, u32 indent) {
+fn void ModuleType.fullPrint(const ModuleType* t, Buf* out, u32 indent) {
     out.indent(indent);
     out.print("ModuleType %s\n", t.mod.getName());
 }

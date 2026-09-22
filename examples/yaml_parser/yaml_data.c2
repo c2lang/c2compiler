@@ -15,8 +15,8 @@
 
 module yaml;
 
-import string local;
-import stdlib local;
+import string { memset, memcpy }
+import stdlib { malloc, free }
 
 const u32 MaxDepth = 8;
 

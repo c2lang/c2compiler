@@ -16,8 +16,8 @@
 module ast;
 
 #if AstStatistics
-import stdio local;
-import string;
+import stdio { printf, snprintf }
+import string { memset }
 
 const u32 NCat = 1;             // 32 for fine grained analysis
 const u32 BucketWidth = 8;      // 4 or less for slack analysis
@@ -36,7 +36,7 @@ type Stats struct {
 }
 
 fn void Stats.reset(Stats* s) {
-    string.memset(s, 0, sizeof(Stats));
+    memset(s, 0, sizeof(Stats));
 }
 
 fn void Stat.add(Stat* ss, u32 size) {

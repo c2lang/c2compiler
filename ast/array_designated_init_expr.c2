@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 public type ArrayDesignatedInitExprKind enum u8 {
     Single, Range, Slice
@@ -37,7 +37,7 @@ public type ArrayDesignatedInitExpr struct @(opaque) {
     Expr*[0] expr;
 }
 
-public fn ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(ast_context.Context* c,
+public fn ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(Context* c,
                                                                   SrcLoc loc,
                                                                   Expr* expr1,
                                                                   Expr* expr2,
@@ -113,7 +113,7 @@ fn SrcLoc ArrayDesignatedInitExpr.getEndLoc(const ArrayDesignatedInitExpr* e) {
     return e.initValue.getEndLoc();
 }
 
-fn void ArrayDesignatedInitExpr.print(const ArrayDesignatedInitExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void ArrayDesignatedInitExpr.print(const ArrayDesignatedInitExpr* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     switch (e.getKind()) {
@@ -132,7 +132,7 @@ fn void ArrayDesignatedInitExpr.print(const ArrayDesignatedInitExpr* e, string_b
     if (e.hasExpr2()) e.getExpr2().print(out, indent + 1);
 }
 
-fn void ArrayDesignatedInitExpr.printLiteral(const ArrayDesignatedInitExpr* e, string_buffer.Buf* out) {
+fn void ArrayDesignatedInitExpr.printLiteral(const ArrayDesignatedInitExpr* e, Buf* out) {
     out.add1('[');
     if (e.hasExpr1()) {
         e.getExpr1().printLiteral(out);

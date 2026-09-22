@@ -1,7 +1,5 @@
 module stdio extern "C";
 
-import stdarg local;
-
 // possibilities for the third argument to 'setvbuf'
 const u8 _IOFBF = 0; // fully buffered
 const u8 _IOLBF = 1; // line buffering

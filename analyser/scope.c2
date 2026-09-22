@@ -16,16 +16,16 @@
 module scope;
 
 import ast;
-import diagnostics;
+import diagnostics { Diags }
 import levenshtein;
 import module_list;
 import constants;
-import src_loc local;
-import string_pool;
+import src_loc { SrcLoc }
+import string_pool { Pool }
 
-import stdio;
-import stdlib;
-import string;
+import stdio { printf }
+import stdlib { malloc, calloc, free }
+import string { memcpy, strlen }
 
 public const u32 Function    = 0x1;
 public const u32 Break       = 0x2;
@@ -44,8 +44,8 @@ type Level struct {
 
 public type Scope struct @(opaque) {
     // global scope
-    diagnostics.Diags* diags;
-    string_pool.Pool* astPool;
+    Diags* diags;
+    Pool* astPool;
     const module_list.List* allmodules;
     const ast.ImportDeclList* imports;
     const ast.Module* mod;
@@ -72,14 +72,14 @@ public type Scope struct @(opaque) {
 }
 
 public fn Scope* create(module_list.List* allmodules,
-                          diagnostics.Diags* diags,
-                          string_pool.Pool* astPool,
+                          Diags* diags,
+                          Pool* astPool,
                           const ast.ImportDeclList* imports,
                           ast.Module* mod,
                           const ast.SymbolTable* symbols,
                           bool warn_on_unused)
 {
-    Scope* s = stdlib.calloc(1, sizeof(Scope));
+    Scope* s = calloc(1, sizeof(Scope));
     s.diags = diags;
     s.astPool = astPool;
     s.allmodules = allmodules;
@@ -96,12 +96,12 @@ public fn Scope* create(module_list.List* allmodules,
 }
 
 public fn void Scope.free(Scope* s) {
-    stdlib.free(s.cache_imports);
-    stdlib.free(s.cache_decls);
-    stdlib.free(s.stack_symbols);
-    stdlib.free(s.cache_symbols);
-    stdlib.free(s.stack_decls);
-    stdlib.free(s);
+    free(s.cache_imports);
+    free(s.cache_decls);
+    free(s.stack_symbols);
+    free(s.cache_symbols);
+    free(s.stack_decls);
+    free(s);
 }
 
 public fn void Scope.reset(Scope* s) {
@@ -206,31 +206,31 @@ fn void Scope.stack_add(Scope* s, u32 name_idx, ast.Decl* d) {
 }
 
 fn void Scope.stack_resize(Scope* s, u32 capacity) {
-    u32* symbols = stdlib.malloc(capacity * sizeof(u32));
-    ast.Decl** decls = stdlib.malloc(capacity * sizeof(ast.Decl*));
+    u32* symbols = malloc(capacity * sizeof(u32));
+    ast.Decl** decls = malloc(capacity * sizeof(ast.Decl*));
     s.stack_capacity = capacity;
     if (s.stack_count) {
-        string.memcpy(symbols, s.stack_symbols, s.stack_count * sizeof(u32));
-        string.memcpy(decls, s.stack_decls, s.stack_count * sizeof(ast.Decl*));
-        stdlib.free(s.stack_decls);
-        stdlib.free(s.stack_symbols);
+        memcpy(symbols, s.stack_symbols, s.stack_count * sizeof(u32));
+        memcpy(decls, s.stack_decls, s.stack_count * sizeof(ast.Decl*));
+        free(s.stack_decls);
+        free(s.stack_symbols);
     }
     s.stack_symbols = symbols;
     s.stack_decls = decls;
 }
 
 fn void Scope.cache_resize(Scope* s, u32 capacity) {
-    u32* symbols = stdlib.malloc(capacity * sizeof(u32));
-    ast.Decl** decls = stdlib.malloc(capacity * sizeof(ast.Decl*));
-    ast.ImportDecl** imports = stdlib.malloc(capacity * sizeof(ast.ImportDecl*));
+    u32* symbols = malloc(capacity * sizeof(u32));
+    ast.Decl** decls = malloc(capacity * sizeof(ast.Decl*));
+    ast.ImportDecl** imports = malloc(capacity * sizeof(ast.ImportDecl*));
     s.cache_capacity = capacity;
     if (s.cache_count) {
-        string.memcpy(symbols, s.cache_symbols, s.cache_count * sizeof(u32));
-        string.memcpy(decls, s.cache_decls, s.cache_count * sizeof(ast.Decl*));
-        string.memcpy(imports, s.cache_imports, s.cache_count * sizeof(ast.ImportDecl*));
-        stdlib.free(s.cache_imports);
-        stdlib.free(s.cache_decls);
-        stdlib.free(s.cache_symbols);
+        memcpy(symbols, s.cache_symbols, s.cache_count * sizeof(u32));
+        memcpy(decls, s.cache_decls, s.cache_count * sizeof(ast.Decl*));
+        memcpy(imports, s.cache_imports, s.cache_count * sizeof(ast.ImportDecl*));
+        free(s.cache_imports);
+        free(s.cache_decls);
+        free(s.cache_symbols);
     }
     s.cache_symbols = symbols;
     s.cache_decls = decls;
@@ -309,7 +309,7 @@ fn const char* Scope.findBestMatch(const Scope* s, u32 name_idx, const char* nam
             // TODO make suggestion based on symbols in all modules
     for (u32 i=0; i<s.stack_count; i++) {
         const char* name2 = s.idx2name(s.stack_symbols[i]);
-        usize len2 = string.strlen(name2);
+        usize len2 = strlen(name2);
         usize dist = levenshtein.dist(name1, len1, name2, len2);
         if (dist < best_dist) {
             best_dist = dist;
@@ -320,7 +320,7 @@ fn const char* Scope.findBestMatch(const Scope* s, u32 name_idx, const char* nam
 
     if (best_dist <= max_dist) return hint;
 
-    // search perfect match (u32) in modules that are not imported locally (printf -> stdio.printf)
+    // search perfect match (u32) in modules that are not imported locally (printf -> printf)
     for (u32 i = 0; i < s.imports.size(); i++) {
         ast.ImportDecl* id = s.imports.get(i);
         if (id.isLocal()) continue;
@@ -338,7 +338,7 @@ fn const char* Scope.findBestMatch(const Scope* s, u32 name_idx, const char* nam
         u32 num_syms = st.num_public + st.num_private;
         for (u32 j=0; j<num_syms; j++) {
             const char* name2 = s.idx2name(st.symbols[j]);
-            usize len2 = string.strlen(name2);
+            usize len2 = strlen(name2);
             usize dist = levenshtein.dist(name1, len1, name2, len2);
             if (dist < best_dist) {
                 best_dist = dist;
@@ -381,7 +381,7 @@ public fn ast.Decl* Scope.find(Scope* s, u32 name_idx, SrcLoc loc, bool usedPubl
             s.diags.error(loc, "use of unimported module '%s'", name);
             return nil;
         }
-        const char* hint = s.findBestMatch(name_idx, name, string.strlen(name));
+        const char* hint = s.findBestMatch(name_idx, name, strlen(name));
         if (hint) {
             s.diags.error(loc, "use of undeclared identifier '%s'; did you mean '%s'?", name, hint);
         } else {
@@ -584,10 +584,10 @@ fn ast.Decl* Scope.findGlobalSymbol(Scope* s, u32 name_idx, SrcLoc loc, bool* ot
 
 public fn void Scope.dump(const Scope* s) @(unused) {
     //s.local_scope.dump();
-    stdio.printf("Scope (lvl %d) %d\n", s.lvl, s.stack_count);
+    printf("Scope (lvl %d) %d\n", s.lvl, s.stack_count);
     for (u32 i=0; i<s.lvl; i++) {
         const Level* l = &s.levels[i];
-        stdio.printf("  [%d]  start %2d  flags 0x%02x\n", i, l.first_index, l.flags);
+        printf("  [%d]  start %2d  flags 0x%02x\n", i, l.first_index, l.flags);
     }
 }
 

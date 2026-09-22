@@ -15,10 +15,10 @@
 
 module script;
 
-import stdio local;
+import stdio { * }
 import lua;
-import lua_auxlib local;
-import lua_lib local;
+import lua_auxlib { * }
+import lua_lib { * }
 import color;
 import unistd;
 

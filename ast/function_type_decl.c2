@@ -15,15 +15,15 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
+import ast_context { Context }
+import string_buffer { Buf}
 
 public type FunctionTypeDecl struct @(opaque) {
     Decl base;
     FunctionDecl* func;
 }
 
-public fn FunctionTypeDecl* FunctionTypeDecl.create(ast_context.Context* c, FunctionDecl* func, u32 ast_idx) {
+public fn FunctionTypeDecl* FunctionTypeDecl.create(Context* c, FunctionDecl* func, u32 ast_idx) {
     FunctionTypeDecl* ftd = c.alloc(sizeof(FunctionTypeDecl));
     Decl* d = func.asDecl();
     ftd.base.init(FunctionType, d.getNameIdx(), d.getLoc(), d.isPublic(), d.getType(), ast_idx);
@@ -42,7 +42,7 @@ public fn FunctionDecl* FunctionTypeDecl.getDecl(const FunctionTypeDecl* d) {
     return d.func;
 }
 
-fn void FunctionTypeDecl.print(const FunctionTypeDecl* d, string_buffer.Buf* out, u32 indent) {
+fn void FunctionTypeDecl.print(const FunctionTypeDecl* d, Buf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Decl);
     out.add("FunctionTypeDecl");

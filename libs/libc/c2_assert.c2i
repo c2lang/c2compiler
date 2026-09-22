@@ -1,8 +1,7 @@
 module c2_assert;
 
-import stdio local;
-import stdarg local;
-import stdlib local;
+import stdio { * }
+import stdlib { abort }
 
 public fn i32 c2_assert_fail(const char* filename @(auto_file),
                              u32 line @(auto_line),

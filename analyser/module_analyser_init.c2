@@ -15,11 +15,11 @@
 
 module module_analyser;
 
-import ast local;
+import ast { * }
 import ctv_analyser;
 import init_checker;
-import src_loc local;
-import value_type local;
+import src_loc { SrcLoc }
+import value_type { Value }
 
 fn bool Analyser.analyseInitExpr(Analyser* ma, Expr** e_ptr, QualType expectedType, SrcLoc assignLoc, bool is_bitfield, bool is_default_param) {
     Expr* e = *e_ptr;

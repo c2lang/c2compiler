@@ -15,12 +15,12 @@
 
 module event_test;
 
-import csignal local;
-import string local;
-import stdlib local;
-import stdio local;
-import unistd local;
-import example_socket local;
+import csignal { * }
+import string { memset }
+import stdlib { exit, EXIT_SUCCESS, EXIT_FAILURE }
+import stdio { fprintf, stderr }
+import unistd { * }
+import example_socket { Socket }
 import events;
 import logger;
 

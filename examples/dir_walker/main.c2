@@ -15,10 +15,10 @@
 
 module mod_main;
 
-import stdio local;
-import string local;
-import libc_dirent local;
-import c_errno local;
+import stdio { printf, fprintf, stderr }
+import string { pstrcpy, strerror, strcmp }
+import libc_dirent { * }
+import c_errno { errno }
 
 fn void print_indent(i32 indent) {
     printf("%*s", indent * 2, "");

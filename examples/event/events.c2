@@ -15,13 +15,13 @@
 
 module events;
 
-import stdlib local;
-import unistd local;
+import stdlib { exit, EXIT_FAILURE }
+import unistd { read, write, pipe2 }
 import sys_time;
-import stdio local;
-import string local;
-import libc_poll local;
-import libc_fcntl local;
+import stdio { printf, fprintf, stderr }
+import string { memset }
+import libc_poll { * }
+import libc_fcntl { * }
 
 public fn u64 current_time() {
     sys_time.Timeval tv;

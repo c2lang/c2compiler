@@ -1,6 +1,6 @@
 module test;
 
-import stdio local;
+import stdio { printf }
 
 public fn i32 main(i32 argc, const char** argv) {
     printf("Hello C2!\n");

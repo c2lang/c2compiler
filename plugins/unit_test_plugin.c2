@@ -15,15 +15,15 @@
 
 module plugin_main;
 
-import ast local;
-import attr local;
+import ast { * }
+import attr { Attr }
 import console;
 import plugin_info;
-import string_buffer;
+import string_buffer { Buf }
 import utils;
 
-import stdlib local;
-import string;
+import stdlib { calloc, free }
+import string { strncmp }
 
 public plugin_info.Plugin handle @(export) = {
     .load = load,
@@ -91,7 +91,7 @@ const char[] Content1 @(embed="plugins/unit_test1.c2");
 const char[] Content2 @(embed="plugins/unit_test2.c2");
 
 fn void generate_types(Plugin* p) {
-    string_buffer.Buf* out = string_buffer.create(4096, false, 2);
+    Buf* out = string_buffer.create(4096, false, 2);
 
     out.add(Content1);
     p.info.addSource(p.info.fn_arg, "generated", out);
@@ -130,7 +130,7 @@ fn void Plugin.handleTypeFunc(void* arg, FunctionDecl* fd) {
     }
 
     const char* name = p.getName(d);
-    if (string.strncmp("test", name, 4) != 0) return;
+    if (strncmp("test", name, 4) != 0) return;
 
     p.tests.add(fd);
 }
@@ -151,7 +151,7 @@ fn void generate_tests(void* arg) {
         // TODO multiple test-groups in single module
         m.visitTypeFunctions(Plugin.handleTypeFunc, p);
 
-        string_buffer.Buf* out = string_buffer.create(512, false, 2);
+        Buf* out = string_buffer.create(512, false, 2);
         out.print("module %s;\n\n", m.getName());
         out.add("import c2test as ct;\n\n");
 
@@ -193,12 +193,12 @@ fn void generate_tests(void* arg) {
 }
 
 fn void Plugin.generate_c2test_main(Plugin* p) {
-    string_buffer.Buf* out = string_buffer.create(1024, false, 2);
+    Buf* out = string_buffer.create(1024, false, 2);
 
     // Note: this would be so much easier if we used the load_file plugin. But that
     // would make the build process a lot more complicated.
     out.add("module c2test_main;\n\n");
-    out.add("import c2test local;\n\n");
+    out.add("import c2test { * }\n\n");
 
     for (u32 i=0; i<p.decls.size(); i++) {
         Module* m = p.decls.get(i).getModule();

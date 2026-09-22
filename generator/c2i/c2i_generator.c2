@@ -15,17 +15,17 @@
 
 module c2i_generator;
 
-import ast local;
-import component;
+import ast { * }
+import component { Component }
 import console;
 import file_utils;
-import string_buffer;
+import string_buffer { Buf }
 import string_list;
-import string_pool;
+import string_pool { Pool }
 
 type Generator struct {
-    string_pool.Pool* astPool;
-    string_buffer.Buf* out;
+    Pool* astPool;
+    Buf* out;
     const char* output_dir;
     string_list.List imports;  // used to filter out duplicate imports (from different ASTs)
     Module* mod;
@@ -38,18 +38,18 @@ fn const char* Generator.idx2name(const Generator* gen, u32 name_idx) {
     return gen.astPool.idx2str(name_idx);
 }
 
-public fn void generate(string_pool.Pool* astPool, const char* output_dir, component.List* comps)
+public fn void generate(Pool* astPool, const char* output_dir, component.List* comps)
 {
     Generator gen = {}
     gen.astPool = astPool;
     gen.out = string_buffer.create(64*1024, false, 3);
     gen.output_dir = output_dir;
 
-    component.Component* mainComp = comps.getLast();
+    Component* mainComp = comps.getLast();
 
     // generate external components
     for (u32 i=0; i<comps.size(); i++) {
-        component.Component* c = comps.get(i);
+        Component* c = comps.get(i);
         c.visitModules(Generator.on_module, &gen);
     }
     // generate main module
@@ -108,6 +108,6 @@ fn void on_decl(void* arg, Decl* d) {
     gen.emitGlobalDecl(d);
 }
 
-fn void Generator.emitName(Generator* gen, string_buffer.Buf* out, const Decl* d) {
+fn void Generator.emitName(Generator* gen, Buf* out, const Decl* d) {
     out.add(gen.idx2name(d.getNameIdx()));
 }

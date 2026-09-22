@@ -15,10 +15,10 @@
 
 module init_checker;
 
-import src_loc local;
+import src_loc { SrcLoc }
 
-import stdlib;
-import string;
+import stdlib { malloc, free }
+import string { memcpy }
 
 public type InitEntry struct {
     u32 index;
@@ -35,7 +35,7 @@ public type Checker struct {
 // Note: no create/init since zero-initialized
 
 public fn void Checker.free(Checker* c) {
-    stdlib.free(c.entries);
+    free(c.entries);
     c.entries = nil;
     c.count = 0;
     c.capacity = 0;
@@ -54,10 +54,10 @@ public fn u32 Checker.getCount(const Checker* c) {
 public fn void Checker.add(Checker* c, u32 index, SrcLoc loc) {
     if (c.count >= c.capacity) {
         c.capacity = c.capacity ? c.capacity * 2 : 8;
-        InitEntry* entries = stdlib.malloc(c.capacity * sizeof(InitEntry));
+        InitEntry* entries = malloc(c.capacity * sizeof(InitEntry));
         if (c.entries) {
-            string.memcpy(entries, c.entries, c.count * sizeof(InitEntry));
-            stdlib.free(c.entries);
+            memcpy(entries, c.entries, c.count * sizeof(InitEntry));
+            free(c.entries);
         }
         c.entries = entries;
     }

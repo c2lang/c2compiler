@@ -26,7 +26,7 @@ import utf8;
 import value_type { Value }
 
 import ctype { isdigit, isalnum, isalpha, isxdigit, isblank }
-import stdio local;
+import stdio { vsnprintf }
 import stdlib { strtol, strtod }
 import string { memset, memcpy, memcmp, strncmp }
 

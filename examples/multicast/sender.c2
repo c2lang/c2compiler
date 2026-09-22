@@ -15,10 +15,10 @@
 
 module test;
 
-import multicast_sender local;
+import multicast_sender { * }
 
-import stdio local;
-import string local;
+import stdio { snprintf }
+import string { strlen }
 import unistd;
 
 const char[] MULTICAST_IP = "225.0.0.37";

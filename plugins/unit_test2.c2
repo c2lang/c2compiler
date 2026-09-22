@@ -1,10 +1,9 @@
 // NOTE: module + imports are generated so this file is not valid C2.
 
-import csetjmp local;
-import stdarg local;
-import stdio local;
-import sys_time;
-import unistd;
+import csetjmp { JmpBufTag, setjmp, longjmp }
+import stdio { * }
+import sys_time { Timeval }
+import unistd { isatty }
 
 public const char[] Red      = "\033[0;31m";
 public const char[] Green    = "\033[0;32m";
@@ -19,7 +18,7 @@ char* error_msg;
 u32 error_size;
 
 public fn u64 now() {
-  sys_time.Timeval tv;
+  Timeval tv;
   sys_time.gettimeofday(&tv, nil);
   u64 now64 = (u64)tv.tv_sec;
   now64 *= 1000000;
@@ -115,7 +114,7 @@ public type Stats struct {
 }
 
 public fn i32 run_tests() {
-  color_output = unistd.isatty(1);
+  color_output = isatty(1);
   Config cfg = {
     .on_error = on_error,
     .on_log = on_log,

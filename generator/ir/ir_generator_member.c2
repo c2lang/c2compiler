@@ -15,14 +15,14 @@
 
 module ir_generator;
 
-import ast local;
+import ast { * }
 import bit_utils;
-import ir local;
-import ir_context;
+import ir { * }
+import ir_context { Context }
 
 // NOTE: should not be used for LHS bitfields!
 fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const MemberExpr* m, bool base_only = false) {
-    ir_context.Context* c = gen.ctx;
+    Context* c = gen.ctx;
 
     u32 tail = 0;
 

@@ -15,14 +15,14 @@
 
 module ir_generator;
 
-import ast local;
-import ir local;
-import ir_context;
-import ref_list local;
+import ast { * }
+import ir;
+import ir_context { Context }
+import ref_list { RefList }
 
 fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     CallExpr* call = (CallExpr*)e;
-    ir_context.Context* c = gen.ctx;
+    Context* c = gen.ctx;
 
     u32 num_args = call.getNumArgs();
     Expr** args = call.getArgs();

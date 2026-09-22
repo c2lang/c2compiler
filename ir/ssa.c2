@@ -15,11 +15,11 @@
 
 module ir_tools;
 
-import ir local;
-import ir_rev_list local;
-import ir_slot_collector local;
+import ir { * }
+import ir_rev_list { RevIndex }
+import ir_slot_collector { ReadSlotAccess }
 
-import stdio local;
+import stdio { printf }
 
 fn void Tools.createSSA(Tools* t) {
     FunctionInfo* fi = t.fi;

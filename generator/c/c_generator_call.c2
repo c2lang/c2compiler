@@ -15,10 +15,10 @@
 
 module c_generator;
 
-import ast local;
-import string_buffer;
+import ast { * }
+import string_buffer { Buf }
 
-fn void Generator.emitCall(Generator* gen, string_buffer.Buf* out, Expr* e) {
+fn void Generator.emitCall(Generator* gen, Buf* out, Expr* e) {
     CallExpr* call = (CallExpr*)e;
 
     Decl* dest = nil;

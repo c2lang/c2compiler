@@ -15,7 +15,7 @@
 
 module dep_finder;
 
-import ast local;
+import ast { * }
 
 public type OnDecl fn void (void* arg, Decl* d);
 

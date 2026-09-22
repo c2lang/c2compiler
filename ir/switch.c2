@@ -15,8 +15,8 @@
 
 module ir_tools;
 
-import ir local;
-import ir_inserter local;
+import ir { * }
+import ir_inserter { Inserter }
 
 import index_list;
 

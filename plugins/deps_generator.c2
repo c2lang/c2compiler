@@ -15,22 +15,22 @@
 
 module deps_generator;
 
-import ast local;
-import ast_visitor;
-import component;
-import file_utils;
-import string_buffer;
+import ast { * }
+import ast_visitor { Visitor }
+import component { Component }
+import file_utils { File }
+import string_buffer { Buf }
 import string_list;
-import string_pool;
+import string_pool { Pool }
 
-import stdio local;
-import stdlib local;
-import string local;
+import stdio { snprintf, fprintf, stderr }
+import stdlib { malloc, calloc, free }
+import string { memcpy }
 
 type Dir struct {
     u32 name_idx;
     u32 indent; // of children
-    string_buffer.Buf* buf;
+    Buf* buf;
 
     Dir* subdirs;
     u32 count;
@@ -74,7 +74,7 @@ fn void Dir.free(Dir* d) {
     d.buf.free();
 }
 
-fn void Dir.flatten(const Dir* d, string_buffer.Buf* out, string_pool.Pool* pool) {
+fn void Dir.flatten(const Dir* d, Buf* out, Pool* pool) {
     // flattens subdirs into passed buf
     for (u32 i=0; i<d.count; i++) {
         const Dir* subdir = &d.subdirs[i];
@@ -95,18 +95,18 @@ type Generator struct {
     const char* curfile;
     bool is_external;  // current component is external
 
-    ast_visitor.Visitor* visitor; // non-basic mode only
+    Visitor* visitor; // non-basic mode only
     string_list.List imports; // basic mode only
-    string_pool.Pool* astPool;
+    Pool* astPool;
 
     Decl** deps;
     u32 deps_count;
     u32 deps_capacity;
 
     Dir root;
-    string_pool.Pool* pool;
+    Pool* pool;
 
-    string_buffer.Buf* out; // no owership, points to Buf inside Dir
+    Buf* out; // no owership, points to Buf inside Dir
     u32 indent;
 
     // options
@@ -378,7 +378,7 @@ fn void Generator.deps_add(Generator* gen, Decl* d) {
 }
 
 #if 0
-fn void Generator.create_basic(Generator* gen, component.Component* c) {
+fn void Generator.create_basic(Generator* gen, Component* c) {
     const module_list.List* modlist = c.getModules();
     const Module** mods = modlist.getConst();
     for (u32 i=0; i<modlist.length(); i++) {
@@ -409,7 +409,7 @@ fn void Generator.create_basic(Generator* gen, component.Component* c) {
 #endif
 
 
-public fn void generate(const char* title, const char* output_dir, component.List* comps, string_pool.Pool* astPool, bool basic_mode) {
+public fn void generate(const char* title, const char* output_dir, component.List* comps, Pool* astPool, bool basic_mode) {
     Generator gen = { nil }
 
 
@@ -430,7 +430,7 @@ public fn void generate(const char* title, const char* output_dir, component.Lis
     gen.pool = string_pool.create(4096, 1024);
 
     gen.out = gen.root.buf;
-    string_buffer.Buf* out = gen.out;
+    Buf* out = gen.out;
 
     out.add("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     out.print("<dsm name='%s'>\n", title);
@@ -441,7 +441,7 @@ public fn void generate(const char* title, const char* output_dir, component.Lis
     gen.indent++;
 
     for (u32 i=0; i<comps.size(); i++) {
-        const component.Component* comp = comps.get(i);
+        const Component* comp = comps.get(i);
         gen.is_external = comp.isExternal();
 
         if (comp.isInternal()) continue;
@@ -466,7 +466,7 @@ public fn void generate(const char* title, const char* output_dir, component.Lis
     gen.indent--;
     out.add("</dsm>\n");
 
-    file_utils.File file.init(output_dir, "deps.xml");
+    File file.init(output_dir, "deps.xml");
     file.write(out.data(), out.size());
 
     if (gen.visitor) gen.visitor.free();

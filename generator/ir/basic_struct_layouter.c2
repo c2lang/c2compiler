@@ -16,7 +16,7 @@
 module ir_generator;
 
 import ast;
-import value_type local;
+import value_type { Value }
 
 type BasicStructLayouter struct {
     Generator* gen;

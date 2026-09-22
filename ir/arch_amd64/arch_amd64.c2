@@ -15,7 +15,7 @@
 
 module arch_amd64;
 
-import ir_tools local;
+import ir_tools { Tools, Target }
 import ir;
 
 /*

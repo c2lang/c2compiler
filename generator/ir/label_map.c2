@@ -17,8 +17,8 @@ module label_map;
 
 import ir;
 
-import stdlib;
-import string;
+import stdlib { malloc, free }
+import string { memset, memcpy }
 
 public type Entry struct {
     u32 key;
@@ -34,12 +34,12 @@ public type Map struct {
 }
 
 public fn void Map.init(Map* l) {
-    string.memset(l, 0, sizeof(Map));
+    memset(l, 0, sizeof(Map));
     l.resize(8);
 }
 
 public fn void Map.free(Map* l) {
-    stdlib.free(l.entries);
+    free(l.entries);
 }
 
 public fn void Map.clear(Map* l) {
@@ -101,9 +101,9 @@ public fn ir.BlockId Map.getContinue(const Map* l, u32 key) {
 
 fn void Map.resize(Map* l, u32 cap) {
     l.capacity = cap;
-    Entry* entries2 = stdlib.malloc(l.capacity * sizeof(Entry));
-    if (l.count) string.memcpy(entries2, l.entries, l.count * sizeof(Entry));
-    if (l.entries) stdlib.free(l.entries);
+    Entry* entries2 = malloc(l.capacity * sizeof(Entry));
+    if (l.count) memcpy(entries2, l.entries, l.count * sizeof(Entry));
+    if (l.entries) free(l.entries);
     l.entries = entries2;
 }
 

@@ -15,11 +15,11 @@
 
 module sukodu;
 
-import stdio local;
+import stdio { * }
 import color;
-import string local;
+import string { * }
 import sys_time;
-import utils local; // StringBuffer
+import utils { StringBuffer }
 
 /*
     2 extra algorithms:

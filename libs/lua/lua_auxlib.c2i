@@ -1,6 +1,6 @@
 module lua_auxlib extern "C";
 
-import lua local;
+import lua { * }
 
 State *luaL_newstate(void);
 void luaL_requiref(State *L, const char* modname, CFunction openf, int glb);

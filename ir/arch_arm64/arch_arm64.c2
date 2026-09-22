@@ -15,9 +15,9 @@
 
 module arch_arm64;
 
-import ir_tools local;
-import ir local;
-import string_buffer;
+import ir_tools { Tools, Target }
+import ir { * }
+import string_buffer { Buf }
 
 type Arm64_InstrKind enum u8 {
     Add,
@@ -325,7 +325,7 @@ fn void applyCallingConv(Tools* t, FunctionInfo* f) {
     }
 }
 
-fn void generateAsm(string_buffer.Buf* out, const char* name, const FunctionInfo* fi, bool is_external) {
+fn void generateAsm(Buf* out, const char* name, const FunctionInfo* fi, bool is_external) {
     // NOTE: currently exactly the same as RV64 version!
 #if 0
     PER FUNCTION:

@@ -15,7 +15,7 @@
 
 module ast;
 
-import string_buffer;
+import string_buffer { Buf }
 
 public type TypeKind enum u8 (public const char* const name) {
     Builtin   : { "Builtin" },
@@ -97,7 +97,7 @@ public fn bool Type.isVoidType(const Type* t) {
 }
 
 public fn void Type.dump(const Type* t) @(unused) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+    Buf* out = ast.getDumpBuf();
     t.print(out);
     out.newline();
     ast.flushDumpBuf(out);
@@ -189,7 +189,7 @@ fn u32 Type.getSize(const Type* t) {
     return 0;
 }
 
-fn void Type.print(const Type* t, string_buffer.Buf* out) {
+fn void Type.print(const Type* t, Buf* out) {
     out.color(col_Type);
     switch (t.getKind()) {
     case Builtin:
@@ -222,7 +222,7 @@ fn void Type.print(const Type* t, string_buffer.Buf* out) {
     }
 }
 
-fn void Type.fullPrint(const Type* t, string_buffer.Buf* out, u32 indent) {
+fn void Type.fullPrint(const Type* t, Buf* out, u32 indent) {
     switch (t.getKind()) {
     case Builtin:
         BuiltinType.fullPrint((BuiltinType*)t, out, indent);

@@ -15,11 +15,11 @@
 
 module ir_generator;
 
-import ast local;
-import ir local;
-import ir_context local;
-import ir_gen_locals local;
-import value_type local;
+import ast { * }
+import ir { * }
+import ir_context { Context, SymbolId }
+import ir_gen_locals { StackVar }
+import value_type { Value }
 
 fn void Generator.emitExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     if (e.isCtv()) {
@@ -190,7 +190,7 @@ fn void Generator.emitVarDecl(Generator* gen, ir.Ref* result, Decl* d) {
 }
 
 fn void Generator.emitCondOperator(Generator* gen, ir.Ref* result, const Expr* e) {
-    ir_context.Context* c = gen.ctx;
+    Context* c = gen.ctx;
     const ConditionalOperator* co = (ConditionalOperator*)e;
 
     //a = cond ? b : c;
@@ -306,7 +306,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, ir.Ref* result, const Expr* 
 
 // EmitCond will end with the true_blk started
 fn void Generator.emitCond(Generator* gen, const Expr* e, BlockId true_blk, BlockId false_blk, BlockId start_blk) {
-    ir_context.Context* c = gen.ctx;
+    Context* c = gen.ctx;
 
     if (e.isCtv()) {
         Value v = ast.evalExpr(e);
@@ -387,7 +387,7 @@ fn void Generator.emitCond(Generator* gen, const Expr* e, BlockId true_blk, Bloc
 }
 
 fn void Generator.emitAssignCond(Generator* gen, ir.Type t, ir.Ref lhs, ir.Ref rhs, BlockId left, BlockId right, BlockId start) {
-    ir_context.Context* c = gen.ctx;
+    Context* c = gen.ctx;
     // if (a = getchar()), emit:
     //   %x = getchar()
     //   store a, %x
@@ -448,7 +448,7 @@ fn bool Generator.emitBinaryCond(Generator* gen, const Expr* e, BlockId left, Bl
     ir.Ref rhs;
     gen.emitExpr(&rhs, b.getRHS());
     ir.Ref cond = gen.ctx.addBinaryInstr(k, lhs, rhs);
-    ir_context.Context* c = gen.ctx;
+    Context* c = gen.ctx;
     c.addJmpIfInstr(cond, left, right);
     c.endBlock();
     c.startBlock(start);
@@ -611,7 +611,7 @@ fn void Generator.emitStructInitExpr(Generator* gen, const StackVar* var, const 
 
 fn void Generator.emitArrayInitExpr(Generator* gen, const StackVar* var, const Expr* e) {
     const InitListExpr* ile = (InitListExpr*)e;
-    ir_context.Context* ctx = gen.ctx;
+    Context* ctx = gen.ctx;
 
     if (e.isCtc()) {
         // TODO if all members are CTC/CTV, generate a 'global' and copy that

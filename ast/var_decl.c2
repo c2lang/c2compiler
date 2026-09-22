@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import src_loc local;
-import string_buffer;
+import ast_context { Context }
+import src_loc { SrcLoc }
+import string_buffer { Buf }
 
 public type VarDeclKind enum u8 (const char* const name) {
     GlobalVar       : { "global" },
@@ -80,16 +80,16 @@ public type VarDecl struct @(opaque) {
     // optional VarDeclInit / BitFieldInfo
 }
 
-public fn VarDecl* VarDecl.create(ast_context.Context* c,
-                                    VarDeclKind kind,
-                                    u32 name,
-                                    SrcLoc loc,
-                                    bool is_public,
-                                    const TypeRefHolder* ref,
-                                    u32 ast_idx,
-                                    SrcLoc assignLoc,
-                                    bool has_embed,
-                                    Expr* initValue)
+public fn VarDecl* VarDecl.create(Context* c,
+                                  VarDeclKind kind,
+                                  u32 name,
+                                  SrcLoc loc,
+                                  bool is_public,
+                                  const TypeRefHolder* ref,
+                                  u32 ast_idx,
+                                  SrcLoc assignLoc,
+                                  bool has_embed,
+                                  Expr* initValue)
 {
     u32 size = sizeof(VarDecl) + ref.getExtraSize();
     // Note: assignLoc only used for initValue
@@ -113,7 +113,7 @@ public fn VarDecl* VarDecl.create(ast_context.Context* c,
     return d;
 }
 
-public fn VarDecl* VarDecl.createStructMember(ast_context.Context* c,
+public fn VarDecl* VarDecl.createStructMember(Context* c,
                                                 u32 name,
                                                 SrcLoc loc,
                                                 bool is_public,
@@ -370,7 +370,7 @@ public fn FormatAttr VarDecl.getFormatAttr(const VarDecl* d) {
     return d.base.varDeclBits.format_attr;
 }
 
-fn void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
+fn void VarDecl.print(const VarDecl* d, Buf* out, u32 indent) {
     bool valid_type = d.base.qt.isValid();
     d.base.printKind(out, indent, valid_type);
     if (!valid_type) {
@@ -412,7 +412,7 @@ fn void VarDecl.print(const VarDecl* d, string_buffer.Buf* out, u32 indent) {
     }
 }
 
-fn void VarDecl.printType(const VarDecl* d, string_buffer.Buf* out) {
+fn void VarDecl.printType(const VarDecl* d, Buf* out) {
     if (d.base.qt.isValid()) {
         d.base.qt.printQuoted(out);
     } else {

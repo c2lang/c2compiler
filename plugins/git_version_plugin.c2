@@ -16,13 +16,13 @@
 module plugin_main;
 
 import ast;
-import component;
+import component { Component }
 import console;
-import plugin_info;
+import plugin_info { Info }
 import process_utils;
 
-import stdlib local;
-import string local;
+import stdlib { calloc, free }
+import string { pstrcpy, strlen }
 
 public plugin_info.Plugin handle @(export) = {
     .load = load,
@@ -34,7 +34,7 @@ public plugin_info.Plugin handle @(export) = {
 }
 
 type Plugin struct {
-    plugin_info.Info* info;
+    Info* info;
     char[128] version;
 }
 
@@ -59,7 +59,7 @@ fn void unload(void* arg) {
     free(arg);
 }
 
-fn void init(void* arg, plugin_info.Info* info) {
+fn void init(void* arg, Info* info) {
     Plugin* p = arg;
     p.info = info;
 }
@@ -70,7 +70,7 @@ fn void generate_module(void* arg) {
 
     // create module git_version
     u32 mod_name = p.info.astPool.addStr("git_version", true);
-    component.Component* mainComp = p.info.components.get(p.info.components.size()-1);
+    Component* mainComp = p.info.components.get(p.info.components.size()-1);
     ast.Module* mod = mainComp.getOrAddModule(mod_name, false);
 
     // add AST to module

@@ -15,21 +15,21 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 public type AliasTypeDecl struct @(opaque) {
     Decl base;
     TypeRef typeRef;    // Note: variable size!
 }
 
-public fn AliasTypeDecl* AliasTypeDecl.create(ast_context.Context* c,
-                                                u32 name,
-                                                SrcLoc loc,
-                                                bool is_public,
-                                                u32 ast_idx,
-                                                const TypeRefHolder* ref)
+public fn AliasTypeDecl* AliasTypeDecl.create(Context* c,
+                                              u32 name,
+                                              SrcLoc loc,
+                                              bool is_public,
+                                              u32 ast_idx,
+                                              const TypeRefHolder* ref)
 {
     u32 size = sizeof(AliasTypeDecl) + ref.getExtraSize();
     AliasTypeDecl* d = c.alloc(size);
@@ -50,7 +50,7 @@ public fn TypeRef* AliasTypeDecl.getTypeRef(AliasTypeDecl* d) {
     return &d.typeRef;
 }
 
-fn void AliasTypeDecl.print(const AliasTypeDecl* d, string_buffer.Buf* out, u32 indent) {
+fn void AliasTypeDecl.print(const AliasTypeDecl* d, Buf* out, u32 indent) {
     d.base.printKind(out, indent, true);
     d.base.printBits(out);
     d.base.printAttrs(out);

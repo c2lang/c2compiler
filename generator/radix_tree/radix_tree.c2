@@ -15,10 +15,10 @@
 
 module radix_tree;
 
-import linked_list;
+import linked_list { Element }
 
-import stdlib local;
-import string local;
+import stdlib { calloc, malloc, free }
+import string { memset, memcpy, strlen }
 
 /*
     valgrind --leak-check=full -s  ./output/tree/tree
@@ -59,7 +59,7 @@ static_assert(4, sizeof(Node));
 type Zone struct {
     u32 start;
     u32 size;
-    linked_list.Element list;
+    Element list;
 }
 
 type Nodes struct {
@@ -129,8 +129,8 @@ public type Tree struct @(opaque) {
     u32 wasted;
     // node allocator
     Zone[32] zones;
-    linked_list.Element free_zones;
-    linked_list.Element used_zones;
+    Element free_zones;
+    Element used_zones;
 }
 
 public fn Tree* create(u32 initial_nodes, u32 initial_words) {
@@ -196,7 +196,7 @@ fn void Tree.nodes_resize(Tree* t, u32 capacity) {
     }
 
     assert(!t.free_zones.isEmpty());
-    linked_list.Element* e = t.free_zones.popFront();
+    Element* e = t.free_zones.popFront();
     Zone* new_zone = to_container(Zone, list, e);
     new_zone.start = old_capacity;
     new_zone.size = capacity - old_capacity;
@@ -224,12 +224,12 @@ fn void Tree.free_node(Tree* t, u32 node_idx) {
 
     //if (t.free_zones.isEmpty()) t.dump_zones();
     assert(!t.free_zones.isEmpty());
-    linked_list.Element* e = t.free_zones.popFront();
+    Element* e = t.free_zones.popFront();
     Zone* new_zone = to_container(Zone, list, e);
     new_zone.start = node_idx;
     new_zone.size = node_size;
 
-    linked_list.Element* cur = t.used_zones.next;
+    Element* cur = t.used_zones.next;
     while (cur != &t.used_zones) {
         Zone* z = to_container(Zone, list, cur);
         if (node_idx < z.start) {
@@ -245,7 +245,7 @@ fn void Tree.free_node(Tree* t, u32 node_idx) {
 }
 
 fn u32 Tree.allocate_node(Tree* t, u32 node_size) {
-    linked_list.Element* cur = t.used_zones.next;
+    Element* cur = t.used_zones.next;
     Zone* zone = nil;
     while (cur != &t.used_zones) {
         Zone* z = to_container(Zone, list, cur);
@@ -470,7 +470,7 @@ fn void Tree.insert(Tree* t, u32 node_idx, const char* text, u32 len, u32* paren
 fn bool Tree.need_node_space(const Tree* t, u32 required) {
     if (t.used_zones.isEmpty()) return true;
 
-    linked_list.Element* e = t.used_zones.prev;
+    Element* e = t.used_zones.prev;
     Zone* z = to_container(Zone, list, e);
     return z.size < required;
 }

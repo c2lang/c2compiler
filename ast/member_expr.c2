@@ -15,11 +15,11 @@
 
 module ast;
 
-import ast_context;
-import src_loc local;
-import string_buffer;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc, SrcRange }
 
-import string;
+import string { memcpy, strlen }
 
 public type MemberConversion enum u8 {
     None,
@@ -66,7 +66,12 @@ public type MemberExpr struct @(opaque) {
 }
 
 // if base == nil, MemberExpr is pure, otherwise non-pure
-public fn MemberExpr* MemberExpr.create(ast_context.Context* c, Expr* base, u32 base_name_idx, u32 base_len, SrcLoc loc, u32 member_name_idx) {
+public fn MemberExpr* MemberExpr.create(Context* c,
+                                        Expr* base,
+                                        u32 base_name_idx,
+                                        u32 base_len,
+                                        SrcLoc loc,
+                                        u32 member_name_idx) {
     u32 size = sizeof(MemberExpr);
     MemberExpr* e = c.alloc(size);
     e.base.init(Member, loc, 0, 0, 0, NValue);
@@ -89,7 +94,7 @@ fn Expr* MemberExpr.instantiate(MemberExpr* e, Instantiator* inst) {
     u32 size = sizeof(MemberExpr);
     MemberExpr* e2 = inst.c.alloc(size);
 
-    string.memcpy(e2, e, size);
+    memcpy(e2, e, size);
     if (e2.hasExpr()) e2.refs[0].expr = e2.refs[0].expr.instantiate(inst);
 
 #if AstStatistics
@@ -163,7 +168,7 @@ fn SrcLoc MemberExpr.getStartLoc(const MemberExpr* e) {
 }
 
 fn SrcLoc MemberExpr.getEndLoc(const MemberExpr* e) {
-    return e.base.getLoc() + (u32)string.strlen(e.getName(1));
+    return e.base.getLoc() + (u32)strlen(e.getName(1));
 }
 
 fn SrcLoc MemberExpr.getBaseEndLoc(const MemberExpr* e) {
@@ -289,7 +294,7 @@ public fn const char* MemberExpr.getMemberName(const MemberExpr* e) {
     return e.getName(1);
 }
 
-fn void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void MemberExpr.print(const MemberExpr* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.space();
@@ -320,7 +325,7 @@ fn void MemberExpr.print(const MemberExpr* e, string_buffer.Buf* out, u32 indent
     if (e.hasExpr()) e.refs[0].expr.print(out, indent + 1);
 }
 
-fn void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
+fn void MemberExpr.printLiteral(const MemberExpr* e, Buf* out) {
     if (e.hasExpr()) {
         e.refs[0].expr.printLiteral(out);
     } else {
@@ -331,7 +336,7 @@ fn void MemberExpr.printLiteral(const MemberExpr* e, string_buffer.Buf* out) {
 }
 
 public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+    Buf* out = ast.getDumpBuf();
     out.color(col_Expr);
     out.print("MemberExpr loc %d expr %d decl %d/2\n",
               m.base.getLoc(), m.hasExpr(), m.base.base.memberExprBits.num_decls);

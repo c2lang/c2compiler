@@ -15,22 +15,21 @@
 
 module c2cat_main;
 
-import c2_tokenizer;
-import attr local;
-import color local;
+import c2_tokenizer { Tokenizer, ErrorLevel }
+import attr { AttrRegistry }
+import color { * }
 import file_utils;
 import keywords;
-import src_loc local;
-import string_buffer;
+import src_loc { SrcLoc }
+import string_buffer { Buf }
 import string_map;
-import string_pool;
-import number_radix;
-import token local;
+import string_pool { Pool }
+import token { Kind, Token }
 
-import ctype;
-import stdio local;
-import stdlib local;
-import string local;
+import ctype { isspace }
+import stdio { * }
+import stdlib { exit, EXIT_FAILURE, EXIT_SUCCESS }
+import string { strcmp }
 import unistd;
 
 type Style enum u8 (const char* const name @(unused), const Color default_color) {
@@ -61,10 +60,10 @@ fn void usage(const char* me) {
 }
 
 type C2cat struct {
-    string_pool.Pool* pool;
-    string_buffer.Buf* out;
-    string_buffer.Buf* out2;
-    c2_tokenizer.Tokenizer* tokenizer;
+    Pool* pool;
+    Buf* out;
+    Buf* out2;
+    Tokenizer* tokenizer;
     AttrRegistry attr_registry;
     const char* filename;
     const char* input;
@@ -73,7 +72,7 @@ type C2cat struct {
     u8 in_attributes; // 0 no, 1 seen @, 2 (, ) -> 0
     bool check_only;
     bool has_error;
-    c2_tokenizer.ErrorLevel error_level;
+    ErrorLevel error_level;
     Style[Kind] token_style;
     Color[Style] style_color;
 }
@@ -155,7 +154,7 @@ fn void C2cat.update_state(C2cat* ctx, const Token* tok) {
 }
 
 fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
-    string_buffer.Buf* out = ctx.out;
+    Buf* out = ctx.out;
     u32 pos = tok.loc - ctx.tokenizer.loc_start;    // token start offset
     u32 tok_len = tok.len;                          // token length in bytes
 
@@ -171,7 +170,7 @@ fn void C2cat.print_token(C2cat* ctx, const Token* tok) {
         }
         // check for whitespace only
         for (u32 i = ctx.offset; i < pos; i++) {
-            if (!ctype.isspace(ctx.input[i])) {
+            if (!isspace(ctx.input[i])) {
                 ctx.print_error(Error, ctx.tokenizer.loc_start + i,
                                 "non space character '\\x%2x' between tokens",
                                 ctx.input[i] & 0xFF);
@@ -230,11 +229,11 @@ fn bool Location.init(Location* loc, const char* src, u32 offset) {
 }
 
 fn void C2cat.print_error(C2cat* ctx,
-                          c2_tokenizer.ErrorLevel level,
+                          ErrorLevel level,
                           SrcLoc loc,
                           const char* format @(printf_format), ...)
 {
-    string_buffer.Buf* out2 = ctx.out2;
+    Buf* out2 = ctx.out2;
     if (!ctx.check_only && !ctx.out.endsWith('\n')) out2.add1('\n');
     out2.color(ctx.style_color[Error]);
     Location sloc.init(ctx.input, loc - ctx.tokenizer.loc_start);
@@ -275,7 +274,7 @@ fn void C2cat.print_error(C2cat* ctx,
     ctx.has_error = true;
 }
 
-fn void C2cat.on_tokenizer_error(void* arg, c2_tokenizer.ErrorLevel level, SrcLoc loc, const char* msg) {
+fn void C2cat.on_tokenizer_error(void* arg, ErrorLevel level, SrcLoc loc, const char* msg) {
     C2cat* ctx = arg;
     ctx.print_error(level, loc, "%s", msg);
 }
@@ -288,10 +287,10 @@ fn i32 c2cat_file(const char* filename, bool use_color, bool use_color2, bool ch
         return -1;
     }
 
-    string_pool.Pool* pool = string_pool.create(16*1024, 1024);
-    string_buffer.Buf* out = string_buffer.create(16*1024, use_color, 2);
-    string_buffer.Buf* out2 = string_buffer.create(1024, use_color2, 2);
-    string_buffer.Buf* buf = string_buffer.create(1024, false, 0);
+    Pool* pool = string_pool.create(16*1024, 1024);
+    Buf* out = string_buffer.create(16*1024, use_color, 2);
+    Buf* out2 = string_buffer.create(1024, use_color2, 2);
+    Buf* buf = string_buffer.create(1024, false, 0);
     const char* input = file.data();
     u32 file_size = file.data_size();
     keywords.Info kwinfo.init(pool);
@@ -311,7 +310,7 @@ fn i32 c2cat_file(const char* filename, bool use_color, bool use_color2, bool ch
 
     ctx.init_colors();
 
-    c2_tokenizer.Tokenizer tokenizer.init(pool, buf, input, 1, &kwinfo, &features,
+    Tokenizer tokenizer.init(pool, buf, input, 1, &kwinfo, &features,
                                           C2cat.on_tokenizer_error, &ctx, true);
     ctx.tokenizer = &tokenizer;
     ctx.attr_registry.init(ctx.pool);
@@ -323,7 +322,7 @@ fn i32 c2cat_file(const char* filename, bool use_color, bool use_color2, bool ch
         //printf("%4d %s\n", tok.loc, tok.kind.name);
         if (ctx.error_level) {
             if (ctx.error_level == FatalError) goto done;
-            ctx.error_level = (c2_tokenizer.ErrorLevel)0;
+            ctx.error_level = (ErrorLevel)0;
         }
         ctx.update_state(&tok);
         ctx.print_token(&tok);

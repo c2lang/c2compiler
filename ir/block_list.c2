@@ -15,8 +15,8 @@
 
 module ir;
 
-import string local;
-import stdlib;
+import string { memcpy }
+import stdlib { calloc, free }
 
 public type BlockList struct {
     u32 count;
@@ -31,15 +31,15 @@ public fn void BlockList.init(BlockList* l, u32 initial_size) {
 }
 
 public fn void BlockList.free(BlockList* l) {
-    if (l.blocks) stdlib.free(l.blocks);
+    if (l.blocks) free(l.blocks);
 }
 
 fn void BlockList.resize(BlockList* l, u32 cap) {
     l.capacity = cap;
-    Block* blocks2 = stdlib.calloc(l.capacity, sizeof(Block));
+    Block* blocks2 = calloc(l.capacity, sizeof(Block));
     if (l.count > 1) {
         memcpy(blocks2, l.blocks, l.count * sizeof(Block));
-        stdlib.free(l.blocks);
+        free(l.blocks);
     }
     l.blocks = blocks2;
 }

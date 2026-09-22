@@ -15,11 +15,11 @@
 
 module ir_generator;
 
-import ast local;
+import ast { * }
 import bit_utils;
-import ir local;
-import ir_context;
-import value_type local;
+import ir { * }
+import ir_context { Context }
+import value_type { Value }
 
 fn void Generator.emitAssign(Generator* gen, ir.Ref* result, const Expr* lhs, const Expr* rhs) {
     // special case is needed because setting Bitfield is not a simple store
@@ -147,7 +147,7 @@ fn void Generator.emitBinaryOperator(Generator* gen, ir.Ref* result, const Expr*
 // this is the outside case, should return a result
 fn void Generator.emitLogicalAnd(Generator* gen, ir.Ref* result, const Expr* e) {
     const BinaryOperator* b = (BinaryOperator*)e;
-    ir_context.Context* c = gen.ctx;
+    Context* c = gen.ctx;
 
 /*
     emit:
@@ -196,7 +196,7 @@ fn void Generator.emitLogicalAnd(Generator* gen, ir.Ref* result, const Expr* e) 
 
 fn void Generator.emitLogicalOr(Generator* gen, ir.Ref* result, const Expr* e) {
     const BinaryOperator* b = (BinaryOperator*)e;
-    ir_context.Context* c = gen.ctx;
+    Context* c = gen.ctx;
 
 /*
     emit:
@@ -336,7 +336,7 @@ fn void Generator.emitOpAssign(Generator* gen, ir.Ref* result, const Expr* e) {
 }
 
 fn void Generator.emitBitfieldAssign(Generator* gen, ir.Ref* result, const Expr* lhs, const Expr* rhs) {
-    ir_context.Context* c = gen.ctx;
+    Context* c = gen.ctx;
 
     //assert(lhs.isMember());
     const MemberExpr* m = (MemberExpr*)lhs;

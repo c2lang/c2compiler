@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 type ParenExprBits struct {
     u32 : NumExprBits;
@@ -29,7 +29,7 @@ public type ParenExpr struct @(opaque) {
     Expr* inner;
 }
 
-public fn ParenExpr* ParenExpr.create(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* inner) {
+public fn ParenExpr* ParenExpr.create(Context* c, SrcLoc loc, u32 src_len, Expr* inner) {
     ParenExpr* e = c.alloc(sizeof(ParenExpr));
     e.base.init(Paren, loc, 0, 0, 0, NValue);
     e.base.base.parenExprBits.src_len = src_len;
@@ -48,7 +48,7 @@ public fn Expr* ParenExpr.getInner(const ParenExpr* e) { return e.inner; }
 
 public fn Expr** ParenExpr.getInner2(ParenExpr* e) { return &e.inner; }
 
-fn void ParenExpr.print(const ParenExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void ParenExpr.print(const ParenExpr* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.newline();
@@ -60,7 +60,7 @@ fn SrcLoc ParenExpr.getEndLoc(const ParenExpr* e) {
     return e.base.base.loc + e.base.base.parenExprBits.src_len;
 }
 
-fn void ParenExpr.printLiteral(const ParenExpr* e, string_buffer.Buf* out) {
+fn void ParenExpr.printLiteral(const ParenExpr* e, Buf* out) {
     out.lparen();
     e.inner.printLiteral(out);
     out.rparen();

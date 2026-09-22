@@ -16,14 +16,13 @@
 module logger;
 
 import color;
-import stdarg local;
-import string local;
-import stdio local;
-import stdlib local;
-import sys_time local;
+import string { strlcpy }
+import stdio { printf }
+import stdlib { exit, EXIT_FAILURE }
+import sys_time { Timeval, gettimeofday, Time }
 import libc_time;
 
-import utils local;
+import utils { StringBuffer }
 
 public type Level enum u8 {
     Fatal = 0,

@@ -16,7 +16,7 @@
 module c2_parser;
 
 import stmt_list;
-import ast local;
+import ast { * }
 import constants { MaxMultiDecl }
 import token { Token, Kind }
 import src_loc { SrcLoc }

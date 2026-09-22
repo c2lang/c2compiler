@@ -15,13 +15,13 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import string_pool;
+import ast_context { Context }
+import string_buffer { Buf }
+import string_pool { Pool }
 import color;
 
-import stdlib;
-import string;
+import stdlib { malloc, calloc, free }
+import string { memcpy }
 
 public type Module struct @(opaque) {
     u32 name_idx;
@@ -43,8 +43,8 @@ public type Module struct @(opaque) {
 static_assert(80, sizeof(Module));
 
 // Note: name must be allocated in target StringPool
-public fn Module* Module.create(ast_context.Context* c, u32 name_idx, bool is_external) {
-    Module* m = stdlib.calloc(1, sizeof(Module));
+public fn Module* Module.create(Context* c, u32 name_idx, bool is_external) {
+    Module* m = calloc(1, sizeof(Module));
     m.mt = ModuleType.create(c, m);
     m.name_idx = name_idx;
     m.is_external = is_external;
@@ -60,10 +60,10 @@ public fn void Module.free(Module* m) {
     for (u32 i=0; i<m.num_files; i++) {
         m.files[i].free();
     }
-    stdlib.free(m.files);
+    free(m.files);
     m.symbols.free();
     m.instances.free();
-    stdlib.free(m);
+    free(m);
 }
 
 public fn void Module.setUsed(Module* m) { m.is_used = true; }
@@ -179,16 +179,16 @@ public fn u32 Module.getNameIdx(const Module* m) { return m.name_idx; }
 
 fn void Module.resizeFiles(Module* m, u32 cap) {
     m.max_files = cap;
-    void* buf = stdlib.malloc(m.max_files * sizeof(AST*));
+    void* buf = malloc(m.max_files * sizeof(AST*));
     if (m.files) {
         void* old = m.files;
-        string.memcpy(buf, old, m.num_files * sizeof(AST*));
-        stdlib.free(old);
+        memcpy(buf, old, m.num_files * sizeof(AST*));
+        free(old);
     }
     m.files = buf;
 }
 
-public fn AST* Module.add(Module* m, string_pool.Pool* auxPool, u32 filename, bool is_interface, bool is_generated) {
+public fn AST* Module.add(Module* m, Pool* auxPool, u32 filename, bool is_interface, bool is_generated) {
     AST* a = AST.create(auxPool, filename, m, is_interface, is_generated);
 
     if (m.num_files == m.max_files) m.resizeFiles(m.max_files * 2);
@@ -226,7 +226,7 @@ public fn FunctionDecl* Module.getInstance(const Module* m, FunctionDecl* fd, u3
     return m.instances.get(fd, idx);
 }
 
-public fn void Module.print(const Module* m, string_buffer.Buf* out, bool show_funcs) {
+public fn void Module.print(const Module* m, Buf* out, bool show_funcs) {
     out.color(color.Normal);
     out.print("------ module %s (used %d, exported %d, private %d) ------\n",
               ast.idx2name(m.name_idx), m.is_used, m.is_exported, m.is_private);

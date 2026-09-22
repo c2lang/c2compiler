@@ -18,10 +18,10 @@ module plugin_main;
 import ast;
 import console;
 import deps_generator;
-import plugin_info;
+import plugin_info { Info }
 import utils;
 
-import stdlib local;
+import stdlib { calloc, free }
 
 public plugin_info.Plugin handle @(export) = {
     .load = load,
@@ -33,7 +33,7 @@ public plugin_info.Plugin handle @(export) = {
 }
 
 type Plugin struct {
-    plugin_info.Info* info;
+    Info* info;
 }
 
 fn void* load(const char* options, console.Config* config) {
@@ -47,7 +47,7 @@ fn void unload(void* arg) {
     free(arg);
 }
 
-fn void init(void* arg, plugin_info.Info* info) {
+fn void init(void* arg, Info* info) {
     Plugin* p = arg;
     p.info = info;
     ast.setGlobals(info.ast_globals);

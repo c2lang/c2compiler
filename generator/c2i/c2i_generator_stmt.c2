@@ -15,11 +15,11 @@
 
 module c2i_generator;
 
-import ast local;
-import string_buffer;
+import ast { * }
+import string_buffer { Buf }
 
 fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
-    string_buffer.Buf* out = gen.out;
+    Buf* out = gen.out;
 
     if (out.endsWith('\n')) out.indent(indent);
 
@@ -169,7 +169,7 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
     }
 }
 
-fn void emitAsmPart(string_buffer.Buf* out, bool multi_line, u32 indent) {
+fn void emitAsmPart(Buf* out, bool multi_line, u32 indent) {
     if (multi_line) {
         out.newline();
         out.indent(indent);
@@ -180,7 +180,7 @@ fn void emitAsmPart(string_buffer.Buf* out, bool multi_line, u32 indent) {
 }
 
 fn void Generator.emitAsmOperand(Generator* gen, u32 name, const Expr* c, Expr* e) {
-    string_buffer.Buf* out = gen.out;
+    Buf* out = gen.out;
     if (name) {
         out.print("[%s] ", gen.idx2name(name));
     }
@@ -191,7 +191,7 @@ fn void Generator.emitAsmOperand(Generator* gen, u32 name, const Expr* c, Expr* 
 }
 
 fn void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
-    string_buffer.Buf* out = gen.out;
+    Buf* out = gen.out;
 
     out.add("asm ");
     if (a.isVolatile()) out.add("volatile ");
@@ -240,7 +240,7 @@ fn void Generator.emitAsmStmt(Generator* gen, AsmStmt* a, u32 indent) {
 }
 
 fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
-    string_buffer.Buf* out = gen.out;
+    Buf* out = gen.out;
 
     out.add("switch (");
     if (sw.hasDecl()) {
@@ -262,7 +262,7 @@ fn void Generator.emitSwitchStmt(Generator* gen, SwitchStmt* sw, u32 indent) {
 }
 
 fn void Generator.emitCase(Generator* gen, SwitchCase* c, u32 indent) {
-    string_buffer.Buf* out = gen.out;
+    Buf* out = gen.out;
 
     out.indent(indent);
     if (c.isDefault()) {

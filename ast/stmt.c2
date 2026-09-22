@@ -15,8 +15,8 @@
 
 module ast;
 
-import src_loc local;
-import string_buffer;
+import src_loc { SrcLoc }
+import string_buffer { Buf }
 
 public type StmtKind enum u8 (const char* const name) {
     Return       : { "ReturnStmt" },
@@ -150,12 +150,12 @@ public fn SrcLoc Stmt.getLoc(const Stmt* s) {
 }
 
 public fn void Stmt.dump(const Stmt* s) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+    Buf* out = ast.getDumpBuf();
     s.print(out, 0);
     ast.flushDumpBuf(out);
 }
 
-fn void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
+fn void Stmt.print(const Stmt* s, Buf* out, u32 indent) {
     switch (s.getKind()) {
     case Return:
         ReturnStmt.print((ReturnStmt*)s, out, indent);
@@ -205,7 +205,7 @@ fn void Stmt.print(const Stmt* s, string_buffer.Buf* out, u32 indent) {
     }
 }
 
-fn void Stmt.printKind(const Stmt* s, string_buffer.Buf* out, u32 indent) {
+fn void Stmt.printKind(const Stmt* s, Buf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Stmt);
     out.add(s.getKind().name);

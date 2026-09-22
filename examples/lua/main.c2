@@ -16,7 +16,7 @@
 module test;
 
 import script;
-import stdio local;
+import stdio { * }
 import lua;
 
 // TODO wrap in own type so lua remains hidden

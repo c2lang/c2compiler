@@ -15,8 +15,8 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
+import ast_context { Context }
+import string_buffer { Buf }
 
 public type StructType struct @(opaque) {
     Type base;
@@ -25,7 +25,7 @@ public type StructType struct @(opaque) {
 
 
 // Note: not public, since only called by StructTypeDecl
-fn StructType* StructType.create(ast_context.Context* c, StructTypeDecl* decl) {
+fn StructType* StructType.create(Context* c, StructTypeDecl* decl) {
     StructType* t = c.alloc(sizeof(StructType));
     t.base.init(Struct);
     t.decl = decl;
@@ -39,7 +39,7 @@ public fn StructTypeDecl* StructType.getDecl(const StructType* t) { return t.dec
 
 fn Type* StructType.asType(StructType* t) { return &t.base; }
 
-fn void StructType.print(const StructType* t, string_buffer.Buf* out) {
+fn void StructType.print(const StructType* t, Buf* out) {
     if (t.decl.isGlobal()) {
         out.add(t.decl.base.getModuleName());
         out.add1('.');
@@ -49,7 +49,7 @@ fn void StructType.print(const StructType* t, string_buffer.Buf* out) {
     else out.add("<anonymous>");
 }
 
-fn void StructType.fullPrint(const StructType* t, string_buffer.Buf* out, u32 indent) {
+fn void StructType.fullPrint(const StructType* t, Buf* out, u32 indent) {
     out.indent(indent);
     out.print("StructType [%p] %s\n", t, t.decl.asDecl().getName());
 }

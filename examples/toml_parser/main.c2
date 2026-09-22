@@ -15,8 +15,8 @@
 
 module test;
 
-import stdio local;
-import string local;
+import stdio { * }
+import string { strcmp }
 import toml;
 
 /*

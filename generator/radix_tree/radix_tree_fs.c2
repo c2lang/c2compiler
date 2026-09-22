@@ -15,11 +15,11 @@
 
 module radix_tree;
 
-import linked_list;
+import linked_list { Element }
 
-import stdlib local;
-import string local;
-import unistd;
+import stdlib { calloc, free }
+import string { memcpy, strlen }
+import unistd { write }
 
 type Trimmer struct {
     Nodes* nodes;
@@ -94,7 +94,7 @@ fn u32 section_size(const void* section) {
 
 fn bool section_write(i32 fd, void* section) {
     const u32 size = section_size(section);
-    isize written = unistd.write(fd, section, size);
+    isize written = write(fd, section, size);
     return (size == written);
 }
 
@@ -144,7 +144,7 @@ public fn Tree* load(InputStream* input) {
 
 fn u32 Tree.used_nodes(const Tree* t) {
     u32 used = t.nodes.capacity - t.wasted;
-    linked_list.Element* cur = t.used_zones.next;
+    Element* cur = t.used_zones.next;
     while (cur != &t.used_zones) {
         const Zone* zone = to_container(Zone, list, cur);
         used -= zone.size;

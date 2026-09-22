@@ -16,8 +16,8 @@
 module c2_parser;
 
 import ast_builder { Builder }
-import ast local;
-import attr local;
+import ast { * }
+import attr { AttrRegistry, AttrKind, Attr }
 import c2_tokenizer { Tokenizer, ErrorLevel }
 import color;
 import constants;
@@ -36,11 +36,10 @@ import value_type { ftoa }
 import utils;
 #endif
 
-import csetjmp local;
-import ctype local;
-import stdarg local;
-import stdio local;
-import stdlib local;
+import csetjmp { JmpBufTag, setjmp, longjmp }
+import ctype { islower }
+import stdio { fputs, stdout }
+import stdlib { calloc, malloc, free }
 
 const u32 NumStmtLists = 16; // max used for c2c is 8
 const u32 MaxLookahead = 64; // must be power of 2

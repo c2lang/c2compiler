@@ -15,11 +15,11 @@
 
 module conversion_checker;
 
-import ast local;
-import ast_builder;
-import diagnostics;
+import ast { * }
+import ast_builder { Builder }
+import diagnostics { Diags }
 import ctv_analyser;
-import src_loc local;
+import src_loc { SrcLoc }
 
 //  0 = cannot happen (mostly Module/Alias type)
 //  1 = Not allowed
@@ -103,8 +103,8 @@ const u8[BuiltinKind][BuiltinKind] BuiltinConversions = {
 }
 
 public type Checker struct {
-    diagnostics.Diags* diags;
-    ast_builder.Builder* builder;
+    Diags* diags;
+    Builder* builder;
     BuiltinKind native_kind;
 
     // changes every check
@@ -114,7 +114,7 @@ public type Checker struct {
     Expr** expr_ptr;
 }
 
-public fn void Checker.init(Checker* c, diagnostics.Diags* diags, ast_builder.Builder* builder) {
+public fn void Checker.init(Checker* c, Diags* diags, Builder* builder) {
     c.diags = diags;
     c.builder = builder;
     c.native_kind = builder.getNativeKind();

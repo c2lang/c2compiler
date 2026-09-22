@@ -15,9 +15,9 @@
 
 module module_analyser;
 
-import ast local;
+import ast { * }
 import size_analyser;
-import src_loc local;
+import src_loc { SrcLoc }
 
 fn QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;

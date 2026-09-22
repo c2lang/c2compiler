@@ -15,9 +15,9 @@
 
 module ast;
 
-import string local;
-import stdlib local;
-import src_loc local;
+import string { memset, memcpy }
+import stdlib { malloc, free }
+import src_loc { SrcLoc }
 
 // Use stack for small lists, heap for larger ones
 

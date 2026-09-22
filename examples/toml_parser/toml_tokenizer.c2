@@ -15,10 +15,10 @@
 
 module toml;
 
-import stdio local;
-import string local;
-import ctype local;
-import stdlib local;
+import stdio { snprintf }
+import string { memcpy, strncmp }
+import ctype { isalpha, isdigit }
+import stdlib { atoi }
 
 const u32 MaxText = 1024;
 

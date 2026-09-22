@@ -1,6 +1,6 @@
 module test;
 
-import stdio local;
+import stdio { printf }
 
 fn void normal(i32 loops) {
     i32 i = 0;

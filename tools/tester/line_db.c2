@@ -15,8 +15,8 @@
 
 module line_db;
 
-import stdlib local;
-import string local;
+import stdlib { calloc, malloc, free }
+import string { memcpy, strndup }
 
 type Entry struct {
     char* line;

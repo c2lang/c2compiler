@@ -15,10 +15,11 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
-import string;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
+
+import string { memcpy, memset }
 
 type EnumTypeDeclBits struct {
     u32 : NumDeclBits;
@@ -40,17 +41,17 @@ public type EnumTypeDecl struct @(opaque) {
     EnumConstantDecl**[0] incr_constants; // tail-allocated, for incremental enums
 }
 
-public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
-                                              u32 name,
-                                              SrcLoc loc,
-                                              bool is_public,
-                                              u32 ast_idx,
-                                              QualType implType,
-                                              bool is_incremental,
-                                              EnumConstantDecl** constants,
-                                              u32 num_constants,
-                                              VarDecl** assoc_values,
-                                              u16 num_assoc_values)
+public fn EnumTypeDecl* EnumTypeDecl.create(Context* c,
+                                            u32 name,
+                                            SrcLoc loc,
+                                            bool is_public,
+                                            u32 ast_idx,
+                                            QualType implType,
+                                            bool is_incremental,
+                                            EnumConstantDecl** constants,
+                                            u32 num_constants,
+                                            VarDecl** assoc_values,
+                                            u16 num_assoc_values)
 {
     u32 size = sizeof(EnumTypeDecl) + num_constants * sizeof(EnumConstantDecl*);
     if (is_incremental) size += sizeof(EnumConstantDecl**);
@@ -72,7 +73,7 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
         assert(num_constants == 0);
         d.incr_constants[0] = nil;
     } else {
-        string.memcpy(d.constants, constants, num_constants * sizeof(EnumConstantDecl*));
+        memcpy(d.constants, constants, num_constants * sizeof(EnumConstantDecl*));
 
         for (u32 i=0; i<num_constants; i++) {
             constants[i].asDecl().setType(qt);
@@ -83,10 +84,10 @@ public fn EnumTypeDecl* EnumTypeDecl.create(ast_context.Context* c,
         u32 assoc_size = num_assoc_values * sizeof(VarDecl*);
         d.assoc_values = c.alloc(assoc_size);
         size += assoc_size;
-        string.memcpy(d.assoc_values, assoc_values, assoc_size);
+        memcpy(d.assoc_values, assoc_values, assoc_size);
         d.assoc_decls = c.alloc(assoc_size);
         size += assoc_size;
-        string.memset(d.assoc_decls, 0, assoc_size);
+        memset(d.assoc_decls, 0, assoc_size);
     }
 #if AstStatistics
     Stats.addDecl(EnumType, size);
@@ -105,7 +106,7 @@ public fn bool EnumTypeDecl.isRegular(const EnumTypeDecl* d) {
 /*
 public fn void EnumTypeDecl.setIncrMembers(EnumTypeDecl* d, Decl** constants, u32 num_constants) {
     d.base.enumTypeDeclBits.num_constants = num_constants;
-    string.memcpy(d.constants, constants, num_constants * sizeof(EnumConstantDecl*));
+    memcpy(d.constants, constants, num_constants * sizeof(EnumConstantDecl*));
 }
 */
 
@@ -134,7 +135,7 @@ public fn EnumConstantDecl** EnumTypeDecl.getConstants(EnumTypeDecl* d) {
     return d.constants;
 }
 
-public fn void EnumTypeDecl.setIncrConstants(EnumTypeDecl* d, ast_context.Context* c, IdentifierExpr** constants, u32 count) {
+public fn void EnumTypeDecl.setIncrConstants(EnumTypeDecl* d, Context* c, IdentifierExpr** constants, u32 count) {
     assert(count);
     const u32 size = count * sizeof(EnumConstantDecl*);
     EnumConstantDecl** decls = c.alloc(size);
@@ -197,10 +198,10 @@ public fn EnumConstantDecl* EnumTypeDecl.getConstant(const EnumTypeDecl* d, u32 
     return d.constants[idx];
 }
 
-public fn void EnumTypeDecl.setEnumFunctions(EnumTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u16 count) {
+public fn void EnumTypeDecl.setEnumFunctions(EnumTypeDecl* d, Context* c, FunctionDecl** funcs, u16 count) {
     const u32 size = count * sizeof(FunctionDecl*);
     FunctionDecl** dest = c.alloc(size);
-    string.memcpy(dest, funcs, size);
+    memcpy(dest, funcs, size);
     d.enum_functions = dest;
     d.num_enum_functions = count;
 }
@@ -224,7 +225,7 @@ public fn Decl* EnumTypeDecl.findFunction(const EnumTypeDecl* d, u32 name_idx) {
     return nil;
 }
 
-fn void EnumTypeDecl.print(EnumTypeDecl* d, string_buffer.Buf* out, u32 indent) {
+fn void EnumTypeDecl.print(EnumTypeDecl* d, Buf* out, u32 indent) {
     d.base.printKind(out, indent, true);
     d.base.printBits(out);
     out.color(col_Attr);

@@ -16,10 +16,10 @@
 module ast;
 
 import color;
-import string_buffer;
+import string_buffer { Buf }
 
-import stdlib;
-import string;
+import stdlib { malloc, free }
+import string { memcpy }
 
 public type SymbolTable struct {
     u32 num_public;
@@ -38,8 +38,8 @@ fn void SymbolTable.init(SymbolTable* t, u32 initial) {
 }
 
 fn void SymbolTable.free(SymbolTable* t) {
-    stdlib.free(t.decls);
-    stdlib.free(t.symbols);
+    free(t.decls);
+    free(t.symbols);
 }
 
 public fn u32 SymbolTable.size(const SymbolTable* t) {
@@ -51,15 +51,15 @@ public fn Decl* SymbolTable.get(const SymbolTable* t, u32 i) {
 }
 
 fn void SymbolTable.resize(SymbolTable* t, u32 capacity) {
-    u32* symbols = stdlib.malloc(capacity * sizeof(u32));
-    ast.Decl** decls = stdlib.malloc(capacity * sizeof(ast.Decl*));
+    u32* symbols = malloc(capacity * sizeof(u32));
+    ast.Decl** decls = malloc(capacity * sizeof(ast.Decl*));
     t.capacity = capacity;
     u32 count = t.num_public + t.num_private;
     if (count) {
-        string.memcpy(symbols, t.symbols, count * sizeof(u32));
-        string.memcpy(decls, t.decls, count * sizeof(ast.Decl*));
-        stdlib.free(t.decls);
-        stdlib.free(t.symbols);
+        memcpy(symbols, t.symbols, count * sizeof(u32));
+        memcpy(decls, t.decls, count * sizeof(ast.Decl*));
+        free(t.decls);
+        free(t.symbols);
     }
     t.symbols = symbols;
     t.decls = decls;
@@ -109,7 +109,7 @@ fn ast.Decl* SymbolTable.findPrivate(const SymbolTable* t, u32 name_idx) {
     return nil;
 }
 
-public fn void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
+public fn void SymbolTable.print(const SymbolTable* t, Buf* out) {
     u32 count = t.num_public + t.num_private;
     for (u32 i=0; i<count; i++) {
         const Decl* d = t.decls[i];
@@ -140,7 +140,7 @@ public fn void SymbolTable.print(const SymbolTable* t, string_buffer.Buf* out) {
 }
 
 public fn void SymbolTable.dump(const SymbolTable* t) @(unused) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+    Buf* out = ast.getDumpBuf();
     u32 count = t.num_public + t.num_private;
 
     out.add("Symbols:\n");

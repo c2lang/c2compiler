@@ -15,9 +15,9 @@
 
 module ast;
 
-import string_buffer;
+import string_buffer { Buf }
 
-import stdio local;
+import stdio { printf }
 
 public const usize QualType_Const    = 0x1;
 public const usize QualType_Volatile = 0x2;
@@ -418,7 +418,7 @@ public fn bool QualType.needsCtvInit(const QualType qt) {
     const Type* t = canon.getTypeOrNil();
 
     if (!t) {
-        stdio.printf("MISSING CANONICAL\n");
+        printf("MISSING CANONICAL\n");
         qt.dump_full();
         return false;
     }
@@ -482,7 +482,7 @@ public fn const char* QualType.diagName(const QualType qt) {
     char* msg = msgs[msg_id];
     msg_id = (msg_id + 1) % elemsof(msgs);
 
-    string_buffer.Buf buf.init(msg, 128, false, false, 0);
+    Buf buf.init(msg, 128, false, false, 0);
     // TODO need to create another print?
 
     //buf.add1('\'');
@@ -498,7 +498,7 @@ public fn const char* QualType.diagNameBare(const QualType qt) {
     char* msg = msgs[msg_id];
     msg_id = (msg_id + 1) % elemsof(msgs);
 
-    string_buffer.Buf buf.init(msg, 128, false, false, 0);
+    Buf buf.init(msg, 128, false, false, 0);
 
     qt.printInner(&buf, true, false, true);
 
@@ -506,18 +506,18 @@ public fn const char* QualType.diagNameBare(const QualType qt) {
 }
 
 public fn void QualType.dump(const QualType qt) @(unused) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+    Buf* out = ast.getDumpBuf();
     qt.printInner(out, false, true, false);
     ast.flushDumpBuf(out);
 }
 
 public fn void QualType.dump_full(const QualType qt) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+    Buf* out = ast.getDumpBuf();
     qt.fullPrint(out, 0);
     ast.flushDumpBuf(out);
 }
 
-fn void QualType.printQuoted(const QualType qt, string_buffer.Buf* out) {
+fn void QualType.printQuoted(const QualType qt, Buf* out) {
     out.color(col_Type);
     //out.add1('\'');
     qt.printInner(out, true, true, true);
@@ -525,11 +525,11 @@ fn void QualType.printQuoted(const QualType qt, string_buffer.Buf* out) {
     //out.add1('\'');
 }
 
-public fn void QualType.print(const QualType qt, string_buffer.Buf* out) {
+public fn void QualType.print(const QualType qt, Buf* out) {
     qt.printInner(out, true, true, true);
 }
 
-fn void QualType.printInner(const QualType qt, string_buffer.Buf* out,  bool printCanon, bool printModifiers, bool print_error) {
+fn void QualType.printInner(const QualType qt, Buf* out,  bool printCanon, bool printModifiers, bool print_error) {
     // output examples: const char*,  const char const*,
     const Type* t = qt.getTypeOrNil();
     if (t) {
@@ -568,7 +568,7 @@ fn void QualType.printInner(const QualType qt, string_buffer.Buf* out,  bool pri
     }
 }
 
-fn void QualType.fullPrint(const QualType qt, string_buffer.Buf* out, u32 indent) {
+fn void QualType.fullPrint(const QualType qt, Buf* out, u32 indent) {
     out.indent(indent);
     out.add("QualType");
     u32 quals = qt.getQuals();

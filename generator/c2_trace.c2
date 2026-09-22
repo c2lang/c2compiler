@@ -15,11 +15,11 @@
 
 module c2_trace;
 
-import c2_trace_tables local;
+import c2_trace_tables { * }
 
-import stdio local;
-import stdlib local;
-import string local;
+import stdio { sscanf, dprintf }
+import stdlib { getenv }
+import string { strcmp }
 
 fn bool match_name(const char* name, const char* pattern) {
     for (;;) {

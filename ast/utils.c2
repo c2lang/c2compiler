@@ -15,15 +15,15 @@
 
 module ast;
 
-import attr local;
-import color local;
-import ast_context local;
-import string_buffer;
-import string_pool;
+import ast_context { Context }
+import attr { Attr }
+import color { * }
+import string_buffer { Buf }
+import string_pool { Pool }
 
-import stdio;
-import stdlib;
-import string;
+import stdio { printf, puts }
+import stdlib { malloc, calloc, free }
+import string { memcpy }
 
 #if Arch32
 #else
@@ -103,7 +103,7 @@ public type Globals struct @(opaque) {
     QualType void_type;
     QualType void_ptr_type;
 
-    string_pool.Pool* names_pool;
+    Pool* names_pool;
     PointerPool pointers;
     StringTypePool string_types;
     bool use_color;
@@ -111,7 +111,7 @@ public type Globals struct @(opaque) {
     u32 ast_count;      // Note: first index used to indicate nil
     u32 ast_capacity;
     AST** ast_list;
-    string_buffer.Buf* dump_buf;
+    Buf* dump_buf;
 #if AstStatistics
     Stats stats;
 #endif
@@ -127,8 +127,8 @@ public fn Globals* getGlobals() { return globals; }
 public fn void setGlobals(Globals* g) @(unused) { globals = g; }
 
 // wordsize in bytes, must NOT be called from Plugin!
-public fn void initialize(Context* c, string_pool.Pool* astPool, bool use_color) {
-    Globals* g = stdlib.calloc(sizeof(Globals), 1);
+public fn void initialize(Context* c, Pool* astPool, bool use_color) {
+    Globals* g = calloc(sizeof(Globals), 1);
     g.pointers.init(c);
     g.string_types.init(c);
     g.use_color = use_color;
@@ -158,7 +158,7 @@ public fn void initialize(Context* c, string_pool.Pool* astPool, bool use_color)
 
 public fn void report() {
     Globals* g = globals;
-    stdio.printf("ast_list: %d/%d, %d bytes\n",
+    printf("ast_list: %d/%d, %d bytes\n",
                  g.ast_count, g.ast_capacity, g.ast_capacity * sizeof(*g.ast_list));
     g.string_types.report();
     g.pointers.report();
@@ -172,12 +172,12 @@ public fn void deinit() {
     g.names_pool = nil;
     g.ast_count = 0;
     g.ast_capacity = 0;
-    stdlib.free(g.ast_list);
+    free(g.ast_list);
     g.ast_list = nil;
     g.pointers.clear();
     g.string_types.clear();
     g.dump_buf.free();
-    stdlib.free(g);
+    free(g);
     globals = nil;
 }
 
@@ -216,11 +216,11 @@ fn u32 Globals.addAST(Globals* g, AST* a) {
         if (g.ast_capacity == 0) g.ast_capacity = 16;
         else g.ast_capacity *= 2;
 
-        void* buf = stdlib.malloc(g.ast_capacity * sizeof(AST*));
+        void* buf = malloc(g.ast_capacity * sizeof(AST*));
         if (g.ast_list) {
             void* old = g.ast_list;
-            string.memcpy(buf, old, g.ast_count * sizeof(AST*));
-            stdlib.free(old);
+            memcpy(buf, old, g.ast_count * sizeof(AST*));
+            free(old);
         }
         g.ast_list = buf;
     }
@@ -235,13 +235,13 @@ fn AST* Globals.idx2ast(Globals* g, u32 idx) {
     return g.ast_list[idx];
 }
 
-fn string_buffer.Buf* getDumpBuf() {
+fn Buf* getDumpBuf() {
     return globals.dump_buf;
 }
 
-fn void flushDumpBuf(string_buffer.Buf* out) {
+fn void flushDumpBuf(Buf* out) {
     out.color(col_Normal);
-    stdio.puts(out.data());
+    puts(out.data());
     out.clear();
 }
 

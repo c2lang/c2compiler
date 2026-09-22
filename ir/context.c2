@@ -16,13 +16,13 @@
 module ir_context;
 
 import index_list;
-import ir local;
-import ir_tools local;
-import string_pool;
+import ir { * }
+import ir_tools { Target, Tools }
+import string_pool { Pool }
 import target_info;
 
-import stdio;
-import stdlib;
+import stdio { snprintf }
+import stdlib { calloc, free }
 
 type Builder struct {
     u32 slot_idx;
@@ -51,7 +51,7 @@ fn void Builder.free(Builder* b) {
 
 public type Context struct @(opaque) {
     // context stuff
-    string_pool.Pool* pool;
+    Pool* pool;
     ConstantList constants;
     SymbolList symbols;
     InitValueList init_values;
@@ -76,7 +76,7 @@ public type BuildInfo struct {
 }
 
 public fn Context* create(bool print, const target_info.Info* info, const BuildInfo* buildInfo) {
-    Context* c = stdlib.calloc(1, sizeof(Context));
+    Context* c = calloc(1, sizeof(Context));
     c.pool = string_pool.create(2*1024, 256);
     c.constants.init(128);
     c.symbols.init(128);
@@ -91,7 +91,7 @@ public fn Context* create(bool print, const target_info.Info* info, const BuildI
         char[8] slot_name;
         // Result: starts at 4, then +4 each
         // Note: just 4,8,12,
-        stdio.snprintf(slot_name, elemsof(slot_name), "s%d", slot);
+        snprintf(slot_name, elemsof(slot_name), "s%d", slot);
         u32 idx = c.pool.addStr(slot_name, false);
     }
 
@@ -120,7 +120,7 @@ public fn void Context.free(Context* c) {
     c.symbols.free();
     c.constants.free();
     c.pool.free();
-    stdlib.free(c);
+    free(c);
 }
 
 public fn void Context.convert_functions(Context* c) {

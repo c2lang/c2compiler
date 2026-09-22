@@ -1,8 +1,8 @@
 // @warnings{no-unused}
 module test;
 
-import stdio local;
-import string local;
+import stdio { gets }
+import string { strncpy, strncat }
 
 fn void test1() {
     char[128] buf;

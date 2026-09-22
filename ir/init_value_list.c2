@@ -15,8 +15,8 @@
 
 module ir_context;
 
-import string local;
-import stdlib;
+import string { memset, memcpy }
+import stdlib { malloc, free }
 
 type InitValueList struct {
     u32 count;
@@ -30,14 +30,14 @@ fn void InitValueList.init(InitValueList* l, u32 initial_size) {
 }
 
 fn void InitValueList.free(InitValueList* l) {
-    if (l.values) stdlib.free(l.values);
+    if (l.values) free(l.values);
 }
 
 fn void InitValueList.resize(InitValueList* l, u32 cap) {
     l.capacity = cap;
-    InitValue* values2 = stdlib.malloc(l.capacity * sizeof(InitValue));
+    InitValue* values2 = malloc(l.capacity * sizeof(InitValue));
     if (l.count != 0) memcpy(values2, l.values, l.count * sizeof(InitValue));
-    if (l.values) stdlib.free(l.values);
+    if (l.values) free(l.values);
     l.values = values2;
 }
 

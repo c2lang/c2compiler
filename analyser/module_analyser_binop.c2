@@ -15,12 +15,12 @@
 
 module module_analyser;
 
-import ast local;
-import c_prec local;
-import c2_prec local;
+import ast { * }
+import c_prec { C_Prec, C_Prec_table }
+import c2_prec { Prec, Prec_table }
 import conversion_checker;
-import src_loc local;
-import value_type local;
+import src_loc { SrcLoc }
+import value_type { Value }
 
 fn bool validArithType(QualType t) {
     t = t.getCanonicalType();

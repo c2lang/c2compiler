@@ -15,20 +15,20 @@
 
 module ast;
 
-import attr local;
+import attr { Attr, AttrKind }
 import attr_table;
-import src_loc local;
-import string_buffer;
-import string_pool;
+import src_loc { SrcLoc }
+import string_buffer { Buf }
+import string_pool { Pool }
 
-import stdlib;
+import stdlib { calloc, free }
 
 /*
     Represents a single file with all its imports, decls, etc
 */
 public type AST struct @(opaque) {
     Module* mod;
-    string_pool.Pool* auxPool;
+    Pool* auxPool;
     void* ptr;  // pointer used during analyser/generation (in analysis: Scope*)
     u32 name;   // into auxPool
     u32 idx;    // ast idx
@@ -47,8 +47,8 @@ public type AST struct @(opaque) {
 
 static_assert(144+64, sizeof(AST));
 
-fn AST* AST.create(string_pool.Pool* auxPool, u32 name, Module* mod, bool is_interface, bool is_generated) {
-    AST* a = stdlib.calloc(1, sizeof(AST));
+fn AST* AST.create(Pool* auxPool, u32 name, Module* mod, bool is_interface, bool is_generated) {
+    AST* a = calloc(1, sizeof(AST));
     a.mod = mod;
     a.auxPool = auxPool;
     a.name = name;
@@ -72,7 +72,7 @@ fn void AST.free(AST* a) {
     a.static_asserts.free();
     a.array_values.free();
     if (a.attrs) a.attrs.free();
-    stdlib.free(a);
+    free(a);
 }
 
 public fn const char* AST.getFilename(const AST* a) @(unused) {
@@ -247,13 +247,7 @@ fn const Attr* AST.getAttr(const AST* a, const Decl* d, AttrKind kind)
     return nil;
 }
 
-/*
-public fn void AST.info(const AST* a, string_buffer.Buf* out) {
-    out.print("    %s\n", a.getFilename());
-}
-*/
-
-fn void AST.print(const AST* a, string_buffer.Buf* out, bool show_funcs) {
+fn void AST.print(const AST* a, Buf* out, bool show_funcs) {
     out.color(col_Normal);
     out.print("---- AST %s ----\n", a.getFilename());
 

@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 public type AlternateExpr struct @(opaque) {
     Expr base;
@@ -25,7 +25,7 @@ public type AlternateExpr struct @(opaque) {
     Expr* generated;
 }
 
-public fn AlternateExpr* AlternateExpr.create(ast_context.Context* c, Expr* original, Expr* generated) @(unused) {
+public fn AlternateExpr* AlternateExpr.create(Context* c, Expr* original, Expr* generated) @(unused) {
     AlternateExpr* e = c.alloc(sizeof(AlternateExpr));
     e.base.init(Alternate, original.getLoc(), 0, 0, original.hasEffect(), NValue);
     e.original = original;
@@ -49,7 +49,7 @@ public fn Expr* AlternateExpr.getGenerated(const AlternateExpr* e) { return e.ge
 
 //public fn Expr** AlternateExpr.getGenerated2(AlternateExpr* e) { return &e.generated; }
 
-fn void AlternateExpr.print(const AlternateExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void AlternateExpr.print(const AlternateExpr* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.newline();
@@ -66,7 +66,7 @@ fn SrcLoc AlternateExpr.getEndLoc(const AlternateExpr* e) {
     return e.original.getEndLoc();
 }
 
-fn void AlternateExpr.printLiteral(const AlternateExpr* e, string_buffer.Buf* out) {
+fn void AlternateExpr.printLiteral(const AlternateExpr* e, Buf* out) {
     e.original.printLiteral(out);
 }
 

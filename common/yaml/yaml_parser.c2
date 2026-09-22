@@ -15,10 +15,9 @@
 
 module yaml;
 
-import csetjmp local;
-import stdarg local;
-import stdio local;
-import stdlib local;
+import csetjmp { JmpBufTag, setjmp, longjmp }
+import stdio { vsnprintf, snprintf }
+import stdlib { calloc, free }
 
 const u32 MaxDiag = 256;
 

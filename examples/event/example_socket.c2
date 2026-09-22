@@ -15,11 +15,11 @@
 
 module example_socket;
 
-import stdio local;
-import stdlib local;
-import unistd local;
-import string local;
-import sys_socket local;
+import stdio { printf }
+import stdlib { * }
+import unistd { * }
+import string { * }
+import sys_socket { * }
 import events;
 import logger;
 

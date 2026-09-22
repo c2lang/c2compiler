@@ -15,8 +15,8 @@
 
 module ast;
 
-import src_loc local;
-import string_buffer;
+import string_buffer { Buf }
+import src_loc { SrcLoc, SrcRange }
 
 public type ExprKind enum u8 (const char* const name) {
     IntegerLiteral        : { "IntegerLiteral" },
@@ -594,12 +594,12 @@ public fn bool Expr.needsSemi(const Expr* e) {
 }
 
 public fn void Expr.dump(const Expr* e) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+    Buf* out = ast.getDumpBuf();
     e.print(out, 0);
     ast.flushDumpBuf(out);
 }
 
-fn void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
+fn void Expr.print(const Expr* e, Buf* out, u32 indent) {
     switch (e.getKind()) {
     case IntegerLiteral:
         IntegerLiteral.print((IntegerLiteral*)e, out, indent);
@@ -680,7 +680,7 @@ fn void Expr.print(const Expr* e, string_buffer.Buf* out, u32 indent) {
 }
 
 // used in generating asserts()
-public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
+public fn void Expr.printLiteral(const Expr* e, Buf* out) {
     switch (e.getKind()) {
     case IntegerLiteral:
         IntegerLiteral.printLiteral((IntegerLiteral*)e, out);
@@ -761,13 +761,13 @@ public fn void Expr.printLiteral(const Expr* e, string_buffer.Buf* out) {
     out.print("<<kind=%d>>", e.getKind());
 }
 
-fn void Expr.printKind(const Expr* e, string_buffer.Buf* out, u32 indent) {
+fn void Expr.printKind(const Expr* e, Buf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Expr);
     out.add(e.getKind().name);
 }
 
-fn void Expr.printTypeBits(const Expr* e, string_buffer.Buf* out) {
+fn void Expr.printTypeBits(const Expr* e, Buf* out) {
     out.space();
     e.qt.printQuoted(out);
     out.color(col_Attr);

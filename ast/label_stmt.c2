@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 type LabelStmtBits struct {
     u32 : NumStmtBits;
@@ -34,7 +34,7 @@ public type LabelStmt struct @(opaque) {
     Stmt* stmt;
 }
 
-public fn LabelStmt* LabelStmt.create(ast_context.Context* c, u32 name, SrcLoc loc, Stmt* stmt) {
+public fn LabelStmt* LabelStmt.create(Context* c, u32 name, SrcLoc loc, Stmt* stmt) {
     LabelStmt* s = c.alloc(sizeof(LabelStmt));
     s.base.init(Label, loc);
     s.name = name;
@@ -96,7 +96,7 @@ public fn Stmt** LabelStmt.getStmt2(LabelStmt* s) {
     return &s.stmt;
 }
 
-fn void LabelStmt.print(const LabelStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void LabelStmt.print(const LabelStmt* s, Buf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.color(col_Value);
     out.space();

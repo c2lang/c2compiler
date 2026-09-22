@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 public type BuiltinExprKind enum u8 (const char* const name) {
     Sizeof      : { "sizeof" },
@@ -55,7 +55,7 @@ public type BuiltinExpr struct @(opaque) {
     ToContainerData[0] container;   // tail-allocated, only for to_container
 }
 
-public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* inner, BuiltinExprKind kind) {
+public fn BuiltinExpr* BuiltinExpr.create(Context* c, SrcLoc loc, u32 src_len, Expr* inner, BuiltinExprKind kind) {
     const u32 size = sizeof(BuiltinExpr);
     BuiltinExpr* e = c.alloc(size);
     e.base.init(Builtin, loc, true, true, false, RValue);
@@ -69,7 +69,7 @@ public fn BuiltinExpr* BuiltinExpr.create(ast_context.Context* c, SrcLoc loc, u3
     return e;
 }
 
-public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* typeExpr, Expr* member) {
+public fn BuiltinExpr* BuiltinExpr.createOffsetOf(Context* c, SrcLoc loc, u32 src_len, Expr* typeExpr, Expr* member) {
     const u32 size = sizeof(BuiltinExpr) + sizeof(OffsetOfData);
     BuiltinExpr* e = c.alloc(size);
     e.base.init(Builtin, loc, true, true, false, RValue);
@@ -84,7 +84,7 @@ public fn BuiltinExpr* BuiltinExpr.createOffsetOf(ast_context.Context* c, SrcLoc
     return e;
 }
 
-public fn BuiltinExpr* BuiltinExpr.createToContainer(ast_context.Context* c, SrcLoc loc, u32 src_len, Expr* typeExpr, Expr* member, Expr* pointer) {
+public fn BuiltinExpr* BuiltinExpr.createToContainer(Context* c, SrcLoc loc, u32 src_len, Expr* typeExpr, Expr* member, Expr* pointer) {
     const u32 size = sizeof(BuiltinExpr) + sizeof(ToContainerData);
     BuiltinExpr* e = c.alloc(size);
     e.base.init(Builtin, loc, false, false, false, RValue);
@@ -159,7 +159,7 @@ public fn Expr** BuiltinExpr.getToContainerPointer2(BuiltinExpr* b) {
     return &b.container[0].pointer;
 }
 
-fn void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void BuiltinExpr.print(const BuiltinExpr* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.color(col_Value);
@@ -184,7 +184,7 @@ fn void BuiltinExpr.print(const BuiltinExpr* e, string_buffer.Buf* out, u32 inde
     }
 }
 
-fn void BuiltinExpr.printLiteral(const BuiltinExpr* e, string_buffer.Buf* out) {
+fn void BuiltinExpr.printLiteral(const BuiltinExpr* e, Buf* out) {
     out.add(e.getKind().name);
     out.lparen();
     e.inner.printLiteral(out);

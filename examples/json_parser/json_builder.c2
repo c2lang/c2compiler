@@ -15,7 +15,7 @@
 
 module json;
 
-import utils local;
+import utils { * }
 
 public type Builder struct {
     StringBuffer buffer;

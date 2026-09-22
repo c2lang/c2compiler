@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 type ArraySubscriptExprBits struct {
     u32 : NumExprBits;
@@ -31,10 +31,10 @@ public type ArraySubscriptExpr struct @(opaque) {
     Expr* idx;
 }
 
-public fn ArraySubscriptExpr* ArraySubscriptExpr.create(ast_context.Context* c,
-                                                          SrcLoc loc, u32 src_len,
-                                                          Expr* lhs,
-                                                          Expr* idx)
+public fn ArraySubscriptExpr* ArraySubscriptExpr.create(Context* c,
+                                                        SrcLoc loc, u32 src_len,
+                                                        Expr* lhs,
+                                                        Expr* idx)
 {
     ArraySubscriptExpr* e = c.alloc(sizeof(ArraySubscriptExpr));
     e.base.init(ArraySubscript, loc, 0, 0, 0, LValue);
@@ -69,14 +69,14 @@ fn SrcLoc ArraySubscriptExpr.getEndLoc(const ArraySubscriptExpr* e) {
     return e.base.base.loc + e.base.base.arraySubscriptExprBits.src_len;
 }
 
-fn void ArraySubscriptExpr.printLiteral(const ArraySubscriptExpr* e, string_buffer.Buf* out) {
+fn void ArraySubscriptExpr.printLiteral(const ArraySubscriptExpr* e, Buf* out) {
     e.lhs.printLiteral(out);
     out.add1('[');
     e.idx.printLiteral(out);
     out.add1(']');
 }
 
-fn void ArraySubscriptExpr.print(const ArraySubscriptExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void ArraySubscriptExpr.print(const ArraySubscriptExpr* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.newline();

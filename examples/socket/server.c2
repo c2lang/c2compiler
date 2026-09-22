@@ -15,11 +15,11 @@
 
 module test;
 
-import stdio local;
-import stdlib local;
-import unistd local;
-import string local;
-import sys_socket local;
+import stdio { printf }
+import stdlib { exit, EXIT_FAILURE }
+import unistd { * }
+import string { memset }
+import sys_socket { * }
 
 fn void fatal(const char* msg) {
     printf("%s\n", msg);

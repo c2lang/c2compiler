@@ -15,10 +15,10 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
-import value_type local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
+import value_type { Value }
 
 type EnumConstantDeclBits struct {
     u32 : NumDeclBits;
@@ -32,12 +32,12 @@ public type EnumConstantDecl struct @(opaque) {
     Expr*[0] init;  // tail-allocated
 }
 
-public fn EnumConstantDecl* EnumConstantDecl.create(ast_context.Context* c,
-                                                      u32 name,
-                                                      SrcLoc loc,
-                                                      bool is_public,
-                                                      u32 ast_idx,
-                                                      Expr* initValue)
+public fn EnumConstantDecl* EnumConstantDecl.create(Context* c,
+                                                    u32 name,
+                                                    SrcLoc loc,
+                                                    bool is_public,
+                                                    u32 ast_idx,
+                                                    Expr* initValue)
 {
     u32 size = sizeof(EnumConstantDecl);
     if (initValue) size += sizeof(Expr*);
@@ -84,7 +84,7 @@ public fn Expr** EnumConstantDecl.getInit2(EnumConstantDecl* d) {
     return nil;
 }
 
-fn void EnumConstantDecl.print(const EnumConstantDecl* d, string_buffer.Buf* out, u32 indent) {
+fn void EnumConstantDecl.print(const EnumConstantDecl* d, Buf* out, u32 indent) {
     d.base.printKind(out, indent, true);
     d.base.printBits(out);
     d.base.printName(out);

@@ -17,30 +17,30 @@ module c2c_main;
 
 import build_file;
 import build_file_parser;
-import build_target;
+import build_target { PluginList, Target }
 import color;
 import console;
-import c2recipe;
+import c2recipe { Recipe }
 import compiler;
-import constants;
+import constants { recipe_name }
 import file_utils;
 #if C2_PLUGINS && !BOOTSTRAP
 import git_version; // from plugin
 #endif
-import diagnostics;
+import diagnostics { Diags }
 import plugin_info;
 import plugin_mgr;
-import source_mgr;
+import source_mgr { SourceMgr, Location }
 import string_list;
-import string_buffer;
-import string_pool;
+import string_buffer { Buf }
+import string_pool { Pool }
 import string_utils;
 import utils;
 
-import c_errno local;
-import stdio local;
-import stdlib local;
-import string local;
+import c_errno { errno }
+import stdio { snprintf }
+import stdlib { exit, EXIT_FAILURE, EXIT_SUCCESS, getenv }
+import string { memset, memchr, strlen, strerror, pstrcpy }
 
 type Options struct {
     bool log_verbose;
@@ -61,7 +61,7 @@ type Options struct {
     string_list.List features;
 }
 
-fn void Options.init(Options* opts, string_pool.Pool* pool) {
+fn void Options.init(Options* opts, Pool* pool) {
     memset(opts, 0, sizeof(Options));
     opts.targets.init(pool);
     opts.files.init(pool);
@@ -74,7 +74,7 @@ fn void Options.free(Options* opts) {
     opts.features.free();
 }
 
-fn void write_file_or_die(const char* filename, string_buffer.Buf* buf) {
+fn void write_file_or_die(const char* filename, Buf* buf) {
     file_utils.File file.init(filename);
     if (!file.write(buf.data(), buf.size())) {
         console.error("c2c: cannot write to %s: %s", file.path, file.getError());
@@ -112,7 +112,7 @@ fn void create_project(const char* name) {
         exit(EXIT_FAILURE);
     }
 
-    string_buffer.Buf* buf = string_buffer.create(4096, false, 2);
+    Buf* buf = string_buffer.create(4096, false, 2);
 
     buf.print(GenMain, name);
     write_file_or_die("main.c2", buf);
@@ -470,20 +470,20 @@ type Context struct {
     utils.PathInfo path_info;
 
     // note: auxPool is used by recipe, build-file and manifests
-    string_pool.Pool* auxPool;
-    source_mgr.SourceMgr* sm;
-    diagnostics.Diags* diags;
+    Pool* auxPool;
+    SourceMgr* sm;
+    Diags* diags;
 
     Options opts;
     compiler.Options comp_opts;
 
-    c2recipe.Recipe* recipe;
+    Recipe* recipe;
     build_file.Info* build_info;
     char[file_utils.Max_path] build_filename;
     i32 recipe_id;
 
     plugin_mgr.Mgr* plugins;
-    const build_target.PluginList* pl;
+    const PluginList* pl;
     compiler.PluginHandler pluginHandler;
     u32 plugins_feature;
 }
@@ -525,7 +525,7 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
             exit(EXIT_FAILURE);
             break;
         case 3:
-            console.error(notFound, constants.recipe_name);
+            console.error(notFound, recipe_name);
             exit(EXIT_FAILURE);
             break;
         }
@@ -538,7 +538,7 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
         u32 target_idx = c.auxPool.add(basename, (u32)(ext - basename), true);
         build_target.BackEndKind backend = C;
         if (c.opts.use_ir_backend) backend = IR;
-        build_target.Target* t = c.recipe.addTarget(target_idx, 0, Executable);
+        Target* t = c.recipe.addTarget(target_idx, 0, Executable);
         t.setBackEnd(backend);
         if (c.opts.use_math_library)
             t.addLib(c.auxPool.addStr("math", true), DynamicLibrary);
@@ -553,10 +553,10 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
         }
 
         if (!c.opts.other_dir && !utils.findProjectDir(&c.path_info)) {
-            console.error(notFound, constants.recipe_name);
+            console.error(notFound, recipe_name);
             exit(EXIT_FAILURE);
         }
-        c.recipe_id = c.sm.loadFile(constants.recipe_name, 0);
+        c.recipe_id = c.sm.loadFile(recipe_name, 0);
         if (c.recipe_id == -1) exit(EXIT_FAILURE);
         if (!c.recipe.parse(c.recipe_id)) exit(EXIT_FAILURE);
         // keep c.recipe_id open so we can close source files in source_mgr
@@ -594,7 +594,7 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
             for (u32 i=0; i<c.build_info.getNumPlugins(); i++) {
                 const build_file.Plugin* p = c.build_info.getPlugin(i);
                 if (!c.plugins.loadGlobal(p.name, p.options)) {
-                    source_mgr.Location loc = c.sm.locate(p.loc);
+                    Location loc = c.sm.locate(p.loc);
                     char[256] loc_str;
                     snprintf(loc_str, elemsof(loc_str), "%s:%d:%d", loc.filename, loc.line, loc.column);
                     console.error_diag(loc_str, "%s", c.plugins.getError());
@@ -633,7 +633,7 @@ fn void Context.handle_plugins(Context* c) {
     for (u32 i=0; i<c.pl.size(); i++) {
         const build_target.Plugin* p = c.pl.get(i);
         if (!c.plugins.loadGlobal(p.name, p.options)) {
-            source_mgr.Location loc = c.sm.locate(p.loc);
+            Location loc = c.sm.locate(p.loc);
             char[256] loc_str;
             snprintf(loc_str, elemsof(loc_str), "%s:%d:%d", loc.filename, loc.line, loc.column);
             console.error_diag(loc_str, "%s", c.plugins.getError());
@@ -654,7 +654,7 @@ fn void Context.handle_plugins(Context* c) {
 }
 
 fn bool Context.build_target(Context* c,
-                             build_target.Target* target,
+                             Target* target,
                              const char* target_name)
 {
     u32 num_errors = c.diags.getNumErrors();
@@ -679,7 +679,7 @@ fn bool Context.build_target(Context* c,
     for (u32 j=0; j<c.pl.size(); j++) {
         const build_target.Plugin* p = c.pl.get(j);
         if (!c.plugins.loadLocal(p.name, p.options)) {
-            source_mgr.Location loc = c.sm.locate(p.loc);
+            Location loc = c.sm.locate(p.loc);
             char[256] loc_str;
             snprintf(loc_str, elemsof(loc_str), "%s:%d:%d", loc.filename, loc.line, loc.column);
             console.error_diag(loc_str, "%s", c.plugins.getError());
@@ -692,7 +692,7 @@ fn bool Context.build_target(Context* c,
 
     if (!target.hasBackEnd() && target.getKind() != SourceLibrary) {
         if (!c.comp_opts.test_mode && !c.comp_opts.check_only) {
-            console.error("c2c: no backend for target %s defined in %s", target_name, constants.recipe_name);
+            console.error("c2c: no backend for target %s defined in %s", target_name, recipe_name);
             if (c.recipe_id != -1) c.sm.clear(c.recipe_id);
             return false;
         }
@@ -711,7 +711,7 @@ fn bool Context.build_targets(Context* c) {
     bool hasError = false;
 
     for (u32 i=0; i<c.recipe.numTargets(); i++) {
-        build_target.Target* target = c.recipe.getTarget(i);
+        Target* target = c.recipe.getTarget(i);
 
         u32 target_idx = target.getNameIdx();
         const char* target_name = c.auxPool.idx2str(target_idx);
@@ -731,7 +731,7 @@ fn bool Context.build_targets(Context* c) {
     if (has_filter && c.opts.targets.length()) {
         for (u32 i = 0; i < c.opts.targets.length(); i++) {
             const char* name = c.opts.targets.get(i);
-            console.warn("no such target in %s: %s", constants.recipe_name, name);
+            console.warn("no such target in %s: %s", recipe_name, name);
         }
     }
 

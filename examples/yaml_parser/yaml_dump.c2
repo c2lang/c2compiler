@@ -15,8 +15,8 @@
 
 module yaml;
 
-import stdio local;
-import string local;
+import stdio { printf }
+import string { strlen }
 
 public fn void Parser.dump(const Parser* p, bool verbose) {
     p.data.dump(verbose);

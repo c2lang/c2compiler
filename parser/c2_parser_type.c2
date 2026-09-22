@@ -15,7 +15,7 @@
 
 module c2_parser;
 
-import ast local;
+import ast { * }
 import src_loc { SrcLoc }
 
 import ctype { islower, isupper }

@@ -1,8 +1,8 @@
 // @warnings{no-unused}
 module test;
 
-import stdio local;
-import string local;
+import stdio { printf, putchar }
+import string { strncmp, strlen, strcmp }
 
 const u8 A8 = 0xAA;
 const u8 F5 = 0x1F;

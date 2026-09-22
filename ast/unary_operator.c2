@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 public type UnaryOpcode enum u8 (const char* const name) {
     PostInc : { "++" }, // a++
@@ -43,7 +43,7 @@ public type UnaryOperator struct @(opaque) {
     Expr* inner;
 }
 
-public fn UnaryOperator* UnaryOperator.create(ast_context.Context* c, SrcLoc loc, UnaryOpcode kind, Expr* inner) {
+public fn UnaryOperator* UnaryOperator.create(Context* c, SrcLoc loc, UnaryOpcode kind, Expr* inner) {
     UnaryOperator* e = c.alloc(sizeof(UnaryOperator));
     e.base.init(UnaryOperator, loc, 0, 0, kind <= PreDec, kind == Deref ? LValue : RValue);
     e.base.base.unaryOperatorBits.kind = kind;
@@ -101,7 +101,7 @@ public fn bool UnaryOperator.isAddrOf(const UnaryOperator* e) {
     return e.getOpcode() == AddrOf;
 }
 
-fn void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u32 indent) {
+fn void UnaryOperator.print(const UnaryOperator* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.space();
@@ -111,7 +111,7 @@ fn void UnaryOperator.print(const UnaryOperator* e, string_buffer.Buf* out, u32 
     e.inner.print(out, indent + 1);
 }
 
-fn void UnaryOperator.printLiteral(const UnaryOperator* e, string_buffer.Buf* out) {
+fn void UnaryOperator.printLiteral(const UnaryOperator* e, Buf* out) {
     const char* opcode = e.getOpcode().name;
     if (e.isBefore()) {
         out.add(opcode);

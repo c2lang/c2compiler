@@ -15,8 +15,8 @@
 
 module module_analyser;
 
-import ast local;
-import src_loc local;
+import ast { * }
+import src_loc { SrcLoc }
 
 fn VarDecl* getVarDecl(const Expr* e) {
     Decl* d;

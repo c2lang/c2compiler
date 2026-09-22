@@ -15,8 +15,8 @@
 
 module tester;
 
-import stdio local;
-import utils local;
+import stdio { printf }
+import utils { StringBuffer }
 
 //type Callback fn void (StringBuffer* buf, const char* text);
 

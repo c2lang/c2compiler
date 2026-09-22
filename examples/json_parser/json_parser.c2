@@ -15,9 +15,9 @@
 
 module json;
 
-import stdio local;
-import string local;
-import csetjmp local;
+import stdio { * }
+import string { * }
+import csetjmp { JmpBufTag, setjmp, longjmp }
 
 public const u32 MAX_DIAG = 256;
 

@@ -15,12 +15,11 @@
 
 module test_utils;
 
-import ctype local;
-import stdarg local;
-import stdio local;
+import ctype { isblank }
+import stdio { vsnprintf, printf, fprintf, stderr }
 
-import color local;
-import string_buffer;
+import color { * }
+import string_buffer { Buf }
 
 public bool color_output;
 const char* proc_name = "";
@@ -57,7 +56,7 @@ public fn void print_error(const char* format @(printf_format), ...) {
     else fprintf(stderr, "%s: %s\n", proc_name, buffer);
 }
 
-public fn void color_print2(string_buffer.Buf* output,
+public fn void color_print2(Buf* output,
                             Color col,
                             const char* format @(printf_format),
                             ...)

@@ -15,10 +15,9 @@
 
 module utils;
 
-import stdarg local;
-import stdio local;
-import stdlib local;
-import string local;
+import stdio { vsnprintf }
+import stdlib { malloc, free }
+import string { memcpy, strlen }
 
 public type StringBuffer struct {
     u32 capacity;

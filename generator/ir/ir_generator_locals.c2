@@ -14,11 +14,12 @@
  */
 
 module ir_gen_locals;
+
 import ast;
 import ir;
 
-import stdlib;
-import string;
+import stdlib { malloc, free }
+import string { memcpy }
 
 public type StackVar struct {
     ir.Ref ref;        // never changes
@@ -39,7 +40,7 @@ public fn void Locals.init(Locals* l) {
 }
 
 public fn void Locals.free(Locals* l) {
-    stdlib.free(l.vars);
+    free(l.vars);
 }
 
 public fn void Locals.clear(Locals* l) {
@@ -49,10 +50,10 @@ public fn void Locals.clear(Locals* l) {
 
 fn void Locals.resize(Locals* l, u32 capacity) {
     l.capacity = capacity;
-    StackVar* vars2 = stdlib.malloc(capacity * sizeof(StackVar));
+    StackVar* vars2 = malloc(capacity * sizeof(StackVar));
     if (l.count) {
-        string.memcpy(vars2, l.vars, l.count * sizeof(StackVar));
-        stdlib.free(l.vars);
+        memcpy(vars2, l.vars, l.count * sizeof(StackVar));
+        free(l.vars);
     }
     l.vars = vars2;
 }

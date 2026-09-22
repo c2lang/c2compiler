@@ -16,36 +16,36 @@
 module compiler;
 
 import ast;
-import ast_builder;
-import ast_context;
+import ast_builder { Builder }
+import ast_context { Context }
 import attr_handler;
 import build_file;
-import build_target;
-import c2_parser;
+import build_target { Target }
+import c2_parser { Parser }
 import color;
-import component;
+import component { Component }
 import console;
 import constants;
-import diagnostics;
+import diagnostics { Diags }
 import file_list;
 import file_utils;
 import keywords;
-import module_analyser;
+import module_analyser { Analyser }
 import module_list;
 import plugin_info;
-import source_mgr;
-import string_buffer;
+import source_mgr { SourceMgr }
+import string_buffer { Buf }
 import string_list;
-import string_pool;
+import string_pool { Pool }
 import string_utils;
 import target_info;
 import utils;
 
-import c_errno local;
-import ctype;
-import stdio;
-import stdlib;
-import string;
+import c_errno { errno }
+import ctype { toupper }
+import stdio { snprintf }
+import stdlib { exit, EXIT_FAILURE, EXIT_SUCCESS }
+import string { memset, pstrcpy, strerror }
 
 public type BeginTargetFn fn void (void* arg, plugin_info.Info* info);
 public type PluginFn fn void (void* arg);
@@ -83,11 +83,11 @@ public type Options struct {
     const char* target_triple;
 }
 
-public fn void build(string_pool.Pool* auxPool,
-                       source_mgr.SourceMgr* sm,
-                       diagnostics.Diags* diags,
+public fn void build(Pool* auxPool,
+                       SourceMgr* sm,
+                       Diags* diags,
                        build_file.Info* build_info, // can be nil
-                       build_target.Target* target,
+                       Target* target,
                        const Options* opts,
                        string_list.List* features,
                        PluginHandler* pluginHandler)
@@ -116,27 +116,27 @@ public fn void build(string_pool.Pool* auxPool,
 }
 
 type Compiler struct {
-    string_pool.Pool* auxPool;   // no ownership
-    source_mgr.SourceMgr* sm;    // no ownership
-    diagnostics.Diags* diags;    // no ownership
+    Pool* auxPool;   // no ownership
+    SourceMgr* sm;    // no ownership
+    Diags* diags;    // no ownership
     build_file.Info* build_info; // no ownership, can be nil
-    build_target.Target* target; // no ownership
+    Target* target; // no ownership
     const Options* opts;         // no ownership
     target_info.Info targetInfo;
     PluginHandler* pluginHandler; // no ownership
 
-    ast_context.Context* context;
-    string_pool.Pool* astPool;
-    ast_builder.Builder* builder;
+    Context* context;
+    Pool* astPool;
+    Builder* builder;
     attr_handler.Handler* attr_handler;
     module_list.List allmodules;
     component.List components;
     keywords.Info kwinfo;
-    c2_parser.Parser* parser;
-    module_analyser.Analyser* analyser;
+    Parser* parser;
+    Analyser* analyser;
     bool is_image; // require build-file, dont allow dynamic libs, dont allow module exports
 
-    component.Component* mainComp;  // no ownership
+    Component* mainComp;  // no ownership
     u32 main_idx;  // in astPool
     u32 libc_name; // in auxPool
     u32 c2_name; // in auxPool
@@ -147,7 +147,7 @@ type Compiler struct {
 
     string_list.List libdirs;       // search paths for lib/lib.c2i
     string_list.List libdirs_bin;   // search paths for .so /.a files
-    component.Component* current;
+    Component* current;
 }
 
 fn component.Kind target2compKind(build_target.Kind k) {
@@ -170,18 +170,18 @@ fn component.Kind target2compKind(build_target.Kind k) {
 const char[] C2_trace @(embed="generator/c2_trace.c2");
 
 fn void Compiler.build(Compiler* c,
-                         string_pool.Pool* auxPool,
-                         source_mgr.SourceMgr* sm,
-                         diagnostics.Diags* diags,
+                         Pool* auxPool,
+                         SourceMgr* sm,
+                         Diags* diags,
                          build_file.Info* build_info, // can be nil
-                         build_target.Target* target,
+                         Target* target,
                          const Options* opts,
                          string_list.List* features,
                          PluginHandler* pluginHandler,
                          plugin_info.Info* info)
 {
     // init phase
-    string.memset(c, 0, sizeof(Compiler));
+    memset(c, 0, sizeof(Compiler));
     c.auxPool = auxPool;
     c.sm = sm;
     c.diags = diags;
@@ -255,7 +255,7 @@ fn void Compiler.build(Compiler* c,
         if (c.is_image) {
             // TODO src loc
             console.error("images require a build-file");
-            stdlib.exit(-1);
+            exit(EXIT_FAILURE);
         }
         if (c.opts.libdir) {
             // parse into multiple, add each to string-pool
@@ -266,7 +266,7 @@ fn void Compiler.build(Compiler* c,
     if (target_str) {
         if (!fromString(&c.targetInfo, target_str)) {
             console.error("invalid target triple: %s", target_str);
-            stdlib.exit(-1);
+            exit(EXIT_FAILURE);
         }
     } else {
         getNativeTarget(&c.targetInfo);
@@ -323,7 +323,7 @@ fn void Compiler.build(Compiler* c,
     if (opts.show_libs) {
         c.showAllLibs();
         // since not all members have been initialized, just exit here, to avoid free() not working
-        stdlib.exit(0);
+        exit(EXIT_SUCCESS);
     }
 
     c.mainComp = component.create(c.context,
@@ -360,13 +360,13 @@ fn void Compiler.build(Compiler* c,
     info.addSource = Compiler.add_source;
     info.register_attr = Compiler.register_attr;
     info.fn_arg = c;
-    string.pstrcpy(info.target_name, elemsof(info.target_name), c.auxPool.idx2str(target.getNameIdx()));
+    pstrcpy(info.target_name, elemsof(info.target_name), c.auxPool.idx2str(target.getNameIdx()));
 
     // create output directory
     if (!file_utils.make_path(info.output_dir, elemsof(info.output_dir), output_base, c.auxPool.idx2str(target.getNameIdx()))
     ||  file_utils.create_path(info.output_dir)) {
-        console.error("cannot create directory %s: %s", info.output_dir, string.strerror(errno));
-        stdlib.exit(-1);
+        console.error("cannot create directory %s: %s", info.output_dir, strerror(errno));
+        exit(EXIT_FAILURE);
     }
 
     pluginHandler.start_target(pluginHandler.arg, info);
@@ -455,9 +455,9 @@ fn bool Compiler.parseMainComponent(Compiler* c) {
 #endif
 }
 
-fn component.Component* Compiler.findModuleComponent(const Compiler* c, u32 name_idx) {
+fn Component* Compiler.findModuleComponent(const Compiler* c, u32 name_idx) {
     for (u32 i=0; i<c.components.size(); i++) {
-        component.Component* comp = c.components.get(i);
+        Component* comp = c.components.get(i);
         module_list.List* mod_list = comp.getModules();
         ast.Module** mods = mod_list.get();
         for (u32 j = 0; j < mod_list.length(); j++) {
@@ -467,7 +467,7 @@ fn component.Component* Compiler.findModuleComponent(const Compiler* c, u32 name
     return nil;
 }
 
-fn void Compiler.add_source(void* arg, const char* name, string_buffer.Buf* content) {
+fn void Compiler.add_source(void* arg, const char* name, Buf* content) {
     Compiler* c = arg;
     u32 size;
     void* data = content.detach(&size);
@@ -513,10 +513,10 @@ fn void Compiler.removeFeature(Compiler* c, const char* str) {
 
 fn void Compiler.addGlobalDefine(Compiler* c, const char* prefix, const char* tail) {
     char[32] tmp;
-    stdio.snprintf(tmp, elemsof(tmp), "%s_%s", prefix, tail);
+    snprintf(tmp, elemsof(tmp), "%s_%s", prefix, tail);
     for (usize i = 0; tmp[i]; i++) {
         u8 ch = (u8)tmp[i];
-        tmp[i] = (ch == '-') ? '_' : (char)ctype.toupper(ch);
+        tmp[i] = (ch == '-') ? '_' : (char)toupper(ch);
     }
 
     c.addFeature(tmp);
@@ -526,7 +526,7 @@ fn void Compiler.addGlobalDefine(Compiler* c, const char* prefix, const char* ta
 fn void Compiler.addLibPath(void* arg, const char* path, u32 len) {
     Compiler* c = arg;
     u32 path_idx = c.auxPool.add(path, len, true);
-    //stdio.printf("PATH [%s]\n", c.auxPool.idx2str(path_idx));
+    //printf("PATH [%s]\n", c.auxPool.idx2str(path_idx));
     c.libdirs.add(path_idx);
 }
 

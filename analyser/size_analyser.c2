@@ -15,10 +15,7 @@
 
 module size_analyser;
 
-import ast local;
-
-//import stdio local;
-//import string local;
+import ast { * }
 
 public type TypeSize struct {
     u32 size;

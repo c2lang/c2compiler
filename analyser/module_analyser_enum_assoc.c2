@@ -15,7 +15,7 @@
 
 module module_analyser;
 
-import ast local;
+import ast { * }
 
 fn void Analyser.analyseEnumAssocValues(Analyser* ma, EnumTypeDecl* etd) {
     u32 num_assocs = etd.getNumAssocs();

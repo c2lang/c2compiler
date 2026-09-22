@@ -15,10 +15,11 @@
 
 module ast;
 
-import ast_context;
-import src_loc local;
-import string_buffer;
-import string;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
+
+import string { memcpy }
 
 type CallExprBits struct {
     u32 : NumExprBits;
@@ -39,7 +40,7 @@ public type CallExpr struct @(opaque) {
     //TypeRef template_arg; // tail-allocated, variable size
 }
 
-public fn CallExpr* CallExpr.create(ast_context.Context* c,
+public fn CallExpr* CallExpr.create(Context* c,
                                       SrcLoc loc,
                                       SrcLoc endLoc,
                                       Expr* func,
@@ -54,14 +55,14 @@ public fn CallExpr* CallExpr.create(ast_context.Context* c,
     e.template_idx = 0;
     e.instance_ast_idx = 0;
     e.func = func;
-    string.memcpy(e.args, args, num_args * sizeof(Expr*));
+    memcpy(e.args, args, num_args * sizeof(Expr*));
 #if AstStatistics
     Stats.addExpr(Call, size);
 #endif
     return e;
 }
 
-public fn CallExpr* CallExpr.createTemplate(ast_context.Context* c,
+public fn CallExpr* CallExpr.createTemplate(Context* c,
                                               SrcLoc loc,
                                               SrcLoc endLoc,
                                               Expr* func,
@@ -80,7 +81,7 @@ public fn CallExpr* CallExpr.createTemplate(ast_context.Context* c,
     e.template_idx = 0;
     e.instance_ast_idx = (u16)ast_idx;
     e.func = func;
-    string.memcpy(e.args, args, num_args * sizeof(Expr*));
+    memcpy(e.args, args, num_args * sizeof(Expr*));
     TypeRef* destRef = (TypeRef*)&e.args[num_args];
     destRef.init(ref);
 #if AstStatistics
@@ -172,7 +173,7 @@ public fn Expr* CallExpr.getArg(const CallExpr* e, u32 i) {
     return e.args[i];
 }
 
-fn void CallExpr.printLiteral(const CallExpr* e, string_buffer.Buf* out) {
+fn void CallExpr.printLiteral(const CallExpr* e, Buf* out) {
     e.func.printLiteral(out);
     out.lparen();
     for (u32 i = 0; i < e.getNumArgs(); i++) {
@@ -182,7 +183,7 @@ fn void CallExpr.printLiteral(const CallExpr* e, string_buffer.Buf* out) {
     out.rparen();
 }
 
-fn void CallExpr.print(const CallExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void CallExpr.print(const CallExpr* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     if (e.base.base.callExprBits.calls_type_func) out.add(" TF");

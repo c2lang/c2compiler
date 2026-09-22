@@ -15,19 +15,19 @@
 
 module refs_main;
 
-import c2refs local;
-import constants;
+import c2refs { Dest, RefUsesFn, Refs }
+import constants { Refs_filename }
 import file_utils;
-import refs_finder;
-import string_pool;
+import refs_finder { Finder }
+import string_pool { Pool }
 import utils;
 
-import c_errno local;
-import stdio local;
-import stdlib local;
-import string local;
+import c_errno { errno }
+import stdio { printf, fprintf, stderr }
+import stdlib { atoi, malloc, free, exit, EXIT_FAILURE }
+import string { memcpy, strerror }
 #if MeasureTime
-import sys_time;
+import sys_time { Timeval, gettimeofday }
 #endif
 
 type Options struct {
@@ -49,8 +49,8 @@ u32 count;
 
 #if MeasureTime
 public fn u64 getCurrentTime() {
-    sys_time.Timeval tv;
-    sys_time.gettimeofday(&tv, nil);
+    Timeval tv;
+    gettimeofday(&tv, nil);
     u64 now64 = (u64)tv.tv_sec;
     now64 *= 1000000;
     now64 += tv.tv_usec;
@@ -69,7 +69,7 @@ fn void usage(const char* me)  @(noreturn) {
     printf("    -o                      use offset instead of line/col (both on input+output)\n");
     printf("    -r                      find uses of symbol (specified by name/position)\n");
     printf("    -t [target]             use [target]\n");
-    exit(-1);
+    exit(EXIT_FAILURE);
 }
 
 type Result struct {
@@ -83,7 +83,7 @@ type Results struct {
     u32 capacity;
     Result* results;
 
-    string_pool.Pool* pool;
+    Pool* pool;
 }
 
 fn void Results.init(Results* r) {
@@ -291,11 +291,11 @@ public fn i32 main(i32 argc, const char** argv)
 #if MeasureTime
     u64 t1 = getCurrentTime();
 #endif
-    refs_finder.Finder* finder = refs_finder.create(constants.output_dir, constants.refs_filename);
+    Finder* finder = refs_finder.create(constants.output_dir, Refs_filename);
     u32 refsfile_count = finder.search(opts.target);
 
     if (refsfile_count == 0) {
-        fprintf(stderr, "no %s files found\n", constants.refs_filename);
+        fprintf(stderr, "no %s files found\n", Refs_filename);
         return -1;
     }
 

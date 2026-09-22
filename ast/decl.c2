@@ -15,12 +15,12 @@
 
 module ast;
 
-import src_loc local;
-import attr local;
-import string_buffer;
+import src_loc { SrcLoc }
+import attr { Attr, AttrKind }
+import string_buffer { Buf }
 
-import stdio;
-import string;
+import stdio { snprintf }
+import string { pstrcpy }
 
 // TODO better order (most used first)
 public type DeclKind enum u8 (const char* const name) {
@@ -250,7 +250,7 @@ public fn void Decl.setGenerated(Decl* d) { d.declBits.is_generated = 1; }
 public fn void Decl.clearGenerated(Decl* d) { d.declBits.is_generated = 0; }
 
 public fn void Decl.dump(const Decl* d) {
-    string_buffer.Buf* out = ast.getDumpBuf();
+    Buf* out = ast.getDumpBuf();
     d.print(out, 0);
     ast.flushDumpBuf(out);
 }
@@ -322,30 +322,30 @@ public fn const char* Decl.getFullName(const Decl* d) {
         const FunctionDecl* fd = (FunctionDecl*)d;
         if (fd.hasPrefix()) {
             const char* prefix_name = ast.idx2name(fd.getPrefixNameIdx());
-            stdio.snprintf(tmp, tmp_size, "%s.%s.%s", modname, prefix_name, d.getName());
+            snprintf(tmp, tmp_size, "%s.%s.%s", modname, prefix_name, d.getName());
         } else {
-            stdio.snprintf(tmp, tmp_size, "%s.%s", modname, d.getName());
+            snprintf(tmp, tmp_size, "%s.%s", modname, d.getName());
         }
         break;
     case Import:
-        string.pstrcpy(tmp, tmp_size, d.getName());
+        pstrcpy(tmp, tmp_size, d.getName());
         break;
     case EnumConstant:
         QualType qt = d.getType();
         EnumType* et = qt.getEnumType();
         EnumTypeDecl* etd = et.getDecl();
         Decl* ed = (Decl*)etd;
-        stdio.snprintf(tmp, tmp_size, "%s.%s.%s", modname, ed.getName(), d.getName());
+        snprintf(tmp, tmp_size, "%s.%s.%s", modname, ed.getName(), d.getName());
         break;
     default:
-        stdio.snprintf(tmp, tmp_size, "%s.%s", modname, d.getName());
+        snprintf(tmp, tmp_size, "%s.%s", modname, d.getName());
         break;
     }
 
     return tmp;
 }
 
-fn void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
+fn void Decl.print(const Decl* d, Buf* out, u32 indent) {
     switch (d.getKind()) {
     case Function:
         FunctionDecl.print((FunctionDecl*)d, out, indent);
@@ -374,7 +374,7 @@ fn void Decl.print(const Decl* d, string_buffer.Buf* out, u32 indent) {
     }
 }
 
-fn void Decl.printKind(const Decl* d, string_buffer.Buf* out, u32 indent, bool print_type) {
+fn void Decl.printKind(const Decl* d, Buf* out, u32 indent, bool print_type) {
     out.indent(indent);
     out.color(col_Decl);
     out.add(d.getKind().name);
@@ -384,7 +384,7 @@ fn void Decl.printKind(const Decl* d, string_buffer.Buf* out, u32 indent, bool p
     }
 }
 
-fn void Decl.printName(const Decl* d, string_buffer.Buf* out) {
+fn void Decl.printName(const Decl* d, Buf* out) {
     out.space();
     out.color(col_Value);
     if (d.name_idx) {
@@ -394,7 +394,7 @@ fn void Decl.printName(const Decl* d, string_buffer.Buf* out) {
     }
 }
 
-fn void Decl.printBits(const Decl* d, string_buffer.Buf* out) {
+fn void Decl.printBits(const Decl* d, Buf* out) {
     out.color(col_Attr);
     if (d.isPublic()) out.add(" public");
     DeclCheckState cs = d.getCheckState();
@@ -415,7 +415,7 @@ fn void Decl.printBits(const Decl* d, string_buffer.Buf* out) {
     }
 }
 
-fn void Decl.printAttrs(const Decl* d, string_buffer.Buf* out) {
+fn void Decl.printAttrs(const Decl* d, Buf* out) {
     if (!d.hasAttr()) return;
 
     // Note: just request 4 here, ideally we should iterate over all
@@ -441,7 +441,7 @@ fn void Decl.printAttrs(const Decl* d, string_buffer.Buf* out) {
     }
 }
 
-fn void Decl.printUsed(const Decl* d, string_buffer.Buf* out) {
+fn void Decl.printUsed(const Decl* d, Buf* out) {
     out.color(col_Attr);
     out.print(" used=%d/%d", d.isUsed(), d.isUsedPublic());
 }

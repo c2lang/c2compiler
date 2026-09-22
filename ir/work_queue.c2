@@ -18,15 +18,15 @@ module ir_context;
 import ir;
 import ir_tools;
 
-import stdlib local;
-import string local;
-import unistd;
-import pthread;
+import stdlib { calloc, malloc, free }
+import string { memset, memcpy }
+import unistd { sysconf, _SC_NPROCESSORS_ONLN }
+import pthread { Mutex, Pthread }
 
 const u32 MAX_THREADS = 32;
 
 fn u32 online_cpus() {
-    i64 ncpus = unistd.sysconf(unistd._SC_NPROCESSORS_ONLN);
+    i64 ncpus = sysconf(_SC_NPROCESSORS_ONLN);
     if (ncpus > 8) return 8;    // Hack around Ryzen virtual cores. Using only physical is faster
     if (ncpus > 0) return (u32)ncpus;
     return 1;
@@ -34,7 +34,7 @@ fn u32 online_cpus() {
 
 
 type WorkQueue struct {
-    pthread.Mutex lock;
+    Mutex lock;
 
     // vector of FunctionInfo's
     u32 idx;
@@ -88,7 +88,7 @@ fn ir.FunctionInfo* WorkQueue.get(WorkQueue* q) {
 type QueueWorker struct {
     u32 index;
     WorkQueue* queue;
-    pthread.Pthread thread;
+    Pthread thread;
 
     ir_tools.Tools tools;
 }

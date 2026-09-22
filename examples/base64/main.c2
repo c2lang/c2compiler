@@ -15,10 +15,10 @@
 
 module tester;
 
-import c_errno local;
-import stdio local;
-import stdlib local;
-import string local;
+import c_errno { errno }
+import stdio { * }
+import stdlib { * }
+import string { * }
 import base64;
 
 /*

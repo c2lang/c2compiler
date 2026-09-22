@@ -15,7 +15,7 @@
 
 module ast_visitor;
 
-import ast local;
+import ast { * }
 
 fn void Visitor.handleExpr(Visitor* v, Expr* e) {
     assert(e);

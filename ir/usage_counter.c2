@@ -15,9 +15,9 @@
 
 module usage_counter;
 
-import stdio; // only for dump
-import stdlib local;
-import string local;
+import stdio { printf }
+import stdlib { malloc, free }
+import string { memset }
 
 // Usage 1 means only produces a temp (so can be removed if no side effects)
 public type Counter struct {
@@ -107,7 +107,7 @@ public fn u32 Counter.popHead(Counter* c) {
 
 public fn void Counter.dump(const Counter* c) @(unused) {
     for (u32 i=0; i<=c.max_idx; i++) {
-        if (c.counts[i] != 0) stdio.printf("  [%3d] %d\n", i, c.counts[i]);
+        if (c.counts[i] != 0) printf("  [%3d] %d\n", i, c.counts[i]);
     }
 }
 

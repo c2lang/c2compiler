@@ -15,11 +15,11 @@
 
 module ast;
 
-import ast_context;
+import ast_context { Context }
 
-import stdio local;
-import stdlib local;
-import string local;
+import stdio { printf }
+import stdlib { malloc, free }
+import string { memset, memcpy }
 
 /*
     This pool is used to lookup pointers to a certain type. It keeps 4 variants:
@@ -34,14 +34,14 @@ type PointerPoolSlot struct {
 }
 
 type PointerPool struct {
-    ast_context.Context* context;
+    Context* context;
 
     u32 count;
     u32 capacity;
     PointerPoolSlot* slots;
 }
 
-fn void PointerPool.init(PointerPool* p, ast_context.Context* c) {
+fn void PointerPool.init(PointerPool* p, Context* c) {
     p.context = c;
     p.count = 1;    // skip first slot
     p.capacity = 0;

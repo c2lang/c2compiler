@@ -17,9 +17,9 @@ module ir_slot_writes_map;
 
 import ir;
 
-import stdio local;
-import stdlib;
-import string;
+import stdio { printf }
+import stdlib { calloc, malloc, free }
+import string { memset, memcpy }
 
 public type SlotWrite struct {
     u16 slot;
@@ -65,9 +65,9 @@ static_assert(168, sizeof(Map));
 
 // Note: map size must be a multiple of largest arena size (so 256)
 public fn Map* create(u32 max_elems, u16 num_blocks) {
-    Map* m = stdlib.calloc(1, sizeof(Map));
-    m.map = stdlib.malloc(max_elems * sizeof(SlotWrite));
-    m.blocks = stdlib.malloc(num_blocks * sizeof(BlockWrites));
+    Map* m = calloc(1, sizeof(Map));
+    m.map = malloc(max_elems * sizeof(SlotWrite));
+    m.blocks = malloc(num_blocks * sizeof(BlockWrites));
     m.num_blocks = num_blocks;
     m.max_elems = max_elems;
 
@@ -76,14 +76,14 @@ public fn Map* create(u32 max_elems, u16 num_blocks) {
 }
 
 public fn void Map.free(Map* m) {
-    stdlib.free(m.map);
-    stdlib.free(m.blocks);
-    stdlib.free(m);
+    free(m.map);
+    free(m.blocks);
+    free(m);
 }
 
 public fn void Map.clear(Map* m) {
-    string.memset(m.arenas, 0, sizeof(m.arenas));
-    string.memset(m.blocks, 0, m.num_blocks * sizeof(BlockWrites));
+    memset(m.arenas, 0, sizeof(m.arenas));
+    memset(m.blocks, 0, m.num_blocks * sizeof(BlockWrites));
 
     // initialize arenas
     for (u32 i=0; i<NumArenas; i++) {
@@ -243,7 +243,7 @@ public fn void Map.add(Map* m, u16 blk_id, u16 slot, ir.Ref ref) {
         u16 src_idx = r.start;
         // copy BlockWrites's data to new head of a2
         //printf("  copy data %d -> %d\n", src_idx, dest_idx);
-        string.memcpy(&m.map[dest_idx], &m.map[src_idx], r.count*sizeof(SlotWrite));
+        memcpy(&m.map[dest_idx], &m.map[src_idx], r.count*sizeof(SlotWrite));
 
         assert(dest_idx < 65536);
         r.start = (u16)dest_idx;
@@ -253,7 +253,7 @@ public fn void Map.add(Map* m, u16 blk_id, u16 slot, ir.Ref ref) {
             // fix hole in map by moving data of last BlockWrites in arena
             BlockWrites* last = &m.blocks[last_idx];
             //printf("  PLUG HOLE %d -> %d\n", last.start, src_idx);
-            string.memcpy(&m.map[src_idx], &m.map[last.start], last.count*sizeof(SlotWrite));
+            memcpy(&m.map[src_idx], &m.map[last.start], last.count*sizeof(SlotWrite));
             last.start = src_idx;
         }
     } else {    // just move to next arena
@@ -270,12 +270,12 @@ public fn void Map.add(Map* m, u16 blk_id, u16 slot, ir.Ref ref) {
         //printf("  DEST %d\n", dest_idx);
         if (r.count) { // was in arena[0], no need to plug holes
             // copy variable's data to end end of a2
-            string.memcpy(&m.map[dest_idx], &m.map[src_idx], r.count*sizeof(SlotWrite));
+            memcpy(&m.map[dest_idx], &m.map[src_idx], r.count*sizeof(SlotWrite));
             if (last_idx != NULL) {
                 // fix hole in map by moving data of last BlockWrites in arena
                 BlockWrites* last = &m.blocks[last_idx];
                 //printf("  PLUG HOLE %d -> %d\n", last.start, src_idx);
-                string.memcpy(&m.map[src_idx], &m.map[last.start], last.count*sizeof(SlotWrite));
+                memcpy(&m.map[src_idx], &m.map[last.start], last.count*sizeof(SlotWrite));
                 last.start = src_idx;
             }
         }
@@ -329,7 +329,7 @@ fn u16 Map.shiftArenaRight(Map* m, u32 arena_idx) {
     u32 dest_idx = a.map_start + a.max_elems - a.free_slots * cap;
     //printf("  DEST %d <- %d\n", dest_idx, src_idx);
     // move data
-    string.memcpy(&m.map[dest_idx], &m.map[src_idx], r.count*sizeof(SlotWrite));
+    memcpy(&m.map[dest_idx], &m.map[src_idx], r.count*sizeof(SlotWrite));
     r.start = (u16)dest_idx;
 
     if (a.first_var != a.last_var) {  // several members, move variable to tail

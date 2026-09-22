@@ -15,9 +15,9 @@
 
 module terminal;
 
-import ctermios local;
-import stdio local;
-import unistd local;
+import ctermios { * }
+import stdio { * }
+import unistd { * }
 
 fn void init(Termios *save) {
     tcgetattr(0, save);

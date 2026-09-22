@@ -1,6 +1,6 @@
 module test;
 
-import stdio local;
+import stdio { printf }
 
 i32 i;
 i32 b = 10;

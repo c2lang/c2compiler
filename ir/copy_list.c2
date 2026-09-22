@@ -15,10 +15,10 @@
 
 module ir_copy_list;
 
-import ir local;
+import ir { * }
 
-import stdlib local;
-import string local;
+import stdlib { malloc, free }
+import string { memcpy }
 
 public type CopyInfo struct {
     u32 instr_idx;

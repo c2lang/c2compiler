@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 public type ConditionalOperator struct @(opaque) {
     Expr base;
@@ -27,12 +27,12 @@ public type ConditionalOperator struct @(opaque) {
     Expr* rhs;
 }
 
-public fn ConditionalOperator* ConditionalOperator.create(ast_context.Context* c,
-                                                            SrcLoc questionLoc,
-                                                            SrcLoc colonLoc,
-                                                            Expr* cond,
-                                                            Expr* lhs,
-                                                            Expr* rhs)
+public fn ConditionalOperator* ConditionalOperator.create(Context* c,
+                                                          SrcLoc questionLoc,
+                                                          SrcLoc colonLoc,
+                                                          Expr* cond,
+                                                          Expr* lhs,
+                                                          Expr* rhs)
 {
     ConditionalOperator* e = c.alloc(sizeof(ConditionalOperator));
     e.base.init(ConditionalOperator, questionLoc, 0, 1, 1, RValue);
@@ -87,7 +87,7 @@ fn SrcLoc ConditionalOperator.getEndLoc(const ConditionalOperator* e) {
     return e.getRHS().getEndLoc();
 }
 
-fn void ConditionalOperator.printLiteral(const ConditionalOperator* e, string_buffer.Buf* out) {
+fn void ConditionalOperator.printLiteral(const ConditionalOperator* e, Buf* out) {
     e.cond.printLiteral(out);
     out.add(" ? ");
     e.lhs.printLiteral(out);
@@ -95,7 +95,7 @@ fn void ConditionalOperator.printLiteral(const ConditionalOperator* e, string_bu
     e.rhs.printLiteral(out);
 }
 
-fn void ConditionalOperator.print(const ConditionalOperator* e, string_buffer.Buf* out, u32 indent) {
+fn void ConditionalOperator.print(const ConditionalOperator* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.newline();

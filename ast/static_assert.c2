@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 public type StaticAssert struct @(opaque) {
     u32 ast_idx;    // into globals.ast_list, 0 means nil
@@ -26,11 +26,11 @@ public type StaticAssert struct @(opaque) {
     Expr* rhs;
 }
 
-public fn StaticAssert* StaticAssert.create(ast_context.Context* c,
-                                                      u32 ast_idx,
-                                                      SrcLoc loc,
-                                                      Expr* lhs,
-                                                      Expr* rhs)
+public fn StaticAssert* StaticAssert.create(Context* c,
+                                            u32 ast_idx,
+                                            SrcLoc loc,
+                                            Expr* lhs,
+                                            Expr* rhs)
 {
     StaticAssert* d = c.alloc(sizeof(StaticAssert));
     d.ast_idx = ast_idx;
@@ -55,7 +55,7 @@ public fn Expr* StaticAssert.getRHS(const StaticAssert* d) {
     return d.rhs;
 }
 
-fn void StaticAssert.print(const StaticAssert* d, string_buffer.Buf* out, u32 indent) {
+fn void StaticAssert.print(const StaticAssert* d, Buf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Decl);
     out.add("StaticAssert\n");

@@ -15,11 +15,11 @@
 
 module file_utils;
 
-import stdio local;
-import libc_fcntl local;
-import string local;
-import c_errno local;
-import unistd local;
+import stdio { snprintf }
+import libc_fcntl { * }
+import string { strerror }
+import c_errno { errno }
+import unistd { * }
 
 public type Writer struct {
     char[256] msg;

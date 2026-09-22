@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 type StringLiteralBits struct {
     u32 : NumExprBits;
@@ -30,7 +30,12 @@ public type StringLiteral struct @(opaque) {
     u32 len; // Note: no cost on 64-bit systems because of padding
 }
 
-public fn StringLiteral* StringLiteral.create(ast_context.Context* c, SrcLoc loc, u32 src_len, u32 value, u32 len, bool addnull=true) {
+public fn StringLiteral* StringLiteral.create(Context* c,
+                                              SrcLoc loc,
+                                              u32 src_len,
+                                              u32 value,
+                                              u32 len,
+                                              bool addnull = true) {
     StringLiteral* e = c.alloc(sizeof(StringLiteral));
     e.base.init(StringLiteral, loc, 0, 1, 0, LValue);
     e.base.base.stringLiteralBits.src_len = src_len;
@@ -61,11 +66,11 @@ fn SrcLoc StringLiteral.getEndLoc(const StringLiteral* e) {
     return e.base.base.loc + e.base.base.stringLiteralBits.src_len;
 }
 
-public fn void StringLiteral.printLiteral(const StringLiteral* e, string_buffer.Buf* out) {
+public fn void StringLiteral.printLiteral(const StringLiteral* e, Buf* out) {
     out.encodeBytes(idx2name(e.value), e.len, '"');
 }
 
-fn void StringLiteral.print(const StringLiteral* e, string_buffer.Buf* out, u32 indent) {
+fn void StringLiteral.print(const StringLiteral* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.space();

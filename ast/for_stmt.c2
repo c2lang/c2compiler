@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import src_loc local;
-import string_buffer;
+import ast_context { Context }
+import string_buffer { Buf}
+import src_loc { SrcLoc }
 
 public type ForStmt struct @(opaque) {
     Stmt base;
@@ -27,7 +27,7 @@ public type ForStmt struct @(opaque) {
     Stmt* body;
 }
 
-public fn ForStmt* ForStmt.create(ast_context.Context* c, SrcLoc loc, Stmt* init, Expr* cond, Expr* cont, Stmt* body) {
+public fn ForStmt* ForStmt.create(Context* c, SrcLoc loc, Stmt* init, Expr* cond, Expr* cont, Stmt* body) {
     ForStmt* s = c.alloc(sizeof(ForStmt));
     s.base.init(For, loc);
     s.init = init;
@@ -59,7 +59,7 @@ public fn Expr** ForStmt.getCond2(ForStmt* s) { return s.cond ? &s.cond : nil; }
 public fn Expr** ForStmt.getCont2(ForStmt* s) { return s.cont ? &s.cont : nil; }
 //public fn Stmt** ForStmt.getBody2(ForStmt* s) { return s.body ? &s.body : nil; }
 
-fn void ForStmt.print(const ForStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void ForStmt.print(const ForStmt* s, Buf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.newline();
 

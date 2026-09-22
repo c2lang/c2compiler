@@ -15,10 +15,11 @@
 
 module ast;
 
-import ast_context;
-import src_loc local;
-import string_buffer;
-import string;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
+
+import string { memcpy }
 
 type SwitchStmtBits struct {
     u32 : NumStmtBits;
@@ -36,13 +37,13 @@ public type SwitchStmt struct @(opaque) {
     //SwitchCase*[0] cases; // tail-allocated
 }
 
-public fn SwitchStmt* SwitchStmt.create(ast_context.Context* c,
-                                          SrcLoc loc,
-                                          Stmt* decl,
-                                          Expr* cond,
-                                          SwitchCase** cases,
-                                          u32 numCases,
-                                          bool has_default)
+public fn SwitchStmt* SwitchStmt.create(Context* c,
+                                        SrcLoc loc,
+                                        Stmt* decl,
+                                        Expr* cond,
+                                        SwitchCase** cases,
+                                        u32 numCases,
+                                        bool has_default)
 {
     bool has_decl = (decl != nil);
     u32 size = sizeof(SwitchStmt) + has_decl * sizeof(Stmt*) + numCases * sizeof(SwitchCase*);
@@ -55,7 +56,7 @@ public fn SwitchStmt* SwitchStmt.create(ast_context.Context* c,
     s.cond = cond;
     if (has_decl) s.decl[0] = decl;
     SwitchCase** cases_dest = (void*)(s.decl + has_decl);
-    string.memcpy(cases_dest, cases, numCases * sizeof(SwitchCase*));
+    memcpy(cases_dest, cases, numCases * sizeof(SwitchCase*));
 #if AstStatistics
     Stats.addStmt(Switch, size);
 #endif
@@ -127,7 +128,7 @@ public fn SwitchCase** SwitchStmt.getCases(SwitchStmt* s) {
     return (SwitchCase**)&s.decl[s.base.switchStmtBits.has_decl];
 }
 
-fn void SwitchStmt.print(const SwitchStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void SwitchStmt.print(const SwitchStmt* s, Buf* out, u32 indent) {
     s.base.printKind(out, indent);
     if (s.isString()) {
         out.color(col_Attr);

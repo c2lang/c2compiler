@@ -17,17 +17,17 @@ module compiler;
 
 import console;
 import sys_utsname;
-import target_info local;
+import target_info { Info, str2sys, str2arch, str2vendor, str2abi }
 
-import c_errno local;
-import stdio local;
-import stdlib local;
-import string;
+import c_errno { errno }
+import stdio { sscanf }
+import stdlib { exit, EXIT_FAILURE }
+import string { strerror }
 
 fn void getNativeTarget(Info* info) {
     sys_utsname.Name un;
     if (sys_utsname.uname(&un) != 0) {
-        console.error("error getting system info: %s", string.strerror(errno));
+        console.error("error getting system info: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 

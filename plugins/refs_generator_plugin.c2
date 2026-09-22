@@ -17,12 +17,12 @@ module plugin_main;
 
 import ast;
 import console;
-import constants;
+import constants { Refs_filename }
 import refs_generator;
 import plugin_info;
 import utils;
 
-import stdlib local;
+import stdlib { calloc, free }
 
 public plugin_info.Plugin handle @(export) = {
     .load = load,
@@ -58,7 +58,7 @@ fn void post_analysis(void* arg) {
     Plugin* p = arg;
     console.debug("generating refs");
     u64 t1 = utils.now();
-    refs_generator.generate(p.info.sm, p.info.astPool, p.info.output_dir, p.info.components, constants.refs_filename);
+    refs_generator.generate(p.info.sm, p.info.astPool, p.info.output_dir, p.info.components, Refs_filename);
     u64 t2 = utils.now();
     console.log_time("refs generation", t2 - t1);
 }

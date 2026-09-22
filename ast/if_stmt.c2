@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import src_loc local;
-import string_buffer;
+import ast_context { Context }
+import string_buffer { Buf}
+import src_loc { SrcLoc }
 
 type IfStmtBits struct {
     u32 : NumStmtBits;
@@ -33,7 +33,7 @@ public type IfStmt struct @(opaque) {
     Stmt*[0] tail; // tail-allocated: else/decl
 }
 
-public fn IfStmt* IfStmt.create(ast_context.Context* c,
+public fn IfStmt* IfStmt.create(Context* c,
                                 SrcLoc loc,
                                 Stmt* decl,
                                 Expr* cond,
@@ -106,7 +106,7 @@ public fn Stmt** IfStmt.getElse2(IfStmt* s) {
     return nil;
 }
 
-fn void IfStmt.print(const IfStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void IfStmt.print(const IfStmt* s, Buf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.color(col_Attr);
     if (s.hasDecl()) {

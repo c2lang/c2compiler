@@ -15,8 +15,8 @@
 
 module ir_context;
 
-import string local;
-import stdlib;
+import string { memset, memcpy }
+import stdlib { malloc, free }
 
 type ConstantList struct {
     u32 count;
@@ -28,12 +28,12 @@ fn void ConstantList.init(ConstantList* l, u32 initial_size) {
     memset(l, 0, sizeof(ConstantList));
     if (initial_size) {
         l.capacity = initial_size;
-        l.constants = stdlib.malloc(l.capacity * sizeof(Constant));
+        l.constants = malloc(l.capacity * sizeof(Constant));
     }
 }
 
 fn void ConstantList.free(ConstantList* l) {
-    if (l.constants) stdlib.free(l.constants);
+    if (l.constants) free(l.constants);
 }
 
 fn u32 ConstantList.add(ConstantList* l, const Constant* c) {
@@ -45,11 +45,11 @@ fn u32 ConstantList.add(ConstantList* l, const Constant* c) {
 
     if (l.count >= l.capacity) {
         l.capacity *= 2;
-        void* constants2 = stdlib.malloc(l.capacity * sizeof(Constant));
+        void* constants2 = malloc(l.capacity * sizeof(Constant));
         void* old = l.constants;
         if (old) {
             memcpy(constants2, old, l.count * sizeof(Constant));
-            stdlib.free(old);
+            free(old);
         }
         l.constants = constants2;
     }

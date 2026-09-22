@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import src_loc local;
-import string_buffer;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 public type AssertStmt struct @(opaque) {
     Stmt base;
@@ -25,10 +25,10 @@ public type AssertStmt struct @(opaque) {
     Expr* call;
 }
 
-public fn AssertStmt* AssertStmt.create(ast_context.Context* c,
-                                          SrcLoc loc,
-                                          Expr* inner,
-                                          Expr* call)
+public fn AssertStmt* AssertStmt.create(Context* c,
+                                        SrcLoc loc,
+                                        Expr* inner,
+                                        Expr* call)
 {
     AssertStmt* s = c.alloc(sizeof(AssertStmt));
     s.base.init(Assert, loc);
@@ -53,7 +53,7 @@ public fn Expr* AssertStmt.getCall(const AssertStmt* s) { return s.call; }
 
 public fn Expr** AssertStmt.getCall2(AssertStmt* s) { return &s.call; }
 
-fn void AssertStmt.print(const AssertStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void AssertStmt.print(const AssertStmt* s, Buf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.newline();
     s.inner.print(out, indent + 1);

@@ -15,11 +15,11 @@
 
 module ast;
 
-import ast_context;
-import constants local;
-import string_buffer;
+import ast_context { Context }
+import constants { MaxMultiDeclBits }
+import string_buffer { Buf }
 
-import string local;
+import string { memcpy }
 
 type DeclStmtBits struct {
     u32 : NumStmtBits;
@@ -31,7 +31,7 @@ public type DeclStmt struct @(opaque) {
     VarDecl*[0] decl;
 }
 
-public fn DeclStmt* DeclStmt.create(ast_context.Context* c,
+public fn DeclStmt* DeclStmt.create(Context* c,
                                     VarDecl** decl, u32 count)
 {
     u32 size = sizeof(DeclStmt) + sizeof(VarDecl*) * count;
@@ -61,7 +61,7 @@ public fn u32 DeclStmt.getDeclCount(const DeclStmt* d) {
     return d.base.declStmtBits.count;
 }
 
-fn void DeclStmt.print(const DeclStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void DeclStmt.print(const DeclStmt* s, Buf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.newline();
     u32 count = s.base.declStmtBits.count;

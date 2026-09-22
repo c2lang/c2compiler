@@ -15,7 +15,7 @@
 
 module printf_utils;
 
-import ctype local;
+import ctype { isdigit }
 
 public type PrintfSpecifier enum u8 {
     Invalid,        // unknown or length prefix

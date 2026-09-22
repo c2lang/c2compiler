@@ -16,15 +16,15 @@
 module source_lib_generator;
 
 import build_target;
-import component local;
+import component { Component }
 import console;
 import constants;
 import file_utils;
 import manifest_writer;
 
-import stdlib local;
-import string;
-import c_errno local;
+import c_errno { errno }
+import stdlib { exit, EXIT_FAILURE }
+import string { strerror }
 
 public fn void generate(build_target.Target* target,
                         const char* target_name,
@@ -51,7 +51,7 @@ fn void copy_file(void* arg, const char* filename, u32 src_loc) {
     // TODO no need to copy file, just write, since we have contents in SourceMgr
     // dont know SourceMgr file_ids here!
     if (file_utils.copy_file(filename, dest)) {
-        console.error("cannot copy file to %s: %s", dest, string.strerror(errno));
+        console.error("cannot copy file to %s: %s", dest, strerror(errno));
         exit(EXIT_FAILURE);
     }
 }

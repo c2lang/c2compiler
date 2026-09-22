@@ -16,16 +16,16 @@
 module c2loc_main;
 
 import build_target;
-import c2recipe;
-import constants;
+import c2recipe { Recipe }
+import constants { recipe_name }
 import file_list;
 import source_mgr;
 import string_pool;
 
-import c_errno local;
-import stdio local;
-import stdlib local;
-import string local;
+import c_errno { errno }
+import stdio { printf }
+import stdlib { exit, EXIT_FAILURE }
+import string { strerror, strcmp }
 import unistd;
 
 const char* target;
@@ -117,9 +117,9 @@ public fn i32 main(i32 argc, const char** argv)
 
     pool = string_pool.create(32*1024, 1024);
     sm = source_mgr.create(pool);
-    c2recipe.Recipe* recipe = c2recipe.create(sm, pool);
+    Recipe* recipe = c2recipe.create(sm, pool);
 
-    i32 file_id = sm.loadFile(constants.recipe_name, 0);
+    i32 file_id = sm.loadFile(recipe_name, 0);
     if (file_id == -1) return -1;
     if (!recipe.parse(file_id)) return -1;
 
@@ -135,7 +135,7 @@ public fn i32 main(i32 argc, const char** argv)
     }
 
     if (target && !found) {
-        printf("no such target in %s\n", constants.recipe_name);
+        printf("no such target in %s\n", recipe_name);
     }
 
     recipe.free();

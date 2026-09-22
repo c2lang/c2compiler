@@ -15,10 +15,11 @@
 
 module test;
 
-import stdio local;
-import string local;
 import file_utils;
 import xml;
+
+import stdio { * }
+import string { strerror }
 
 public fn i32 main(i32 argc, char** argv) {
     if (argc != 2 && argc != 3) {

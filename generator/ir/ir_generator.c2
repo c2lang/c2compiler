@@ -15,25 +15,25 @@
 
 module ir_generator;
 
-import ast local;
+import ast { * }
 import array_init_sorter;
 import build_file;
-import component;
+import component { Component }
 import console;
-import constants;
+import constants { MaxScopes, MaxCallArgs }
 import file_utils;
-import ir local;
-import ir_context local;
-import ir_gen_locals local;
-import source_mgr;
-import string_buffer;
-import string_pool;
+import ir { * }
+import ir_context { SymbolId }
+import ir_gen_locals { Locals, StackVar }
+import source_mgr { SourceMgr }
+import string_buffer { Buf }
+import string_pool { Pool }
 import target_info;
 import label_map;
-import value_type local;
+import value_type { Value }
 
-import c_errno local;
-import string;
+import c_errno { errno }
+import string { memset, strerror }
 
 type JumpScope struct {
     ir.BlockId break_block;    // 0 means invalid (assert)
@@ -42,16 +42,16 @@ type JumpScope struct {
 
 type Generator struct {
     ir_context.Context* ctx;
-    const string_pool.Pool* names;
+    const Pool* names;
     label_map.Map labels;
 
-    JumpScope[constants.MaxScopes] scopes;
+    JumpScope[MaxScopes] scopes;
     u32 num_scopes;
 
     Locals locals;
 
     const Decl* mainFunc;
-    string_buffer.Buf* name_buf;
+    Buf* name_buf;
     bool assert_generated;
     bool print;
     bool enable_asserts;
@@ -59,14 +59,14 @@ type Generator struct {
     u32 string_idx;     // for string literals
     const char* target;
     const char* output_dir;
-    source_mgr.SourceMgr* sm;
+    SourceMgr* sm;
     const target_info.Info* targetInfo;
     FunctionDecl* cur_function;
 }
 
 fn void Generator.init(Generator* gen,
-                       source_mgr.SourceMgr* sm,
-                       const string_pool.Pool* names,
+                       SourceMgr* sm,
+                       const Pool* names,
                        const target_info.Info* targetInfo,
                        const build_file.Info* buildInfo,
                        const char* target,
@@ -74,7 +74,7 @@ fn void Generator.init(Generator* gen,
                        bool enable_asserts,
                        bool print,
                        bool print_all) {
-    string.memset(gen, 0, sizeof(Generator));
+    memset(gen, 0, sizeof(Generator));
 
     ir_context.BuildInfo build_info = {}
     if (buildInfo) {
@@ -129,7 +129,7 @@ fn void Generator.leaveScope(Generator* gen) {
 fn const char* Generator.createLocalName(Generator* gen, const Decl* d) {
     assert(gen.cur_function);
     // a in function mod.func -> mod_func.a
-    string_buffer.Buf* out = gen.name_buf;
+    Buf* out = gen.name_buf;
     out.clear();
     out.add(d.getModuleName());
     out.add1('_');
@@ -140,7 +140,7 @@ fn const char* Generator.createLocalName(Generator* gen, const Decl* d) {
 }
 
 fn const char* Generator.createSymbolName(Generator* gen, const Decl* d) {
-    string_buffer.Buf* out = gen.name_buf;
+    Buf* out = gen.name_buf;
     out.clear();
 
     if (d.isExternal() && d.getModule().isForeign()) {
@@ -187,7 +187,7 @@ fn SymbolId Generator.createSymbol(Generator* gen, Decl* d) {
 }
 
 fn const char* Generator.createStringVar(Generator* gen) {
-    string_buffer.Buf* out = gen.name_buf;
+    Buf* out = gen.name_buf;
     out.clear();
     out.print(".str%d", gen.string_idx);
     gen.string_idx++;
@@ -490,7 +490,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
     // Note: this also adds instructions
     u32 num_params = fd.getNumParams();
     VarDecl** params = fd.getParams();
-    ir.Ref[constants.MaxCallArgs] param_refs;
+    ir.Ref[MaxCallArgs] param_refs;
     // first add all %x = param
     for (u32 i=0; i<num_params; i++) {
         VarDecl* v = params[i];
@@ -502,7 +502,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
         // only if debugging
         // params may be unnamed
         u32 name_idx = v.asDecl().getNameIdx();
-        string_buffer.Buf* out = gen.name_buf;
+        Buf* out = gen.name_buf;
         out.clear();
         if (name_idx) out.add(gen.idx2name(name_idx));
         else out.add("(unnamed)");
@@ -580,8 +580,8 @@ fn void Generator.on_module(void* arg, Module* m) {
 public fn void generate(const char* target,
                         const char* output_dir,
                         component.List* comps,
-                        source_mgr.SourceMgr* sm,
-                        const string_pool.Pool* astPool,
+                        SourceMgr* sm,
+                        const Pool* astPool,
                         const target_info.Info* targetInfo,
                         const build_file.Info* buildInfo,   // can be nil
                         const Decl* mainFunc,
@@ -591,7 +591,7 @@ public fn void generate(const char* target,
     char[file_utils.Max_path] ir_dir;
     if (!file_utils.make_path(ir_dir, elemsof(ir_dir), output_dir, "ir")
     ||  file_utils.create_path(ir_dir)) {
-        console.error("cannot create directory %s: %s", ir_dir, string.strerror(errno));
+        console.error("cannot create directory %s: %s", ir_dir, strerror(errno));
         return;
     }
 
@@ -599,7 +599,7 @@ public fn void generate(const char* target,
     gen.mainFunc = mainFunc;
 
     // TODO also generate source libs, inline functions for interface files
-    component.Component* mainComp = comps.getLast();
+    Component* mainComp = comps.getLast();
     mainComp.visitModules(Generator.on_module, &gen);
 
     gen.ctx.convert_functions();
@@ -637,7 +637,7 @@ fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
     // only if debugging
     // params may be unnamed
     u32 name_idx = vd.asDecl().getNameIdx();
-    string_buffer.Buf* out = gen.name_buf;
+    Buf* out = gen.name_buf;
     out.clear();
     out.print("s%d ", slot.value);
     if (name_idx) out.add(gen.idx2name(name_idx));

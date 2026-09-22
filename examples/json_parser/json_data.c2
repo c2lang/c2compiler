@@ -15,9 +15,9 @@
 
 module json;
 
-import stdlib local;
-import string local;
-import stdio local;
+import stdlib { malloc, free }
+import string { memcpy, strlen, strcmp }
+import stdio { printf }
 
 const u32 TEXT_INIT_SIZE = 256;
 const u32 NODE_INIT_SIZE = 64;

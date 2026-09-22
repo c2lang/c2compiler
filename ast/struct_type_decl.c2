@@ -15,11 +15,11 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
-import string;
+import string { memset, memcpy }
 
 type StructTypeDeclBits struct {
     u32 : NumDeclBits;
@@ -56,7 +56,7 @@ public fn bool FieldInitField.isZeroSizeBitfield(const FieldInitField* f) {
     return f.is_bitfield && f.bitfield_width == 0;
 }
 
-fn void FieldInitField.print(const FieldInitField* f, string_buffer.Buf* out) {
+fn void FieldInitField.print(const FieldInitField* f, Buf* out) {
     out.color(col_Calc);
     out.print("offset=%d  idx=%d", f.offset, f.member_idx);
     if (f.is_bitfield) {
@@ -102,7 +102,7 @@ public type StructTypeDecl struct @(opaque) {
     //StructLayout layout[0]; // tail-allocated
 }
 
-public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
+public fn StructTypeDecl* StructTypeDecl.create(Context* c,
                                                   u32 name,
                                                   SrcLoc loc,
                                                   bool is_public,
@@ -136,8 +136,8 @@ public fn StructTypeDecl* StructTypeDecl.create(ast_context.Context* c,
     layout.attr_alignment = 1;
 
     if (num_members) {
-        string.memcpy(d.members, members, num_members * sizeof(Decl*));
-        string.memset(layout.members, 0, num_members * sizeof(StructMemberLayout));
+        memcpy(d.members, members, num_members * sizeof(Decl*));
+        memset(layout.members, 0, num_members * sizeof(StructMemberLayout));
     }
 #if AstStatistics
     Stats.addDecl(StructType, size);
@@ -239,10 +239,13 @@ public fn bool StructTypeDecl.hasAttrNoTypeDef(const StructTypeDecl* d) {
     return d.base.structTypeDeclBits.attr_notypedef;
 }
 
-public fn void StructTypeDecl.setStructFunctions(StructTypeDecl* d, ast_context.Context* c, FunctionDecl** funcs, u32 count) {
+public fn void StructTypeDecl.setStructFunctions(StructTypeDecl* d,
+                                                 Context* c,
+                                                 FunctionDecl** funcs,
+                                                 u32 count) {
     const u32 size = count * sizeof(FunctionDecl*);
     FunctionDecl** dest = c.alloc(size);
-    string.memcpy(dest, funcs, size);
+    memcpy(dest, funcs, size);
     d.struct_functions = dest;
     d.num_struct_functions = count;
 }
@@ -307,7 +310,7 @@ public fn Decl* StructTypeDecl.findMember(const StructTypeDecl* s, u32 name_idx,
     return nil;
 }
 
-public fn FieldInitInfo* StructTypeDecl.createFieldInfo(StructTypeDecl* d, ast_context.Context* c) {
+public fn FieldInitInfo* StructTypeDecl.createFieldInfo(StructTypeDecl* d, Context* c) {
     u32 count = d.getDesigMemberCount();
     d.field_info = c.alloc(sizeof(FieldInitInfo) + count * sizeof(FieldInitField));
     d.field_info.num_fields = count;
@@ -343,7 +346,7 @@ public fn bool StructTypeDecl.hasFieldInfo(const StructTypeDecl* d) {
     return d.field_info != nil;
 }
 
-fn void StructTypeDecl.print(const StructTypeDecl* d, string_buffer.Buf* out, u32 indent) {
+fn void StructTypeDecl.print(const StructTypeDecl* d, Buf* out, u32 indent) {
     d.base.printKind(out, indent, true);
     d.base.printBits(out);
     bool is_global = d.base.structTypeDeclBits.is_global;

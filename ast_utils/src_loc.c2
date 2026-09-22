@@ -17,7 +17,7 @@ module src_loc;
 
 public type SrcLoc u32;
 
-public type SrcRange struct {
+public type SrcRange struct @(unused) {
     SrcLoc start;
     SrcLoc end;
 }

@@ -15,8 +15,8 @@
 
 module test;
 
-import stdio local;
-import string local;
+import stdio { * }
+import string { * }
 import stdlib;
 import sys_time;
 import unistd;

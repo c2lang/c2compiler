@@ -18,14 +18,14 @@ module c_generator;
 import ast;
 import build_file;
 import build_target;
-import component;
-import file_utils local;
+import component { Component }
+import file_utils { Max_path }
 import module_list;
-import string_buffer;
+import string_buffer { Buf }
 import string_list;
 
-import stdio local;
-import string local;
+import stdio { snprintf }
+import string { pstrcpy, strcmp }
 
 fn void Generator.createMakefile(Generator* gen,
                                  const char* output_dir,
@@ -34,7 +34,7 @@ fn void Generator.createMakefile(Generator* gen,
                                  bool enable_asserts,
                                  u32 libc_name)
 {
-    string_buffer.Buf* out = gen.out;
+    Buf* out = gen.out;
     out.clear();
     out.add("# This makefile is auto-generated, any modifications will be lost\n\n");
 
@@ -99,7 +99,7 @@ fn void Generator.createMakefile(Generator* gen,
         //out.add("objects := $(patsubst %.c,%.o,$(wildcard *.c))\n");
         out.add("objects := ");
         for (u32 i = 0; i != comps.size(); i++) {
-            component.Component* c = comps.get(i);
+            Component* c = comps.get(i);
             if (c.isExternalLibrary()) continue;    // does NOT include source libraries
 
             module_list.List* mods = c.getModules();
@@ -156,7 +156,7 @@ fn void Generator.createMakefile(Generator* gen,
 
         // interate Components in reverse order
         for (u32 i = comps.size(); i-- > 0;) {
-            component.Component* c = comps.get(i);
+            Component* c = comps.get(i);
             if (!c.isExternal()) continue;
             const char* linkname = c.getLinkName();
 
@@ -230,10 +230,10 @@ fn void Generator.createMakefile(Generator* gen,
     gen.write(gen.out, output_dir, "Makefile");
 }
 
-fn void Generator.createExportsFile(Generator* gen, const char* output_dir, component.Component* mainComp) {
+fn void Generator.createExportsFile(Generator* gen, const char* output_dir, Component* mainComp) {
     if (gen.target_kind != DynamicLibrary) return;
 
-    string_buffer.Buf* out = gen.out;
+    Buf* out = gen.out;
     out.clear();
 
     out.add("LIB_1.0 {\n");
@@ -305,7 +305,7 @@ const char[] C2_types_header =
     ```;
 
 fn void Generator.generateC2TypesHeader(Generator* gen) {
-    string_buffer.Buf* out = gen.header;
+    Buf* out = gen.header;
     out.clear();
     out.add(C2_types_header);
     gen.write(out, gen.results_dir, "c2types.h");

@@ -15,12 +15,12 @@
 
 module ast;
 
-import ast_context;
-import attr local;
-import src_loc local;
-import string_buffer;
+import ast_context { Context }
+import attr { Attr }
+import string_buffer { Buf}
+import src_loc { SrcLoc }
 
-import string;
+import string { memcpy }
 
 public type CallKind enum u8 (const char* const name) {
     Invalid         : { "Invalid" },
@@ -84,7 +84,7 @@ public type FunctionDecl struct @(opaque) {
     //VarDecl*[0] params; // tail-allocated;
 }
 
-public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
+public fn FunctionDecl* FunctionDecl.create(Context* c,
                                             u32 name,
                                             SrcLoc loc,
                                             bool is_public,
@@ -120,7 +120,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     }
     if (num_params) {
         VarDecl** tail = d.rtype.getPointerAfter();
-        string.memcpy(tail, params, num_params * sizeof(VarDecl*));
+        memcpy(tail, params, num_params * sizeof(VarDecl*));
     }
 
 #if AstStatistics
@@ -129,7 +129,7 @@ public fn FunctionDecl* FunctionDecl.create(ast_context.Context* c,
     return d;
 }
 
-public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
+public fn FunctionDecl* FunctionDecl.createTemplate(Context* c,
                                                     u32 name,
                                                     SrcLoc loc,
                                                     bool is_public,
@@ -161,7 +161,7 @@ public fn FunctionDecl* FunctionDecl.createTemplate(ast_context.Context* c,
     d.rtype.init(rtype);
     if (num_params) {
         VarDecl** tail = d.rtype.getPointerAfter();
-        string.memcpy(tail, params, num_params * sizeof(VarDecl*));
+        memcpy(tail, params, num_params * sizeof(VarDecl*));
     }
 
 #if AstStatistics
@@ -475,7 +475,7 @@ public fn const char* FunctionDecl.getDiagKind(const FunctionDecl* d) {
     return "";
 }
 
-fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 indent) {
+fn void FunctionDecl.print(const FunctionDecl* d, Buf* out, u32 indent) {
     bool valid_type = d.base.qt.isValid();
     d.base.printKind(out, indent, valid_type);
     if (!valid_type) {
@@ -539,7 +539,7 @@ fn void FunctionDecl.print(const FunctionDecl* d, string_buffer.Buf* out, u32 in
     }
 }
 
-fn void FunctionDecl.printType(const FunctionDecl* d, string_buffer.Buf* out) {
+fn void FunctionDecl.printType(const FunctionDecl* d, Buf* out) {
     if (d.isType()) {
         out.add(d.base.getName());
         return;

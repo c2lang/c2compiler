@@ -15,12 +15,12 @@
 
 module module_analyser;
 
-import ast local;
-import name_map local;
+import ast { * }
+import name_map { NameMap }
 import size_analyser;
-import value_type local;
+import value_type { Value }
 
-import stdio;
+import stdio { snprintf }
 
 fn void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
     if (d.isOpaque()) {
@@ -44,7 +44,7 @@ fn void Analyser.analyseStructType(Analyser* ma, StructTypeDecl* d) {
 fn const char* Analyser.bitfieldDesc(Analyser* ma, u32 name_idx) {
     if (name_idx) {
         static char[64] bitfield_desc;
-        stdio.snprintf(bitfield_desc, elemsof(bitfield_desc), "bit-field '%s'", ma.idx2name(name_idx));
+        snprintf(bitfield_desc, elemsof(bitfield_desc), "bit-field '%s'", ma.idx2name(name_idx));
         return bitfield_desc;
     } else {
         return "unnamed bit-field";

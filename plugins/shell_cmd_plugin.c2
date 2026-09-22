@@ -23,10 +23,10 @@ import process_utils;
 import string_buffer;
 import string_utils;
 import utils;
-import yaml;
+import yaml { Parser, Node, Iter }
 
-import stdlib local;
-import string local;
+import stdlib { calloc, free, exit, EXIT_FAILURE, atoi }
+import string { strcspn, strspn, memcpy, strlen }
 
 type Cmd struct {
     const char* name;
@@ -77,7 +77,7 @@ fn void init(void* arg, plugin_info.Info* info) {
         console.error("shell_cmd: cannot load file %s: %s", p.config_file, file.getError());
         exit(EXIT_FAILURE);
     }
-    yaml.Parser* parser = yaml.Parser.create();
+    Parser* parser = Parser.create();
     if (!parser.parse(file.data())) {
         console.error("shell_cmd: %s", parser.getMessage());
         exit(EXIT_FAILURE);
@@ -102,19 +102,19 @@ fn void post_parse(void* arg) {
     //Plugin* p = arg;
 }
 
-fn bool parse_config(yaml.Parser* parser, const char* config_file, string_buffer.Buf* out) {
+fn bool parse_config(Parser* parser, const char* config_file, string_buffer.Buf* out) {
     const char* mname = "shell_cmd";
     const char* mod_name = parser.getScalarValue("shell.module");
     if (mod_name) mname = mod_name;
     out.print("module %s;\n\n", mname);
 
-    const yaml.Node* cmds = parser.findNode("shell.commands");
+    const Node* cmds = parser.findNode("shell.commands");
     if (!cmds) {
         console.error("shell_cmd: missing 'shell.commands'");
         return false;
     }
 
-    yaml.Iter iter = parser.getNodeChildIter(cmds);
+    Iter iter = parser.getNodeChildIter(cmds);
     while (!iter.done()) {
         Cmd c = { }
 

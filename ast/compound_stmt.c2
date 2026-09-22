@@ -15,11 +15,11 @@
 
 module ast;
 
-import ast_context;
-import src_loc local;
-import string_buffer;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
-import string;
+import string { memcpy }
 
 type CompoundStmtBits struct {
     u32 : NumStmtBits;
@@ -31,7 +31,7 @@ public type CompoundStmt struct @(opaque) {
     Stmt*[0] stmts; // tail-allocated
 }
 
-public fn CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc endLoc, Stmt** stmts, u32 count) {
+public fn CompoundStmt* CompoundStmt.create(Context* c, SrcLoc endLoc, Stmt** stmts, u32 count) {
     assert(count < 65556);
     u32 size = sizeof(CompoundStmt) + count * sizeof(Stmt*);
 
@@ -40,7 +40,7 @@ public fn CompoundStmt* CompoundStmt.create(ast_context.Context* c, SrcLoc endLo
     s.base.compoundStmtBits.count = count;
 
     if (count) {
-        string.memcpy(s.stmts, stmts, count * sizeof(Stmt*));
+        memcpy(s.stmts, stmts, count * sizeof(Stmt*));
     }
 #if AstStatistics
     Stats.addStmt(Compound, size);
@@ -78,7 +78,7 @@ public fn SrcLoc CompoundStmt.getEndLoc(const CompoundStmt* e) {
     return e.base.loc + 1;
 }
 
-fn void CompoundStmt.print(const CompoundStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void CompoundStmt.print(const CompoundStmt* s, Buf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.newline();
     const u32 count = s.base.compoundStmtBits.count;

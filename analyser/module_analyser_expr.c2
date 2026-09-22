@@ -15,14 +15,14 @@
 
 module module_analyser;
 
-import ast local;
-import ast_builder;
+import ast { * }
+import ast_builder { Builder }
 import conversion_checker;
 import levenshtein;
-import src_loc local;
-import value_type local;
+import src_loc { SrcLoc }
+import value_type { Value }
 
-import string;
+import string { strlen }
 
 fn QualType Analyser.analyseConstExpr(Analyser* ma, Expr** e_ptr, bool need_rvalue) {
     assert(e_ptr);
@@ -655,7 +655,7 @@ fn void Analyser.get_best_match(Analyser* ma, const char* name1, usize len1, Str
             ma.get_best_match(name1, len1, (StructTypeDecl*)m, best_dist, result);
         } else {
             const char* name2 = ma.idx2name(name_idx);
-            usize len2 = string.strlen(name2);
+            usize len2 = strlen(name2);
             usize dist = levenshtein.dist(name1, len1, name2, len2);
             if (dist < *best_dist) {
                 *result = name2;
@@ -668,7 +668,7 @@ fn void Analyser.get_best_match(Analyser* ma, const char* name1, usize len1, Str
 
 fn void Analyser.memberError(Analyser* ma, u32 name_idx, SrcLoc loc, StructTypeDecl* s) {
     const char* name1 = ma.idx2name(name_idx);
-    usize len1 = string.strlen(name1);
+    usize len1 = strlen(name1);
 
     const char* result = nil;
     usize dist = usize.max;
@@ -702,7 +702,7 @@ fn Decl* Analyser.findStructMember(Analyser* ma,
 }
 
 // TODO move to AnalyserUtils
-fn QualType getPointerFromArray(ast_builder.Builder* builder, QualType q) {
+fn QualType getPointerFromArray(Builder* builder, QualType q) {
     // Dont get canonical
     const ArrayType* a = (ArrayType*)q.getTypeOrNil();
     QualType elem = a.getElemType();

@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-import stdio local;
+import stdio { printf }
 
 u32 a = 1, b = 2;
 

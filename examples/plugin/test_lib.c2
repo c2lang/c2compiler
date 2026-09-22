@@ -15,7 +15,7 @@
 
 module test;
 
-import stdio local;
+import stdio { printf }
 import plugin_main;
 
 public fn i32 main() {

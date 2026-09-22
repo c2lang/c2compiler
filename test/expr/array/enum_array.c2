@@ -1,8 +1,6 @@
 // @warnings{no-unused}
 module test;
 
-import stdio local;
-
 type Enum enum u8 { No, Yes, Maybe }
 
 u32[Enum] a = {

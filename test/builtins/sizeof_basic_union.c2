@@ -1,6 +1,5 @@
 // @warnings{no-unused}
 module test;
-import stdio local;
 
 type S1 union {
     i8 a;

@@ -14,9 +14,9 @@
  */
 
 module test;
-import stdio local;
-import stdlib local;
-import list as ll local;
+import stdio { printf }
+import stdlib { calloc  }
+import list as ll { Element }
 
 type Module struct {
     const char* name;
@@ -111,6 +111,8 @@ public fn i32 main() {
 
     printf("Ordered list\n");
     printList("all", &modules, false);
+
+    // NOTE: Modules are not freed
     return 0;
 }
 

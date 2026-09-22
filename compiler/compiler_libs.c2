@@ -18,22 +18,22 @@ module compiler;
 import ast;
 import build_target;
 import color;
-import component local;
+import component { Kind, Component }
 import component_sorter;
 import console;
-import constants;
+import constants { manifest_name }
 import file_utils;
 import manifest;
 import module_list;
-import source_mgr;
-import string_buffer;
+import source_mgr { SourceMgr }
+import string_buffer { Buf }
 import string_list;
 
-import c_errno local;
-import libc_dirent local;
-import stdio;
-import stdlib local;
-import string;
+import c_errno { errno }
+import libc_dirent { * }
+import stdio { puts }
+import stdlib { exit, EXIT_FAILURE }
+import string { strerror }
 
 fn Kind convertKind(build_target.Kind kind) {
     switch (kind) {
@@ -94,14 +94,14 @@ fn void Compiler.load_libs(Compiler* c) {
     // sort components
     component_sorter.sort(c.components.get_all(), c.components.size(), c.diags);
 #if 0
-    stdio.printf("AFTER SORT\n");
+    printf("AFTER SORT\n");
     for (u32 i=0; i<c.components.size(); i++) {
         Component* comp = c.components.get(i);
-        stdio.printf("  [%d] %s  %s\n", i, comp.getName(), comp.getKindName());
+        printf("  [%d] %s  %s\n", i, comp.getName(), comp.getKindName());
         const string_list.List* deps = comp.getDeps();
         for (u32 j=0; j<deps.length(); j++) {
             u32 depname = deps.get_idx(j);
-            stdio.printf("    dep %s\n", c.auxPool.idx2str(depname));
+            printf("    dep %s\n", c.auxPool.idx2str(depname));
         }
     }
 #endif
@@ -119,7 +119,7 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
     }
 
     char[file_utils.Max_path] fullname;
-    if (!file_utils.make_path(fullname, elemsof(fullname), libdir, constants.manifest_name)) return;
+    if (!file_utils.make_path(fullname, elemsof(fullname), libdir, manifest_name)) return;
     i32 file_id = c.sm.loadFile(fullname, 0);
     if (file_id == -1) return;
 
@@ -169,7 +169,7 @@ fn bool Compiler.find_lib(const Compiler* c, const char* libname, char* libdir, 
         const char* dirname = c.libdirs.get(i);
         if (file_utils.make_path(libdir, size, dirname, libname)) {
             char[file_utils.Max_path] path;
-            if (file_utils.make_path(path, elemsof(path), libdir, constants.manifest_name)
+            if (file_utils.make_path(path, elemsof(path), libdir, manifest_name)
             &&  file_utils.is_file(path))
                 return true;
         }
@@ -220,7 +220,7 @@ fn void Compiler.parse_lib(Compiler* c, Component* comp) {
 
 fn void parseSourceLibFile(void* arg, const char* filename, u32 src_loc) {
     Compiler* c = arg;
-    source_mgr.SourceMgr* sm = c.sm;
+    SourceMgr* sm = c.sm;
 
     // prefix with component root
     char[file_utils.Max_path] fullname;
@@ -250,7 +250,7 @@ fn void Compiler.parseSourceLibs(Compiler* c) {
 }
 
 fn void Compiler.showAllLibs(Compiler* c) {
-    string_buffer.Buf* out = string_buffer.create(1024, color.useColor(), 2);
+    Buf* out = string_buffer.create(1024, color.useColor(), 2);
     out.add("libraries:\n");
 
     bool show_modules = false;
@@ -258,11 +258,11 @@ fn void Compiler.showAllLibs(Compiler* c) {
         c.showLibs(out, c.libdirs.get(i), show_modules);
     }
 
-    stdio.puts(out.data());
+    puts(out.data());
     out.free();
 }
 
-fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirname, bool show_modules) {
+fn void Compiler.showLibs(Compiler* c, Buf* out, const char* dirname, bool show_modules) {
     out.indent(1);
     out.color(color.Blue);
     out.add(dirname);
@@ -271,7 +271,7 @@ fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirna
 
     DIR* dir = opendir(dirname);
     if (dir == nil) {
-        console.error("cannot open library dir '%s': %s", dirname, string.strerror(errno));
+        console.error("cannot open library dir '%s': %s", dirname, strerror(errno));
         return;
     }
 
@@ -279,7 +279,7 @@ fn void Compiler.showLibs(Compiler* c, string_buffer.Buf* out, const char* dirna
         char[file_utils.Max_path] fullname;
         const char* name = entry.d_name;
         if (name[0] != '.' && entry.d_type == DT_DIR) {
-            if (!file_utils.make_path3(fullname, elemsof(fullname), dirname, name, constants.manifest_name)
+            if (!file_utils.make_path3(fullname, elemsof(fullname), dirname, name, manifest_name)
             ||  !file_utils.is_file(fullname))
                 continue;
 

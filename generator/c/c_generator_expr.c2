@@ -15,16 +15,16 @@
 
 module c_generator;
 
-import ast local;
-import c_prec local;
-import string_buffer;
+import ast { * }
+import c_prec { C_Prec, C_Prec_table }
+import string_buffer { Buf }
 
-fn void Generator.emitExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
+fn void Generator.emitExpr(Generator* gen, Buf* out, Expr* e) {
     gen.emitExpr2(out, e, Assignment);
 }
 
 // TODO: use default argument: C_Prec = Assignment
-fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_Prec prec) {
+fn void Generator.emitExpr2(Generator* gen, Buf* out, Expr* e, C_Prec prec) {
     switch (e.getKind()) {
     case IntegerLiteral:
         IntegerLiteral* i = (IntegerLiteral*)e;
@@ -166,7 +166,7 @@ fn void Generator.emitExpr2(Generator* gen, string_buffer.Buf* out, Expr* e, C_P
     }
 }
 
-fn void Generator.emitStringLiteral(Generator* gen, string_buffer.Buf* out, const StringLiteral* s, bool raw = false) {
+fn void Generator.emitStringLiteral(Generator* gen, Buf* out, const StringLiteral* s, bool raw = false) {
     const char* p = gen.idx2name(s.getText());
     u32 len = s.getLength();
     if (!raw && len > 10) {
@@ -187,7 +187,7 @@ fn void Generator.emitStringLiteral(Generator* gen, string_buffer.Buf* out, cons
     out.encodeBytes(p, len, '"');
 }
 
-fn void Generator.emitBitOffset(Generator* gen, string_buffer.Buf* out, Expr* base, Expr* index, C_Prec prec) {
+fn void Generator.emitBitOffset(Generator* gen, Buf* out, Expr* base, Expr* index, C_Prec prec) {
     // example: a[15:8] -> ((a>>8) & 0xFF)
     BitOffsetExpr* bo = (BitOffsetExpr*)index;
     // TODO use prec to remove these parentheses
@@ -205,14 +205,14 @@ fn void Generator.emitBitOffset(Generator* gen, string_buffer.Buf* out, Expr* ba
     out.rparen();
 }
 
-fn void Generator.emitCast(Generator* gen, string_buffer.Buf* out, QualType qt, bool full) {
+fn void Generator.emitCast(Generator* gen, Buf* out, QualType qt, bool full) {
     out.add1('(');
     gen.emitTypePre(out, qt);
     if (full) gen.emitTypePost(out, qt);
     out.add1(')');
 }
 
-fn void Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e, C_Prec prec) {
+fn void Generator.emitBinaryOperator(Generator* gen, Buf* out, Expr* e, C_Prec prec) {
     BinaryOperator* b = (BinaryOperator*)e;
     BinaryOpcode opcode = b.getOpcode();
     C_Prec prec2 = C_Prec_table[opcode];
@@ -233,7 +233,7 @@ fn void Generator.emitBinaryOperator(Generator* gen, string_buffer.Buf* out, Exp
     if (need_paren) out.rparen();
 }
 
-fn void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, Expr* e, C_Prec prec) {
+fn void Generator.emitUnaryOperator(Generator* gen, Buf* out, Expr* e, C_Prec prec) {
     UnaryOperator* u = (UnaryOperator*)e;
     if (u.isBefore()) {
         if (prec > Prefix) out.lparen();
@@ -246,7 +246,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, string_buffer.Buf* out, Expr
     }
 }
 
-fn void emitDotOrArrow(string_buffer.Buf* out, QualType qt) {
+fn void emitDotOrArrow(Buf* out, QualType qt) {
     if (qt.isPointer()) out.add("->");
     else out.add1('.');
 }
@@ -257,7 +257,7 @@ type MemberContext struct {
     QualType baseType;
 }
 
-fn void Generator.emitMemberDecl(Generator* gen, string_buffer.Buf* out, Decl* d, MemberContext* mc = nil) {
+fn void Generator.emitMemberDecl(Generator* gen, Buf* out, Decl* d, MemberContext* mc = nil) {
     switch (d.getKind()) {
     case Function:
         if (mc.need_dot) emitDotOrArrow(out, mc.baseType);
@@ -305,7 +305,7 @@ fn void Generator.emitMemberDecl(Generator* gen, string_buffer.Buf* out, Decl* d
     }
 }
 
-fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, MemberExpr* m, MemberContext* mc, bool base_only = false) {
+fn void Generator.emitMemberExpr(Generator* gen, Buf* out, MemberExpr* m, MemberContext* mc, bool base_only = false) {
     if (m.hasExpr()) {
         Expr* base = m.getBaseExpr();
         if (base.isMember()) {
@@ -323,7 +323,7 @@ fn void Generator.emitMemberExpr(Generator* gen, string_buffer.Buf* out, MemberE
     if (!base_only) gen.emitMemberDecl(out, m.getDecl(1), mc);
 }
 
-fn void Generator.emitFieldDesigExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
+fn void Generator.emitFieldDesigExpr(Generator* gen, Buf* out, Expr* e) {
     FieldDesignatedInitExpr* fdi = (FieldDesignatedInitExpr*)e;
     out.add1('.');
     out.add(fdi.getFieldName());
@@ -331,7 +331,7 @@ fn void Generator.emitFieldDesigExpr(Generator* gen, string_buffer.Buf* out, Exp
     gen.emitExpr(out, fdi.getInit());
 }
 
-fn void Generator.emitArrayDesigExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
+fn void Generator.emitArrayDesigExpr(Generator* gen, Buf* out, Expr* e) {
     ArrayDesignatedInitExpr* ad = (ArrayDesignatedInitExpr*)e;
     out.add1('[');
     if (ad.hasExpr1()) gen.emitExpr(out, ad.getExpr1());
@@ -345,7 +345,7 @@ fn void Generator.emitArrayDesigExpr(Generator* gen, string_buffer.Buf* out, Exp
     gen.emitExpr(out, ad.getInit());
 }
 
-fn void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr* e) {
+fn void Generator.emitBuiltinExpr(Generator* gen, Buf* out, Expr* e) {
     BuiltinExpr* b = (BuiltinExpr*)e;
     switch (b.getKind()) {
     case Sizeof:
@@ -391,7 +391,7 @@ fn void Generator.emitBuiltinExpr(Generator* gen, string_buffer.Buf* out, Expr* 
 }
 
 // output initializers as compact lines with aligned columns if possible
-fn void Generator.emitInitListExpr(Generator* gen, string_buffer.Buf* out, InitListExpr* ile) {
+fn void Generator.emitInitListExpr(Generator* gen, Buf* out, InitListExpr* ile) {
     Expr** values = ile.getValues();
     u32 num_values = ile.getNumValues();
     out.add1('{');

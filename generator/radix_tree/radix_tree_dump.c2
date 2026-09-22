@@ -15,9 +15,9 @@
 
 module radix_tree;
 
-import linked_list;
+import linked_list { Element }
 
-import stdio local;
+import stdio { printf }
 
 fn void Tree.dump_nodes(const Tree* t, u32 idx, u32 end) {
     while (idx < end) {
@@ -56,7 +56,7 @@ fn void Tree.dump2(const Tree* t, bool print_nodes, bool print_words, bool print
     printf("---- nodes (%d/%d, root %d) ----\n", used, t.nodes.capacity, t.nodes.root_idx);
     if (print_nodes) {
         u32 idx = sizeof(Node);
-        linked_list.Element* cur = t.used_zones.next;
+        Element* cur = t.used_zones.next;
         while (cur != &t.used_zones) {
             Zone* z = to_container(Zone, list, cur);
             // TODO also dumps wasted nodes!
@@ -119,7 +119,7 @@ fn u32 Tree.count_words(const Tree* t) {
 
 fn void Tree.dump_zones(const Tree* t) @(unused) {
     printf("---- zones ----\n");
-    linked_list.Element* cur = t.used_zones.next;
+    Element* cur = t.used_zones.next;
     while (cur != &t.used_zones) {
         Zone* z = to_container(Zone, list, cur);
         printf("  %7d  %7d\n", z.start, z.size);

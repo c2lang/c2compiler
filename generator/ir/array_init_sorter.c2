@@ -15,13 +15,14 @@
 
 module array_init_sorter;
 
-import ast;
+import ast { Expr }
 
-import stdlib;
+import stdlib { malloc, free }
+
 // TODO make 2 arrays, better for cache
 public type InitEntry struct {
     u32 index;
-    const ast.Expr* expr;
+    const Expr* expr;
 }
 
 public type Sorter struct {
@@ -37,15 +38,15 @@ public fn Sorter create(u32 allocate, u32 array_size, u32 elem_size) {
     Sorter s = {}
     s.array_size = array_size;
     s.elem_size = elem_size;
-    s.entries = stdlib.malloc(allocate * sizeof(InitEntry));
+    s.entries = malloc(allocate * sizeof(InitEntry));
     return s;
 }
 
 public fn void Sorter.free(Sorter* s) {
-    stdlib.free(s.entries);
+    free(s.entries);
 }
 
-public fn void Sorter.addAt(Sorter* s, u32 index, const ast.Expr* e) {
+public fn void Sorter.addAt(Sorter* s, u32 index, const Expr* e) {
     InitEntry entry = { .index= index, .expr = e }
 
     if (s.count == 0) {
@@ -68,13 +69,13 @@ public fn void Sorter.addAt(Sorter* s, u32 index, const ast.Expr* e) {
     s.index = index+1;
 }
 
-public fn void Sorter.add(Sorter* s, const ast.Expr* e) {
+public fn void Sorter.add(Sorter* s, const Expr* e) {
     s.addAt(s.index, e);
 }
 
 public type OnZeroFn fn void (void* arg, u32 size);
 
-public type OnExprFn fn void (void* arg, const ast.Expr* e, u32 elem_size);
+public type OnExprFn fn void (void* arg, const Expr* e, u32 elem_size);
 
 public fn void Sorter.iterate(const Sorter* s, OnExprFn on_expr, OnZeroFn on_zero, void* arg) {
     u32 last = 0;

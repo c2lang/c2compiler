@@ -15,8 +15,8 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
+import ast_context { Context }
+import string_buffer { Buf }
 
 public type PointerType struct @(opaque) {
     Type base;
@@ -24,7 +24,7 @@ public type PointerType struct @(opaque) {
 }
 
 // Note: non-public, since all pointers should be created via ast.getPointerType()
-fn PointerType* PointerType.create(ast_context.Context* c, QualType inner) {
+fn PointerType* PointerType.create(Context* c, QualType inner) {
     PointerType* t = c.alloc(sizeof(PointerType));
     t.base.init(Pointer);
     t.base.setAlignment(c.getWordSize());
@@ -41,12 +41,12 @@ public fn QualType PointerType.getInner(const PointerType* t) {
     return t.inner;
 }
 
-fn void PointerType.print(const PointerType* t, string_buffer.Buf* out) {
+fn void PointerType.print(const PointerType* t, Buf* out) {
     t.inner.printInner(out, false, true, true);
     out.add1('*');
 }
 
-fn void PointerType.fullPrint(const PointerType* t, string_buffer.Buf* out, u32 indent) {
+fn void PointerType.fullPrint(const PointerType* t, Buf* out, u32 indent) {
     out.indent(indent);
     out.print("PointerType [%p]\n", t);
     t.inner.fullPrint(out, indent + 1);

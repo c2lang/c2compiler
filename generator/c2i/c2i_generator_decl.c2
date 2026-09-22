@@ -15,10 +15,10 @@
 
 module c2i_generator;
 
-import ast local;
-import string_buffer;
+import ast { * }
+import string_buffer { Buf }
 
-fn void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, const Decl* d) {
+fn void Generator.emitGlobalVarDecl(Generator* gen, Buf* out, const Decl* d) {
     VarDecl* v = (VarDecl*)d;
 
     gen.emitType(out, d.getType());
@@ -38,7 +38,7 @@ fn void Generator.emitGlobalVarDecl(Generator* gen, string_buffer.Buf* out, cons
     out.newline();
 }
 
-fn void Generator.emitVarDecl(Generator* gen, string_buffer.Buf* out, const VarDecl* vd, bool first) {
+fn void Generator.emitVarDecl(Generator* gen, Buf* out, const VarDecl* vd, bool first) {
     Decl* d = (Decl*)vd;
 
     if (first) {
@@ -73,7 +73,7 @@ fn void Generator.emitVarDecl(Generator* gen, string_buffer.Buf* out, const VarD
 }
 
 fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
-    string_buffer.Buf* out = gen.out;
+    Buf* out = gen.out;
 
     gen.indent = 0;
     switch (d.getKind()) {
@@ -105,7 +105,7 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
     out.newline();
 }
 
-fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, Decl* d) {
+fn void Generator.emitDeclName(Generator* gen, Buf* out, Decl* d) {
     if (!d.isVariable()) {
         Module* mod = d.getModule();
         if (mod != gen.mod) {
@@ -132,7 +132,7 @@ fn void Generator.emitDeclName(Generator* gen, string_buffer.Buf* out, Decl* d) 
     gen.emitName(out, d);
 }
 
-fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType qt) {
+fn void Generator.emitTypePre(Generator* gen, Buf* out, QualType qt) {
     Decl* decl = nil;
 
     if (qt.prefixQualifiers()) {
@@ -192,7 +192,7 @@ fn void Generator.emitTypePre(Generator* gen, string_buffer.Buf* out, QualType q
     gen.emitDeclName(out, decl);
 }
 
-fn void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualType qt) {
+fn void Generator.emitTypePost(Generator* gen, Buf* out, QualType qt) {
     if (!qt.isArray()) return;
     ArrayType* at = (ArrayType*)qt.getType();
 
@@ -202,12 +202,12 @@ fn void Generator.emitTypePost(Generator* gen, string_buffer.Buf* out, QualType 
     gen.emitTypePost(out, at.getElemType());
 }
 
-fn void Generator.emitType(Generator* gen, string_buffer.Buf* out, QualType qt) {
+fn void Generator.emitType(Generator* gen, Buf* out, QualType qt) {
     gen.emitTypePre(out, qt);
     gen.emitTypePost(out, qt);
 }
 
-fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, const Decl* d) {
+fn void Generator.emitEnumType(Generator* gen, Buf* out, const Decl* d) {
     EnumTypeDecl* etd = (EnumTypeDecl*)d;
 
     out.print("type %s enum ", gen.idx2name(d.getNameIdx()));
@@ -231,7 +231,7 @@ fn void Generator.emitEnumType(Generator* gen, string_buffer.Buf* out, const Dec
     out.add("}\n");
 }
 
-fn void Generator.emitFunctionDecl(Generator* gen, string_buffer.Buf* out, const Decl* d, bool as_type) {
+fn void Generator.emitFunctionDecl(Generator* gen, Buf* out, const Decl* d, bool as_type) {
     FunctionDecl* fd = (FunctionDecl*)d;
 
     gen.indent = 0;
@@ -271,13 +271,13 @@ fn void Generator.emitFunctionDecl(Generator* gen, string_buffer.Buf* out, const
     }
 }
 
-fn void Generator.emitFunctionTypeDecl(Generator* gen, string_buffer.Buf* out, const Decl* d) {
+fn void Generator.emitFunctionTypeDecl(Generator* gen, Buf* out, const Decl* d) {
     const FunctionTypeDecl* ftd = (FunctionTypeDecl*)d;
     out.print("type %s fn ", gen.idx2name(d.getNameIdx()));
     gen.emitFunctionDecl(out, (Decl*)ftd.getDecl(), true);
 }
 
-fn void Generator.emitAliasTypeDecl(Generator* gen, string_buffer.Buf* out, const Decl* d) {
+fn void Generator.emitAliasTypeDecl(Generator* gen, Buf* out, const Decl* d) {
     AliasTypeDecl* a = (AliasTypeDecl*)d;
     out.print("type %s ", gen.idx2name(d.getNameIdx()));
     QualType qt = a.asDecl().getType();
@@ -285,7 +285,7 @@ fn void Generator.emitAliasTypeDecl(Generator* gen, string_buffer.Buf* out, cons
     out.add(";\n");
 }
 
-fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl* d, u32 indent) {
+fn void Generator.emitStructMember(Generator* gen, Buf* out, Decl* d, u32 indent) {
     if (d.isVariable()) {
         out.indent(indent);
         gen.emitVarDecl(out, (VarDecl*)d, true);
@@ -297,7 +297,7 @@ fn void Generator.emitStructMember(Generator* gen, string_buffer.Buf* out, Decl*
     }
 }
 
-fn void Generator.emitStruct(Generator* gen, string_buffer.Buf* out, const Decl* d, u32 indent) {
+fn void Generator.emitStruct(Generator* gen, Buf* out, const Decl* d, u32 indent) {
     StructTypeDecl* std = (StructTypeDecl*)d;
     const char* stype = std.isStruct() ? "struct" : "union";
     if (indent == 0) {

@@ -15,10 +15,10 @@
 
 module module_analyser;
 
-import ast local;
-import src_loc local;
+import ast { * }
+import src_loc { SrcLoc }
 
-import ctype;
+import ctype { isupper }
 
 const char[] DiagStaticThoughVar = "cannot access static type-function through variable";
 
@@ -129,7 +129,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
 
                 // check if constant/enum-function (by first casing)
                 const char* name = m.getMemberName();
-                if (ctype.isupper(name[0]) || name_idx == ma.min_idx || name_idx == ma.max_idx) {   // search for constants
+                if (isupper(name[0]) || name_idx == ma.min_idx || name_idx == ma.max_idx) {   // search for constants
                     if (valtype != NValue) {    // variable of Enum type (eg Enum a; a.x)
                         // TODO reset msg to normal invalid base
                         ma.errorRange(baseLoc, m.getBaseRange(), "invalid member reference base (enum constant/variable)");

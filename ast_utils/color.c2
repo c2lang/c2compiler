@@ -14,7 +14,8 @@
  */
 
 module color;
-import unistd;
+
+import unistd { isatty }
 
 public type Color enum u8 {
     None,
@@ -77,7 +78,7 @@ const char*[Color] defaultColors = {
 }
 
 public fn bool useColor() {
-    return unistd.isatty(1);
+    return isatty(1);
 }
 
 public fn const char* Color.str(Color col) {

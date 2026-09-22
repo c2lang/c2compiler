@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 public type ArrayValue struct @(opaque) {
     u32 name_idx;   // 0 means nil
@@ -25,10 +25,10 @@ public type ArrayValue struct @(opaque) {
     Expr* value;
 }
 
-public fn ArrayValue* ArrayValue.create(ast_context.Context* c,
-                                          u32 name,
-                                          SrcLoc loc,
-                                          Expr* value)
+public fn ArrayValue* ArrayValue.create(Context* c,
+                                        u32 name,
+                                        SrcLoc loc,
+                                        Expr* value)
 {
     ArrayValue* d = c.alloc(sizeof(ArrayValue));
     d.name_idx = name;
@@ -52,7 +52,7 @@ public fn Expr* ArrayValue.getValue(const ArrayValue* d) {
     return d.value;
 }
 
-fn void ArrayValue.print(const ArrayValue* d, string_buffer.Buf* out) @(unused) {
+fn void ArrayValue.print(const ArrayValue* d, Buf* out) @(unused) {
 /*
     d.base.printKind(out, 0, false);
     out.color(col_Value);

@@ -15,9 +15,9 @@
 
 module yaml;
 
-import string local;
-import stdio local;
-import ctype local;
+import string { memset, memcpy }
+import stdio { snprintf }
+import ctype { isprint, isalpha, isdigit }
 
 type Location struct {
     u32 line;

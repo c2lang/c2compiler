@@ -17,12 +17,12 @@ module multicast_receiver;
 
 import events;
 
-import stdio local;
-import stdlib local;
-import unistd local;
-import c_errno local;
-import string local;
-import sys_socket local;
+import stdio { printf, fprintf, stderr, perror }
+import stdlib { exit, EXIT_FAILURE }
+import unistd { close }
+import c_errno { errno }
+import string { pstrcpy, strerror, memset }
+import sys_socket { * }
 
 public type Receiver struct {
     events.Base* evbase;

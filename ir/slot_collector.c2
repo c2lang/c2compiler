@@ -15,12 +15,12 @@
 
 module ir_slot_collector;
 
-import ir local;
-import ir_slot_writes_map local;
+import ir { * }
+import ir_slot_writes_map { Map, Iter, SlotWrite }
 
-import stdio local;
-import stdlib;
-import string local;
+import stdio { printf }
+import stdlib { malloc, free }
+import string { memset }
 
 public type ReadSlotAccess struct {
     u16 done : 1;
@@ -70,16 +70,16 @@ public fn void SlotCollector.create(SlotCollector* c) {
     c.writes = ir_slot_writes_map.create(1024, 256);
     // TEMP hardcoded max
 
-    c.reads = stdlib.malloc(SlotMax * sizeof(ReadSlotAccess));
+    c.reads = malloc(SlotMax * sizeof(ReadSlotAccess));
 
     // TEMP hardcoded max
-    c.indexes = stdlib.malloc(256 * sizeof(BlockIndex));
+    c.indexes = malloc(256 * sizeof(BlockIndex));
 
 }
 
 public fn void SlotCollector.free(SlotCollector* c) {
-    stdlib.free(c.indexes);
-    stdlib.free(c.reads);
+    free(c.indexes);
+    free(c.reads);
     c.writes.free();
 }
 

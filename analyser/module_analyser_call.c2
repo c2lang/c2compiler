@@ -15,15 +15,15 @@
 
 module module_analyser;
 
-import ast local;
-import attr local;
-import printf_utils local;
-import scope;
-import src_loc local;
-import string_buffer;
+import ast { * }
+import attr { Attr }
+import printf_utils { * }
+import scope { Scope }
+import src_loc { SrcLoc }
+import string_buffer { Buf }
 
-import stdio;
-import string;
+import stdio { snprintf }
+import string { strcmp }
 
 const char[] DiagTooManyArgs = "too many arguments to %sfunction call, expected %d, have %d";
 const char[] DiagTooFewArgs = "too few arguments to %sfunction call, expected %d, have %d";
@@ -202,10 +202,10 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
         isCtv = isCtc = false;
     }
 
-    //stdio.printf("CALL (%d | %d)\n", func_num_args, call_num_args);
+    //printf("CALL (%d | %d)\n", func_num_args, call_num_args);
     FormatAttr format_attr = fd.getFormatAttr();
     while (1) {
-        //stdio.printf("ARG [%d | %d]\n", func_arg_index, call_arg_index);
+        //printf("ARG [%d | %d]\n", func_arg_index, call_arg_index);
         if (func_arg_index >= func_num_args) break;
 
         VarDecl* vd = func_args[func_arg_index];
@@ -319,7 +319,7 @@ type FormatAnalyser struct {
     u32 idx;
     SrcLoc loc;
     u32 last_offset;
-    string_buffer.Buf* out;
+    Buf* out;
     FormatAttr format_attr;
 }
 
@@ -615,7 +615,7 @@ fn bool Analyser.checkFormatArgs(Analyser* ma, Expr* format, Expr** args, u32 nu
         return false;
     }
 
-    string_buffer.Buf* out = string_buffer.create(256, false, 0);
+    Buf* out = string_buffer.create(256, false, 0);
     FormatAnalyser fa = { ma, format_text, args, num_args, 0, format_loc, 0, out, format_attr }
 
     switch (format_attr) {
@@ -644,7 +644,7 @@ fn bool Analyser.checkFormatArgs(Analyser* ma, Expr* format, Expr** args, u32 nu
         return false;
     }
     const char* new_format_text = out.data();
-    if (string.strcmp(format_text, new_format_text)) {
+    if (strcmp(format_text, new_format_text)) {
         u32 len = out.size();
         *new_format_ptr = ma.builder.actOnStringLiteral(0, len, ma.astPool.add(new_format_text, len, true), len, true);
         ma.builder.insertImplicitCast(ArrayToPointerDecay, new_format_ptr, format.getType());
@@ -654,7 +654,7 @@ fn bool Analyser.checkFormatArgs(Analyser* ma, Expr* format, Expr** args, u32 nu
 }
 
 fn void Analyser.create_template_name(Analyser* ma, char* name, u32 size, u32 orig, u16 idx) {
-    stdio.snprintf(name, size, "%s_%d_", ma.idx2name(orig), idx);
+    snprintf(name, size, "%s_%d_", ma.idx2name(orig), idx);
 }
 
 fn void Analyser.opaque_callback(void* arg, SrcLoc loc, Decl* d) {
@@ -697,7 +697,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
         Module* template_mod = fd.asDecl().getModule();
         Analyser* analyser = ma.clone();
         analyser.setMod(template_mod);
-        scope.Scope* tmpScope = scope.create(ma.allmodules,
+        Scope* tmpScope = scope.create(ma.allmodules,
                                              ma.diags,
                                              ma.astPool,
                                              d.getAST().getImports(),

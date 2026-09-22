@@ -1,6 +1,6 @@
 module c2test;
-import stdarg local;
-import string;
+
+import string { memcpy, strcmp, strstr }
 
 public type TestFn fn void(void* t);
 
@@ -30,7 +30,7 @@ public type Config struct {
 Config g_cfg;
 
 public fn void init(const Config* cfg) {
-  string.memcpy(&g_cfg, cfg, sizeof(Config));
+  memcpy(&g_cfg, cfg, sizeof(Config));
 }
 
 // ---- integer checks ----
@@ -91,25 +91,25 @@ public fn void check_between_eq(const char* file @(auto_file), u32 line @(auto_l
 
 // ---- string checks ----
 public fn void check_str(const char* file @(auto_file), u32 line @(auto_line), const char* expected, const char* real) {
-  if (string.strcmp(real, expected) != 0) {
+  if (strcmp(real, expected) != 0) {
     g_cfg.on_error("%s:%d  assertion failed, expected '%s', got '%s'", file, line, expected, real);
   }
 }
 
 public fn void check_not_str(const char* file @(auto_file), u32 line @(auto_line), const char* expected, const char* real) {
-  if (string.strcmp(real, expected) == 0) {
+  if (strcmp(real, expected) == 0) {
     g_cfg.on_error("%s:%d  assertion failed, expected not '%s', got '%s'", file, line, expected, real);
   }
 }
 
 public fn void check_str_contains(const char* file @(auto_file), u32 line @(auto_line), const char* str, const char* sub) {
-  if (string.strstr(str, sub) == nil) {
+  if (strstr(str, sub) == nil) {
     g_cfg.on_error("%s:%d  assertion failed, '%s' does not contain '%s'", file, line, str, sub);
   }
 }
 
 public fn void check_str_not_contains(const char* file @(auto_file), u32 line @(auto_line), const char* str, const char* sub) {
-  if (string.strstr(str, sub) != nil) {
+  if (strstr(str, sub) != nil) {
     g_cfg.on_error("%s:%d  assertion failed, '%s' should not contain '%s'", file, line, str, sub);
   }
 }

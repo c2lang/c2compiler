@@ -1,6 +1,6 @@
 module mod1;
 
-import c2test local;
+import c2test { * }
 
 type Test struct @(unittest) {
     i32 x;

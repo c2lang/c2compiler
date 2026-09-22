@@ -15,10 +15,10 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
-import value_type local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
+import value_type { Value }
 
 type BooleanLiteralBits struct {
     u32 : NumExprBits;
@@ -29,7 +29,7 @@ public type BooleanLiteral struct @(opaque) {
     Expr base;
 }
 
-public fn BooleanLiteral* BooleanLiteral.create(ast_context.Context* c, SrcLoc loc, bool val) {
+public fn BooleanLiteral* BooleanLiteral.create(Context* c, SrcLoc loc, bool val) {
     BooleanLiteral* e = c.alloc(sizeof(BooleanLiteral));
     e.base.init(BooleanLiteral, loc, 1, 1, 0, RValue);
     e.base.base.booleanLiteralBits.value = val;
@@ -48,7 +48,7 @@ fn SrcLoc BooleanLiteral.getEndLoc(const BooleanLiteral* e) {
     return e.base.base.loc + (e.base.base.booleanLiteralBits.value ? 4 : 5);
 }
 
-fn void BooleanLiteral.print(const BooleanLiteral* e, string_buffer.Buf* out, u32 indent) {
+fn void BooleanLiteral.print(const BooleanLiteral* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.space();
@@ -57,7 +57,7 @@ fn void BooleanLiteral.print(const BooleanLiteral* e, string_buffer.Buf* out, u3
     out.newline();
 }
 
-public fn void BooleanLiteral.printLiteral(const BooleanLiteral* e, string_buffer.Buf* out) {
+public fn void BooleanLiteral.printLiteral(const BooleanLiteral* e, Buf* out) {
     out.add(e.base.base.booleanLiteralBits.value ? "true" : "false");
 }
 

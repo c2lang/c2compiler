@@ -2,7 +2,6 @@
 // @target{arm-unknown-linux-gnueabi}
 
 module test;
-import stdio local;
 
 type S1 struct {
     i8 a;

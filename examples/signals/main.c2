@@ -14,11 +14,12 @@
  */
 
 module test;
-import csignal local;
-import string local;
-import stdlib local;
-import stdio local;
-import unistd local;
+
+import csignal { * }
+import string { memset }
+import stdlib { exit, EXIT_SUCCESS, EXIT_FAILURE }
+import stdio { printf, fprintf, stderr }
+import unistd { * }
 
 fn void fatal(const char* msg) {
     fprintf(stderr, "fatal: %s\n", msg);

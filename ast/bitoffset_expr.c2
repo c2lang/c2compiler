@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 type BitOffsetExprBits struct {
     u32 : NumExprBits;
@@ -30,7 +30,7 @@ public type BitOffsetExpr struct @(opaque) {
     Expr* rhs;
 }
 
-public fn BitOffsetExpr* BitOffsetExpr.create(ast_context.Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) {
+public fn BitOffsetExpr* BitOffsetExpr.create(Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) {
     BitOffsetExpr* e = c.alloc(sizeof(BitOffsetExpr));
     e.base.init(BitOffset, loc, 0, 0, 0, RValue);
     e.lhs = lhs;
@@ -70,13 +70,13 @@ fn SrcLoc BitOffsetExpr.getEndLoc(const BitOffsetExpr* e) {
     return e.rhs.getEndLoc();
 }
 
-fn void BitOffsetExpr.printLiteral(const BitOffsetExpr* e, string_buffer.Buf* out) {
+fn void BitOffsetExpr.printLiteral(const BitOffsetExpr* e, Buf* out) {
     e.lhs.printLiteral(out);
     out.add1(':');
     e.rhs.printLiteral(out);
 }
 
-fn void BitOffsetExpr.print(const BitOffsetExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void BitOffsetExpr.print(const BitOffsetExpr* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.space();

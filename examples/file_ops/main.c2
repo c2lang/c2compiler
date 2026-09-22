@@ -15,8 +15,8 @@
 
 module event_test;
 
-import stdio local;
-import string local;
+import stdio { fprintf, stderr, stdout, fwrite }
+import string { strerror }
 
 import file_utils;
 

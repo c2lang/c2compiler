@@ -15,20 +15,20 @@
 
 module module_analyser;
 
-import src_loc local;
+import src_loc { SrcLoc }
 
-import stdlib;
+import stdlib { calloc, free }
 
 type StructFieldInitChecker struct {
     SrcLoc* inits;
 }
 
 fn void StructFieldInitChecker.init(StructFieldInitChecker* c, u32 capacity) {
-    c.inits = stdlib.calloc(capacity, sizeof(SrcLoc));
+    c.inits = calloc(capacity, sizeof(SrcLoc));
 }
 
 fn void StructFieldInitChecker.free(StructFieldInitChecker* c) {
-    stdlib.free(c.inits);
+    free(c.inits);
 }
 
 fn SrcLoc StructFieldInitChecker.add(StructFieldInitChecker* c, u32 idx, SrcLoc loc) {

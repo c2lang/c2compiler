@@ -15,9 +15,9 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf}
+import src_loc { SrcLoc }
 
 public type IdentifierKind enum u8 (const char* const name) {
     Unresolved    : { "Unresolved" },
@@ -46,7 +46,7 @@ public type IdentifierExpr struct @(opaque) {
     }
 }
 
-public fn IdentifierExpr* IdentifierExpr.create(ast_context.Context* c, SrcLoc loc, u32 name, u32 name_len) {
+public fn IdentifierExpr* IdentifierExpr.create(Context* c, SrcLoc loc, u32 name, u32 name_len) {
     IdentifierExpr* e = c.alloc(sizeof(IdentifierExpr));
     e.base.init(Identifier, loc, 0, 0, 0, NValue);
     e.name_idx = name;
@@ -105,7 +105,7 @@ public fn u32 IdentifierExpr.getNameIdx(const IdentifierExpr* e) {
     return e.name_idx;
 }
 
-fn void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void IdentifierExpr.print(const IdentifierExpr* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.space();
@@ -124,7 +124,7 @@ fn void IdentifierExpr.print(const IdentifierExpr* e, string_buffer.Buf* out, u3
     out.newline();
 }
 
-fn void IdentifierExpr.printLiteral(const IdentifierExpr* e, string_buffer.Buf* out) {
+fn void IdentifierExpr.printLiteral(const IdentifierExpr* e, Buf* out) {
     out.add(e.getName());
 }
 

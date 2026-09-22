@@ -15,11 +15,11 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
-import string;
+import string { memcpy }
 
 type AsmStmtBits struct {
     u32 : NumStmtBits;
@@ -42,17 +42,17 @@ public type AsmStmt struct @(opaque) {
     u32[0] names;   // tail-allocated
 }
 
-public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
-                                    SrcLoc loc,
-                                    bool is_basic,
-                                    bool is_volatile,
-                                    u32 num_outputs,
-                                    u32 num_inputs,
-                                    const u32* names,
-                                    ExprList* constraints,
-                                    ExprList* exprs,
-                                    ExprList* clobbers,
-                                    Expr* str)
+public fn AsmStmt* AsmStmt.create(Context* c,
+                                  SrcLoc loc,
+                                  bool is_basic,
+                                  bool is_volatile,
+                                  u32 num_outputs,
+                                  u32 num_inputs,
+                                  const u32* names,
+                                  ExprList* constraints,
+                                  ExprList* exprs,
+                                  ExprList* clobbers,
+                                  Expr* str)
 {
     u32 size = sizeof(AsmStmt);
     size += (constraints.size() * sizeof(Expr*));
@@ -73,22 +73,22 @@ public fn AsmStmt* AsmStmt.create(ast_context.Context* c,
     u8* tail = (u8*)s.constraints;
     if (s.num_constraints) {
         u32 sz = s.num_constraints * sizeof(Expr*);
-        string.memcpy(tail, constraints.getExprs(), sz);
+        memcpy(tail, constraints.getExprs(), sz);
         tail += sz;
     }
     if (s.num_exprs) {
         u32 sz = s.num_exprs * sizeof(Expr*);
-        string.memcpy(tail, exprs.getExprs(), sz);
+        memcpy(tail, exprs.getExprs(), sz);
         tail += sz;
     }
     if (s.num_clobbers) {
         u32 sz = s.num_clobbers * sizeof(Expr*);
-        string.memcpy(tail, clobbers.getExprs(), sz);
+        memcpy(tail, clobbers.getExprs(), sz);
         tail += sz;
     }
     u32 num_names = num_outputs + num_inputs;
     if (num_names) {
-        string.memcpy(tail, names, num_names * sizeof(u32));
+        memcpy(tail, names, num_names * sizeof(u32));
     }
 
 #if AstStatistics
@@ -155,7 +155,7 @@ public fn u32* AsmStmt.getNames(const AsmStmt* s) {
     return (u32*)tail;
 }
 
-fn void AsmStmt.print(const AsmStmt* s, string_buffer.Buf* out, u32 indent) {
+fn void AsmStmt.print(const AsmStmt* s, Buf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.newline();
     out.indent(indent);

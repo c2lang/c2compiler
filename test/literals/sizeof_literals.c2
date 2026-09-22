@@ -1,6 +1,6 @@
 module test;
 
-import stdio local;
+import stdio { printf }
 
 static_assert(sizeof(""), 1);
 static_assert(sizeof("a"), 2);

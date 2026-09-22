@@ -1,8 +1,6 @@
 // @warnings{no-unused}
 module test;
 
-import stdio local;
-
 type Foo enum u8 { A, B, C }
 
 fn const char* Foo.str(Foo f) {     // value arg

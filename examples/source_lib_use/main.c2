@@ -18,7 +18,7 @@ module test_main;
 import foo;
 import bar;
 
-import stdio local;
+import stdio { printf }
 
 public fn i32 main(i32 argc, char** argv) {
     i32 res = 1;

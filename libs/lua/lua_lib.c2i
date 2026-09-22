@@ -1,6 +1,6 @@
 module lua_lib extern "C";
 
-import lua local;
+import lua { State }
 
 int luaopen_base(State *L);
 

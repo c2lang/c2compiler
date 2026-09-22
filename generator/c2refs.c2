@@ -15,18 +15,18 @@
 
 module c2refs;
 
-import radix_tree;
+import radix_tree { Tree }
 
-import libc_fcntl local;
+import libc_fcntl { * }
 #if C2TagsGenerate
 #else
-import stdio local;
-import sys_stat local;
+import stdio { printf }
+import sys_stat { Stat, stat }
 #endif
-import stdlib local;
-import string local;
-import sys_mman local;
-import unistd local;
+import stdlib { * }
+import string { * }
+import sys_mman { * }
+import unistd { * }
 
 const u32 NOT_FOUND = u32.max;
 
@@ -462,7 +462,7 @@ public type Refs struct @(opaque) {
     Lengths* line_lengths;
     Links* links;
 
-    radix_tree.Tree* symbols;
+    Tree* symbols;
 
     // runtime (not saved to files
     u32 cur_file_idx;   // TODO remove
@@ -513,7 +513,7 @@ fn Refs* Refs.load_internal(MapFile f) {
     if (!links) return nil;
 
     radix_tree.InputStream input = { f.map, (u32)f.size }
-    radix_tree.Tree* symbols = radix_tree.load(&input);
+    Tree* symbols = radix_tree.load(&input);
     if (!symbols) return nil;
 
     Refs* r = calloc(1, sizeof(Refs));

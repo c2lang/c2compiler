@@ -1,7 +1,7 @@
 // @warnings{no-unused}
 module test;
 
-import string local;
+import string { strcmp }
 
 public fn void test1(const char* name) {
     if (strcmp(name, "a") == 0) {

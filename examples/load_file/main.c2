@@ -1,6 +1,6 @@
 module test_main;
 
-import stdio local;
+import stdio { printf, putchar }
 
 const char[] Data1 @(embed="load_file/files/data1.dat");
 const char[] File2 @(embed="load_file/files/file2.txt");

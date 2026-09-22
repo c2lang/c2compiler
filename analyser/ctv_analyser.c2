@@ -15,10 +15,10 @@
 
 module ctv_analyser;
 
-import ast local;
-import diagnostics;
-import src_loc local;
-import value_type local;
+import ast { QualType, Expr, BuiltinType }
+import diagnostics { Diags }
+import src_loc { SrcLoc, SrcRange }
+import value_type { Value }
 
 type Limit struct {
     i64 min_val;
@@ -36,7 +36,7 @@ fn void Limit.init(Limit* l, u32 width, bool is_signed) {
     }
 }
 
-public fn bool checkRange(diagnostics.Diags* diags, QualType qt, const Expr* e) {
+public fn bool checkRange(Diags* diags, QualType qt, const Expr* e) {
     QualType canon = qt.getCanonicalType();
     if (!canon.isBuiltin()) return true;  // TODO find out cases
 
@@ -51,7 +51,7 @@ public fn bool checkRange(diagnostics.Diags* diags, QualType qt, const Expr* e) 
     return checkTypeRange(diags, qt, &value, 0, e);
 }
 
-public fn bool checkBitfield(diagnostics.Diags* diags, u8 bitfield_width, bool bitfield_signed, const Expr* e) {
+public fn bool checkBitfield(Diags* diags, u8 bitfield_width, bool bitfield_signed, const Expr* e) {
     Value value = ast.evalExpr((e));
     if (value.kind == Error) {
         diags.errorRange(e.getLoc(), e.getRange(), "%s", value.error_msg);
@@ -68,7 +68,7 @@ public fn bool checkBitfield(diagnostics.Diags* diags, u8 bitfield_width, bool b
 }
 
 // Expr* e can be nil
-public fn bool checkTypeRange(diagnostics.Diags* diags, QualType qt, Value* value, SrcLoc loc, const Expr* e) {
+public fn bool checkTypeRange(Diags* diags, QualType qt, Value* value, SrcLoc loc, const Expr* e) {
     QualType canon = qt.getCanonicalType();
     if (!canon.isBuiltin()) return true;  // TODO find out cases
     // hack to accept `u32 x = ~1;`

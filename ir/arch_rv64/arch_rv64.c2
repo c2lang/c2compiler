@@ -15,9 +15,9 @@
 
 module arch_rv64;
 
-import ir_tools local;
-import ir local;
-import string_buffer;
+import ir_tools { Tools, Target }
+import ir { * }
+import string_buffer { Buf }
 
 type RV64_InstrKind enum u8 {
     Add,
@@ -248,7 +248,7 @@ next:
 }
 
 
-fn void generateAsm(string_buffer.Buf* out, const char* name, const FunctionInfo* fi, bool is_external) {
+fn void generateAsm(Buf* out, const char* name, const FunctionInfo* fi, bool is_external) {
 #if 0
     PER FUNCTION:
     QBE:    .balign 16

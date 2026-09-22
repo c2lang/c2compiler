@@ -17,7 +17,7 @@ module test;
 
 import pthread;
 import stdio as io;
-import unistd local;
+import unistd { usleep }
 
 bool stop = false;
 

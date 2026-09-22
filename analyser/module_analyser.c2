@@ -15,41 +15,40 @@
 
 module module_analyser;
 
-import ast local;
-import ast_context;
-import ast_builder;
-import attr local;
-import conversion_checker as conv;
-import diagnostics;
-import file_utils;
+import ast { * }
+import ast_context { Context }
+import ast_builder { Builder }
+import attr { Attr }
+import conversion_checker;
+import diagnostics { Diags }
+import file_utils { File }
 import init_checker;
 import module_list;
-import label_vector local;
-import name_vector local;
-import src_loc local;
-import scope;
-import string_buffer;
-import string_pool;
-import warning_flags;
+import label_vector { LabelVector }
+import name_vector { NameVector }
+import src_loc { SrcLoc, SrcRange }
+import scope { Scope }
+import string_buffer { Buf }
+import string_pool { Pool }
+import warning_flags { Flags }
 import struct_func_list as sf_list;
 import incr_array_list as ia_list;
-import value_type local;
+import value_type { Value }
 
-import ctype;
-import stdarg local;
-import stdlib;
-import string;
+import ctype { islower, isupper }
+import stdlib { calloc, free }
+import string { strcmp }
 
 const u32 MaxDepth = 8;
 
 public type Analyser struct @(opaque) {
-    diagnostics.Diags* diags;
-    conv.Checker conv_checker;
-    ast_context.Context* context;
-    string_pool.Pool* astPool;
-    ast_builder.Builder* builder;
+    Diags* diags;
+    conversion_checker.Checker conv_checker;
+    Context* context;
+    Pool* astPool;
+    Builder* builder;
     module_list.List* allmodules;
-    const warning_flags.Flags* warnings;
+    const Flags* warnings;
 
     // variables below differs per run
     Module* mod;
@@ -75,7 +74,7 @@ public type Analyser struct @(opaque) {
     // Type + Vars analysis
     StackLayer[MaxDepth] checkStack;
     u32 checkIndex;
-    scope.Scope* scope; // points to top layer in stack
+    Scope* scope; // points to top layer in stack
 
     // for each function-body analysis
     FunctionDecl* curFunction; // set when analysing a function-body
@@ -88,15 +87,15 @@ public type Analyser struct @(opaque) {
     u32 need_const_expr;
 }
 
-public fn Analyser* create(diagnostics.Diags* diags,
-                             ast_context.Context* context,
-                             string_pool.Pool* astPool,
-                             ast_builder.Builder* builder,
+public fn Analyser* create(Diags* diags,
+                             Context* context,
+                             Pool* astPool,
+                             Builder* builder,
                              module_list.List* allmodules,
-                             const warning_flags.Flags* warnings,
+                             const Flags* warnings,
                              bool has_asserts, bool check_only)
 {
-    Analyser* ma = stdlib.calloc(1, sizeof(Analyser));
+    Analyser* ma = calloc(1, sizeof(Analyser));
     ma.diags = diags;
     ma.conv_checker.init(diags, builder);
     ma.context = context;
@@ -115,7 +114,7 @@ public fn Analyser* create(diagnostics.Diags* diags,
 }
 
 fn Analyser* Analyser.clone(Analyser* org) {
-    Analyser* ma = stdlib.calloc(1, sizeof(Analyser));
+    Analyser* ma = calloc(1, sizeof(Analyser));
     ma.diags = org.diags;
     ma.conv_checker.init(org.diags, org.builder);
     ma.context = org.context;
@@ -138,7 +137,7 @@ public fn void Analyser.free(Analyser* ma) {
     }
     ma.prefixes.free();  // Note: safe to be freed twice
     ma.labels.free();
-    stdlib.free(ma);
+    free(ma);
 }
 
 fn const char* Analyser.idx2name(const Analyser* ma, u32 name_idx) {
@@ -210,7 +209,7 @@ public fn void Analyser.checkModule(Analyser* ma, Module* mod) {
 fn init_checker.Checker* Analyser.getInitChecker(Analyser* ma) {
     if (ma.check_idx >= elemsof(ma.init_checkers)) {
         ma.check_idx++;
-        return stdlib.calloc(1, sizeof(init_checker.Checker));
+        return calloc(1, sizeof(init_checker.Checker));
     } else {
         init_checker.Checker* c = &ma.init_checkers[ma.check_idx++];
         c.clear();
@@ -223,7 +222,7 @@ fn void Analyser.putInitChecker(Analyser* ma, init_checker.Checker* c) {
     ma.check_idx--;
     if (ma.check_idx >= elemsof(ma.init_checkers)) {
         c.free();
-        stdlib.free(c);
+        free(c);
     }
 }
 
@@ -355,7 +354,7 @@ fn void Analyser.setMod(Analyser* ma, Module* mod) {
 
 type StackLayer struct {
     Decl* decl;
-    scope.Scope* scope;
+    Scope* scope;
     FunctionDecl* function; // only set when analysing function bodies
     bool usedPublic;
 }
@@ -396,7 +395,7 @@ fn void Analyser.errorRange(Analyser* ma, SrcLoc loc, SrcRange range, const char
 
 fn void Analyser.createGlobalScope(void* arg, AST* a) {
     Analyser* ma = arg;
-    scope.Scope* s = scope.create(ma.allmodules,
+    Scope* s = scope.create(ma.allmodules,
                                   ma.diags,
                                   ma.astPool,
                                   a.getImports(),
@@ -407,7 +406,7 @@ fn void Analyser.createGlobalScope(void* arg, AST* a) {
 }
 
 fn void Analyser.deleteScope(void* /*arg*/, AST* a) {
-    scope.Scope* s = a.getPtr();
+    Scope* s = a.getPtr();
     a.setPtr(nil);
     s.free();
 }
@@ -559,7 +558,7 @@ fn void Analyser.handleEnumAssocValue(void* arg, Decl* d) {
     ma.popCheck();
 }
 
-fn void Analyser.printLiteral(Analyser* ma, string_buffer.Buf* buf,
+fn void Analyser.printLiteral(Analyser* ma, Buf* buf,
                               const char* s, const Expr* e, Value val,
                               bool as_is = false)
 {
@@ -570,7 +569,7 @@ fn void Analyser.printLiteral(Analyser* ma, string_buffer.Buf* buf,
     if (as_is) {
         buf.print(" is %s", str);
     } else
-    if (string.strcmp((const char*)buf.data() + off, str)) {
+    if (strcmp((const char*)buf.data() + off, str)) {
         buf.print(" (%s)", str);
     }
 }
@@ -636,7 +635,7 @@ fn void Analyser.handleStaticAssert(void* arg, StaticAssert* sa) {
     }
 
     char[256] tmp;
-    string_buffer.Buf buf.init(tmp, elemsof(tmp), true, false, 0);
+    Buf buf.init(tmp, elemsof(tmp), true, false, 0);
 
     if (rhs) {
         if (opcode == Equal) {
@@ -680,11 +679,11 @@ fn void Analyser.handleVarDecl(void* arg, VarDecl* v) {
 fn void Analyser.checkName(Analyser* ma, Decl* d, bool is_constant) {
     const char* name = ma.getName(d);
     if (is_constant) {
-        if (ctype.islower(name[0])) {
+        if (islower(name[0])) {
             ma.error(d.getLoc(), "a global constant name must start with an upper case character");
         }
     } else {
-        if (ctype.isupper(name[0])) {
+        if (isupper(name[0])) {
             ma.error(d.getLoc(), "a variable name must start with a lower case character");
         }
     }
@@ -750,7 +749,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
 
         // open file, copy contents to StringPool and close
         const char* filename = ma.idx2name(embed.value.text);
-        file_utils.File reader.init(filename);
+        File reader.init(filename);
         if (!reader.load()) {
             ma.error(embed.loc, "error opening embedded file '%s': %s", filename, reader.getError());
             return;
@@ -813,7 +812,7 @@ fn void Analyser.checkVarDeclAttributes(Analyser* ma, VarDecl* v) {
 }
 
 // Note: fd is only set if analysing function bodies
-fn bool Analyser.pushCheck(Analyser* ma, Decl* d, scope.Scope* s, FunctionDecl* fd) {
+fn bool Analyser.pushCheck(Analyser* ma, Decl* d, Scope* s, FunctionDecl* fd) {
     if (d) {
         for (u32 i=0; i<ma.checkIndex; i++) {
             if (ma.checkStack[i].decl == d) {

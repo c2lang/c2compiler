@@ -31,4 +31,4 @@ public const char* output_dir = "output";
 public const char* recipe_name = "recipe.txt";
 public const char* buildfile_name = "build.yaml";
 public const char* manifest_name = "manifest.yaml";
-public const char* refs_filename = "refs";
+public const char[] Refs_filename = "refs";

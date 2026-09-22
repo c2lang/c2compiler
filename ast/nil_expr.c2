@@ -15,15 +15,15 @@
 
 module ast;
 
-import ast_context;
-import string_buffer;
-import src_loc local;
+import ast_context { Context }
+import string_buffer { Buf }
+import src_loc { SrcLoc }
 
 public type NilExpr struct @(opaque) {
     Expr base;
 }
 
-public fn NilExpr* NilExpr.create(ast_context.Context* c, SrcLoc loc) {
+public fn NilExpr* NilExpr.create(Context* c, SrcLoc loc) {
     NilExpr* e = c.alloc(sizeof(NilExpr));
     e.base.init(Nil, loc, 1, 1, 0, RValue);
     e.base.setType(getVoidPtr());
@@ -37,13 +37,13 @@ fn SrcLoc NilExpr.getEndLoc(const NilExpr* e) {
     return e.base.base.loc + 3;
 }
 
-fn void NilExpr.print(const NilExpr* e, string_buffer.Buf* out, u32 indent) {
+fn void NilExpr.print(const NilExpr* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.newline();
 }
 
-fn void NilExpr.printLiteral(const NilExpr*, string_buffer.Buf* out) {
+fn void NilExpr.printLiteral(const NilExpr*, Buf* out) {
     out.add("nil");
 }
 

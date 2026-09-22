@@ -15,10 +15,10 @@
 
 module ir_generator;
 
-import ast local;
-import ir local;
-import ir_context;
-import value_type local;
+import ast { * }
+import ir { BlockId, BlockKind }
+import ir_context { Context }
+import value_type { Value }
 
 // returns true if more stmts can follow
 fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
@@ -119,7 +119,7 @@ fn void Generator.emitContinueStmt(Generator* gen, const ContinueStmt* c) {
 }
 
 fn bool Generator.emitLabelStmt(Generator* gen, const LabelStmt* l) {
-    ir_context.Context* c = gen.ctx;
+    Context* c = gen.ctx;
 
     u32 name_idx = l.getNameIdx();
     if (l.hasGoto()) {
@@ -154,7 +154,7 @@ fn bool Generator.emitLabelStmt(Generator* gen, const LabelStmt* l) {
 }
 
 fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
-    ir_context.Context* c = gen.ctx;
+    Context* c = gen.ctx;
 
     const IfStmt* if_stmt = (IfStmt*)s;
     const Stmt* decl = if_stmt.getDecl();
@@ -216,7 +216,7 @@ fn void Generator.emitIfStmt(Generator* gen, const Stmt* s) {
 }
 
 fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s, u32 label_name) {
-    ir_context.Context* c = gen.ctx;
+    Context* c = gen.ctx;
     const WhileStmt* w = (WhileStmt*)s;
 
     // TODO check if CtvCondition, then skip condition/body
@@ -264,7 +264,7 @@ fn void Generator.emitWhileStmt(Generator* gen, const Stmt* s, u32 label_name) {
 }
 
 fn void Generator.emitForStmt(Generator* gen, const Stmt* s, u32 label_name) {
-    ir_context.Context* c = gen.ctx;
+    Context* c = gen.ctx;
     const ForStmt* f = (ForStmt*)s;
 
     const Stmt* ie = f.getInit();
@@ -351,8 +351,8 @@ fn void Generator.emitAssertStmt(Generator* gen, const Stmt* s) {
     ExprRef cond_str;
     gen.createString(&cond_str, gen.start.data());
 
-    local const char[] name = "$gbl_assert_str";
-    local const char[] self = "$self_str";
+    static const char[] name = "$gbl_assert_str";
+    static const char[] self = "$self_str";
     if (!gen.assert_generated) {
         // TODO need to know name of program (pass to generator)
         gen.globals.print("data %s = align 1 { b \"%s\\000\" }\n", self, gen.target);

@@ -1,6 +1,6 @@
 module unistd extern "C";
 
-import libc_fcntl local;
+import libc_fcntl { * }
 
 /* Standard file descriptors.  */
 const int STDIN_FILENO  = 0;

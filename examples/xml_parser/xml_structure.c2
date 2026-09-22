@@ -15,9 +15,9 @@
 
 module xml;
 
-import stdlib local;
-import string local;
-import stdio local;   // TEMP
+import stdlib { * }
+import string { memset, memcpy, strcmp, strlen }
+import stdio { printf }
 
 const u32 MAX_NODES = 1024;
 const u32 MAX_ATTRS = 1024;
@@ -143,7 +143,7 @@ fn u32 Blocks.addNode(Blocks* b, const char* name) {
     // TODO check if fits in block, otherwise re-alloc
     if (b.node_count == b.max_nodes) {
         printf("NODE LIMIT REACHED!\n");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
     u32 off = b.node_count;
     Node* node = &b.nodes[off];
@@ -170,7 +170,7 @@ fn u32 Blocks.addAttr(Blocks* b, const char* name) {
     // TODO check if fits in block, otherwise re-alloc
     if (b.attr_count == b.max_attrs) {
         printf("ATTR LIMIT REACHED!\n");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
     u32 off = b.attr_count;
     Attr* attr = &b.attrs[off];
@@ -191,7 +191,7 @@ fn u32 Blocks.addValue(Blocks* b, const char* value) {
     u32 len = (u32)strlen(value) + 1;
     if (b.data_off + len >= b.data_size) {
         printf("DATA LIMIT REACHED\n");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
     u32 off = b.data_off;
     memcpy(&b.data[off], value, len);

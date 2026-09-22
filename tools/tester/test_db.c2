@@ -15,21 +15,20 @@
 
 module test_db;
 
-import ctype local;
-import c_errno local;
-import stdio local;
-import stdarg local;
-import stdlib local;
-import string local;
-import unistd local;
+import ctype { isalnum }
+import c_errno { errno, EINTR }
+import stdio { * }
+import stdlib { malloc, free, exit, EXIT_FAILURE, atoi }
+import string { * }
+import unistd { * }
 
 import constants;
-import expect_file local;
+import expect_file { ExpectFile, ExpectMode }
 import file_utils;
-import issues local;
-import string_buffer;
-import string_utils local;
-import test_utils local;
+import issues { Issues, Iter }
+import string_buffer { Buf }
+import string_utils { endsWith }
+import test_utils { * }
 #if TesterDebug
 import color;
 #endif
@@ -54,7 +53,7 @@ public type TestKind enum u8 (public const char* const ext) {
 }
 
 public type Db struct {
-    string_buffer.Buf* output;  // no ownership
+    Buf* output;  // no ownership
     const char* source;     // no ownership
     const char* filename;   // no ownership
     TestKind kind;
@@ -76,7 +75,7 @@ public type Db struct {
     const char* bol;    // pointer inside source to the beginning of the current line
     const char* cur;    // pointer inside source to the current byte
     u32 line_nr;        // line number, updated by db.skipLine()
-    string_buffer.Buf* recipe;      // ownership
+    Buf* recipe;      // ownership
     char[file_utils.Max_path] current_file;
     char[64] target;
 
@@ -85,14 +84,14 @@ public type Db struct {
 }
 
 public fn void Db.init(Db* db,
-                         string_buffer.Buf* output,
-                         const char* source,
-                         const char* filename,
-                         TestKind kind,
-                         const char* tmp_dir,
-                         const char* c2c_cmd,
-                         const char* cwd,
-                         bool runSkipped)
+                       Buf* output,
+                       const char* source,
+                       const char* filename,
+                       TestKind kind,
+                       const char* tmp_dir,
+                       const char* c2c_cmd,
+                       const char* cwd,
+                       bool runSkipped)
 {
     memset(db, 0, sizeof(Db));
     db.output = output;
@@ -368,7 +367,7 @@ fn bool Db.parseKeyword(Db* db) {
         if (*db.target == 0) {
             return db.error("expected target triple");
         }
-        string_buffer.Buf* build = string_buffer.create(1024, false, 0);
+        Buf* build = string_buffer.create(1024, false, 0);
         build.print("target: \"%s\"\n", db.target);
         build.add("libdir:\n");
         build.add("   - \"$C2_LIBDIR\"\n");
@@ -539,7 +538,7 @@ public fn void Db.testFile(Db* db) {
         close(pipe_stderr[1]);
 
         // collect output and check errors
-        string_buffer.Buf* buf = string_buffer.create(4096, false, 2);
+        Buf* buf = string_buffer.create(4096, false, 2);
         for (;;) {
             char[64*1024] buffer;
             isize count = read(pipe_stderr[0], buffer, sizeof(buffer));

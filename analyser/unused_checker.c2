@@ -15,21 +15,21 @@
 
 module unused_checker;
 
-import ast local;
-import diagnostics;
-import string_pool;
-import warning_flags;
+import ast { * }
+import diagnostics { Diags }
+import string_pool { Pool }
+import warning_flags { Flags }
 
 type Checker struct {
-    diagnostics.Diags* diags;
-    string_pool.Pool* astPool;
-    const warning_flags.Flags* warnings;
+    Diags* diags;
+    Pool* astPool;
+    const Flags* warnings;
 }
 
-public fn void check(diagnostics.Diags* diags,
-                       string_pool.Pool* astPool,
-                       const warning_flags.Flags* warnings,
-                       Module* mod)
+public fn void check(Diags* diags,
+                     Pool* astPool,
+                     const Flags* warnings,
+                     Module* mod)
 {
     Checker c = {
         .diags = diags,

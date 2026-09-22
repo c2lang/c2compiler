@@ -15,10 +15,10 @@
 
 module ast;
 
-import value_type local;
+import value_type { Value }
 
-import dlfcn local;
-import stdio local;
+import dlfcn { dlsym, RTLD_DEFAULT }
+import stdio { fprintf, stderr }
 
 const u32 Max_depth = 100;
 const u32 Max_complexity = 1000000;

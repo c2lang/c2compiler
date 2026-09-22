@@ -17,17 +17,16 @@ module ir_tools;
 
 import bit_array;
 import index_list;
-//import arch_arm64;
-import ir_copy_list local;
-import ir_inserter;
-import ir local;
+import ir_copy_list { CopyList }
+import ir_inserter { Inserter }
+import ir { * }
 import ir_lookup_table;
-import ir_rev_list local;
-import ir_slot_collector local;
-import ir_slot_values local;
+import ir_rev_list { RevList }
+import ir_slot_collector { SlotCollector }
+import ir_slot_values { SlotValues }
 import usage_counter;
 
-import stdlib;
+import stdlib { malloc, free }
 
 
 public type PrintFn fn void (const void* arg1, const void* arg2, const FunctionInfo* fi, const char* label);
@@ -37,7 +36,7 @@ public type Tools struct {
     SlotValues slot_values;
     SlotCollector collector;
     RevList revlist;
-    ir_inserter.Inserter inserter;
+    Inserter inserter;
     bit_array.BitArray active_blocks;
     CopyList copies;
     usage_counter.Counter usage;
@@ -147,7 +146,7 @@ fn void Tools.markUsedBlocks(Tools* t, FunctionInfo* fi) {
         blocks[i].used = blocks[i].phi_source;
     }
 
-    BlockId* blocks2 = stdlib.malloc(num_blocks * sizeof(BlockId));
+    BlockId* blocks2 = malloc(num_blocks * sizeof(BlockId));
     //rpo.num_blocks = num_blocks;
 
     blocks2[0] = 0; // add start block to todo-list
@@ -182,7 +181,7 @@ fn void Tools.markUsedBlocks(Tools* t, FunctionInfo* fi) {
     printf("USED: \n");
     for (u32 i = 0; i < num_blocks; i++) printf("  B%d  used %d\n", i, blocks[i].used);
 #endif
-    stdlib.free(blocks2);
+    free(blocks2);
 
 }
 

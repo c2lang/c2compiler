@@ -16,7 +16,7 @@
 module test;
 
 import events;
-import multicast_receiver local;
+import multicast_receiver { * }
 
 const char[] MULTICAST_IP = "225.0.0.37";
 const u16 MULTICAST_PORT = 12345;

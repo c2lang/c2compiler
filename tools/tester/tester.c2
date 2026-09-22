@@ -15,21 +15,21 @@
 
 module tester_main;
 
-import c_errno local;
-import libc_dirent local;
+import c_errno { * }
+import libc_dirent { * }
 import pthread;
-import stdio local;
-import stdlib local;
-import string local;
-import sys_stat local;
-import sys_time;
-import unistd;
+import stdio { * }
+import stdlib {* }
+import string { strdup, strerror, strcmp }
+import sys_stat { * }
+import sys_time { Timeval, gettimeofday }
+import unistd { sysconf, _SC_NPROCESSORS_ONLN, getcwd }
 
 import color;
-import test_utils local;
-import test_db local;
-import string_buffer;
-import string_utils local;
+import test_utils { * }
+import test_db { TestKind }
+import string_buffer { Buf }
+import string_utils { endsWith }
 import file_utils;
 
 /*
@@ -134,7 +134,7 @@ fn void TestQueue.summarizeFailed(const TestQueue* q) {
 }
 
 fn u32 online_cpus() {
-    i64 ncpus = unistd.sysconf(unistd._SC_NPROCESSORS_ONLN);
+    i64 ncpus = sysconf(_SC_NPROCESSORS_ONLN);
     if (ncpus > 8) return 8;    // Hack around Ryzen virtual cores. Using only physical is faster
     if (ncpus > 0) return (u32)ncpus;
     return 1;
@@ -245,7 +245,7 @@ fn void Tester.run_test(Tester* t, Test* test) {
 
     t.num_tests++;
 
-    string_buffer.Buf* buf = string_buffer.create(4096, color_output, 2);
+    Buf* buf = string_buffer.create(4096, color_output, 2);
     buf.print("%s\n", test.filename);
 
     file_utils.File file.init(test.filename);
@@ -291,8 +291,8 @@ fn void usage(const char* name) {
 }
 
 fn u64 now() {
-    sys_time.Timeval tv;
-    sys_time.gettimeofday(&tv, nil);
+    Timeval tv;
+    gettimeofday(&tv, nil);
     u64 now64 = (u64)tv.tv_sec;
     now64 *= 1000000;
     now64 += tv.tv_usec;
@@ -355,7 +355,7 @@ public fn i32 main(i32 argc, char** argv) {
     if (num_threads > MAX_THREADS) num_threads = MAX_THREADS;
     if (num_threads > queue.count) num_threads = queue.count;
 
-    char* cwd = unistd.getcwd(nil, 0);
+    char* cwd = getcwd(nil, 0);
     if (cwd == nil) {
         print_error("cannot get current directory: %s", strerror(errno));
         return EXIT_FAILURE;

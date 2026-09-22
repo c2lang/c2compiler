@@ -15,21 +15,20 @@
 
 module c2recipe;
 
-import build_target;
+import build_target { Target }
 import color;
-import ctype;
-import file_list local;
-import source_mgr;
-import src_loc local;
+import ctype { isspace, isalnum }
+import file_list { FileList, File }
+import source_mgr { SourceMgr }
+import src_loc { SrcLoc }
 import string_list;
-import string_pool;
-import warning_flags;
+import string_pool { Pool }
+import warning_flags { Flags }
 
-import csetjmp local;
-import stdarg local;
-import stdio local;
-import stdlib;
-import string;
+import csetjmp { JmpBufTag, setjmp, longjmp }
+import stdio { vsnprintf, fprintf, stderr }
+import stdlib { calloc, free }
+import string { memset, memcpy, strncmp, strlen }
 
 type Kind enum u8 (const char* const name @(unused)) {
     // global
@@ -62,7 +61,7 @@ type Token struct {
 }
 
 fn void Token.init(Token* t) {
-    string.memset(t, 0, sizeof(Token));
+    memset(t, 0, sizeof(Token));
 }
 
 
@@ -75,7 +74,7 @@ type Set struct {
 }
 
 fn Set* Set.create(u32 name, SrcLoc loc, Set* next) {
-    Set* s = stdlib.calloc(1, sizeof(Set));
+    Set* s = calloc(1, sizeof(Set));
     s.name_idx = name;
     s.loc = loc;
     s.next = next;
@@ -86,7 +85,7 @@ fn Set* Set.create(u32 name, SrcLoc loc, Set* next) {
 
 fn void Set.free(Set* s) {
     s.files.free();
-    stdlib.free(s);
+    free(s);
 }
 
 fn bool Set.addFile(Set* s, u32 filename, SrcLoc loc) {
@@ -95,8 +94,8 @@ fn bool Set.addFile(Set* s, u32 filename, SrcLoc loc) {
 
 type Parser struct {
     Recipe* recipe;
-    string_pool.Pool* pool;
-    source_mgr.SourceMgr* sm;
+    Pool* pool;
+    SourceMgr* sm;
     string_list.List global_configs;
 
     const char* input_start;
@@ -106,7 +105,7 @@ type Parser struct {
     Token token;
     bool new_line;
     bool targets_started;
-    build_target.Target* target;
+    Target* target;
     Set* sets;      // Note: will point to current set
 }
 
@@ -120,7 +119,7 @@ fn void Parser.free(Parser* p) {
     }
 }
 
-fn bool Parser.parse(Recipe* recipe, string_pool.Pool* pool, source_mgr.SourceMgr* sm, i32 file_id) {
+fn bool Parser.parse(Recipe* recipe, Pool* pool, SourceMgr* sm, i32 file_id) {
     const char* data = sm.get_content(file_id);
     Parser p = { }
     p.recipe = recipe;
@@ -249,7 +248,7 @@ fn void Parser.lex(Parser* p, Token* result) {
             // filename
             // lex until whitespace
             const char* start = p.cur;
-            while (*p.cur && !ctype.isspace(*p.cur)) p.cur++;
+            while (*p.cur && !isspace(*p.cur)) p.cur++;
             result.kind = p.new_line ? File : Text;
             if (*p.cur == 0) result.kind = Eof;
             p.new_line = false;
@@ -257,7 +256,7 @@ fn void Parser.lex(Parser* p, Token* result) {
             result.value = p.pool.add(start, len, true);
             return;
         default:
-            if (ctype.isalnum(*p.cur)) {
+            if (isalnum(*p.cur)) {
                 result.loc = p.loc_start + (SrcLoc)(p.cur - p.input_start);
                 if (equals(p.cur, "plugin ", 7)) {
                     result.kind = Plugin;
@@ -304,7 +303,7 @@ fn void Parser.lex(Parser* p, Token* result) {
 
                 // lex until whitespace
                 const char* start = p.cur;
-                while (*p.cur && !ctype.isspace(*p.cur)) p.cur++;
+                while (*p.cur && !isspace(*p.cur)) p.cur++;
                 // TODO check EOF
                 result.kind = p.new_line ? File : Text;
                 p.new_line = false;
@@ -376,13 +375,13 @@ fn void Parser.lex_option(Parser* p, Token* result) {
     result.loc = p.loc_start + (SrcLoc)(p.cur - p.input_start);
 
     const char* end = p.cur;
-    while (*end && !ctype.isspace(*end)) end++;
+    while (*end && !isspace(*end)) end++;
 
     char[24] option;
     u32 len = (u32)(end - p.cur);
     if (len >= elemsof(option)) p.error("unknown option");
 
-    string.memcpy(option, p.cur, len);
+    memcpy(option, p.cur, len);
     option[len] = '\0';
 
     switch (option) {
@@ -420,7 +419,7 @@ fn void Parser.lex_option(Parser* p, Token* result) {
         p.warning("unknown option '%s'", option);
         break;
     }
-    p.cur += string.strlen(option);
+    p.cur += strlen(option);
 }
 
 fn void Parser.skip_comments(Parser* p) {
@@ -510,12 +509,12 @@ fn void Parser.parsePlugin(Parser* p, bool is_global) {
 fn void Parser.parseWarnings(Parser* p) {
     p.consumeToken();
     p.expect(Text, "expect options");
-    warning_flags.Flags* warnings = p.target.getWarnings2();
+    Flags* warnings = p.target.getWarnings2();
     // TODO no need to store in string pool
     while (p.is(Text)) {
         const char* option = p.pool.idx2str(p.token.value);
         bool disable = false;
-        if (!string.strncmp(option, "no-", 3)) {
+        if (!strncmp(option, "no-", 3)) {
             disable = true;
             option += 3;
         }

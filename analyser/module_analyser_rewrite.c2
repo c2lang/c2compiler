@@ -15,10 +15,10 @@
 
 module module_analyser;
 
-import ast local;
-import source_mgr;
+import ast { * }
+import source_mgr { Location }
 
-import string local;
+import string { strlen }
 
 fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd, Expr* new_format_arg) {
     Expr* e = *e_ptr;
@@ -89,7 +89,7 @@ fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd, Expr*
 
     u32 func_num_args = fd.getNumParams();
     //stdio.printf("CALL %d/%d  FUNC %d/%d\n", call_arg_index, call_num_args, func_arg_index, func_num_args);
-    source_mgr.Location loc;
+    Location loc;
     if (fd.getNumAutoArgs()) loc = ma.diags.locate(e.getLoc());
     VarDecl** func_args = fd.getParams();
     while (func_arg_index < func_num_args) {
