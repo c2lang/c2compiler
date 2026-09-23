@@ -8,7 +8,7 @@ public const i32 N = 1;
 
 // @file{file2}
 module bar;
-import foo local;
+import foo { * }
 
 public i32 f1 = foo.N;
 

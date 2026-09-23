@@ -9,7 +9,7 @@ public type State enum u16 { A }
 // @file{file2}
 module bar;
 
-import foo local;
+import foo { * }
 
 i32 b = State.A;
 

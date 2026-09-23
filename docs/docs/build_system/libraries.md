@@ -128,8 +128,6 @@ For example, a fraction of *stdio.c2i* looks like this:
 ```c2
 module stdio extern "C";
 
-import stdarg local;
-
 struct FILE @(opaque) {}
 
 FILE* stdin;

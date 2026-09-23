@@ -5,8 +5,8 @@
 // @file{file1}
 module test;
 
-import ctype local;
-import stdio local;
+import ctype { * }
+import stdio { * }
 
 fn bool check_case(const char* s, bool is_upper) {
     if (is_upper) return isupper(*s);

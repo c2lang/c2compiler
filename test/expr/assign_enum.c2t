@@ -5,7 +5,7 @@
 // @file{file1}
 module test;
 
-import stdio local;
+import stdio { * }
 
 type State enum u8 { OFF, ON, OTHER }
 

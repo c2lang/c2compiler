@@ -6,7 +6,7 @@
 // @file{test1}
 module test1;
 
-import test2 local;
+import test2 { * }
 
 public const u32 Max = 3;
 

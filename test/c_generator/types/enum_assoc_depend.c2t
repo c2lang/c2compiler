@@ -12,7 +12,7 @@ fn void foo(Stats* stats) {
 // @file{enum_assoc.c2}
 module ast;
 
-import stdio local;
+import stdio { * }
 
 public fn i32 main() {
     Stats stats = {}

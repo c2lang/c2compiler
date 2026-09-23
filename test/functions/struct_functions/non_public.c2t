@@ -13,7 +13,7 @@ fn void Type.internal(Type* t) {}
 // @file{file2}
 module bar;
 
-import foo local;
+import foo { * }
 
 Type t;
 

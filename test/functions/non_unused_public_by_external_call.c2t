@@ -9,7 +9,7 @@ public fn void test1() {}
 // @file{file2}
 module bar;
 
-import foo local;
+import foo { * }
 
 public fn i32 main() {
     test1();

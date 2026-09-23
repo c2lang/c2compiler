@@ -58,7 +58,6 @@ fn Stmt* Parser.parseStmt(Parser* p) {
     case KW_bool ... KW_f64:        // C2 builtin types
     case KW_int ... KW_unsigned:    // C type keywords
     case KW_const:
-    case KW_local:
     case KW_static:
     case KW_tlocal:
     case KW_volatile:
@@ -535,8 +534,8 @@ fn Stmt* Parser.parseDeclStmt(Parser* p, bool checkSemi, bool allowLocal, bool i
     u32 num_decls = 0;
     bool is_static = p.tok.kind == KW_static;
     bool has_tlocal = (p.tok.kind == KW_tlocal);
-    if (is_static | has_tlocal || p.tok.kind == KW_local) {
-        if (!allowLocal || p.tok.kind == KW_local) p.error("keyword '%s' is not allowed here", p.tok.kind.name);
+    if (is_static | has_tlocal ) {
+        if (!allowLocal) p.error("keyword '%s' is not allowed here", p.tok.kind.name);
         p.consumeToken();
     }
 
@@ -660,7 +659,7 @@ fn bool Parser.isDeclaration(Parser* p) {
     const Kind kind = p.tok.kind;
     if (kind == Identifier) return p.isTypeSpec();
     if (kind.isTypeKeyword() && (p.peekToken(1) != Dot)) return true;
-    if (kind == KW_local || kind == KW_static || kind == KW_tlocal) return true;
+    if (kind == KW_static || kind == KW_tlocal) return true;
     if (kind.isQualifier()) return true;
     return false;
 }

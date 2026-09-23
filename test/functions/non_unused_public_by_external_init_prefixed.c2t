@@ -8,7 +8,7 @@ public fn void test1() {}
 
 // @file{file2}
 module bar;
-import foo local;
+import foo { * }
 
 public type Func fn void();
 public Func f1 = foo.test1;

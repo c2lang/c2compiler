@@ -9,7 +9,7 @@ public i32 n;
 // @file{file2}
 module bar;
 
-import foo local;
+import foo { * }
 
 fn i32 test2() {
     return foo.n;

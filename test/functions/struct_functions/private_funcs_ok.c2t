@@ -18,7 +18,7 @@ public fn void Type.init(Type* t) {
 // @file{file2}
 module bar;
 
-import foo local;
+import foo { * }
 
 fn void test() {
     Type t;

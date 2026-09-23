@@ -15,7 +15,7 @@ public fn void type_init() {
 // @file{file2}
 module bar;
 
-import foo local;
+import foo { * }
 
 fn void test() {
     Type.init();        // @error{symbol 'foo.Type' is not public}

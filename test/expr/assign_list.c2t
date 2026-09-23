@@ -5,7 +5,7 @@
 // @file{file1}
 module test;
 
-import stdio local;
+import stdio { * }
 
 type Point struct {
     i32 x;

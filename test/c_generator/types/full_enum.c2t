@@ -12,7 +12,7 @@ public type State enum u8 {
 // @file{file2}
 module file2;
 
-import file1 local;
+import file1 { * }
 
 fn void test1() {
     file1.State a = file1.State.A;

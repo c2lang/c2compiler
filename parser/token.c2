@@ -126,7 +126,6 @@ public type Kind enum u8 (public const char* const name) {
     KW_goto              : { "goto" },
     KW_if                : { "if" },
     KW_import            : { "import" },
-    KW_local             : { "local" },
     KW_module            : { "module" },
     KW_nil               : { "nil" },
     KW_offsetof          : { "offsetof" },

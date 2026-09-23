@@ -13,7 +13,7 @@ public const i32 FIRST = 1;
 // @file{file2}
 module bb;
 
-import aa local;
+import aa { * }
 
 public type Enum enum i8 {
     One = FIRST,

@@ -14,7 +14,7 @@ public fn i32 f4() {
 
 // @file{file2}
 module bar;
-import foo local;
+import foo { * }
 
 Foo* v;
 type Bar struct {

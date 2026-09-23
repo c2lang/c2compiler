@@ -1,4 +1,4 @@
 module test;
 
-fn local i32 test1() {}    // @error{expected type specifier}
+fn static i32 test1() {}    // @error{expected type specifier}
 

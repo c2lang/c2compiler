@@ -347,10 +347,6 @@ fn void Parser.parseImports(Parser* p) {
             p.consumeToken();
         }
         bool islocal = false;
-        if (p.tok.kind == KW_local) {
-            p.consumeToken();
-            islocal = true;
-        }
         // TODO: accept @(unused) attribute on imports
         //u32 num_attr = p.parseOptionalAttributes();
         SymbolList symlist.init();
@@ -674,7 +670,7 @@ fn bool Parser.parseFunctionParams(Parser* p, VarDeclList* params, bool is_publi
     param_default ::= EQUALS constant_expression.
 */
 fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool accept_default) {
-    if (p.tok.kind == KW_local || p.tok.kind == KW_static || p.tok.kind == KW_tlocal)
+    if (p.tok.kind == KW_static || p.tok.kind == KW_tlocal)
         p.error("keyword '%s' is not allowed here", p.tok.kind.name);
 
     TypeRefHolder ref.init();
@@ -782,7 +778,7 @@ fn void Parser.parseArrayEntry(Parser* p) {
 }
 
 fn void Parser.parseVarDecl(Parser* p, bool is_public) {
-    if (p.tok.kind == KW_local || p.tok.kind == KW_static)
+    if (p.tok.kind == KW_static)
         p.error("keyword '%s' cannot be used at file scope", p.tok.kind.name);
 
     bool has_tlocal = (p.tok.kind == KW_tlocal);

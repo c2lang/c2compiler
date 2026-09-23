@@ -18,7 +18,7 @@ public type Foo3 struct {
 
 // @file{file2}
 module bar;
-import foo local;
+import foo { * }
 
 fn void b() {
     i32 s = sizeof(Foo);  // @error{opaque type 'foo.Foo' used by value}

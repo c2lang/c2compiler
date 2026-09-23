@@ -13,7 +13,7 @@ fn void Type.f1(Type* t) {}
 // @file{file2}
 module bar;
 
-import foo local;
+import foo { * }
 
 fn void Type.f2(Type* t) {}  // @error{module 'bar' has no symbol 'Type'}
 

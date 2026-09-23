@@ -11,15 +11,15 @@ public type Type struct {
 // @file{file2}
 module mod2;
 
-import mod1 local;
+import mod1 { * }
 
 public fn void type_init(Type* t) {}
 
 // @file{file3}
 module mod3;
 
-import mod1 local;
-import mod2 local;
+import mod1 { * }
+import mod2 { * }
 
 fn void test() {
     Type t;

@@ -5,8 +5,8 @@
 // @file{file1}
 module test;
 
-import stdio local;
-import stdlib local;
+import stdio { * }
+import stdlib { * }
 
 fn i32 add(i32 x = 10, i32 y = 20) {
     return x + y;

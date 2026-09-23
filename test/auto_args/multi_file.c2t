@@ -14,7 +14,7 @@ public fn void Foo.test(Foo* f, const char* file @(auto_file), u32 line @(auto_l
 // @file{file2}
 module test;
 
-import foo local;
+import foo { * }
 
 public fn i32 main() {
     Foo* f = nil;

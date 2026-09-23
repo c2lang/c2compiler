@@ -6,7 +6,7 @@
 
 // @file{file1}
 module test;
-import stdio local;
+import stdio { * }
 
 public fn i32 main() {
 #ifdef FOO

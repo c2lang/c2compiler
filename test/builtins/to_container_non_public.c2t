@@ -10,7 +10,7 @@ type Foo struct {
 
 // @file{file2}
 module bar;
-import foo local;
+import foo { * }
 
 fn void b() {
     i32 a = 10;

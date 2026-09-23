@@ -14,7 +14,7 @@ public i32 a;
 // @file{file3}
 module test;
 
-import foo local;
+import foo { * }
 import bar;
 
 fn void test1() {

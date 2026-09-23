@@ -13,7 +13,7 @@ public type Enum enum u8 (public i32 a, i32 b) {
 // @file{file2}
 module mod2;
 
-import mod1 local;
+import mod1 { * }
 
 fn void test1(Enum e) {
     i32 a = e.a;

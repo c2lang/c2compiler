@@ -14,8 +14,8 @@ public type Number i32; // @note{did you mean 'bar.Number'?}
 // @file{file3}
 module test;
 
-import foo local;
-import bar local;
+import foo { * }
+import bar { * }
 
 fn void test1() {
     Number i;   // @error{symbol 'Number' is ambiguous}

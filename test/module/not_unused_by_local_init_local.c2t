@@ -9,7 +9,7 @@ public const i32 Num = 0;
 // @file{file2}
 module bar;
 
-import foo local;
+import foo { * }
 
 fn void test() {
     i32 a = Num;

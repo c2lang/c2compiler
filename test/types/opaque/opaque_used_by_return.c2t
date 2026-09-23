@@ -10,7 +10,7 @@ public type Foo struct @(opaque) {
 
 // @file{file2}
 module bar;
-import foo local;
+import foo { * }
 
 fn Foo b() { // @error{opaque type 'foo.Foo' used by value}
     Foo* f;

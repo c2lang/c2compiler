@@ -9,7 +9,7 @@ public type Number i32;
 // @file{file2}
 module bar;
 
-import foo local;
+import foo { * }
 
 fn void test1() {
     Number n;

@@ -1,7 +1,0 @@
-// @warnings{no-unused}
-module test;
-
-fn void test1() {
-    local i32 a = 1; // @error{keyword 'local' is not allowed here}
-}
-
