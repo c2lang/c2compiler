@@ -5,7 +5,6 @@ C2 has the following keywords:
 ### Module related
 
 * `module`
-* `local`
 * `import`
 * `as`
 * `public`

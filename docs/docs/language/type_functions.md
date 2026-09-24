@@ -200,7 +200,7 @@ which is used by the module `outer`:
 ```c
 module outer;
 
-import inner local;
+import inner { * }
 
 fn void example() {
     Shape* s = Shape.create(3);

@@ -8,7 +8,6 @@ C2 has the following builtin types and keywords
 * `as`
 * `extern`
 * `import`
-* `local`
 * `module`
 
 ### Type related

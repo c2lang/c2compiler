@@ -108,15 +108,15 @@ fn void test() {
 }
 ```
 
-### Local imports
+### Importing all symbols
 When a file uses many symbols from the same module, prefixing every use can get
-tedious. Following the import with the `local` keyword makes all of that module's
+tedious. Following the import an import-list '{ * }' makes all of that module's
 external symbols usable **without** a prefix. This combines with aliasing, making
 the prefix entirely optional:
 
 ```c
-import networking as net local;
-import filesystem local;
+import networking as net { * }
+import filesystem { * }
 
 // Equivalent
 filesystem.doSomething();
@@ -135,8 +135,7 @@ module and its set of imports: if both `networking` and `filesystem` declared an
 ambiguous` and both call sites would need their module prefix restored.
 
 ### Import lists
-`local` is an all-or-nothing tool — it exposes *every* symbol of a module
-unprefixed, which increases the chance of an accidental clash as a module grows.
+Import lists allow cherry-picking of symbols you want to import.
 When only a handful of symbols are needed unprefixed, list them explicitly in
 braces after the import:
 
@@ -160,16 +159,13 @@ import stdio { printf, fprintf as fp }
 
 An unknown or non-public symbol in the list is a compile error (`module 'stdio' has
 no symbol 'xxx'` / `symbol 'x' is not public`), and the same ambiguity rule as
-`local` imports applies once a listed symbol is used unprefixed alongside other
+import-list imports applies once a listed symbol is used unprefixed alongside other
 imports.
 
-Writing `*` instead of a symbol list imports every symbol unprefixed — exactly
-equivalent to `local`:
+Writing `*` instead of a symbol list imports every symbol unprefixed.
 
 ```c
 import stdio { * }
-// Equivalent to:
-import stdio local;
 ```
 
 As with any import, each name — the import itself, or an individual entry in its
@@ -178,7 +174,7 @@ about it (eg. `unused import 'stdio'`, or `unused import 'stdio.scanf'` for one
 unused entry in an otherwise-used list).
 
 ### Why this matters
-The combination of __modules__ and `import .. (as ..) (local | { .. })` means C2
+The combination of __modules__ and `import .. (as ..) ({ .. })` means C2
 code never has to constantly re-prefix the same declarations, while still letting
 each file choose how verbose it wants to be. In C, libraries commonly prefix every
 symbol themselves to avoid clashes, e.g.:
@@ -208,7 +204,7 @@ public type NetData struct {
 
 ```
 Callers then pick whichever prefix suits them — the module's own name, a shorter
-alias (`import networking as net;`), or no prefix at all (`local` or an import
+alias (`import networking as net;`), or no prefix at all (an import
 list) — without the module itself needing to know or care.
 
 One further advantage over C-style header includes: filenames never appear in the
@@ -256,8 +252,6 @@ the example above, `one`, `two` and `foo` itself can each declare a `test` symbo
 without clashing, because the module prefix (or the enclosing module, for `open`)
 always disambiguates which one is meant.
 
-When `local` or an import list makes a symbol reachable unprefixed, this
-uniqueness guarantee only holds per module — so an unprefixed reference is
-accepted only if exactly one visible import list, `local` import, or the current
-module contributes that name; see [Local imports](#local-imports) for what happens
-when more than one does.
+When an import list makes a symbol reachable unprefixed, this uniqueness guarantee
+only holds per module — so an unprefixed reference is accepted only if exactly one
+visible import list, `local` import, or the current module contributes that name.
