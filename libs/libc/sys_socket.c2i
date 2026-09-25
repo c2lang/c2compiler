@@ -1,7 +1,7 @@
 module sys_socket extern "C";
 
-//import unistd { * }
-//import libc_fcntl { * }
+import unistd { * }
+import libc_fcntl { * }
 
 const int PF_UNIX    =  1;
 
