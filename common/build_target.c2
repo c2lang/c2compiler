@@ -110,6 +110,7 @@ public type Target struct @(opaque) {
     bool backend_no_build;
     bool backend_fast;
     bool optional;
+    bool disabled;
 
     Map features;
     List libs;
@@ -311,5 +312,13 @@ public fn void Target.setOptional(Target* t) {
 
 public fn bool Target.getOptional(const Target* t) {
     return t.optional;
+}
+
+public fn void Target.setDisabled(Target* t) {
+    t.disabled = true;
+}
+
+public fn bool Target.getDisabled(const Target* t) {
+    return t.disabled;
 }
 

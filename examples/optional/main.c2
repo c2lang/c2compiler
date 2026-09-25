@@ -1,0 +1,10 @@
+module test;
+
+import stdio { printf }
+
+public fn i32 main() {
+    printf("Optional target demo\n");
+    return 0;
+}
+
+

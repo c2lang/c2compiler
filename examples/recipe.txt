@@ -235,13 +235,23 @@ executable terminal
     terminal/main.c2
 end
 
-#executable source_lib_use
-#    $warnings no-unused
-#    $backend c
-#    #$use libc static
-#    $use foobar source
-#    #$use foobar static
-#    #$use foobar dynamic
-#
-#    source_lib_use/main.c2
-#end
+executable source_lib_use
+    $disabled
+    #$optional
+    $warnings no-unused
+    $backend c
+    #$use libc static
+    $use foobar source
+    #$use foobar static
+    #$use foobar dynamic
+
+    source_lib_use/main.c2
+end
+
+executable optional
+    $optional
+    #$warnings no-unused
+    $backend c
+
+    optional/main.c2
+end

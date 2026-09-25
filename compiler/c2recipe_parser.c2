@@ -49,6 +49,7 @@ type Kind enum u8 (const char* const name @(unused)) {
     Use             : { "$use" },
     AsmFile         : { "$asm" },
     Optional        : { "$optional" },
+    Disabled        : { "$disabled" },
     Set             : { "set" },
     SetUse          : { "(set)" },
     Eof             : { "eof" },
@@ -415,6 +416,9 @@ fn void Parser.lex_option(Parser* p, Token* result) {
     case "optional":
         result.kind = Optional;
         break;
+    case "disabled":
+        result.kind = Disabled;
+        break;
     default:
         p.warning("unknown option '%s'", option);
         break;
@@ -473,6 +477,7 @@ fn void Parser.parseTop(Parser* p) {
         case Use:
         case AsmFile:
         case Optional:
+        case Disabled:
             p.error("must be inside target");
             break;
         case Set:
@@ -790,6 +795,11 @@ fn void Parser.parseTarget(Parser* p) {
             if (files_started) p.error("$optional must come before files");
             p.consumeToken();
             p.target.setOptional();
+            break;
+        case Disabled:
+            if (files_started) p.error("$disabled must come before files");
+            p.consumeToken();
+            p.target.setDisabled();
             break;
         case Set:
             p.error("cannot define a set here");

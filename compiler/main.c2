@@ -210,6 +210,7 @@ Options:
   -T                print AST statistics
   -v                verbose logging
   -w                enable all warnings (overrides recipe)
+  --all             dont skip optional targets
   --asan            generate code with address sanity checks
   --msan            generate code with memory sanity checks
   --ubsan           generate code with undefined behavior sanity checks
@@ -278,6 +279,9 @@ fn void parse_long_opt(ArgumentParser* ap, const char* arg, compiler.Options* co
     case "I2":
         opts.use_ir_backend = true;
         comp_opts.print_all_ir = true;
+        break;
+    case "all":
+        comp_opts.all = true;
         break;
     case "bootstrap":
         comp_opts.bootstrap = true;
@@ -715,11 +719,19 @@ fn bool Context.build_targets(Context* c) {
 
         u32 target_idx = target.getNameIdx();
         const char* target_name = c.auxPool.idx2str(target_idx);
+
         if (has_filter) {
             if (!c.opts.targets.contains_idx(target_idx)) continue;
+            const char* name = c.opts.targets.get(i);
             c.opts.targets.del(target_idx);
+            if (target.getDisabled()) {
+                console.warn("target '%s' is disabled", target_name);
+                continue;
+            }
         } else {
-            if (target.getOptional()) continue;
+            if (target.getDisabled()) continue;
+
+            if (target.getOptional() && !c.comp_opts.all) continue;
         }
         if (c.opts.show_targets) {
             console.log("%s", target_name);
