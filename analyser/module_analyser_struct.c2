@@ -62,7 +62,8 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
             VarDecl* vd = (VarDecl*)member;
             // Note: dont push to stack, because can self-ref to StructType
             member.setCheckInProgress();
-            ma.analyseStructMember(vd);
+            bool ok = ma.analyseStructMember(vd);
+            if (!ok) continue;
 
 #if 0
             // TODO decide whether to allow this
@@ -133,29 +134,29 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
     size_analyser.sizeOfStruct(d);
 }
 
-fn void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
+fn bool Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
     TypeRef* ref = v.getTypeRef();
 
     if (ref.isIncrArray()) {
         ma.error(ref.getLoc(), "incremental arrays not allowed in as struct/union member");
-        return;
+        return false;
     }
 
     QualType res = ma.analyseTypeRef(ref, true);
-    if (res.isInvalid()) return;
+    if (res.isInvalid()) return false;
 
     // check that array size is specified
     if (res.isArray()) {
         ArrayType* at = res.getArrayType();
         if (!at.hasSize()) {
             ma.error(ref.getLoc(), "array size must be specified for struct/union members");
-            return;
+            return false;
         }
     }
 
     if (res.isVoid()) {
         ma.error(ref.getLoc(), "member has invalid type 'void'");
-        return;
+        return false;
     }
 
     Decl* d = (Decl*)v;
@@ -173,6 +174,7 @@ fn void Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
         }
         // Note: we dont check auto-args or other attributes here yet
     }
+    return true;
 }
 
 fn void Analyser.analyseStructNames(Analyser* ma, StructTypeDecl* d, NameMap* names) {

@@ -1,0 +1,7 @@
+module test;
+
+type Foo struct {
+    u32 a : 1;
+    Bar b : 10;     // @error{unknown type 'Bar'}
+}
+
