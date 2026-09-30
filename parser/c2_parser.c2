@@ -236,10 +236,10 @@ fn void Parser.expectAndConsume(Parser* p, Kind kind) {
     p.expectError(kind);
 }
 
-fn void Parser.consumeRBrace(Parser* p, const char* context) {
+fn void Parser.consumeRBrace(Parser* p) {
     p.expectAndConsume(RBrace);
     if (p.tok.kind == Semicolon) {
-        p.diags.warn(p.tok.loc, "no semicolon allowed after %s", context);
+        p.diags.error(p.tok.loc, "no semicolon allowed after '}'");
         p.consumeToken();
     }
 }
@@ -375,7 +375,7 @@ fn void Parser.parseImports(Parser* p) {
                     p.consumeToken();
                 }
             }
-            p.consumeRBrace("import list");
+            p.consumeRBrace();
         } else {
             p.expectAndConsume(Semicolon);
         }
@@ -1101,7 +1101,7 @@ fn void Parser.parseExternDecl(Parser* p) {
             p.parseTopLevel();
         }
         p.tokenizer.c_mode--; // must set before consuming the token
-        p.consumeRBrace("extern \"C\" block");
+        p.consumeRBrace();
     } else {
         p.parseTopLevel();
     }

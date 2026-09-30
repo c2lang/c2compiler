@@ -212,7 +212,7 @@ fn CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
     }
 
     SrcLoc endLoc = p.tok.loc + 1;
-    p.consumeRBrace("block");
+    p.consumeRBrace();
 
     CompoundStmt* s = p.builder.actOnCompoundStmt(endLoc, stmts.getData(), stmts.size());
     p.putStmtList();

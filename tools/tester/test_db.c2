@@ -226,7 +226,8 @@ fn bool Db.readArgument(Db* db, char* dst, u32 size, const char* item) {
         if (*cp == 0 || *cp == '\n') {
             return db.error("missing '}'");
         }
-        if (*cp == '}') {
+        // Allow escaping with '}' (needed for some warnings)
+        if (*cp == '}' && !(cp[-1] == '\'' && cp[1] == '\'')) {
             dst[len] = '\0';
             db.cur = cp + 1;
             return true;

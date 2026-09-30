@@ -64,7 +64,7 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
         cases.add(c);
     }
 
-    p.consumeRBrace("switch block");
+    p.consumeRBrace();
 
     Stmt* s = p.builder.actOnSwitchStmt(loc, decl, cond, cases.getData(), cases.size(), has_default);
     cases.free();

@@ -233,7 +233,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
         p.expectAndConsume(Semicolon);
     }
 
-    p.consumeRBrace("struct definition");
+    p.consumeRBrace();
 }
 
 fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
@@ -335,7 +335,7 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
         }
     }
 
-    p.consumeRBrace("enum definition");
+    p.consumeRBrace();
 
     EnumTypeDecl* d = p.builder.actOnEnumType(name,
                                               loc,
