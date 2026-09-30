@@ -140,6 +140,8 @@ const char[] Recipe_help =
 
     executable <name>
        $optional
+       $disabled
+       $optional
        $warnings <no-unused>
                  <no-unused-variable>
                  <no-unused-function>
