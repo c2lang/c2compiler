@@ -2,7 +2,11 @@
 
 module test;
 
+#if ARCH_32BIT
+static_assert(4, sizeof(isize));
+static_assert(4, sizeof(usize));
+#else
 static_assert(8, sizeof(isize));
 static_assert(8, sizeof(usize));
-static_assert(8, sizeof(void*));
+#endif
 

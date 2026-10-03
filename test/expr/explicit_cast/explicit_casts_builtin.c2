@@ -22,11 +22,12 @@ fn void test2(i32 a) {
 }
 
 fn void test3a(i32 a) {
-    Func b1 = (Func)(a); // @error{only integers of type 'u64' may be cast to a pointer}
+                            // @error32{only integers of type 'u32' may be cast to a pointer} +1
+    Func b1 = (Func)(a);    // @error64{only integers of type 'u64' may be cast to a pointer}
 }
 
 fn void test4(u64 a) {
-    Func b1 = (Func)(a);
+    Func b1 = (Func)(a);    // @error32{only integers of type 'u32' may be cast to a pointer}
 }
 
 fn void test5(i32 a) {
