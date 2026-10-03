@@ -21,7 +21,9 @@ import string_buffer { Buf }
 
 type BitOffsetExprBits struct {
     u32 : NumExprBits;
-    u32 width : 8;  // in bits
+    u32 : 32 - NumExprBits - 8 - 8;
+    i8 high_bit : 8;  // bit number, -1 for runtime
+    i8 low_bit : 8;  // same
 }
 
 public type BitOffsetExpr struct @(opaque) {
@@ -33,6 +35,9 @@ public type BitOffsetExpr struct @(opaque) {
 public fn BitOffsetExpr* BitOffsetExpr.create(Context* c, SrcLoc loc, Expr* lhs, Expr* rhs) {
     BitOffsetExpr* e = c.alloc(sizeof(BitOffsetExpr));
     e.base.init(BitOffset, loc, 0, 0, 0, RValue);
+    e.base.base.bitOffsetBits.high_bit = -1;
+    e.base.base.bitOffsetBits.low_bit = -1;
+
     e.lhs = lhs;
     e.rhs = rhs;
 #if AstStatistics
@@ -54,12 +59,18 @@ public fn Expr** BitOffsetExpr.getLHS2(BitOffsetExpr* e) { return &e.lhs; }
 public fn Expr* BitOffsetExpr.getRHS(const BitOffsetExpr* e) { return e.rhs; }
 public fn Expr** BitOffsetExpr.getRHS2(BitOffsetExpr* e) { return &e.rhs; }
 
-public fn void BitOffsetExpr.setWidth(BitOffsetExpr* e, u8 width) {
-    e.base.base.bitOffsetBits.width = width;
+public fn void BitOffsetExpr.setHighBit(BitOffsetExpr* e, i8 high_bit) {
+    e.base.base.bitOffsetBits.high_bit = high_bit;
+}
+public fn i8 BitOffsetExpr.getHighBit(const BitOffsetExpr* e) {
+    return e.base.base.bitOffsetBits.high_bit;
 }
 
-public fn u32 BitOffsetExpr.getWidth(const BitOffsetExpr* e) {
-    return e.base.base.bitOffsetBits.width;
+public fn void BitOffsetExpr.setLowBit(BitOffsetExpr* e, i8 low_bit) {
+    e.base.base.bitOffsetBits.low_bit = low_bit;
+}
+public fn i8 BitOffsetExpr.getLowBit(const BitOffsetExpr* e) {
+    return e.base.base.bitOffsetBits.low_bit;
 }
 
 fn SrcLoc BitOffsetExpr.getStartLoc(const BitOffsetExpr* e) {
@@ -81,7 +92,7 @@ fn void BitOffsetExpr.print(const BitOffsetExpr* e, Buf* out, u32 indent) {
     e.base.printTypeBits(out);
     out.space();
     out.color(col_Calc);
-    out.print("%d", e.base.base.bitOffsetBits.width);
+    out.print("high_bit=%d, low_bit=%d", e.base.base.bitOffsetBits.high_bit, e.base.base.bitOffsetBits.low_bit);
     out.newline();
     e.lhs.print(out, indent + 1);
     e.rhs.print(out, indent + 1);

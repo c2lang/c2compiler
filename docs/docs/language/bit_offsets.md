@@ -10,7 +10,7 @@ wire protocols, or other bit-packed data.
 
 The syntax is `value[<highest bit>:<lowest bit>]`, so the resulting width is
 `highest - lowest + 1`. This mirrors how hardware datasheets typically describe
-bit ranges within a register.
+bit ranges within a hardware register.
 
 ```c
 fn void demo() {
@@ -31,23 +31,24 @@ fn void demo() {
   a `type` alias of one) — signed integers, `bool`, pointers and functions are all
   rejected with `bitoffsets are only allowed on unsigned integer type`.
 * The two indices must themselves be integers; the high index may not be lower
-  than the low one (`left bitoffset index is smaller than right index`), and
+  than the low index (`left bitoffset index is smaller than right index`), and
   neither may be negative or exceed the base value's bit width (`bitoffset index
   value 'N' too large for type 'uN'`).
-* A bit offset is a read-only expression: it can't appear on the left-hand side
+* A bit offset is a read-only expression: it cannot appear on the left-hand side
   of an assignment (`bitoffset cannot be used as left hand side expression`).
-* When both indices are compile-time constants, the result gets the smallest
-  standard integer type wide enough to hold the range. When either index is only
-  known at run time, the compiler can't narrow the type and the result keeps the
-  base value's own width instead — which may then need an explicit narrowing
-  conversion at the assignment, same as any other implicit narrowing:
+* For consistency, the type of a bitoffset is the type of the base value, but
+  when both indices are compile-time constants, the expression value range is known and the
+  bitoffset expression can be stored directly into a smaller type. When either index
+  value is only known at run time, the compiler cannot determine if the value fits
+  so an explicit narrowing conversion is needed when assigning to a smaller type:
 
 ```c
 fn void demo2(u32 value, u8 lo, u8 hi) {
-    u8 fixed   = value[15:8];     // OK: width (8 bits) is known at compile time
-    u32 dynamic = value[hi:lo];   // OK: kept at the base type's width, u32
-    u8 narrowed = value[hi:lo];   // error: implicit conversion loses integer
-                                  // precision: 'u32' to 'u8'
+    u8  a = value[15:8];    // OK: width (8 bits) is known at compile time
+    u32 b = value[hi:lo];   // OK: all selections fit in destination type
+    u8  c = value[hi:lo];   // error: implicit conversion loses integer precision: 'u32' to 'u8'
+    u8  d = value[15:4];    // the value has a knwon width of 12 bits so an cast is needed to prevent the
+                            // error: implicit conversion loses integer precision: 'u32' to 'u8'
 }
 ```
 
@@ -56,10 +57,8 @@ they do elsewhere in C2:
 
 ```c
 u32 value1 = 0xffff;
-u8 a = value1[15:0];   // error: implicit conversion loses integer precision:
-                        // 'u16' to 'u8'
+u8 a = value1[15:0];    // error: implicit conversion loses integer precision: 'u16' to 'u8'
 
 const u32 Value2 = 0x1234;
-i8 b = Value2[6:0] + 100;  // error: constant value 152 out-of-bounds for type
-                            // 'i8', range [-128, 127]
+i8 b = Value2[6:0] + 100;  // error: constant value 152 out-of-bounds for type 'i8', range [-128, 127]
 ```

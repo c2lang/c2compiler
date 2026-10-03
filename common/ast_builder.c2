@@ -709,6 +709,10 @@ fn bool Builder.actOnParamAttr(Builder* b, VarDecl* d, const Attr* a) {
         if (d.hasAutoAttr()) break;
         d.setAttrAutoFunc();
         return true;
+    case AutoExpr:
+        if (d.hasAutoAttr()) break;
+        d.setAttrAutoExpr();
+        return true;
     default:
         b.diags.error(a.loc, "attribute '%s' cannot be applied to function parameters",
                       b.idx2name(a.name));
