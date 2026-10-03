@@ -113,13 +113,13 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
 
     console.debug("opening lib %s", libstr);
     char[file_utils.Max_path] libdir;
-    if (!c.find_lib(libstr, libdir, elemsof(libdir))) {
+    if (!c.find_lib(libstr, libdir, countof(libdir))) {
         console.error("cannot find library '%s'", libstr);
         exit(EXIT_FAILURE);
     }
 
     char[file_utils.Max_path] fullname;
-    if (!file_utils.make_path(fullname, elemsof(fullname), libdir, manifest_name)) return;
+    if (!file_utils.make_path(fullname, countof(fullname), libdir, manifest_name)) return;
     i32 file_id = c.sm.loadFile(fullname, 0);
     if (file_id == -1) return;
 
@@ -169,7 +169,7 @@ fn bool Compiler.find_lib(const Compiler* c, const char* libname, char* libdir, 
         const char* dirname = c.libdirs.get(i);
         if (file_utils.make_path(libdir, size, dirname, libname)) {
             char[file_utils.Max_path] path;
-            if (file_utils.make_path(path, elemsof(path), libdir, manifest_name)
+            if (file_utils.make_path(path, countof(path), libdir, manifest_name)
             &&  file_utils.is_file(path))
                 return true;
         }
@@ -182,7 +182,7 @@ fn void Compiler.parseExternalModule(void* arg, ast.Module* m) {
     if (!m.isUsed()) return;
 
     char[file_utils.Max_path] filename;
-    if (!file_utils.make_path(filename, elemsof(filename), c.current.getPath(), m.getName(), ".c2i"))
+    if (!file_utils.make_path(filename, countof(filename), c.current.getPath(), m.getName(), ".c2i"))
         return;
 
     i32 file_id = c.sm.loadFile(filename, 0);
@@ -224,7 +224,7 @@ fn void parseSourceLibFile(void* arg, const char* filename, u32 src_loc) {
 
     // prefix with component root
     char[file_utils.Max_path] fullname;
-    if (!file_utils.make_path(fullname, elemsof(fullname), c.current.getPath(), filename)) return;
+    if (!file_utils.make_path(fullname, countof(fullname), c.current.getPath(), filename)) return;
 
     i32 file_id = sm.loadFile(fullname, src_loc);
     if (file_id == -1) return;   // note: error already printed
@@ -279,7 +279,7 @@ fn void Compiler.showLibs(Compiler* c, Buf* out, const char* dirname, bool show_
         char[file_utils.Max_path] fullname;
         const char* name = entry.d_name;
         if (name[0] != '.' && entry.d_type == DT_DIR) {
-            if (!file_utils.make_path3(fullname, elemsof(fullname), dirname, name, manifest_name)
+            if (!file_utils.make_path3(fullname, countof(fullname), dirname, name, manifest_name)
             ||  !file_utils.is_file(fullname))
                 continue;
 

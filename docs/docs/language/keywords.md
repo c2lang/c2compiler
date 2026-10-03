@@ -14,7 +14,7 @@ C2 has the following keywords:
 * `bool`
 * `char`
 * `const`
-* `elemsof`
+* `countof`
 * `enum`
 * `f32`
 * `f64`

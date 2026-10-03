@@ -312,7 +312,7 @@ public fn u32 Decl.getSection(const Decl* d) {
 public fn const char* Decl.getFullName(const Decl* d) {
     static char[4][128] tmp_buf; // allow up to 4 consecutive calls with different output
     static u32 tmp_id = 0;
-    u32 tmp_size = elemsof(tmp_buf[0]);
+    u32 tmp_size = countof(tmp_buf[0]);
     char* tmp = tmp_buf[tmp_id++ & 3];
 
     const char* modname = d.getModuleName();

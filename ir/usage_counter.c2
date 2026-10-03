@@ -74,9 +74,9 @@ public fn void Counter.decr(Counter* c, u32 idx) {
         u32 pos = c.queue_head;
         for (u32 i=0; i<c.queue_count; i++) {
             if (c.work_queue[pos] == idx) return; // already in
-            pos = (pos + 1) % elemsof(c.work_queue);
+            pos = (pos + 1) % countof(c.work_queue);
         }
-        assert(c.queue_count != elemsof(c.work_queue));
+        assert(c.queue_count != countof(c.work_queue));
         c.work_queue[pos] = idx;
         c.queue_count++;
     }
@@ -90,7 +90,7 @@ public fn void Counter.fillQueue(Counter* c) {
     u32 i = c.max_idx;
     while (i != u32.max) {
         if (c.counts[i] == 1) {
-            assert(c.queue_count != elemsof(c.work_queue));
+            assert(c.queue_count != countof(c.work_queue));
             // fill linearly since it starts empty
             c.work_queue[c.queue_count++] = i;
         }
@@ -100,7 +100,7 @@ public fn void Counter.fillQueue(Counter* c) {
 
 public fn u32 Counter.popHead(Counter* c) {
     u32 idx = c.work_queue[c.queue_head];
-    c.queue_head = (c.queue_head + 1) % elemsof(c.work_queue);
+    c.queue_head = (c.queue_head + 1) % countof(c.work_queue);
     c.queue_count--;
     return idx;
 }

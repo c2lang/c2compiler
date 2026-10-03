@@ -246,7 +246,7 @@ fn void Compiler.findStaticLib(Compiler* c, Component* comp) {
     // TODO
 
     // libdir
-    if (file_utils.make_path(fullname, elemsof(fullname), comp.getPath(), filename) &&
+    if (file_utils.make_path(fullname, countof(fullname), comp.getPath(), filename) &&
         file_utils.is_file(fullname)) {
         console.debug("found %s in %s", comp.getName(), comp.getPath());
         comp.setBinPath(comp.getPathIdx());

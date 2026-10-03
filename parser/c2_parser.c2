@@ -477,7 +477,7 @@ fn u32 Parser.parseOptionalAttributes(Parser* p) {
 
     p.expectAndConsume(LParen);
 
-    u32[elemsof(AttrKind)] dups;
+    u32[countof(AttrKind)] dups;
     u32 num_attrs = 0;
     u32 count = 0;
 
@@ -518,7 +518,7 @@ fn u32 Parser.parseOptionalAttributes(Parser* p) {
         if (findName(dups, num_attrs, a.name)) {
             p.diags.error(a.loc, "duplicate attribute");
         } else {
-            if (num_attrs >= elemsof(dups)) p.error("too many attributes");
+            if (num_attrs >= countof(dups)) p.error("too many attributes");
             dups[num_attrs++] = a.name;
             count += p.builder.actOnAttr(&a);
         }
@@ -986,7 +986,7 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
     if (tok.kind.isKeyword())
         out.color(color.Normal);
     char[256] locstr;
-    p.sm.loc2str(tok.loc, locstr, elemsof(locstr));
+    p.sm.loc2str(tok.loc, locstr, countof(locstr));
     out.print("  %6d %s  ", tok.loc, locstr);
 
     out.color(color.Cyan);
@@ -1017,7 +1017,7 @@ fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
             break;
         default:
             char[32] buf;
-            out.add(ftoa(buf, elemsof(buf), tok.float_value));
+            out.add(ftoa(buf, countof(buf), tok.float_value));
             break;
         }
         if (tok.suffix_F) out.add1('F');

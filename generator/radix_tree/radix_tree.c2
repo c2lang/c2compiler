@@ -154,7 +154,7 @@ public fn void Tree.free(Tree* t) {
 fn void Tree.init_zones(Tree* t) {
     t.free_zones.init();
     t.used_zones.init();
-    for (u32 i=0; i<elemsof(t.zones); i++) {
+    for (u32 i = 0; i < countof(t.zones); i++) {
         t.free_zones.addTail(&t.zones[i].list);
     }
 }
@@ -520,7 +520,7 @@ fn void Tree.iterate(const Tree* t, u32 node_idx, Iter* iter) {
     // if we have children, dont print
     const char* word = t.idx2word(n.word_idx);
     usize len = strlen(word);
-    assert(iter.len + len < elemsof(iter.buf));
+    assert(iter.len + len < countof(iter.buf));
     memcpy(iter.buf + iter.len, word, len + 1);
     if (n.num_children == 0) {
 #if RadixTreeValue
@@ -556,7 +556,7 @@ public fn void Tree.find(Tree* t, const char* text, MatchFn func, void* arg) @(u
     } else {
         Iter iter = { func, arg, 0 }
         u32 len = (u32)strlen(tail);
-        assert(len < elemsof(iter.buf));
+        assert(len < countof(iter.buf));
         memcpy(iter.buf, tail, len + 1);
         iter.len = len;
         for (u32 i=0; i<n.num_children; i++) {

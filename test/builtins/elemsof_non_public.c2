@@ -3,6 +3,6 @@ module test;
 
 u32[4] array;
 
-public const u32 S = elemsof(array);
-public const u32 S2 = elemsof(test.array);
+public const u32 S = countof(array);
+public const u32 S2 = countof(test.array);
 

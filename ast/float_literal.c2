@@ -70,7 +70,7 @@ public fn void FloatLiteral.printLiteral(const FloatLiteral* e, Buf* out) {
         break;
     default:
         char[32] buf;
-        out.add(ftoa(buf, elemsof(buf), e.val));
+        out.add(ftoa(buf, countof(buf), e.val));
         break;
     }
     QualType qt = e.base.getType();

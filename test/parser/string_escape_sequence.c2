@@ -2,17 +2,17 @@
 module test;
 
 const char[] S1 = "12";
-static_assert(3, elemsof(S1));
+static_assert(3, countof(S1));
 
 const char[] S2 = { '1', '2' }
-static_assert(2, elemsof(S2));
+static_assert(2, countof(S2));
 
 const char[] S3 = "\x1e\x0f";
-static_assert(3, elemsof(S3));
+static_assert(3, countof(S3));
 
 const char[] S4 = "\"abc\"";
-static_assert(6, elemsof(S4));
+static_assert(6, countof(S4));
 
 const char[] S5 = "\103\062";
-static_assert(3, elemsof(S5));
+static_assert(3, countof(S5));
 

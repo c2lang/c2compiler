@@ -37,7 +37,7 @@ fn i32 foo(i32 n) {
     case 15,16: return n;
     case F17,F18,F19...F20: return n;
     case sizeof(char[21]): return 21;
-    case elemsof(s.a): return 22;
+    case countof(s.a): return 22;
     case offsetof(Foo, c): return 23;
     case sizeof(Foo): return 24;
     case 24 + (0 || 1): return 25;

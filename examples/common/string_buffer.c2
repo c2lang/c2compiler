@@ -139,7 +139,7 @@ public fn void StringBuffer.vprintf(StringBuffer* buf, const char* format, va_li
     // formatted output is limited to 4095 bytes
     char[4096] tmp;
     char* dest = tmp;
-    u32 dest_size = elemsof(tmp);
+    u32 dest_size = countof(tmp);
     u32 avail = buf.capacity - buf.len;
     if (!buf.grow || avail >= 4096) {
         if (!avail) {

@@ -102,7 +102,7 @@ public fn void PhiClauses.init(PhiClauses* c) {
 }
 
 public fn void PhiClauses.free(PhiClauses* c) {
-    if (c.capacity > elemsof(c.stash)) free(c.clauses);
+    if (c.capacity > countof(c.stash)) free(c.clauses);
 }
 
 public fn u32 PhiClauses.getCount(const PhiClauses* c) {
@@ -125,20 +125,20 @@ public fn void PhiClauses.add(PhiClauses* c, BlockId blk_id, Ref ref) {
     PhiClause* clause;
     if (c.count >= c.capacity) {
         if (c.capacity == 0) {
-            c.capacity = elemsof(c.stash);
+            c.capacity = countof(c.stash);
             clause = c.stash;
         } else {
             u32 cap2 = c.capacity + c.capacity / 2 + 2;
             PhiClause* clauses2 = malloc(cap2 * sizeof(PhiClause));
             memcpy(clauses2, c.getClauses(), c.count * sizeof(PhiClause));
-            if (c.capacity > elemsof(c.stash)) free(c.clauses);
+            if (c.capacity > countof(c.stash)) free(c.clauses);
             c.capacity = cap2;
             c.clauses = clauses2;
 
             clause = &c.clauses[c.count];
         }
     } else {
-        if (c.count > elemsof(c.stash)) clause = &c.clauses[c.count];
+        if (c.count > countof(c.stash)) clause = &c.clauses[c.count];
         else clause = &c.stash[c.count];
     }
     c.count++;
@@ -148,7 +148,7 @@ public fn void PhiClauses.add(PhiClauses* c, BlockId blk_id, Ref ref) {
 }
 
 public fn const PhiClause* PhiClauses.getClauses(const PhiClauses* c) {
-    if (c.count <= elemsof(c.stash)) return c.stash;
+    if (c.count <= countof(c.stash)) return c.stash;
     return c.clauses;
 }
 

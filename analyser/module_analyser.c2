@@ -132,7 +132,7 @@ fn Analyser* Analyser.clone(Analyser* org) {
 }
 
 public fn void Analyser.free(Analyser* ma) {
-    for (u32 i = 0; i < elemsof(ma.init_checkers); i++) {
+    for (u32 i = 0; i < countof(ma.init_checkers); i++) {
         ma.init_checkers[i].free();
     }
     ma.prefixes.free();  // Note: safe to be freed twice
@@ -207,7 +207,7 @@ public fn void Analyser.checkModule(Analyser* ma, Module* mod) {
 }
 
 fn init_checker.Checker* Analyser.getInitChecker(Analyser* ma) {
-    if (ma.check_idx >= elemsof(ma.init_checkers)) {
+    if (ma.check_idx >= countof(ma.init_checkers)) {
         ma.check_idx++;
         return calloc(1, sizeof(init_checker.Checker));
     } else {
@@ -220,7 +220,7 @@ fn init_checker.Checker* Analyser.getInitChecker(Analyser* ma) {
 fn void Analyser.putInitChecker(Analyser* ma, init_checker.Checker* c) {
     assert(ma.check_idx > 0);
     ma.check_idx--;
-    if (ma.check_idx >= elemsof(ma.init_checkers)) {
+    if (ma.check_idx >= countof(ma.init_checkers)) {
         c.free();
         free(c);
     }
@@ -635,7 +635,7 @@ fn void Analyser.handleStaticAssert(void* arg, StaticAssert* sa) {
     }
 
     char[256] tmp;
-    Buf buf.init(tmp, elemsof(tmp), true, false, 0);
+    Buf buf.init(tmp, countof(tmp), true, false, 0);
 
     if (rhs) {
         if (opcode == Equal) {

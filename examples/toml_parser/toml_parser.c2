@@ -187,7 +187,7 @@ fn u32 addType(u32 raw, ValueType t) @(inline) {
 fn void Parser.parseKeyValue(Parser* p) {
     //printf("parseKeyValue()\n");
     char[MaxText] key;
-    pstrcpy(key, elemsof(key), p.tok.text);
+    pstrcpy(key, countof(key), p.tok.text);
     p.consumeToken();
     p.expectAndConsume(TokenKind.Equals);
     u32 value = p.parseValue();
@@ -411,7 +411,7 @@ public fn const char* Reader.getMsg(const Reader* r) {
 public fn bool Reader.parse(Reader* r, const char* filename) {
     file_utils.Reader file;
     if (!file.open(filename)) {
-        snprintf(r.message, elemsof(r.message), "%s", strerror(file.errno));
+        snprintf(r.message, countof(r.message), "%s", strerror(file.errno));
         return false;
     }
 
@@ -421,7 +421,7 @@ public fn bool Reader.parse(Reader* r, const char* filename) {
         return false;
     }
     Parser parser;
-    bool status = parser.parse(file.data(), r.message, elemsof(r.message), r.blocks);
+    bool status = parser.parse(file.data(), r.message, countof(r.message), r.blocks);
     file.close();
 
 #if DEBUG_NODES

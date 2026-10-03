@@ -54,7 +54,7 @@ public fn u32 Finder.search(Finder* f, const char* target) {
     char[file_utils.Max_path] fullname;
 
     if (target) {
-        if (file_utils.make_path3(fullname, elemsof(fullname), f.dirname, target, f.filename)
+        if (file_utils.make_path3(fullname, countof(fullname), f.dirname, target, f.filename)
         &&  file_utils.path_exists(fullname)) {
             f.add(fullname);
             return 1;
@@ -70,7 +70,7 @@ public fn u32 Finder.search(Finder* f, const char* target) {
     while (Dirent* entry = readdir(dir)) {
         const char* name = entry.d_name;
         if (name[0] != '.' && entry.d_type == DT_DIR) {
-            if (file_utils.make_path3(fullname, elemsof(fullname), f.dirname, name, f.filename)
+            if (file_utils.make_path3(fullname, countof(fullname), f.dirname, name, f.filename)
             &&  file_utils.path_exists(fullname)) {
                 f.add(fullname);
             }

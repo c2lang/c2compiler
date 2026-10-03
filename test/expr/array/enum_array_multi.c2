@@ -10,7 +10,7 @@ u32[Enum][Enum2] a = {
     [Maybe] = { 9, 10, 11, 12 },
 }
 
-static_assert(elemsof(a), elemsof(Enum));
+static_assert(countof(a), countof(Enum));
 
 
 fn Enum getYes() { return Yes; }

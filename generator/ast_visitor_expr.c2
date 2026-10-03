@@ -149,7 +149,7 @@ fn void Visitor.handleBuiltinExpr(Visitor* v, BuiltinExpr* b) {
     v.handleExpr(b.getInner());
     switch (b.getKind()) {
     case Sizeof:
-    case Elemsof:
+    case Countof:
         break;
     case OffsetOf:
         v.handleExpr(b.getOffsetOfMember());

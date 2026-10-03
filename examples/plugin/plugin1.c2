@@ -32,9 +32,9 @@ public i32[5] array3 = { 8, 9, 10, 11, 12 }
 public fn void load(i32 arg) {
     printf("Plugin1.load() %d\n", arg);
     printf("other.test1 = %p\n", other.test1);
-    printf("plugin1.array1 = %d\n", elemsof(array1));
-    printf("plugin1.array2 = %d\n", elemsof(array2));
-    printf("plugin1.array3 = %d\n", elemsof(array3));
+    printf("plugin1.array1 = %d\n", countof(array1));
+    printf("plugin1.array2 = %d\n", countof(array2));
+    printf("plugin1.array3 = %d\n", countof(array3));
     other.test1();
 }
 

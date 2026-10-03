@@ -27,12 +27,12 @@ public type ExprList struct {
 
 public fn void ExprList.init(ExprList* l) {
     l.count = 0;
-    l.capacity = elemsof(l.stash);
+    l.capacity = countof(l.stash);
     l.exprs = l.stash;
 }
 
 public fn void ExprList.free(ExprList* l) {
-    if (l.capacity > elemsof(l.stash)) free(l.exprs);
+    if (l.capacity > countof(l.stash)) free(l.exprs);
     l.count = 0;
     l.capacity = 0;
 }
@@ -40,13 +40,13 @@ public fn void ExprList.free(ExprList* l) {
 public fn void ExprList.add(ExprList* l, Expr* d) {
     if (l.count >= l.capacity) {
         if (l.capacity == 0) {
-            l.capacity = elemsof(l.stash);
+            l.capacity = countof(l.stash);
             l.exprs = l.stash;
         } else {
             u32 capacity2 = l.capacity + l.capacity / 2 + 2;
             void* exprs2 = malloc(capacity2 * sizeof(Expr*));
             memcpy(exprs2, l.exprs, l.count * sizeof(Expr*));
-            if (l.capacity > elemsof(l.stash)) free(l.exprs);
+            if (l.capacity > countof(l.stash)) free(l.exprs);
             l.capacity = capacity2;
             l.exprs = exprs2;
         }

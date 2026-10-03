@@ -13,5 +13,5 @@ array += 30;
 Enum += C;
 array += 40;
 
-static_assert(4, elemsof(array));
-static_assert(3, elemsof(Enum));
+static_assert(4, countof(array));
+static_assert(3, countof(Enum));

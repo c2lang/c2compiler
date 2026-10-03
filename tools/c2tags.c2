@@ -210,7 +210,7 @@ fn void use_fn(void* arg, const Dest* res) {
         char[file_utils.Max_path] fullname;
         const char* filename = res.filename;
         if (info.hasSubdir()) {
-            file_utils.make_path(fullname, elemsof(fullname), info.root2orig, filename);
+            file_utils.make_path(fullname, countof(fullname), info.root2orig, filename);
             filename = fullname;
         }
         if (opts.use_offsets) {
@@ -228,7 +228,7 @@ fn void use_fn_multi(void* arg, const Dest* res) {
         char[file_utils.Max_path] fullname;
         const char* filename = res.filename;
         if (opts.filename && info.hasSubdir()) {
-            file_utils.make_path(fullname, elemsof(fullname), info.root2orig, filename);
+            file_utils.make_path(fullname, countof(fullname), info.root2orig, filename);
             filename = fullname;
         }
         results.add(filename, res.line, res.col);
@@ -285,7 +285,7 @@ public fn i32 main(i32 argc, const char** argv)
     //printf("P2 [%s]\n", info.orig2root);
     char[file_utils.Max_path] fullname;
     if (opts.filename && info.hasSubdir()) {
-        file_utils.make_path(fullname, elemsof(fullname), info.orig2root, opts.filename);
+        file_utils.make_path(fullname, countof(fullname), info.orig2root, opts.filename);
         opts.filename = fullname;
     }
 #if MeasureTime

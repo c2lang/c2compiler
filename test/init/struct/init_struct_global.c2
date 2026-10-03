@@ -15,13 +15,13 @@ const u8* dp = Foo1_data;
 
 Foo foo1 = {
     .data = Foo1_data,
-    .size = elemsof(Foo1_data),
+    .size = countof(Foo1_data),
     .other = &other_data,
 }
 
 Foo foo2 = {
     Foo1_data,
-    elemsof(Foo1_data),
+    countof(Foo1_data),
     &other_data,
 }
 

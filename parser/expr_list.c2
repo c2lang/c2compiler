@@ -34,7 +34,7 @@ public type List struct {
 public fn void List.init(List* l) {
     memset(l, 0, sizeof(List));
     l.data = l.stack;
-    l.capacity = elemsof(l.stack);
+    l.capacity = countof(l.stack);
 }
 
 public fn void List.add(List* l, Expr* e) {

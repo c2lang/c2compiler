@@ -157,8 +157,8 @@ persons += { "Peter", 30 }
 // you can add more entries later (in the same/other file of the same module)
 persons += { "Alice", 40 }
 
-fn void demo_elemsof() {
-    i32 a = elemsof(persons);     // will be 4
+fn void demo_countof() {
+    i32 a = countof(persons);     // will be 4
 }
 ```
 

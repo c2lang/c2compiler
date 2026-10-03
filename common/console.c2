@@ -65,7 +65,7 @@ public fn void debug(const char* format @(printf_format), ...) {
     char[BUF_SIZE] buf;
     va_list args;
     va_start(args, format);
-    vsnprintf(buf, elemsof(buf), format, args);
+    vsnprintf(buf, countof(buf), format, args);
     va_end(args);
     if (config.use_color) {
         printf("%s%s%s\n", color.Blue.str(), buf, color.Normal.str());
@@ -80,7 +80,7 @@ public fn void log(const char* format @(printf_format), ...) {
     char[BUF_SIZE] buf;
     va_list args;
     va_start(args, format);
-    vsnprintf(buf, elemsof(buf), format, args);
+    vsnprintf(buf, countof(buf), format, args);
     va_end(args);
     printf("%s\n", buf);
 }
@@ -89,7 +89,7 @@ public fn void warn(const char* format @(printf_format), ...) {
     char[BUF_SIZE] buf;
     va_list args;
     va_start(args, format);
-    vsnprintf(buf, elemsof(buf), format, args);
+    vsnprintf(buf, countof(buf), format, args);
     va_end(args);
     if (config.use_color) {
         fprintf(stderr, "%swarning: %s%s\n", color.Yellow.str(), buf, color.Normal.str());
@@ -102,7 +102,7 @@ public fn void error(const char* format @(printf_format), ...) {
     char[BUF_SIZE] buf;
     va_list args;
     va_start(args, format);
-    vsnprintf(buf, elemsof(buf), format, args);
+    vsnprintf(buf, countof(buf), format, args);
     va_end(args);
     if (config.use_color) {
         fprintf(stderr, "%serror: %s%s\n", color.Red.str(), buf, color.Normal.str());
@@ -115,7 +115,7 @@ public fn void error_diag(const char* loc, const char* format @(printf_format), 
     char[BUF_SIZE] buf;
     va_list args;
     va_start(args, format);
-    vsnprintf(buf, elemsof(buf), format, args);
+    vsnprintf(buf, countof(buf), format, args);
     va_end(args);
     if (config.use_color) {
         fprintf(stderr, "%s%s: error: %s%s\n", color.Red.str(), loc, buf, color.Normal.str());

@@ -87,7 +87,7 @@ fn void SlotCollector.addStaticSlot(SlotCollector* c, u16 slot) {
     for (u32 i=0; i<c.num_static_slots; i++) {
         if (c.static_slots[i].slot == slot) return; // already static
     }
-    assert(c.num_static_slots < elemsof(c.static_slots));
+    assert(c.num_static_slots < countof(c.static_slots));
     c.static_slots[c.num_static_slots].slot = slot;
     c.static_slots[c.num_static_slots].temp_idx = 0;
     c.num_static_slots++;

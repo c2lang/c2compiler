@@ -185,7 +185,7 @@ const u8[Kind] CastExprTokenLookup = {
     [Amp] = 7,
     [PlusPlus] = 7,
     [MinusMinus] = 7,
-    [KW_elemsof] = 8,
+    [KW_countof] = 8,
     [KW_false] = 9,
     [KW_true] = 9,
     [KW_nil] = 10,
@@ -283,8 +283,8 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         res = p.parseCastExpr(false, is_addrof_op);
         UnaryOpcode opcode = convertTokenToUnaryOpcode(savedKind);
         return p.builder.actOnUnaryOperator(loc, opcode, res);
-    case 8: // KW_elemsof
-        res = p.parseElemsof();
+    case 8: // KW_countof
+        res = p.parseCountof();
         break;
     case 9: // KW_false, KW_true
         res = p.builder.actOnBooleanConstant(p.tok.loc, savedKind == KW_true);
@@ -566,7 +566,7 @@ fn Expr* Parser.parseSizeof(Parser* p) {
     return p.builder.actOnBuiltinExpr(loc, src_len, res, Sizeof);
 }
 
-fn Expr* Parser.parseElemsof(Parser* p) {
+fn Expr* Parser.parseCountof(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -578,7 +578,7 @@ fn Expr* Parser.parseElemsof(Parser* p) {
 
     u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(RParen);
-    return p.builder.actOnBuiltinExpr(loc, src_len, res, Elemsof);
+    return p.builder.actOnBuiltinExpr(loc, src_len, res, Countof);
 }
 
 fn Expr* Parser.parseInitValue(Parser* p, bool allow_designators) {
@@ -843,7 +843,7 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
             case StringLiteral:
             case Tilde:
             case Exclaim:
-            case KW_elemsof:
+            case KW_countof:
             case KW_false:
             case KW_true:
             case KW_nil:
