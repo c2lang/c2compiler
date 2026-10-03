@@ -709,6 +709,10 @@ fn bool Builder.actOnParamAttr(Builder* b, VarDecl* d, const Attr* a) {
         if (d.hasAutoAttr()) break;
         d.setAttrAutoFunc();
         return true;
+    case AutoExpr:
+        if (d.hasAutoAttr()) break;
+        d.setAttrAutoExpr();
+        return true;
     default:
         b.diags.error(a.loc, "attribute '%s' cannot be applied to function parameters",
                       b.idx2name(a.name));
@@ -1167,8 +1171,12 @@ public fn Expr* Builder.actOnTypeExpr(Builder* b, SrcLoc loc, u32 src_len, const
     return (Expr*)TypeExpr.create(b.context, loc, src_len, ref);
 }
 
-public fn Expr* Builder.actOnBitOffsetExpr(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
-    return (Expr*)BitOffsetExpr.create(b.context, loc, lhs, rhs);
+public fn Expr* Builder.actOnBitSelectionExpr(Builder* b, SrcLoc loc, u32 src_len, Expr* base, Expr* high, Expr* low, i32 high_val, i32 low_val) {
+    return (Expr*)BitSelectionExpr.create(b.context, loc, src_len, base, high, low, high_val, low_val);
+}
+
+public fn Expr* Builder.actOnArraySelectionExpr(Builder* b, SrcLoc loc, u32 src_len, Expr* base, Expr* idx, Expr* count, Expr* step) {
+    return (Expr*)ArraySelectionExpr.create(b.context, loc, src_len, base, idx, count, step);
 }
 
 public fn Expr* Builder.actOnArraySubscriptExpr(Builder* b, SrcLoc loc, u32 src_len, Expr* base, Expr* idx) {

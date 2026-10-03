@@ -6,25 +6,25 @@ u32 b = 0;
 const u8* text = "";
 
 fn void test1() {
-    b = a[test1:0];     // @error{index of bitoffset has non-integer type 'void ()'}
+    b = a[test1:0];     // @error{selection index has non-integer type 'void ()'}
 }
 
 fn void test2() {
-    b = a[0:text];      // @error{index of bitoffset has non-integer type 'const u8*'}
+    b = a[0:text];      // @error{selection index has non-integer type 'const u8*'}
 }
 
 fn void test3() {
     b = a[2:1];
     b = a[b:a];
 
-    b = a[-1:0];        // @error{bitoffset index value '-1' is negative}
+    b = a[-1:0];        // @error{selection index value '-1' is negative}
 }
 
 fn void test4() {
-    b = a[0:2-8];       // @error{bitoffset index value '-6' is negative}
+    b = a[0:2-8];       // @error{selection index value '-6' is negative}
 }
 
 fn void test5() {
-    b = a[64:0];       // @error{bitoffset index value '64' too large for type 'u32'}
+    b = a[64:0];       // @error{selection index value '64' too large for type 'u32'}
 }
 

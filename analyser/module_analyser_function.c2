@@ -113,6 +113,9 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd, bool full) {
                 if (vd.hasAttrAutoFunc() && !ref.isConstCharPtr()) { // check for 'const char* '
                     ma.error(ref.getLoc(), "attribute 'auto_func' requires a parameter of type 'const char*'");
                 }
+                if (vd.hasAttrAutoExpr() && !ref.isConstCharPtr()) { // check for 'const char* '
+                    ma.error(ref.getLoc(), "attribute 'auto_expr' requires a parameter of type 'const char*'");
+                }
             }
         }
 

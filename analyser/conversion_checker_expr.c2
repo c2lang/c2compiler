@@ -81,20 +81,34 @@ fn ExprWidth getExprWidth(const Expr* e) {
         // TODO ToContainer -> width = 64
         break;
     case ArraySubscript:
-        // TODO BitOffset -> specific width
-        fallthrough;
     case Member:
         return getTypeWidth(e.getType());
     case Paren:
         const ParenExpr* p = (ParenExpr*)e;
         return getExprWidth(p.getInner());
-    case BitOffset:
+    case ArraySelection:
+        // individual elements behave like ArraySubscript
         break;
+    case BitSelection:
+        // For consistency, the type is that of the base operand.
+        // but if the high and low bit numbers are compile time constants,
+        // the value range can be determined and returned here.
+        const BitSelectionExpr* bs = (BitSelectionExpr*)e;
+        i32 high_val = bs.getHighVal();
+        i32 low_val = bs.getLowVal();
+        if (high_val >= 0 && low_val >= 0) {
+            result.width = (u8)(high_val - low_val + 1);
+            result.is_signed = false;
+            return result;
+        }
+        return getTypeWidth(e.getType());
     case ExplicitCast:
         // TODO: explicit cast may reduce signed values
+        // XXX: should refine this: compute minimum range of inner value and cast type
         return getTypeWidth(e.getType());
     case ImplicitCast:
         const ImplicitCastExpr* c = (ImplicitCastExpr*)e;
+        // XXX: should refine this: compute minimum range of inner value and cast type
         return getExprWidth(c.getInner());
     case Range:
         break;
