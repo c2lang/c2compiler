@@ -129,14 +129,16 @@ fn void TailAllocator.report(const TailAllocator* c) {
 public type Context struct @(opaque) {
     TailAllocator allocator;
     u32 blk_size;
-    u32 wordsize;
+    u32 ptr_size;
+    u32 long_size;
 }
 
-public fn Context* create(u32 blk_size, u32 wordsize) {
+public fn Context* create(u32 blk_size, u32 ptr_size, u32 long_size) {
     Context* c = malloc(sizeof(Context));
     c.allocator.init(blk_size);
     c.blk_size = blk_size;
-    c.wordsize = wordsize;
+    c.ptr_size = ptr_size;
+    c.long_size = long_size;
     return c;
 }
 
@@ -152,7 +154,8 @@ public fn void Context.clear(Context* c) {
 }
 #endif
 
-public fn u32 Context.getWordSize(Context* c) { return c.wordsize; }
+public fn u32 Context.getPointerSize(Context* c) { return c.ptr_size; }
+public fn u32 Context.getLongSize(Context* c) { return c.long_size; }
 
 public fn void* Context.alloc(Context* c, u32 len) {
     return c.allocator.alloc(len);
