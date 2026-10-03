@@ -1,0 +1,238 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+import stdio { printf }
+
+u8  a8 = 0x12;
+u16 a16 = 0x1234;
+u32 a32 = 0x12345678;
+u64 a64 = 0x123456789ABCDEF0;
+u32 low = 1;
+u32 high = 7;
+
+fn void foo(const char* s @(auto_expr), u64 x) {
+    printf("%s -> 0x%x\n", s, x);
+}
+
+public fn i32 main(i32 argc, const char** argv) {
+    foo(high);
+    foo(low);
+
+    foo(a8);
+    foo(a8[7:0]);
+    foo(a8[7:4]);
+    foo(a8[7:7]);
+    foo(a8[5:0]);
+    foo(a8[5:4]);
+    foo(a8[5:5]);
+    foo(a8[1:0]);
+    foo(a8[4:4]);
+    foo(a8[0:0]);
+    foo(a8[high:7]);
+    foo(a8[high:4]);
+    foo(a8[high:0]);
+    foo(a8[high:low]);
+    foo(a8[high:low+1]);
+    foo(a8[high+1:low]);
+    foo(a8[high+1:low+1]);
+    foo(a8[7:low]);
+    foo(a8[7:low+1]);
+    foo(a8[1:low]);
+    foo(a8[1:low+1]);
+    foo(a8[0:low]);
+    foo(a8[0:low+1]);
+
+    foo(a16);
+    foo(a16[15:0]);
+    foo(a16[15:4]);
+    foo(a16[15:15]);
+    foo(a16[5:0]);
+    foo(a16[5:4]);
+    foo(a16[5:5]);
+    foo(a16[1:0]);
+    foo(a16[4:4]);
+    foo(a16[0:0]);
+    foo(a16[high:15]);
+    foo(a16[high:4]);
+    foo(a16[high:0]);
+    foo(a16[high:low]);
+    foo(a16[high:low+1]);
+    foo(a16[high+1:low]);
+    foo(a16[high+1:low+1]);
+    foo(a16[15:low]);
+    foo(a16[15:low+1]);
+    foo(a16[1:low]);
+    foo(a16[1:low+1]);
+    foo(a16[0:low]);
+    foo(a16[0:low+1]);
+
+    foo(a32);
+    foo(a32[31:0]);
+    foo(a32[31:4]);
+    foo(a32[31:31]);
+    foo(a32[5:0]);
+    foo(a32[5:4]);
+    foo(a32[5:5]);
+    foo(a32[1:0]);
+    foo(a32[4:4]);
+    foo(a32[0:0]);
+    foo(a32[high:31]);
+    foo(a32[high:4]);
+    foo(a32[high:0]);
+    foo(a32[high:low]);
+    foo(a32[high:low+1]);
+    foo(a32[high+1:low]);
+    foo(a32[high+1:low+1]);
+    foo(a32[31:low]);
+    foo(a32[31:low+1]);
+    foo(a32[1:low]);
+    foo(a32[1:low+1]);
+    foo(a32[0:low]);
+    foo(a32[0:low+1]);
+
+    foo(a64);
+    foo(a64[63:0]);
+    foo(a64[63:4]);
+    foo(a64[63:63]);
+    foo(a64[5:0]);
+    foo(a64[5:4]);
+    foo(a64[5:5]);
+    foo(a64[1:0]);
+    foo(a64[4:4]);
+    foo(a64[0:0]);
+    foo(a64[high:63]);
+    foo(a64[high:4]);
+    foo(a64[high:0]);
+    foo(a64[high:low]);
+    foo(a64[high:low+1]);
+    foo(a64[high+1:low]);
+    foo(a64[high+1:low+1]);
+    foo(a64[63:low]);
+    foo(a64[63:low+1]);
+    foo(a64[1:low]);
+    foo(a64[1:low+1]);
+    foo(a64[0:low]);
+    foo(a64[0:low+1]);
+
+    return 0;
+}
+
+// @expect{atleast, cgen/build.c}
+
+static u8 test_a8 = 0x12;
+static u16 test_a16 = 0x1234;
+static u32 test_a32 = 0x12345678;
+static u64 test_a64 = 0x123456789ABCDEF0L;
+static u32 test_low = 1;
+static u32 test_high = 7;
+static void test_foo(const char* s, u64 x);
+int main(int argc, const char** argv);
+
+static void test_foo(const char* s, u64 x)
+{
+   printf("%s -> 0x%lx\n", s, x);
+}
+
+int main(int argc, const char** argv)
+{
+   test_foo("high", test_high);
+   test_foo("low", test_low);
+   test_foo("a8", test_a8);
+   test_foo("a8[7:0]", test_a8);
+   test_foo("a8[7:4]", (u8)(test_a8 >> 4));
+   test_foo("a8[7:7]", (u8)(test_a8 >> 7));
+   test_foo("a8[5:0]", (u8)(test_a8 & 0x3f));
+   test_foo("a8[5:4]", (u8)((test_a8 >> 4) & 0x3));
+   test_foo("a8[5:5]", (u8)((test_a8 >> 5) & 0x1));
+   test_foo("a8[1:0]", (u8)(test_a8 & 0x3));
+   test_foo("a8[4:4]", (u8)((test_a8 >> 4) & 0x1));
+   test_foo("a8[0:0]", (u8)(test_a8 & 0x1));
+   test_foo("a8[high:7]", (u8)((test_a8 & ((2U << test_high) - 1)) >> 7));
+   test_foo("a8[high:4]", (u8)((test_a8 & ((2U << test_high) - 1)) >> 4));
+   test_foo("a8[high:0]", (u8)(test_a8 & ((2U << test_high) - 1)));
+   test_foo("a8[high:low]", (u8)((test_a8 & ((2U << test_high) - 1)) >> test_low));
+   test_foo("a8[high:low + 1]", (u8)((test_a8 & ((2U << test_high) - 1)) >> (test_low + 1)));
+   test_foo("a8[high + 1:low]", (u8)((test_a8 & ((2U << (test_high + 1)) - 1)) >> test_low));
+   test_foo("a8[high + 1:low + 1]", (u8)((test_a8 & ((2U << (test_high + 1)) - 1)) >> (test_low + 1)));
+   test_foo("a8[7:low]", (u8)(test_a8 >> test_low));
+   test_foo("a8[7:low + 1]", (u8)(test_a8 >> (test_low + 1)));
+   test_foo("a8[1:low]", (u8)((test_a8 & 0x3) >> test_low));
+   test_foo("a8[1:low + 1]", (u8)((test_a8 & 0x3) >> (test_low + 1)));
+   test_foo("a8[0:low]", (u8)((test_a8 & 0x1) >> test_low));
+   test_foo("a8[0:low + 1]", (u8)((test_a8 & 0x1) >> (test_low + 1)));
+   test_foo("a16", test_a16);
+   test_foo("a16[15:0]", test_a16);
+   test_foo("a16[15:4]", (u16)(test_a16 >> 4));
+   test_foo("a16[15:15]", (u16)(test_a16 >> 15));
+   test_foo("a16[5:0]", (u16)(test_a16 & 0x3f));
+   test_foo("a16[5:4]", (u16)((test_a16 >> 4) & 0x3));
+   test_foo("a16[5:5]", (u16)((test_a16 >> 5) & 0x1));
+   test_foo("a16[1:0]", (u16)(test_a16 & 0x3));
+   test_foo("a16[4:4]", (u16)((test_a16 >> 4) & 0x1));
+   test_foo("a16[0:0]", (u16)(test_a16 & 0x1));
+   test_foo("a16[high:15]", (u16)((test_a16 & ((2U << test_high) - 1)) >> 15));
+   test_foo("a16[high:4]", (u16)((test_a16 & ((2U << test_high) - 1)) >> 4));
+   test_foo("a16[high:0]", (u16)(test_a16 & ((2U << test_high) - 1)));
+   test_foo("a16[high:low]", (u16)((test_a16 & ((2U << test_high) - 1)) >> test_low));
+   test_foo("a16[high:low + 1]", (u16)((test_a16 & ((2U << test_high) - 1)) >> (test_low + 1)));
+   test_foo("a16[high + 1:low]", (u16)((test_a16 & ((2U << (test_high + 1)) - 1)) >> test_low));
+   test_foo("a16[high + 1:low + 1]", (u16)((test_a16 & ((2U << (test_high + 1)) - 1)) >> (test_low + 1)));
+   test_foo("a16[15:low]", (u16)(test_a16 >> test_low));
+   test_foo("a16[15:low + 1]", (u16)(test_a16 >> (test_low + 1)));
+   test_foo("a16[1:low]", (u16)((test_a16 & 0x3) >> test_low));
+   test_foo("a16[1:low + 1]", (u16)((test_a16 & 0x3) >> (test_low + 1)));
+   test_foo("a16[0:low]", (u16)((test_a16 & 0x1) >> test_low));
+   test_foo("a16[0:low + 1]", (u16)((test_a16 & 0x1) >> (test_low + 1)));
+   test_foo("a32", test_a32);
+   test_foo("a32[31:0]", test_a32);
+   test_foo("a32[31:4]", test_a32 >> 4);
+   test_foo("a32[31:31]", test_a32 >> 31);
+   test_foo("a32[5:0]", test_a32 & 0x3f);
+   test_foo("a32[5:4]", (test_a32 >> 4) & 0x3);
+   test_foo("a32[5:5]", (test_a32 >> 5) & 0x1);
+   test_foo("a32[1:0]", test_a32 & 0x3);
+   test_foo("a32[4:4]", (test_a32 >> 4) & 0x1);
+   test_foo("a32[0:0]", test_a32 & 0x1);
+   test_foo("a32[high:31]", (test_a32 & ((2U << test_high) - 1)) >> 31);
+   test_foo("a32[high:4]", (test_a32 & ((2U << test_high) - 1)) >> 4);
+   test_foo("a32[high:0]", test_a32 & ((2U << test_high) - 1));
+   test_foo("a32[high:low]", (test_a32 & ((2U << test_high) - 1)) >> test_low);
+   test_foo("a32[high:low + 1]", (test_a32 & ((2U << test_high) - 1)) >> (test_low + 1));
+   test_foo("a32[high + 1:low]", (test_a32 & ((2U << (test_high + 1)) - 1)) >> test_low);
+   test_foo("a32[high + 1:low + 1]", (test_a32 & ((2U << (test_high + 1)) - 1)) >> (test_low + 1));
+   test_foo("a32[31:low]", test_a32 >> test_low);
+   test_foo("a32[31:low + 1]", test_a32 >> (test_low + 1));
+   test_foo("a32[1:low]", (test_a32 & 0x3) >> test_low);
+   test_foo("a32[1:low + 1]", (test_a32 & 0x3) >> (test_low + 1));
+   test_foo("a32[0:low]", (test_a32 & 0x1) >> test_low);
+   test_foo("a32[0:low + 1]", (test_a32 & 0x1) >> (test_low + 1));
+   test_foo("a64", test_a64);
+   test_foo("a64[63:0]", test_a64);
+   test_foo("a64[63:4]", test_a64 >> 4);
+   test_foo("a64[63:63]", test_a64 >> 63);
+   test_foo("a64[5:0]", test_a64 & 0x3f);
+   test_foo("a64[5:4]", (test_a64 >> 4) & 0x3);
+   test_foo("a64[5:5]", (test_a64 >> 5) & 0x1);
+   test_foo("a64[1:0]", test_a64 & 0x3);
+   test_foo("a64[4:4]", (test_a64 >> 4) & 0x1);
+   test_foo("a64[0:0]", test_a64 & 0x1);
+   test_foo("a64[high:63]", (test_a64 & ((2ULL << test_high) - 1)) >> 63);
+   test_foo("a64[high:4]", (test_a64 & ((2ULL << test_high) - 1)) >> 4);
+   test_foo("a64[high:0]", test_a64 & ((2ULL << test_high) - 1));
+   test_foo("a64[high:low]", (test_a64 & ((2ULL << test_high) - 1)) >> test_low);
+   test_foo("a64[high:low + 1]", (test_a64 & ((2ULL << test_high) - 1)) >> (test_low + 1));
+   test_foo("a64[high + 1:low]", (test_a64 & ((2ULL << (test_high + 1)) - 1)) >> test_low);
+   test_foo("a64[high + 1:low + 1]", (test_a64 & ((2ULL << (test_high + 1)) - 1)) >> (test_low + 1));
+   test_foo("a64[63:low]", test_a64 >> test_low);
+   test_foo("a64[63:low + 1]", test_a64 >> (test_low + 1));
+   test_foo("a64[1:low]", (test_a64 & 0x3) >> test_low);
+   test_foo("a64[1:low + 1]", (test_a64 & 0x3) >> (test_low + 1));
+   test_foo("a64[0:low]", (test_a64 & 0x1) >> test_low);
+   test_foo("a64[0:low + 1]", (test_a64 & 0x1) >> (test_low + 1));
+   return 0;
+}
+

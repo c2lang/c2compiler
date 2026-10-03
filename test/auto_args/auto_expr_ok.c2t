@@ -1,0 +1,30 @@
+// @recipe bin
+    $warnings no-unused
+    $backend c
+
+// @file{file1}
+module test;
+
+fn void trace(const char* s @(auto_expr), u32 e) {
+}
+
+public fn i32 main() {
+    trace(1);
+    trace(1 + (2 << 3));
+    trace((u32)1 / 1);
+    return 0;
+}
+
+
+// @expect{atleast, cgen/build.c}
+
+static void test_trace(const char* s, u32 e);
+
+int main(void)
+{
+   test_trace("1", 1);
+   test_trace("1 + (2 << 3)", 1 + (2 << 3));
+   test_trace("(u32)1 / 1", (u32)1 / 1);
+   return 0;
+}
+
