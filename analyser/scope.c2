@@ -182,7 +182,7 @@ public fn void Scope.exit(Scope* s, bool has_error) {
             if (!d.isUsed()) {
                 ast.VarDecl* vd = (ast.VarDecl*)d;
                 // Note: params are handled by function
-                if (vd.isLocal()) s.diags.warn(d.getLoc(), "unused variable '%s'", s.getName(d));
+                if (vd.isLocal()) s.diags.warn(W_unused_variable, d.getLoc(), "unused variable '%s'", s.getName(d));
             }
         }
     }
