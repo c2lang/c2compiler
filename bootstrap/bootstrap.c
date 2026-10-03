@@ -29875,7 +29875,7 @@ static void module_analyser_Analyser_get_best_match(module_analyser_Analyser* ma
       ast_Decl* m = members[i];
       u32 name_idx = ast_Decl_getNameIdx(m);
       if (!name_idx) {
-         module_analyser_Analyser_get_best_match(ma, name1, len1, (ast_StructTypeDecl*)m, best_dist, result);
+         if (ast_Decl_isStructType(m)) module_analyser_Analyser_get_best_match(ma, name1, len1, (ast_StructTypeDecl*)m, best_dist, result);
       } else {
          const char* name2 = module_analyser_Analyser_idx2name(ma, name_idx);
          size_t len2 = strlen(name2);

@@ -17,6 +17,7 @@ module module_analyser;
 
 import ast { * }
 import source_mgr { Location }
+import string_buffer { Buf }
 
 import string { strlen }
 
@@ -111,6 +112,24 @@ fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd, Expr*
                 u32 value = ma.astPool.add(func_name, len, true);
                 Expr* arg = ma.builder.actOnStringLiteral(0, 0, value, len, true);
                 args.add(arg);
+            }
+            if (vd.hasAttrAutoExpr()) {
+                if (call_arg_index < call_num_args) {
+                    Expr* e1 = call_args[call_arg_index];
+                    char[256] tmp;
+                    Buf buf.init(tmp, elemsof(tmp), true, false, 0);
+                    e1.printLiteral(&buf);
+                    const char* expr_str = buf.str();
+                    u32 len = (u32)strlen(expr_str);
+                    u32 value = ma.astPool.add(expr_str, len, true);
+                    Expr* arg = ma.builder.actOnStringLiteral(0, 0, value, len, true);
+                    args.add(arg);
+                    buf.deinit();
+                } else {
+                    ma.error(vd.getLoc(), "an auto_expr argument must precede an actual argument");
+                    Expr* arg = ma.builder.actOnNilExpr(0);
+                    args.add(arg);
+                }
             }
             func_arg_index++;
             continue;

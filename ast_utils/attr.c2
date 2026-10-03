@@ -42,6 +42,7 @@ public type AttrKind enum u8 (const char* const name, const AttrReq required_arg
     AutoFile     : { "auto_file",     NoArg },  //               Var, function param only
     AutoLine     : { "auto_line",     NoArg },  //               Var, function param only
     AutoFunc     : { "auto_func",     NoArg },  //               Var, function param only
+    AutoExpr     : { "auto_expr",     NoArg },  //               Var, function param only
     Embed        : { "embed",         String }, //               Var, globals only
     Deprecated   : { "deprecated",    String }, //        Func
 }
