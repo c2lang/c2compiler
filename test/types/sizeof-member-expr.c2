@@ -1,0 +1,43 @@
+module test;
+
+import stdio { printf }
+
+type S struct {
+    S* n;
+    u32 i;
+}
+
+//const X XX = { &XX, 1 }  // bogus circular dependency
+
+S xx;
+const S XX = { &xx, 1 }
+
+public fn i32 main() {
+    printf("sizeof(S) = %d\n", sizeof(S));
+    printf("sizeof(S.n) = %d\n", sizeof(S.n));
+    printf("sizeof(S.n.i) = %d\n", sizeof(S.n.i));
+    printf("sizeof(S.n.n.i) = %d\n", sizeof(S.n.n.i));
+    printf("sizeof(S.n.n.n.n.i) = %d\n", sizeof(S.n.n.n.n.i));
+    printf("sizeof(S.n.n.n.n.n.n.n.n.i) = %d\n", sizeof(S.n.n.n.n.n.n.n.n.i));
+    printf("sizeof(S.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.i) = %d\n", sizeof(S.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.i));
+    printf("sizeof(S.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.i) = %d\n", sizeof(S.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.i));
+
+    printf("sizeof(XX) = %d\n", sizeof(XX));
+    printf("sizeof(XX.n) = %d\n", sizeof(XX.n));
+    printf("sizeof(XX.n.i) = %d\n", sizeof(XX.n.i));
+    printf("sizeof(XX.n.n.i) = %d\n", sizeof(XX.n.n.i));
+    printf("sizeof(XX.n.n.n.n.i) = %d\n", sizeof(XX.n.n.n.n.i));
+    printf("sizeof(XX.n.n.n.n.n.n.n.n.i) = %d\n", sizeof(XX.n.n.n.n.n.n.n.n.i));
+    printf("sizeof(XX.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.i) = %d\n", sizeof(XX.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.i));
+    printf("sizeof(XX.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.i) = %d\n", sizeof(XX.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.i));
+
+    printf("sizeof(xx) = %d\n", sizeof(xx));
+    printf("sizeof(xx.n) = %d\n", sizeof(xx.n));
+    printf("sizeof(xx.n.i) = %d\n", sizeof(xx.n.i));
+    printf("sizeof(xx.n.n.i) = %d\n", sizeof(xx.n.n.i));
+    printf("sizeof(xx.n.n.n.n.i) = %d\n", sizeof(xx.n.n.n.n.i));
+    printf("sizeof(xx.n.n.n.n.n.n.n.n.i) = %d\n", sizeof(xx.n.n.n.n.n.n.n.n.i));
+    printf("sizeof(xx.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.i) = %d\n", sizeof(xx.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.i));
+    printf("sizeof(xx.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.i) = %d\n", sizeof(xx.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.n.i));
+    return 0;
+}

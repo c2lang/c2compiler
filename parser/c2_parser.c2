@@ -40,9 +40,9 @@ import csetjmp { JmpBufTag, setjmp, longjmp }
 import ctype { islower }
 import stdio { fputs, stdout }
 import stdlib { calloc, malloc, free }
+import string { memcpy }
 
 const u32 NumStmtLists = 16; // max used for c2c is 8
-const u32 MaxLookahead = 64; // must be power of 2
 
 public type Parser struct @(opaque) {
     Tokenizer tokenizer;
@@ -52,7 +52,9 @@ public type Parser struct @(opaque) {
 
     u32 next_count;
     u32 next_head; // index of next token (circular index into next)
-    Token[MaxLookahead] next;
+    u32 next_mask; // mask for circular buffer index values (size - 1)
+    u32 next_size; // length of array pointed to by Parser.next, a power of 2
+    Token* next;
 
     SourceMgr* sm;
     Diags* diags;
@@ -113,6 +115,7 @@ public fn Parser* create(SourceMgr* sm,
 }
 
 public fn void Parser.free(Parser* p) {
+    free(p.next);
     for (u32 i = 0; i < NumStmtLists; i++) {
         p.stmt_lists[i].free();
     }
@@ -195,7 +198,7 @@ fn void Parser.consumeToken(Parser* p) {
     p.prev_loc = p.tok.loc + p.tok.len;
     if (p.next_count) {
         p.tok = p.next[p.next_head];
-        p.next_head = (p.next_head + 1) % MaxLookahead;
+        p.next_head = (p.next_head + 1) & p.next_mask;
         p.next_count--;
         return;
     }
@@ -204,22 +207,37 @@ fn void Parser.consumeToken(Parser* p) {
 }
 
 fn Kind Parser.peekToken(Parser* p, u32 n) {
-    assert(n > 0);
-    assert(n <= MaxLookahead);
+    if (!n) return p.tok.kind;
+    while (n > p.next_size) {
+        // reallocate the Token lookahead circular buffer
+        u32 next_mask = (p.next_mask * 2) | 15;
+        u32 next_size = next_mask + 1;
+        Token* next = calloc(next_size, sizeof(Token));
+        u32 count = p.next_size - p.next_head;
+        if (count > p.next_count) count = p.next_count;
+        memcpy(next, p.next + p.next_head, count * sizeof(Token));
+        memcpy(next + count, p.next, (p.next_count - count) * sizeof(Token));
+        free(p.next);
+        p.next = next;
+        p.next_head = 0;
+        p.next_mask = next_mask;
+        p.next_size = next_size;
+    }
     while (p.next_count < n) {
-        const u32 slot = (p.next_head + p.next_count) % MaxLookahead;
+        const u32 slot = (p.next_head + p.next_count) & p.next_mask;
         p.tokenizer.lex(&p.next[slot]);
         p.next_count++;
     }
-    u32 slot = (p.next_head + n - 1) % MaxLookahead;
+    u32 slot = (p.next_head + n - 1) & p.next_mask;
     return p.next[slot].kind;
 }
 
 fn Kind Parser.peekToken2(Parser* p, u32 n, Token* tok) {
+    if (!n) { *tok = p.tok; return tok.kind; }
     Kind kind = p.peekToken(n);
-    u32 slot = (p.next_head + n - 1) % MaxLookahead;
+    u32 slot = (p.next_head + n - 1) & p.next_mask;
     *tok = p.next[slot];
-    return p.next[slot].kind;
+    return tok.kind;
 }
 
 fn void Parser.consumeSemicolon(Parser* p, bool need_semi) {

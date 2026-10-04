@@ -106,6 +106,7 @@ fn bool Parser.isTypeSpec(Parser* p) {
         case LSquare:
             if (state == 4) return false;
             ahead = p.skipArray(ahead, RSquare);
+            if (!ahead) return false;
             state = 3;
             break;
         case Star:
@@ -147,7 +148,7 @@ fn u32 Parser.skipArray(Parser* p, u32 ahead, Kind endKind) {
     Kind[8] closeKind = { endKind }
     while (depth > 0) {
         Token next;
-        if (depth >= elemsof(closeKind) || ahead >= MaxLookahead) {
+        if (depth >= elemsof(closeKind)) {
             p.error("expression too complex");
         }
         switch (p.peekToken2(ahead++, &next)) {
@@ -168,8 +169,8 @@ fn u32 Parser.skipArray(Parser* p, u32 ahead, Kind endKind) {
             }
             break;
         case Eof:
-            p.errorAt(next.loc, "unexpected end-of-file");
-            break;
+        case Semicolon:
+            return 0;   // probably a syntax error
         default:
             break;
         }

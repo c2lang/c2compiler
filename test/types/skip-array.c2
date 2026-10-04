@@ -1,0 +1,11 @@
+module test;
+
+import stdio { printf }
+
+type X char;
+
+public fn i32 main() {
+    X[1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1] x;
+    printf("sizeof(x) = %d\n", sizeof(x));
+    return 0;
+}

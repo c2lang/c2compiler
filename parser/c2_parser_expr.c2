@@ -376,7 +376,6 @@ fn Expr* Parser.parseCallExpr(Parser* p, Expr* func) {
     ExprList args.init();
 
     while (p.tok.kind != RParen) {
-
         if (p.tok.kind == Identifier && p.peekToken(1) == Colon) {
             SrcLoc nameLoc = p.tok.loc;
             u32 name_idx = p.tok.name_idx;
@@ -548,7 +547,7 @@ fn Expr* Parser.parseSizeof(Parser* p) {
     p.expectAndConsume(LParen);
 
     Expr* res = nil;
-    if (p.parseAsType()) {
+    if (p.parseSizeofAsType()) {
         // argument is unambiguously a type
         SrcLoc type_loc = p.tok.loc;
         TypeRefHolder ref.init();
@@ -715,27 +714,28 @@ fn Expr* Parser.parseFullIdentifier(Parser* p) {
 
     The reason we test brackets [] inside a sizeof is that it is potentially ambiguous;
     it can be an array (eg Foo[2]) or a subscript expression (a[2]). We assume Foo to be
-    a type, but it could be a global Constant, in which case an error will be generated later.
+    a type, but it could be a global constant, in which case an error will be generated later.
 
     i8,u8,.      - type
     X*           - type
     Foo<..>      - type
     test.Foo<..> - type
-    Foo          - identifier (upper case, can be Constant or Type)
-    f            - identifier (lower case)
-    test.Foo     - member (upper case, can be Constant or Type)
-    f.a          - member (lower case)
+    Foo          - identifier (upper case, can be constant or type)
+    f            - identifier (lower case, can be a system type)
+    test.Foo     - member (upper case, can be constant or type)
+    f.a          - member (lower case, can be a system type with a module prefix)
     test.f.a     - member (lower case)
-    Foo[..]      - can be Constant element or Type array, assume Type array
-    test.Foo[..] - can be Constant element or Type array, assume Type array
-    a[..]        - subscript expression
-    test.a[..]   - subscript expression
-    Foo.a        - error (need instantiation, should accept as extension)
-    test.Foo.a   - error (need instantiation, should accept as extension)
-    a*)          - type (but will give error later)
-    test.a*)     - type (but will give error later)
+    Foo[..]      - can be global constant array element or type array, assume type array
+    test.Foo[..] - can be global constant array element or module prefixed type array, assume module prefixed type array
+    a[..]        - subscript expression, yet could be system type array
+    test.a[..]   - subscript expression, yet could be system type array with a module prefix
+    Foo.a        - struct field (need instantiation, should accept as extension)
+                   could also be a member expression of a global constant
+    test.Foo.a   - same as above with module prefix
+    a*)          - system type, will give error later if not a system type
+    test.a*)     - system type with module prefix, will give error later if not
 */
-fn bool Parser.parseAsType(Parser* p) {
+fn bool Parser.parseSizeofAsType(Parser* p) {
     // type must start with either a qualifier or an identifier
     //   or a builtin not followed by a dot.
     Kind kind = p.tok.kind;
@@ -745,11 +745,12 @@ fn bool Parser.parseAsType(Parser* p) {
     }
     Token t2 = p.tok;
     // parse potential member expression
+    // module name space is flat so `a.b.c` cannot be a type
     u32 ahead = 1;
-    while (p.peekToken(ahead) == Dot) {
-        if (p.peekToken2(ahead + 1, &t2) != Identifier)
-            return false;
+    if (p.peekToken(ahead) == Dot) {
+        if (p.peekToken2(ahead + 1, &t2) != Identifier) return false;
         ahead += 2;
+        if (p.peekToken(ahead) == Dot) return false;
     }
 
     i32 stars = 0;
@@ -762,8 +763,9 @@ fn bool Parser.parseAsType(Parser* p) {
         case LSquare:
             if (stars) return true;  // sizeof(MyType*[...])
             // if identifier is not uppercase, argument is not a type
+            // this assumption is erroneous for sizeof(pid_t[2])
             if (!isupper(*p.pool.idx2str(t2.name_idx))) return false;
-            // ambiguous: could be a global constant element or an array type
+            // ambiguous: could be a global constant array element or an array type
             return true;    // assume array type
         case Star:
             if (stars) return true;  // sizeof(a**...)
@@ -796,9 +798,8 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
     Token t2 = p.tok;
     bool ambiguous = true;
     for (;;) {
-        if (ahead) p.peekToken2(ahead, &t2);
+        Kind kind = p.peekToken2(ahead, &t2);
         ahead++;
-        Kind kind = t2.kind;
         if (kind.isTypeKeyword() && (p.peekToken(ahead) != Dot)) {
             // builtin type, non ambiguous
             ambiguous = false;
@@ -813,15 +814,18 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
         // but still potentially ambiguous.
         if (kind != Identifier)
             return 0;
-        while (p.peekToken(ahead) == Dot) {
-            if (p.peekToken2(ahead + 1, &t2) != Identifier)
-                return 0;
-            ahead += 2;
-        }
         break;
     }
+
+    // module name space is flat so `a.b.c` cannot be a type
+    if (p.peekToken(ahead) == Dot) {
+        if (p.peekToken2(ahead + 1, &t2) != Identifier) return 0;
+        ahead += 2;
+        if (p.peekToken(ahead) == Dot) return 0;
+    }
+
     i32 stars = 0;
-    while (1) {
+    for (;;) {
         switch (p.peekToken(ahead)) {
         case Star:
             if (stars < 0) return 0;
@@ -871,8 +875,7 @@ fn u32 Parser.parseAsCastType(Parser* p, u32 ahead, Kind close_tok) {
         case LSquare:
             // skip expression
             ahead = p.skipArray(ahead + 1, RSquare);
-            if (!ahead)
-                return 0;
+            if (!ahead) return 0;
             stars = -1; // no longer accept stars
             break;
         case Less:
