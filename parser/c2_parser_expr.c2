@@ -37,6 +37,15 @@ fn Expr* Parser.parseAssignmentExpression(Parser* p) {
     return p.parseRHSOfBinaryExpression(lhs, Prec.Assignment);
 }
 
+fn Expr* Parser.parseConstExpr(Parser* p) {
+    Expr* lhs = p.parseCastExpr(false, false);
+    return p.parseRHSOfBinaryExpression(lhs, Prec.Conditional);
+}
+
+fn Expr* Parser.parseInitExpr(Parser* p) {
+    return (p.tok.kind == LBrace) ? p.parseInitList() : p.parseAssignmentExpression();
+}
+
 const Prec[Kind] BinOpPrecLookup = {
     [Comma]          = Comma,
 
@@ -382,14 +391,11 @@ fn Expr* Parser.parseCallExpr(Parser* p, Expr* func) {
             u32 name_idx = p.tok.name_idx;
             p.consumeToken();  // name
             p.consumeToken();  // ':'
-            Expr* inner = (p.tok.kind == LBrace) ? p.parseInitList() : p.parseExpr();
+            Expr* inner = p.parseInitExpr();
             Expr* arg = p.builder.actOnNamedArgument(nameLoc, name_idx, inner);
             args.add(arg);
-        } else
-        if (p.tok.kind == LBrace) {
-            args.add(p.parseInitList());
         } else {
-            args.add(p.parseExpr());
+            args.add(p.parseInitExpr());
         }
         if (p.tok.kind != Comma) break;
         p.consumeToken();
@@ -493,7 +499,7 @@ fn Expr* Parser.parseParenExpr(Parser* p) {
             // C cast expression
             if (ref.isArray()) p.error("array types are not allowed here");
             Expr* expr = p.parseCastExpr(false, false);
-            u32 src_len = p.prev_loc - loc;
+            u32 src_len = p.prev_tok.loc + p.prev_tok.len - loc;
             return p.builder.actOnExplicitCast(loc, src_len, &ref, expr, true);
         }
     }
@@ -553,7 +559,7 @@ fn Expr* Parser.parseSizeof(Parser* p) {
         SrcLoc type_loc = p.tok.loc;
         TypeRefHolder ref.init();
         p.parseTypeSpecifier(&ref);
-        u32 src_len = p.prev_loc - type_loc;
+        u32 src_len = p.prev_tok.loc + p.prev_tok.len - type_loc;
         res = p.builder.actOnTypeExpr(type_loc, src_len, &ref);
     } else {
         // argument is an expression or an ambiguous name, parse as expression
@@ -581,20 +587,17 @@ fn Expr* Parser.parseElemsof(Parser* p) {
     return p.builder.actOnBuiltinExpr(loc, src_len, res, Elemsof);
 }
 
-fn Expr* Parser.parseInitValue(Parser* p, bool allow_designators) {
+fn Expr* Parser.parseInitValue(Parser* p) {
     switch (p.tok.kind) {
     case LBrace:
         return p.parseInitList();
     case Dot:
-        if (!allow_designators) p.error("designator not allowed here");
         return p.parseFieldDesignator();
     case LSquare:
-        if (!allow_designators) p.error("designator not allowed here");
         return p.parseArrayDesignator();
     default:
-        break;
+        return p.parseAssignmentExpression();
     }
-    return p.parseAssignmentExpression();
 }
 
 fn Expr* Parser.parseInitList(Parser* p) {
@@ -604,7 +607,7 @@ fn Expr* Parser.parseInitList(Parser* p) {
     ExprList values.init();
 
     while (p.tok.kind != RBrace) {
-        Expr* e = p.parseInitValue(true);
+        Expr* e = p.parseInitValue();
         values.add(e);
         if (p.tok.kind == Comma) {
             p.consumeToken();
@@ -631,7 +634,7 @@ fn Expr* Parser.parseFieldDesignator(Parser* p) {
     p.consumeToken();
 
     p.expectAndConsume(Equal);
-    Expr* value = p.parseInitValue(false);
+    Expr* value = p.parseInitExpr();
 
     return p.builder.actOnFieldDesignatedInit(loc, field, value);
 }
@@ -651,14 +654,13 @@ fn Expr* Parser.parseArrayDesignator(Parser* p) {
         kind = p.tok.kind == Colon ? Slice : Range;
         p.consumeToken();
         if (p.tok.kind != RSquare) {
-            // TODO: should be constant-expression
-            expr2 = p.parseExpr();
+            expr2 = p.parseConstExpr();
         }
     }
     p.expectAndConsume(RSquare);
     p.expectAndConsume(Equal);
 
-    Expr* initValue = p.parseInitValue(false);
+    Expr* initValue = p.parseInitExpr();
     return p.builder.actOnArrayDesignatedInit(loc, expr1, expr2, initValue, kind);
 }
 

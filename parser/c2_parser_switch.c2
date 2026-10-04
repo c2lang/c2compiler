@@ -30,8 +30,10 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
     Stmt* decl = nil;
     Expr* cond = nil;
     if (p.isDeclaration()) {
+        p.keep_semi = true;
         // !checkSemi, !allowLocal, isCondition
         decl = p.parseDeclStmt(false, false, true);
+        p.keep_semi = false;
         if (p.tok.kind == Semicolon) {
             p.consumeToken();
             cond = p.parseExpr();
@@ -73,11 +75,11 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
 
 fn void Parser.parseCaseCondition(Parser* p, expr_list.List* list) {
     for (;;) {
-        Expr* e = p.parseExpr();
+        Expr* e = p.parseConstExpr();
         if (p.tok.kind == Ellipsis) {
             SrcLoc loc = p.tok.loc;
             p.consumeToken();
-            Expr* e1 = p.parseExpr();
+            Expr* e1 = p.parseConstExpr();
             e = p.builder.actOnRange(loc, e, e1);
         }
         list.add(e);

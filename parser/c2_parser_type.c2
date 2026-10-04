@@ -209,7 +209,7 @@ fn void Parser.parseStructBlock(Parser* p, DeclList* members, bool is_public) {
             Expr* bitfield = nil;
             if (p.tok.kind == Colon) {
                 p.consumeToken();
-                bitfield = p.parseExpr();
+                bitfield = p.parseConstExpr();
             }
             VarDecl* member = p.builder.actOnStructMember(name, loc, is_public, &ref, bitfield);
             d = (Decl*)member;
@@ -309,7 +309,7 @@ fn void Parser.parseEnumType(Parser* p, u32 name, SrcLoc loc, bool is_public) {
             if (p.tok.kind == Equal) {
                 if (has_assoc_values) p.error("expected ':' and enum-associated values");
                 p.consumeToken();
-                init_expr = p.parseExpr(); // p.parseConstantExpr()
+                init_expr = p.parseConstExpr();
             } else if (p.tok.kind == Colon) {
                 if (!has_assoc_values) p.error("no enum-associated values were defined, so expected none");
                 p.consumeToken();
@@ -433,7 +433,7 @@ fn VarDecl* Parser.parseEnumAttribute(Parser* p) {
         if (!accept_default) p.error("default enum-associated values are not allowed in type definitions");
         assignLoc = p.tok.loc;
         p.consumeToken();
-        initValue = p.parseInitValue(false);
+        initValue = p.parseInitExpr();
     }
 
     VarDecl* param = p.builder.actOnEnumValue(name, loc, is_public, &ref, assignLoc, initValue);

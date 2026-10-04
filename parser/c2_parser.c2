@@ -47,7 +47,7 @@ const u32 MaxLookahead = 64; // must be power of 2
 public type Parser struct @(opaque) {
     Tokenizer tokenizer;
     Token tok;
-    SrcLoc prev_loc;
+    Token prev_tok;
     i32 file_id;
 
     u32 next_count;
@@ -63,6 +63,7 @@ public type Parser struct @(opaque) {
     bool is_interface;
     bool is_generated;
     bool has_asserts;
+    bool keep_semi;     // semicolon hack for compound statements
     u32 va_list_idx;
     u32 varargs_idx;
     u32 stdarg_idx;
@@ -192,7 +193,7 @@ fn void Parser.on_tokenizer_error(void* arg, ErrorLevel level, SrcLoc loc, const
 }
 
 fn void Parser.consumeToken(Parser* p) {
-    p.prev_loc = p.tok.loc + p.tok.len;
+    p.prev_tok = p.tok;
     if (p.next_count) {
         p.tok = p.next[p.next_head];
         p.next_head = (p.next_head + 1) % MaxLookahead;
@@ -222,8 +223,8 @@ fn Kind Parser.peekToken2(Parser* p, u32 n, Token* tok) {
     return p.next[slot].kind;
 }
 
-fn void Parser.consumeSemicolon(Parser* p, bool need_semi) {
-    if (need_semi) {
+fn void Parser.consumeSemicolon(Parser* p) {
+    if (p.tok.kind == Semicolon || p.prev_tok.kind != RBrace) {
         p.expectAndConsume(Semicolon);
     }
 }
@@ -238,9 +239,8 @@ fn void Parser.expectAndConsume(Parser* p, Kind kind) {
 
 fn void Parser.consumeRBrace(Parser* p) {
     p.expectAndConsume(RBrace);
-    if (p.tok.kind == Semicolon) {
+    if (p.tok.kind == Semicolon && !p.keep_semi) {
         p.diags.error(p.tok.loc, "no semicolon allowed after '}'");
-        p.consumeToken();
     }
 }
 
@@ -252,7 +252,7 @@ fn void Parser.expect(Parser* p, Kind kind) {
 
 fn void Parser.expectError(Parser* p, Kind kind) {
     // error position after previous token
-    SrcLoc loc = p.prev_loc;
+    SrcLoc loc = p.prev_tok.loc + p.prev_tok.len;
     if (loc) {
         if (kind == Semicolon) {
             // non fatal error to show all such error locations
@@ -376,9 +376,8 @@ fn void Parser.parseImports(Parser* p) {
                 }
             }
             p.consumeRBrace();
-        } else {
-            p.expectAndConsume(Semicolon);
         }
+        p.consumeSemicolon();
 
         if (mod_name != p.stdarg_idx) {
             // ignore import stdarg: vararg is imported implicitly from c2 library
@@ -728,7 +727,7 @@ fn VarDecl* Parser.parseParamDecl(Parser* p, bool is_public, bool accept_default
         if (!accept_default) p.error("default parameter values are not allowed in type definitions");
         assignLoc = p.tok.loc;
         p.consumeToken();
-        initValue = p.parseInitValue(false);
+        initValue = p.parseInitExpr();
     }
 
     VarDecl* param = p.builder.actOnFunctionParam(name, loc, is_public, &ref, assignLoc, initValue);
@@ -760,7 +759,7 @@ fn void Parser.parseOptionalArray(Parser* p, TypeRefHolder* ref) {
         } else {
             // [<expr>?]
             Expr* size = nil;
-            if (p.tok.kind != RSquare) size = p.parseExpr();
+            if (p.tok.kind != RSquare) size = p.parseConstExpr();
             ref.addArray(size);
         }
         p.expectAndConsume(RSquare);
@@ -773,9 +772,8 @@ fn void Parser.parseArrayEntry(Parser* p) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
     p.consumeToken(); // +=
-    bool need_semi = (p.tok.kind != LBrace);
-    Expr* initValue = p.parseInitValue(false);
-    p.consumeSemicolon(need_semi);
+    Expr* initValue = p.parseInitExpr();
+    p.consumeSemicolon();
 
     p.builder.actOnArrayValue(name, loc, initValue);
 }
@@ -787,7 +785,6 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
     bool has_tlocal = (p.tok.kind == KW_tlocal);
     if (has_tlocal) p.consumeToken();
 
-    bool need_semi = true;
     TypeRefHolder ref.init();
     p.parseTypeSpecifier(&ref);
 
@@ -824,7 +821,6 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
             p.error("expected '=' or ';'");
         }
 
-        need_semi = true;
         Expr* initValue = nil;
         SrcLoc assignLoc = 0;
 
@@ -834,8 +830,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
         case Equal:
             assignLoc = p.tok.loc;
             p.consumeToken();
-            need_semi = (p.tok.kind != LBrace);
-            initValue = p.parseInitValue(false);
+            initValue = p.parseInitExpr();
             break;
         case LSquare:
             p.error("array indices should go after type");
@@ -855,7 +850,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
         if (ref.isPointer() || ref.isArray())
             p.error("pointer and array variables must be defined separately");
     }
-    p.consumeSemicolon(need_semi);
+    p.consumeSemicolon();
 }
 
 fn void Parser.parseStaticAssert(Parser* p) {
@@ -863,11 +858,11 @@ fn void Parser.parseStaticAssert(Parser* p) {
     p.consumeToken();
 
     p.expectAndConsume(LParen);
-    Expr* lhs = p.parseExpr();
+    Expr* lhs = p.parseConstExpr();
     Expr* rhs = nil;
     if (p.tok.kind == Comma) {
         p.consumeToken();
-        rhs = p.parseExpr();
+        rhs = p.parseConstExpr();
     }
     p.expectAndConsume(RParen);
     p.expectAndConsume(Semicolon);
