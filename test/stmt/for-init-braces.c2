@@ -4,7 +4,7 @@ import stdio { printf }
 
 public fn i32 main() {
     i32 i = 0;
-    for (i32[] s = { 3, 2, 1 }; i < elemsof(s); i++) {
+    for (i32[] s = { 3, 2, 1 }; i < countof(s); i++) {
         printf("%d ", s[i]);
     }
     printf("go!\n");

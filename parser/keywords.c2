@@ -52,9 +52,6 @@ public fn void Info.init(Info* info, Pool* pool) {
         assert(idx < countof(info.indexes));
         info.indexes[idx] = k;
     }
-    idx = pool.add("elemsof", strlen("elemsof"), true);
-    assert(idx < countof(info.indexes));
-    info.indexes[idx] = KW_countof;
     info.max_index = idx;
 }
 

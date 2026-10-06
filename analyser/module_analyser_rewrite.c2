@@ -117,7 +117,7 @@ fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd, Expr*
                 if (call_arg_index < call_num_args) {
                     Expr* e1 = call_args[call_arg_index];
                     char[256] tmp;
-                    Buf buf.init(tmp, elemsof(tmp), true, false, 0);
+                    Buf buf.init(tmp, countof(tmp), true, false, 0);
                     e1.printLiteral(&buf);
                     const char* expr_str = buf.str();
                     u32 len = (u32)strlen(expr_str);

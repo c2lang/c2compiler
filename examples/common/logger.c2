@@ -88,7 +88,7 @@ public type Log struct {
 public fn void Log.init(Log* log, Base* base, const char* name_) @(unused) {
     log.base = base;
     log.level = base.defaultLevel;
-    pstrcpy(log.name, elemsof(log.name), name_);
+    pstrcpy(log.name, countof(log.name), name_);
 }
 
 public fn void Log.setLevel(Log* log, Level lvl) @(unused) {
