@@ -89,7 +89,7 @@ fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd, Expr*
     }
 
     u32 func_num_args = fd.getNumParams();
-    //stdio.printf("CALL %d/%d  FUNC %d/%d\n", call_arg_index, call_num_args, func_arg_index, func_num_args);
+    //printf("CALL %d/%d  FUNC %d/%d\n", call_arg_index, call_num_args, func_arg_index, func_num_args);
     Location loc;
     if (fd.getNumAutoArgs()) loc = ma.diags.locate(e.getLoc());
     VarDecl** func_args = fd.getParams();

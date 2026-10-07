@@ -61,9 +61,9 @@ fn void Table.resize(Table* t, u32 capacity2, bool copy) {
 
 /*
 public fn void Table.dump(const Table* t) @(unused) {
-    stdio.printf("TABLE %d\n", t.capacity);
+    printf("TABLE %d\n", t.capacity);
     for (u32 i=0; i<t.capacity; i++) {
-        if (t.data[i] != 0) stdio.printf("  [%d] %d\n", i, t.data[i]);
+        if (t.data[i] != 0) printf("  [%d] %d\n", i, t.data[i]);
     }
 }
 */

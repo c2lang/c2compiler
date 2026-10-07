@@ -325,7 +325,7 @@ fn bool Checker.checkIntConversion(Checker* c, const BuiltinType* bi) {
     Expr* e = *c.expr_ptr;
     u32 wl = bi.getWidth();
     ExprWidth w = getExprWidth(e);
-    //stdio.printf("INT CONVERSION signed|width: %d %d -> %d %d\n", w.is_signed, w.width, bi.isSigned(), w.width);
+    //printf("INT CONVERSION signed|width: %d %d -> %d %d\n", w.is_signed, w.width, bi.isSigned(), w.width);
 
     if (w.width > wl) return false;
 

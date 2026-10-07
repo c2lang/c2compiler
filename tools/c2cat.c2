@@ -30,7 +30,7 @@ import ctype { isspace }
 import stdio { * }
 import stdlib { exit, EXIT_FAILURE, EXIT_SUCCESS }
 import string { strcmp }
-import unistd;
+import unistd { isatty }
 
 type Style enum u8 (const char* const name @(unused), const Color default_color) {
     Normal     : { "normal",     Normal },
@@ -361,7 +361,7 @@ done:
 public fn i32 main(i32 argc, const char** argv)
 {
     bool use_color = color.useColor();
-    bool use_color2 = unistd.isatty(2);
+    bool use_color2 = isatty(2);
     bool check_only = false;
     i32 status = 0;
 

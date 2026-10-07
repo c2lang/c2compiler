@@ -28,7 +28,7 @@ import value_type { Value }
 import ctype { isdigit, isalnum, isalpha, isxdigit, isblank }
 import stdio { vsnprintf }
 import stdlib { strtol, strtod }
-import string { memset, memcpy, memcmp, strncmp }
+import string { memset, memcpy, memcmp, strcmp, strncmp, strlen }
 
 type Action enum u8 {
     INVALID = 0,  // ensure the default Action in Char_lookup is INVALID
@@ -1413,7 +1413,7 @@ fn bool Tokenizer.lex_feature_cmd(Tokenizer* t, Token* result) {
     for (kind = Feat_if; kind < Invalid; kind++) {
         const char* word = kind.name + 1;
         if (compare_word(t.cur, word)) {
-            t.cur += string.strlen(word);
+            t.cur += strlen(word);
             break;
         }
     }
@@ -1528,7 +1528,7 @@ fn i64 Tokenizer.parse_ppexpr(Tokenizer* t, Token* result) {
             case Identifier:
                 val.setUnsigned(0);
                 const char* id = t.pool.idx2str(result.name_idx);
-                if (!string.strcmp(id, "defined")) {
+                if (!strcmp(id, "defined")) {
                     bool has_paren = false;
                     if (t.lex_preproc(result) == LParen) {
                         has_paren = true;

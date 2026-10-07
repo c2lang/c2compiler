@@ -15,7 +15,7 @@
 
 module ast;
 
-import stdlib { malloc, free }
+import stdlib { malloc, free, realloc }
 import string { memcpy }
 
 public type DeclList struct {
@@ -53,7 +53,7 @@ fn void DeclList.resize(DeclList* l) {
         memcpy(l.data, l.stash, countof(l.stash) * sizeof(*l.data));
     } else {
         l.capacity = l.capacity * 2;
-        l.data = stdlib.realloc(l.data, l.capacity * sizeof(*l.data));
+        l.data = realloc(l.data, l.capacity * sizeof(*l.data));
     }
 }
 

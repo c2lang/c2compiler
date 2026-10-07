@@ -51,7 +51,7 @@ fn WorkQueue* WorkQueue.init(WorkQueue* q) {
 }
 
 fn void WorkQueue.free(WorkQueue* q) {
-    stdlib.free(q.funcs);
+    free(q.funcs);
 }
 
 fn void WorkQueue.add(WorkQueue* q, ir.FunctionInfo* fi) {
@@ -69,7 +69,7 @@ fn void WorkQueue.resize(WorkQueue* q, u32 capacity) {
     ir.FunctionInfo** fns = malloc(capacity * sizeof(ir.FunctionInfo*));
     if (q.count) {
         memcpy(fns, q.funcs, q.count * sizeof(ir.FunctionInfo*));
-        stdlib.free(q.funcs);
+        free(q.funcs);
     }
 
     q.funcs = fns;

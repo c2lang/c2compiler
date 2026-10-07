@@ -5,10 +5,10 @@
 // @file{file1}
 module file1;
 
-import stdlib;
+import stdlib { exit }
 
 fn void test1() @(noreturn) {
-    stdlib.exit(-1);
+    exit(-1);
 }
 
 fn i32 test2() {

@@ -85,8 +85,8 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
             switch (kind) {
             // TODO put others in default / fallthrough
             case Struct:
-                //stdio.printf("STRUCT BASE (ptr %d, quals %d, inner_quals %d)\n",
-                //             is_ptr, baseType.getQuals(), inner_qualifiers);
+                //printf("STRUCT BASE (ptr %d, quals %d, inner_quals %d)\n",
+                //       is_ptr, baseType.getQuals(), inner_qualifiers);
                 // TODO use valType (if ValType.NValue then Foo.x)
                 StructType* st = (StructType*)t;
                 StructTypeDecl* std = st.getDecl();
@@ -122,7 +122,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 // no need to update valtype
                 break;
             case Enum:
-                //stdio.printf("ENUM BASE  (type: %d)\n", valtype == NValue);
+                //printf("ENUM BASE  (type: %d)\n", valtype == NValue);
                 EnumType* et = (EnumType*)t;
                 EnumTypeDecl* etd = et.getDecl();
                 d = (Decl*)etd;
@@ -229,7 +229,7 @@ fn QualType Analyser.analyseMemberExpr(Analyser* ma, Expr** e_ptr, u32 side) {
                 assert(0);
                 break;
             case Module:
-                //stdio.printf("MODULE BASE\n");
+                //printf("MODULE BASE\n");
                 ModuleType* mt = (ModuleType*)t;
                 d = ma.scope.findSymbolInModule(mt.getModule(), name_idx, loc);
                 if (!d) {

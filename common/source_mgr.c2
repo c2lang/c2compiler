@@ -188,7 +188,7 @@ public fn i32 SourceMgr.loadFile(SourceMgr* sm, const char* filename, SrcLoc slo
             fprintf(stderr, "%s%serror:%s cannot open %s: %s\n",
                           tmp, Red.str(), Normal.str(), filename, file.getError());
         } else {
-            stdio.fprintf(stdio.stderr, "%serror: cannot open %s: %s\n", tmp, filename, file.getError());
+            fprintf(stderr, "%serror: cannot open %s: %s\n", tmp, filename, file.getError());
         }
         return -1;
     }
@@ -264,7 +264,7 @@ fn File* SourceMgr.find_file(SourceMgr* sm, SrcLoc loc) {
 }
 
 public fn Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
-    //stdio.printf("=== sm.locate(%d)  max_offset %d num_files %d\n", loc, sm.max_offset, sm.num_files);
+    //printf("=== sm.locate(%d)  max_offset %d num_files %d\n", loc, sm.max_offset, sm.num_files);
     Location l = { 1, 1, "-", nil }
     File* f = sm.find_file(loc);
     if (f) {
@@ -277,16 +277,16 @@ public fn Location SourceMgr.locate(SourceMgr* sm, SrcLoc loc) {
         l.line_start = f.data + offset - pos.column;
         l.filename = sm.pool.idx2str(f.filename);
     }
-    //stdio.printf("    -> %s:%d:%d\n", l.filename, l.line, l.column);
+    //printf("    -> %s:%d:%d\n", l.filename, l.line, l.column);
     return l;
 }
 
 public fn char* SourceMgr.loc2str(SourceMgr* sm, SrcLoc sloc, char* tmp, usize tmp_size) {
     Location loc = sm.locate(sloc);
     if (loc.line_start) {
-        stdio.snprintf(tmp, tmp_size, "%s:%d:%d", loc.filename, loc.line, loc.column);
+        snprintf(tmp, tmp_size, "%s:%d:%d", loc.filename, loc.line, loc.column);
     } else {
-        stdio.snprintf(tmp, tmp_size, "-");
+        snprintf(tmp, tmp_size, "-");
     }
     return tmp;
 }
@@ -308,7 +308,7 @@ public fn void SourceMgr.report(SourceMgr* sm, bool full) {
     u32 total_size = sizeof(SourceMgr) + sm.max_files * sizeof(File) + sm.index_capacity * sizeof(u16);
     u32 total_bytes = 0;
     u32 total_lines = 0;
-    if (full) stdio.printf("source-mgr: %d files\n", sm.num_files);
+    if (full) printf("source-mgr: %d files\n", sm.num_files);
     for (u32 i = 0; i < sm.num_files; i++) {
         File* f = &sm.files[i];
         total_bytes += f.data_size;
@@ -322,12 +322,12 @@ public fn void SourceMgr.report(SourceMgr* sm, bool full) {
             total_lines += lines;
         }
         if (full) {
-            stdio.printf("  %7d  %6d  %4d  %s%s\n",
-                         f.offset, f.data_size, lines, sm.pool.idx2str(f.filename),
-                         f.is_generated ? " (generated)" : "");
+            printf("  %7d  %6d  %4d  %s%s\n",
+                   f.offset, f.data_size, lines, sm.pool.idx2str(f.filename),
+                   f.is_generated ? " (generated)" : "");
         }
     }
-    stdio.printf("source-mgr: %d files, %d bytes, %d total size, %d lines\n",
-                 sm.num_files, total_bytes, total_size, total_lines);
+    printf("source-mgr: %d files, %d bytes, %d total size, %d lines\n",
+           sm.num_files, total_bytes, total_size, total_lines);
 }
 

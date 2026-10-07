@@ -53,7 +53,7 @@ public fn i32 main() {
 
     a++;  // something goes wrong, doesn't print anymore
 
-    //stdio.printf("B=%s\n", B);
+    //printf("B=%s\n", B);
     return 0;
 }
 

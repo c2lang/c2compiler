@@ -58,7 +58,7 @@ fn Dir* Dir.get(Dir* d, u32 name_idx) {
         }
         d.subdirs = subdirs;
     }
-    //stdio.printf("CREATE %u %u\n", d.indent + 1, name_idx);
+    //printf("CREATE %u %u\n", d.indent + 1, name_idx);
     Dir* subdir = &d.subdirs[d.count];
     subdir.init(name_idx, d.indent + 1);
     d.count++;

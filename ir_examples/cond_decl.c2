@@ -1,6 +1,6 @@
 module test;
 
-import stdio;
+import stdio { printf }
 
 u32 bufsize = 10;
 
@@ -58,11 +58,11 @@ public fn i32 main(i32 argc, const char** argv) {
 
     i32 loops = argc;
     while (i32 a = check2(loops)) {
-        stdio.printf("loop %d\n", loops);
+        printf("loop %d\n", loops);
     }
     loops = 3;
     while (i32 a = check(&loops)) {
-        stdio.printf("loop %d\n", loops);
+        printf("loop %d\n", loops);
     }
 
     loops = 2;

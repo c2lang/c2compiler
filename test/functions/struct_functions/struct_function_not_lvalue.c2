@@ -1,6 +1,6 @@
 module test;
 
-import stdio;
+import stdio { printf }
 
 type Point struct { i32 x, y; }
 
@@ -9,7 +9,7 @@ fn Point makePoint(i32 x, i32 y) {
 }
 
 fn void Point.print(Point* p) {
-    stdio.printf("{ x=%d, y=%d }\n", p.x, p.y);
+    printf("{ x=%d, y=%d }\n", p.x, p.y);
 }
 
 fn void f1() {

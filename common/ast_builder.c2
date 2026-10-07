@@ -26,7 +26,7 @@ import src_loc { SrcLoc }
 import string_buffer { Buf }
 import string_pool { Pool }
 
-import stdlib { calloc, free }
+import stdlib { calloc, free, exit }
 
 public type Builder struct @(opaque) {
     Context* context;           // no ownership
@@ -110,11 +110,11 @@ public fn void Builder.actOnModule(Builder* b,
     assert(b.comp);
     if (mod_name == b.c2_name && !is_interface) {
         b.diags.error(mod_loc, "module name 'c2' is reserved");
-        stdlib.exit(-1);
+        exit(-1);
     }
     if (mod_name == b.main_name) {
         b.diags.error(mod_loc, "module name 'main' is reserved");
-        stdlib.exit(-1);
+        exit(-1);
     }
 
     b.mod = b.comp.getOrAddModule(mod_name, b.is_private);

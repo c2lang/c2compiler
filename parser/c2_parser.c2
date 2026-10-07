@@ -313,7 +313,7 @@ fn void Parser.parseModule(Parser* p) {
         p.expectIdentifier();
 
     const char* modname = p.pool.idx2str(p.tok.name_idx);
-    if (!ctype.islower(modname[0])) {
+    if (!islower(modname[0])) {
         p.error("a module name must start with a lower case character");
     }
     u32 module_name_idx = p.tok.name_idx;

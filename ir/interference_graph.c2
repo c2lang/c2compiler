@@ -505,11 +505,11 @@ public fn void InterferenceGraph.dump(const InterferenceGraph* g, bool verbose) 
     for (u16 i=0; i<g.num_variables; i++) {
         if (g.register_map[i] == VAR_UNUSED) continue;
         Iter iter = g.getList(i);
-        stdio.printf("  %2d: ", i);
+        printf("  %2d: ", i);
         for (u32 j=0; j<iter.count; j++) {
-            stdio.printf(" %d", iter.ids[j]);
+            printf(" %d", iter.ids[j]);
         }
-        stdio.printf("\n");
+        printf("\n");
     }
 }
 

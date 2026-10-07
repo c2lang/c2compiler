@@ -460,7 +460,7 @@ fn void Tools.fixup_function(Tools* t) {
         Block* b = &blocks[i];
         u32 i_start = b.instr.start;
         u32 i_count = b.instr.count;
-        //stdio.printf("   B[%d] %d - %d\n", i, i_start, i_start+i_count-1);
+        //printf("   B[%d] %d - %d\n", i, i_start, i_start+i_count-1);
         for (u32 j=i_start; j<i_start+i_count; j++) {
             Instr* is = &instrs[j];
 

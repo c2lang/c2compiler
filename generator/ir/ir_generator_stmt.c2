@@ -340,7 +340,7 @@ fn void Generator.emitAssertStmt(Generator* gen, const Stmt* s) {
     source_mgr.Location loc = gen.sm.getLocation(a.getLoc());
     const char* funcname = gen.cur_function.asDecl().getFullName();
     char[512] location;
-    stdio.snprintf(location, countof(location), "%s:%d: %s", loc.filename, loc.line, funcname);
+    snprintf(location, countof(location), "%s:%d: %s", loc.filename, loc.line, funcname);
     ExprRef loc_str;
     gen.createString(&loc_str, location);
 

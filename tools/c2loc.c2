@@ -26,7 +26,7 @@ import c_errno { errno }
 import stdio { printf }
 import stdlib { exit, EXIT_FAILURE }
 import string { strerror, strcmp }
-import unistd;
+import unistd { chdir }
 
 const char* target;
 const char* other_dir;
@@ -109,7 +109,7 @@ public fn i32 main(i32 argc, const char** argv)
     parse_opts(argc, argv);
 
     if (other_dir) {
-        if (unistd.chdir(other_dir)) {
+        if (chdir(other_dir)) {
             printf("cannot chdir to %s: %s\n", other_dir, strerror(errno));
             exit(EXIT_FAILURE);
         }
