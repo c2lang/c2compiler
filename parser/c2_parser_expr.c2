@@ -235,6 +235,32 @@ fn UnaryOpcode convertTokenToUnaryOpcode(Kind kind) {
     return PreInc;
 }
 
+fn Expr* Parser.parseOffsetOfMember(Parser* p) {
+    p.expectIdentifier();
+    SrcLoc loc = p.tok.loc;
+    u32 name_idx = p.tok.name_idx;
+    u32 name_len = p.tok.len;
+    p.consumeToken();
+    Expr* e = p.builder.actOnIdentifier(loc, name_idx, name_len);
+    for (;;) {
+        switch (p.tok.kind) {
+        case LSquare:
+            loc = p.tok.loc;
+            p.consumeToken();
+            Expr* idx = p.parseExpr();
+            u32 src_len = p.tok.loc + 1 - loc;
+            p.expectAndConsume(RSquare);
+            e = p.builder.actOnArraySubscriptExpr(loc, src_len, e, idx);
+            break;
+        case Dot:
+            e = p.parseImpureMemberExpr(e);
+            break;
+        default:
+            return e;
+        }
+    }
+}
+
 fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp*/) {
     // This handles all of cast-expression, unary-expression, postfix-expression,
     // and primary-expression.  We handle them together like this for efficiency
@@ -673,7 +699,7 @@ fn Expr* Parser.parseOffsetOfExpr(Parser* p) {
 
     p.expectAndConsume(Comma);
 
-    Expr* member = p.parseFullIdentifier();
+    Expr *member = p.parseOffsetOfMember();
 
     u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(RParen);
@@ -690,7 +716,7 @@ fn Expr* Parser.parseToContainerExpr(Parser* p) {
 
     p.expectAndConsume(Comma);
 
-    Expr* member = p.parseFullIdentifier();
+    Expr* member = p.parseOffsetOfMember();
 
     p.expectAndConsume(Comma);
 

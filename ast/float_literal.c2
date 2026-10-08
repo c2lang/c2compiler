@@ -42,7 +42,6 @@ public fn FloatLiteral* FloatLiteral.create(Context* c, SrcLoc loc, u32 src_len,
     Stats.addExpr(FloatLiteral, sizeof(FloatLiteral));
 #endif
     i.base.setType(getBuiltinQT(kind));
-
     return i;
 }
 

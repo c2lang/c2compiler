@@ -18,6 +18,7 @@ module module_analyser;
 import ast { * }
 import size_analyser;
 import src_loc { SrcLoc }
+import value_type { Value }
 
 fn QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
     Expr* e = *e_ptr;
@@ -122,8 +123,6 @@ fn QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
     QualType qt = ma.analyseExpr(&inner, false, RHS);
     if (qt.isInvalid()) return QualType_Invalid;
 
-    e.setType(getBuiltinQT(UInt32));
-
     StructType* st = qt.getStructTypeOrNil();
     if (!st) {
         ma.error(inner.getLoc(), "offsetof can only be used on struct types");
@@ -134,9 +133,11 @@ fn QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
     if (!ma.checkOpaque(std, inner.getLoc())) return QualType_Invalid;
 
     Expr* member = b.getOffsetOfMember();
-    Decl* d = ma.findMemberOffset(b, std, member);
-    if (!d) return QualType_Invalid;
-    return e.getType();
+    u32 offset = 0;
+    QualType qmem = ma.findMemberOffset(qt, member, &offset);
+    if (qmem.isInvalid()) return QualType_Invalid;
+    b.setValue(offset);
+    return e.setType(getBuiltinQT(UInt32));
 }
 
 fn QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
@@ -156,8 +157,10 @@ fn QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
 
     // check member
     Expr* member = b.getToContainerMember();
-    Decl* d = ma.findMemberOffset(b, std, member);
-    if (!d) return QualType_Invalid;
+    u32 offset = 0;
+    QualType qmem = ma.findMemberOffset(qt, member, &offset);
+    b.setValue(offset);
+    if (qmem.isInvalid()) return QualType_Invalid;
 
     // check ptr
     Expr** pptr = b.getToContainerPointer2();
@@ -169,7 +172,6 @@ fn QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
     qt.copyQuals(pt.getInner());
 
     // Construct expected pointer type with proper qualifiers
-    QualType qmem = d.getType();
     qmem.copyQuals(pt.getInner());
     QualType expectedType = ma.builder.actOnPointerType(qmem);
 
@@ -180,59 +182,85 @@ fn QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
     return ma.builder.actOnPointerType(qt);
 }
 
-type FindMemberOffsetContext struct {
-    StructTypeDecl* std;
-    u32 base_offset;
-}
-
-fn Decl* Analyser.findMemberOffsetAux(Analyser* ma, FindMemberOffsetContext* ctx, Expr* member) {
-    Decl* d = nil;
-    if (member.isIdentifier()) {
+// XXX: should use a similar approach for designated initializers
+fn QualType Analyser.findMemberOffset(Analyser* ma, QualType qt, Expr* member, u32 *base) {
+    switch (member.getKind()) {
+    case Identifier: {
         IdentifierExpr* i = (IdentifierExpr*)member;
-        u32 name_idx = i.getNameIdx();
-
-        d = ma.findStructMemberOffset(ctx.std, name_idx, member.getLoc(), &ctx.base_offset);
-        if (!d) return nil;
-
-        i.setDecl(d);
-        d.setUsed();
-        member.setLValue();
+        Decl* d = ma.findStructMemberOffset(qt, i.getNameIdx(), member.getLoc(), base);
+        if (!d) return QualType_Invalid;
+        qt = d.getType();
+        i.setDecl(d);  // probably useless
         i.setKind(StructMember);
-    } else {
-        assert(member.isMember());
+        member.setLValue();
+        return member.setType(qt);
+    }
+    case ArraySubscript: {
+        ArraySubscriptExpr* ae = (ArraySubscriptExpr*)member;
+        qt = ma.findMemberOffset(qt, ae.getBase(), base);
+        if (qt.isInvalid()) return QualType_Invalid;
+        ArrayType* ap = qt.getArrayTypeOrNil();
+        if (!ap) {
+            ma.error(member.getLoc(), "base member is not an array");
+            return QualType_Invalid;
+        }
+        Expr** ep = ae.getIndex2();
+        QualType et = ma.analyseConstExpr(ep, true);
+        if (et.isInvalid()) return QualType_Invalid;
+        Expr* de = *ep;
+        if (!de.isCtv()) {
+            ma.errorRange(de.getLoc(), de.getRange(), "array index is not a compile-time value");
+            return QualType_Invalid;
+        }
+        QualType canon = et.getImplType();
+        if (!canon.isInteger() && !canon.isBool()) {
+            ma.errorRange(de.getLoc(), de.getRange(), "array index expression must have integer type");
+            return QualType_Invalid;
+        }
+        // check range
+        u32 size = ap.getSize();
+        Value val = ast.evalExpr(de);
+        u64 idx = val.as_u64();
+        if (size && idx > size) { // dont give error if arrays has size 0 (allowed for struct members)
+            ma.errorRange(de.getLoc(), de.getRange(), "array index '%d' greater than array length '%d'", idx, size);
+            return QualType_Invalid;
+        }
+        qt = ap.getElemType();
+        *base += idx * qt.getSize();
+        return member.setType(qt);
+    }
+    case Member: {
         MemberExpr* m = (MemberExpr*)member;
         u32 start = 0;
         if (m.hasExpr()) {
-            d = ma.findMemberOffsetAux(ctx, m.getBaseExpr());
-            if (!d) return nil;
-            if (d.isStructType()) ctx.std = (StructTypeDecl*)d;
+            qt = ma.findMemberOffset(qt, m.getBaseExpr(), base);
+            if (qt.isInvalid()) return QualType_Invalid;
             start = 1;
         }
         for (u32 i = start; i < 2; i++) {
-            u32 name_idx = m.getNameIdx(i);
-            SrcLoc loc = m.getLoc(i);
-            d = ma.findStructMemberOffset(ctx.std, name_idx, loc, &ctx.base_offset);
-            if (!d) return nil;
-
-            if (d.isStructType()) ctx.std = (StructTypeDecl*)d;
-            d.setUsed();
-            m.setDecl(d, i);
+            Decl* d = ma.findStructMemberOffset(qt, m.getNameIdx(i), m.getLoc(i), base);
+            if (!d) return QualType_Invalid;
+            qt = d.getType();
+            m.setDecl(d, i);  // probably useless
         }
+        return member.setType(qt);
     }
-    member.setType(d.getType());
-    return d;
+    default:
+        ma.error(member.getLoc(), "invalid field designator");
+        return QualType_Invalid;
+    }
 }
 
-fn Decl* Analyser.findMemberOffset(Analyser* ma, BuiltinExpr* b, StructTypeDecl* std, Expr* member) {
-    FindMemberOffsetContext ctx = { std, 0 }
-    Decl* d = ma.findMemberOffsetAux(&ctx, member);
-    if (d) b.setValue(ctx.base_offset);
-    return d;
-}
-
-fn Decl* Analyser.findStructMemberOffset(Analyser* ma, StructTypeDecl* s, u32 name_idx, SrcLoc loc, u32* base) {
+fn Decl* Analyser.findStructMemberOffset(Analyser* ma, QualType qt, u32 name_idx, SrcLoc loc, u32* base) {
+    StructType* tp = qt.isInvalid() ? nil : qt.getStructTypeOrNil();
+    if (!tp) {
+        ma.error(loc, "base is not a struct or union");
+        return nil;
+    }
+    StructTypeDecl* s = tp.getDecl();
     Decl* d = s.findMember(name_idx, base);
-    if (!d) ma.memberError(name_idx, loc, s);
+    if (d) d.setUsed();
+    else ma.memberError(name_idx, loc, s);
     return d;
 }
 

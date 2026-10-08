@@ -1,0 +1,48 @@
+module test;
+
+type S2 struct {
+    i32 b;
+}
+
+type Foo struct {
+    i32 aa;
+    S2 s2;
+    struct p {
+        i32 x, y;
+    }
+    S2[4] a;
+    S2[2][2] a2;
+}
+
+static_assert(sizeof(Foo), 48);
+static_assert(offsetof(Foo, aa), 0);
+static_assert(offsetof(Foo, s2), 4);
+static_assert(offsetof(Foo, s2.b), 4);
+static_assert(offsetof(Foo, p), 8);
+static_assert(offsetof(Foo, p.x), 8);
+static_assert(offsetof(Foo, p.y), 12);
+static_assert(offsetof(Foo, a), 16);
+static_assert(offsetof(Foo, a[1*0]), 16);
+static_assert(offsetof(Foo, a[2]), 24);
+static_assert(offsetof(Foo, a[3].b), 28);
+static_assert(offsetof(Foo, a[4]), 32);
+static_assert(offsetof(Foo, a2), 32);
+static_assert(offsetof(Foo, a2[0]), 32);
+static_assert(offsetof(Foo, a2[0][0]), 32);
+static_assert(offsetof(Foo, a2[0][0].b), 32);
+static_assert(offsetof(Foo, a2[1]), 40);
+static_assert(offsetof(Foo, a2[1][0]), 40);
+static_assert(offsetof(Foo, a2[1][0].b), 40);
+static_assert(offsetof(Foo, a2[1][1]), 44);
+static_assert(offsetof(Foo, a2[1][1].b), 44);
+static_assert(offsetof(Foo, a2[1][2]), 48);
+static_assert(offsetof(Foo, a2[1][2].b), 48);
+static_assert(offsetof(Foo, a2[2]), 48);
+static_assert(offsetof(Foo, a2[2][0]), 48);
+static_assert(offsetof(Foo, a2[2][0].b), 48);
+static_assert(offsetof(Foo, a[5]), 36); // @error{array index '5' greater than array length '4'}
+static_assert(offsetof(Foo, s2.aa), 16); // @error{no member named 'aa' in struct 'test.S2'}
+
+public fn i32 main() {
+    return 0;
+}

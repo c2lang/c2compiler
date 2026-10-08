@@ -279,19 +279,18 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
 
 fn bool Analyser.checkArrayDesignatorIndex(Analyser* ma, Expr* e, u64 *valp, bool has_size, u64 size)
 {
-    SrcLoc loc = e.getStartLoc();
     Value idx = ast.evalExpr(e);
     if (!idx.isInteger()) {
-        ma.error(loc, "array designator expression must have integer type");
+        ma.errorRange(e.getStartLoc(), e.getRange(), "array designator expression must have integer type");
         return false;
     }
     if (idx.isNegative()) {
-        ma.error(loc, "array designator value '%s' is negative", idx.str());
+        ma.errorRange(e.getStartLoc(), e.getRange(), "array designator value '%s' is negative", idx.str());
         return false;
     }
     *valp = idx.as_u64();
     if (has_size && *valp >= size) {
-        ma.error(loc, "array designator index '%d' exceeds array upper bound '%d'", *valp, size - 1);
+        ma.errorRange(e.getStartLoc(), e.getRange(), "array designator index '%d' exceeds array upper bound '%d'", *valp, size - 1);
         return false;
     }
     return true;

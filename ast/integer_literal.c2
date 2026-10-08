@@ -42,7 +42,6 @@ public fn IntegerLiteral* IntegerLiteral.create(Context* c, SrcLoc loc, u32 src_
     Stats.addExpr(IntegerLiteral, sizeof(IntegerLiteral));
 #endif
     i.base.setType(getBuiltinQT(kind));
-
     return i;
 }
 
