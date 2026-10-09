@@ -72,7 +72,11 @@ struct Sigaction {
     int sa_flags;
     SigActionRestorer sa_restorer;
 }
+#if ARCH_32BIT
+static_assert(144, sizeof(Sigaction));
+#else
 static_assert(152, sizeof(Sigaction));
+#endif
 
 // from x86_64-linux-gnu/bits/types/sigset_t.h
 

@@ -45,7 +45,11 @@ public type AST struct @(opaque) {
     attr_table.Table* attrs;
 }
 
+#if ARCH_32BIT
+static_assert(132, sizeof(AST));
+#else
 static_assert(144+64, sizeof(AST));
+#endif
 
 fn AST* AST.create(Pool* auxPool, u32 name, Module* mod, bool is_interface, bool is_generated) {
     AST* a = calloc(1, sizeof(AST));

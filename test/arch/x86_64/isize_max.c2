@@ -1,5 +1,8 @@
 // @warnings{no-unused}
 module test;
 
-isize q = isize.max + 1; // @error{constant value 9223372036854775808 out-of-bounds for type 'isize', range [-9223372036854775808, 9223372036854775807]}
-
+#if ARCH_32BIT
+isize q = isize.max + 1; // @error32{constant value 2147483648 out-of-bounds for type 'isize', range [-2147483648, 2147483647]}
+#else
+isize q = isize.max + 1; // @error64{constant value 9223372036854775808 out-of-bounds for type 'isize', range [-9223372036854775808, 9223372036854775807]}
+#endif
