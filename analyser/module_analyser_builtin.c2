@@ -137,7 +137,9 @@ fn QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
     QualType qmem = ma.findMemberOffset(qt, member, &offset);
     if (qmem.isInvalid()) return QualType_Invalid;
     b.setValue(offset);
-    return e.setType(getBuiltinQT(UInt32));
+    qt = getBuiltinQT(UInt32);
+    e.setType(qt);
+    return qt;
 }
 
 fn QualType Analyser.analyseToContainer(Analyser* ma, BuiltinExpr* b) {
@@ -193,7 +195,8 @@ fn QualType Analyser.findMemberOffset(Analyser* ma, QualType qt, Expr* member, u
         i.setDecl(d);  // probably useless
         i.setKind(StructMember);
         member.setLValue();
-        return member.setType(qt);
+        member.setType(qt);
+        return qt;
     }
     case ArraySubscript: {
         ArraySubscriptExpr* ae = (ArraySubscriptExpr*)member;
@@ -227,7 +230,8 @@ fn QualType Analyser.findMemberOffset(Analyser* ma, QualType qt, Expr* member, u
         }
         qt = ap.getElemType();
         *base += idx * qt.getSize();
-        return member.setType(qt);
+        member.setType(qt);
+        return qt;
     }
     case Member: {
         MemberExpr* m = (MemberExpr*)member;
@@ -243,7 +247,8 @@ fn QualType Analyser.findMemberOffset(Analyser* ma, QualType qt, Expr* member, u
             qt = d.getType();
             m.setDecl(d, i);  // probably useless
         }
-        return member.setType(qt);
+        member.setType(qt);
+        return qt;
     }
     default:
         ma.error(member.getLoc(), "invalid field designator");

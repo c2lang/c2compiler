@@ -546,7 +546,7 @@ public fn SrcRange Expr.getRange(const Expr* e) {
     return range;
 }
 
-public fn QualType Expr.setType(Expr* e, QualType qt) { return e.qt = qt; }
+public fn void Expr.setType(Expr* e, QualType qt) { e.qt = qt; }
 
 public fn QualType Expr.getType(const Expr* e) { return e.qt; }
 
