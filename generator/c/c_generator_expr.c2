@@ -94,15 +94,10 @@ fn void Generator.emitExpr2(Generator* gen, Buf* out, Expr* e, C_Prec prec) {
         break;
     case ArraySubscript:
         ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
-        Expr* index = a.getIndex();
-        if (index.isBitOffset()) {
-            gen.emitBitOffset(out, a.getBase(), index, prec);
-        } else {
-            gen.emitExpr2(out, a.getBase(), Postfix);
-            out.add1('[');
-            gen.emitExpr2(out, index, Comma);
-            out.add1(']');
-        }
+        gen.emitExpr2(out, a.getBase(), Postfix);
+        out.add1('[');
+        gen.emitExpr2(out, a.getIndex(), Comma);
+        out.add1(']');
         break;
     case Member:
         MemberContext mc = {}
@@ -114,9 +109,13 @@ fn void Generator.emitExpr2(Generator* gen, Buf* out, Expr* e, C_Prec prec) {
         gen.emitExpr2(out, p.getInner(), Comma);
         out.rparen();
         break;
-    case BitOffset:
-        // Already handled in ArraySubscript
+    case ArraySelection:
+        // TODO: should only generate in vector operation
         assert(0);
+        break;
+    case BitSelection:
+        BitSelectionExpr* bs = (BitSelectionExpr*)e;
+        gen.emitBitSelection(out, bs, prec);
         break;
     case ExplicitCast:
         ExplicitCastExpr* c = (ExplicitCastExpr*)e;
@@ -187,7 +186,7 @@ fn void Generator.emitStringLiteral(Generator* gen, Buf* out, const StringLitera
     out.encodeBytes(p, len, '"');
 }
 
-fn void Generator.emitBitOffset(Generator* gen, Buf* out, Expr* base, Expr* index, C_Prec prec) {
+fn void Generator.emitBitSelection(Generator* gen, Buf* out, BitSelectionExpr* bs, C_Prec prec) {
     // Expand `a[high:low]` as `((a & ((2ULL << high) - 1)) >> low)` which avoids double evaluation.
     // If both `high` and `low` are constants, we can use an alternative that uses a smaller mask:
     // `((a >> low) & ((2ULL << (high - low)) - 1))`, eg: `a[15:8]` -> `((a >> 8) & 0xFF)`.
@@ -195,15 +194,15 @@ fn void Generator.emitBitOffset(Generator* gen, Buf* out, Expr* base, Expr* inde
     // No need to cast `a` to an unsigned type as signed types are rejected during analysis.
     // Yet the type of the expression is the type of `a`, so a cast may be necessary for types
     // smaller than `i32` unless the selection is trivial.
-    BitOffsetExpr* bo = (BitOffsetExpr*)index;
+    Expr* base = bs.getBase();
     QualType qt = base.getType();
     i32 max_bit = (i32)qt.getSize() * 8 - 1;
-    i32 high_bit = bo.getHighBit();
-    i32 low_bit = bo.getLowBit();
+    i32 high_val = bs.getHighVal();
+    i32 low_val = bs.getLowVal();
     C_Prec prec1 = prec;
     C_Prec prec2 = prec;
 
-    if (low_bit == 0 && high_bit >= max_bit) {
+    if (low_val == 0 && high_val >= max_bit) {
         // trivial expansion as `a`
         gen.emitExpr2(out, base, prec);
         return;
@@ -215,50 +214,50 @@ fn void Generator.emitBitOffset(Generator* gen, Buf* out, Expr* base, Expr* inde
         out.add(max_bit == 15 ? "(u16)(" : "(u8)(");
         prec1 = Assignment;
     }
-    if (low_bit >= 0 && high_bit >= 0) {
+    if (low_val >= 0 && high_val >= 0) {
         // expand as `((a >> low) & ((2ULL << (high - low)) - 1))`
-        if (high_bit < max_bit) {
+        if (high_val < max_bit) {
             if (prec1 > Assignment) out.lparen();
             prec2 = Prefix;
         }
-        if (low_bit) {
+        if (low_val) {
             if (prec2 > Assignment) out.lparen();
         }
         gen.emitExpr2(out, base, Prefix);
-        if (low_bit) {
-            out.print(" >> %d", low_bit);
+        if (low_val) {
+            out.print(" >> %d", low_val);
             if (prec2 > Assignment) out.rparen();
         }
-        if (high_bit < max_bit) {
-            out.print(" & 0x%x", ((u64)2 << (high_bit - low_bit)) - 1);
+        if (high_val < max_bit) {
+            out.print(" & 0x%x", ((u64)2 << (high_val - low_val)) - 1);
             if (prec1 > Assignment) out.rparen();
         }
     } else {
         // expand as `((a & ((2ULL << high) - 1)) >> low)`
-        if (low_bit) {
+        if (low_val) {
             if (prec1 > Assignment) out.lparen();
             prec2 = Prefix;
         }
-        if (high_bit < max_bit) {
+        if (high_val < max_bit) {
             if (prec2 > Assignment) out.lparen();
         }
         gen.emitExpr2(out, base, Prefix);
-        if (high_bit < max_bit) {
-            if (high_bit >= 0) {
-                out.print(" & 0x%x", ((u64)2 << high_bit) - 1);
+        if (high_val < max_bit) {
+            if (high_val >= 0) {
+                out.print(" & 0x%x", ((u64)2 << high_val) - 1);
             } else {
                 out.print(" & ((2U%s << ", max_bit > 31 ? "LL" : "");
-                gen.emitExpr2(out, bo.getLHS(), Prefix);
+                gen.emitExpr2(out, bs.getHigh(), Prefix);
                 out.add(") - 1)");
             }
             if (prec2 > Assignment) out.rparen();
         }
-        if (low_bit) {
-            if (low_bit > 0) {
-                out.print(" >> %d", low_bit);
+        if (low_val) {
+            if (low_val > 0) {
+                out.print(" >> %d", low_val);
             } else {
                 out.add(" >> ");
-                gen.emitExpr2(out, bo.getRHS(), Prefix);
+                gen.emitExpr2(out, bs.getLow(), Prefix);
             }
             if (prec1 > Assignment) out.rparen();
         }
