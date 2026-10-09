@@ -124,6 +124,9 @@ fn FlowBits Analyser.analyseStmt(Analyser* ma, Stmt** s_ptr, bool checkEffect) {
     case Assert:
         ma.analyseAssertStmt(s);
         return FlowNext;
+    case StaticAssert:
+        ma.analyseStaticAssert((StaticAssert*)s);
+        return FlowNext;
     }
     if (!(flow & FlowNext)) ma.scope.setUnreachable();
     return flow;

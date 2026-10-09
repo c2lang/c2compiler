@@ -166,6 +166,16 @@ fn void Generator.emitStmt(Generator* gen, Stmt* s, u32 indent, bool newline) {
         gen.emitExpr(out, a.getInner());
         out.add(");\n");
         break;
+    case StaticAssert:
+        StaticAssert* a = (StaticAssert*)s;
+        out.add("static_assert(");
+        gen.emitExpr(out, a.getLHS());
+        if (Expr* rhs = a.getRHS()) {
+            out.add(", ");
+            gen.emitExpr(out, rhs);
+        }
+        out.add(");\n");
+        break;
     }
 }
 

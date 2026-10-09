@@ -34,6 +34,7 @@ public type StmtKind enum u8 (const char* const name) {
     Decl         : { "DeclStmt" },
     Asm          : { "Asm" },
     Assert       : { "AssertStmt" },
+    StaticAssert : { "StaticAssert" },
 }
 
 type StmtBits struct {
@@ -116,6 +117,8 @@ fn Stmt* Stmt.instantiate(Stmt* s, Instantiator* inst) {
         return AsmStmt.instantiate((AsmStmt*)s, inst);
     case Assert:
         return AssertStmt.instantiate((AssertStmt*)s, inst);
+    case StaticAssert:
+        return StaticAssert.instantiate((StaticAssert*)s, inst);
     }
     s.dump();
     assert(0);
@@ -201,6 +204,9 @@ fn void Stmt.print(const Stmt* s, Buf* out, u32 indent) {
         break;
     case Assert:
         AssertStmt.print((AssertStmt*)s, out, indent);
+        break;
+    case StaticAssert:
+        StaticAssert.print((StaticAssert*)s, out, indent);
         break;
     }
 }

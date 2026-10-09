@@ -20,8 +20,8 @@ import src_loc { SrcLoc }
 import string_buffer { Buf }
 
 public type StaticAssert struct @(opaque) {
+    Stmt base;
     u32 ast_idx;    // into globals.ast_list, 0 means nil
-    u32 loc;
     Expr* lhs;
     Expr* rhs;
 }
@@ -33,14 +33,20 @@ public fn StaticAssert* StaticAssert.create(Context* c,
                                             Expr* rhs)
 {
     StaticAssert* d = c.alloc(sizeof(StaticAssert));
+    d.base.init(StaticAssert, loc);
     d.ast_idx = ast_idx;
-    d.loc = loc;
     d.lhs = lhs;
     d.rhs = rhs;
 #if AstStatistics
-    Stats.addStaticAssert(sizeof(StaticAssert));
+    Stats.addStmt(StaticAssert, sizeof(StaticAssert));
 #endif
     return d;
+}
+
+fn Stmt* StaticAssert.instantiate(StaticAssert* s, Instantiator* inst) {
+    return (Stmt*)StaticAssert.create(inst.c, s.ast_idx, s.base.loc,
+                                      s.lhs.instantiate(inst),
+                                      s.rhs ? s.rhs.instantiate(inst) : nil);
 }
 
 public fn AST* StaticAssert.getAST(const StaticAssert* d) {
@@ -56,10 +62,9 @@ public fn Expr* StaticAssert.getRHS(const StaticAssert* d) {
 }
 
 fn void StaticAssert.print(const StaticAssert* d, Buf* out, u32 indent) {
-    out.indent(indent);
-    out.color(col_Decl);
-    out.add("StaticAssert\n");
+    d.base.printKind(out, indent);
+    out.newline();
     d.lhs.print(out, indent + 1);
-    d.rhs.print(out, indent + 1);
+    if (d.rhs) d.rhs.print(out, indent + 1);
 }
 

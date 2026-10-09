@@ -90,6 +90,8 @@ fn bool Generator.emitStmt(Generator* gen, const Stmt* s) {
     case Assert:
         //if (gen.enable_asserts) gen.emitAssertStmt(s);
         return true;
+    case StaticAssert:
+        return true;
     }
     s.dump();
     assert(0); // TODO

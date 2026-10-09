@@ -1235,11 +1235,11 @@ public fn Expr* Builder.actOnArrayDesignatedInit(Builder* b,
     return (Expr*)ArrayDesignatedInitExpr.create(b.context, loc, expr1, expr2, initValue, kind);
 }
 
-public fn void Builder.actOnStaticAssert(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs) {
+public fn Stmt* Builder.actOnStaticAssert(Builder* b, SrcLoc loc, Expr* lhs, Expr* rhs, bool is_global) {
     StaticAssert* d = StaticAssert.create(b.context, b.ast_idx, loc, lhs, rhs);
-    b.ast.addStaticAssert(d);
+    if (is_global) b.ast.addStaticAssert(d);
+    return (Stmt*)d;
 }
-
 
 public fn void Builder.insertImplicitCast(Builder* b,
                                           ImplicitCastKind kind,

@@ -549,6 +549,7 @@ fn Cont Stmt.eval(Stmt* s, Evaluator* sf) {
     case Decl:        return ((DeclStmt*)s).eval(sf);
     case Asm:         return ((AsmStmt*)s).eval(sf);
     case Assert:      return ((AssertStmt*)s).eval(sf);
+    case StaticAssert: return Normal; // already evaluated at analysis time
     }
     return Abort;
 }

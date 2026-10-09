@@ -82,6 +82,7 @@ type ExprBits struct {
     u32 has_effect : 1;
 }
 const u32 NumExprBits = NumStmtBits + 10;
+static_assert(NumExprBits == 14);
 
 public type Expr struct @(opaque) {
     Stmt base;
