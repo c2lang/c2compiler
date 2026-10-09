@@ -27,7 +27,7 @@ type FieldInit struct {
     const ast.FieldInitField* info;
     ast.Expr* expr;
 }
-static_assert(16, sizeof(FieldInit));
+static_assert(sizeof(void*) == 4 ? 8 : 16, sizeof(FieldInit));
 
 type FieldStructLayouter struct {
     Generator* gen;
