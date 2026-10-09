@@ -30,7 +30,7 @@ public fn i32 main(i32 argc, const char** argv) {
 
 int main(int argc, const char** argv)
 {
-    int a;
+    int a = { 0 };
 
     a = (1 << 2) + 3;
     a = ((1 ^ 2) | 3) & 4;
