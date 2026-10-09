@@ -198,6 +198,8 @@ fn void Generator.emitStmt(Generator* gen, StringBuf* out, Stmt* s, u32 indent, 
         }
         out.add(";\n");
         break;
+    case StaticAssert:
+        break;  // we could generate a C statement here
     }
 }
 

@@ -42,7 +42,7 @@ public fn void Visitor.free(Visitor* v) {
 // only used by plugins
 public fn void Visitor.handleAssert(Visitor* v, StaticAssert* a) @(unused) {
     v.handleExpr(a.getLHS());
-    v.handleExpr(a.getRHS());
+    if (Expr* rhs = a.getRHS()) v.handleExpr(rhs);
 }
 
 public fn void Visitor.handle(Visitor* v, Decl* d) {
@@ -237,8 +237,12 @@ fn void Visitor.handleStmt(Visitor* v, Stmt* s) {
     case Assert:
         AssertStmt* a = (AssertStmt*)s;
         v.handleExpr(a.getInner());
-        Expr* call = a.getCall();
-        if (call) v.handleExpr(call);
+        if (Expr* call = a.getCall()) v.handleExpr(call);
+        break;
+    case StaticAssert:
+        StaticAssert* a = (StaticAssert*)s;
+        v.handleExpr(a.getLHS());
+        if (Expr* rhs = a.getRHS()) v.handleExpr(rhs);
         break;
     }
 }

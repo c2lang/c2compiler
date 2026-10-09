@@ -1,0 +1,35 @@
+module test;
+
+public fn i32 main(i32 argc, char **argv) {
+    static_assert(sizeof(argc), 4);
+    static_assert(sizeof(argc) == 4);
+    static_assert(sizeof(argc) == 4, "integers must be 32-bit");
+    static_assert(sizeof(argv), 8);
+    static_assert(sizeof(argv) == 8);
+    static_assert(sizeof(argv) == 8, "pointers must be 64-bit");
+    return 0;
+}
+
+fn void foo1() {
+    static_assert(sizeof(i32), 2); // @error{static_assert failed: sizeof(i32) is 4, expected 2}
+}
+
+fn void foo2() {
+    static_assert(sizeof(i32) == 2); // @error{static_assert failed: sizeof(i32) is 4, expected 2}
+}
+
+fn void foo3() {
+    static_assert(sizeof(i32) == 2, "integers must be i32-bit"); // @error{integers must be i32-bit: sizeof(i32) is 4, expected 2}
+}
+
+fn void foo4() {
+    static_assert(sizeof(void*), 4); // @error{static_assert failed: sizeof(void*) is 8, expected 4}
+}
+
+fn void foo5() {
+    static_assert(sizeof(void*) == 4); // @error{static_assert failed: sizeof(void*) is 8, expected 4}
+}
+
+fn void foo6() {
+    static_assert(sizeof(void*) == 4, "pointers must be 32-bit"); // @error{pointers must be 32-bit: sizeof(void*) is 8, expected 4}
+}

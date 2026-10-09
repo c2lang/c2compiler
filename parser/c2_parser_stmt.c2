@@ -39,6 +39,8 @@ fn Stmt* Parser.parseStmt(Parser* p) {
         return p.parseAsmStmt();
     case KW_assert:
         return p.parseAssertStmt();
+    case KW_static_assert:
+        return p.parseStaticAssert(false);
     case KW_break:
         return p.parseBreakStmt();
     case KW_continue:

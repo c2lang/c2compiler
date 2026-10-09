@@ -427,7 +427,7 @@ fn void Parser.parseTopLevel(Parser* p) {
         break;
     case KW_static_assert:
         if (is_public) p.error("static_assert cannot be public");
-        p.parseStaticAssert();
+        p.parseStaticAssert(true);
         break;
     case KW_type:
         //if (p.tokenizer.c_mode) goto invalid_c;
@@ -871,7 +871,7 @@ fn void Parser.parseVarDecl(Parser* p, bool is_public) {
     p.consumeSemicolon();
 }
 
-fn void Parser.parseStaticAssert(Parser* p) {
+fn Stmt *Parser.parseStaticAssert(Parser* p, bool is_global = true) {
     SrcLoc loc = p.tok.loc;
     p.consumeToken();
 
@@ -884,7 +884,7 @@ fn void Parser.parseStaticAssert(Parser* p) {
     }
     p.expectAndConsume(RParen);
     p.expectAndConsume(Semicolon);
-    p.builder.actOnStaticAssert(loc, lhs, rhs);
+    return p.builder.actOnStaticAssert(loc, lhs, rhs, is_global);
 }
 
 fn bool Parser.parseOptionalAccessSpecifier(Parser* p) {

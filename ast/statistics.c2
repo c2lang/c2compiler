@@ -32,7 +32,7 @@ type Stats struct {
     Stat[ExprKind] exprs;
     Stat[StmtKind] stmts;
     Stat[DeclKind] decls;
-    Stat[3] others; // 0=ArrayValue, 1=StaticAssert, 2=SwitchCase
+    Stat[2] others; // 0=ArrayValue, 1=SwitchCase
 }
 
 fn void Stats.reset(Stats* s) {
@@ -67,18 +67,14 @@ fn void Stats.addDecl(DeclKind kind, u32 size) {
     globals.stats.decls[kind].add(size);
 }
 
-const char*[] other_names = { "ArrayValue", "StaticAssert", "SwitchCase" }
+const char*[] other_names = { "ArrayValue", "SwitchCase" }
 
 fn void Stats.addArrayValue(u32 size) {
     globals.stats.others[0].add(size);
 }
 
-fn void Stats.addStaticAssert(u32 size) {
-    globals.stats.others[1].add(size);
-}
-
 fn void Stats.addSwitchCase(u32 size) {
-    globals.stats.others[2].add(size);
+    globals.stats.others[1].add(size);
 }
 
 type StatPack struct {
@@ -169,7 +165,7 @@ fn void Stats.report(const Stats* s) {
     pack.total();
 
     printf("--- Other ---\n");
-    for (u32 i = 0; i < 3; i++)
+    for (u32 i = 0; i < 2; i++)
         s.others[i].dump(other_names[i], &pack);
     pack.total();
 
