@@ -16,7 +16,7 @@
 module module_analyser;
 
 import ast { * }
-import init_checker;
+import init_checker { InitChecker }
 import src_loc { SrcLoc }
 import scope;
 import string_buffer { Buf }
@@ -79,7 +79,7 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
 
     SwitchCase* defaultCase = nil;
 
-    init_checker.Checker* checker = ma.getInitChecker();
+    InitChecker* checker = ma.getInitChecker();
 
     for (u32 i = 0; i < numCases; i++) {
         SwitchCase* c = cases[i];
@@ -220,7 +220,7 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
 
 fn FlowBits Analyser.analyseCase(Analyser* ma,
                                  SwitchCase* c,
-                                 init_checker.Checker* checker,
+                                 InitChecker* checker,
                                  EnumTypeDecl* etd,
                                  bool is_string,
                                  bool is_last)
@@ -273,7 +273,7 @@ fn FlowBits Analyser.analyseCase(Analyser* ma,
 
 fn bool Analyser.analyseCaseCondition(Analyser* ma,
                                       SwitchCase* c,
-                                      init_checker.Checker* checker,
+                                      InitChecker* checker,
                                       EnumTypeDecl* etd,
                                       bool is_string) {
     u32 num_conds = c.getNumConds();
@@ -351,7 +351,7 @@ fn bool Analyser.analyseCaseCondition(Analyser* ma,
 
 fn bool Analyser.analyseCaseExpr(Analyser* ma,
                                  SwitchCase* c,
-                                 init_checker.Checker* checker,
+                                 InitChecker* checker,
                                  EnumTypeDecl* etd,
                                  bool is_string,
                                  SrcLoc loc,
@@ -441,7 +441,7 @@ fn bool Analyser.analyseCaseExpr(Analyser* ma,
 
 fn bool Analyser.checkEnumConstantCase(Analyser* ma,
                                        IdentifierExpr* id,
-                                       init_checker.Checker* checker,
+                                       InitChecker* checker,
                                        EnumTypeDecl* etd,
                                        SrcLoc loc,
                                        u32* ip,

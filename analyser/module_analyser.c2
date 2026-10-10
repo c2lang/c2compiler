@@ -22,7 +22,7 @@ import attr { Attr }
 import conversion_checker;
 import diagnostics { Diags }
 import file_utils { File }
-import init_checker;
+import init_checker { InitChecker }
 import module_list;
 import label_vector { LabelVector }
 import name_vector { NameVector }
@@ -81,7 +81,7 @@ public type Analyser struct @(opaque) {
     bool has_error;
 
     u32 check_idx;
-    init_checker.Checker[4] init_checkers;
+    InitChecker[4] init_checkers;
 
     u32 global_initializer;
     u32 need_const_expr;
@@ -206,18 +206,18 @@ public fn void Analyser.checkModule(Analyser* ma, Module* mod) {
     mod.visitASTs(Analyser.deleteScope, ma);
 }
 
-fn init_checker.Checker* Analyser.getInitChecker(Analyser* ma) {
+fn InitChecker* Analyser.getInitChecker(Analyser* ma) {
     if (ma.check_idx >= countof(ma.init_checkers)) {
         ma.check_idx++;
-        return calloc(1, sizeof(init_checker.Checker));
+        return calloc(1, sizeof(InitChecker));
     } else {
-        init_checker.Checker* c = &ma.init_checkers[ma.check_idx++];
+        InitChecker* c = &ma.init_checkers[ma.check_idx++];
         c.clear();
         return c;
     }
 }
 
-fn void Analyser.putInitChecker(Analyser* ma, init_checker.Checker* c) {
+fn void Analyser.putInitChecker(Analyser* ma, InitChecker* c) {
     assert(ma.check_idx > 0);
     ma.check_idx--;
     if (ma.check_idx >= countof(ma.init_checkers)) {

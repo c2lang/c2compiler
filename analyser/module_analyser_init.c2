@@ -17,7 +17,7 @@ module module_analyser;
 
 import ast { * }
 import ctv_analyser;
-import init_checker;
+import init_checker { InitChecker }
 import src_loc { SrcLoc }
 import value_type { Value }
 
@@ -256,7 +256,7 @@ fn bool Analyser.analyseInitListArray(Analyser* ma, InitListExpr* ile, QualType 
         // Check for out of bound array designators or compute implied array length
         ile.setHasDesignators();
 
-        init_checker.Checker* checker = ma.getInitChecker();
+        InitChecker* checker = ma.getInitChecker();
         ok = ma.checkArrayDesignators(ile, has_size, &array_size, checker);
         ma.putInitChecker(checker);
 
@@ -318,7 +318,7 @@ fn bool Analyser.checkArrayDesignatorLength(Analyser* ma, Expr* e, u64 *valp, bo
     return true;
 }
 
-fn bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, bool has_size, u32 *size, init_checker.Checker* checker) {
+fn bool Analyser.checkArrayDesignators(Analyser* ma, InitListExpr* ile, bool has_size, u32 *size, InitChecker* checker) {
     u32 numValues = ile.getNumValues();
     Expr** values = ile.getValues();
 

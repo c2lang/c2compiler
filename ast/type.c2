@@ -122,7 +122,7 @@ public fn u32 Type.getAlignment(const Type* t) {
         const StructTypeDecl* std = s.getDecl();
         return std.getAlignment();
     case Enum:
-        const EnumType * e = (EnumType*)t;
+        const EnumType* e = (EnumType*)t;
         const EnumTypeDecl* etd = e.getDecl();
         QualType it = etd.getImplType();
         return it.getTypeOrNil().getAlignment();
@@ -173,7 +173,7 @@ fn u32 Type.getSize(const Type* t) {
         const StructTypeDecl* std = s.getDecl();
         return std.getSize();
     case Enum:
-        const EnumType * e = (EnumType*)t;
+        const EnumType* e = (EnumType*)t;
         const EnumTypeDecl* etd = e.getDecl();
         QualType it = etd.getImplType();
         return it.getSize();

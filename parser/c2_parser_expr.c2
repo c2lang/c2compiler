@@ -699,7 +699,7 @@ fn Expr* Parser.parseOffsetOfExpr(Parser* p) {
 
     p.expectAndConsume(Comma);
 
-    Expr *member = p.parseOffsetOfMember();
+    Expr* member = p.parseOffsetOfMember();
 
     u32 src_len = p.tok.loc + 1 - loc;
     p.expectAndConsume(RParen);
