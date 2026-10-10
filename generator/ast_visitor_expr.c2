@@ -158,5 +158,8 @@ fn void Visitor.handleBuiltinExpr(Visitor* v, BuiltinExpr* b) {
         v.handleExpr(b.getToContainerMember());
         v.handleExpr(b.getToContainerPointer());
         break;
+    case VaArg:
+        v.handleTypeRef(b.getVaArgTypeRef());
+        break;
     }
 }

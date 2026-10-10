@@ -78,7 +78,16 @@ fn ExprWidth getExprWidth(const Expr* e) {
     case ConditionalOperator:
         return getCondOpWidth((ConditionalOperator*)e);
     case Builtin:
-        // TODO ToContainer -> width = 64
+        BuiltinExpr* b = (BuiltinExpr*)e;
+        switch (b.getKind()) {
+        case Sizeof:       // should be ctv
+        case Countof:      // should be ctv
+        case OffsetOf:     // should be ctv
+            break;
+        case ToContainer:  // returns a pointer
+        case VaArg:        // returns typed value
+            return getTypeWidth(e.getType());
+        }
         break;
     case ArraySubscript:
         ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;

@@ -142,6 +142,7 @@ public type Kind enum u8 (public const char* const name) {
     KW_true              : { "true" },
     KW_type              : { "type" },
     KW_union             : { "union" },
+    KW_va_arg            : { "va_arg" },
     KW_volatile          : { "volatile" },
     KW_while             : { "while" },
     // only in raw mode

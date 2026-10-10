@@ -475,6 +475,7 @@ fn void Generator.emitBuiltin(Generator* gen, ir.Ref* result, const Expr* e) {
     case Sizeof:
     case Countof:
     case OffsetOf:
+    case VaArg:
         e.dump();
         assert(0);
         break;

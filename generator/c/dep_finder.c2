@@ -191,6 +191,18 @@ fn void Finder.handleExpr(Finder* s, Expr* e) {
     case Builtin:
         BuiltinExpr* b = (BuiltinExpr*)e;
         s.handleExpr(b.getInner());
+        switch (b.getKind()) {
+        case Sizeof:
+        case Countof:
+        case OffsetOf:
+            break;
+        case ToContainer:
+            // XXX pointer should be inner, should handleTypeRef
+            break;
+        case VaArg:
+            s.handleTypeRef(b.getVaArgTypeRef(), true);
+            break;
+        }
         break;
     case ArraySubscript:
         ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
