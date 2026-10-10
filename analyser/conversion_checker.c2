@@ -18,7 +18,7 @@ module conversion_checker;
 import ast { * }
 import ast_builder { Builder }
 import diagnostics { Diags }
-import ctv_analyser;
+import ctv_analyser { checkRange }
 import src_loc { SrcLoc }
 
 //  0 = cannot happen (mostly Module/Alias type)
@@ -150,7 +150,7 @@ public fn bool Checker.checkAssign(Checker* c, QualType lhs, QualType rhs, Expr*
         // TODO if bool, always allow, except in init?
         if (t1.isBool()) return true;
 
-        return ctv_analyser.checkRange(c.diags, lhs, *e_ptr);
+        return checkRange(c.diags, lhs, *e_ptr);
     }
 
     const Type* lcanon = t1.getTypeOrNil();
@@ -434,7 +434,7 @@ fn bool Checker.checkEnum2Int(Checker* c, const Type* lcanon, const Type* rcanon
 
     // NOTE: EnumConstDecls are CTV, but variables of the type are not!
     if ((*c.expr_ptr).isCtv()) {
-        return ctv_analyser.checkRange(c.diags, c.lhs, *c.expr_ptr);
+        return checkRange(c.diags, c.lhs, *c.expr_ptr);
     } else {
         // compare impl type
         const EnumType* et = (EnumType*)rcanon;

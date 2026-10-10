@@ -16,7 +16,7 @@
 module test;
 
 import ctype { isdigit, isblank, isspace }
-import stdio { * }
+import stdio { printf, fprintf, fwrite, stderr, stdin, stdout }
 import string { strcmp, strerror }
 
 import file_utils;

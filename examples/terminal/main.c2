@@ -19,7 +19,7 @@ import stdio { fflush, printf, stdout }
 import ctermios { * }
 import unistd { read }
 
-fn void init(Termios *save) {
+fn void init(Termios* save) {
     tcgetattr(0, save);
     Termios new = *save;
     new.c_lflag &= ~(ICANON | ECHO);
@@ -28,7 +28,7 @@ fn void init(Termios *save) {
     tcsetattr(0, TCSANOW, &new);
 }
 
-fn void reset(Termios *old) {
+fn void reset(Termios* old) {
     tcsetattr(0, TCSANOW, old);
 }
 

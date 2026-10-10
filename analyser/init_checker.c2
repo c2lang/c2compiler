@@ -25,7 +25,7 @@ public type InitEntry struct {
     SrcLoc loc;
 }
 
-public type Checker struct {
+public type InitChecker struct {
     InitEntry* entries;
     u32 count;
     u32 capacity;
@@ -34,7 +34,7 @@ public type Checker struct {
 
 // Note: no create/init since zero-initialized
 
-public fn void Checker.free(Checker* c) {
+public fn void InitChecker.free(InitChecker* c) {
     free(c.entries);
     c.entries = nil;
     c.count = 0;
@@ -42,16 +42,16 @@ public fn void Checker.free(Checker* c) {
     c.max = 0;
 }
 
-public fn void Checker.clear(Checker* c) {
+public fn void InitChecker.clear(InitChecker* c) {
     c.count = 0;
     c.max = 0;
 }
 
-public fn u32 Checker.getCount(const Checker* c) {
+public fn u32 InitChecker.getCount(const InitChecker* c) {
     return c.count;
 }
 
-public fn void Checker.add(Checker* c, u32 index, SrcLoc loc) {
+public fn void InitChecker.add(InitChecker* c, u32 index, SrcLoc loc) {
     if (c.count >= c.capacity) {
         c.capacity = c.capacity ? c.capacity * 2 : 8;
         InitEntry* entries = malloc(c.capacity * sizeof(InitEntry));
@@ -68,13 +68,13 @@ public fn void Checker.add(Checker* c, u32 index, SrcLoc loc) {
     c.count++;
 }
 
-public fn void Checker.add2(Checker* c, u32 index1, u32 index2, SrcLoc loc) {
+public fn void InitChecker.add2(InitChecker* c, u32 index1, u32 index2, SrcLoc loc) {
     c.add(index1, loc);
     if (index1 != index2)
         c.add(index2, 0);
 }
 
-public fn SrcLoc Checker.find(Checker* c, u32 index) {
+public fn SrcLoc InitChecker.find(InitChecker* c, u32 index) {
     if (index > c.max) return 0;
     for (u32 i = 0; i < c.count; i++) {
         if (c.entries[i].loc == 0) { // range
@@ -88,7 +88,7 @@ public fn SrcLoc Checker.find(Checker* c, u32 index) {
     return 0;
 }
 
-public fn SrcLoc Checker.find2(Checker* c, u32 index1, u32 index2, u32* found1p, u32* found2p) {
+public fn SrcLoc InitChecker.find2(InitChecker* c, u32 index1, u32 index2, u32* found1p, u32* found2p) {
     if (index1 > c.max) return 0;
     for (u32 i = 0; i < c.count; i++) {
         u32 index = c.entries[i].index;
