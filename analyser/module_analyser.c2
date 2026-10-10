@@ -588,6 +588,13 @@ fn bool isTrueLiteral(Expr* e) {
 
 fn void Analyser.handleStaticAssert(void* arg, StaticAssert* sa) {
     Analyser* ma = arg;
+    // push a dummy declaration so ma.popCheck() does not set ma.scope to nil
+    if (!ma.pushCheck(nil, sa.getAST().getPtr(), nil)) return;
+    ma.analyseStaticAssert(sa);
+    ma.popCheck();
+}
+
+fn void Analyser.analyseStaticAssert(Analyser* ma, StaticAssert* sa) {
     Expr* lhs = sa.getLHS();
     Expr* rhs = sa.getRHS();
     const char* msg = "static_assert failed";
@@ -597,12 +604,9 @@ fn void Analyser.handleStaticAssert(void* arg, StaticAssert* sa) {
         rhs = nil;
     }
 
-    // push a dummy declaration so ma.popCheck() does not set ma.scope to nil
-    if (!ma.pushCheck(nil, sa.getAST().getPtr(), nil)) return;
     QualType t1 = ma.analyseConstExpr(&lhs, true);
     QualType t2 = t1;
     if (!t1.isInvalid() && rhs) t2 = ma.analyseConstExpr(&rhs, true);
-    ma.popCheck();
     if (t1.isInvalid() || t2.isInvalid()) return;
 
     if (!lhs.isCtv()) {

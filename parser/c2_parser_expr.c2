@@ -319,8 +319,7 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         UnaryOpcode opcode = convertTokenToUnaryOpcode(savedKind);
         return p.builder.actOnUnaryOperator(loc, opcode, res);
     case 8: // KW_countof
-        res = p.parseCountof();
-        break;
+        return p.parseCountof();
     case 9: // KW_false, KW_true
         res = p.builder.actOnBooleanConstant(p.tok.loc, savedKind == KW_true);
         p.consumeToken();
