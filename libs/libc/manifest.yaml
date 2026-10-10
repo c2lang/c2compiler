@@ -26,7 +26,6 @@ modules:
     - net_if
     - netinet_tcp
     - regex
-    - stdarg
     - stdio
     - stdlib
     - string

@@ -1,0 +1,66 @@
+module test;
+
+import string { strlen }
+import unistd { write }
+
+fn i32 dputc(i32 hd, char c) {
+    write(hd, &c, 1);
+    return 1;
+}
+
+fn i32 dputs(i32 hd, const char* s) {
+    usize len = strlen(s);
+    return (i32)write(hd, s, len);
+}
+
+fn i32 vdprintf(i32 hd, const char* format, va_list ap) {
+    i32 len = 0;
+    while (*format) {
+        char c = *format++;
+        if (c == '%') {
+            switch (c = *format++) {
+            case 's':
+                char *s = va_arg(ap, char *);
+                len += dputs(hd, s);
+                continue;
+            case 'd':
+                char[24] buf;
+                char *p = buf + countof(buf);
+                i32 n = va_arg(ap, i32);
+                *--p = '\0';
+                for (;;) {
+                    *--p = n % 10 + '0';
+                    if ((n /= 10) == 0)
+                        break;
+                }
+                len += dputs(hd, p);
+                continue;
+            case 'c':
+                dputc(hd, (char)va_arg(ap, i32));
+                continue;
+            case '%':
+                break;
+            default:
+                c = *--format;
+                break;
+            }
+        }
+        dputc(hd, c);
+        len++;
+    }
+    return (i32)len;
+}
+
+fn i32 dprintf(i32 hd, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    i32 res = vdprintf(hd, format, args);
+    va_end(args);
+    return res;
+}
+
+public fn i32 main() {
+    dprintf(1, "Hello world!\n");
+    dprintf(1, "My name is %s and I am %d\n", "Charlie", 42);
+    return 0;
+}

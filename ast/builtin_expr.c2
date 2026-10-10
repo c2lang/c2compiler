@@ -24,16 +24,17 @@ public type BuiltinExprKind enum u8 (const char* const name) {
     Countof     : { "countof" },
     OffsetOf    : { "offsetof" },
     ToContainer : { "to_container" },
+    VaArg       : { "va_arg" },
 }
 
 type BuiltinExprBits struct {
     u32 : NumExprBits;
-    BuiltinExprKind kind : 2;
+    BuiltinExprKind kind : 3;
     // TODO: builtin expressions should be output literally in the
     //   C generator except countof(enum) that cannot be expressed in C.
     //   use_literal is tested in the C generator but not set yet.
     bool use_literal : 1;
-    u32 src_len : 32 - NumExprBits - 5; // length of () expression
+    u32 src_len : 32 - NumExprBits - 6; // length of () expression
 }
 
 type ToContainerData struct {
@@ -45,6 +46,11 @@ type OffsetOfData struct {
     Expr* member;       // Identifier / MemberExpr
 }
 
+type VaArgData struct {
+    QualType dest_type;  // set during analysis, can differ from expr.qt
+    TypeRef dest;    // note: variable length!
+}
+
 public type BuiltinExpr struct @(opaque) {
     Expr base;
     // TODO use TypeRef (can contain Type or VarDecl ref)
@@ -53,6 +59,7 @@ public type BuiltinExpr struct @(opaque) {
 
     OffsetOfData[0] offset;     // tail-allocated, only for offsetof
     ToContainerData[0] container;   // tail-allocated, only for to_container
+    VaArgData[0] va_arg_data;
 }
 
 public fn BuiltinExpr* BuiltinExpr.create(Context* c, SrcLoc loc, u32 src_len, Expr* inner, BuiltinExprKind kind) {
@@ -100,6 +107,23 @@ public fn BuiltinExpr* BuiltinExpr.createToContainer(Context* c, SrcLoc loc, u32
     return e;
 }
 
+public fn BuiltinExpr* BuiltinExpr.createVaArg(Context* c, SrcLoc loc, u32 src_len, const TypeRefHolder* ref, Expr* inner)
+{
+    const u32 size = sizeof(BuiltinExpr) + sizeof(VaArgData) + ref.getExtraSize();
+    BuiltinExpr* e = c.alloc(size);
+    e.base.init(Builtin, loc, false, false, true, RValue);
+    e.base.base.builtinExprBits.kind = VaArg;
+    e.base.base.builtinExprBits.src_len = src_len;
+    e.inner = inner;
+    e.value = 0;
+    e.va_arg_data[0].dest_type = QualType_Invalid;
+    e.va_arg_data[0].dest.init(ref);
+#if AstStatistics
+    Stats.addExpr(Builtin, size);
+#endif
+    return e;
+}
+
 fn Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
     switch (e.getKind()) {
     case Sizeof:
@@ -115,6 +139,20 @@ fn Expr* BuiltinExpr.instantiate(BuiltinExpr* e, Instantiator* inst) {
                                                     e.inner.instantiate(inst),
                                                     e.container[0].member.instantiate(inst),
                                                     e.container[0].pointer.instantiate(inst));
+    case VaArg:
+        bool matches = e.va_arg_data[0].dest.matchesTemplate(inst.template_name);
+        u32 extra = matches ? inst.ref.getExtraSize() : e.va_arg_data[0].dest.getExtraSize();
+        u32 size = sizeof(BuiltinExpr) + sizeof(VaArgData) + extra;
+        BuiltinExpr* e2 = inst.c.alloc(size);
+        e2.base = e.base;
+        e2.inner = e.inner.instantiate(inst);
+        e2.value = 0;
+        e2.va_arg_data[0].dest_type = QualType_Invalid;
+        e2.va_arg_data[0].dest.instantiate(&e.va_arg_data[0].dest, inst);
+#if AstStatistics
+        Stats.addExpr(Builtin, size);
+#endif
+        return (Expr*)e2;
     }
     return nil;
 }
@@ -133,6 +171,7 @@ public fn void BuiltinExpr.setValue(BuiltinExpr* e, u64 val) {
     e.value = val;
 }
 
+public fn Expr** BuiltinExpr.getInner2(BuiltinExpr* e) { return &e.inner; }
 public fn Expr* BuiltinExpr.getInner(const BuiltinExpr* e) { return e.inner; }
 
 fn SrcLoc BuiltinExpr.getEndLoc(const BuiltinExpr* e) {
@@ -159,6 +198,20 @@ public fn Expr** BuiltinExpr.getToContainerPointer2(BuiltinExpr* b) {
     return &b.container[0].pointer;
 }
 
+public fn void BuiltinExpr.setVaArgDestType(BuiltinExpr* b, QualType qt) {
+    assert(b.getKind() == VaArg);
+    b.va_arg_data[0].dest_type = qt;
+}
+public fn QualType BuiltinExpr.getVaArgDestType(const BuiltinExpr* b) {
+    assert(b.getKind() == VaArg);
+    return b.va_arg_data[0].dest_type;
+}
+
+public fn TypeRef* BuiltinExpr.getVaArgTypeRef(BuiltinExpr* b) {
+    assert(b.getKind() == VaArg);
+    return &b.va_arg_data[0].dest;
+}
+
 fn void BuiltinExpr.print(const BuiltinExpr* e, Buf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
@@ -181,6 +234,13 @@ fn void BuiltinExpr.print(const BuiltinExpr* e, Buf* out, u32 indent) {
         e.container[0].member.print(out, indent + 1);
         e.container[0].pointer.print(out, indent + 1);
         break;
+    case VaArg:
+        if (e.va_arg_data[0].dest_type.isValid()) {
+            e.va_arg_data[0].dest_type.printQuoted(out);
+        } else {
+            e.va_arg_data[0].dest.print(out, true);
+        }
+        break;
     }
 }
 
@@ -201,6 +261,10 @@ fn void BuiltinExpr.printLiteral(const BuiltinExpr* e, Buf* out) {
         e.container[0].member.printLiteral(out);
         out.add(", ");
         e.container[0].pointer.printLiteral(out);
+        break;
+    case VaArg:
+        out.add(", ");
+        e.va_arg_data[0].dest.print(out, true);
         break;
     }
     out.rparen();

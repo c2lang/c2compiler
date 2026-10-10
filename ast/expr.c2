@@ -416,7 +416,17 @@ public fn bool Expr.isPositiveOrUB(const Expr* e) {
         ConditionalOperator* c = (ConditionalOperator*)e;
         return c.getLHS().isPositiveOrUB() && c.getRHS().isPositiveOrUB();
     case Builtin:
-        return true;
+        BuiltinExpr* b = (BuiltinExpr*)e;
+        switch (b.getKind()) {
+        case Sizeof:
+        case Countof:
+        case OffsetOf:
+            return true;
+        case ToContainer:  // returns a pointer
+        case VaArg:        // returns typed value
+            return false;
+        }
+        break;
     case ArraySubscript:
     case Member:
         break;

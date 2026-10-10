@@ -95,7 +95,7 @@ type Generator struct {
     Decl* mainFunc;
 
     // to filter exceptions
-    u32 varargsName;
+    u32 varargs_idx;
 
     Module* mod;
 
@@ -1151,13 +1151,14 @@ fn void Generator.on_module(void* arg, Module* m) {
     }
 
     // Note: special case for stdarg.h va_list
-    if (m.getNameIdx() == gen.varargsName) {
+    if (m.getNameIdx() == gen.varargs_idx) {
         const char[] builtin_defs =
         ```c
         // Note: this module is a special case and is custom generated
         #define va_list __builtin_va_list
         #define va_start __builtin_va_start
         #define va_end __builtin_va_end
+        #define va_arg __builtin_va_arg
 
         ```;
 
@@ -1245,7 +1246,7 @@ fn void Generator.init(Generator* gen,
     gen.decls.init();
 
     gen.astPool = astPool;
-    gen.varargsName = astPool.addStr("varargs", true);
+    gen.varargs_idx = astPool.addStr("varargs", true);
 }
 
 fn void Generator.free(Generator* gen) {

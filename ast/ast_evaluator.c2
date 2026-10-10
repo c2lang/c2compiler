@@ -78,7 +78,15 @@ fn Value Evaluator.get_value(Evaluator* eval, const Expr* e) {
         return eval.get_value(!v.isZero() ? c.getLHS() : c.getRHS());
     case Builtin:
         const BuiltinExpr* bi = (BuiltinExpr*)e;
-        return Value.createUnsigned(bi.getValue());
+        switch (bi.getKind()) {
+        case Sizeof:
+        case Countof:
+        case OffsetOf:
+            return Value.createUnsigned(bi.getValue());
+        default:
+            break;
+        }
+        break;
     case ArraySubscript:  // a[high:low], both included
         // note: can be CTV if BitOffsetExpr
         ArraySubscriptExpr* a = (ArraySubscriptExpr*)e;
