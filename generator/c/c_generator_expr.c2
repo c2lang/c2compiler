@@ -452,6 +452,13 @@ fn void Generator.emitBuiltinExpr(Generator* gen, Buf* out, Expr* e) {
         gen.emitExpr(out, b.getToContainerPointer());
         out.rparen();
         break;
+    case VaArg:
+        out.add("va_arg(");
+        gen.emitExpr(out, b.getInner());
+        out.add(", ");
+        gen.emitTypePre(out, b.getVaArgDestType());
+        out.add1(')');
+        break;
     }
 }
 

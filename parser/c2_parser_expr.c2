@@ -215,6 +215,7 @@ const u8[Kind] CastExprTokenLookup = {
     [KW_usize] = 14,
     [KW_f32] = 14,
     [KW_f64] = 14,
+    [KW_va_arg] = 15,
 }
 
 // Note: tried lookup table, was slower..
@@ -343,6 +344,9 @@ fn Expr* Parser.parseCastExpr(Parser* p, bool /*isUnaryExpr*/, bool /*isAddrOfOp
         } else {
             p.error("expected expression");
         }
+        break;
+    case 15: // KW_va_arg
+        res = p.parseVaArgExpr();
         break;
     }
     return p.parsePostfixExprSuffix(res, couldBeTemplateCall);
@@ -726,6 +730,24 @@ fn Expr* Parser.parseToContainerExpr(Parser* p) {
     p.expectAndConsume(RParen);
 
     return p.builder.actOnToContainerExpr(loc, src_len, structExpr, member, pointer);
+}
+
+fn Expr* Parser.parseVaArgExpr(Parser* p) {
+    SrcLoc loc = p.tok.loc;
+    p.consumeToken();
+    p.expectAndConsume(LParen);
+
+    Expr* expr = p.parseExpr();
+
+    p.expectAndConsume(Comma);
+
+    TypeRefHolder ref.init();
+    p.parseTypeSpecifier(&ref);
+
+    u32 src_len = p.tok.loc + 1 - loc;
+    p.expectAndConsume(RParen);
+
+    return p.builder.actOnVaArgExpr(loc, src_len, &ref, expr);
 }
 
 // Syntax:

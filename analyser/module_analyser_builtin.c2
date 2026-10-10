@@ -33,6 +33,8 @@ fn QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
         return ma.analyseOffsetOf(b);
     case ToContainer:
         return ma.analyseToContainer(b);
+    case VaArg:
+        return ma.analyseVaArg(b);
     }
 
     return QualType_Invalid;
@@ -267,5 +269,27 @@ fn Decl* Analyser.findStructMemberOffset(Analyser* ma, QualType qt, u32 name_idx
     if (d) d.setUsed();
     else ma.memberError(name_idx, loc, s);
     return d;
+}
+
+fn QualType Analyser.analyseVaArg(Analyser* ma, BuiltinExpr* b) {
+    Expr* e = (Expr*)b;
+    // syntax va_arg(va_list ap, type)
+    TypeRef* ref = b.getVaArgTypeRef();
+    QualType destType = ma.analyseTypeRef(ref, true);
+    QualType srcType = ma.analyseExpr(b.getInner2(), true, RHS);
+    if (srcType.isInvalid() || destType.isInvalid()) return QualType_Invalid;
+    // XXX should check that srcType is va_list
+    Expr* inner = b.getInner();
+    //e.copyConstantFlags(inner);
+    //e.copyValType(inner);
+    b.setVaArgDestType(destType);
+
+    if (!destType.isScalar()) {
+        ma.error(ref.getLoc(), "used type '%s' where arithmetic or pointer type is required", destType.diagName());
+        return QualType_Invalid;
+    }
+    e.setType(destType);
+
+    return destType;
 }
 
