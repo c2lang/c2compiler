@@ -112,7 +112,7 @@ public type SourceMgr struct @(opaque) {
     u16* index;
 }
 
-public fn SourceMgr* create(StringPool* pool) {
+public fn SourceMgr* SourceMgr.create(StringPool* pool) {
     SourceMgr* sm = calloc(1, sizeof(SourceMgr));
     sm.pool = pool;
     sm.max_files = InitialMaxFiles;

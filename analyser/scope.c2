@@ -71,7 +71,7 @@ public type Scope struct @(opaque) {
     u32 lvl;
 }
 
-public fn Scope* create(module_list.List* allmodules,
+public fn Scope* Scope.create(module_list.List* allmodules,
                           Diags* diags,
                           StringPool* astPool,
                           const ast.ImportDeclList* imports,

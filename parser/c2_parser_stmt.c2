@@ -272,7 +272,7 @@ fn Stmt* Parser.parseAsmStmt(Parser* p) {
         return s;
     }
 
-    string_list.List names.init(p.pool);
+    string_list.StringList names.init(p.pool);
 
     // Extended Asm stmt
 
@@ -338,7 +338,7 @@ fn Stmt* Parser.parseAsmStmt(Parser* p) {
 //      '[' identifier ']' asm-string_literal '(' expression ')'
 //
 fn void Parser.parseAsmOperandsOpt(Parser* p,
-                                   string_list.List* names,
+                                   string_list.StringList* names,
                                    ExprList* constraints,
                                    ExprList* exprs) {
     // 'asm-operands' isn't present

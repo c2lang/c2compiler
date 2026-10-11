@@ -23,19 +23,19 @@ type Entry struct {
     bool consecutive;
 }
 
-public type Db struct @(opaque) {
+public type LineDb struct @(opaque) {
     u32 count;
     u32 capacity;
     // TODO use vector<Entry>
     Entry* entries;
 }
 
-public fn Db* create() {
-    Db* db = calloc(1, sizeof(Db));
+public fn LineDb* LineDb.create() {
+    LineDb* db = calloc(1, sizeof(LineDb));
     return db;
 }
 
-public fn void Db.destroy(Db* db) {
+public fn void LineDb.destroy(LineDb* db) {
     for (u32 i=0; i<db.count; i++) {
         free(db.entries[i].line);
     }
@@ -43,11 +43,11 @@ public fn void Db.destroy(Db* db) {
     free(db);
 }
 
-public fn u32 Db.size(const Db* db) {
+public fn u32 LineDb.size(const LineDb* db) {
     return db.count;
 }
 
-fn void Db.resize(Db* db, u32 capacity) {
+fn void LineDb.resize(LineDb* db, u32 capacity) {
     Entry* entries2 = malloc(capacity * sizeof(Entry));
     if (db.count) {
         memcpy(entries2, db.entries, db.count * sizeof(Entry));
@@ -57,7 +57,7 @@ fn void Db.resize(Db* db, u32 capacity) {
     db.entries = entries2;
 }
 
-public fn void Db.add(Db* db, const char* start, const char* end, bool consecutive) {
+public fn void LineDb.add(LineDb* db, const char* start, const char* end, bool consecutive) {
     if (db.count == db.capacity) {
         db.resize(db.capacity ? db.capacity * 2 : 4);
     }
@@ -68,11 +68,11 @@ public fn void Db.add(Db* db, const char* start, const char* end, bool consecuti
     entry.consecutive = consecutive;
 }
 
-public fn const char* Db.getLine(const Db* db, u32 idx) {
+public fn const char* LineDb.getLine(const LineDb* db, u32 idx) {
     return db.entries[idx].line;
 }
 
-public fn bool Db.getConsecutive(const Db* db, u32 idx) {
+public fn bool LineDb.getConsecutive(const LineDb* db, u32 idx) {
     return db.entries[idx].consecutive;
 }
 

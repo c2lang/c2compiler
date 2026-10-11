@@ -34,7 +34,7 @@ public type Finder struct @(opaque) {
     StringPool* pool;
 }
 
-public fn Finder* create(const char* dirname, const char* filename) {
+public fn Finder* Finder.create(const char* dirname, const char* filename) {
     Finder* f = malloc(sizeof(Finder));
     f.dirname = dirname;
     f.filename = filename;

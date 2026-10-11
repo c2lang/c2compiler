@@ -18,11 +18,11 @@ module ir_generator;
 import ast { * }
 import bit_utils;
 import ir { * }
-import ir_context { Context }
+import ir_context { IrContext }
 
 // NOTE: should not be used for LHS bitfields!
 fn void Generator.emitMemberExpr(Generator* gen, ir.Ref* result, const MemberExpr* m, bool base_only = false) {
-    Context* c = gen.ctx;
+    IrContext* c = gen.ctx;
 
     u32 tail = 0;
 

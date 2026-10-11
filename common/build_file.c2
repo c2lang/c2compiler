@@ -42,9 +42,9 @@ public type Info struct {
     u32 asmflags;
     u32 linkerscript;
 
-    string_list.List lib_dirs;
-    string_list.List lib_dirs_bin;
-    string_list.List plugin_dirs;
+    string_list.StringList lib_dirs;
+    string_list.StringList lib_dirs_bin;
+    string_list.StringList plugin_dirs;
 
     Plugin* plugins; // can be nil
     u32 plugin_count;
@@ -111,15 +111,15 @@ public fn const char* Info.getLinkerScript(const Info* info) {
 }
 */
 
-public fn const string_list.List* Info.getLibDirs(const Info* info) {
+public fn const string_list.StringList* Info.getLibDirs(const Info* info) {
     return &info.lib_dirs;
 }
 
-public fn const string_list.List* Info.getLibDirsBin(const Info* info) {
+public fn const string_list.StringList* Info.getLibDirsBin(const Info* info) {
     return &info.lib_dirs_bin;
 }
 
-public fn const string_list.List* Info.getPluginDirs(const Info* info) {
+public fn const string_list.StringList* Info.getPluginDirs(const Info* info) {
     return &info.plugin_dirs;
 }
 

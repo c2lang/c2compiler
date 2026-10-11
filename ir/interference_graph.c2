@@ -66,7 +66,7 @@ public type InterferenceGraph struct @(opaque) {
 static_assert(224, sizeof(InterferenceGraph));
 
 // Note: map size must be a multiple of largest arena size (so 256)
-public fn InterferenceGraph* create(u32 max_elems, u16 num_variables, u16 num_regs) {
+public fn InterferenceGraph* InterferenceGraph.create(u32 max_elems, u16 num_variables, u16 num_regs) {
     InterferenceGraph* g = calloc(1, sizeof(InterferenceGraph));
     g.map = malloc(max_elems * sizeof(u16));
     u16 total = num_variables + num_regs;

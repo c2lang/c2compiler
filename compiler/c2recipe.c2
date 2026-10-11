@@ -15,7 +15,7 @@
 
 module c2recipe;
 
-import build_target { Target, PluginList }
+import build_target { BuildTarget, PluginList }
 import source_mgr { SourceMgr }
 import src_loc { SrcLoc }
 import string_pool { StringPool }
@@ -27,19 +27,19 @@ public type Recipe struct @(opaque) {
     StringPool* pool;
     SourceMgr* sm;
 
-    Target** targets;
+    BuildTarget** targets;
     u32 num_targets;
     u32 max_targets;
 
     PluginList plugins;
 }
 
-public fn Recipe* create(SourceMgr* sm, StringPool* pool) {
+public fn Recipe* Recipe.create(SourceMgr* sm, StringPool* pool) {
     Recipe* r = calloc(1, sizeof(Recipe));
     r.sm = sm;
     r.pool = pool;
     r.max_targets = 4;
-    r.targets = calloc(r.max_targets, sizeof(Target*));
+    r.targets = calloc(r.max_targets, sizeof(BuildTarget*));
     r.plugins.init();
     return r;
 }
@@ -58,21 +58,21 @@ fn void Recipe.addPlugin(Recipe* r, u32 name, u32 options, SrcLoc loc) {
     r.plugins.add(name, options, loc);
 }
 
-public fn Target* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_target.Kind kind) {
+public fn BuildTarget* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_target.Kind kind) {
     // search for duplicates
     for (u32 i = 0; i < r.num_targets; i++) {
-        Target* t = r.targets[i];
+        BuildTarget* t = r.targets[i];
         if (t.getNameIdx() == name) return nil;
     }
 
     if (r.num_targets == r.max_targets) {
         r.max_targets *= 2;
-        Target** targets2 = malloc(r.max_targets * sizeof(Target*));
-        memcpy(targets2, r.targets, r.num_targets * sizeof(Target*));
+        BuildTarget** targets2 = malloc(r.max_targets * sizeof(BuildTarget*));
+        memcpy(targets2, r.targets, r.num_targets * sizeof(BuildTarget*));
         free(r.targets);
         r.targets = targets2;
     }
-    Target* t = build_target.create(name, loc, kind, r.pool);
+    BuildTarget* t = BuildTarget.create(name, loc, kind, r.pool);
     r.targets[r.num_targets] = t;
     r.num_targets++;
     return t;
@@ -84,7 +84,7 @@ public fn bool Recipe.parse(Recipe* r, i32 file_id) {
 
 public fn u32 Recipe.numTargets(const Recipe* r) { return r.num_targets; }
 
-public fn Target* Recipe.getTarget(const Recipe* r, u32 idx) {
+public fn BuildTarget* Recipe.getTarget(const Recipe* r, u32 idx) {
     return r.targets[idx];
 }
 

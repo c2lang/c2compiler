@@ -22,7 +22,7 @@ import stdlib { malloc, free, exit, EXIT_FAILURE, atoi }
 import string { * }
 import unistd { * }
 
-import constants;
+import constants { buildfile_name }
 import expect_file { ExpectFile, ExpectMode }
 import file_utils;
 import issues { Issues, Iter }
@@ -102,9 +102,9 @@ public fn void Db.init(Db* db,
     db.c2c_cmd = c2c_cmd;
     db.runSkipped = runSkipped;
 
-    db.errors = issues.create("error");
-    db.warnings = issues.create("warning");
-    db.notes = issues.create("note");
+    db.errors = Issues.create("error");
+    db.warnings = Issues.create("warning");
+    db.notes = Issues.create("note");
 
     db.line_nr = 1;
     db.bol = source;
@@ -324,7 +324,7 @@ fn bool Db.parseExpect(Db* db) {
     }
     db.skipLine();
 
-    ExpectFile* currentExpect = expect_file.create(filename, em);
+    ExpectFile* currentExpect = ExpectFile.create(filename, em);
     // TODO check for name duplicates
     db.addExpected(currentExpect);
     while (*db.cur && !strstart(db.cur, "// @")) {
@@ -372,7 +372,7 @@ fn bool Db.parseKeyword(Db* db) {
         build.print("target: \"%s\"\n", db.target);
         build.add("libdir:\n");
         build.add("   - \"$C2_LIBDIR\"\n");
-        db.writeFile(constants.buildfile_name, build.data(), build.size());
+        db.writeFile(buildfile_name, build.data(), build.size());
         build.free();
         db.skipLine();
         return true;
@@ -711,7 +711,7 @@ fn void Db.matchIssues(Db* db, Issues* ip, const char* filename, u32 linenr, con
 }
 
 public fn void Db.checkIssues(Db* db, Issues* ip) {
-    for (issues.Iter iter = ip.getIter(); iter.more(); iter.next()) {
+    for (Iter iter = ip.getIter(); iter.more(); iter.next()) {
         if (iter.getFound()) continue;
         char[128] path;
         const char* show_filename = db.getShowName(path, countof(path), iter.getFilename());

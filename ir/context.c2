@@ -54,7 +54,7 @@ fn void Builder.free(Builder* b) {
     b.block_order.free();
 }
 
-public type Context struct @(opaque) {
+public type IrContext struct @(opaque) {
     // context stuff
     StringPool* pool;
     ConstantList constants;
@@ -80,8 +80,8 @@ public type BuildInfo struct {
     const char* linkerflags;    // no ownership
 }
 
-public fn Context* create(bool print, const target_info.Info* info, const BuildInfo* buildInfo) {
-    Context* c = calloc(1, sizeof(Context));
+public fn IrContext* IrContext.create(bool print, const target_info.Info* info, const BuildInfo* buildInfo) {
+    IrContext* c = calloc(1, sizeof(IrContext));
     c.pool = StringPool.create(2*1024, 256);
     c.constants.init(128);
     c.symbols.init(128);
@@ -109,7 +109,7 @@ public fn Context* create(bool print, const target_info.Info* info, const BuildI
     return c;
 }
 
-public fn void Context.free(Context* c) {
+public fn void IrContext.free(IrContext* c) {
     c.queue.free();
     c.tools.free();
     for (u32 i=1; i<c.symbols.getCount(); i++) {
@@ -128,20 +128,20 @@ public fn void Context.free(Context* c) {
     free(c);
 }
 
-public fn void Context.convert_functions(Context* c) {
+public fn void IrContext.convert_functions(IrContext* c) {
     // already done if single threaded
     if (!c.single_thread) c.queue.run(c, 0);
 }
 
 fn void print_function(const void* arg1, const void* arg2, const FunctionInfo* fi, const char* label) {
-    const Context* c = arg1;
+    const IrContext* c = arg1;
     if (!c.print_all) return;
 
     c.print_function(arg2, fi, label);
 }
 
 // TODO: handle embedded null bytes
-public fn SymbolId Context.addStringLiteral(Context* c, const char* name, const char* text, u32 size) {
+public fn SymbolId IrContext.addStringLiteral(IrContext* c, const char* name, const char* text, u32 size) {
 #if DebugIr
     printf("addStringLiteral(%s)\n", text);
 #endif
@@ -157,7 +157,7 @@ public fn SymbolId Context.addStringLiteral(Context* c, const char* name, const 
     return id;
 }
 
-public fn SymbolId Context.addGlobalVar(Context* c, const char* name, u32 align, bool is_external) {
+public fn SymbolId IrContext.addGlobalVar(IrContext* c, const char* name, u32 align, bool is_external) {
     u32 name_idx = c.pool.addStr(name, false);
     SymbolId id = c.symbols.add(name_idx, false, align, is_external);
 #if DebugIr
@@ -166,7 +166,7 @@ public fn SymbolId Context.addGlobalVar(Context* c, const char* name, u32 align,
     return id;
 }
 
-public fn SymbolId Context.addFunction(Context* c, const char* name, bool is_external) {
+public fn SymbolId IrContext.addFunction(IrContext* c, const char* name, bool is_external) {
     u32 name_idx = c.pool.addStr(name, false);
     // TODO 4/8 bytes, ARCH
     SymbolId id = c.symbols.add(name_idx, true, 4, is_external);
@@ -176,7 +176,7 @@ public fn SymbolId Context.addFunction(Context* c, const char* name, bool is_ext
     return id;
 }
 
-public fn void Context.startFunc(Context* c, SymbolId id) {
+public fn void IrContext.startFunc(IrContext* c, SymbolId id) {
     Builder* b = &c.b;
 #if DebugIr
     printf("startFunc(%d)  cur %d\n", id, b.cur_func);
@@ -189,7 +189,7 @@ public fn void Context.startFunc(Context* c, SymbolId id) {
     b.slot_idx = 0;
 }
 
-public fn void Context.endFunc(Context* c) {
+public fn void IrContext.endFunc(IrContext* c) {
     Builder* b = &c.b;
 #if DebugIr
     printf("endFunc() cur %d\n", b.cur_func);
@@ -202,7 +202,7 @@ public fn void Context.endFunc(Context* c) {
     b.cur_func = 0;
 }
 
-public fn void Context.startGlobal(Context* c, SymbolId id) {
+public fn void IrContext.startGlobal(IrContext* c, SymbolId id) {
     Builder* b = &c.b;
 #if DebugIr
     printf("startGlobal(%d)  cur %d\n", id, b.cur_global);
@@ -213,7 +213,7 @@ public fn void Context.startGlobal(Context* c, SymbolId id) {
     s.g.init_value_idx = c.init_values.getCount();
 }
 
-public fn void Context.endGlobal(Context* c) {
+public fn void IrContext.endGlobal(IrContext* c) {
     Builder* b = &c.b;
 #if DebugIr
     printf("endGlobal()  cur %d\n", b.cur_global);
@@ -224,7 +224,7 @@ public fn void Context.endGlobal(Context* c) {
     b.cur_global = 0;
 }
 
-public fn void Context.addInitZero(Context* c, u32 size) {
+public fn void IrContext.addInitZero(IrContext* c, u32 size) {
 #if DebugIr
     printf("addInitZero()  %d\n", size);
 #endif
@@ -234,17 +234,17 @@ public fn void Context.addInitZero(Context* c, u32 size) {
     v.init(Zero, size);
 }
 
-public fn void Context.addInitValueU8(Context* c, u8 value) {
+public fn void IrContext.addInitValueU8(IrContext* c, u8 value) {
     InitValue* v = c.init_values.add();
     v.init(Byte, value);
 }
 
-public fn void Context.addInitValueU16(Context* c, u16 value) {
+public fn void IrContext.addInitValueU16(IrContext* c, u16 value) {
     InitValue* v = c.init_values.add();
     v.init(Short, value);
 }
 
-public fn void Context.addInitValueU32(Context* c, u32 value) {
+public fn void IrContext.addInitValueU32(IrContext* c, u32 value) {
     InitValue* v = c.init_values.add();
     if (value < 0x0FFFFFFF) {
         v.init(Word, value);
@@ -255,7 +255,7 @@ public fn void Context.addInitValueU32(Context* c, u32 value) {
     }
 }
 
-public fn void Context.addInitValueU64(Context* c, u64 value) {
+public fn void IrContext.addInitValueU64(IrContext* c, u64 value) {
     InitValue* v = c.init_values.add();
     if (value < 0x0FFFFFFF) {
         v.init(Long, (u32)value);
@@ -266,24 +266,24 @@ public fn void Context.addInitValueU64(Context* c, u64 value) {
     }
 }
 
-public fn void Context.addInitSymbol(Context* c, SymbolId id) {
+public fn void IrContext.addInitSymbol(IrContext* c, SymbolId id) {
     InitValue* v = c.init_values.add();
     v.init(Symbol, id);
 }
 
 // size is the length of the string literal
 // TODO: handle embedded null bytes
-public fn void Context.addInitString(Context* c, const char* text, u32 len) {
+public fn void IrContext.addInitString(IrContext* c, const char* text, u32 len) {
     InitValue* v = c.init_values.add();
     u32 text_idx = c.pool.add(text, len, false);
     v.init(Text, text_idx);
 }
 
-public fn void Context.setFunctionReturnType(Context* c, Type t) {
+public fn void IrContext.setFunctionReturnType(IrContext* c, Type t) {
     c.b.tmp_info.setReturnType(t);
 }
 
-public fn Ref Context.addFuncArg(Context* c, Type t) {
+public fn Ref IrContext.addFuncArg(IrContext* c, Type t) {
     c.b.tmp_info.addArg(t);
 
     u32 idx = c.b.tmp_info.instructions.getCount();
@@ -293,7 +293,7 @@ public fn Ref Context.addFuncArg(Context* c, Type t) {
     return ref;
 }
 
-public fn BlockId Context.createBlock(Context* c, BlockKind kind) {
+public fn BlockId IrContext.createBlock(IrContext* c, BlockKind kind) {
     BlockId id = c.b.tmp_info.blocks.add(kind);
 #if DebugIr
     printf(" createBlock(%s) id=%d\n", kind.str(), id);
@@ -301,12 +301,12 @@ public fn BlockId Context.createBlock(Context* c, BlockKind kind) {
     return id;
 }
 
-public fn bool Context.isBlockTerminated(const Context* c) {
+public fn bool IrContext.isBlockTerminated(const IrContext* c) {
     return c.b.block_terminated;
 }
 
 // Note: blocks are not implemented in order! (can be nested statements)
-public fn void Context.startBlock(Context* c, BlockId id) {
+public fn void IrContext.startBlock(IrContext* c, BlockId id) {
 #if DebugIr
     Block* b = c.b.tmp_info.blocks.get(id);
     printf(" startBlock(%s.%d) cur %d\n", b.getKindName(), id, c.b.cur_block);
@@ -319,7 +319,7 @@ public fn void Context.startBlock(Context* c, BlockId id) {
     c.b.blk_start_instr = c.b.tmp_info.instructions.getCount();
 }
 
-public fn void Context.endBlock(Context* c) {
+public fn void IrContext.endBlock(IrContext* c) {
 #if DebugIr
     printf(" endBlock()\n");
 #endif
@@ -333,11 +333,11 @@ public fn void Context.endBlock(Context* c) {
     c.b.in_block = false;
 }
 
-public fn BlockId Context.getCurBlock(const Context* c) {
+public fn BlockId IrContext.getCurBlock(const IrContext* c) {
     return c.b.cur_block;
 }
 
-public fn void Context.addJmpInstr(Context* c, BlockId dest) {
+public fn void IrContext.addJmpInstr(IrContext* c, BlockId dest) {
     assert(c.b.in_block);
     Block* b = c.b.tmp_info.blocks.get(c.b.cur_block);
 #if DebugIr
@@ -351,7 +351,7 @@ public fn void Context.addJmpInstr(Context* c, BlockId dest) {
     c.b.block_terminated = true;
 }
 
-public fn void Context.addJmpIfInstr(Context* c, Ref cond, BlockId dest1, BlockId dest2) {
+public fn void IrContext.addJmpIfInstr(IrContext* c, Ref cond, BlockId dest1, BlockId dest2) {
     assert(c.b.in_block);
     Block* b = c.b.tmp_info.blocks.get(c.b.cur_block);
 #if DebugIr
@@ -366,7 +366,7 @@ public fn void Context.addJmpIfInstr(Context* c, Ref cond, BlockId dest1, BlockI
     c.b.block_terminated = true;
 }
 
-public fn void Context.addRet0Instr(Context* c) {
+public fn void IrContext.addRet0Instr(IrContext* c) {
 #if DebugIr
     printf("  ret\n");
 #endif
@@ -378,7 +378,7 @@ public fn void Context.addRet0Instr(Context* c) {
     b.end_block = 1;
 }
 
-public fn void Context.addRet1Instr(Context* c, Ref ref) {
+public fn void IrContext.addRet1Instr(IrContext* c, Ref ref) {
 #if DebugIr
     printf("  ret <val>\n");
 #endif
@@ -390,7 +390,7 @@ public fn void Context.addRet1Instr(Context* c, Ref ref) {
     b.end_block = 1;
 }
 
-public fn Ref Context.addLoadInstr(Context* c, Type t, Ref src) {
+public fn Ref IrContext.addLoadInstr(IrContext* c, Type t, Ref src) {
 #if DebugIr
     printf("  load %s %s %d\n", t.str(), src.getKindName(), src.value);
 #endif
@@ -452,7 +452,7 @@ const InstrKind[Type] Type2Store = {
     [Type.F64] = InstrKind.Store8,
 }
 
-public fn void Context.addStoreInstr(Context* c, Type t, Ref src, Ref dest) {
+public fn void IrContext.addStoreInstr(IrContext* c, Type t, Ref src, Ref dest) {
 #if DebugIr
     printf("  store %s  %s %d -> %s %d\n", t.str(),
            src.getKindName(), src.value,
@@ -465,7 +465,7 @@ public fn void Context.addStoreInstr(Context* c, Type t, Ref src, Ref dest) {
     i.init2(k, src, dest);
 }
 
-public fn Ref Context.addBinaryInstr(Context* c, InstrKind k, Ref left, Ref right) {
+public fn Ref IrContext.addBinaryInstr(IrContext* c, InstrKind k, Ref left, Ref right) {
 #if DebugIr
     printf("  binary Instr %s (%s %d, %s %d) \n", k.str(),
            left.getKindName(), left.value,
@@ -478,7 +478,7 @@ public fn Ref Context.addBinaryInstr(Context* c, InstrKind k, Ref left, Ref righ
     return out;
 }
 
-public fn Ref Context.addCallInstr(Context* c, Ref name, const Ref* args, u32 num_args, bool has_result, bool noreturn) {
+public fn Ref IrContext.addCallInstr(IrContext* c, Ref name, const Ref* args, u32 num_args, bool has_result, bool noreturn) {
 #if DebugIr
     printf("  call %s%d\n", name.getKindName(), name.value);
 #endif
@@ -505,7 +505,7 @@ public fn Ref Context.addCallInstr(Context* c, Ref name, const Ref* args, u32 nu
 }
 
 // Temp only for 2 refs, could be more
-public fn Ref Context.addPhi2Instr(Context* c, BlockId b1, Ref r1, BlockId b2, Ref r2) {
+public fn Ref IrContext.addPhi2Instr(IrContext* c, BlockId b1, Ref r1, BlockId b2, Ref r2) {
 #if DebugIr
     printf("  phi2  %d, %d\n", b1, b2);
 #endif
@@ -524,7 +524,7 @@ public fn Ref Context.addPhi2Instr(Context* c, BlockId b1, Ref r1, BlockId b2, R
     return out;
 }
 
-public fn Ref Context.addStackSlot(Context* c, u32 align, Ref size) {
+public fn Ref IrContext.addStackSlot(IrContext* c, u32 align, Ref size) {
 #if DebugIr
     printf("  slot (%d)\n", c.b.slot_idx);
 #endif
@@ -559,7 +559,7 @@ public fn Ref Context.addStackSlot(Context* c, u32 align, Ref size) {
     return out;
 }
 
-public fn Ref Context.addIntegerConstant(Context* c, i64 size) {
+public fn Ref IrContext.addIntegerConstant(IrContext* c, i64 size) {
 #if DebugIr
     printf("  integer (%d)\n", size);
 #endif
@@ -577,7 +577,7 @@ public fn Ref Context.addIntegerConstant(Context* c, i64 size) {
     }
 }
 
-public fn void Context.addComment(Context* c, const char* text) {
+public fn void IrContext.addComment(IrContext* c, const char* text) {
     FunctionInfo* fi = c.b.tmp_info;
     u32 idx = c.pool.addStr(text, false);
     Ref out.init(RefKind.Temp, fi.instructions.getCount());
@@ -586,7 +586,7 @@ public fn void Context.addComment(Context* c, const char* text) {
     i.init1(InstrKind.Comment, ref);
 }
 
-public fn CaseId Context.addSwitchInstr(Context* c, Ref cond, BlockId join_blk, u32 num_cases) {
+public fn CaseId IrContext.addSwitchInstr(IrContext* c, Ref cond, BlockId join_blk, u32 num_cases) {
 #if DebugIr
     printf("  switch (join %d, %d cases)\n", join_blk, num_cases);
 #endif
@@ -603,14 +603,14 @@ public fn CaseId Context.addSwitchInstr(Context* c, Ref cond, BlockId join_blk, 
     return case_id;
 }
 
-public fn void Context.setCase(Context* c, CaseId case_id, u32 value, BlockId blk_id) {
+public fn void IrContext.setCase(IrContext* c, CaseId case_id, u32 value, BlockId blk_id) {
 #if DebugIr
     printf("  case (%d) value %d blk %d\n", case_id, value, blk_id);
 #endif
     c.b.tmp_info.cases.set(case_id, value, blk_id);
 }
 
-fn void Context.finalizeFunction(Context* c, SymbolId id) {
+fn void IrContext.finalizeFunction(IrContext* c, SymbolId id) {
     // prune unused blocks and flatten blocks with only a jmp instruction
     Tools* t = &c.tools;
     Symbol* symbol = c.symbols.get(id);

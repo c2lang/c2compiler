@@ -67,7 +67,7 @@ public fn void SlotCollector.create(SlotCollector* c) {
     memset(c, 0, sizeof(SlotCollector));
 
     // TODO scale with blocks
-    c.writes = ir_slot_writes_map.create(1024, 256);
+    c.writes = ir_slot_writes_map.Map.create(1024, 256);
     // TEMP hardcoded max
 
     c.reads = malloc(SlotMax * sizeof(ReadSlotAccess));

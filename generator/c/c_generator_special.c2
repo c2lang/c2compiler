@@ -30,7 +30,7 @@ import string { pstrcpy, strcmp }
 fn void Generator.createMakefile(Generator* gen,
                                  const char* output_dir,
                                  component.List* comps,
-                                 string_list.List* asm_files,
+                                 string_list.StringList* asm_files,
                                  bool enable_asserts,
                                  u32 libc_name)
 {
@@ -43,7 +43,7 @@ fn void Generator.createMakefile(Generator* gen,
     const char* ldflags = "";
     const char* ldflags2 = "";
     const char* asmflags = "";
-    const string_list.List* libdir_bin = nil;
+    const string_list.StringList* libdir_bin = nil;
 
     if (gen.targetInfo.sys == FreeBSD || gen.targetInfo.sys == OpenBSD) {
         cc = "clang";

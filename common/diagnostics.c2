@@ -34,7 +34,7 @@ public type Diags struct @(opaque) {
     const PathInfo* path_info;  // no ownership
 }
 
-public fn Diags* create(SourceMgr* sm, bool use_color, const PathInfo* path_info) {
+public fn Diags* Diags.create(SourceMgr* sm, bool use_color, const PathInfo* path_info) {
     Diags* diags = calloc(1, sizeof(Diags));
     diags.sm = sm;
     diags.out = StringBuf.create(512, use_color, 1);

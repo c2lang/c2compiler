@@ -27,26 +27,26 @@ public type Entry struct {
     ir.BlockId continue_id;
 }
 
-public type Map struct {
+public type LabelMap struct {
     Entry* entries;
     u32 count;
     u32 capacity;
 }
 
-public fn void Map.init(Map* l) {
-    memset(l, 0, sizeof(Map));
+public fn void LabelMap.init(LabelMap* l) {
+    memset(l, 0, sizeof(LabelMap));
     l.resize(8);
 }
 
-public fn void Map.free(Map* l) {
+public fn void LabelMap.free(LabelMap* l) {
     free(l.entries);
 }
 
-public fn void Map.clear(Map* l) {
+public fn void LabelMap.clear(LabelMap* l) {
     l.count = 0;
 }
 
-public fn void Map.add(Map* l, u32 key, ir.BlockId goto_id) {
+public fn void LabelMap.add(LabelMap* l, u32 key, ir.BlockId goto_id) {
     // Note: we dont check for duplicates here
     if (l.count == l.capacity) l.resize(l.capacity * 2);
     Entry* v = &l.entries[l.count];
@@ -57,7 +57,7 @@ public fn void Map.add(Map* l, u32 key, ir.BlockId goto_id) {
     l.count++;
 }
 
-public fn void Map.add2(Map* l, u32 key, ir.BlockId break_id, ir.BlockId continue_id) {
+public fn void LabelMap.add2(LabelMap* l, u32 key, ir.BlockId break_id, ir.BlockId continue_id) {
     // Note: entry might already be created by goto
     for (u32 i=0; i<l.count; i++) {
         Entry* v = &l.entries[i];
@@ -78,28 +78,28 @@ public fn void Map.add2(Map* l, u32 key, ir.BlockId break_id, ir.BlockId continu
 }
 
 // Note: if value 0 is not a valid one, dont need to check with contains() first
-public fn ir.BlockId Map.getGoto(const Map* l, u32 key) {
+public fn ir.BlockId LabelMap.getGoto(const LabelMap* l, u32 key) {
     for (u32 i=0; i<l.count; i++) {
         if (l.entries[i].key == key) return l.entries[i].goto_id;
     }
     return 0;
 }
 
-public fn ir.BlockId Map.getBreak(const Map* l, u32 key) {
+public fn ir.BlockId LabelMap.getBreak(const LabelMap* l, u32 key) {
     for (u32 i=0; i<l.count; i++) {
         if (l.entries[i].key == key) return l.entries[i].break_id;
     }
     return 0;
 }
 
-public fn ir.BlockId Map.getContinue(const Map* l, u32 key) {
+public fn ir.BlockId LabelMap.getContinue(const LabelMap* l, u32 key) {
     for (u32 i=0; i<l.count; i++) {
         if (l.entries[i].key == key) return l.entries[i].continue_id;
     }
     return 0;
 }
 
-fn void Map.resize(Map* l, u32 cap) {
+fn void LabelMap.resize(LabelMap* l, u32 cap) {
     l.capacity = cap;
     Entry* entries2 = malloc(l.capacity * sizeof(Entry));
     if (l.count) memcpy(entries2, l.entries, l.count * sizeof(Entry));

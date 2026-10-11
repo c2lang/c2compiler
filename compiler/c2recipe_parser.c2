@@ -15,7 +15,7 @@
 
 module c2recipe;
 
-import build_target { Target }
+import build_target { BuildTarget }
 import color;
 import ctype { isspace, isalnum }
 import file_list { FileList, File }
@@ -97,7 +97,7 @@ type Parser struct {
     Recipe* recipe;
     StringPool* pool;
     SourceMgr* sm;
-    string_list.List global_configs;
+    string_list.StringList global_configs;
 
     const char* input_start;
     const char* cur;
@@ -106,7 +106,7 @@ type Parser struct {
     Token token;
     bool new_line;
     bool targets_started;
-    Target* target;
+    BuildTarget* target;
     Set* sets;      // Note: will point to current set
 }
 

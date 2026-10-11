@@ -51,7 +51,7 @@ public type Replacer struct @(opaque) {
     u32 dest_capacity;
 }
 
-public fn Replacer* create(const char* new_name) {
+public fn Replacer* Replacer.create(const char* new_name) {
     Replacer* r = calloc(1, sizeof(Replacer));
     r.new_name = new_name;
     r.resize(16);

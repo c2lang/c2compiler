@@ -17,7 +17,7 @@ module ir_generator;
 
 import ast;
 import ir { Ref, InstrKind }
-import ir_context { Context }
+import ir_context { IrContext }
 import value_type { Value }
 
 import stdlib { malloc, free }
@@ -168,7 +168,7 @@ field:
 fn void FieldStructLayouter.finalizeExpr(FieldStructLayouter* l, const ast.StructTypeDecl* std, Ref base_ref) {
     bool have_bitfield = false;
     u8 bitfield_base_size = 0;   // in bytes of whole field
-    Context* ctx = l.gen.ctx;
+    IrContext* ctx = l.gen.ctx;
 
     u32 num_members = std.getNumMembers();
     ast.StructLayout* layout = std.getLayout();

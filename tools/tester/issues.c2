@@ -90,7 +90,7 @@ public type Issues struct @(opaque) {
     const char* name;
 }
 
-public fn Issues* create(const char* name) {
+public fn Issues* Issues.create(const char* name) {
     Issues* i = calloc(1, sizeof(Issues));
     i.name = name;
     i.resizeIssues(4);

@@ -44,7 +44,7 @@ Color col_Arch        = Bcyan;
 const u32 MaxTemps = 4096;
 
 type PrintHelper struct {
-    const Context* c;
+    const IrContext* c;
     const BlockList* blocks;
 
     StringBuf* out;
@@ -58,7 +58,7 @@ type PrintHelper struct {
     u32 blk_instr_count;
 }
 
-fn void PrintHelper.init(PrintHelper* ph, const Context* c) {
+fn void PrintHelper.init(PrintHelper* ph, const IrContext* c) {
     ph.out = StringBuf.create(64*1024, useColor(), 2);
 
     // TODO print name of module
@@ -120,7 +120,7 @@ fn void PrintHelper.collect_temps(PrintHelper* ph) {
 }
 
 fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionInfo* info) {
-    const Context* c = ph.c;
+    const IrContext* c = ph.c;
 
     if (!info) return;  // external symbol
     //dump_function(info, c.pool.idx2str(s.name));
@@ -231,7 +231,7 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
     out.add("}\n");
 }
 
-fn void Context.print_function(const Context* c,
+fn void IrContext.print_function(const IrContext* c,
                                const Symbol* symbol,
                                const FunctionInfo* info,
                                const char* version) @(unused) {
@@ -246,7 +246,7 @@ fn void Context.print_function(const Context* c,
     ph.free();
 }
 
-public fn void Context.print(const Context* c) {
+public fn void IrContext.print(const IrContext* c) {
     PrintHelper ph.init(c);
     StringBuf* out = ph.out;
 
@@ -604,7 +604,7 @@ fn void dump_function_info(StringBuf* out, const FunctionInfo* info) @(unused) {
     out.newline();
 }
 
-public fn void Context.dump(const Context* c) @(unused) {
+public fn void IrContext.dump(const IrContext* c) @(unused) {
     StringBuf* out = StringBuf.create(16*1024, false, 1);
 
     out.print("symbols: (%d)\n", c.symbols.getCount());
@@ -681,7 +681,7 @@ public fn void Context.dump_temps(const Context* c) @(unused) {
 }
 #endif
 
-public fn void Context.report(const Context* c) @(unused) {
+public fn void IrContext.report(const IrContext* c) @(unused) {
     StringBuf* out = StringBuf.create(256, false, 1);
 
     u32 total_blocks = 0;

@@ -87,13 +87,13 @@ public type Analyser struct @(opaque) {
     u32 need_const_expr;
 }
 
-public fn Analyser* create(Diags* diags,
-                             Context* context,
-                             StringPool* astPool,
-                             Builder* builder,
-                             module_list.List* allmodules,
-                             const Flags* warnings,
-                             bool has_asserts, bool check_only)
+public fn Analyser* Analyser.create(Diags* diags,
+                                    Context* context,
+                                    StringPool* astPool,
+                                    Builder* builder,
+                                    module_list.List* allmodules,
+                                    const Flags* warnings,
+                                    bool has_asserts, bool check_only)
 {
     Analyser* ma = calloc(1, sizeof(Analyser));
     ma.diags = diags;
@@ -395,7 +395,7 @@ fn void Analyser.errorRange(Analyser* ma, SrcLoc loc, SrcRange range, const char
 
 fn void Analyser.createGlobalScope(void* arg, AST* a) {
     Analyser* ma = arg;
-    Scope* s = scope.create(ma.allmodules,
+    Scope* s = Scope.create(ma.allmodules,
                                   ma.diags,
                                   ma.astPool,
                                   a.getImports(),

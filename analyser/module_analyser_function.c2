@@ -227,7 +227,7 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd, bool full) {
 fn bool Analyser.analyseFunctionBody2(Analyser* ma, FunctionDecl* fd, Module* mod) {
     Analyser* analyser = ma.clone();
     analyser.setMod(mod);
-    Scope* tmpScope = scope.create(ma.allmodules,
+    Scope* tmpScope = Scope.create(ma.allmodules,
                                    ma.diags,
                                    ma.astPool,
                                    fd.asDecl().getAST().getImports(),

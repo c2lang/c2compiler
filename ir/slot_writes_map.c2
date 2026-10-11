@@ -64,7 +64,7 @@ public type Map struct @(opaque) {
 static_assert(168, sizeof(Map));
 
 // Note: map size must be a multiple of largest arena size (so 256)
-public fn Map* create(u32 max_elems, u16 num_blocks) {
+public fn Map* Map.create(u32 max_elems, u16 num_blocks) {
     Map* m = calloc(1, sizeof(Map));
     m.map = malloc(max_elems * sizeof(SlotWrite));
     m.blocks = malloc(num_blocks * sizeof(BlockWrites));

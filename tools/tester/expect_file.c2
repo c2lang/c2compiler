@@ -20,7 +20,7 @@ import stdlib { calloc, free, exit, EXIT_FAILURE }
 import string { pstrcpy, strncmp }
 
 import file_utils;
-import line_db;
+import line_db { LineDb }
 import string_buffer { StringBuf }
 import test_utils { * }
 
@@ -51,15 +51,15 @@ public type ExpectFile struct @(opaque) {
     u32 expIndex;
 
     // TODO should inline the Db
-    line_db.Db* lines;
+    LineDb* lines;
 }
 
 
-public fn ExpectFile* create(const char* name, ExpectMode m) {
+public fn ExpectFile* ExpectFile.create(const char* name, ExpectMode m) {
     ExpectFile* f = calloc(1, sizeof(ExpectFile));
     pstrcpy(f.filename, countof(f.filename), name);
     f.mode = m;
-    f.lines = line_db.create();
+    f.lines = LineDb.create();
     return f;
 }
 

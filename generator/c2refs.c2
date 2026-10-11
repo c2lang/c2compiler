@@ -15,7 +15,7 @@
 
 module c2refs;
 
-import radix_tree { Tree }
+import radix_tree { RadixTree }
 
 #if C2TagsGenerate
 #else
@@ -462,7 +462,7 @@ public type Refs struct @(opaque) {
     Lengths* line_lengths;
     Links* links;
 
-    Tree* symbols;
+    RadixTree* symbols;
 
     // runtime (not saved to files
     u32 cur_file_idx;   // TODO remove
@@ -480,7 +480,7 @@ public fn Refs* Refs.create(u32 num_files) {
     r.files = Files.create(num_files, 4096);
     r.line_lengths = Lengths.create(4096);
     r.links = Links.create(1024);
-    r.symbols = radix_tree.create(512, 512);
+    r.symbols = RadixTree.create(512, 512);
 
     // note: maps + size will be nil/0
     return r;
@@ -513,7 +513,7 @@ fn Refs* Refs.load_internal(MapFile f) {
     if (!links) return nil;
 
     radix_tree.InputStream input = { f.map, (u32)f.size }
-    Tree* symbols = radix_tree.load(&input);
+    RadixTree* symbols = radix_tree.load(&input);
     if (!symbols) return nil;
 
     Refs* r = calloc(1, sizeof(Refs));

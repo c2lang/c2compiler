@@ -20,7 +20,7 @@ import component { Component }
 import console;
 import file_utils { File }
 import string_buffer { StringBuf }
-import string_list { List }
+import string_list { StringList }
 
 import stdlib { exit, EXIT_FAILURE }
 import string { strcmp }
@@ -73,7 +73,7 @@ public fn void write(const char* dir, Component* c, const char* filename) {
               "\n",
               c.getName(), getKindStr(c));
 
-    const List* deps = c.getDeps();
+    const StringList* deps = c.getDeps();
     if (deps.length()) {
         out.print("dependencies:\n");
         for (u32 i = 0; i < deps.length(); i++) {

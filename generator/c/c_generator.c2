@@ -88,7 +88,7 @@ type Generator struct {
     u32 need_const_expr;
     FunctionDecl* cur_function; // needed for assert
     const char* mod_name; // set per module
-    string_list.List imports;  // used to filter out duplicate imports (from different ASTs)
+    string_list.StringList imports;  // used to filter out duplicate imports (from different ASTs)
     DeclList decls;
     dep_finder.Finder deps;
 
@@ -1281,7 +1281,7 @@ public fn void generate(StringPool* astPool,
                         const target_info.Info* targetInfo,
                         component.List* comps,
                         Decl* mainFunc,
-                        string_list.List* asm_files,
+                        string_list.StringList* asm_files,
                         bool enable_asserts,
                         bool fast_build, bool asan, bool msan, bool ubsan,
                         bool test_mode, bool trace_calls)

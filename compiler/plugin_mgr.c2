@@ -44,7 +44,7 @@ type Plugin struct {
     plugin_info.Plugin* functions;
 }
 
-public type Mgr struct @(opaque) {
+public type PluginMgr struct @(opaque) {
     StringPool* auxPool;
     console.Config* console_config;
     bool no_plugins;
@@ -53,12 +53,12 @@ public type Mgr struct @(opaque) {
     u32 plugin_count;
     u32 plugin_max;
 
-    string_list.List paths;
+    string_list.StringList paths;
     char[256] error_msg;
 }
 
-public fn Mgr* create(StringPool* auxPool, console.Config* console_config, bool no_plugins) {
-    Mgr* m = calloc(1, sizeof(Mgr));
+public fn PluginMgr* PluginMgr.create(StringPool* auxPool, console.Config* console_config, bool no_plugins) {
+    PluginMgr* m = calloc(1, sizeof(PluginMgr));
     m.auxPool = auxPool;
     m.console_config = console_config;
     m.no_plugins = no_plugins;
@@ -66,7 +66,7 @@ public fn Mgr* create(StringPool* auxPool, console.Config* console_config, bool 
     return m;
 }
 
-public fn void Mgr.free(Mgr* m) {
+public fn void PluginMgr.free(PluginMgr* m) {
     for (u32 i=m.plugin_count; i!=0; i--) {
         Plugin* p = &m.plugins[i-1];
         console.debug("plugins: unload %s", m.auxPool.idx2str(p.name));
@@ -79,15 +79,15 @@ public fn void Mgr.free(Mgr* m) {
     free(m);
 }
 
-public fn const char* Mgr.getError(const Mgr* m) {
+public fn const char* PluginMgr.getError(const PluginMgr* m) {
     return m.error_msg;
 }
 
-public fn void Mgr.addPath(Mgr* m, u32 path) {
+public fn void PluginMgr.addPath(PluginMgr* m, u32 path) {
     if (!m.paths.contains_idx(path)) m.paths.add(path);
 }
 
-fn void Mgr.addPlugin(Mgr* m, Plugin* p) {
+fn void PluginMgr.addPlugin(PluginMgr* m, Plugin* p) {
     if (m.plugin_count == m.plugin_max) {
         m.plugin_max = m.plugin_max ? m.plugin_max * 2 : 4;
         Plugin* plugins2 = malloc(m.plugin_max * sizeof(Plugin));
@@ -109,7 +109,7 @@ fn bool is_plugin(const Dirent* entry) {
     return string_utils.endsWith(filename, lib_ext);
 }
 
-public fn void Mgr.show(const Mgr* m) {
+public fn void PluginMgr.show(const PluginMgr* m) {
     console.log("Plugins:");
     for (u32 i=0; i<m.paths.length(); i++) {
         const char* path = m.paths.get(i);
@@ -127,7 +127,7 @@ public fn void Mgr.show(const Mgr* m) {
     }
 }
 
-fn bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
+fn bool PluginMgr.loadPlugin(PluginMgr* m, u32 name, u32 options, bool is_global) {
     if (m.no_plugins) return true;
 
     for (u32 i=0; i<m.plugin_count; i++) {
@@ -180,16 +180,16 @@ fn bool Mgr.loadPlugin(Mgr* m, u32 name, u32 options, bool is_global) {
     return true;
 }
 
-public fn bool Mgr.loadGlobal(Mgr* m, u32 name, u32 options) {
+public fn bool PluginMgr.loadGlobal(PluginMgr* m, u32 name, u32 options) {
     return m.loadPlugin(name, options, true);
 }
 
-public fn bool Mgr.loadLocal(Mgr* m, u32 name, u32 options) {
+public fn bool PluginMgr.loadLocal(PluginMgr* m, u32 name, u32 options) {
     return m.loadPlugin(name, options, false);
 }
 
 
-fn bool Mgr.find_file(Mgr* m, char* fullname, usize size, const char* filename) {
+fn bool PluginMgr.find_file(PluginMgr* m, char* fullname, usize size, const char* filename) {
     for (u32 i=0; i<m.paths.length(); i++) {
         if (file_utils.make_path(fullname, size, m.paths.get(i), filename)
         &&  file_utils.is_file(fullname))
@@ -198,28 +198,28 @@ fn bool Mgr.find_file(Mgr* m, char* fullname, usize size, const char* filename) 
     return false;
 }
 
-public fn void Mgr.beginTarget(Mgr* m, plugin_info.Info* info) {
+public fn void PluginMgr.beginTarget(PluginMgr* m, plugin_info.Info* info) {
     for (u32 i=0; i<m.plugin_count; i++) {
         Plugin* p = &m.plugins[i];
         if (p.is_active) p.functions.init(p.arg, info);
     }
 }
 
-public fn void Mgr.endTarget(Mgr* m) {
+public fn void PluginMgr.endTarget(PluginMgr* m) {
     for (u32 i=0; i<m.plugin_count; i++) {
         Plugin* p = &m.plugins[i];
         p.is_active = p.is_global;
     }
 }
 
-public fn void Mgr.postParse(Mgr* m) {
+public fn void PluginMgr.postParse(PluginMgr* m) {
     for (u32 i=0; i<m.plugin_count; i++) {
         Plugin* p = &m.plugins[i];
         if (p.is_active && p.functions.post_parse) p.functions.post_parse(p.arg);
     }
 }
 
-public fn void Mgr.postAnalysis(Mgr* m) {
+public fn void PluginMgr.postAnalysis(PluginMgr* m) {
     for (u32 i=0; i<m.plugin_count; i++) {
         Plugin* p = &m.plugins[i];
         if (p.is_active && p.functions.post_analysis) p.functions.post_analysis(p.arg);

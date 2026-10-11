@@ -16,7 +16,7 @@
 module ast;
 
 import attr { Attr, AttrKind }
-import attr_table;
+import attr_table { AttrTable }
 import src_loc { SrcLoc }
 import string_buffer { StringBuf }
 import string_pool { StringPool }
@@ -42,7 +42,7 @@ public type AST struct @(opaque) {
     StaticAssertList static_asserts;
     ArrayValueList array_values;
 
-    attr_table.Table* attrs;
+    attr_table.AttrTable* attrs;
 }
 
 static_assert(144+64, sizeof(AST));
@@ -237,7 +237,7 @@ fn Decl* AST.findType(const AST* a, u32 name_idx) {
 // note: these will be called sequentially for same decl
 public fn void AST.storeAttr(AST* a, Decl* d, const Attr* at)
 {
-    if (!a.attrs) a.attrs = attr_table.create();
+    if (!a.attrs) a.attrs = AttrTable.create();
     a.attrs.add(d, at);
 }
 

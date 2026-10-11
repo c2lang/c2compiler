@@ -15,11 +15,11 @@
 
 module c2loc_main;
 
-import build_target;
+import build_target { BuildTarget }
 import c2recipe { Recipe }
 import constants { recipe_name }
 import file_list;
-import source_mgr;
+import source_mgr { SourceMgr }
 import string_pool { StringPool }
 
 import c_errno { errno }
@@ -33,7 +33,7 @@ const char* other_dir;
 bool verbose;
 
 StringPool* pool;
-source_mgr.SourceMgr* sm;
+SourceMgr* sm;
 
 fn void usage(const char* me) {
     printf("Usage: %s <options> <target>\n", me);
@@ -81,7 +81,7 @@ fn u32 count_loc(const char* data) {
     return loc;
 }
 
-fn void handle_target(build_target.Target* t, const char* name) {
+fn void handle_target(BuildTarget* t, const char* name) {
     if (verbose) printf("%s: %d files\n", name, t.numFiles());
     u32 total_loc = 0;
     for (u32 i=0; i<t.numFiles(); i++) {
@@ -116,8 +116,8 @@ public fn i32 main(i32 argc, const char** argv)
     }
 
     pool = StringPool.create(32*1024, 1024);
-    sm = source_mgr.create(pool);
-    Recipe* recipe = c2recipe.create(sm, pool);
+    sm = SourceMgr.create(pool);
+    Recipe* recipe = Recipe.create(sm, pool);
 
     i32 file_id = sm.loadFile(recipe_name, 0);
     if (file_id == -1) return -1;
@@ -125,7 +125,7 @@ public fn i32 main(i32 argc, const char** argv)
 
     bool found = false;
     for (u32 i=0; i<recipe.numTargets(); i++) {
-        build_target.Target* t = recipe.getTarget(i);
+        BuildTarget* t = recipe.getTarget(i);
         const char* target_name = pool.idx2str(t.getNameIdx());
         if (target && strcmp(target, target_name) != 0) continue;
         found = true;

@@ -17,12 +17,12 @@ module ir_generator;
 
 import ast { * }
 import ir;
-import ir_context { Context }
+import ir_context { IrContext }
 import ref_list { RefList }
 
 fn void Generator.emitCallExpr(Generator* gen, ir.Ref* result, const Expr* e) {
     CallExpr* call = (CallExpr*)e;
-    Context* c = gen.ctx;
+    IrContext* c = gen.ctx;
 
     u32 num_args = call.getNumArgs();
     Expr** args = call.getArgs();

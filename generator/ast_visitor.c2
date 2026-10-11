@@ -27,7 +27,7 @@ public type Visitor struct @(opaque) {
     bool use_generated; // use generated branch in AlternateExpr nodes
 }
 
-public fn Visitor* create(void* arg, OnRef on_ref, bool use_generated = false) {
+public fn Visitor* Visitor.create(void* arg, OnRef on_ref, bool use_generated = false) {
     Visitor* v = calloc(1, sizeof(Visitor));
     v.arg = arg;
     v.on_ref = on_ref;

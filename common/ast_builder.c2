@@ -17,7 +17,7 @@ module ast_builder;
 
 import ast { * }
 import ast_context { Context }
-import attr_handler { Handler }
+import attr_handler { AttrHandler }
 import attr { Attr }
 import component { Component }
 import diagnostics { Diags }
@@ -46,16 +46,16 @@ public type Builder struct @(opaque) {
     Attr[8] attrs;
     u32 num_attrs;
 
-    Handler* attr_handler; // no ownership
+    AttrHandler* attr_handler; // no ownership
 }
 
-public fn Builder* create(Context* context,
-                          Diags* diags,
-                          StringPool* astPool,
-                          StringPool* auxPool,
-                          u32 c2_name,
-                          u32 main_name,
-                          Handler* attr_handler_)
+public fn Builder* Builder.create(Context* context,
+                                  Diags* diags,
+                                  StringPool* astPool,
+                                  StringPool* auxPool,
+                                  u32 c2_name,
+                                  u32 main_name,
+                                  AttrHandler* attr_handler_)
 {
     Builder* b = calloc(1, sizeof(Builder));
     b.context = context;

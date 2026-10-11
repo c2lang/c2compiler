@@ -27,7 +27,7 @@ type Generator struct {
     StringPool* astPool;
     StringBuf* out;
     const char* output_dir;
-    string_list.List imports;  // used to filter out duplicate imports (from different ASTs)
+    string_list.StringList imports;  // used to filter out duplicate imports (from different ASTs)
     Module* mod;
     const char* mod_name;
     bool in_body;

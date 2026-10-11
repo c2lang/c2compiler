@@ -291,7 +291,7 @@ public fn i32 main(i32 argc, const char** argv)
 #if MeasureTime
     u64 t1 = getCurrentTime();
 #endif
-    Finder* finder = refs_finder.create(constants.output_dir, Refs_filename);
+    Finder* finder = Finder.create(constants.output_dir, Refs_filename);
     u32 refsfile_count = finder.search(opts.target);
 
     if (refsfile_count == 0) {

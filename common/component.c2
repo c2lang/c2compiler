@@ -58,14 +58,14 @@ public type Component struct @(opaque) {
     StringPool* auxPool;      // no ownership
 
     module_list.List mods;
-    string_list.List deps;
+    string_list.StringList deps;
     FileList files;   // only for (external) source libraries
 }
 
-public fn Component* create(Context* context,
-                              StringPool* auxPool,
-                              u32 name_idx, // into auxPool
-                              Kind kind)
+public fn Component* Component.create(Context* context,
+                                      StringPool* auxPool,
+                                      u32 name_idx, // into auxPool
+                                      Kind kind)
 {
     Component* c = calloc(1, sizeof(Component));
     c.name_idx = name_idx;
@@ -250,7 +250,7 @@ public fn void Component.addDep(Component* c, u32 dep_idx) {
     c.deps.add(dep_idx);
 }
 
-public fn string_list.List* Component.getDeps(Component* c) {
+public fn string_list.StringList* Component.getDeps(Component* c) {
     return &c.deps;
 }
 

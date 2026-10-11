@@ -697,7 +697,7 @@ fn FunctionDecl* Analyser.instantiateTemplateFunction(Analyser* ma, CallExpr* ca
         Module* template_mod = fd.asDecl().getModule();
         Analyser* analyser = ma.clone();
         analyser.setMod(template_mod);
-        Scope* tmpScope = scope.create(ma.allmodules,
+        Scope* tmpScope = Scope.create(ma.allmodules,
                                              ma.diags,
                                              ma.astPool,
                                              d.getAST().getImports(),

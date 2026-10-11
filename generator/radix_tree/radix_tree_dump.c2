@@ -19,7 +19,7 @@ import linked_list { Element }
 
 import stdio { printf }
 
-fn void Tree.dump_nodes(const Tree* t, u32 idx, u32 end) {
+fn void RadixTree.dump_nodes(const RadixTree* t, u32 idx, u32 end) {
     while (idx < end) {
         const Node* n = t.idx2node(idx);
         const char* prefix = "  ";
@@ -41,14 +41,14 @@ fn void Tree.dump_nodes(const Tree* t, u32 idx, u32 end) {
 }
 
 
-public fn void Tree.dump(const Tree* t, bool verbose) {
+public fn void RadixTree.dump(const RadixTree* t, bool verbose) {
     u32 num_words = t.count_words();
     u32 total_size = t.used_nodes() + t.words.size;
     printf("  symbols: %7d bytes  %d words\n", total_size, num_words);
     if (verbose) t.dump2(true, true, false);
 }
 
-fn void Tree.dump2(const Tree* t, bool print_nodes, bool print_words, bool print_stats) {
+fn void RadixTree.dump2(const RadixTree* t, bool print_nodes, bool print_words, bool print_stats) {
     u32 used = t.used_nodes();
     u32 num_words = t.count_words();
     printf("---- %d words, total size %d, wasted %d ----\n", num_words, used + t.words.size, t.wasted);
@@ -101,14 +101,14 @@ fn void count_word(void* arg, const char* text) {
 }
 #endif
 
-public fn void Tree.dump_words(const Tree* t) @(unused) {
+public fn void RadixTree.dump_words(const RadixTree* t) @(unused) {
     if (t.nodes.root_idx == 0) return;
 
     Iter iter = { print_word, nil, 0 }
     t.iterate(t.nodes.root_idx, &iter);
 }
 
-fn u32 Tree.count_words(const Tree* t) {
+fn u32 RadixTree.count_words(const RadixTree* t) {
     if (t.nodes.root_idx == 0) return 0;
 
     u32 count = 0;
@@ -117,7 +117,7 @@ fn u32 Tree.count_words(const Tree* t) {
     return count;
 }
 
-fn void Tree.dump_zones(const Tree* t) @(unused) {
+fn void RadixTree.dump_zones(const RadixTree* t) @(unused) {
     printf("---- zones ----\n");
     Element* cur = t.used_zones.next;
     while (cur != &t.used_zones) {
@@ -127,7 +127,7 @@ fn void Tree.dump_zones(const Tree* t) @(unused) {
     }
 }
 
-fn void Tree.dump_stats(const Tree* t) {
+fn void RadixTree.dump_stats(const RadixTree* t) {
     Stats stats = { }
     t.stats_iter(t.nodes.root_idx, &stats);
     printf("---- stats (%d leaves, %d internal) ----\n", stats.leaf_nodes, stats.internal_nodes);
@@ -142,7 +142,7 @@ type Stats struct {
     u32[128] children;
 }
 
-fn void Tree.stats_iter(const Tree* t, u32 node_idx, Stats* stats) {
+fn void RadixTree.stats_iter(const RadixTree* t, u32 node_idx, Stats* stats) {
     const Node* n = t.idx2node(node_idx);
     stats.children[n.num_children]++;
     if (n.num_children == 0) {

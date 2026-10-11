@@ -20,7 +20,7 @@ import ast_visitor { Visitor }
 import component { Component }
 import file_utils { File }
 import string_buffer { StringBuf }
-import string_list;
+import string_list { StringList }
 import string_pool { StringPool }
 
 import stdio { snprintf, fprintf, stderr }
@@ -96,7 +96,7 @@ type Generator struct {
     bool is_external;  // current component is external
 
     Visitor* visitor; // non-basic mode only
-    string_list.List imports; // basic mode only
+    StringList imports; // basic mode only
     StringPool* astPool;
 
     Decl** deps;
@@ -421,7 +421,7 @@ public fn void generate(const char* title, const char* output_dir, component.Lis
     if (basic_mode) gen.show_files = false;
 
     if (!basic_mode) {
-        gen.visitor = ast_visitor.create(&gen, Generator.on_ref);
+        gen.visitor = Visitor.create(&gen, Generator.on_ref);
     }
     gen.astPool = astPool;
     gen.imports.init(astPool);

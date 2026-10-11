@@ -132,7 +132,7 @@ public type Context struct @(opaque) {
     u32 wordsize;
 }
 
-public fn Context* create(u32 blk_size, u32 wordsize) {
+public fn Context* Context.create(u32 blk_size, u32 wordsize) {
     Context* c = malloc(sizeof(Context));
     c.allocator.init(blk_size);
     c.blk_size = blk_size;

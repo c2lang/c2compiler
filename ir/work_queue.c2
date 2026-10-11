@@ -108,7 +108,7 @@ fn void* worker_main(void* arg) {
     return nil;
 }
 
-fn QueueWorker* QueueWorker.create(u32 idx, WorkQueue* q, Context* c) {
+fn QueueWorker* QueueWorker.create(u32 idx, WorkQueue* q, IrContext* c) {
     QueueWorker* w = calloc(1, sizeof(QueueWorker));
     w.index = idx;
     w.queue = q;
@@ -126,7 +126,7 @@ fn void QueueWorker.join(QueueWorker* w) {
     w.tools.free();
 }
 
-fn void WorkQueue.run(WorkQueue* q, Context* c, u32 num_threads) {
+fn void WorkQueue.run(WorkQueue* q, IrContext* c, u32 num_threads) {
     if (num_threads == 0) num_threads = online_cpus();
     if (num_threads > MAX_THREADS) num_threads = MAX_THREADS;
     if (num_threads > q.count) num_threads = q.count;

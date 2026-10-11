@@ -82,13 +82,13 @@ public type Parser struct @(opaque) {
     char[constants.MaxMultiString] multi_string;
 }
 
-public fn Parser* create(SourceMgr* sm,
-                         Diags* diags,
-                         StringPool* pool,
-                         ast_builder.Builder* builder,
-                         const keywords.Info* kwinfo,
-                         const Map* features,
-                         bool has_asserts)
+public fn Parser* Parser.create(SourceMgr* sm,
+                                Diags* diags,
+                                StringPool* pool,
+                                ast_builder.Builder* builder,
+                                const keywords.Info* kwinfo,
+                                const Map* features,
+                                bool has_asserts)
 {
     Parser* p = calloc(1, sizeof(Parser));
     p.sm = sm;

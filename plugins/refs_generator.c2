@@ -242,7 +242,7 @@ fn void Generator.init(Generator* gen, source_mgr.SourceMgr* sm, StringPool* ast
     gen.refs = Refs.create(sm.getNumFiles());
     gen.lines.init();
     gen.curfile = nil;
-    gen.visitor = ast_visitor.create(gen, Generator.on_ref);
+    gen.visitor = Visitor.create(gen, Generator.on_ref);
 }
 
 fn void Generator.free(Generator* gen) {

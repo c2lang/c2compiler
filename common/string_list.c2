@@ -20,29 +20,29 @@ import string_pool { StringPool }
 import stdlib { malloc, free }
 import string { memset, memcpy, strcmp }
 
-public type List struct {
+public type StringList struct {
     StringPool* pool;
     u32* indexes;   // into pool
     u32 count;
     u32 capacity;
 }
 
-public fn void List.init(List* l, StringPool* pool) {
-    memset(l, 0, sizeof(List));
+public fn void StringList.init(StringList* l, StringPool* pool) {
+    memset(l, 0, sizeof(StringList));
     l.pool = pool;
     l.resize(16);
 }
 
-public fn void List.free(List* l) {
+public fn void StringList.free(StringList* l) {
     free(l.indexes);
     l.indexes = nil;
 }
 
-public fn void List.clear(List* l) {
+public fn void StringList.clear(StringList* l) {
     l.count = 0;
 }
 
-fn void List.resize(List* l, u32 capacity) {
+fn void StringList.resize(StringList* l, u32 capacity) {
     l.capacity = capacity;
     u32* indexes2 = malloc(capacity * sizeof(u32));
     if (l.count) {
@@ -52,7 +52,7 @@ fn void List.resize(List* l, u32 capacity) {
     l.indexes = indexes2;
 }
 
-public fn void List.add(List* l, u32 name_idx) {
+public fn void StringList.add(StringList* l, u32 name_idx) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
 
     l.indexes[l.count] = name_idx;
@@ -61,7 +61,7 @@ public fn void List.add(List* l, u32 name_idx) {
 
 // remove an index from the string list
 // return number of items removed.
-public fn u32 List.del(List* l, u32 idx) {
+public fn u32 StringList.del(StringList* l, u32 idx) {
     u32 j = 0;
     u32 count = l.count;
     for (u32 i = 0; i < count; i++) {
@@ -72,36 +72,36 @@ public fn u32 List.del(List* l, u32 idx) {
     return count - j;
 }
 
-public fn void List.addStr(List* l, const char* str) {
+public fn void StringList.addStr(StringList* l, const char* str) {
     l.add(l.pool.addStr(str, true));
 }
 
-public fn bool List.contains(const List* l, const char* name) @(unused) {
+public fn bool StringList.contains(const StringList* l, const char* name) @(unused) {
     for (u32 i=0; i<l.count; i++) {
         if (strcmp(l.pool.idx2str(l.indexes[i]), name) == 0) return true;
     }
     return false;
 }
 
-public fn bool List.contains_idx(const List* l, u32 idx) {
+public fn bool StringList.contains_idx(const StringList* l, u32 idx) {
     for (u32 i=0; i<l.count; i++) {
         if (l.indexes[i] == idx) return true;
     }
     return false;
 }
 
-public fn u32 List.length(const List* l) {
+public fn u32 StringList.length(const StringList* l) {
     return l.count;
 }
 
-public fn const char* List.get(const List* l, u32 idx) {
+public fn const char* StringList.get(const StringList* l, u32 idx) {
     return l.pool.idx2str(l.indexes[idx]);
 }
 
-public fn u32 List.get_idx(const List* l, u32 idx) {
+public fn u32 StringList.get_idx(const StringList* l, u32 idx) {
     return l.indexes[idx];
 }
 
-public fn u32* List.getData(List* l) {
+public fn u32* StringList.getData(StringList* l) {
     return l.indexes;
 }

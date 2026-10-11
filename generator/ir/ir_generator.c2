@@ -16,16 +16,16 @@
 module ir_generator;
 
 import ast { * }
-import array_init_sorter;
+import array_init_sorter { Sorter }
 import build_file;
 import component { Component }
 import console;
 import constants { MaxScopes, MaxCallArgs }
 import file_utils;
 import ir { * }
-import ir_context { SymbolId }
+import ir_context { SymbolId, IrContext }
 import ir_gen_locals { Locals, StackVar }
-import label_map;
+import label_map { LabelMap }
 import source_mgr { SourceMgr }
 import string_buffer { StringBuf }
 import string_pool { StringPool }
@@ -41,9 +41,9 @@ type JumpScope struct {
 }
 
 type Generator struct {
-    ir_context.Context* ctx;
+    ir_context.IrContext* ctx;
     const StringPool* names;
-    label_map.Map labels;
+    LabelMap labels;
 
     JumpScope[MaxScopes] scopes;
     u32 num_scopes;
@@ -82,7 +82,7 @@ fn void Generator.init(Generator* gen,
         build_info.linkerflags = buildInfo.getLinkerFlags();
     }
 
-    gen.ctx = ir_context.create(print_all, targetInfo, &build_info);
+    gen.ctx = IrContext.create(print_all, targetInfo, &build_info);
     gen.names = names;
     gen.labels.init();
     gen.target = target;
@@ -415,7 +415,7 @@ fn void Generator.emitArrayInit(Generator* gen, const Expr* e) {
 
     if (ile.hasDesignators()) {
         // TODO handle sparse arrays
-        array_init_sorter.Sorter sorter = array_init_sorter.create(num_values, array_size, elem_size);
+        Sorter sorter = Sorter.create(num_values, array_size, elem_size);
         const Expr** values = ile.getValues2();
         for (u32 i=0; i<num_values; i++) {
             const Expr* ie = values[i];
@@ -454,7 +454,7 @@ fn bool Generator.isExternal(Generator* gen, const Decl* d) {
 }
 
 fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
-    ir_context.Context* c = gen.ctx;
+    ir_context.IrContext* c = gen.ctx;
 
     gen.labels.clear();
     gen.locals.clear();
@@ -536,7 +536,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
 
 fn void on_var_decl(void* arg, VarDecl* vd) {
     Generator* gen = arg;
-    ir_context.Context* c = gen.ctx;
+    ir_context.IrContext* c = gen.ctx;
 
     Decl* d = (Decl*)vd;
     if (!d.isUsed()) return;

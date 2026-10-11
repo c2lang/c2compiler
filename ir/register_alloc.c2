@@ -18,7 +18,7 @@ module ir_tools;
 import ir_rpo { Rpo }
 import ir { * }
 import ir_interference_graph { InterferenceGraph }
-import ir_live_map;
+import ir_live_map { LiveMap, Iter }
 
 import stdio { printf }
 import stdlib { malloc, free }
@@ -31,8 +31,8 @@ type LiveVector struct {
 
     // TEMP HERE, should be placed in tools and created once
     InterferenceGraph* interferences;   // temp_id is index
-    ir_live_map.Map* live_in;     // blk_id is index
-    ir_live_map.Map* live_out;    // blk_id is index
+    LiveMap* live_in;     // blk_id is index
+    LiveMap* live_out;    // blk_id is index
 }
 
 fn void LiveVector.init(LiveVector* v, u32 num_blocks, u32 num_instr) {
@@ -44,10 +44,10 @@ fn void LiveVector.init(LiveVector* v, u32 num_blocks, u32 num_instr) {
     u16 num_regs = 8;  // always 8 for now (just for call return+args)
 
     // TODO this should be re-used between functions (also LiveVector)
-    v.interferences = ir_interference_graph.create(32*1024, (u16)num_instr, num_regs);
+    v.interferences = InterferenceGraph.create(32*1024, (u16)num_instr, num_regs);
     // TODO dynamically resize maps
-    v.live_in = ir_live_map.create(4096, (u16)num_blocks);
-    v.live_out = ir_live_map.create(4096, (u16)num_blocks);
+    v.live_in = LiveMap.create(4096, (u16)num_blocks);
+    v.live_out = LiveMap.create(4096, (u16)num_blocks);
 }
 
 fn void LiveVector.free(LiveVector* v) {
@@ -129,7 +129,7 @@ fn void LiveVector.storeIn(LiveVector* v, u16 blk_id) {
 }
 
 fn void LiveVector.merge(LiveVector* v, u32 blk_id) {
-    ir_live_map.Iter iter = v.live_in.getList((u16)blk_id);
+    Iter iter = v.live_in.getList((u16)blk_id);
     assert(iter.count + iter.count < v.cap);
     for (u32 i=0; i<iter.count; i++) {
         v.add(iter.ids[i]);
@@ -147,7 +147,7 @@ fn void LiveVector.dumpRanges(const LiveVector* v, u32 num_blocks) @(unused) {
     for (u32 i=0; i<num_blocks; i++) {
         printf("B%d\n", i);
         printf("  In [");
-        ir_live_map.Iter iter = v.live_in.getList((u16)i);
+        Iter iter = v.live_in.getList((u16)i);
         for (u32 j=0; j<iter.count; j++) printf(" %d", iter.ids[j]);
         printf(" ]\n  Out[");
         iter = v.live_out.getList((u16)i);
@@ -162,7 +162,7 @@ fn void Tools.createBlockInterferences(Tools* t, u32 blk_id, FunctionInfo* fi, L
     v.clear();
 
     // step 1 - start from LiveOut
-    ir_live_map.Iter iter = v.live_out.getList((u16)blk_id);
+    Iter iter = v.live_out.getList((u16)blk_id);
     for (u32 i=0; i<iter.count; i++) {
         v.addInterfere(iter.ids[i]);
     }
@@ -254,7 +254,7 @@ fn void Tools.checkBlockLiveness(Tools* t, u32 blk_id, LiveVector* v) {
 #if 0
     if (b.phi_source) {
         // copy from LiveIn (could be from Phi-instructions if earlier)
-        ir_live_map.Iter iter = v.live_out.getList((u16)blk_id);
+        Iter iter = v.live_out.getList((u16)blk_id);
         for (u32 i=0; i<iter.count; i++) {
             // TODO use function to access v.temps
             v.temps[v.count++] = iter.ids[i];
@@ -588,12 +588,12 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
         for (u32 i=0; i<num_blocks; i++) {
             Block* b = &blocks[i];
             u16 blk_id = (u16)i;
-            ir_live_map.Iter iter = v.live_out.getList(blk_id);
+            Iter iter = v.live_out.getList(blk_id);
             for (u32 d=0; d<2; d++) {
                 u16 dest = (u16)b.dests[d];
                 if (!dest) break;
 
-                ir_live_map.Iter iter2 = v.live_in.getList(dest);
+                Iter iter2 = v.live_in.getList(dest);
                 for (u32 j=0; j<iter2.count; j++) {
                     u16 var = iter2.ids[j];
                     if (!iter.contains(var)) {

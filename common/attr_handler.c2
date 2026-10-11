@@ -30,7 +30,7 @@ type Entry struct {
     void* arg;
 }
 
-public type Handler struct @(opaque) {
+public type AttrHandler struct @(opaque) {
     Diags* diags;   // no ownership
     StringPool* astPool;
     const Flags* warnings;
@@ -40,22 +40,22 @@ public type Handler struct @(opaque) {
     u32 capacity;
 }
 
-public fn Handler* create(Diags* diags,
-                          StringPool* astPool,
-                          const Flags* warnings) {
-    Handler* h = calloc(1, sizeof(Handler));
+public fn AttrHandler* AttrHandler.create(Diags* diags,
+                                          StringPool* astPool,
+                                          const Flags* warnings) {
+    AttrHandler* h = calloc(1, sizeof(AttrHandler));
     h.diags = diags;
     h.astPool = astPool;
     h.warnings = warnings;
     return h;
 }
 
-public fn void Handler.free(Handler* h) {
+public fn void AttrHandler.free(AttrHandler* h) {
     if (h.entries) free(h.entries);
     free(h);
 }
 
-public fn bool Handler.register(Handler* h, u32 name, AttrHandlerFn func, void* arg) {
+public fn bool AttrHandler.register(AttrHandler* h, u32 name, AttrHandlerFn func, void* arg) {
     // TODO check for duplicates
 
     if (h.count == h.capacity) {
@@ -76,7 +76,7 @@ public fn bool Handler.register(Handler* h, u32 name, AttrHandlerFn func, void* 
     return true;
 }
 
-public fn bool Handler.handle(Handler* h, Decl* d, const Attr* a) {
+public fn bool AttrHandler.handle(AttrHandler* h, Decl* d, const Attr* a) {
     for (u32 i=0; i<h.count; i++) {
         Entry* e = &h.entries[i];
         if (e.name == a.name) return e.func(e.arg, d, a);

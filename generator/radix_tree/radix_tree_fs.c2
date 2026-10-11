@@ -42,7 +42,7 @@ fn u32 Trimmer.add_node(Trimmer* tr, u32 num_children, u32 word_idx) {
     return node_idx;
 }
 
-public fn void Tree.trim(Tree* t) {
+public fn void RadixTree.trim(RadixTree* t) {
     if (!t.is_created) return;
 
     u32 used = t.used_nodes();
@@ -70,7 +70,7 @@ public fn void Tree.trim(Tree* t) {
     t.init_zones();
 }
 
-fn u32 Tree.trim_node(const Tree* t, u32 node_idx, Trimmer* tr) {
+fn u32 RadixTree.trim_node(const RadixTree* t, u32 node_idx, Trimmer* tr) {
     // copy nodes (except children)
     const Node* n = t.idx2node(node_idx);
     u32 word_idx = n.word_idx ? tr.add_word(t.idx2word(n.word_idx)) : 0;
@@ -110,7 +110,7 @@ fn void* section_load(InputStream* input, u32 minSize) {
     return section;
 }
 
-public fn bool Tree.store(Tree* t, i32 fd) {
+public fn bool RadixTree.store(RadixTree* t, i32 fd) {
     t.trim();
 
     if (!section_write(fd, t.nodes)) return false;
@@ -124,7 +124,7 @@ public type InputStream struct {
     u32 size;
 }
 
-public fn Tree* load(InputStream* input) {
+public fn RadixTree* load(InputStream* input) {
     Nodes* nodes = section_load(input, sizeof(Nodes));
     if (!nodes) return nil;
 
@@ -134,7 +134,7 @@ public fn Tree* load(InputStream* input) {
         return nil;
     }
 
-    Tree* t = calloc(1, sizeof(Tree));
+    RadixTree* t = calloc(1, sizeof(RadixTree));
     t.nodes = nodes;
     t.words = words;
     t.init_zones();
@@ -142,7 +142,7 @@ public fn Tree* load(InputStream* input) {
     return t;
 }
 
-fn u32 Tree.used_nodes(const Tree* t) {
+fn u32 RadixTree.used_nodes(const RadixTree* t) {
     u32 used = t.nodes.capacity - t.wasted;
     Element* cur = t.used_zones.next;
     while (cur != &t.used_zones) {

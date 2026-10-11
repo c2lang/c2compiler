@@ -20,25 +20,25 @@ import attr { Attr, AttrKind }
 import stdlib { calloc, malloc, free }
 import string { memcpy }
 
-public type Table struct @(opaque) {
+public type AttrTable struct @(opaque) {
     // use vector<Attr>
     u32 count;
     u32 capacity;
     Attr* attrs;
 }
 
-public fn Table* create() {
-    Table* t = calloc(1, sizeof(Table));
+public fn AttrTable* AttrTable.create() {
+    AttrTable* t = calloc(1, sizeof(AttrTable));
     t.resize(2);
     return t;
 }
 
-public fn void Table.free(Table* t) {
+public fn void AttrTable.free(AttrTable* t) {
     free(t.attrs);
     free(t);
 }
 
-fn void Table.resize(Table* t, u32 capacity) {
+fn void AttrTable.resize(AttrTable* t, u32 capacity) {
     t.capacity = capacity;
     Attr* attrs2 = malloc(capacity * sizeof(Attr));
     if (t.count) {
@@ -48,7 +48,7 @@ fn void Table.resize(Table* t, u32 capacity) {
     t.attrs = attrs2;
 }
 
-public fn void Table.add(Table* t, void* decl, const Attr* at) {
+public fn void AttrTable.add(AttrTable* t, void* decl, const Attr* at) {
     // IDEA: TODO search for other Attrs that are the same for section?
 
     if (t.count == t.capacity) t.resize(t.capacity * 2);
@@ -59,7 +59,7 @@ public fn void Table.add(Table* t, void* decl, const Attr* at) {
     t.count++;
 }
 
-public fn const Attr* Table.find(const Table* t, const void* decl, AttrKind kind) {
+public fn const Attr* AttrTable.find(const AttrTable* t, const void* decl, AttrKind kind) {
     for (u32 i=0; i<t.count; i++) {
         const Attr* a = &t.attrs[i];
         if (a.decl == decl && a.kind == kind) return a;

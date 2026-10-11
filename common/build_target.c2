@@ -98,7 +98,7 @@ public fn void PluginList.add(PluginList* l, u32 name, u32 options, SrcLoc loc) 
     l.count++;
 }
 
-public type Target struct @(opaque) {
+public type BuildTarget struct @(opaque) {
     u32 name_idx;       // index into auxPool
     SrcLoc loc;
     Flags warnings;
@@ -114,15 +114,15 @@ public type Target struct @(opaque) {
 
     Map features;
     List libs;
-    string_list.List exports;
+    string_list.StringList exports;
     PluginList plugins;
 
     FileList files;
     FileList asm_files;
 }
 
-public fn Target* create(u32 name_idx, SrcLoc loc, Kind kind, StringPool* pool) {
-    Target* t = calloc(1, sizeof(Target));
+public fn BuildTarget* BuildTarget.create(u32 name_idx, SrcLoc loc, Kind kind, StringPool* pool) {
+    BuildTarget* t = calloc(1, sizeof(BuildTarget));
     t.name_idx = name_idx;
     t.loc = loc;
     t.kind = kind;
@@ -134,7 +134,7 @@ public fn Target* create(u32 name_idx, SrcLoc loc, Kind kind, StringPool* pool) 
     return t;
 }
 
-public fn void Target.free(Target* t) {
+public fn void BuildTarget.free(BuildTarget* t) {
     t.exports.free();
     t.plugins.free();
     t.libs.free();
@@ -144,52 +144,52 @@ public fn void Target.free(Target* t) {
     free(t);
 }
 
-public fn u32 Target.getNameIdx(const Target* t) { return t.name_idx; }
+public fn u32 BuildTarget.getNameIdx(const BuildTarget* t) { return t.name_idx; }
 
-public fn void Target.setNameIdx(Target* t, u32 name_idx) {
+public fn void BuildTarget.setNameIdx(BuildTarget* t, u32 name_idx) {
     t.name_idx = name_idx;
 }
 
-public fn u32 Target.numFiles(const Target* t) { return t.files.getCount(); }
+public fn u32 BuildTarget.numFiles(const BuildTarget* t) { return t.files.getCount(); }
 
-public fn u32 Target.numAsmFiles(const Target* t) { return t.asm_files.getCount(); }
+public fn u32 BuildTarget.numAsmFiles(const BuildTarget* t) { return t.asm_files.getCount(); }
 
-public fn const Map* Target.getFeatures(const Target* t) { return &t.features; }
+public fn const Map* BuildTarget.getFeatures(const BuildTarget* t) { return &t.features; }
 
-public fn void Target.addFeature(Target* t, u32 feature) {
+public fn void BuildTarget.addFeature(BuildTarget* t, u32 feature) {
     t.features.addNameValue(feature, "1");
 }
 
-public fn void Target.removeFeature(Target* t, u32 feature) {
+public fn void BuildTarget.removeFeature(BuildTarget* t, u32 feature) {
     t.features.del(feature);
 }
 
-public fn void Target.addPlugin(Target* t, u32 name, u32 options, SrcLoc loc) {
+public fn void BuildTarget.addPlugin(BuildTarget* t, u32 name, u32 options, SrcLoc loc) {
     t.plugins.add(name, options, loc);
 }
 
-public fn const PluginList* Target.getPlugins(const Target* t) { return &t.plugins; }
+public fn const PluginList* BuildTarget.getPlugins(const BuildTarget* t) { return &t.plugins; }
 
 
-public fn void Target.disableAsserts(Target* t) { t.disable_asserts = true; }
+public fn void BuildTarget.disableAsserts(BuildTarget* t) { t.disable_asserts = true; }
 
-public fn bool Target.hasAsserts(const Target* t) { return !t.disable_asserts; }
+public fn bool BuildTarget.hasAsserts(const BuildTarget* t) { return !t.disable_asserts; }
 
 public type Visitor fn void (void* arg, u32 name, Kind kind);
 
-public fn void Target.visitLibs(const Target* t, Visitor visitor, void* arg) {
+public fn void BuildTarget.visitLibs(const BuildTarget* t, Visitor visitor, void* arg) {
     t.libs.visit(visitor, arg);
 }
 
-public fn bool Target.hasLib(const Target* t, u32 lib) {
+public fn bool BuildTarget.hasLib(const BuildTarget* t, u32 lib) {
     return t.libs.contains(lib);
 }
 
-public fn void Target.addLib(Target* t, u32 lib, Kind kind) {
+public fn void BuildTarget.addLib(BuildTarget* t, u32 lib, Kind kind) {
     t.libs.add(lib, kind);
 }
 
-public fn void Target.disableWarnings(Target* t) {
+public fn void BuildTarget.disableWarnings(BuildTarget* t) {
     t.warnings.no_unused = true;
     t.warnings.no_unused_variable = true;
     t.warnings.no_unused_struct_member = true;
@@ -207,7 +207,7 @@ public fn void Target.disableWarnings(Target* t) {
     t.warnings.no_deprecated = true;
 }
 
-public fn void Target.enableWarnings(Target* t) {
+public fn void BuildTarget.enableWarnings(BuildTarget* t) {
     t.warnings.no_unused = false;
     t.warnings.no_unused_variable = false;
     t.warnings.no_unused_struct_member = false;
@@ -225,23 +225,23 @@ public fn void Target.enableWarnings(Target* t) {
     t.warnings.no_deprecated = false;
 }
 
-public fn const Flags* Target.getWarnings(const Target* t) {
+public fn const Flags* BuildTarget.getWarnings(const BuildTarget* t) {
     return &t.warnings;
 }
 
-public fn Flags* Target.getWarnings2(Target* t) {
+public fn Flags* BuildTarget.getWarnings2(BuildTarget* t) {
     return &t.warnings;
 }
 
-public fn void Target.addExport(Target* t, u32 export) {
+public fn void BuildTarget.addExport(BuildTarget* t, u32 export) {
     t.exports.add(export);
 }
 
-public fn const string_list.List* Target.getExports(const Target* t) { return &t.exports; }
+public fn const string_list.StringList* BuildTarget.getExports(const BuildTarget* t) { return &t.exports; }
 
-public fn Kind Target.getKind(const Target* t) { return t.kind; }
+public fn Kind BuildTarget.getKind(const BuildTarget* t) { return t.kind; }
 
-public fn bool Target.needsMain(const Target* t) {
+public fn bool BuildTarget.needsMain(const BuildTarget* t) {
     switch (t.kind) {
     case Image:
     case Executable:
@@ -254,71 +254,71 @@ public fn bool Target.needsMain(const Target* t) {
     return false;
 }
 
-public fn bool Target.addFile(Target* t, u32 filename, SrcLoc loc) {
+public fn bool BuildTarget.addFile(BuildTarget* t, u32 filename, SrcLoc loc) {
     return t.files.add(filename, loc);
 }
 
-public fn const File* Target.getFile(const Target* t, u32 idx) {
+public fn const File* BuildTarget.getFile(const BuildTarget* t, u32 idx) {
     return t.files.get(idx);
 }
 
-public fn bool Target.addAsmFile(Target* t, u32 filename, SrcLoc loc) {
+public fn bool BuildTarget.addAsmFile(BuildTarget* t, u32 filename, SrcLoc loc) {
     return t.asm_files.add(filename, loc);
 }
 
-public fn const File* Target.getAsmFile(const Target* t, u32 idx) {
+public fn const File* BuildTarget.getAsmFile(const BuildTarget* t, u32 idx) {
     return t.asm_files.get(idx);
 }
 
-public fn void Target.setNoLibC(Target* t) {
+public fn void BuildTarget.setNoLibC(BuildTarget* t) {
     t.no_libc = true;
 }
 
-public fn bool Target.getNoLibC(const Target* t) {
+public fn bool BuildTarget.getNoLibC(const BuildTarget* t) {
     return t.no_libc;
 }
 
-public fn BackEndKind Target.getBackEnd(const Target* t) {
+public fn BackEndKind BuildTarget.getBackEnd(const BuildTarget* t) {
     return t.backend;
 }
 
-public fn bool Target.hasBackEnd(const Target* t) {
+public fn bool BuildTarget.hasBackEnd(const BuildTarget* t) {
     return t.backend != None;
 }
 
-public fn void Target.setBackEnd(Target* t, BackEndKind kind) {
+public fn void BuildTarget.setBackEnd(BuildTarget* t, BackEndKind kind) {
     t.backend = kind;
 }
 
-public fn void Target.setNoBuild(Target* t) {
+public fn void BuildTarget.setNoBuild(BuildTarget* t) {
     t.backend_no_build = true;
 }
 
-public fn bool Target.getNoBuild(const Target* t) {
+public fn bool BuildTarget.getNoBuild(const BuildTarget* t) {
     return t.backend_no_build;
 }
 
-public fn void Target.setFastBuild(Target* t) {
+public fn void BuildTarget.setFastBuild(BuildTarget* t) {
     t.backend_fast = true;
 }
 
-public fn bool Target.getFastBuild(const Target* t) {
+public fn bool BuildTarget.getFastBuild(const BuildTarget* t) {
     return t.backend_fast;
 }
 
-public fn void Target.setOptional(Target* t) {
+public fn void BuildTarget.setOptional(BuildTarget* t) {
     t.optional = true;
 }
 
-public fn bool Target.getOptional(const Target* t) {
+public fn bool BuildTarget.getOptional(const BuildTarget* t) {
     return t.optional;
 }
 
-public fn void Target.setDisabled(Target* t) {
+public fn void BuildTarget.setDisabled(BuildTarget* t) {
     t.disabled = true;
 }
 
-public fn bool Target.getDisabled(const Target* t) {
+public fn bool BuildTarget.getDisabled(const BuildTarget* t) {
     return t.disabled;
 }
 

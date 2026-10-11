@@ -102,7 +102,7 @@ public fn i32 main(i32 argc, const char** argv)
                               output_dir, opts.target, Refs_filename);
         refsfile = refsname;
     } else {
-        Finder* finder = refs_finder.create(output_dir, Refs_filename);
+        Finder* finder = Finder.create(output_dir, Refs_filename);
         u32 count = finder.search(nil);
 
         if (count == 0) {
@@ -125,7 +125,7 @@ public fn i32 main(i32 argc, const char** argv)
         return -1;
     }
 
-    Replacer* r = replacer.create(opts.newname);
+    Replacer* r = Replacer.create(opts.newname);
 
     u16 old_len = 0;
     if (opts.symbolname) {

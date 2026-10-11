@@ -18,7 +18,7 @@ module plugin_info;
 import ast;
 import ast_builder;
 import ast_context;
-import build_target { Target }
+import build_target { BuildTarget }
 import component;
 import console;
 import diagnostics;
@@ -34,7 +34,7 @@ public type AddSourceFn fn void (void* arg, const char* name, StringBuf* content
 public type Info struct {
     SourceMgr* sm;    // no ownership
     diagnostics.Diags* diags;    // no ownership
-    Target* target;
+    BuildTarget* target;
 
     component.List* components;
     StringPool* astPool;

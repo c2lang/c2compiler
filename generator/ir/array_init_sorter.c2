@@ -33,7 +33,7 @@ public type Sorter struct {
     u32 elem_size;
 }
 
-public fn Sorter create(u32 allocate, u32 array_size, u32 elem_size) {
+public fn Sorter Sorter.create(u32 allocate, u32 array_size, u32 elem_size) {
     assert(array_size != 0);
     Sorter s = {}
     s.array_size = array_size;

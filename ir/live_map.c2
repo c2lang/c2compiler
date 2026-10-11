@@ -46,18 +46,18 @@ type Variable struct {
 }
 static_assert(10, sizeof(Variable));
 
-public type Map struct @(opaque) {
+public type LiveMap struct @(opaque) {
     u16* map;
     Variable* variables;
     u32 num_variables;
     u32 max_elems;   // only used for dump
     Arena[NumArenas] arenas;
 }
-static_assert(168, sizeof(Map));
+static_assert(168, sizeof(LiveMap));
 
 // Note: map size must be a multiple of largest arena size (so 256)
-public fn Map* create(u32 max_elems, u16 num_variables) {
-    Map* g = calloc(1, sizeof(Map));
+public fn LiveMap* LiveMap.create(u32 max_elems, u16 num_variables) {
+    LiveMap* g = calloc(1, sizeof(LiveMap));
     g.map = malloc(max_elems * sizeof(u16));
     g.variables = calloc(num_variables, sizeof(Variable));
     g.num_variables = num_variables;
@@ -80,7 +80,7 @@ public fn Map* create(u32 max_elems, u16 num_variables) {
     return g;
 }
 
-public fn void Map.free(Map* g) {
+public fn void LiveMap.free(LiveMap* g) {
     free(g.map);
     free(g.variables);
     free(g);
@@ -94,7 +94,7 @@ fn u32 findArena(u16 capacity) {
     return 0;
 }
 
-fn u16 Map.removeVariableFromArena(Map* g, Arena* a, u16 var_idx) {
+fn u16 LiveMap.removeVariableFromArena(LiveMap* g, Arena* a, u16 var_idx) {
     // Replace hole of removed area with last element. Options: (X=removed, L=last, _=other)
     // [X] or [_X], no hole, just remove
     // [XL] or [_XL], hole, but no need to fix linked-list after removal
@@ -160,7 +160,7 @@ fn u16 Map.removeVariableFromArena(Map* g, Arena* a, u16 var_idx) {
     return last_idx;
 }
 
-fn void Map.addVariableToArenaHead(Map* g, Arena* a, u16 var_idx) {
+fn void LiveMap.addVariableToArenaHead(LiveMap* g, Arena* a, u16 var_idx) {
     Variable* r = &g.variables[var_idx];
     r.prev = NULL;
     r.next = a.first_var;
@@ -174,7 +174,7 @@ fn void Map.addVariableToArenaHead(Map* g, Arena* a, u16 var_idx) {
     a.first_var = var_idx;
 }
 
-fn void Map.addVariableToArenaTail(Map* g, Arena* a, u16 var_idx) {
+fn void LiveMap.addVariableToArenaTail(LiveMap* g, Arena* a, u16 var_idx) {
     Variable* r = &g.variables[var_idx];
     r.prev = a.last_var;
     r.next = NULL;
@@ -188,7 +188,7 @@ fn void Map.addVariableToArenaTail(Map* g, Arena* a, u16 var_idx) {
     a.last_var = var_idx;
 }
 
-public fn void Map.addFiltered(Map* g, u16 var1, u16 var2) {
+public fn void LiveMap.addFiltered(LiveMap* g, u16 var1, u16 var2) {
     // check for duplicates
     const Variable* r = &g.variables[var1];
     u32 idx = r.start + r.count;
@@ -202,7 +202,7 @@ public fn void Map.addFiltered(Map* g, u16 var1, u16 var2) {
     g.add(var1, var2);
 }
 
-public fn void Map.add(Map* g, u16 var1, u16 var2) {
+public fn void LiveMap.add(LiveMap* g, u16 var1, u16 var2) {
     Variable* r = &g.variables[var1];
 
     if (r.count < r.capacity) {
@@ -308,12 +308,12 @@ public fn void Iter.dump(const Iter* iter) @(unused) {
     printf("\n");
 }
 
-public fn Iter Map.getList(const Map* g, u16 var_idx) {
+public fn Iter LiveMap.getList(const LiveMap* g, u16 var_idx) {
     const Variable* r = &g.variables[var_idx];
     return { .count = r.count, .ids = &g.map[r.start] }
 }
 
-fn u16 Map.shiftArenaRight(Map* g, u32 arena_idx) {
+fn u16 LiveMap.shiftArenaRight(LiveMap* g, u32 arena_idx) {
     u16 cap = Caps[arena_idx];
     //printf("  SHIFT ARENA %d  cap %d\n", arena_idx, cap);
     Arena* a = &g.arenas[arena_idx];
@@ -369,7 +369,7 @@ fn void print_idx(u16 idx) {
     else printf("%4d", idx);
 }
 
-public fn void Map.dump(const Map* g, bool verbose) @(unused) {
+public fn void LiveMap.dump(const LiveMap* g, bool verbose) @(unused) {
     if (verbose) {
         u32 mem_variables = g.num_variables * sizeof(Variable);
         u32 mem_map = g.max_elems * sizeof(u16);
