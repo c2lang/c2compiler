@@ -696,10 +696,11 @@ public fn void Refs.findRefUses(const Refs* r, const Dest* origin, RefUsesFn fun
     r.loc2uses(dest_loc, func, arg, symbol_len);
 }
 
-public fn void Refs.findSymbolUses(const Refs* r, const char* symbol_name, RefUsesFn func, void* arg, u16* symbol_len) {
+public fn void Refs.findSymbolUses(const Refs* r, const char* symbol_name, RefUsesFn func, void* arg) {
     u32 src_loc = NOT_FOUND;
     r.symbols.get_value(symbol_name, &src_loc);
-    r.loc2uses(src_loc, func, arg, symbol_len);
+    u16 symbol_len = 0;     // not used
+    r.loc2uses(src_loc, func, arg, &symbol_len);
 }
 
 fn void Refs.dump_links(const Refs* r, bool verbose) {

@@ -87,6 +87,17 @@ fn void use_fn(void* arg, const Dest* res) {
     r.add(res.filename, res.line, res.col);
 }
 
+fn u16 find_len(const char* symbol) {
+    u16 len = 0;
+    const char* cp = symbol;
+    while (*cp) {
+        len++;
+        if (*cp == '.') len = 0;
+        cp++;
+    }
+    return len;
+}
+
 public fn i32 main(i32 argc, const char** argv)
 {
     parse_options(argc, argv);
@@ -130,11 +141,14 @@ public fn i32 main(i32 argc, const char** argv)
 
     u16 old_len = 0;
     if (opts.symbolname) {
-        refs.findSymbolUses(opts.symbolname, use_fn, r, &old_len);
+        refs.findSymbolUses(opts.symbolname, use_fn, r);
+        old_len = find_len(opts.symbolname);
     } else {
         Dest origin = { .filename=opts.filename, .line=opts.line, .col=opts.column }
         refs.findRefUses(&origin, use_fn, r, &old_len);
     }
+
+    // when replacing module.symbol, old len should be strlen(symbol)
     i32 ret = r.replace(old_len);
     refs.free();
     r.free();

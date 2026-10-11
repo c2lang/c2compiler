@@ -261,8 +261,7 @@ fn bool check_refs(const char* refsfile, RefUsesFn on_result, void* arg) {
         }
     } else {    // lookup <symbol>
         if (opts.reverse) {
-            u16 symbol_len = 0;
-            r.findSymbolUses(opts.symbolname, on_result, arg, &symbol_len);
+            r.findSymbolUses(opts.symbolname, on_result, arg);
         } else {
             Dest result = r.findSymbol(opts.symbolname);
             on_result(arg, &result);
