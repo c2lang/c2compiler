@@ -16,8 +16,9 @@
 module file_utils;
 
 import c_errno { errno, ENAMETOOLONG, EEXIST, EINVAL }
-import string { pstrcpy, strerror }
 import stdio { vsnprintf }
+import stdlib { getenv }
+import string { pstrcpy, strerror, strlen }
 import sys_stat { Stat, stat, S_IFMT, S_IFREG, S_IFDIR, mkdir }
 import unistd { getcwd }
 
@@ -57,7 +58,7 @@ fn usize copy_dirname(char* buf, usize size, const char* dir) {
 // if the path fits in the destination array, a pointer to it is returned.
 // otherwise the path is truncated, errno is set to ENAMETOOLONG and nil is returned
 // both the filename and the extension can be nil or omitted
-public fn const char* make_path(char* buf, usize size, const char* path, const char* filename = nil, const char* ext = nil) {
+public fn char* make_path(char* buf, usize size, const char* path, const char* filename = nil, const char* ext = nil) {
     usize pos = 0;
     if (filename) {
         if (*filename != '/') pos = copy_dirname(buf, size, path);
@@ -74,7 +75,7 @@ public fn const char* make_path(char* buf, usize size, const char* path, const c
 // construct a path in a buffer from a directory name, a subdirectory name and a filename
 // if the path fits in the destination array, a pointer to it is returned.
 // otherwise the path is truncated, errno is set to ENAMETOOLONG and nil is returned
-fn const char* make_path3(char* buf, usize size, const char* dir, const char* subdir, const char* filename) {
+fn char* make_path3(char* buf, usize size, const char* dir, const char* subdir, const char* filename) {
     usize pos = 0;
     if (*filename != '/') {
         if (*subdir != '/') pos = copy_dirname(buf, size, dir);
@@ -84,6 +85,72 @@ fn const char* make_path3(char* buf, usize size, const char* dir, const char* su
     if (pos < size) return buf;
     errno = ENAMETOOLONG;
     return nil;
+}
+
+// construct an absolute path in a buffer from a pathname
+// prepend home directory if pathname starts with '~/'
+// prepend current directory unless pathname starts with '/'
+// remove redundant '/./' and squeeze '/xxx/../' occurrences
+fn char* make_abs_path(char* buf, usize size, const char* path) {
+    usize pos = 0;
+    if (*path == '~' && (!path[1] || path[1] == '/')) {
+        char *homedir = getenv("HOME");
+        if (homedir) {
+            pos = pstrcpy(buf, size, homedir);
+            path++;
+            if (*path && pos && buf[pos - 1] == '/') path++;
+            pos = pstrcpy(buf + pos, size - pos, path);
+        }
+    } else
+    if (*path != '/') {
+        if (getcwd(buf, size)) {
+            pos = strlen(buf);
+            if (pos && buf[pos - 1] != '/') {
+                pos += pstrcpy(buf + pos, size - pos, "/");
+            }
+            pos += pstrcpy(buf + pos, size - pos, path);
+        }
+    }
+    if (!pos) {
+        pos = pstrcpy(buf, size, path);
+    }
+    char *p = buf;
+    char *q = buf;
+    for (;;) {
+        if (*p == '/' && p[1] == '.') {
+            if (!p[2] || p[2] == '/') {
+                // replace '/./' with '/'
+                p += 2;
+                continue;
+            }
+            if (p[2] == '.') {
+                // replace '/xxx/../' with '/'
+                if (!p[3] || p[3] == '/') {
+                    while (q > buf && *--q != '/') continue;
+                    p += 3;
+                    continue;
+                }
+            }
+        }
+        if (!(*q++ = *p++)) break;
+    }
+    if (size > 1 && !*buf) {
+        buf[0] = '/';
+        buf[1] = '\0';
+    }
+    return buf;
+}
+
+fn char* parent_dir(char* path) {
+    // truncate path to its parent directory
+    // return pointer past the trailing '/'
+    // return nil if no parent directory
+    char *tail = nil;
+    for (char *p = path; *p; p++) {
+        if (*p == '/' && p[1]) tail = p + 1;
+    }
+    if (tail) *tail = '\0';
+    return tail;
 }
 
 // returns 0 on success, errno on failure
@@ -180,6 +247,11 @@ public fn bool Pathname.init_cwd(Pathname* file) @(unused) {
     return true;
 }
 
+public fn bool Pathname.init_abs(Pathname* file, const char* path) @(unused) {
+    make_abs_path(file.path, countof(file.path), path);
+    return true;
+}
+
 public fn void Pathname.deinit(Pathname* file) @(unused) {}
 
 public fn const char* Pathname.get_extension(const Pathname* file) @(unused) {
@@ -188,6 +260,10 @@ public fn const char* Pathname.get_extension(const Pathname* file) @(unused) {
 
 public fn const char* Pathname.get_basename(const Pathname* file) @(unused) {
     return get_basename(file.path);
+}
+
+public fn const char* Pathname.parent_dir(Pathname* file) @(unused) {
+    return parent_dir(file.path);
 }
 
 public fn bool Pathname.exists(const Pathname* file) @(unused) {
