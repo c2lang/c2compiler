@@ -16,6 +16,7 @@
 module arch_amd64;
 
 import ir_tools { Tools, Target }
+import string_buffer { Buf }
 import ir;
 
 /*
@@ -34,9 +35,16 @@ fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
 fn void applyCallingConv(Tools* t, ir.FunctionInfo* f) {
 }
 
+fn void generateAsm(Buf* out, const char* name, const ir.FunctionInfo* f, bool is_external) {
+}
+
 const Target ArchInfo = {
     .applyCallingConv = applyCallingConv,
     .instructionSelection = instructionSelection,
+    .generateAsm = generateAsm,
+    .instr_names = nil, // TODO
+    .num_instr = 0,     // TODO
+    .register_names = nil,
     .num_args_in_regs = 6,
     .num_regs = 17,
     .num_temps = 9,
