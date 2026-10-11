@@ -21,7 +21,7 @@ import ctype { isspace, isalnum }
 import file_list { FileList, File }
 import source_mgr { SourceMgr }
 import src_loc { SrcLoc }
-import string_list;
+import string_list { StringList }
 import string_pool { StringPool }
 import warning_flags { Flags }
 
@@ -97,7 +97,7 @@ type Parser struct {
     Recipe* recipe;
     StringPool* pool;
     SourceMgr* sm;
-    string_list.StringList global_configs;
+    StringList global_configs;
 
     const char* input_start;
     const char* cur;

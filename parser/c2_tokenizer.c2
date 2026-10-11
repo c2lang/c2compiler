@@ -19,7 +19,7 @@ import constants;
 import keywords { Info }
 import src_loc { SrcLoc }
 import string_buffer { StringBuf }
-import string_map { Map }
+import string_map { StringMap }
 import string_pool { StringPool }
 import token { Token, Kind }
 import utf8;
@@ -270,7 +270,7 @@ public type Tokenizer struct {
     // Feature handling
     Feature[constants.MaxFeatureDepth+1] feature_stack;
     u32 feature_count;
-    const Map* features;
+    const StringMap* features;
     bool raw_mode;  // also emit comments and invalid characters
     bool stop_at_eol; // restrict lexing to single line for preprocessor
     u8 c_mode;      // inside a module extern "C" or an extern "C" {} block
@@ -285,7 +285,7 @@ public fn void Tokenizer.init(Tokenizer* t,
                               const char* input,
                               SrcLoc loc_start,
                               const Info* kwinfo,
-                              const Map* features,
+                              const StringMap* features,
                               ErrorFn on_error,
                               void* on_error_arg,
                               bool raw_mode)

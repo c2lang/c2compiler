@@ -18,7 +18,7 @@ module manifest;
 import component { Component }
 import console;
 import source_mgr { SourceMgr }
-import string_list;
+import string_list { StringList }
 import string_pool { StringPool }
 import yaml { Node, Parser, Iter }
 
@@ -40,7 +40,7 @@ fn bool getYamlInfo(Parser* parser,
                     StringPool* astPool,
                     StringPool* auxPool,
                     Component* comp,
-                    string_list.StringList* mods)
+                    StringList* mods)
 {
     /* const Node* lib_lang = */ get_checked(parser, "info.language");
     // const Node* lib_type = get_checked(parser, "info.type");
@@ -150,7 +150,7 @@ public fn bool parse(SourceMgr* sm,
                      StringPool* astPool,
                      StringPool* auxPool,
                      Component* comp,
-                     string_list.StringList* mods)
+                     StringList* mods)
 {
     const char* data = sm.get_content(file_id);
     //u32 loc_start = sm.get_offset(file_id);

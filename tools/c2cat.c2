@@ -22,7 +22,7 @@ import file_utils;
 import keywords;
 import src_loc { SrcLoc }
 import string_buffer { StringBuf }
-import string_map;
+import string_map { StringMap }
 import string_pool { StringPool }
 import token { Kind, Token }
 
@@ -294,7 +294,7 @@ fn i32 c2cat_file(const char* filename, bool use_color, bool use_color2, bool ch
     const char* input = file.data();
     u32 file_size = file.data_size();
     keywords.Info kwinfo.init(pool);
-    string_map.Map features.init(pool);
+    StringMap features.init(pool);
 
     C2cat ctx = {
         .pool = pool,

@@ -21,7 +21,7 @@ import c2refs { Refs }
 import component;
 import console;
 import file_utils;
-import source_mgr;
+import source_mgr { SourceMgr }
 import string_pool { StringPool }
 import string_utils { endsWith }
 
@@ -109,7 +109,7 @@ fn void LineCounter.handle(LineCounter* l, u32 size, const char* content) {
 
 type Generator struct {
     StringPool* astPool;
-    source_mgr.SourceMgr* sm;
+    SourceMgr* sm;
     Refs* refs;
     const char* curfile;
     Visitor* visitor;
@@ -236,7 +236,7 @@ fn void Generator.on_file(void* arg, u32 start, u32 size, const char* filename, 
     gen.refs.add_file(start, size, filename, len_start, len_count);
 }
 
-fn void Generator.init(Generator* gen, source_mgr.SourceMgr* sm, StringPool* astPool) {
+fn void Generator.init(Generator* gen, SourceMgr* sm, StringPool* astPool) {
     gen.astPool = astPool;
     gen.sm = sm;
     gen.refs = Refs.create(sm.getNumFiles());
@@ -251,7 +251,7 @@ fn void Generator.free(Generator* gen) {
     gen.refs.free();
 }
 
-public fn void generate(source_mgr.SourceMgr* sm, StringPool* astPool, const char* output_dir, component.List* comps, const char* filename) {
+public fn void generate(SourceMgr* sm, StringPool* astPool, const char* output_dir, component.List* comps, const char* filename) {
     Generator gen.init(sm, astPool);
 
     // for each file, store:  start, size, filename. Store line lengths

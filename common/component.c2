@@ -22,7 +22,7 @@ import file_list { FileList, File }
 import module_list;
 import src_loc { SrcLoc }
 import string_buffer { StringBuf }
-import string_list;
+import string_list { StringList }
 import string_pool { StringPool }
 
 import stdio { puts }
@@ -58,7 +58,7 @@ public type Component struct @(opaque) {
     StringPool* auxPool;      // no ownership
 
     module_list.List mods;
-    string_list.StringList deps;
+    StringList deps;
     FileList files;   // only for (external) source libraries
 }
 
@@ -250,7 +250,7 @@ public fn void Component.addDep(Component* c, u32 dep_idx) {
     c.deps.add(dep_idx);
 }
 
-public fn string_list.StringList* Component.getDeps(Component* c) {
+public fn StringList* Component.getDeps(Component* c) {
     return &c.deps;
 }
 

@@ -30,7 +30,7 @@ import manifest_writer;
 import process_utils;
 import source_mgr { SourceMgr }
 import string_buffer { StringBuf }
-import string_list;
+import string_list { StringList }
 import string_pool { StringPool }
 import string_utils;
 import target_info;
@@ -88,7 +88,7 @@ type Generator struct {
     u32 need_const_expr;
     FunctionDecl* cur_function; // needed for assert
     const char* mod_name; // set per module
-    string_list.StringList imports;  // used to filter out duplicate imports (from different ASTs)
+    StringList imports;  // used to filter out duplicate imports (from different ASTs)
     DeclList decls;
     dep_finder.Finder deps;
 
@@ -107,8 +107,8 @@ type Generator struct {
     linked_list.Element header_fragments; // for header-file (if used)
 
     TraceCallList calls;
-    StringList filenames;
-    StringList funcnames;
+    StringHashMap filenames;
+    StringHashMap funcnames;
 }
 
 fn const char* Generator.idx2name(const Generator* gen, u32 name_idx) {
@@ -1282,7 +1282,7 @@ public fn void generate(StringPool* astPool,
                         const target_info.Info* targetInfo,
                         component.List* comps,
                         Decl* mainFunc,
-                        string_list.StringList* asm_files,
+                        StringList* asm_files,
                         bool enable_asserts,
                         bool fast_build, bool asan, bool msan, bool ubsan,
                         bool test_mode, bool trace_calls)

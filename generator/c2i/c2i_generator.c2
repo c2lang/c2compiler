@@ -20,14 +20,14 @@ import component { Component }
 import console;
 import file_utils;
 import string_buffer { StringBuf }
-import string_list;
+import string_list { StringList }
 import string_pool { StringPool }
 
 type Generator struct {
     StringPool* astPool;
     StringBuf* out;
     const char* output_dir;
-    string_list.StringList imports;  // used to filter out duplicate imports (from different ASTs)
+    StringList imports;  // used to filter out duplicate imports (from different ASTs)
     Module* mod;
     const char* mod_name;
     bool in_body;

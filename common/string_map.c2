@@ -20,7 +20,7 @@ import string_pool { StringPool }
 import stdlib { malloc, free }
 import string { memset, memcpy, strcmp }
 
-public type Map struct {
+public type StringMap struct {
     StringPool* pool;
     u32* names;    // into pool
     u32* values;   // into pool
@@ -28,13 +28,13 @@ public type Map struct {
     u32 capacity;
 }
 
-public fn void Map.init(Map* m, StringPool* pool) {
-    memset(m, 0, sizeof(Map));
+public fn void StringMap.init(StringMap* m, StringPool* pool) {
+    memset(m, 0, sizeof(StringMap));
     m.pool = pool;
     m.resize(16);
 }
 
-public fn void Map.free(Map* m) {
+public fn void StringMap.free(StringMap* m) {
     free(m.names);
     free(m.values);
     m.names = nil;
@@ -43,11 +43,11 @@ public fn void Map.free(Map* m) {
     m.capacity = 0;
 }
 
-public fn void Map.clear(Map* m) @(unused) {
+public fn void StringMap.clear(StringMap* m) @(unused) {
     m.count = 0;
 }
 
-fn void Map.resize(Map* m, u32 capacity) {
+fn void StringMap.resize(StringMap* m, u32 capacity) {
     m.capacity = capacity;
     u32* names2 = malloc(capacity * sizeof(u32));
     u32* values2 = malloc(capacity * sizeof(u32));
@@ -61,7 +61,7 @@ fn void Map.resize(Map* m, u32 capacity) {
     m.values = values2;
 }
 
-public fn void Map.add(Map* m, u32 name_idx, u32 value_idx) @(unused) {
+public fn void StringMap.add(StringMap* m, u32 name_idx, u32 value_idx) @(unused) {
     if (m.count == m.capacity) m.resize(m.capacity * 2);
 
     m.names[m.count] = name_idx;
@@ -71,7 +71,7 @@ public fn void Map.add(Map* m, u32 name_idx, u32 value_idx) @(unused) {
 
 // remove an index from the string map
 // return number of items removed.
-public fn u32 Map.del(Map* m, u32 name_idx) {
+public fn u32 StringMap.del(StringMap* m, u32 name_idx) {
     u32 j = 0;
     u32 count = m.count;
     for (u32 i = 0; i < count; i++) {
@@ -85,11 +85,11 @@ public fn u32 Map.del(Map* m, u32 name_idx) {
     return count - j;
 }
 
-public fn void Map.addStr(Map* m, const char* str, const char* val) @(unused) {
+public fn void StringMap.addStr(StringMap* m, const char* str, const char* val) @(unused) {
     m.add(m.pool.addStr(str, true), m.pool.addStr(val, true));
 }
 
-public fn void Map.addNameValue(Map* m, u32 idx, const char* def) {
+public fn void StringMap.addNameValue(StringMap* m, u32 idx, const char* def) {
     const char* str = m.pool.idx2str(idx);
     u32 len;
     const char* value = def;
@@ -105,7 +105,7 @@ public fn void Map.addNameValue(Map* m, u32 idx, const char* def) {
     m.add(idx, m.pool.addStr(value, true));
 }
 
-public fn bool Map.contains(const Map* m, const char* name, u32* indexp = nil) {
+public fn bool StringMap.contains(const StringMap* m, const char* name, u32* indexp = nil) {
     for (u32 i = 0; i < m.count; i++) {
         if (!strcmp(m.pool.idx2str(m.names[i]), name)) {
             if (indexp) *indexp = i;
@@ -115,7 +115,7 @@ public fn bool Map.contains(const Map* m, const char* name, u32* indexp = nil) {
     return false;
 }
 
-public fn bool Map.contains_idx(const Map* m, u32 name_idx, u32* indexp = nil) @(unused) {
+public fn bool StringMap.contains_idx(const StringMap* m, u32 name_idx, u32* indexp = nil) @(unused) {
     for (u32 i = 0; i < m.count; i++) {
         if (m.names[i] == name_idx) {
             if (indexp) *indexp = i;
@@ -125,30 +125,30 @@ public fn bool Map.contains_idx(const Map* m, u32 name_idx, u32* indexp = nil) @
     return false;
 }
 
-public fn u32 Map.length(const Map* m) @(unused) {
+public fn u32 StringMap.length(const StringMap* m) @(unused) {
     return m.count;
 }
 
-public fn u32 Map.getNameIdx(const Map* m, u32 i) @(unused) {
+public fn u32 StringMap.getNameIdx(const StringMap* m, u32 i) @(unused) {
     return m.names[i];
 }
 
-public fn const char* Map.getName(const Map* m, u32 i) @(unused) {
+public fn const char* StringMap.getName(const StringMap* m, u32 i) @(unused) {
     return m.pool.idx2str(m.names[i]);
 }
 
-public fn u32 Map.getValueIdx(const Map* m, u32 i) @(unused) {
+public fn u32 StringMap.getValueIdx(const StringMap* m, u32 i) @(unused) {
     return m.values[i];
 }
 
-public fn const char* Map.getValue(const Map* m, u32 i) @(unused) {
+public fn const char* StringMap.getValue(const StringMap* m, u32 i) @(unused) {
     return m.pool.idx2str(m.values[i]);
 }
 
-public fn u32* Map.getNames(const Map* m) @(unused) {
+public fn u32* StringMap.getNames(const StringMap* m) @(unused) {
     return m.names;
 }
 
-public fn u32* Map.getValues(const Map* m) @(unused) {
+public fn u32* StringMap.getValues(const StringMap* m) @(unused) {
     return m.values;
 }

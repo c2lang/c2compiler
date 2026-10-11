@@ -21,7 +21,7 @@ import console;
 import file_utils { Max_path }
 import module_list;
 import module_sorter;
-import string_list;
+import string_list { StringList }
 import unused_checker;
 import utils;
 import warning_flags { Flags }
@@ -121,7 +121,7 @@ fn bool Compiler.analyseSourceImports(Compiler* c) {
         c.allmodules.clear();
         c.allmodules.addList(comp.getModules(), false);
 
-        string_list.StringList* deps = comp.getDeps();
+        StringList* deps = comp.getDeps();
         u32 num_deps = deps.length();
         const u32* dep_names = deps.getData();
         for (u32 j = 0; j < num_deps; j++) {
@@ -186,7 +186,7 @@ fn void Compiler.handleImport(void* arg, ast.ImportDecl* id) {
 }
 
 fn bool Compiler.check_exports(Compiler* c) {
-    const string_list.StringList* exports = c.target.getExports();
+    const StringList* exports = c.target.getExports();
 
     // library targets must have exported symbols, not perse whole modules (plugins only export single symbol)
     if (c.is_image && exports.length()) {

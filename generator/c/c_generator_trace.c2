@@ -60,7 +60,7 @@ fn void TraceCallList.free(TraceCallList* cl) {
     }
 }
 
-type StringList struct {
+type StringHashMap struct {
     u32* hash_array;
     u32 hash_count;
     u32 hash_capacity;
@@ -71,22 +71,22 @@ type StringList struct {
     u32 last_index;
 }
 
-fn void StringList.free(StringList* sl) {
+fn void StringHashMap.free(StringHashMap* sl) {
     if (sl.strings) {
         for (u32 i = 0; i < sl.string_count; i++) {
             free(sl.strings[i]);
         }
         free(sl.strings);
         free(sl.hash_array);
-        memset(sl, 0, sizeof(StringList));
+        memset(sl, 0, sizeof(StringHashMap));
     }
 }
 
-fn u32 StringList.length(StringList* sl) {
+fn u32 StringHashMap.length(StringHashMap* sl) {
     return sl.string_count;
 }
 
-fn const char* StringList.get(const StringList* sl, u32 i) {
+fn const char* StringHashMap.get(const StringHashMap* sl, u32 i) {
     return sl.strings[i];
 }
 
@@ -94,7 +94,7 @@ const u32 HASH_INITIAL = 13;
 const u32 HASH_PRIME = 17;
 const u32 HASH_BUCKETS = 256;
 
-fn u32 StringList.add(StringList* sl, const char* s, bool check_last) {
+fn u32 StringHashMap.add(StringHashMap* sl, const char* s, bool check_last) {
     if (check_last && s == sl.last_string) return sl.last_index;
     sl.last_string = s;
 

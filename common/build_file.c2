@@ -16,7 +16,7 @@
 module build_file;
 
 import src_loc { SrcLoc }
-import string_list;
+import string_list { StringList }
 import string_pool { StringPool }
 
 import stdlib { malloc, free }
@@ -42,9 +42,9 @@ public type Info struct {
     u32 asmflags;
     u32 linkerscript;
 
-    string_list.StringList lib_dirs;
-    string_list.StringList lib_dirs_bin;
-    string_list.StringList plugin_dirs;
+    StringList lib_dirs;
+    StringList lib_dirs_bin;
+    StringList plugin_dirs;
 
     Plugin* plugins; // can be nil
     u32 plugin_count;
@@ -111,15 +111,15 @@ public fn const char* Info.getLinkerScript(const Info* info) {
 }
 */
 
-public fn const string_list.StringList* Info.getLibDirs(const Info* info) {
+public fn const StringList* Info.getLibDirs(const Info* info) {
     return &info.lib_dirs;
 }
 
-public fn const string_list.StringList* Info.getLibDirsBin(const Info* info) {
+public fn const StringList* Info.getLibDirsBin(const Info* info) {
     return &info.lib_dirs_bin;
 }
 
-public fn const string_list.StringList* Info.getPluginDirs(const Info* info) {
+public fn const StringList* Info.getPluginDirs(const Info* info) {
     return &info.plugin_dirs;
 }
 

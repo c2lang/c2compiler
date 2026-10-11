@@ -16,12 +16,12 @@
 module plugin_info;
 
 import ast;
-import ast_builder;
-import ast_context;
+import ast_builder { Builder }
+import ast_context { Context }
 import build_target { BuildTarget }
 import component;
 import console;
-import diagnostics;
+import diagnostics { Diags }
 import file_utils;
 import source_mgr { SourceMgr }
 import string_pool { StringPool }
@@ -33,14 +33,14 @@ public type AddSourceFn fn void (void* arg, const char* name, StringBuf* content
 
 public type Info struct {
     SourceMgr* sm;    // no ownership
-    diagnostics.Diags* diags;    // no ownership
+    Diags* diags;    // no ownership
     BuildTarget* target;
 
     component.List* components;
     StringPool* astPool;
     StringPool* auxPool;
-    ast_context.Context* context;
-    ast_builder.Builder* builder;
+    Context* context;
+    Builder* builder;
     ast.Globals* ast_globals;
     void* ast_builtins__;  // part of ast_globals now
 

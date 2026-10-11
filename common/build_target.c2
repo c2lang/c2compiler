@@ -17,8 +17,8 @@ module build_target;
 
 import file_list { FileList, File }
 import src_loc { SrcLoc }
-import string_list;
-import string_map { Map }
+import string_list { StringList }
+import string_map { StringMap }
 import string_pool { StringPool }
 import warning_flags { Flags }
 
@@ -112,9 +112,9 @@ public type BuildTarget struct @(opaque) {
     bool optional;
     bool disabled;
 
-    Map features;
+    StringMap features;
     List libs;
-    string_list.StringList exports;
+    StringList exports;
     PluginList plugins;
 
     FileList files;
@@ -154,7 +154,7 @@ public fn u32 BuildTarget.numFiles(const BuildTarget* t) { return t.files.getCou
 
 public fn u32 BuildTarget.numAsmFiles(const BuildTarget* t) { return t.asm_files.getCount(); }
 
-public fn const Map* BuildTarget.getFeatures(const BuildTarget* t) { return &t.features; }
+public fn const StringMap* BuildTarget.getFeatures(const BuildTarget* t) { return &t.features; }
 
 public fn void BuildTarget.addFeature(BuildTarget* t, u32 feature) {
     t.features.addNameValue(feature, "1");
@@ -237,7 +237,7 @@ public fn void BuildTarget.addExport(BuildTarget* t, u32 export) {
     t.exports.add(export);
 }
 
-public fn const string_list.StringList* BuildTarget.getExports(const BuildTarget* t) { return &t.exports; }
+public fn const StringList* BuildTarget.getExports(const BuildTarget* t) { return &t.exports; }
 
 public fn Kind BuildTarget.getKind(const BuildTarget* t) { return t.kind; }
 

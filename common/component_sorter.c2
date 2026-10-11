@@ -18,7 +18,7 @@ module component_sorter;
 import component { Component }
 import diagnostics { Diags }
 import dsm_sorter { Sorter }
-import string_list;
+import string_list { StringList }
 
 import stdlib { exit, malloc, free }
 import string { memcpy }
@@ -41,7 +41,7 @@ public fn void sort(Component** orig, u32 count, Diags* diags) {
     // fill deps
     for (u32 i=0; i<count; i++) {
         Component* c = orig[i];
-        const string_list.StringList* deps = c.getDeps();
+        const StringList* deps = c.getDeps();
         for (u32 j=0; j<deps.length(); j++) {
             u32 dest_name = deps.get_idx(j);
             u32 dest_idx = find_idx(orig, count, dest_name);

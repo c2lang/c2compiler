@@ -315,7 +315,7 @@ fn void Generator.emitForStmt(Generator* gen, const Stmt* s, u32 label_name) {
 
 #if 0
 fn void Generator.emitAssertStmt(Generator* gen, const Stmt* s) {
-    string_buffer.Buf* out = gen.out;
+    StringBuf* out = gen.out;
     const AssertStmt* a = (AssertStmt*)s;
 
     //public fn Expr* AssertStmt.getInner(const AssertStmt* s) { return s.inner; }
@@ -337,7 +337,7 @@ fn void Generator.emitAssertStmt(Generator* gen, const Stmt* s) {
     //"ir_examples/builtins.c2:6: test.test1", "i>10");
 
     // location string
-    source_mgr.Location loc = gen.sm.getLocation(a.getLoc());
+    Location loc = gen.sm.getLocation(a.getLoc());
     const char* funcname = gen.cur_function.asDecl().getFullName();
     char[512] location;
     snprintf(location, countof(location), "%s:%d: %s", loc.filename, loc.line, funcname);

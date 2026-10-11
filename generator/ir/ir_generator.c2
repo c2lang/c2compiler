@@ -502,7 +502,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
         // only if debugging
         // params may be unnamed
         u32 name_idx = v.asDecl().getNameIdx();
-        Buf* out = gen.name_buf;
+        StringBuf* out = gen.name_buf;
         out.clear();
         if (name_idx) out.add(gen.idx2name(name_idx));
         else out.add("(unnamed)");

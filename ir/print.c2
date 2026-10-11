@@ -102,7 +102,7 @@ fn u32 PrintHelper.findTemp(PrintHelper* ph, u32 instr_idx) {
 }
 
 #if DebugIr
-fn void print_dest(Buf* out, BlockId id) {
+fn void print_dest(StringBuf* out, BlockId id) {
     if (id == 0) {
         out.add1('-');
     } else {
@@ -652,7 +652,7 @@ public fn void IrContext.dump(const IrContext* c) @(unused) {
 public fn void Context.dump_temps(const Context* c) @(unused) {
     if (c.tmp_info.blocks.getCount() == 0) return;
 
-    Buf* out = StringBuf.create(16*1024, false, 1);
+    StringBuf* out = StringBuf.create(16*1024, false, 1);
 
     out.add("temp blocks:\n");
     for (u32 i=0; i<c.tmp_info.blocks.getCount(); i++) {

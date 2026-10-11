@@ -27,7 +27,7 @@ import manifest;
 import module_list;
 import source_mgr { SourceMgr }
 import string_buffer { StringBuf }
-import string_list;
+import string_list { StringList }
 
 import c_errno { errno }
 import stdio { puts }
@@ -98,7 +98,7 @@ fn void Compiler.load_libs(Compiler* c) {
     for (u32 i=0; i<c.components.size(); i++) {
         Component* comp = c.components.get(i);
         printf("  [%d] %s  %s\n", i, comp.getName(), comp.getKindName());
-        const string_list.List* deps = comp.getDeps();
+        const StringList* deps = comp.getDeps();
         for (u32 j=0; j<deps.length(); j++) {
             u32 depname = deps.get_idx(j);
             printf("    dep %s\n", c.auxPool.idx2str(depname));
@@ -126,7 +126,7 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
     u32 dirname = c.auxPool.addStr(libdir, false);
 
     comp.setPath(dirname);
-    string_list.StringList mods.init(c.astPool);
+    StringList mods.init(c.astPool);
     bool ok = manifest.parse(c.sm, file_id, c.astPool, c.auxPool, comp, &mods);
     if (!ok) {
         exit(EXIT_FAILURE);
@@ -141,7 +141,7 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
 
     mods.free();
 
-    const string_list.StringList* deps = comp.getDeps();
+    const StringList* deps = comp.getDeps();
     for (u32 i=0; i<deps.length(); i++) {
         u32 depname = deps.get_idx(i);
         if (c.has_component(depname)) continue;
@@ -294,7 +294,7 @@ fn void Compiler.showLibs(Compiler* c, StringBuf* out, const char* dirname, bool
                                                    c.auxPool,
                                                    name_idx,
                                                    ExternalStaticLib); // doesn't matter
-                string_list.StringList mods.init(c.auxPool);   // need to be astPool, but here it doesn't matter
+                StringList mods.init(c.auxPool);   // need to be astPool, but here it doesn't matter
                 manifest.parse(c.sm, file_id, c.astPool, c.auxPool, comp, &mods);
                 c.components.add(comp);
                 mods.free();
@@ -317,7 +317,7 @@ fn void Compiler.showLibs(Compiler* c, StringBuf* out, const char* dirname, bool
                     out.add("      ");
                 }
 
-                const string_list.StringList* deps = comp.getDeps();
+                const StringList* deps = comp.getDeps();
                 u32 num_deps = deps.length();
                 if (num_deps) {
                     out.add("  ");
