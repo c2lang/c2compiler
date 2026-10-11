@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 public type ForStmt struct @(opaque) {
     Stmt base;
@@ -59,7 +59,7 @@ public fn Expr** ForStmt.getCond2(ForStmt* s) { return s.cond ? &s.cond : nil; }
 public fn Expr** ForStmt.getCont2(ForStmt* s) { return s.cont ? &s.cont : nil; }
 //public fn Stmt** ForStmt.getBody2(ForStmt* s) { return s.body ? &s.body : nil; }
 
-fn void ForStmt.print(const ForStmt* s, Buf* out, u32 indent) {
+fn void ForStmt.print(const ForStmt* s, StringBuf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.newline();
 

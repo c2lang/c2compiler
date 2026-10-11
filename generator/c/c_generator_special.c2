@@ -21,7 +21,7 @@ import build_target;
 import component { Component }
 import file_utils { Max_path }
 import module_list;
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_list;
 
 import stdio { snprintf }
@@ -34,7 +34,7 @@ fn void Generator.createMakefile(Generator* gen,
                                  bool enable_asserts,
                                  u32 libc_name)
 {
-    Buf* out = gen.out;
+    StringBuf* out = gen.out;
     out.clear();
     out.add("# This makefile is auto-generated, any modifications will be lost\n\n");
 
@@ -233,7 +233,7 @@ fn void Generator.createMakefile(Generator* gen,
 fn void Generator.createExportsFile(Generator* gen, const char* output_dir, Component* mainComp) {
     if (gen.target_kind != DynamicLibrary) return;
 
-    Buf* out = gen.out;
+    StringBuf* out = gen.out;
     out.clear();
 
     out.add("LIB_1.0 {\n");
@@ -305,7 +305,7 @@ const char[] C2_types_header =
     ```;
 
 fn void Generator.generateC2TypesHeader(Generator* gen) {
-    Buf* out = gen.header;
+    StringBuf* out = gen.header;
     out.clear();
     out.add(C2_types_header);
     gen.write(out, gen.results_dir, "c2types.h");

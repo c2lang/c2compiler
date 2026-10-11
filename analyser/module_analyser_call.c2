@@ -20,7 +20,7 @@ import attr { Attr }
 import printf_utils { * }
 import scope { Scope }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 import stdio { snprintf }
 import string { strcmp }
@@ -319,7 +319,7 @@ type FormatAnalyser struct {
     u32 idx;
     SrcLoc loc;
     u32 last_offset;
-    Buf* out;
+    StringBuf* out;
     FormatAttr format_attr;
 }
 
@@ -615,7 +615,7 @@ fn bool Analyser.checkFormatArgs(Analyser* ma, Expr* format, Expr** args, u32 nu
         return false;
     }
 
-    Buf* out = string_buffer.create(256, false, 0);
+    StringBuf* out = StringBuf.create(256, false, 0);
     FormatAnalyser fa = { ma, format_text, args, num_args, 0, format_loc, 0, out, format_attr }
 
     switch (format_attr) {

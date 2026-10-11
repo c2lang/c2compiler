@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 public type IdentifierKind enum u8 (const char* const name) {
     Unresolved    : { "Unresolved" },
@@ -105,7 +105,7 @@ public fn u32 IdentifierExpr.getNameIdx(const IdentifierExpr* e) {
     return e.name_idx;
 }
 
-fn void IdentifierExpr.print(const IdentifierExpr* e, Buf* out, u32 indent) {
+fn void IdentifierExpr.print(const IdentifierExpr* e, StringBuf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.space();
@@ -124,7 +124,7 @@ fn void IdentifierExpr.print(const IdentifierExpr* e, Buf* out, u32 indent) {
     out.newline();
 }
 
-fn void IdentifierExpr.printLiteral(const IdentifierExpr* e, Buf* out) {
+fn void IdentifierExpr.printLiteral(const IdentifierExpr* e, StringBuf* out) {
     out.add(e.getName());
 }
 

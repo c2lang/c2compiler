@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import constants { MaxMultiDeclBits }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 import string { memcpy }
 
@@ -61,7 +61,7 @@ public fn u32 DeclStmt.getDeclCount(const DeclStmt* d) {
     return d.base.declStmtBits.count;
 }
 
-fn void DeclStmt.print(const DeclStmt* s, Buf* out, u32 indent) {
+fn void DeclStmt.print(const DeclStmt* s, StringBuf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.newline();
     u32 count = s.base.declStmtBits.count;

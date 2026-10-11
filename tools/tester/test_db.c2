@@ -26,7 +26,7 @@ import constants;
 import expect_file { ExpectFile, ExpectMode }
 import file_utils;
 import issues { Issues, Iter }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_utils { endsWith }
 import test_utils { * }
 #if TesterDebug
@@ -53,7 +53,7 @@ public type TestKind enum u8 (public const char* const ext) {
 }
 
 public type Db struct {
-    Buf* output;  // no ownership
+    StringBuf* output;  // no ownership
     const char* source;     // no ownership
     const char* filename;   // no ownership
     TestKind kind;
@@ -75,7 +75,7 @@ public type Db struct {
     const char* bol;    // pointer inside source to the beginning of the current line
     const char* cur;    // pointer inside source to the current byte
     u32 line_nr;        // line number, updated by db.skipLine()
-    Buf* recipe;      // ownership
+    StringBuf* recipe;      // ownership
     char[file_utils.Max_path] current_file;
     char[64] target;
 
@@ -84,7 +84,7 @@ public type Db struct {
 }
 
 public fn void Db.init(Db* db,
-                       Buf* output,
+                       StringBuf* output,
                        const char* source,
                        const char* filename,
                        TestKind kind,
@@ -109,7 +109,7 @@ public fn void Db.init(Db* db,
     db.line_nr = 1;
     db.bol = source;
     db.cur = source;
-    db.recipe = string_buffer.create(4096, false, 2);
+    db.recipe = StringBuf.create(4096, false, 2);
 
     if (kind == C2) { // only for single file test
         file_utils.make_path(db.current_file, countof(db.current_file), cwd, filename);
@@ -368,7 +368,7 @@ fn bool Db.parseKeyword(Db* db) {
         if (*db.target == 0) {
             return db.error("expected target triple");
         }
-        Buf* build = string_buffer.create(1024, false, 0);
+        StringBuf* build = StringBuf.create(1024, false, 0);
         build.print("target: \"%s\"\n", db.target);
         build.add("libdir:\n");
         build.add("   - \"$C2_LIBDIR\"\n");
@@ -539,7 +539,7 @@ public fn void Db.testFile(Db* db) {
         close(pipe_stderr[1]);
 
         // collect output and check errors
-        Buf* buf = string_buffer.create(4096, false, 2);
+        StringBuf* buf = StringBuf.create(4096, false, 2);
         for (;;) {
             char[64*1024] buffer;
             isize count = read(pipe_stderr[0], buffer, sizeof(buffer));

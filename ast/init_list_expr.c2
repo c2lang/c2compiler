@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 import string { memcpy }
 
@@ -111,7 +111,7 @@ public fn SrcLoc InitListExpr.getEndLoc(const InitListExpr* e) {
     return e.endLoc;
 }
 
-fn void InitListExpr.print(const InitListExpr* e, Buf* out, u32 indent) {
+fn void InitListExpr.print(const InitListExpr* e, StringBuf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     switch (e.getKind()) {
@@ -133,7 +133,7 @@ fn void InitListExpr.print(const InitListExpr* e, Buf* out, u32 indent) {
     }
 }
 
-fn void InitListExpr.printLiteral(const InitListExpr* e, Buf* out) {
+fn void InitListExpr.printLiteral(const InitListExpr* e, StringBuf* out) {
     out.add("{ ");
     for (u32 i = 0; i < e.num_values; i++) {
         if (i != 0) out.add(", ");

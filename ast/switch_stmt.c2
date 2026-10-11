@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 import string { memcpy }
 
@@ -128,7 +128,7 @@ public fn SwitchCase** SwitchStmt.getCases(SwitchStmt* s) {
     return (SwitchCase**)&s.decl[s.base.switchStmtBits.has_decl];
 }
 
-fn void SwitchStmt.print(const SwitchStmt* s, Buf* out, u32 indent) {
+fn void SwitchStmt.print(const SwitchStmt* s, StringBuf* out, u32 indent) {
     s.base.printKind(out, indent);
     if (s.isString()) {
         out.color(col_Attr);

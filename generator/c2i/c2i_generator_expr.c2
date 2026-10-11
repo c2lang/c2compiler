@@ -16,9 +16,9 @@
 module c2i_generator;
 
 import ast { * }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
-fn void Generator.emitExpr(Generator* gen, Buf* out, const Expr* e) {
+fn void Generator.emitExpr(Generator* gen, StringBuf* out, const Expr* e) {
     switch (e.getKind()) {
     case IntegerLiteral:
         IntegerLiteral.printLiteral((IntegerLiteral*)e, out);
@@ -153,17 +153,17 @@ fn void Generator.emitExpr(Generator* gen, Buf* out, const Expr* e) {
     }
 }
 
-fn void Generator.emitStringLiteral(Generator* gen, Buf* out, const StringLiteral* s) {
+fn void Generator.emitStringLiteral(Generator* gen, StringBuf* out, const StringLiteral* s) {
     s.printLiteral(out);
 }
 
-fn void Generator.emitBinaryOperator(Generator* gen, Buf* out, const BinaryOperator* b) {
+fn void Generator.emitBinaryOperator(Generator* gen, StringBuf* out, const BinaryOperator* b) {
     gen.emitExpr(out, b.getLHS());
     out.print(" %s ", b.getOpcodeStr());
     gen.emitExpr(out, b.getRHS());
 }
 
-fn void Generator.emitUnaryOperator(Generator* gen, Buf* out, const UnaryOperator* u) {
+fn void Generator.emitUnaryOperator(Generator* gen, StringBuf* out, const UnaryOperator* u) {
     if (u.isBefore()) {
         out.add(u.getOpcodeStr());
         gen.emitExpr(out, u.getInner());
@@ -173,7 +173,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, Buf* out, const UnaryOperato
     }
 }
 
-fn void Generator.emitMemberExpr(Generator* gen, Buf* out, const MemberExpr* m) {
+fn void Generator.emitMemberExpr(Generator* gen, StringBuf* out, const MemberExpr* m) {
     const Expr* base = m.getBaseExpr();
     if (base) {
         gen.emitExpr(out, base);
@@ -189,14 +189,14 @@ fn void Generator.emitMemberExpr(Generator* gen, Buf* out, const MemberExpr* m) 
     out.add(gen.idx2name(m.getNameIdx(1)));
 }
 
-fn void Generator.emitFieldDesigExpr(Generator* gen, Buf* out, const FieldDesignatedInitExpr* fdi) {
+fn void Generator.emitFieldDesigExpr(Generator* gen, StringBuf* out, const FieldDesignatedInitExpr* fdi) {
     out.add1('.');
     out.add(fdi.getFieldName());
     out.add(" = ");
     gen.emitExpr(out, fdi.getInit());
 }
 
-fn void Generator.emitArrayDesigExpr(Generator* gen, Buf* out, const ArrayDesignatedInitExpr* ad) {
+fn void Generator.emitArrayDesigExpr(Generator* gen, StringBuf* out, const ArrayDesignatedInitExpr* ad) {
     out.add1('[');
     if (ad.hasExpr1()) {
         gen.emitExpr(out, ad.getExpr1());
@@ -215,7 +215,7 @@ fn void Generator.emitArrayDesigExpr(Generator* gen, Buf* out, const ArrayDesign
     gen.emitExpr(out, ad.getInit());
 }
 
-fn void Generator.emitBuiltinExpr(Generator* gen, Buf* out, const BuiltinExpr* b) {
+fn void Generator.emitBuiltinExpr(Generator* gen, StringBuf* out, const BuiltinExpr* b) {
     switch (b.getKind()) {
     case Sizeof:
         out.add("sizeof(");
@@ -240,7 +240,7 @@ fn void Generator.emitBuiltinExpr(Generator* gen, Buf* out, const BuiltinExpr* b
     }
 }
 
-fn void Generator.emitCall(Generator* gen, Buf* out, const CallExpr* call) {
+fn void Generator.emitCall(Generator* gen, StringBuf* out, const CallExpr* call) {
     // options:
     // - regular (prefix.)name(..)                  -> if external, prefix
     // - struct function a.foo(..)  A.foo(..)       -> if external, prefix
@@ -269,7 +269,7 @@ fn void Generator.emitCall(Generator* gen, Buf* out, const CallExpr* call) {
 }
 
 // output initializers as compact lines with aligned columns if possible
-fn void Generator.emitInitListExpr(Generator* gen, Buf* out, InitListExpr* ile) {
+fn void Generator.emitInitListExpr(Generator* gen, StringBuf* out, InitListExpr* ile) {
     Expr** values = ile.getValues();
     u32 num_values = ile.getNumValues();
     out.add1('{');

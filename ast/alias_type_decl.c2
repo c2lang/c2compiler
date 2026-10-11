@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 public type AliasTypeDecl struct @(opaque) {
     Decl base;
@@ -50,7 +50,7 @@ public fn TypeRef* AliasTypeDecl.getTypeRef(AliasTypeDecl* d) {
     return &d.typeRef;
 }
 
-fn void AliasTypeDecl.print(const AliasTypeDecl* d, Buf* out, u32 indent) {
+fn void AliasTypeDecl.print(const AliasTypeDecl* d, StringBuf* out, u32 indent) {
     d.base.printKind(out, indent, true);
     d.base.printBits(out);
     d.base.printAttrs(out);

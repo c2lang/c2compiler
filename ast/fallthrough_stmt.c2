@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 public type FallthroughStmt struct @(opaque) {
     Stmt base;
@@ -32,7 +32,7 @@ public fn FallthroughStmt* FallthroughStmt.create(Context* c, SrcLoc loc) {
     return s;
 }
 
-fn void FallthroughStmt.print(const FallthroughStmt* s, Buf* out, u32 indent) {
+fn void FallthroughStmt.print(const FallthroughStmt* s, StringBuf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.newline();
 }

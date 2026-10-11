@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf}
+import string_buffer { StringBuf}
 
 public type GotoStmt struct @(opaque) {
     Stmt base;
@@ -38,7 +38,7 @@ public fn u32 GotoStmt.getNameIdx(const GotoStmt* g) {
     return g.name;
 }
 
-fn void GotoStmt.print(const GotoStmt* s, Buf* out, u32 indent) {
+fn void GotoStmt.print(const GotoStmt* s, StringBuf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.color(col_Value);
     out.print(" %s\n", ast.idx2name(s.name));

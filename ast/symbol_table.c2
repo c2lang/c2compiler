@@ -16,7 +16,7 @@
 module ast;
 
 import color;
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 import stdlib { malloc, free }
 import string { memcpy }
@@ -109,7 +109,7 @@ fn ast.Decl* SymbolTable.findPrivate(const SymbolTable* t, u32 name_idx) {
     return nil;
 }
 
-public fn void SymbolTable.print(const SymbolTable* t, Buf* out) {
+public fn void SymbolTable.print(const SymbolTable* t, StringBuf* out) {
     u32 count = t.num_public + t.num_private;
     for (u32 i=0; i<count; i++) {
         const Decl* d = t.decls[i];
@@ -140,7 +140,7 @@ public fn void SymbolTable.print(const SymbolTable* t, Buf* out) {
 }
 
 public fn void SymbolTable.dump(const SymbolTable* t) @(unused) {
-    Buf* out = ast.getDumpBuf();
+    StringBuf* out = ast.getDumpBuf();
     u32 count = t.num_public + t.num_private;
 
     out.add("Symbols:\n");

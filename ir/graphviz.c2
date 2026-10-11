@@ -16,13 +16,13 @@
 module ir_tools;
 
 import ir { * }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 import stdio { puts }
 
 // Note: Tools not used
 fn void Tools.generate_graphviz(Tools* t, FunctionInfo* fi) @(unused) {
-    Buf* out = string_buffer.create(16*1024, false, 2);
+    StringBuf* out = StringBuf.create(16*1024, false, 2);
 
     out.add("-------------\n");
     out.add(

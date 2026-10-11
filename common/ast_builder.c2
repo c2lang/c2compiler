@@ -23,7 +23,7 @@ import component { Component }
 import diagnostics { Diags }
 import number_radix { Radix }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_pool { Pool }
 
 import stdlib { calloc, free, exit }
@@ -372,7 +372,7 @@ public fn VarDecl* Builder.createEnumAssocDecl(Builder* b,
     QualType a = b.createEnumAssocTypeAccess(esv.getType(), etd);
 
     // name is Enum__<name> for now. The first letter is always capital-cased, even if not const
-    Buf* out = string_buffer.create(128, false, 0);
+    StringBuf* out = StringBuf.create(128, false, 0);
     out.add(b.idx2name(d.getNameIdx()));
     out.add("__");
     out.add(b.idx2name(esv.getNameIdx()));

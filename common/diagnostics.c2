@@ -17,7 +17,7 @@ module diagnostics;
 
 import color { Color }
 import source_mgr { SourceMgr, Location }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import src_loc { SrcLoc, SrcRange }
 import utf8;
 import utils { PathInfo }
@@ -27,7 +27,7 @@ import stdlib { calloc, free }
 
 public type Diags struct @(opaque) {
     SourceMgr* sm;   // no ownership
-    Buf* out;     // owned
+    StringBuf* out;     // owned
     u32 num_errors;
     u32 num_warnings;
     bool promote_warnings;
@@ -37,7 +37,7 @@ public type Diags struct @(opaque) {
 public fn Diags* create(SourceMgr* sm, bool use_color, const PathInfo* path_info) {
     Diags* diags = calloc(1, sizeof(Diags));
     diags.sm = sm;
-    diags.out = string_buffer.create(512, use_color, 1);
+    diags.out = StringBuf.create(512, use_color, 1);
     diags.path_info = path_info;
     return diags;
 }
@@ -139,7 +139,7 @@ fn void Diags.internal(Diags* diags,
         diags.num_warnings++;
     }
 
-    Buf* out = diags.out;
+    StringBuf* out = diags.out;
     out.clear();
 
     Location loc = diags.sm.locate(sloc);
@@ -244,7 +244,7 @@ public fn u32 Diags.getNumErrors(const Diags* diags) { return diags.num_errors; 
 //public fn u32 Diags.getNumWarnings(const Diags* diags) { return diags.num_warnings; }
 
 public fn void Diags.printStatus(const Diags* diags) {
-    Buf* out = diags.out;
+    StringBuf* out = diags.out;
     out.clear();
 
     if (diags.num_warnings) {

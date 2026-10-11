@@ -16,7 +16,7 @@
 module ast;
 
 import ast_context { Context }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 public type EnumType struct @(opaque) {
     Type base;
@@ -42,13 +42,13 @@ public fn QualType EnumType.getImplType(const EnumType* t) {
     return t.decl.getImplType();
 }
 
-fn void EnumType.print(const EnumType* t, Buf* out) {
+fn void EnumType.print(const EnumType* t, StringBuf* out) {
     out.add(t.decl.base.getModuleName());
     out.add1('.');
     out.add(t.decl.base.getName());
 }
 
-fn void EnumType.fullPrint(const EnumType* t, Buf* out, u32 indent) {
+fn void EnumType.fullPrint(const EnumType* t, StringBuf* out, u32 indent) {
     out.indent(indent);
     out.print("EnumType [%p] %s\n", t, t.decl.asDecl().getName());
 }

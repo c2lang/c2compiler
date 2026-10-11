@@ -19,7 +19,7 @@ import ast { * }
 import ast_visitor { Visitor }
 import component { Component }
 import file_utils { File }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_list;
 import string_pool { Pool }
 
@@ -30,7 +30,7 @@ import string { memcpy }
 type Dir struct {
     u32 name_idx;
     u32 indent; // of children
-    Buf* buf;
+    StringBuf* buf;
 
     Dir* subdirs;
     u32 count;
@@ -40,7 +40,7 @@ type Dir struct {
 fn void Dir.init(Dir* d, u32 name_idx, u32 indent) {
     d.name_idx = name_idx;
     d.indent = indent;
-    d.buf = string_buffer.create(16*1024, false, 2);
+    d.buf = StringBuf.create(16*1024, false, 2);
 }
 
 fn Dir* Dir.get(Dir* d, u32 name_idx) {
@@ -74,7 +74,7 @@ fn void Dir.free(Dir* d) {
     d.buf.free();
 }
 
-fn void Dir.flatten(const Dir* d, Buf* out, Pool* pool) {
+fn void Dir.flatten(const Dir* d, StringBuf* out, Pool* pool) {
     // flattens subdirs into passed buf
     for (u32 i=0; i<d.count; i++) {
         const Dir* subdir = &d.subdirs[i];
@@ -106,7 +106,7 @@ type Generator struct {
     Dir root;
     Pool* pool;
 
-    Buf* out; // no owership, points to Buf inside Dir
+    StringBuf* out; // no owership, points to StringBuf inside Dir
     u32 indent;
 
     // options
@@ -430,7 +430,7 @@ public fn void generate(const char* title, const char* output_dir, component.Lis
     gen.pool = string_pool.create(4096, 1024);
 
     gen.out = gen.root.buf;
-    Buf* out = gen.out;
+    StringBuf* out = gen.out;
 
     out.add("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     out.print("<dsm name='%s'>\n", title);

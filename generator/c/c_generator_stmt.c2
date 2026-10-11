@@ -16,9 +16,9 @@
 module c_generator;
 
 import ast { * }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
-fn void Generator.emitVarDecl(Generator* gen, VarDecl* vd, Buf* out, bool emit_init, bool first) {
+fn void Generator.emitVarDecl(Generator* gen, VarDecl* vd, StringBuf* out, bool emit_init, bool first) {
     Decl* d = (Decl*)vd;
     if (first) {
         if (vd.isStatic()) out.add(vd.isTLocal() ? "tlocal " : "static ");
@@ -42,7 +42,7 @@ fn void Generator.emitVarDecl(Generator* gen, VarDecl* vd, Buf* out, bool emit_i
     }
 }
 
-fn void Generator.emitStmt(Generator* gen, Buf* out, Stmt* s, u32 indent, bool newline) {
+fn void Generator.emitStmt(Generator* gen, StringBuf* out, Stmt* s, u32 indent, bool newline) {
 
     if (out.endsWith('\n')) out.indent(indent);
 
@@ -201,7 +201,7 @@ fn void Generator.emitStmt(Generator* gen, Buf* out, Stmt* s, u32 indent, bool n
     }
 }
 
-fn void Generator.emitWhileStmt(Generator* gen, Buf* out, WhileStmt* w, u32 indent, LabelStmt* ls = nil) {
+fn void Generator.emitWhileStmt(Generator* gen, StringBuf* out, WhileStmt* w, u32 indent, LabelStmt* ls = nil) {
     u32 break_name = 0;
     u32 continue_name = 0;
     if (ls) {
@@ -243,7 +243,7 @@ fn void Generator.emitWhileStmt(Generator* gen, Buf* out, WhileStmt* w, u32 inde
     }
 }
 
-fn void Generator.emitForStmt(Generator* gen, Buf* out, ForStmt* f, u32 indent, LabelStmt* ls = nil) {
+fn void Generator.emitForStmt(Generator* gen, StringBuf* out, ForStmt* f, u32 indent, LabelStmt* ls = nil) {
     u32 break_name = 0;
     u32 continue_name = 0;
     if (ls) {
@@ -280,7 +280,7 @@ fn void Generator.emitForStmt(Generator* gen, Buf* out, ForStmt* f, u32 indent, 
     }
 }
 
-fn void Generator.emitLoopBody(Generator* gen, Buf* out, Stmt* body,
+fn void Generator.emitLoopBody(Generator* gen, StringBuf* out, Stmt* body,
                                u32 indent, u32 break_name, u32 continue_name)
 {
     u32 count = 1;
@@ -312,7 +312,7 @@ fn void Generator.emitLoopBody(Generator* gen, Buf* out, Stmt* body,
     }
 }
 
-fn void emitAsmPart(Buf* out, bool multi_line, u32 indent) {
+fn void emitAsmPart(StringBuf* out, bool multi_line, u32 indent) {
     if (multi_line) {
         out.newline();
         out.indent(indent);
@@ -322,7 +322,7 @@ fn void emitAsmPart(Buf* out, bool multi_line, u32 indent) {
     out.add(": ");
 }
 
-fn void Generator.emitAsmOperand(Generator* gen, Buf* out, u32 name, const Expr* c, Expr* e) {
+fn void Generator.emitAsmOperand(Generator* gen, StringBuf* out, u32 name, const Expr* c, Expr* e) {
     if (name) {
         out.print("[%s] ", gen.idx2name(name));
     }
@@ -332,7 +332,7 @@ fn void Generator.emitAsmOperand(Generator* gen, Buf* out, u32 name, const Expr*
     out.rparen();
 }
 
-fn void Generator.emitAsmStmt(Generator* gen, Buf* out, AsmStmt* a, u32 indent) {
+fn void Generator.emitAsmStmt(Generator* gen, StringBuf* out, AsmStmt* a, u32 indent) {
     out.add("__asm__ ");
     if (a.isVolatile()) out.add("volatile ");
 
@@ -379,7 +379,7 @@ fn void Generator.emitAsmStmt(Generator* gen, Buf* out, AsmStmt* a, u32 indent) 
     out.add(";\n");
 }
 
-fn void Generator.emitSwitchStmt(Generator* gen, Buf* out, SwitchStmt* sw, u32 indent, LabelStmt* ls = nil) {
+fn void Generator.emitSwitchStmt(Generator* gen, StringBuf* out, SwitchStmt* sw, u32 indent, LabelStmt* ls = nil) {
     u32 break_name = 0;
     if (ls && ls.hasBreak()) break_name = ls.getNameIdx();
     bool is_decl = sw.hasDecl();
@@ -413,7 +413,7 @@ fn void Generator.emitSwitchStmt(Generator* gen, Buf* out, SwitchStmt* sw, u32 i
     }
 }
 
-fn void Generator.emitCase(Generator* gen, Buf* out, SwitchCase* c, u32 indent) {
+fn void Generator.emitCase(Generator* gen, StringBuf* out, SwitchCase* c, u32 indent) {
     const char* brace = c.hasDecls() ? " {" : "";
 
     if (c.isDefault()) {

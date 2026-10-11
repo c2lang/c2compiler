@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 type ArraySubscriptExprBits struct {
     u32 : NumExprBits;
@@ -69,14 +69,14 @@ fn SrcLoc ArraySubscriptExpr.getEndLoc(const ArraySubscriptExpr* e) {
     return e.base.base.loc + e.base.base.arraySubscriptExprBits.src_len;
 }
 
-fn void ArraySubscriptExpr.printLiteral(const ArraySubscriptExpr* e, Buf* out) {
+fn void ArraySubscriptExpr.printLiteral(const ArraySubscriptExpr* e, StringBuf* out) {
     e.lhs.printLiteral(out);
     out.add1('[');
     e.idx.printLiteral(out);
     out.add1(']');
 }
 
-fn void ArraySubscriptExpr.print(const ArraySubscriptExpr* e, Buf* out, u32 indent) {
+fn void ArraySubscriptExpr.print(const ArraySubscriptExpr* e, StringBuf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.newline();

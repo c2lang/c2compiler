@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 public type NilExpr struct @(opaque) {
     Expr base;
@@ -37,13 +37,13 @@ fn SrcLoc NilExpr.getEndLoc(const NilExpr* e) {
     return e.base.base.loc + 3;
 }
 
-fn void NilExpr.print(const NilExpr* e, Buf* out, u32 indent) {
+fn void NilExpr.print(const NilExpr* e, StringBuf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.newline();
 }
 
-fn void NilExpr.printLiteral(const NilExpr*, Buf* out) {
+fn void NilExpr.printLiteral(const NilExpr*, StringBuf* out) {
     out.add("nil");
 }
 

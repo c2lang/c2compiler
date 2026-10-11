@@ -17,7 +17,7 @@ module ast;
 
 import src_loc { SrcLoc }
 import attr { Attr, AttrKind }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 import stdio { snprintf }
 import string { pstrcpy }
@@ -250,7 +250,7 @@ public fn void Decl.setGenerated(Decl* d) { d.declBits.is_generated = 1; }
 public fn void Decl.clearGenerated(Decl* d) { d.declBits.is_generated = 0; }
 
 public fn void Decl.dump(const Decl* d) {
-    Buf* out = ast.getDumpBuf();
+    StringBuf* out = ast.getDumpBuf();
     d.print(out, 0);
     ast.flushDumpBuf(out);
 }
@@ -345,7 +345,7 @@ public fn const char* Decl.getFullName(const Decl* d) {
     return tmp;
 }
 
-fn void Decl.print(const Decl* d, Buf* out, u32 indent) {
+fn void Decl.print(const Decl* d, StringBuf* out, u32 indent) {
     switch (d.getKind()) {
     case Function:
         FunctionDecl.print((FunctionDecl*)d, out, indent);
@@ -374,7 +374,7 @@ fn void Decl.print(const Decl* d, Buf* out, u32 indent) {
     }
 }
 
-fn void Decl.printKind(const Decl* d, Buf* out, u32 indent, bool print_type) {
+fn void Decl.printKind(const Decl* d, StringBuf* out, u32 indent, bool print_type) {
     out.indent(indent);
     out.color(col_Decl);
     out.add(d.getKind().name);
@@ -384,7 +384,7 @@ fn void Decl.printKind(const Decl* d, Buf* out, u32 indent, bool print_type) {
     }
 }
 
-fn void Decl.printName(const Decl* d, Buf* out) {
+fn void Decl.printName(const Decl* d, StringBuf* out) {
     out.space();
     out.color(col_Value);
     if (d.name_idx) {
@@ -394,7 +394,7 @@ fn void Decl.printName(const Decl* d, Buf* out) {
     }
 }
 
-fn void Decl.printBits(const Decl* d, Buf* out) {
+fn void Decl.printBits(const Decl* d, StringBuf* out) {
     out.color(col_Attr);
     if (d.isPublic()) out.add(" public");
     DeclCheckState cs = d.getCheckState();
@@ -415,7 +415,7 @@ fn void Decl.printBits(const Decl* d, Buf* out) {
     }
 }
 
-fn void Decl.printAttrs(const Decl* d, Buf* out) {
+fn void Decl.printAttrs(const Decl* d, StringBuf* out) {
     if (!d.hasAttr()) return;
 
     // Note: just request 4 here, ideally we should iterate over all
@@ -441,7 +441,7 @@ fn void Decl.printAttrs(const Decl* d, Buf* out) {
     }
 }
 
-fn void Decl.printUsed(const Decl* d, Buf* out) {
+fn void Decl.printUsed(const Decl* d, StringBuf* out) {
     out.color(col_Attr);
     out.print(" used=%d/%d", d.isUsed(), d.isUsedPublic());
 }

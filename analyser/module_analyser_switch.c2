@@ -19,7 +19,7 @@ import ast { * }
 import init_checker { InitChecker }
 import src_loc { SrcLoc }
 import scope;
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import value_type { Value }
 
 import string { memchr }
@@ -118,7 +118,7 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
         } else {
             // check for uncovered cases
             if (checker.getCount() < numConstants) {
-                Buf* out = string_buffer.create(128, false, 0);
+                StringBuf* out = StringBuf.create(128, false, 0);
                 u32 missing = 0;
                 EnumConstantDecl** ecd = etd.getConstants();
                 for (u32 i = 0; i < numConstants; i++) {
@@ -149,7 +149,7 @@ fn FlowBits Analyser.analyseSwitchStmt(Analyser* ma, Stmt* s) {
         // Create alternate expression for c2_strswitch(s)
         // create call expression `c2_helper.c2_strswitch("expression", "case string")
         // TODO: handle declaration expressions
-        Buf* casestr = string_buffer.create(128, false, 0);
+        StringBuf* casestr = StringBuf.create(128, false, 0);
         u32 str_index = 2;
 
         for (u32 i = 0; i < numCases; i++) {

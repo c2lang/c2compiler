@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 public type RangeExpr struct @(opaque) {
     Expr base;
@@ -58,7 +58,7 @@ fn SrcLoc RangeExpr.getEndLoc(const RangeExpr* e) {
     return e.base.base.loc + 3;
 }
 
-fn void RangeExpr.print(const RangeExpr* e, Buf* out, u32 indent) {
+fn void RangeExpr.print(const RangeExpr* e, StringBuf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.newline();
@@ -67,7 +67,7 @@ fn void RangeExpr.print(const RangeExpr* e, Buf* out, u32 indent) {
     if (e.rhs) e.rhs.print(out, indent + 1);
 }
 
-fn void RangeExpr.printLiteral(const RangeExpr* e, Buf* out) {
+fn void RangeExpr.printLiteral(const RangeExpr* e, StringBuf* out) {
     if (e.lhs && e.lhs.getLoc()) {
         e.lhs.printLiteral(out);
         out.space();

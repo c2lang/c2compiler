@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 type ReturnStmtBits struct {
     u32 : NumStmtBits;
@@ -62,7 +62,7 @@ public fn Expr** ReturnStmt.getValue2(ReturnStmt* s) {
     return nil;
 }
 
-fn void ReturnStmt.print(const ReturnStmt* s, Buf* out, u32 indent) {
+fn void ReturnStmt.print(const ReturnStmt* s, StringBuf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.newline();
     if (s.base.returnStmtBits.has_value) {

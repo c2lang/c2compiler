@@ -18,7 +18,7 @@ module c2_tokenizer;
 import constants;
 import keywords { Info }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_map { Map }
 import string_pool { Pool }
 import token { Token, Kind }
@@ -263,7 +263,7 @@ public type Tokenizer struct {
     const char* line_start;
 
     Pool* pool; // no ownership
-    Buf* buf; // no ownership, used for strings and character constants
+    StringBuf* buf; // no ownership, used for strings and character constants
     ErrorFn on_error;
     void* on_error_arg;
 
@@ -281,7 +281,7 @@ static_assert(408, sizeof(Tokenizer));
 
 public fn void Tokenizer.init(Tokenizer* t,
                               Pool* pool,
-                              Buf* buf,
+                              StringBuf* buf,
                               const char* input,
                               SrcLoc loc_start,
                               const Info* kwinfo,
@@ -1464,7 +1464,7 @@ fn bool Tokenizer.parse_error_warn(Tokenizer* t, Token* result, Kind kind) {
     Token tok;
 
     // parse pptokens instead of raw text
-    Buf msg.init(t.error_msg, countof(t.error_msg), false, false, 0);
+    StringBuf msg.init(t.error_msg, countof(t.error_msg), false, false, 0);
     SrcLoc last_loc = 0;
     while (t.lex_preproc(&tok) != Eof) {
         // replace blanks with a single space

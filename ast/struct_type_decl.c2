@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 import string { memset, memcpy }
 
@@ -56,7 +56,7 @@ public fn bool FieldInitField.isZeroSizeBitfield(const FieldInitField* f) {
     return f.is_bitfield && f.bitfield_width == 0;
 }
 
-fn void FieldInitField.print(const FieldInitField* f, Buf* out) {
+fn void FieldInitField.print(const FieldInitField* f, StringBuf* out) {
     out.color(col_Calc);
     out.print("offset=%d  idx=%d", f.offset, f.member_idx);
     if (f.is_bitfield) {
@@ -346,7 +346,7 @@ public fn bool StructTypeDecl.hasFieldInfo(const StructTypeDecl* d) {
     return d.field_info != nil;
 }
 
-fn void StructTypeDecl.print(const StructTypeDecl* d, Buf* out, u32 indent) {
+fn void StructTypeDecl.print(const StructTypeDecl* d, StringBuf* out, u32 indent) {
     d.base.printKind(out, indent, true);
     d.base.printBits(out);
     bool is_global = d.base.structTypeDeclBits.is_global;

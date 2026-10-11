@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 type BitOffsetExprBits struct {
     u32 : NumExprBits;
@@ -81,13 +81,13 @@ fn SrcLoc BitOffsetExpr.getEndLoc(const BitOffsetExpr* e) {
     return e.rhs.getEndLoc();
 }
 
-fn void BitOffsetExpr.printLiteral(const BitOffsetExpr* e, Buf* out) {
+fn void BitOffsetExpr.printLiteral(const BitOffsetExpr* e, StringBuf* out) {
     e.lhs.printLiteral(out);
     out.add1(':');
     e.rhs.printLiteral(out);
 }
 
-fn void BitOffsetExpr.print(const BitOffsetExpr* e, Buf* out, u32 indent) {
+fn void BitOffsetExpr.print(const BitOffsetExpr* e, StringBuf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.space();

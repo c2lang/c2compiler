@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 public type VarDeclKind enum u8 (const char* const name) {
     GlobalVar       : { "global" },
@@ -384,7 +384,7 @@ public fn FormatAttr VarDecl.getFormatAttr(const VarDecl* d) {
     return d.base.varDeclBits.format_attr;
 }
 
-fn void VarDecl.print(const VarDecl* d, Buf* out, u32 indent) {
+fn void VarDecl.print(const VarDecl* d, StringBuf* out, u32 indent) {
     bool valid_type = d.base.qt.isValid();
     d.base.printKind(out, indent, valid_type);
     if (!valid_type) {
@@ -427,7 +427,7 @@ fn void VarDecl.print(const VarDecl* d, Buf* out, u32 indent) {
     }
 }
 
-fn void VarDecl.printType(const VarDecl* d, Buf* out) {
+fn void VarDecl.printType(const VarDecl* d, StringBuf* out) {
     if (d.base.qt.isValid()) {
         d.base.qt.printQuoted(out);
     } else {

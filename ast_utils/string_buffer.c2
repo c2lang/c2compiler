@@ -21,7 +21,7 @@ import stdio { vsnprintf }
 import stdlib { malloc, realloc, free }
 import string { memcpy, strlen }
 
-public type Buf struct {
+public type StringBuf struct {
     u32 capacity;
     u32 size_;
     char* data_;
@@ -32,9 +32,9 @@ public type Buf struct {
     u32 indent_step;
 }
 
-static_assert(24, sizeof(Buf));
+static_assert(24, sizeof(StringBuf));
 
-public fn Buf* Buf.init(Buf* buf, char* data, u32 capacity, bool grow, bool use_colors, u32 indent_step) {
+public fn StringBuf* StringBuf.init(StringBuf* buf, char* data, u32 capacity, bool grow, bool use_colors, u32 indent_step) {
     assert(capacity);
     buf.capacity = capacity;
     buf.size_ = 0;
@@ -51,24 +51,24 @@ public fn Buf* Buf.init(Buf* buf, char* data, u32 capacity, bool grow, bool use_
     return buf;
 }
 
-public fn Buf* create(u32 capacity, bool use_colors, u32 indent_step) {
-    Buf* buf = malloc(sizeof(Buf));
+public fn StringBuf* StringBuf.create(u32 capacity, bool use_colors, u32 indent_step) {
+    StringBuf* buf = malloc(sizeof(StringBuf));
     return buf.init(nil, capacity, true, use_colors, indent_step);
 }
 
-public fn void Buf.deinit(Buf* buf) {
+public fn void StringBuf.deinit(StringBuf* buf) {
     if (buf.own) free(buf.data_);
     buf.data_ = nil;
 }
 
-public fn void Buf.free(Buf* buf) {
+public fn void StringBuf.free(StringBuf* buf) {
     if (buf) {
         buf.deinit();
         free(buf);
     }
 }
 
-fn bool Buf.extend(Buf* buf, u32 len) {
+fn bool StringBuf.extend(StringBuf* buf, u32 len) {
     if (!buf.grow) {
         buf.truncated = true;
         return false;
@@ -84,28 +84,28 @@ fn bool Buf.extend(Buf* buf, u32 len) {
     return true;
 }
 
-public fn void Buf.setColors(Buf* buf, bool colors) @(unused) {
+public fn void StringBuf.setColors(StringBuf* buf, bool colors) @(unused) {
     buf.colors = colors;
 }
 
-public fn void Buf.setIndent(Buf* buf, u32 indent_step) @(unused) {
+public fn void StringBuf.setIndent(StringBuf* buf, u32 indent_step) @(unused) {
     buf.indent_step = indent_step;
 }
 
-public fn u32 Buf.size(const Buf* buf) {
+public fn u32 StringBuf.size(const StringBuf* buf) {
     return buf.size_;
 }
 
-public fn const void* Buf.data(const Buf* buf) {
+public fn const void* StringBuf.data(const StringBuf* buf) {
     buf.data_[buf.size_] = '\0';
     return buf.data_;
 }
 
-public fn const char* Buf.str(const Buf* buf) {
+public fn const char* StringBuf.str(const StringBuf* buf) {
     return buf.data();
 }
 
-public fn void* Buf.detach(Buf* buf, u32 *psize) {
+public fn void* StringBuf.detach(StringBuf* buf, u32 *psize) {
     *psize = buf.size_;
     buf.data_[buf.size_] = '\0';
     if (buf.own) {
@@ -123,20 +123,20 @@ public fn void* Buf.detach(Buf* buf, u32 *psize) {
     }
 }
 
-public fn void Buf.clear(Buf* buf) {
+public fn void StringBuf.clear(StringBuf* buf) {
     buf.size_ = 0;
     buf.truncated = false;
 }
 
-public fn void Buf.color(Buf* buf, Color col) {
+public fn void StringBuf.color(StringBuf* buf, Color col) {
     if (buf.colors) buf.add(col.str());
 }
 
-public fn char Buf.at(const Buf* buf, u32 i) {
+public fn char StringBuf.at(const StringBuf* buf, u32 i) {
     return i < buf.size_ ? buf.data_[i] :  '\0';
 }
 
-public fn void Buf.add1(Buf* buf, char c) {
+public fn void StringBuf.add1(StringBuf* buf, char c) {
     if (buf.size_ + 2 > buf.capacity) {
         if (!buf.extend(1)) return;
     }
@@ -144,12 +144,12 @@ public fn void Buf.add1(Buf* buf, char c) {
     buf.size_ += 1;
 }
 
-public fn void Buf.add(Buf* buf, const char* text) {
+public fn void StringBuf.add(StringBuf* buf, const char* text) {
     u32 len = (u32)strlen(text);
     buf.add2(text, len);
 }
 
-public fn void Buf.add2(Buf* buf, const char* text, u32 len) {
+public fn void StringBuf.add2(StringBuf* buf, const char* text, u32 len) {
     if (buf.size_ + len + 1 > buf.capacity) {
         // truncate if resize fails.
         if (!buf.extend(len)) len = buf.capacity - buf.size_ - 1;
@@ -158,23 +158,23 @@ public fn void Buf.add2(Buf* buf, const char* text, u32 len) {
     buf.size_ += len;
 }
 
-public fn void Buf.newline(Buf* buf) { buf.add1('\n'); }
-public fn void Buf.space(Buf* buf) { buf.add1(' '); }
-public fn void Buf.lparen(Buf* buf) { buf.add1('('); }
-public fn void Buf.rparen(Buf* buf) { buf.add1(')'); }
+public fn void StringBuf.newline(StringBuf* buf) { buf.add1('\n'); }
+public fn void StringBuf.space(StringBuf* buf) { buf.add1(' '); }
+public fn void StringBuf.lparen(StringBuf* buf) { buf.add1('('); }
+public fn void StringBuf.rparen(StringBuf* buf) { buf.add1(')'); }
 
-public fn void Buf.stripTrailingSpaces(Buf* buf) {
+public fn void StringBuf.stripTrailingSpaces(StringBuf* buf) {
     while (buf.size_ && buf.data_[buf.size_-1] == ' ') buf.size_--;
 }
 
-public fn void Buf.print(Buf* buf, const char* format @(printf_format), ...) @(unused) {
+public fn void StringBuf.print(StringBuf* buf, const char* format @(printf_format), ...) @(unused) {
     va_list args;
     va_start(args, format);
     buf.vprintf(format, args);
     va_end(args);
 }
 
-public fn void Buf.vprintf(Buf* buf, const char* format, va_list args) @(unused) {
+public fn void StringBuf.vprintf(StringBuf* buf, const char* format, va_list args) @(unused) {
     // formatted output is limited to 4095 bytes
     char[4096] tmp;
     char* dest = tmp;
@@ -210,12 +210,12 @@ public fn void Buf.vprintf(Buf* buf, const char* format, va_list args) @(unused)
     }
 }
 
-public fn void Buf.unindent(Buf* buf) {
+public fn void StringBuf.unindent(StringBuf* buf) {
     u32 i = buf.indent_step;
     while (i-- > 0 && buf.size_ && buf.data_[buf.size_ - 1] == ' ') buf.size_--;
 }
 
-public fn void Buf.indent(Buf* buf, u32 indent) {
+public fn void StringBuf.indent(StringBuf* buf, u32 indent) {
     indent *= buf.indent_step;
     if (buf.size_ + indent + 1 > buf.capacity) {
         if (!buf.extend(indent)) indent = buf.capacity - buf.size_ - 1;
@@ -227,17 +227,17 @@ public fn void Buf.indent(Buf* buf, u32 indent) {
     buf.size_ += indent;
 }
 
-public fn bool Buf.endsWith(const Buf* buf, char c) {
+public fn bool StringBuf.endsWith(const StringBuf* buf, char c) {
     return (buf.size_ && buf.data_[buf.size_-1] == c);
 }
 
-public fn u32 Buf.getColumn(const Buf* buf) {
+public fn u32 StringBuf.getColumn(const StringBuf* buf) {
     u32 pos = buf.size_;
     while (pos && buf.data_[pos - 1] != '\n') pos--;
     return buf.size_ - pos;
 }
 
-public fn u32 Buf.encodeBytes(Buf* buf, const char* p, u32 len, char sep) {
+public fn u32 StringBuf.encodeBytes(StringBuf* buf, const char* p, u32 len, char sep) {
     u32 size = buf.size_;
     if (sep) buf.add1(sep);
     u32 copy = 0;
@@ -291,7 +291,7 @@ public fn u32 Buf.encodeBytes(Buf* buf, const char* p, u32 len, char sep) {
 
 const u8[16] ToHex = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', }
 
-public fn void Buf.encodeHex(Buf* buf, const u8* data, u32 len) @(unused) {
+public fn void StringBuf.encodeHex(StringBuf* buf, const u8* data, u32 len) @(unused) {
     if (buf.size_ + len * 3 + 1 > buf.capacity) {
         if (!buf.extend(len * 3)) len = (buf.capacity - buf.size_ - 1) / 3;
     }
@@ -305,11 +305,11 @@ public fn void Buf.encodeHex(Buf* buf, const u8* data, u32 len) @(unused) {
     buf.size_ = (u32)(cp - buf.data_);
 }
 
-public fn void Buf.trim(Buf* buf, u32 len) @(unused) {
+public fn void StringBuf.trim(StringBuf* buf, u32 len) @(unused) {
     buf.size_ = (buf.size_ >= len) ? buf.size_ - len : 0;
 }
 
-public fn void Buf.resetToLastNewline(Buf* buf) @(unused) {
+public fn void StringBuf.resetToLastNewline(StringBuf* buf) @(unused) {
     while (buf.size_) {
         buf.size_--;
         if (buf.data_[buf.size_] == '\n') break;

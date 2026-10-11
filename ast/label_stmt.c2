@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 type LabelStmtBits struct {
     u32 : NumStmtBits;
@@ -96,7 +96,7 @@ public fn Stmt** LabelStmt.getStmt2(LabelStmt* s) {
     return &s.stmt;
 }
 
-fn void LabelStmt.print(const LabelStmt* s, Buf* out, u32 indent) {
+fn void LabelStmt.print(const LabelStmt* s, StringBuf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.color(col_Value);
     out.space();

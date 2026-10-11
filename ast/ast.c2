@@ -18,7 +18,7 @@ module ast;
 import attr { Attr, AttrKind }
 import attr_table;
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_pool { Pool }
 
 import stdlib { calloc, free }
@@ -247,7 +247,7 @@ fn const Attr* AST.getAttr(const AST* a, const Decl* d, AttrKind kind)
     return nil;
 }
 
-fn void AST.print(const AST* a, Buf* out, bool show_funcs) {
+fn void AST.print(const AST* a, StringBuf* out, bool show_funcs) {
     out.color(col_Normal);
     out.print("---- AST %s ----\n", a.getFilename());
 

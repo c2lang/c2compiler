@@ -28,7 +28,7 @@ import unistd { sysconf, _SC_NPROCESSORS_ONLN, getcwd }
 import color;
 import test_utils { * }
 import test_db { TestKind }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_utils { endsWith }
 import file_utils;
 
@@ -245,7 +245,7 @@ fn void Tester.run_test(Tester* t, Test* test) {
 
     t.num_tests++;
 
-    Buf* buf = string_buffer.create(4096, color_output, 2);
+    StringBuf* buf = StringBuf.create(4096, color_output, 2);
     buf.print("%s\n", test.filename);
 
     file_utils.File file.init(test.filename);

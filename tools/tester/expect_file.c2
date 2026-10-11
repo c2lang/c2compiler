@@ -21,7 +21,7 @@ import string { pstrcpy, strncmp }
 
 import file_utils;
 import line_db;
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import test_utils { * }
 
 /*
@@ -44,7 +44,7 @@ public type ExpectMode enum u8 {
 public type ExpectFile struct @(opaque) {
     char[file_utils.Max_path] filename;
     ExpectMode mode;
-    Buf* output;  // will be set in check()
+    StringBuf* output;  // will be set in check()
 
     // during analysis
     u32 lastLineNr;
@@ -121,7 +121,7 @@ fn bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, cons
     return true;
 }
 
-public fn bool ExpectFile.check(ExpectFile* f, Buf* output, const char* basedir) {
+public fn bool ExpectFile.check(ExpectFile* f, StringBuf* output, const char* basedir) {
     file_utils.File file.init(basedir, f.filename);
     if (!file.exists()) {
         color_print2(output, colError, "  missing expected file '%s' (%s)", f.filename, file.path);

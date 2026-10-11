@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 public type FieldDesignatedInitExpr struct @(opaque) {
     Expr base;
@@ -79,7 +79,7 @@ public fn Decl* FieldDesignatedInitExpr.getDecl(const FieldDesignatedInitExpr* e
     return nil;
 }
 
-fn void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, Buf* out, u32 indent) {
+fn void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, StringBuf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.color(col_Value);
@@ -97,7 +97,7 @@ fn void FieldDesignatedInitExpr.print(const FieldDesignatedInitExpr* e, Buf* out
     e.initValue.print(out, indent + 1);
 }
 
-fn void FieldDesignatedInitExpr.printLiteral(const FieldDesignatedInitExpr* e, Buf* out) {
+fn void FieldDesignatedInitExpr.printLiteral(const FieldDesignatedInitExpr* e, StringBuf* out) {
     out.add1('.');
     out.add(e.getFieldName());
     out.add(" = ");

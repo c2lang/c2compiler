@@ -16,7 +16,7 @@
 module ast;
 
 import ast_context { Context }
-import string_buffer { Buf}
+import string_buffer { StringBuf}
 
 public type FunctionTypeDecl struct @(opaque) {
     Decl base;
@@ -42,7 +42,7 @@ public fn FunctionDecl* FunctionTypeDecl.getDecl(const FunctionTypeDecl* d) {
     return d.func;
 }
 
-fn void FunctionTypeDecl.print(const FunctionTypeDecl* d, Buf* out, u32 indent) {
+fn void FunctionTypeDecl.print(const FunctionTypeDecl* d, StringBuf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Decl);
     out.add("FunctionTypeDecl");

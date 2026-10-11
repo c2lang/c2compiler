@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 public type ConditionalOperator struct @(opaque) {
     Expr base;
@@ -87,7 +87,7 @@ fn SrcLoc ConditionalOperator.getEndLoc(const ConditionalOperator* e) {
     return e.getRHS().getEndLoc();
 }
 
-fn void ConditionalOperator.printLiteral(const ConditionalOperator* e, Buf* out) {
+fn void ConditionalOperator.printLiteral(const ConditionalOperator* e, StringBuf* out) {
     e.cond.printLiteral(out);
     out.add(" ? ");
     e.lhs.printLiteral(out);
@@ -95,7 +95,7 @@ fn void ConditionalOperator.printLiteral(const ConditionalOperator* e, Buf* out)
     e.rhs.printLiteral(out);
 }
 
-fn void ConditionalOperator.print(const ConditionalOperator* e, Buf* out, u32 indent) {
+fn void ConditionalOperator.print(const ConditionalOperator* e, StringBuf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.newline();

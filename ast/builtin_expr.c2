@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 public type BuiltinExprKind enum u8 (const char* const name) {
     Sizeof      : { "sizeof" },
@@ -159,7 +159,7 @@ public fn Expr** BuiltinExpr.getToContainerPointer2(BuiltinExpr* b) {
     return &b.container[0].pointer;
 }
 
-fn void BuiltinExpr.print(const BuiltinExpr* e, Buf* out, u32 indent) {
+fn void BuiltinExpr.print(const BuiltinExpr* e, StringBuf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.color(col_Value);
@@ -184,7 +184,7 @@ fn void BuiltinExpr.print(const BuiltinExpr* e, Buf* out, u32 indent) {
     }
 }
 
-fn void BuiltinExpr.printLiteral(const BuiltinExpr* e, Buf* out) {
+fn void BuiltinExpr.printLiteral(const BuiltinExpr* e, StringBuf* out) {
     out.add(e.getKind().name);
     out.lparen();
     e.inner.printLiteral(out);

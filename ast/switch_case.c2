@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 import string { memcpy }
 
@@ -114,7 +114,7 @@ public fn bool SwitchCase.hasFallthrough(const SwitchCase* s) { return s.bits.ha
 
 public fn SrcLoc SwitchCase.getLoc(const SwitchCase* s) { return s.loc; }
 
-fn void SwitchCase.print(const SwitchCase* s, Buf* out, u32 indent) {
+fn void SwitchCase.print(const SwitchCase* s, StringBuf* out, u32 indent) {
     out.indent(indent);
     out.color(col_Stmt);
     out.add("SwitchCase");

@@ -19,13 +19,13 @@ import ir;
 import file_utils;
 // TODO dont use console!
 import console;
-import string_buffer;
+import string_buffer { StringBuf }
 
 import stdio { puts }
 
 public fn void Context.writeOutput(Context* c, const char* output_dir, const char* target_name) {
     // generate create Makefile
-    string_buffer.Buf* out = string_buffer.create(4096, false, 0);
+    StringBuf* out = StringBuf.create(4096, false, 0);
     out.add("# This makefile is auto-generated, any modifications will be lost\n\n");
 
     const char* compiler = "clang";
@@ -71,7 +71,7 @@ public fn void Context.writeOutput(Context* c, const char* output_dir, const cha
     out.free();
 }
 
-fn void Context.write(Context* c, const char* output_dir, const char* filename, const string_buffer.Buf* buf) {
+fn void Context.write(Context* c, const char* output_dir, const char* filename, const StringBuf* buf) {
     file_utils.File file.init(output_dir, filename);
     if (!file.write(buf.data(), buf.size())) {
         console.error("cannot write to %s: %s", file.path, file.getError());

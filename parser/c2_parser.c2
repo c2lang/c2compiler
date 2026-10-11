@@ -26,7 +26,7 @@ import keywords;
 import source_mgr { SourceMgr }
 import src_loc { SrcLoc }
 import stmt_list;
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_map { Map }
 import string_pool { Pool }
 import token { Token, Kind }
@@ -129,7 +129,7 @@ public fn void Parser.parse(Parser* p, i32 file_id, bool is_interface, bool is_g
     p.is_interface = is_interface;
     p.is_generated = is_generated;
 
-    Buf* buf = string_buffer.create(1024, false, 0);
+    StringBuf* buf = StringBuf.create(1024, false, 0);
 #if DumpTokens
     u64 t1 = utils.now();
     p.tokenizer.init(p.pool,
@@ -990,7 +990,7 @@ fn void Parser.parseFullTypeIdentifier(Parser* p, TypeRefHolder* ref) {
 
 // TODO: should be a Tokenizer function
 fn void Parser.dump_token(Parser* p, const Token* tok) @(unused) {
-    Buf* out = p.tokenizer.buf;
+    StringBuf* out = p.tokenizer.buf;
     out.clear();
 
     if (tok.kind.isKeyword())

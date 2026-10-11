@@ -28,7 +28,7 @@ import label_vector { LabelVector }
 import name_vector { NameVector }
 import src_loc { SrcLoc, SrcRange }
 import scope { Scope }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_pool { Pool }
 import warning_flags { Flags }
 import struct_func_list as sf_list;
@@ -558,7 +558,7 @@ fn void Analyser.handleEnumAssocValue(void* arg, Decl* d) {
     ma.popCheck();
 }
 
-fn void Analyser.printLiteral(Analyser* ma, Buf* buf,
+fn void Analyser.printLiteral(Analyser* ma, StringBuf* buf,
                               const char* s, const Expr* e, Value val,
                               bool as_is = false)
 {
@@ -635,7 +635,7 @@ fn void Analyser.handleStaticAssert(void* arg, StaticAssert* sa) {
     }
 
     char[256] tmp;
-    Buf buf.init(tmp, countof(tmp), true, false, 0);
+    StringBuf buf.init(tmp, countof(tmp), true, false, 0);
 
     if (rhs) {
         if (opcode == Equal) {

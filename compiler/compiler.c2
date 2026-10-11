@@ -34,7 +34,7 @@ import module_analyser { Analyser }
 import module_list;
 import plugin_info;
 import source_mgr { SourceMgr }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_list;
 import string_pool { Pool }
 import string_utils;
@@ -468,7 +468,7 @@ fn Component* Compiler.findModuleComponent(const Compiler* c, u32 name_idx) {
     return nil;
 }
 
-fn void Compiler.add_source(void* arg, const char* name, Buf* content) {
+fn void Compiler.add_source(void* arg, const char* name, StringBuf* content) {
     Compiler* c = arg;
     u32 size;
     void* data = content.detach(&size);

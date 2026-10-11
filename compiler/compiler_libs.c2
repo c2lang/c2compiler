@@ -26,7 +26,7 @@ import file_utils;
 import manifest;
 import module_list;
 import source_mgr { SourceMgr }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_list;
 
 import c_errno { errno }
@@ -250,7 +250,7 @@ fn void Compiler.parseSourceLibs(Compiler* c) {
 }
 
 fn void Compiler.showAllLibs(Compiler* c) {
-    Buf* out = string_buffer.create(1024, color.useColor(), 2);
+    StringBuf* out = StringBuf.create(1024, color.useColor(), 2);
     out.add("libraries:\n");
 
     bool show_modules = false;
@@ -262,7 +262,7 @@ fn void Compiler.showAllLibs(Compiler* c) {
     out.free();
 }
 
-fn void Compiler.showLibs(Compiler* c, Buf* out, const char* dirname, bool show_modules) {
+fn void Compiler.showLibs(Compiler* c, StringBuf* out, const char* dirname, bool show_modules) {
     out.indent(1);
     out.color(color.Blue);
     out.add(dirname);

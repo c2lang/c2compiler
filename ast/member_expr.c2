@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc, SrcRange }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 import string { memcpy, strlen }
 
@@ -294,7 +294,7 @@ public fn const char* MemberExpr.getMemberName(const MemberExpr* e) {
     return e.getName(1);
 }
 
-fn void MemberExpr.print(const MemberExpr* e, Buf* out, u32 indent) {
+fn void MemberExpr.print(const MemberExpr* e, StringBuf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.space();
@@ -325,7 +325,7 @@ fn void MemberExpr.print(const MemberExpr* e, Buf* out, u32 indent) {
     if (e.hasExpr()) e.refs[0].expr.print(out, indent + 1);
 }
 
-fn void MemberExpr.printLiteral(const MemberExpr* e, Buf* out) {
+fn void MemberExpr.printLiteral(const MemberExpr* e, StringBuf* out) {
     if (e.hasExpr()) {
         e.refs[0].expr.printLiteral(out);
     } else {
@@ -336,7 +336,7 @@ fn void MemberExpr.printLiteral(const MemberExpr* e, Buf* out) {
 }
 
 public fn void MemberExpr.dump(const MemberExpr* m) @(unused) {
-    Buf* out = ast.getDumpBuf();
+    StringBuf* out = ast.getDumpBuf();
     out.color(col_Expr);
     out.print("MemberExpr loc %d expr %d decl %d/2\n",
               m.base.getLoc(), m.hasExpr(), m.base.base.memberExprBits.num_decls);

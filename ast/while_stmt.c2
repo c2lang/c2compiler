@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 public type WhileStmt struct @(opaque) {
     Stmt base;
@@ -46,7 +46,7 @@ fn Stmt* WhileStmt.instantiate(WhileStmt* s, Instantiator* inst) {
     return (Stmt*)WhileStmt.create(inst.c, s.base.loc, cond2, body2);
 }
 
-fn void WhileStmt.print(const WhileStmt* s, Buf* out, u32 indent) {
+fn void WhileStmt.print(const WhileStmt* s, StringBuf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.newline();
 

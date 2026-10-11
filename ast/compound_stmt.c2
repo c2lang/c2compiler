@@ -16,7 +16,7 @@
 module ast;
 
 import ast_context { Context }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import src_loc { SrcLoc }
 
 import string { memcpy }
@@ -78,7 +78,7 @@ public fn SrcLoc CompoundStmt.getEndLoc(const CompoundStmt* e) {
     return e.base.loc + 1;
 }
 
-fn void CompoundStmt.print(const CompoundStmt* s, Buf* out, u32 indent) {
+fn void CompoundStmt.print(const CompoundStmt* s, StringBuf* out, u32 indent) {
     s.base.printKind(out, indent);
     out.newline();
     const u32 count = s.base.compoundStmtBits.count;

@@ -16,9 +16,9 @@
 module c_generator;
 
 import ast { * }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
-fn void Generator.emitCall(Generator* gen, Buf* out, Expr* e) {
+fn void Generator.emitCall(Generator* gen, StringBuf* out, Expr* e) {
     CallExpr* call = (CallExpr*)e;
 
     Decl* dest = nil;

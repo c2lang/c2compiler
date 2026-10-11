@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 import string { memcpy }
 
@@ -173,7 +173,7 @@ public fn Expr* CallExpr.getArg(const CallExpr* e, u32 i) {
     return e.args[i];
 }
 
-fn void CallExpr.printLiteral(const CallExpr* e, Buf* out) {
+fn void CallExpr.printLiteral(const CallExpr* e, StringBuf* out) {
     e.func.printLiteral(out);
     out.lparen();
     for (u32 i = 0; i < e.getNumArgs(); i++) {
@@ -183,7 +183,7 @@ fn void CallExpr.printLiteral(const CallExpr* e, Buf* out) {
     out.rparen();
 }
 
-fn void CallExpr.print(const CallExpr* e, Buf* out, u32 indent) {
+fn void CallExpr.print(const CallExpr* e, StringBuf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     if (e.base.base.callExprBits.calls_type_func) out.add(" TF");

@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import value_type { Value }
 
 type EnumConstantDeclBits struct {
@@ -84,7 +84,7 @@ public fn Expr** EnumConstantDecl.getInit2(EnumConstantDecl* d) {
     return nil;
 }
 
-fn void EnumConstantDecl.print(const EnumConstantDecl* d, Buf* out, u32 indent) {
+fn void EnumConstantDecl.print(const EnumConstantDecl* d, StringBuf* out, u32 indent) {
     d.base.printKind(out, indent, true);
     d.base.printBits(out);
     d.base.printName(out);

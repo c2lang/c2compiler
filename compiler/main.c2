@@ -32,7 +32,7 @@ import plugin_info;
 import plugin_mgr;
 import source_mgr { SourceMgr, Location }
 import string_list;
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_pool { Pool }
 import string_utils;
 import utils;
@@ -74,7 +74,7 @@ fn void Options.free(Options* opts) {
     opts.features.free();
 }
 
-fn void write_file_or_die(const char* filename, Buf* buf) {
+fn void write_file_or_die(const char* filename, StringBuf* buf) {
     file_utils.File file.init(filename);
     if (!file.write(buf.data(), buf.size())) {
         console.error("c2c: cannot write to %s: %s", file.path, file.getError());
@@ -112,7 +112,7 @@ fn void create_project(const char* name) {
         exit(EXIT_FAILURE);
     }
 
-    Buf* buf = string_buffer.create(4096, false, 2);
+    StringBuf* buf = StringBuf.create(4096, false, 2);
 
     buf.print(GenMain, name);
     write_file_or_die("main.c2", buf);

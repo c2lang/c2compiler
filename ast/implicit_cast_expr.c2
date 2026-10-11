@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf}
+import string_buffer { StringBuf}
 
 public type ImplicitCastKind enum u8 (const char* const name) {
     ArrayToPointerDecay : { "ArrayToPointerDecay" },
@@ -90,11 +90,11 @@ fn SrcLoc ImplicitCastExpr.getEndLoc(const ImplicitCastExpr* e) {
     return e.getInner().getEndLoc();
 }
 
-fn void ImplicitCastExpr.printLiteral(const ImplicitCastExpr* e, Buf* out) {
+fn void ImplicitCastExpr.printLiteral(const ImplicitCastExpr* e, StringBuf* out) {
     e.inner.printLiteral(out);
 }
 
-fn void ImplicitCastExpr.print(const ImplicitCastExpr* e, Buf* out, u32 indent) {
+fn void ImplicitCastExpr.print(const ImplicitCastExpr* e, StringBuf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.space();

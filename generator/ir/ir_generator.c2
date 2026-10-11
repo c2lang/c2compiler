@@ -27,7 +27,7 @@ import ir_context { SymbolId }
 import ir_gen_locals { Locals, StackVar }
 import label_map;
 import source_mgr { SourceMgr }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_pool { Pool }
 import target_info;
 import value_type { Value }
@@ -51,7 +51,7 @@ type Generator struct {
     Locals locals;
 
     const Decl* mainFunc;
-    Buf* name_buf;
+    StringBuf* name_buf;
     bool assert_generated;
     bool print;
     bool enable_asserts;
@@ -93,7 +93,7 @@ fn void Generator.init(Generator* gen,
     gen.enable_asserts = enable_asserts;
     gen.ptr_type = targetInfo.ptrWidth == 64 ? ir.Type.U64 : ir.Type.U32;
     gen.sm = sm;
-    gen.name_buf = string_buffer.create(128, false, 0);
+    gen.name_buf = StringBuf.create(128, false, 0);
 }
 
 fn void Generator.free(Generator* gen) {
@@ -129,7 +129,7 @@ fn void Generator.leaveScope(Generator* gen) {
 fn const char* Generator.createLocalName(Generator* gen, const Decl* d) {
     assert(gen.cur_function);
     // a in function mod.func -> mod_func.a
-    Buf* out = gen.name_buf;
+    StringBuf* out = gen.name_buf;
     out.clear();
     out.add(d.getModuleName());
     out.add1('_');
@@ -140,7 +140,7 @@ fn const char* Generator.createLocalName(Generator* gen, const Decl* d) {
 }
 
 fn const char* Generator.createSymbolName(Generator* gen, const Decl* d) {
-    Buf* out = gen.name_buf;
+    StringBuf* out = gen.name_buf;
     out.clear();
 
     if (d.isExternal() && d.getModule().isForeign()) {
@@ -187,7 +187,7 @@ fn SymbolId Generator.createSymbol(Generator* gen, Decl* d) {
 }
 
 fn const char* Generator.createStringVar(Generator* gen) {
-    Buf* out = gen.name_buf;
+    StringBuf* out = gen.name_buf;
     out.clear();
     out.print(".str%d", gen.string_idx);
     gen.string_idx++;
@@ -637,7 +637,7 @@ fn void Generator.addLocalVar(Generator* gen, VarDecl* vd) {
     // only if debugging
     // params may be unnamed
     u32 name_idx = vd.asDecl().getNameIdx();
-    Buf* out = gen.name_buf;
+    StringBuf* out = gen.name_buf;
     out.clear();
     out.print("s%d ", slot.value);
     if (name_idx) out.add(gen.idx2name(name_idx));

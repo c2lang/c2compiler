@@ -18,7 +18,7 @@ module ast;
 import ast_context { Context }
 import attr { Attr }
 import color { * }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_pool { Pool }
 
 import stdio { printf, puts }
@@ -111,7 +111,7 @@ public type Globals struct @(opaque) {
     u32 ast_count;      // Note: first index used to indicate nil
     u32 ast_capacity;
     AST** ast_list;
-    Buf* dump_buf;
+    StringBuf* dump_buf;
 #if AstStatistics
     Stats stats;
 #endif
@@ -136,7 +136,7 @@ public fn void initialize(Context* c, Pool* astPool, bool use_color) {
     g.ast_count = 0;
     g.ast_capacity = 0;
     g.ast_list = nil;
-    g.dump_buf = string_buffer.create(4096, use_color, 2);
+    g.dump_buf = StringBuf.create(4096, use_color, 2);
 #if AstStatistics
     g.stats.reset();
 #endif
@@ -235,11 +235,11 @@ fn AST* Globals.idx2ast(Globals* g, u32 idx) {
     return g.ast_list[idx];
 }
 
-fn Buf* getDumpBuf() {
+fn StringBuf* getDumpBuf() {
     return globals.dump_buf;
 }
 
-fn void flushDumpBuf(Buf* out) {
+fn void flushDumpBuf(StringBuf* out) {
     out.color(col_Normal);
     puts(out.data());
     out.clear();

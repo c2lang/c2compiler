@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 public const u32 LHS = 0x01;
 public const u32 RHS = 0x02;
@@ -110,7 +110,7 @@ fn SrcLoc BinaryOperator.getEndLoc(const BinaryOperator* e) {
     return e.getRHS().getEndLoc();
 }
 
-fn void BinaryOperator.print(const BinaryOperator* e, Buf* out, u32 indent) {
+fn void BinaryOperator.print(const BinaryOperator* e, StringBuf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.space();
@@ -122,7 +122,7 @@ fn void BinaryOperator.print(const BinaryOperator* e, Buf* out, u32 indent) {
     e.rhs.print(out, indent + 1);
 }
 
-fn void BinaryOperator.printLiteral(const BinaryOperator* e, Buf* out) {
+fn void BinaryOperator.printLiteral(const BinaryOperator* e, StringBuf* out) {
     e.lhs.printLiteral(out);
     out.space();
     out.add(e.getOpcode().name);

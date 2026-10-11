@@ -17,7 +17,7 @@ module c_generator;
 
 import src_loc { SrcLoc }
 import source_mgr { Location }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 
 import string { memcpy, memset, strcmp, strdup }
 import stdlib { calloc, malloc, free }
@@ -165,7 +165,7 @@ fn u32 Generator.addCall(Generator* gen, const char* funcname, SrcLoc loc) {
     return gen.calls.add(call);
 }
 
-fn void Generator.writeCalls(Generator* gen, Buf* out) {
+fn void Generator.writeCalls(Generator* gen, StringBuf* out) {
     if (!gen.trace_calls)
         return;
 
@@ -197,6 +197,6 @@ fn void Generator.writeCalls(Generator* gen, Buf* out) {
             "u32 c2_trace_counts[sizeof(c2_trace_data) / sizeof(c2_trace_data[0])];\n\n");
 }
 
-fn void Generator.writeCallExterns(Generator* gen, Buf* out) {
+fn void Generator.writeCallExterns(Generator* gen, StringBuf* out) {
     out.add("extern u32 c2_trace_counts[];\n");
 }

@@ -19,13 +19,13 @@ import ast { * }
 import component { Component }
 import console;
 import file_utils;
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_list;
 import string_pool { Pool }
 
 type Generator struct {
     Pool* astPool;
-    Buf* out;
+    StringBuf* out;
     const char* output_dir;
     string_list.List imports;  // used to filter out duplicate imports (from different ASTs)
     Module* mod;
@@ -42,7 +42,7 @@ public fn void generate(Pool* astPool, const char* output_dir, component.List* c
 {
     Generator gen = {}
     gen.astPool = astPool;
-    gen.out = string_buffer.create(64*1024, false, 3);
+    gen.out = StringBuf.create(64*1024, false, 3);
     gen.output_dir = output_dir;
 
     Component* mainComp = comps.getLast();
@@ -108,6 +108,6 @@ fn void on_decl(void* arg, Decl* d) {
     gen.emitGlobalDecl(d);
 }
 
-fn void Generator.emitName(Generator* gen, Buf* out, const Decl* d) {
+fn void Generator.emitName(Generator* gen, StringBuf* out, const Decl* d) {
     out.add(gen.idx2name(d.getNameIdx()));
 }

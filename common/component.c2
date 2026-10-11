@@ -21,7 +21,7 @@ import color;
 import file_list { FileList, File }
 import module_list;
 import src_loc { SrcLoc }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import string_list;
 import string_pool { Pool }
 
@@ -201,7 +201,7 @@ public fn bool Component.hasModule(const Component* c, const Module* mod) {
 }
 
 public fn void Component.print(const Component* c, bool show_funcs) {
-    Buf* out = string_buffer.create(128*1024, color.useColor(), 1);
+    StringBuf* out = StringBuf.create(128*1024, color.useColor(), 1);
     const Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {
         mods[i].print(out, show_funcs);
@@ -212,7 +212,7 @@ public fn void Component.print(const Component* c, bool show_funcs) {
 }
 
 public fn void Component.printModules(const Component* c) {
-    Buf* out = string_buffer.create(4096, color.useColor(), 1);
+    StringBuf* out = StringBuf.create(4096, color.useColor(), 1);
     out.print("--- %s [%s]", c.getName(), c.kind.name);
     out.add(" ---\n");
     const Module** mods = c.mods.getConst();
@@ -231,7 +231,7 @@ public fn void Component.printModules(const Component* c) {
 public fn void Component.printSymbols(const Component* c, bool print_external) {
     if (c.isExternal() != print_external) return;
 
-    Buf* out = string_buffer.create(4096, color.useColor(), 1);
+    StringBuf* out = StringBuf.create(4096, color.useColor(), 1);
     out.print("--- %s [%s] ---\n", c.getName(), c.kind.name);
     const Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {

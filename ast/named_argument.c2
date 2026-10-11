@@ -16,7 +16,7 @@
 module ast;
 
 import ast_context { Context }
-import string_buffer { Buf }
+import string_buffer { StringBuf }
 import src_loc { SrcLoc }
 
 public type NamedArgument struct @(opaque) {
@@ -54,7 +54,7 @@ fn SrcLoc NamedArgument.getEndLoc(const NamedArgument* e) {
     return e.inner.getEndLoc();
 }
 
-fn void NamedArgument.print(const NamedArgument* e, Buf* out, u32 indent) {
+fn void NamedArgument.print(const NamedArgument* e, StringBuf* out, u32 indent) {
     e.base.printKind(out, indent);
     e.base.printTypeBits(out);
     out.space();
@@ -64,7 +64,7 @@ fn void NamedArgument.print(const NamedArgument* e, Buf* out, u32 indent) {
     e.inner.print(out, indent + 1);
 }
 
-fn void NamedArgument.printLiteral(const NamedArgument* e, Buf* out) {
+fn void NamedArgument.printLiteral(const NamedArgument* e, StringBuf* out) {
     out.add(idx2name(e.name));
     out.add(": ");
     e.inner.printLiteral(out);
