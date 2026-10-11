@@ -193,7 +193,7 @@ public fn i32 Replacer.replace(Replacer* r, u16 old_len) {
         const Loc* l = &r.locs[i];
         //printf("%s %d %d\n", l.filename, l.line, l.column);
         const char* filename = l.filename;
-        if (filename != cur_file) {
+        if (!cur_file || strcmp(filename, cur_file) != 0) {
             num_files++;
             if (r.file.isOpen()) {
                 r.addFragment(prev_offset, r.file.data_size());
@@ -213,7 +213,7 @@ public fn i32 Replacer.replace(Replacer* r, u16 old_len) {
             printf("invalid position %s %d %d\n", l.filename, l.line, l.column);
             return -1;
         }
-        //printf("offset %d   prev %d\n", offset, prev_offset);
+        if (offset < prev_offset) continue; // duplicate/overlapping location
 
         r.addFragment(prev_offset, offset);
         num_subs++;

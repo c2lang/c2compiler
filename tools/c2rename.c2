@@ -82,6 +82,7 @@ fn void parse_options(i32 argc, const char** argv) {
 }
 
 fn void use_fn(void* arg, const Dest* res) {
+    if (!res.filename) return; // symbol/location not found
     Replacer* r = arg;
     r.add(res.filename, res.line, res.col);
 }
