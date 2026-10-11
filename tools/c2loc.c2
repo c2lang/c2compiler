@@ -20,7 +20,7 @@ import c2recipe { Recipe }
 import constants { recipe_name }
 import file_list;
 import source_mgr;
-import string_pool;
+import string_pool { StringPool }
 
 import c_errno { errno }
 import stdio { printf }
@@ -32,7 +32,7 @@ const char* target;
 const char* other_dir;
 bool verbose;
 
-string_pool.Pool* pool;
+StringPool* pool;
 source_mgr.SourceMgr* sm;
 
 fn void usage(const char* me) {
@@ -115,7 +115,7 @@ public fn i32 main(i32 argc, const char** argv)
         }
     }
 
-    pool = string_pool.create(32*1024, 1024);
+    pool = StringPool.create(32*1024, 1024);
     sm = source_mgr.create(pool);
     Recipe* recipe = c2recipe.create(sm, pool);
 

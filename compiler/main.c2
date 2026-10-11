@@ -33,7 +33,7 @@ import plugin_mgr;
 import source_mgr { SourceMgr, Location }
 import string_list;
 import string_buffer { StringBuf }
-import string_pool { Pool }
+import string_pool { StringPool }
 import string_utils;
 import utils;
 
@@ -61,7 +61,7 @@ type Options struct {
     string_list.List features;
 }
 
-fn void Options.init(Options* opts, Pool* pool) {
+fn void Options.init(Options* opts, StringPool* pool) {
     memset(opts, 0, sizeof(Options));
     opts.targets.init(pool);
     opts.files.init(pool);
@@ -476,7 +476,7 @@ type Context struct {
     utils.PathInfo path_info;
 
     // note: auxPool is used by recipe, build-file and manifests
-    Pool* auxPool;
+    StringPool* auxPool;
     SourceMgr* sm;
     Diags* diags;
 
@@ -497,7 +497,7 @@ type Context struct {
 fn void Context.init(Context* c) {
     memset(c, 0, sizeof(Context));
     // note: auxPool is used by recipe, build-file and manifests
-    c.auxPool = string_pool.create(32*1024, 256);
+    c.auxPool = StringPool.create(32*1024, 256);
     c.sm = source_mgr.create(c.auxPool);
     c.diags = diagnostics.create(c.sm, color.useColor(), &c.path_info);
     c.recipe = c2recipe.create(c.sm, c.auxPool);

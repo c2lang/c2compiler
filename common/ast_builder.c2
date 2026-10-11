@@ -24,15 +24,15 @@ import diagnostics { Diags }
 import number_radix { Radix }
 import src_loc { SrcLoc }
 import string_buffer { StringBuf }
-import string_pool { Pool }
+import string_pool { StringPool }
 
 import stdlib { calloc, free, exit }
 
 public type Builder struct @(opaque) {
     Context* context;           // no ownership
     Diags* diags;   // no ownership
-    Pool* astPool;  // no ownership
-    Pool* auxPool;  // no ownership
+    StringPool* astPool;  // no ownership
+    StringPool* auxPool;  // no ownership
     Component* comp;  // no ownership
     Module* mod;                // no ownership
     AST* ast;
@@ -51,8 +51,8 @@ public type Builder struct @(opaque) {
 
 public fn Builder* create(Context* context,
                           Diags* diags,
-                          Pool* astPool,
-                          Pool* auxPool,
+                          StringPool* astPool,
+                          StringPool* auxPool,
                           u32 c2_name,
                           u32 main_name,
                           Handler* attr_handler_)

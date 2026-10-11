@@ -21,7 +21,7 @@ import component { Component }
 import file_utils { File }
 import string_buffer { StringBuf }
 import string_list;
-import string_pool { Pool }
+import string_pool { StringPool }
 
 import stdio { snprintf, fprintf, stderr }
 import stdlib { malloc, calloc, free }
@@ -74,7 +74,7 @@ fn void Dir.free(Dir* d) {
     d.buf.free();
 }
 
-fn void Dir.flatten(const Dir* d, StringBuf* out, Pool* pool) {
+fn void Dir.flatten(const Dir* d, StringBuf* out, StringPool* pool) {
     // flattens subdirs into passed buf
     for (u32 i=0; i<d.count; i++) {
         const Dir* subdir = &d.subdirs[i];
@@ -97,14 +97,14 @@ type Generator struct {
 
     Visitor* visitor; // non-basic mode only
     string_list.List imports; // basic mode only
-    Pool* astPool;
+    StringPool* astPool;
 
     Decl** deps;
     u32 deps_count;
     u32 deps_capacity;
 
     Dir root;
-    Pool* pool;
+    StringPool* pool;
 
     StringBuf* out; // no owership, points to StringBuf inside Dir
     u32 indent;
@@ -409,7 +409,7 @@ fn void Generator.create_basic(Generator* gen, Component* c) {
 #endif
 
 
-public fn void generate(const char* title, const char* output_dir, component.List* comps, Pool* astPool, bool basic_mode) {
+public fn void generate(const char* title, const char* output_dir, component.List* comps, StringPool* astPool, bool basic_mode) {
     Generator gen = { nil }
 
 
@@ -427,7 +427,7 @@ public fn void generate(const char* title, const char* output_dir, component.Lis
     gen.imports.init(astPool);
     gen.root.init(0, 3);
     gen.deps_resize(64);
-    gen.pool = string_pool.create(4096, 1024);
+    gen.pool = StringPool.create(4096, 1024);
 
     gen.out = gen.root.buf;
     StringBuf* out = gen.out;

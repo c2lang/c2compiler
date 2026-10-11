@@ -16,7 +16,7 @@
 module attr;
 
 import src_loc { SrcLoc }
-import string_pool { Pool }
+import string_pool { StringPool }
 
 // note: keep Attr prefix because Kind already exists a lot
 public type AttrKind enum u8 (const char* const name, const AttrReq required_arg) {
@@ -81,7 +81,7 @@ public type AttrRegistry struct {
     u32[AttrKind] name_indexes;
 }
 
-public fn void AttrRegistry.init(AttrRegistry* ar, Pool* pool) {
+public fn void AttrRegistry.init(AttrRegistry* ar, StringPool* pool) {
     // skip unknown attribute
     AttrKind kind = (AttrKind)0;
     ar.name_indexes[kind++] = 0;

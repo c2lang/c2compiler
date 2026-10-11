@@ -18,13 +18,13 @@ module c2recipe;
 import build_target { Target, PluginList }
 import source_mgr { SourceMgr }
 import src_loc { SrcLoc }
-import string_pool { Pool }
+import string_pool { StringPool }
 
 import stdlib { malloc, calloc, free }
 import string { memcpy }
 
 public type Recipe struct @(opaque) {
-    Pool* pool;
+    StringPool* pool;
     SourceMgr* sm;
 
     Target** targets;
@@ -34,7 +34,7 @@ public type Recipe struct @(opaque) {
     PluginList plugins;
 }
 
-public fn Recipe* create(SourceMgr* sm, Pool* pool) {
+public fn Recipe* create(SourceMgr* sm, StringPool* pool) {
     Recipe* r = calloc(1, sizeof(Recipe));
     r.sm = sm;
     r.pool = pool;

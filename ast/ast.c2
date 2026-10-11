@@ -19,7 +19,7 @@ import attr { Attr, AttrKind }
 import attr_table;
 import src_loc { SrcLoc }
 import string_buffer { StringBuf }
-import string_pool { Pool }
+import string_pool { StringPool }
 
 import stdlib { calloc, free }
 
@@ -28,7 +28,7 @@ import stdlib { calloc, free }
 */
 public type AST struct @(opaque) {
     Module* mod;
-    Pool* auxPool;
+    StringPool* auxPool;
     void* ptr;  // pointer used during analyser/generation (in analysis: Scope*)
     u32 name;   // into auxPool
     u32 idx;    // ast idx
@@ -47,7 +47,7 @@ public type AST struct @(opaque) {
 
 static_assert(144+64, sizeof(AST));
 
-fn AST* AST.create(Pool* auxPool, u32 name, Module* mod, bool is_interface, bool is_generated) {
+fn AST* AST.create(StringPool* auxPool, u32 name, Module* mod, bool is_interface, bool is_generated) {
     AST* a = calloc(1, sizeof(AST));
     a.mod = mod;
     a.auxPool = auxPool;

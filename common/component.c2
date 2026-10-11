@@ -23,7 +23,7 @@ import module_list;
 import src_loc { SrcLoc }
 import string_buffer { StringBuf }
 import string_list;
-import string_pool { Pool }
+import string_pool { StringPool }
 
 import stdio { puts }
 import stdlib { calloc, malloc, free }
@@ -55,7 +55,7 @@ public type Component struct @(opaque) {
     bool available_source;  // only for external
 
     Context* context;   // no ownership
-    Pool* auxPool;      // no ownership
+    StringPool* auxPool;      // no ownership
 
     module_list.List mods;
     string_list.List deps;
@@ -63,7 +63,7 @@ public type Component struct @(opaque) {
 }
 
 public fn Component* create(Context* context,
-                              Pool* auxPool,
+                              StringPool* auxPool,
                               u32 name_idx, // into auxPool
                               Kind kind)
 {

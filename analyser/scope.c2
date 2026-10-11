@@ -21,7 +21,7 @@ import levenshtein;
 import module_list;
 import constants;
 import src_loc { SrcLoc }
-import string_pool { Pool }
+import string_pool { StringPool }
 
 import stdio { printf }
 import stdlib { malloc, calloc, free }
@@ -45,7 +45,7 @@ type Level struct {
 public type Scope struct @(opaque) {
     // global scope
     Diags* diags;
-    Pool* astPool;
+    StringPool* astPool;
     const module_list.List* allmodules;
     const ast.ImportDeclList* imports;
     const ast.Module* mod;
@@ -73,7 +73,7 @@ public type Scope struct @(opaque) {
 
 public fn Scope* create(module_list.List* allmodules,
                           Diags* diags,
-                          Pool* astPool,
+                          StringPool* astPool,
                           const ast.ImportDeclList* imports,
                           ast.Module* mod,
                           const ast.SymbolTable* symbols,

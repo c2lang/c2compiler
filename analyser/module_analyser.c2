@@ -29,7 +29,7 @@ import name_vector { NameVector }
 import src_loc { SrcLoc, SrcRange }
 import scope { Scope }
 import string_buffer { StringBuf }
-import string_pool { Pool }
+import string_pool { StringPool }
 import warning_flags { Flags }
 import struct_func_list as sf_list;
 import incr_array_list as ia_list;
@@ -45,7 +45,7 @@ public type Analyser struct @(opaque) {
     Diags* diags;
     conversion_checker.Checker conv_checker;
     Context* context;
-    Pool* astPool;
+    StringPool* astPool;
     Builder* builder;
     module_list.List* allmodules;
     const Flags* warnings;
@@ -89,7 +89,7 @@ public type Analyser struct @(opaque) {
 
 public fn Analyser* create(Diags* diags,
                              Context* context,
-                             Pool* astPool,
+                             StringPool* astPool,
                              Builder* builder,
                              module_list.List* allmodules,
                              const Flags* warnings,

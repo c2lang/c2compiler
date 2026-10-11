@@ -20,7 +20,7 @@ import keywords { Info }
 import src_loc { SrcLoc }
 import string_buffer { StringBuf }
 import string_map { Map }
-import string_pool { Pool }
+import string_pool { StringPool }
 import token { Token, Kind }
 import utf8;
 import value_type { Value }
@@ -262,7 +262,7 @@ public type Tokenizer struct {
     const Info* kwinfo;
     const char* line_start;
 
-    Pool* pool; // no ownership
+    StringPool* pool; // no ownership
     StringBuf* buf; // no ownership, used for strings and character constants
     ErrorFn on_error;
     void* on_error_arg;
@@ -280,7 +280,7 @@ public type Tokenizer struct {
 static_assert(408, sizeof(Tokenizer));
 
 public fn void Tokenizer.init(Tokenizer* t,
-                              Pool* pool,
+                              StringPool* pool,
                               StringBuf* buf,
                               const char* input,
                               SrcLoc loc_start,

@@ -18,7 +18,7 @@ module attr_handler;
 import ast { AttrHandlerFn, Decl }
 import attr { Attr }
 import diagnostics { Diags }
-import string_pool { Pool }
+import string_pool { StringPool }
 import warning_flags { Flags }
 
 import stdlib { calloc, malloc, free }
@@ -32,7 +32,7 @@ type Entry struct {
 
 public type Handler struct @(opaque) {
     Diags* diags;   // no ownership
-    Pool* astPool;
+    StringPool* astPool;
     const Flags* warnings;
 
     Entry* entries;
@@ -41,7 +41,7 @@ public type Handler struct @(opaque) {
 }
 
 public fn Handler* create(Diags* diags,
-                          Pool* astPool,
+                          StringPool* astPool,
                           const Flags* warnings) {
     Handler* h = calloc(1, sizeof(Handler));
     h.diags = diags;

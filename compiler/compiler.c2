@@ -36,7 +36,7 @@ import plugin_info;
 import source_mgr { SourceMgr }
 import string_buffer { StringBuf }
 import string_list;
-import string_pool { Pool }
+import string_pool { StringPool }
 import string_utils;
 import target_info;
 import utils;
@@ -84,7 +84,7 @@ public type Options struct {
     const char* target_triple;
 }
 
-public fn void build(Pool* auxPool,
+public fn void build(StringPool* auxPool,
                        SourceMgr* sm,
                        Diags* diags,
                        build_file.Info* build_info, // can be nil
@@ -117,7 +117,7 @@ public fn void build(Pool* auxPool,
 }
 
 type Compiler struct {
-    Pool* auxPool;   // no ownership
+    StringPool* auxPool;   // no ownership
     SourceMgr* sm;    // no ownership
     Diags* diags;    // no ownership
     build_file.Info* build_info; // no ownership, can be nil
@@ -127,7 +127,7 @@ type Compiler struct {
     PluginHandler* pluginHandler; // no ownership
 
     Context* context;
-    Pool* astPool;
+    StringPool* astPool;
     Builder* builder;
     attr_handler.Handler* attr_handler;
     module_list.List allmodules;
@@ -171,7 +171,7 @@ fn component.Kind target2compKind(build_target.Kind k) {
 const char[] C2_trace @(embed="generator/c2_trace.c2");
 
 fn void Compiler.build(Compiler* c,
-                         Pool* auxPool,
+                         StringPool* auxPool,
                          SourceMgr* sm,
                          Diags* diags,
                          build_file.Info* build_info, // can be nil
@@ -210,7 +210,7 @@ fn void Compiler.build(Compiler* c,
     diags.setWarningAsError(target.getWarnings().are_errors);
     c.diags.clear();
 
-    c.astPool = string_pool.create(128*1024, 8192);
+    c.astPool = StringPool.create(128*1024, 8192);
 
     // Note: keywords must be added first
     c.kwinfo.init(c.astPool);

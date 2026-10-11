@@ -24,7 +24,7 @@ import console;
 import diagnostics;
 import file_utils;
 import source_mgr { SourceMgr }
-import string_pool { Pool }
+import string_pool { StringPool }
 import string_buffer { StringBuf }
 
 public type RegisterAttrFn fn bool (void* arg, u32 name, ast.AttrHandlerFn func, void* arg2);
@@ -37,8 +37,8 @@ public type Info struct {
     Target* target;
 
     component.List* components;
-    Pool* astPool;
-    Pool* auxPool;
+    StringPool* astPool;
+    StringPool* auxPool;
     ast_context.Context* context;
     ast_builder.Builder* builder;
     ast.Globals* ast_globals;

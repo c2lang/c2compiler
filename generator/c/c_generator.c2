@@ -31,7 +31,7 @@ import process_utils;
 import source_mgr { SourceMgr }
 import string_buffer { StringBuf }
 import string_list;
-import string_pool { Pool }
+import string_pool { StringPool }
 import string_utils;
 import target_info;
 import value_type { Value }
@@ -62,8 +62,8 @@ fn void Fragment.free(Fragment* f) {
 }
 
 type Generator struct {
-    Pool* astPool;
-    Pool* auxPool;
+    StringPool* astPool;
+    StringPool* auxPool;
     StringBuf* out;
     const char* target;
     build_target.Kind target_kind;
@@ -1217,7 +1217,7 @@ fn void Generator.write_files(Generator* gen) {
 }
 
 fn void Generator.init(Generator* gen,
-                       Pool* astPool,
+                       StringPool* astPool,
                        const char* target,
                        build_target.Kind kind,
                        const char* results_dir,       // output/<target>/
@@ -1270,8 +1270,8 @@ fn void Generator.write(Generator* gen, const StringBuf* buf, const char* output
     }
 }
 
-public fn void generate(Pool* astPool,
-                        Pool* auxPool,
+public fn void generate(StringPool* astPool,
+                        StringPool* auxPool,
                         const char* target,
                         build_target.Kind kind,
                         const char* output_dir,

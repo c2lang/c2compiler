@@ -28,7 +28,7 @@ import ir_gen_locals { Locals, StackVar }
 import label_map;
 import source_mgr { SourceMgr }
 import string_buffer { StringBuf }
-import string_pool { Pool }
+import string_pool { StringPool }
 import target_info;
 import value_type { Value }
 
@@ -42,7 +42,7 @@ type JumpScope struct {
 
 type Generator struct {
     ir_context.Context* ctx;
-    const Pool* names;
+    const StringPool* names;
     label_map.Map labels;
 
     JumpScope[MaxScopes] scopes;
@@ -66,7 +66,7 @@ type Generator struct {
 
 fn void Generator.init(Generator* gen,
                        SourceMgr* sm,
-                       const Pool* names,
+                       const StringPool* names,
                        const target_info.Info* targetInfo,
                        const build_file.Info* buildInfo,
                        const char* target,
@@ -581,7 +581,7 @@ public fn void generate(const char* target,
                         const char* output_dir,
                         component.List* comps,
                         SourceMgr* sm,
-                        const Pool* astPool,
+                        const StringPool* astPool,
                         const target_info.Info* targetInfo,
                         const build_file.Info* buildInfo,   // can be nil
                         const Decl* mainFunc,

@@ -15,19 +15,19 @@
 
 module string_list;
 
-import string_pool { Pool }
+import string_pool { StringPool }
 
 import stdlib { malloc, free }
 import string { memset, memcpy, strcmp }
 
 public type List struct {
-    Pool* pool;
+    StringPool* pool;
     u32* indexes;   // into pool
     u32 count;
     u32 capacity;
 }
 
-public fn void List.init(List* l, Pool* pool) {
+public fn void List.init(List* l, StringPool* pool) {
     memset(l, 0, sizeof(List));
     l.pool = pool;
     l.resize(16);

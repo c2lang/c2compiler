@@ -17,7 +17,7 @@ module build_file;
 
 import src_loc { SrcLoc }
 import string_list;
-import string_pool { Pool }
+import string_pool { StringPool }
 
 import stdlib { malloc, free }
 import string { memcpy }
@@ -29,7 +29,7 @@ public type Plugin struct {
 }
 
 public type Info struct {
-    Pool* pool; // no ownership
+    StringPool* pool; // no ownership
     const char* filename;   // no ownership
 
     // all indexes into pool

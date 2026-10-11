@@ -19,7 +19,7 @@ import ast_context { Context }
 import attr { Attr }
 import color { * }
 import string_buffer { StringBuf }
-import string_pool { Pool }
+import string_pool { StringPool }
 
 import stdio { printf, puts }
 import stdlib { malloc, calloc, free }
@@ -103,7 +103,7 @@ public type Globals struct @(opaque) {
     QualType void_type;
     QualType void_ptr_type;
 
-    Pool* names_pool;
+    StringPool* names_pool;
     PointerPool pointers;
     StringTypePool string_types;
     bool use_color;
@@ -127,7 +127,7 @@ public fn Globals* getGlobals() { return globals; }
 public fn void setGlobals(Globals* g) @(unused) { globals = g; }
 
 // wordsize in bytes, must NOT be called from Plugin!
-public fn void initialize(Context* c, Pool* astPool, bool use_color) {
+public fn void initialize(Context* c, StringPool* astPool, bool use_color) {
     Globals* g = calloc(sizeof(Globals), 1);
     g.pointers.init(c);
     g.string_types.init(c);

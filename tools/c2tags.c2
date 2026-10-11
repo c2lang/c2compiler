@@ -19,7 +19,7 @@ import c2refs { Dest, RefUsesFn, Refs }
 import constants { Refs_filename }
 import file_utils;
 import refs_finder { Finder }
-import string_pool { Pool }
+import string_pool { StringPool }
 import utils;
 
 import c_errno { errno }
@@ -83,13 +83,13 @@ type Results struct {
     u32 capacity;
     Result* results;
 
-    Pool* pool;
+    StringPool* pool;
 }
 
 fn void Results.init(Results* r) {
     r.count = 0;
     r.resize(32);
-    r.pool = string_pool.create(4096, 1024);
+    r.pool = StringPool.create(4096, 1024);
 }
 
 fn void Results.free(Results* r) {

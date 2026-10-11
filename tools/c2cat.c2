@@ -23,7 +23,7 @@ import keywords;
 import src_loc { SrcLoc }
 import string_buffer { StringBuf }
 import string_map;
-import string_pool { Pool }
+import string_pool { StringPool }
 import token { Kind, Token }
 
 import ctype { isspace }
@@ -60,7 +60,7 @@ fn void usage(const char* me) {
 }
 
 type C2cat struct {
-    Pool* pool;
+    StringPool* pool;
     StringBuf* out;
     StringBuf* out2;
     Tokenizer* tokenizer;
@@ -287,7 +287,7 @@ fn i32 c2cat_file(const char* filename, bool use_color, bool use_color2, bool ch
         return -1;
     }
 
-    Pool* pool = string_pool.create(16*1024, 1024);
+    StringPool* pool = StringPool.create(16*1024, 1024);
     StringBuf* out = StringBuf.create(16*1024, use_color, 2);
     StringBuf* out2 = StringBuf.create(1024, use_color2, 2);
     StringBuf* buf = StringBuf.create(1024, false, 0);

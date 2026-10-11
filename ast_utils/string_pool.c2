@@ -42,7 +42,7 @@ type Block struct {
     char* data;
 }
 
-public type Pool struct @(opaque) {
+public type StringPool struct @(opaque) {
     u32 blocks_count;
     u32 blocks_capacity;
     Block* blocks;
@@ -62,10 +62,10 @@ public type Pool struct @(opaque) {
     u32 entry_capacity;
     HashEntry* entries; // contain hash table followed by collision lists
 }
-static_assert(64, sizeof(Pool));
+static_assert(64, sizeof(StringPool));
 
-public fn Pool* create(u32 data_capacity, u32 hash_size) {
-    Pool* p = calloc(1, sizeof(Pool));
+public fn StringPool* StringPool.create(u32 data_capacity, u32 hash_size) {
+    StringPool* p = calloc(1, sizeof(StringPool));
 
     // initialize internal block directory
     // data_capacity is ignored because we the initial block cannot be
@@ -97,7 +97,7 @@ public fn Pool* create(u32 data_capacity, u32 hash_size) {
     return p;
 }
 
-public fn void Pool.free(Pool* p) {
+public fn void StringPool.free(StringPool* p) {
     free(p.entries);
     while (p.blocks_count) free(p.blocks[--p.blocks_count].data);
     free(p.blocks);
@@ -107,7 +107,7 @@ public fn void Pool.free(Pool* p) {
 const u32 HASH_INITIAL = 13;
 const u32 HASH_PRIME = 17;
 
-fn u32 Pool.hash(const char* text, usize len) {
+fn u32 StringPool.hash(const char* text, usize len) {
     // FNV-1a hash
     u32 result = HASH_INITIAL;
     for (u32 i=0; i<len; i++) {
@@ -117,12 +117,12 @@ fn u32 Pool.hash(const char* text, usize len) {
     return result;
 }
 
-public fn const char* Pool.idx2str(const Pool* p, u32 idx) {
+public fn const char* StringPool.idx2str(const StringPool* p, u32 idx) {
     return p.blocks[idx / BLOCK_SIZE].data + idx % BLOCK_SIZE;
 }
 
 // NOTE: right might NOT be 0-terminated!
-fn bool Pool.same_string(const char* left, const char* right, usize rlen) {
+fn bool StringPool.same_string(const char* left, const char* right, usize rlen) {
     // cannot use memcmp because rlen bytes might not be accessible from left
     for (u32 i = 0; i < rlen; i++) {
         if (left[i] != right[i])
@@ -132,7 +132,7 @@ fn bool Pool.same_string(const char* left, const char* right, usize rlen) {
 }
 
 // NOTE: text is not 0-terminated!! len is strlen(text)
-public fn u32 Pool.add(Pool* p, const char* text, usize len, bool filter) {
+public fn u32 StringPool.add(StringPool* p, const char* text, usize len, bool filter) {
     // TODO compute the number of duplicates?
     p.num_adds++;
     p.total_size += len + 1;
@@ -140,14 +140,14 @@ public fn u32 Pool.add(Pool* p, const char* text, usize len, bool filter) {
     HashEntry hh;
     HashEntry* hp = &hh;
     if (filter) {
-        usize h = Pool.hash(text, len) & p.hash_mask;
+        usize h = StringPool.hash(text, len) & p.hash_mask;
         HashEntry v = p.entries[h];
         if (v != 0) {
             HashEntry next;
             /* scan the list */
             for (;;) {
                 u32 index = (v & INDEX_BITS) << INDEX_SHIFT;
-                if (Pool.same_string(p.idx2str(index), text, len))
+                if (StringPool.same_string(p.idx2str(index), text, len))
                     return index;
                 next = v >> NEXT_SHIFT;
                 if (next == 0)
@@ -204,16 +204,16 @@ has_bp:
     return idx;
 }
 
-public fn u32 Pool.addStr(Pool* p, const char* text, bool filter) {
+public fn u32 StringPool.addStr(StringPool* p, const char* text, bool filter) {
     return p.add(text, strlen(text), filter);
 }
 
-fn void Pool.resize_entries(Pool* p, u32 capacity) {
+fn void StringPool.resize_entries(StringPool* p, u32 capacity) {
     p.entries = realloc(p.entries, capacity * sizeof(*p.entries));
     p.entry_capacity = capacity;
 }
 
-public fn void Pool.report(const Pool* p, const char* name) @(unused) {
+public fn void StringPool.report(const StringPool* p, const char* name) @(unused) {
     // compute bucket lengths
     u32 max = 0;
     u32 min = 999;

@@ -19,7 +19,7 @@ import file_list { FileList, File }
 import src_loc { SrcLoc }
 import string_list;
 import string_map { Map }
-import string_pool { Pool }
+import string_pool { StringPool }
 import warning_flags { Flags }
 
 import stdlib { calloc, malloc, free }
@@ -121,7 +121,7 @@ public type Target struct @(opaque) {
     FileList asm_files;
 }
 
-public fn Target* create(u32 name_idx, SrcLoc loc, Kind kind, Pool* pool) {
+public fn Target* create(u32 name_idx, SrcLoc loc, Kind kind, StringPool* pool) {
     Target* t = calloc(1, sizeof(Target));
     t.name_idx = name_idx;
     t.loc = loc;

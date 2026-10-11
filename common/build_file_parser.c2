@@ -18,7 +18,7 @@ module build_file_parser;
 import build_file { Info }
 import source_mgr { SourceMgr }
 import src_loc { SrcLoc }
-import string_pool { Pool }
+import string_pool { StringPool }
 import yaml { Parser, Node, Iter }
 
 import stdio { fprintf, stderr }
@@ -124,7 +124,7 @@ fn bool parseInfo(Info* info, const char* data) {
     return ok;
 }
 
-public fn Info* parse(SourceMgr* sm, Pool* pool, const char* filename) {
+public fn Info* parse(SourceMgr* sm, StringPool* pool, const char* filename) {
     // create on stack first. After successful parse, alloc on heap and return
     Info info = {}
     info.pool = pool;

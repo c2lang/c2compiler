@@ -18,7 +18,7 @@ module ir_context;
 import index_list;
 import ir { * }
 import ir_tools { Target, Tools }
-import string_pool { Pool }
+import string_pool { StringPool }
 import target_info;
 
 import stdio {
@@ -56,7 +56,7 @@ fn void Builder.free(Builder* b) {
 
 public type Context struct @(opaque) {
     // context stuff
-    Pool* pool;
+    StringPool* pool;
     ConstantList constants;
     SymbolList symbols;
     InitValueList init_values;
@@ -82,7 +82,7 @@ public type BuildInfo struct {
 
 public fn Context* create(bool print, const target_info.Info* info, const BuildInfo* buildInfo) {
     Context* c = calloc(1, sizeof(Context));
-    c.pool = string_pool.create(2*1024, 256);
+    c.pool = StringPool.create(2*1024, 256);
     c.constants.init(128);
     c.symbols.init(128);
     c.init_values.init(128);

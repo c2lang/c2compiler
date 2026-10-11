@@ -16,7 +16,7 @@
 module refs_finder;
 
 import file_utils;
-import string_pool { Pool }
+import string_pool { StringPool }
 
 import c_errno { errno }
 import stdio { fprintf, stderr }
@@ -31,7 +31,7 @@ public type Finder struct @(opaque) {
     u32 capacity;
     u32* results;
 
-    Pool* pool;
+    StringPool* pool;
 }
 
 public fn Finder* create(const char* dirname, const char* filename) {
@@ -40,7 +40,7 @@ public fn Finder* create(const char* dirname, const char* filename) {
     f.filename = filename;
     f.count = 0;
     f.resize(4);
-    f.pool = string_pool.create(256, 512);
+    f.pool = StringPool.create(256, 512);
     return f;
 }
 

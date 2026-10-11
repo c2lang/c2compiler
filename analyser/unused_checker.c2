@@ -17,17 +17,17 @@ module unused_checker;
 
 import ast { * }
 import diagnostics { Diags }
-import string_pool { Pool }
+import string_pool { StringPool }
 import warning_flags { Flags }
 
 type Checker struct {
     Diags* diags;
-    Pool* astPool;
+    StringPool* astPool;
     const Flags* warnings;
 }
 
 public fn void check(Diags* diags,
-                     Pool* astPool,
+                     StringPool* astPool,
                      const Flags* warnings,
                      Module* mod)
 {

@@ -19,7 +19,7 @@ import console;
 import file_utils;
 import plugin_info;
 import string_list;
-import string_pool { Pool }
+import string_pool { StringPool }
 import string_utils;
 
 import c_errno { errno }
@@ -45,7 +45,7 @@ type Plugin struct {
 }
 
 public type Mgr struct @(opaque) {
-    Pool* auxPool;
+    StringPool* auxPool;
     console.Config* console_config;
     bool no_plugins;
 
@@ -57,7 +57,7 @@ public type Mgr struct @(opaque) {
     char[256] error_msg;
 }
 
-public fn Mgr* create(Pool* auxPool, console.Config* console_config, bool no_plugins) {
+public fn Mgr* create(StringPool* auxPool, console.Config* console_config, bool no_plugins) {
     Mgr* m = calloc(1, sizeof(Mgr));
     m.auxPool = auxPool;
     m.console_config = console_config;

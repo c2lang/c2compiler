@@ -19,7 +19,7 @@ import component { Component }
 import console;
 import source_mgr { SourceMgr }
 import string_list;
-import string_pool { Pool }
+import string_pool { StringPool }
 import yaml { Node, Parser, Iter }
 
 import stdio { fprintf, stderr }
@@ -37,8 +37,8 @@ fn const Node* get_checked(Parser* parser, const char* path) {
 }
 
 fn bool getYamlInfo(Parser* parser,
-                    Pool* astPool,
-                    Pool* auxPool,
+                    StringPool* astPool,
+                    StringPool* auxPool,
                     Component* comp,
                     string_list.List* mods)
 {
@@ -147,8 +147,8 @@ fn bool getYamlInfo(Parser* parser,
 
 public fn bool parse(SourceMgr* sm,
                      i32 file_id,
-                     Pool* astPool,
-                     Pool* auxPool,
+                     StringPool* astPool,
+                     StringPool* auxPool,
                      Component* comp,
                      string_list.List* mods)
 {

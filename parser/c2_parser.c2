@@ -28,7 +28,7 @@ import src_loc { SrcLoc }
 import stmt_list;
 import string_buffer { StringBuf }
 import string_map { Map }
-import string_pool { Pool }
+import string_pool { StringPool }
 import token { Token, Kind }
 import value_type { ftoa }
 //import number_radix;    // should have have to be imported
@@ -58,7 +58,7 @@ public type Parser struct @(opaque) {
 
     SourceMgr* sm;
     Diags* diags;
-    Pool* pool;
+    StringPool* pool;
     Builder* builder;
     const Map* features;
     const keywords.Info* kwinfo;
@@ -84,7 +84,7 @@ public type Parser struct @(opaque) {
 
 public fn Parser* create(SourceMgr* sm,
                          Diags* diags,
-                         Pool* pool,
+                         StringPool* pool,
                          ast_builder.Builder* builder,
                          const keywords.Info* kwinfo,
                          const Map* features,

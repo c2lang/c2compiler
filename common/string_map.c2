@@ -15,20 +15,20 @@
 
 module string_map;
 
-import string_pool { Pool }
+import string_pool { StringPool }
 
 import stdlib { malloc, free }
 import string { memset, memcpy, strcmp }
 
 public type Map struct {
-    Pool* pool;
+    StringPool* pool;
     u32* names;    // into pool
     u32* values;   // into pool
     u32 count;
     u32 capacity;
 }
 
-public fn void Map.init(Map* m, Pool* pool) {
+public fn void Map.init(Map* m, StringPool* pool) {
     memset(m, 0, sizeof(Map));
     m.pool = pool;
     m.resize(16);
