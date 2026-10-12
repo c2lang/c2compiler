@@ -23,7 +23,7 @@ import source_mgr { SourceMgr }
 import src_loc { SrcLoc }
 import string_list { StringList }
 import string_pool { StringPool }
-import warning_flags { Flags }
+import warning_flags { WarningFlags }
 
 import csetjmp { JmpBufTag, setjmp, longjmp }
 import stdio { vsnprintf, fprintf, stderr }
@@ -514,7 +514,7 @@ fn void Parser.parsePlugin(Parser* p, bool is_global) {
 fn void Parser.parseWarnings(Parser* p) {
     p.consumeToken();
     p.expect(Text, "expect options");
-    Flags* warnings = p.target.getWarnings2();
+    WarningFlags* warnings = p.target.getWarnings2();
     // TODO no need to store in string pool
     while (p.is(Text)) {
         const char* option = p.pool.idx2str(p.token.value);

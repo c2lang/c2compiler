@@ -20,7 +20,7 @@ import src_loc { SrcLoc }
 import string_list { StringList }
 import string_map { StringMap }
 import string_pool { StringPool }
-import warning_flags { Flags }
+import warning_flags { WarningFlags }
 
 import stdlib { calloc, malloc, free }
 import string { memset, memcpy }
@@ -101,7 +101,7 @@ public fn void PluginList.add(PluginList* l, u32 name, u32 options, SrcLoc loc) 
 public type BuildTarget struct @(opaque) {
     u32 name_idx;       // index into auxPool
     SrcLoc loc;
-    Flags warnings;
+    WarningFlags warnings;
     Kind kind;
 
     bool disable_asserts;
@@ -225,11 +225,11 @@ public fn void BuildTarget.enableWarnings(BuildTarget* t) {
     t.warnings.no_deprecated = false;
 }
 
-public fn const Flags* BuildTarget.getWarnings(const BuildTarget* t) {
+public fn const WarningFlags* BuildTarget.getWarnings(const BuildTarget* t) {
     return &t.warnings;
 }
 
-public fn Flags* BuildTarget.getWarnings2(BuildTarget* t) {
+public fn WarningFlags* BuildTarget.getWarnings2(BuildTarget* t) {
     return &t.warnings;
 }
 

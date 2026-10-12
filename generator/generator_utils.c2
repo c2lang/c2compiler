@@ -18,7 +18,7 @@ module generator_utils;
 import ast { * }
 import ast_visitor { Visitor }
 import component { Component }
-import module_list;
+import module_list { ModuleList }
 
 fn void clear_used_decl(void* arg, Decl* d) {
     d.clearUsed();
@@ -75,7 +75,7 @@ fn void mark_test_mode_mod(void* arg, ast.Module* m) {
     m.visitDecls(mark_test_mode_decl, arg);
 }
 
-public fn void mark_used(Component* mainComp, const module_list.List* allmodules, bool test_mode) {
+public fn void mark_used(Component* mainComp, const ModuleList* allmodules, bool test_mode) {
     if (test_mode) {
         // mark all decls as used
         mainComp.visitModules(mark_test_mode_mod, nil);

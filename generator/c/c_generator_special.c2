@@ -20,7 +20,7 @@ import build_file;
 import build_target;
 import component { Component }
 import file_utils { Max_path }
-import module_list;
+import module_list { ModuleList }
 import string_buffer { StringBuf }
 import string_list { StringList }
 
@@ -102,7 +102,7 @@ fn void Generator.createMakefile(Generator* gen,
             Component* c = comps.get(i);
             if (c.isExternalLibrary()) continue;    // does NOT include source libraries
 
-            module_list.List* mods = c.getModules();
+            ModuleList* mods = c.getModules();
             for (u32 j = 0; j < mods.length(); j++) {
                 ast.Module* m = mods.at(j);
                 if (m.isUsed()) out.print(" %s.o", m.getName());
@@ -240,7 +240,7 @@ fn void Generator.createExportsFile(Generator* gen, const char* output_dir, Comp
     out.add("\tglobal:\n");
 
     // iterate all mods in main Component
-    module_list.List* mods = mainComp.getModules();
+    ModuleList* mods = mainComp.getModules();
 
     for (u32 i = 0; i < mods.length(); i++) {
         const ast.SymbolTable* symbols = mods.at(i).getSymbols();

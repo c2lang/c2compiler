@@ -24,20 +24,20 @@ import string { memset, memcpy }
 
 public const u32 StackSize = 4;
 
-public type List struct {
+public type CaseList struct {
     u32 count;
     u32 capacity;
     SwitchCase*[StackSize] stack;
     SwitchCase** heap;
 }
 
-public fn void List.init(List* l) {
-    memset(l, 0, sizeof(List));
+public fn void CaseList.init(CaseList* l) {
+    memset(l, 0, sizeof(CaseList));
     l.heap = l.stack;
     l.capacity = countof(l.stack);
 }
 
-public fn void List.add(List* l, SwitchCase* s) {
+public fn void CaseList.add(CaseList* l, SwitchCase* s) {
     if (l.count == l.capacity) {
         l.capacity *= 2;
         SwitchCase** heap2 = malloc(l.capacity * sizeof(SwitchCase*));
@@ -49,15 +49,15 @@ public fn void List.add(List* l, SwitchCase* s) {
     l.count++;
 }
 
-public fn void List.free(List* l) {
+public fn void CaseList.free(CaseList* l) {
     if (l.heap != l.stack) free(l.heap);
 }
 
-public fn u32 List.size(const List* l) {
+public fn u32 CaseList.size(const CaseList* l) {
     return l.count;
 }
 
-public fn SwitchCase** List.getData(List* l) {
+public fn SwitchCase** CaseList.getData(CaseList* l) {
     return l.heap;
 }
 

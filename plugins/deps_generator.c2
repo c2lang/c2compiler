@@ -379,7 +379,7 @@ fn void Generator.deps_add(Generator* gen, Decl* d) {
 
 #if 0
 fn void Generator.create_basic(Generator* gen, Component* c) {
-    const module_list.List* modlist = c.getModules();
+    const ModuleList* modlist = c.getModules();
     const Module** mods = modlist.getConst();
     for (u32 i=0; i<modlist.length(); i++) {
         const Module* m = mods[i];
@@ -403,7 +403,7 @@ fn void Generator.create_basic(Generator* gen, Component* c) {
     // step 1: iterate all modules, create Dir structure, count modules
     // step 2: have list of u32 -> idx
     // step 2: create matrix with deps
-    //public func void Component.visitModules(const Component* c, module_list.Visitor visitor, void* arg) {
+    //public func void Component.visitModules(const Component* c, ModuleVisitor visitor, void* arg) {
 
 }
 #endif

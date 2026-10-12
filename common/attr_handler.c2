@@ -19,7 +19,7 @@ import ast { AttrHandlerFn, Decl }
 import attr { Attr }
 import diagnostics { Diags }
 import string_pool { StringPool }
-import warning_flags { Flags }
+import warning_flags { WarningFlags }
 
 import stdlib { calloc, malloc, free }
 import string { memcpy }
@@ -33,7 +33,7 @@ type Entry struct {
 public type AttrHandler struct @(opaque) {
     Diags* diags;   // no ownership
     StringPool* astPool;
-    const Flags* warnings;
+    const WarningFlags* warnings;
 
     Entry* entries;
     u32 count;
@@ -42,7 +42,7 @@ public type AttrHandler struct @(opaque) {
 
 public fn AttrHandler* AttrHandler.create(Diags* diags,
                                           StringPool* astPool,
-                                          const Flags* warnings) {
+                                          const WarningFlags* warnings) {
     AttrHandler* h = calloc(1, sizeof(AttrHandler));
     h.diags = diags;
     h.astPool = astPool;

@@ -16,9 +16,9 @@
 module ast;
 
 import ast_context { Context }
+import color;
 import string_buffer { StringBuf }
 import string_pool { StringPool }
-import color;
 
 import stdlib { malloc, calloc, free }
 import string { memcpy }

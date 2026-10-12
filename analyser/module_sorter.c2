@@ -18,7 +18,7 @@ module module_sorter;
 import ast;
 import component { Component }
 import diagnostics { Diags }
-import module_list;
+import module_list { ModuleList }
 import dsm_sorter { Sorter }
 
 import stdio { printf }
@@ -27,7 +27,7 @@ import string { memcpy }
 
 // Sort modules according to imports. Modules without dependencies (inside this component) come first
 public fn void sort(Component* c, Diags* diags) {
-    module_list.List* mods = c.getModules();
+    ModuleList* mods = c.getModules();
     const u32 count = mods.length();
     if (count <= 1) return;
 

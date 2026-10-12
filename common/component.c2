@@ -19,7 +19,7 @@ import ast { Module, SymbolTable }
 import ast_context { Context }
 import color;
 import file_list { FileList, File }
-import module_list;
+import module_list { ModuleList, ModuleVisitor }
 import src_loc { SrcLoc }
 import string_buffer { StringBuf }
 import string_list { StringList }
@@ -57,7 +57,7 @@ public type Component struct @(opaque) {
     Context* context;   // no ownership
     StringPool* auxPool;      // no ownership
 
-    module_list.List mods;
+    ModuleList mods;
     StringList deps;
     FileList files;   // only for (external) source libraries
 }
@@ -178,11 +178,11 @@ public fn void Component.visitFiles(const Component* c, void* arg, FileVisitor v
     }
 }
 
-public fn void Component.visitModules(const Component* c, module_list.Visitor visitor, void* arg) {
+public fn void Component.visitModules(const Component* c, ModuleVisitor visitor, void* arg) {
     c.mods.visit(visitor, arg);
 }
 
-public fn module_list.List* Component.getModules(Component* c) { return &c.mods; }
+public fn ModuleList* Component.getModules(Component* c) { return &c.mods; }
 
 public fn Module* Component.getOrAddModule(Component* c, u32 name_idx, bool is_private) {
     Module* m = c.mods.find(name_idx);

@@ -15,8 +15,8 @@
 
 module ast;
 
-import src_loc { SrcLoc }
 import attr { Attr, AttrKind }
+import src_loc { SrcLoc }
 import string_buffer { StringBuf }
 
 import stdio { snprintf }

@@ -16,8 +16,8 @@
 module ast;
 
 import ast_context { Context }
-import string_buffer { StringBuf }
 import src_loc { SrcLoc }
+import string_buffer { StringBuf }
 
 public type NamedArgument struct @(opaque) {
     Expr base;

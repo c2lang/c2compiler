@@ -17,8 +17,8 @@ module diagnostics;
 
 import color { Color }
 import source_mgr { SourceMgr, Location }
-import string_buffer { StringBuf }
 import src_loc { SrcLoc, SrcRange }
+import string_buffer { StringBuf }
 import utf8;
 import utils { PathInfo }
 

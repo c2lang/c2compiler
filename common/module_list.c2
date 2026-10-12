@@ -20,22 +20,22 @@ import ast { Module }
 import stdlib { malloc, free }
 import string { memset, memcpy }
 
-public type Visitor fn void (void* arg, Module* m);
+public type ModuleVisitor fn void (void* arg, Module* m);
 
-public type List struct {
+public type ModuleList struct {
     Module** mods;              // modules in this Component
     u32 num_mods;
     u32 max_mods;
     bool owns_modules;
 }
 
-public fn void List.init(List* l, bool owns_modules, u32 capacity) {
-    memset(l, 0, sizeof(List));
+public fn void ModuleList.init(ModuleList* l, bool owns_modules, u32 capacity) {
+    memset(l, 0, sizeof(ModuleList));
     l.owns_modules = owns_modules;
     l.resize(capacity);
 }
 
-public fn void List.free(List* l) {
+public fn void ModuleList.free(ModuleList* l) {
     if (l.owns_modules) {
         for (u32 i=0; i<l.num_mods; i++) {
             l.mods[i].free();
@@ -44,27 +44,27 @@ public fn void List.free(List* l) {
     free(l.mods);
 }
 
-public fn void List.visit(const List* l, Visitor visitor, void* arg) {
+public fn void ModuleList.visit(const ModuleList* l, ModuleVisitor visitor, void* arg) {
     for (u32 i=0; i<l.num_mods; i++) {
         visitor(arg, l.mods[i]);
     }
 }
 
-public fn Module* List.find(const List* l, u32 module_name) {
+public fn Module* ModuleList.find(const ModuleList* l, u32 module_name) {
     for (u32 i=0; i<l.num_mods; i++) {
         if (l.mods[i].getNameIdx() == module_name) return l.mods[i];
     }
     return nil;
 }
 
-public fn void List.add(List* list, Module* m) {
+public fn void ModuleList.add(ModuleList* list, Module* m) {
     // Note: we dont check for duplicates here
     if (list.num_mods == list.max_mods) list.resize(list.max_mods * 2);
     list.mods[list.num_mods] = m;
     list.num_mods++;
 }
 
-public fn void List.addList(List* list, List* other, bool checkPrivate) {
+public fn void ModuleList.addList(ModuleList* list, ModuleList* other, bool checkPrivate) {
     // Note: does not check for duplicates
     u32 total = list.num_mods + other.num_mods;
     if (total > list.max_mods) list.resize(total);
@@ -80,38 +80,38 @@ public fn void List.addList(List* list, List* other, bool checkPrivate) {
 
 }
 
-public fn void List.clear(List* l) {
+public fn void ModuleList.clear(ModuleList* l) {
     assert(!l.owns_modules);
     l.num_mods = 0;
 }
 
-public fn u32 List.length(const List* l) { return l.num_mods; }
+public fn u32 ModuleList.length(const ModuleList* l) { return l.num_mods; }
 
-public fn Module** List.get(const List* l) { return l.mods; }
+public fn Module** ModuleList.get(const ModuleList* l) { return l.mods; }
 
-public fn const Module** List.getConst(const List* l) {
+public fn const Module** ModuleList.getConst(const ModuleList* l) {
     return (const Module**)l.mods;
 }
 
-public fn Module* List.at(const List* l, u32 idx) {
+public fn Module* ModuleList.at(const ModuleList* l, u32 idx) {
     return l.mods[idx];
 }
 
-public fn bool List.contains(const List* l, const Module* mod) {
+public fn bool ModuleList.contains(const ModuleList* l, const Module* mod) {
     for (u32 i=0; i<l.num_mods; i++) {
         if (l.mods[i] == mod) return true;
     }
     return false;
 }
 
-public fn bool List.containsName(const List* l, u32 name_idx) {
+public fn bool ModuleList.containsName(const ModuleList* l, u32 name_idx) {
     for (u32 i=0; i<l.num_mods; i++) {
         if (l.mods[i].getNameIdx() == name_idx) return true;
     }
     return false;
 }
 
-fn void List.resize(List* l, u32 cap) {
+fn void ModuleList.resize(ModuleList* l, u32 cap) {
     l.max_mods = cap;
     void* buf = malloc(l.max_mods * sizeof(Module*));
     if (l.mods) {

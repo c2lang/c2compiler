@@ -23,14 +23,14 @@ import conversion_checker;
 import diagnostics { Diags }
 import file_utils { File }
 import init_checker { InitChecker }
-import module_list;
+import module_list { ModuleList }
 import label_vector { LabelVector }
 import name_vector { NameVector }
 import src_loc { SrcLoc, SrcRange }
 import scope { Scope }
 import string_buffer { StringBuf }
 import string_pool { StringPool }
-import warning_flags { Flags }
+import warning_flags { WarningFlags }
 import struct_func_list as sf_list;
 import incr_array_list as ia_list;
 import value_type { Value }
@@ -47,8 +47,8 @@ public type Analyser struct @(opaque) {
     Context* context;
     StringPool* astPool;
     Builder* builder;
-    module_list.List* allmodules;
-    const Flags* warnings;
+    ModuleList* allmodules;
+    const WarningFlags* warnings;
 
     // variables below differs per run
     Module* mod;
@@ -91,8 +91,8 @@ public fn Analyser* Analyser.create(Diags* diags,
                                     Context* context,
                                     StringPool* astPool,
                                     Builder* builder,
-                                    module_list.List* allmodules,
-                                    const Flags* warnings,
+                                    ModuleList* allmodules,
+                                    const WarningFlags* warnings,
                                     bool has_asserts, bool check_only)
 {
     Analyser* ma = calloc(1, sizeof(Analyser));

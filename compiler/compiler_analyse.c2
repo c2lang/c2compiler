@@ -19,12 +19,12 @@ import ast { Module, QualType }
 import component { Component }
 import console;
 import file_utils { Max_path }
-import module_list;
+import module_list { ModuleList }
 import module_sorter;
 import string_list { StringList }
 import unused_checker;
 import utils;
-import warning_flags { Flags }
+import warning_flags { WarningFlags }
 
 import stdio { snprintf }
 
@@ -67,7 +67,7 @@ fn bool Compiler.analyse(Compiler* c) {
     c.checkMain();
 
     // check unused
-    const Flags* warnings = c.target.getWarnings();
+    const WarningFlags* warnings = c.target.getWarnings();
     if (!warnings.no_unused) {
         c.mainComp.visitModules(Compiler.checkUnused, c);
     }
@@ -92,7 +92,7 @@ fn bool Compiler.checkDuplicateModules(Compiler* c) {
     c.allmodules.clear();
     for (u32 i=0; i<c.components.size(); i++) {
         Component* comp = c.components.get(i);
-        module_list.List* mod_list = comp.getModules();
+        ModuleList* mod_list = comp.getModules();
         Module** mods = mod_list.get();
         for (u32 j = 0; j < mod_list.length(); j++) {
             Module* m = mods[j];

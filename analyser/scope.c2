@@ -18,7 +18,7 @@ module scope;
 import ast;
 import diagnostics { Diags }
 import levenshtein;
-import module_list;
+import module_list { ModuleList }
 import constants;
 import src_loc { SrcLoc }
 import string_pool { StringPool }
@@ -46,7 +46,7 @@ public type Scope struct @(opaque) {
     // global scope
     Diags* diags;
     StringPool* astPool;
-    const module_list.List* allmodules;
+    const ModuleList* allmodules;
     const ast.ImportDeclList* imports;
     const ast.Module* mod;
     const ast.SymbolTable* symbols; // all symbols of the module
@@ -71,7 +71,7 @@ public type Scope struct @(opaque) {
     u32 lvl;
 }
 
-public fn Scope* Scope.create(module_list.List* allmodules,
+public fn Scope* Scope.create(ModuleList* allmodules,
                           Diags* diags,
                           StringPool* astPool,
                           const ast.ImportDeclList* imports,

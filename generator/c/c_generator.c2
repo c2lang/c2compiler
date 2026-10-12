@@ -25,7 +25,7 @@ import constants;
 import console;
 import dep_finder;
 import file_utils;
-import linked_list;
+import linked_list { Element }
 import manifest_writer;
 import process_utils;
 import source_mgr { SourceMgr }
@@ -43,7 +43,7 @@ import string { strcmp, memset, strerror }
 
 type Fragment struct {
     StringBuf* buf;
-    linked_list.Element list;
+    Element list;
 }
 
 fn Fragment* Fragment.create() {
@@ -102,9 +102,9 @@ type Generator struct {
     StringBuf* header;
 
     // list of fragments
-    linked_list.Element free_list;
-    linked_list.Element used_list;  // for c-file
-    linked_list.Element header_fragments; // for header-file (if used)
+    Element free_list;
+    Element used_list;  // for c-file
+    Element header_fragments; // for header-file (if used)
 
     TraceCallList calls;
     StringHashMap filenames;
@@ -130,7 +130,7 @@ fn Fragment* Generator.getFragment(Generator* gen) {
         return Fragment.create();
     }
 
-    linked_list.Element* e = gen.free_list.popFront();
+    Element* e = gen.free_list.popFront();
     Fragment* f = to_container(Fragment, list, e);
     f.clear();
     return f;
@@ -815,7 +815,7 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
 
 fn void Generator.flattenFragments(Generator* gen) {
     while (!gen.used_list.isEmpty()) {
-        linked_list.Element* e = gen.used_list.popFront();
+        Element* e = gen.used_list.popFront();
         Fragment* f = to_container(Fragment, list, e);
         gen.out.add2(f.buf.data(), f.buf.size());
         gen.freeFragment(f);
@@ -826,7 +826,7 @@ fn void Generator.flattenFragments(Generator* gen) {
     }
 
     while (!gen.header_fragments.isEmpty()) {
-        linked_list.Element* e = gen.header_fragments.popFront();
+        Element* e = gen.header_fragments.popFront();
         Fragment* f = to_container(Fragment, list, e);
         gen.header.add2(f.buf.data(), f.buf.size());
         gen.freeFragment(f);
@@ -1251,7 +1251,7 @@ fn void Generator.init(Generator* gen,
 
 fn void Generator.free(Generator* gen) {
     while (!gen.free_list.isEmpty()) {
-        linked_list.Element* e = gen.free_list.popFront();
+        Element* e = gen.free_list.popFront();
         Fragment* f = to_container(Fragment, list, e);
         f.free();
     }

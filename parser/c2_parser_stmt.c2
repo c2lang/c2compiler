@@ -18,7 +18,7 @@ module c2_parser;
 import ast { * }
 import constants { MaxMultiDecl }
 import src_loc { SrcLoc }
-import stmt_list;
+import stmt_list { StmtList }
 import string_list { StringList }
 import token { Token, Kind }
 
@@ -206,7 +206,7 @@ fn Stmt* Parser.parseDeclOrStmt(Parser* p) {
 fn CompoundStmt* Parser.parseCompoundStmt(Parser* p) {
     p.expectAndConsume(LBrace);
 
-    stmt_list.List* stmts = p.getStmtList();
+    StmtList* stmts = p.getStmtList();
 
     while (p.tok.kind != RBrace) {
         stmts.add(p.parseStmt());

@@ -31,7 +31,7 @@ import file_list;
 import file_utils;
 import keywords;
 import module_analyser { Analyser }
-import module_list;
+import module_list { ModuleList }
 import plugin_info;
 import source_mgr { SourceMgr }
 import string_buffer { StringBuf }
@@ -130,7 +130,7 @@ type Compiler struct {
     StringPool* astPool;
     Builder* builder;
     AttrHandler* attr_handler;
-    module_list.List allmodules;
+    ModuleList allmodules;
     component.List components;
     keywords.Info kwinfo;
     Parser* parser;
@@ -144,7 +144,7 @@ type Compiler struct {
     ast.Decl* mainFunc;
 
     // used to parse external components
-    module_list.List parse_queue;
+    ModuleList parse_queue;
 
     StringList libdirs;       // search paths for lib/lib.c2i
     StringList libdirs_bin;   // search paths for .so /.a files
@@ -459,7 +459,7 @@ fn bool Compiler.parseMainComponent(Compiler* c) {
 fn Component* Compiler.findModuleComponent(const Compiler* c, u32 name_idx) {
     for (u32 i=0; i<c.components.size(); i++) {
         Component* comp = c.components.get(i);
-        module_list.List* mod_list = comp.getModules();
+        ModuleList* mod_list = comp.getModules();
         ast.Module** mods = mod_list.get();
         for (u32 j = 0; j < mod_list.length(); j++) {
             if (mods[j].getNameIdx() == name_idx) return comp;

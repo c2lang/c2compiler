@@ -39,14 +39,14 @@ The output looks something like below and is sorted already.
 
 ```
 stdlib.free: 9508 calls
-  parser/stmt_list.c2:53:28: stdlib.free: 1111 calls from stmt_list.List.free
+  parser/stmt_list.c2:53:28: stdlib.free: 1111 calls from stmt_list.StmtList.free
   analyser/name_vector.c2:35:17: stdlib.free: 641 calls from name_vector.NameVector.free
   ast/function_decl_list.c2:46:13: stdlib.free: 582 calls from ast.FunctionDeclList.add
   ast_utils/string_buffer.c2:60:18: stdlib.free: 549 calls from string_buffer.StringBuf.free
   ast_utils/string_buffer.c2:61:5: stdlib.free: 549 calls from string_buffer.StringBuf.free
 
 stdlib.malloc: 8378 calls
-  parser/stmt_list.c2:43:24: stdlib.malloc: 1511 calls from stmt_list.List.add
+  parser/stmt_list.c2:43:24: stdlib.malloc: 1511 calls from stmt_list.StmtList.add
   ast/function_decl_list.c2:42:24: stdlib.malloc: 990 calls from ast.FunctionDeclList.add
   analyser/name_vector.c2:31:28: stdlib.malloc: 584 calls from name_vector.NameVector.init
   ast_utils/string_buffer.c2:35:16: stdlib.malloc: 549 calls from string_buffer.create

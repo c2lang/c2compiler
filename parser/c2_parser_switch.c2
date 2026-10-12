@@ -15,11 +15,10 @@
 
 module c2_parser;
 
-import stmt_list;
-import case_list;
-import expr_list;
 import ast { * }
+import case_list { CaseList }
 import src_loc { SrcLoc }
+import stmt_list { StmtList }
 
 fn Stmt* Parser.parseSwitchStmt(Parser* p) {
     SrcLoc loc = p.tok.loc;
@@ -46,7 +45,7 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
     p.expectAndConsume(LBrace);
 
     // TODO: potential memory leak on error
-    case_list.List cases.init();
+    CaseList cases.init();
 
     bool has_default = false;
     while (p.tok.kind != RBrace) {
@@ -73,7 +72,7 @@ fn Stmt* Parser.parseSwitchStmt(Parser* p) {
     return s;
 }
 
-fn void Parser.parseCaseCondition(Parser* p, expr_list.List* list) {
+fn void Parser.parseCaseCondition(Parser* p, ExprList* list) {
     for (;;) {
         Expr* e = p.parseConstExpr();
         if (p.tok.kind == Ellipsis) {
@@ -93,13 +92,13 @@ fn SwitchCase* Parser.parseCase(Parser* p, bool is_default) {
     p.consumeToken();
 
     // TODO: potential memory leak on error
-    expr_list.List conds.init();
+    ExprList conds.init();
     if (!is_default) {
         p.parseCaseCondition(&conds);
     }
     p.expectAndConsume(Colon);
 
-    stmt_list.List* stmts = p.getStmtList();
+    StmtList* stmts = p.getStmtList();
 
     bool more = true;
     while (more) {
@@ -115,7 +114,7 @@ fn SwitchCase* Parser.parseCase(Parser* p, bool is_default) {
         }
     }
 
-    SwitchCase* s = p.builder.actOnCase(loc, is_default, conds.getData(), conds.size(), stmts.getData(), stmts.size());
+    SwitchCase* s = p.builder.actOnCase(loc, is_default, conds.getExprs(), conds.size(), stmts.getData(), stmts.size());
     conds.free();
     p.putStmtList();
     return s;
