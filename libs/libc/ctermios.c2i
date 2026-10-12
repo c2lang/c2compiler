@@ -300,6 +300,7 @@ const unsigned EXTPROC = 0004000;
 typedef unsigned int tcflag_t;
 typedef unsigned char cc_t;
 typedef unsigned int speed_t;
+typedef int pid_t;
 
 const u32 NCCS = 20;
 
@@ -440,6 +441,7 @@ int tcsetwinsize(int fd, const Winsize* wp);
 typedef unsigned int tcflag_t;
 typedef unsigned char cc_t;
 typedef unsigned int speed_t;
+typedef int pid_t;
 
 const u32 NCCS = 20;
 

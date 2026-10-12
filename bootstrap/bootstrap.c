@@ -40122,7 +40122,7 @@ static void compiler_Compiler_analyse_component(compiler_Compiler* c, component_
 static void compiler_Compiler_findStaticLib(compiler_Compiler* c, component_Component* comp)
 {
    char filename[512];
-   sprintf(filename, "lib%s.a", component_Component_getName(comp));
+   snprintf(filename, 512, "lib%s.a", component_Component_getName(comp));
    char fullname[512];
    if (file_utils_make_path(fullname, 512, component_Component_getPath(comp), filename, NULL) && file_utils_is_file(fullname)) {
       console_debug("found %s in %s", component_Component_getName(comp), component_Component_getPath(comp));

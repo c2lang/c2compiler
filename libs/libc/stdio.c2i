@@ -53,15 +53,25 @@ FILE* stdout @(cname="__stdoutp");
 FILE* stderr @(cname="__stderrp");
 #endif
 #if SYSTEM_OPENBSD
+#if 0 // obsolete (OpenBSD version 6.8)
+struct FILE { long _stub; char[144] pad; }
+FILE[] stdin  @(cname="(&__sF[0])", cdef="extern FILE __sF[]");
+FILE[] stdout @(cname="(&__sF[1])", cdef="extern FILE __sF[]");
+FILE[] stderr @(cname="(&__sF[2])", cdef="extern FILE __sF[]");
+#else // updated (OpenBSD version 7.9)
 //typedef struct __sFILE FILE;
-//struct __sFstub { long _stub; };
+//struct __sFstub { long _stub; }
 //extern struct __sFstub __stdin[];
 //extern struct __sFstub __stdout[];
 //extern struct __sFstub __stderr[];
-struct FILE { long _stub; char[144] pad; }
-FILE[] stdin @(cname="__stdin");
-FILE[] stdout @(cname="__stdout");
-FILE[] stderr @(cname="__stderr");
+//#define stdin ((struct __sFILE *)__stdin)
+//#define stdout ((struct __sFILE *)__stdout)
+//#define stderr ((struct __sFILE *)__stderr)
+struct FILE { long _stub; }
+FILE[] stdin  @(cname="__stdin",  cdef="extern FILE __stdin[]");
+FILE[] stdout @(cname="__stdout", cdef="extern FILE __stdout[]");
+FILE[] stderr @(cname="__stderr", cdef="extern FILE __stderr[]");
+#endif
 #endif
 
 int remove(const char* __filename);

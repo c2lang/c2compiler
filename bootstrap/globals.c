@@ -18,6 +18,9 @@
 #include <time.h>
 #include <unistd.h>
 
+#undef countof
+#define countof(a)  (sizeof(a) / sizeof((a)[0]))
+
 typedef unsigned int u32;
 int verbose;
 
@@ -1046,6 +1049,36 @@ int main(int argc, char *argv[]) {
     }
     printf("}\n");
     printf("// libc/stdio.c2i\n{\n"); {
+#ifdef _IOFBF
+        printf("const u8 _IOFBF = %d; // fully buffered\n", _IOFBF);
+#endif
+#ifdef _IOLBF
+        printf("const u8 _IOLBF = %d; // line buffering\n", _IOLBF);
+#endif
+#ifdef _IONBF
+        printf("const u8 _IONBF = %d; // no buffering\n", _IONBF);
+#endif
+#ifdef BUFSIZ
+        printf("const u32 BUFSIZ = %d;\n", BUFSIZ);
+#endif
+#ifdef EOF
+        printf("const u8 EOF = %d;\n", EOF);
+#endif
+#ifdef FOPEN_MAX
+        printf("const u32 FOPEN_MAX = %d;\n", FOPEN_MAX);
+#endif
+#ifdef FILENAME_MAX
+        printf("const u32 FILENAME_MAX = %d;\n", FILENAME_MAX);
+#endif
+#ifdef SEEK_SET
+        printf("const u8 SEEK_SET = %d;\n", SEEK_SET);
+#endif
+#ifdef SEEK_CUR
+        printf("const u8 SEEK_CUR = %d;\n", SEEK_CUR);
+#endif
+#ifdef SEEK_END
+        printf("const u8 SEEK_END = %d;\n", SEEK_END);
+#endif
         preprocess_header("stdio.h");
     }
     printf("}\n");

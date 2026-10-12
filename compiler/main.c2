@@ -724,7 +724,6 @@ fn bool Context.build_targets(Context* c) {
 
         if (has_filter) {
             if (!c.opts.targets.contains_idx(target_idx)) continue;
-            const char* name = c.opts.targets.get(i);
             c.opts.targets.del(target_idx);
             if (target.getDisabled()) {
                 console.warn("target '%s' is disabled", target_name);
@@ -732,7 +731,6 @@ fn bool Context.build_targets(Context* c) {
             }
         } else {
             if (target.getDisabled()) continue;
-
             if (target.getOptional() && !c.comp_opts.all) continue;
         }
         if (c.opts.show_targets) {

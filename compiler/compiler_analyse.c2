@@ -26,7 +26,7 @@ import unused_checker;
 import utils;
 import warning_flags { Flags }
 
-import stdio { sprintf }
+import stdio { snprintf }
 
 fn bool Compiler.analyse(Compiler* c) {
     u64 analysis_start = utils.now();
@@ -238,7 +238,7 @@ fn void Compiler.findStaticLib(Compiler* c, Component* comp) {
     // - system-path
 
     char[Max_path] filename;
-    sprintf(filename, "lib%s.a", comp.getName());
+    snprintf(filename, countof(filename), "lib%s.a", comp.getName());
 
     char[Max_path] fullname;
 
