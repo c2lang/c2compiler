@@ -24,6 +24,7 @@ type BooleanLiteralBits struct {
     u32 : NumExprBits;
     u32 value : 1;
 }
+static_assert(4, sizeof(BooleanLiteralBits));
 
 public type BooleanLiteral struct @(opaque) {
     Expr base;

@@ -73,14 +73,16 @@ public type ValType enum u8 (const char* const name) {
     LValue : { "lvalue" }, // can be used as LHS / RHS of assignment
 }
 
-type ExprBits struct {
+type ExprBits struct @(packed) {
     u32 : NumStmtBits;
     u32 is_ctv : 1;
     u32 is_ctc : 1;
     ValType valtype : 2;
     ExprKind kind : 5;
     u32 has_effect : 1;
+    u32 : 16;
 }
+static_assert(4, sizeof(ExprBits));
 const u32 NumExprBits = NumStmtBits + 10;
 static_assert(NumExprBits == 14);
 

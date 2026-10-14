@@ -44,12 +44,13 @@ public type BuiltinKind enum u8 (public const char* const name,
     USize       : { "usize", false, false, true,  true,  0,  0 },
 }
 
-type BuiltinTypeBits struct {
+type BuiltinTypeBits struct @(packed) {
     u32 : NumTypeBits;  // : 16
     BuiltinKind kind : 4;
     BuiltinKind base_kind : 4;
     u32 width : 8;
 }
+static_assert(4, sizeof(BuiltinTypeBits));
 static_assert(sizeof(BuiltinTypeBits), 4);
 
 public type BuiltinType struct @(opaque) {

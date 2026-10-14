@@ -23,14 +23,14 @@ C2C_DEPS:= $(wildcard $(C2C_DIRS)/*.c2* $(C2C_DIRS)/*/*.c2*) recipe.txt Makefile
 
 PLUGINS= deps_generator refs_generator git_version unit_test shell_cmd
 
-all: $(C2C)
+all: $(C2C)~
 
-c2c: $(C2C)
+c2c: $(C2C)~
 	@$(C2C) --version
 
-$(C2C): output/bootstrap/bootstrap $(C2C_DEPS)
+$(C2C)~: output/bootstrap/bootstrap $(C2C_DEPS)
 	@echo "---- running (bootstrapped$(C2FLAGS)) c2c ----"
-	@output/bootstrap/bootstrap c2c $(C2FLAGS) --fast --noplugins
+	@output/bootstrap/bootstrap c2c $(C2FLAGS) --fast --quiet --noplugins
 	@rm -rf output/bootstrap/cgen
 	@mv -f output/c2c/* output/bootstrap
 	@echo "---- running c2c (no plugins$(C2FLAGS)) ----"

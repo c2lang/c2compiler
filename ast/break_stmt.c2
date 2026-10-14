@@ -23,6 +23,7 @@ type BreakStmtBits struct {
     u32 : NumStmtBits;
     u32 has_name: 1;
 }
+static_assert(4, sizeof(BreakStmtBits));
 
 public type BreakStmt struct @(opaque) {
     Stmt base;

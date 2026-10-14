@@ -27,6 +27,7 @@ type ImportDeclBits struct {
 //    u32 own_component : 1;
     u32 symlist_count : 16;
 }
+static_assert(4, sizeof(ImportDeclBits));
 
 public type ImportDecl struct @(opaque) {
     Decl base;

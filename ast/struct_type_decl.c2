@@ -29,6 +29,7 @@ type StructTypeDeclBits struct {
     u32 attr_opaque : 1;
     u32 attr_notypedef : 1;
 }
+static_assert(4, sizeof(StructTypeDeclBits));
 
 public type FieldInitInfo struct {
     u32 num_fields;     // fields[num_fields]

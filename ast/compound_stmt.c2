@@ -25,6 +25,7 @@ type CompoundStmtBits struct {
     u32 : NumStmtBits;
     u32 count : 32 - NumStmtBits;
 }
+static_assert(4, sizeof(CompoundStmtBits));
 
 public type CompoundStmt struct @(opaque) {
     Stmt base;

@@ -29,6 +29,7 @@ type SwitchStmtBits struct {
     u32 has_source_cond : 1;
     u32 num_cases : 32 - NumStmtBits - 4;
 }
+static_assert(4, sizeof(SwitchStmtBits));
 
 public type SwitchStmt struct @(opaque) {
     Stmt base;

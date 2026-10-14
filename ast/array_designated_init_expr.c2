@@ -23,12 +23,14 @@ public type ArrayDesignatedInitExprKind enum u8 {
     Single, Range, Slice
 }
 
-type ArrayDesignatedInitExprBits struct {
+type ArrayDesignatedInitExprBits struct @(packed) {
     u32 : NumExprBits;
     bool has_expr1 : 1;
     bool has_expr2 : 1;
     ArrayDesignatedInitExprKind kind : 2;
+    u32 : 12;
 }
+static_assert(4, sizeof(ArrayDesignatedInitExprBits));
 
 public type ArrayDesignatedInitExpr struct @(opaque) {
     Expr base;

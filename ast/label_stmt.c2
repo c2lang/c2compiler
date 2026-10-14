@@ -26,6 +26,7 @@ type LabelStmtBits struct {
     u32 has_break : 1;
     u32 has_continue : 1;
 }
+static_assert(4, sizeof(LabelStmtBits));
 
 public type LabelStmt struct @(opaque) {
     Stmt base;

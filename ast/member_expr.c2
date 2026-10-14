@@ -38,7 +38,7 @@ public type MemberKind enum u8 (const char* const name) {
     EnumConstantValue  : { "EnumConstantValue" },  // e.name
 }
 
-type MemberExprBits struct {
+type MemberExprBits struct @(packed) {
     u32 : NumExprBits;
     MemberKind kind : 3;
     u32 num_decls : 2;  // how many refs have a decl (from the bottom up), set during analysis
@@ -48,6 +48,7 @@ type MemberExprBits struct {
     u32 is_bitfield : 1;
     u32 base_len : 5;
 }
+static_assert(4, sizeof(MemberExprBits));
 
 // 2 variants: pure: `a.b` and non pure: `<expr>.b`
 type MemberRef union {

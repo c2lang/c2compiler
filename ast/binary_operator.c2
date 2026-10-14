@@ -62,9 +62,11 @@ public fn bool BinaryOpcode.isComparison(BinaryOpcode opcode) {
 
 type BinaryOperatorBits struct {
     u32 : NumExprBits;
-    u32 : 2;
+    u8 : 0;
     BinaryOpcode kind : 5;
+    u32 : 11;
 }
+static_assert(4, sizeof(BinaryOperatorBits));
 
 public type BinaryOperator struct @(opaque) {
     Expr base;

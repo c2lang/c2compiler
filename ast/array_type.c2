@@ -24,6 +24,7 @@ type ArrayTypeBits struct {
     u32 is_incremental : 1;
     u32 is_enum_index : 1;
 }
+static_assert(4, sizeof(ArrayTypeBits));
 
 public type ArrayType struct @(opaque) {
     Type base;

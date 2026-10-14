@@ -38,7 +38,7 @@ public type DefKind enum u8 (const char* const name) {
     Template        : { "template" },      // ..
 }
 
-type FunctionDeclBits struct {
+type FunctionDeclBits struct @(packed) {
     u32 : NumDeclBits;
     u32 is_variadic : 1;
     u32 has_prefix : 1;     // is a (static) type-function
@@ -48,6 +48,7 @@ type FunctionDeclBits struct {
     u32 has_body : 1;    // if function is defined in C2
     FunctionSignature signature : 4;
 }
+static_assert(4, sizeof(FunctionDeclBits));
 
 type FunctionDeclFlags struct {
     u16 instance_ast_idx : 16;  // template function instances only

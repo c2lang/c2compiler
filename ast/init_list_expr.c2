@@ -29,9 +29,11 @@ type InitListKind enum u8 {
 
 type InitListExprBits struct {
     u32 : NumExprBits;
+    u8 : 0;
     InitListKind kind : 2;   // InitListKind
     u32 has_designators : 1;    // ArrayDesignators for array, FieldDesignators for structs
 }
+static_assert(4, sizeof(InitListExprBits));
 
 public type InitListExpr struct @(opaque) {
     Expr base;

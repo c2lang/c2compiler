@@ -34,9 +34,11 @@ public type UnaryOpcode enum u8 (const char* const name) {
 
 type UnaryOperatorBits struct {
     u32 : NumExprBits;
-    u32 : 2;
+    u8 : 0;
     UnaryOpcode kind : 4;
+    u32 : 12;
 }
+static_assert(4, sizeof(UnaryOperatorBits));
 
 public type UnaryOperator struct @(opaque) {
     Expr base;

@@ -26,6 +26,7 @@ type AsmStmtBits struct {
     u32 is_basic: 1;
     u32 is_volatile : 1;
 }
+static_assert(4, sizeof(AsmStmtBits));
 
 public type AsmStmt struct @(opaque) {
     Stmt base;

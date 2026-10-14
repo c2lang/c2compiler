@@ -27,15 +27,16 @@ public type BuiltinExprKind enum u8 (const char* const name) {
     VaArg       : { "va_arg" },
 }
 
-type BuiltinExprBits struct {
+type BuiltinExprBits struct @(packed) {
     u32 : NumExprBits;
     BuiltinExprKind kind : 3;
     // TODO: builtin expressions should be output literally in the
     //   C generator except countof(enum) that cannot be expressed in C.
     //   use_literal is tested in the C generator but not set yet.
     bool use_literal : 1;
-    u32 src_len : 32 - NumExprBits - 6; // length of () expression
+    u32 src_len : 32 - NumExprBits - 4; // length of () expression
 }
+static_assert(4, sizeof(BuiltinExprBits));
 
 type ToContainerData struct {
     Expr* member;

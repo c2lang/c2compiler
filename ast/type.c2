@@ -33,6 +33,7 @@ type TypeBits struct {
     TypeKind kind : 8;
     u32 align : 8;
 }
+static_assert(4, sizeof(TypeBits));
 const u32 NumTypeBits = 16;
 
 public type Type struct @(opaque) {

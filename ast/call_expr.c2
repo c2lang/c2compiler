@@ -29,6 +29,7 @@ type CallExprBits struct {
     u32 is_noreturn : 1;
     u32 num_args : 8;
 }
+static_assert(4, sizeof(CallExprBits));
 
 public type CallExpr struct @(opaque) {
     Expr base;

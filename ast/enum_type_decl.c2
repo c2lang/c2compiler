@@ -28,6 +28,7 @@ type EnumTypeDeclBits struct {
     u32 has_assoc_values : 1;
     u32 num_constants : 12;
 }
+static_assert(4, sizeof(EnumTypeDeclBits));
 
 public type EnumTypeDecl struct @(opaque) {
     Decl base;

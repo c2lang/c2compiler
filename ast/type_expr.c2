@@ -23,6 +23,7 @@ type TypeExprBits struct {
     u32 : NumExprBits;
     u32 src_len : 32 - NumExprBits;
 }
+static_assert(4, sizeof(TypeExprBits));
 
 public type TypeExpr struct @(opaque) {
     Expr base;

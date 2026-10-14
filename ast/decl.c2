@@ -40,7 +40,7 @@ public type DeclCheckState enum u8 (const char* const name) {
     Checked     : { "checked" },
 }
 
-type DeclBits struct {
+type DeclBits struct @(packed) {
     DeclKind kind : 4;
     DeclCheckState check_state : 2;
     u32 is_public : 1;
@@ -52,7 +52,9 @@ type DeclBits struct {
     u32 is_external : 1;    // in external lib
     u32 is_generated : 1;   // for globals, can be used by generators
     u32 has_gen_idx : 1;
+    u32 : 16;
 }
+static_assert(4, sizeof(DeclBits));
 
 const u32 NumDeclBits = 15;  // should match bitfields above
 

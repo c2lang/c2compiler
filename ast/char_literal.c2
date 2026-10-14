@@ -21,12 +21,13 @@ import src_loc { SrcLoc }
 import string_buffer { StringBuf }
 import value_type { Value }
 
-type CharLiteralBits struct {
+type CharLiteralBits struct @(packed) {
     u32 : NumExprBits;
     u32 value : 8;
     Radix radix : 2;
     u32 src_len : 32 - NumExprBits - 8 - 2;
 }
+static_assert(4, sizeof(CharLiteralBits));
 
 public type CharLiteral struct @(opaque) {
     Expr base;

@@ -25,6 +25,7 @@ public type InstrBits struct {
     u32 register_nr : 6;    // might need more for spilling
     u32 arch_instr : 8;     // opaque number
 }
+static_assert(4, sizeof(InstrBits));
 
 public type Instr struct {
     union {

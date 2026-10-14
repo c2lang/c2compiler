@@ -30,13 +30,13 @@ public type IdentifierKind enum u8 (const char* const name) {
     Label         : { "Label" },
 }
 
-type IdentifierExprBits struct {
+type IdentifierExprBits struct @(packed) {
     u32 : NumExprBits;
     u32 has_decl : 1;
-    u32 : 1;
     IdentifierKind kind : 3;
-    u32 name_len : 32 - NumExprBits - 5;
+    u32 name_len : 32 - NumExprBits - 4;
 }
+static_assert(4, sizeof(IdentifierExprBits));
 
 public type IdentifierExpr struct @(opaque) {
     Expr base;

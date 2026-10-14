@@ -23,6 +23,7 @@ type ParenExprBits struct {
     u32 : NumExprBits;
     u32 src_len : 32 - NumExprBits;
 }
+static_assert(4, sizeof(ParenExprBits));
 
 public type ParenExpr struct @(opaque) {
     Expr base;

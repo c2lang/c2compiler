@@ -24,6 +24,7 @@ type ExplicitCastExprBits struct {
     u32 c_style : 1;
     u32 src_len : 32 - NumExprBits - 1;
 }
+static_assert(4, sizeof(ExplicitCastExprBits));
 
 public type ExplicitCastExpr struct @(opaque) {
     Expr base;

@@ -23,6 +23,7 @@ type ReturnStmtBits struct {
     u32 : NumStmtBits;
     u32 has_value : 1;
 }
+static_assert(4, sizeof(ReturnStmtBits));
 
 public type ReturnStmt struct @(opaque) {
     Stmt base;

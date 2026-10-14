@@ -25,6 +25,7 @@ type DeclStmtBits struct {
     u32 : NumStmtBits;
     u32 count : MaxMultiDeclBits;
 }
+static_assert(4, sizeof(DeclStmtBits));
 
 public type DeclStmt struct @(opaque) {
     Stmt base;

@@ -36,6 +36,7 @@ type TypeRefBits struct {
     TypeRefKind kind : 2;
     BuiltinKind builtin_kind : 4;   // only if builtin (!is_user)
 }
+static_assert(4, sizeof(TypeRefBits));
 
 public type Ref struct {
     SrcLoc loc;

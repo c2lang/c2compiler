@@ -25,6 +25,7 @@ type IfStmtBits struct {
     u32 has_source_cond : 1;
     u32 has_else : 1;
 }
+static_assert(4, sizeof(IfStmtBits));
 
 public type IfStmt struct @(opaque) {
     Stmt base;

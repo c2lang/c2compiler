@@ -28,6 +28,7 @@ type SwitchCaseBits struct {
     u32 has_decls : 1;
     u32 has_fallthrough : 1;
 }
+static_assert(4, sizeof(SwitchCaseBits));
 
 public type SwitchCase struct @(opaque) {
     union {
