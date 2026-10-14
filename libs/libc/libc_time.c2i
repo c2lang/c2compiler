@@ -15,23 +15,24 @@ struct Tm {
     const char* tm_zone;
 }
 
-type Time long @(cname="time_t");
+typedef long time_t;
+type Time time_t;
 
-Time time(Time* tloc);
+time_t time(time_t* tloc);
 
 char* asctime(const Tm* tm);
 char* asctime_r(const Tm* tm, char* buf);
 
-char* ctime(const Time* timep);
-char* ctime_r(const Time* timep, char* buf);
+char* ctime(const time_t* timep);
+char* ctime_r(const time_t* timep, char* buf);
 
-Time* gmtime(const Time* timep);
-Time* gmtime_r(const Time* timep, Tm* result);
+time_t* gmtime(const time_t* timep);
+time_t* gmtime_r(const time_t* timep, Tm* result);
 
-Tm* localtime(const Time* timep);
-Tm* localtime_r(const Time* timep, Tm* result);
+Tm* localtime(const time_t* timep);
+Tm* localtime_r(const time_t* timep, Tm* result);
 
-Time mktime(Tm* tm);
+time_t mktime(Tm* tm);
 
 size_t strftime(char* s, size_t max, const char* format, const Tm* tm);
 

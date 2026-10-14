@@ -64,7 +64,7 @@ const u32 F_SETFL = 4;
 
 const u32 FD_CLOEXEC = 1;
 
-int open(const char* __file, int __oflag, ...);
+int open(const char* file, int oflag, ...);
 int openat(int dirfd, const char* pathname, int flags, ...);
-int fcntl(int __fd, int __cmd, ...);
+int fcntl(int fd, int cmd, ...);
 

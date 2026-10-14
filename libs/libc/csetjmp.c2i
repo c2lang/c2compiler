@@ -28,7 +28,7 @@ struct JmpBufTag @(cname="__jmp_buf_tag", aligned=8) {
 typedef JmpBufTag* JmpBuf @(cname="jmp_buf");
 
 // TODO alias setjmp -> _setjmp
-int setjmp(JmpBuf __env);
-int _setjmp(JmpBuf __env);
-void longjmp(JmpBuf __env, int __val) @(noreturn);
+int setjmp(JmpBuf env);
+int _setjmp(JmpBuf env);
+void longjmp(JmpBuf env, int val) @(noreturn);
 

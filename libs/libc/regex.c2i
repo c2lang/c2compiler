@@ -1,17 +1,21 @@
 module regex extern "C";
 
-struct Regex_t @(cname="regex_t") {
+struct regex_t {
     void* re_pcre;
     size_t re_nsub;
     size_t re_erroffset;
 }
 
-typedef int RegOff @(cname="regoff_t");
+typedef int regoff_t;
 
-struct Regmatch_t @(cname="regmatch_t") {
-    RegOff rm_so;
-    RegOff rm_eo;
+struct regmatch_t {
+    regoff_t rm_so;
+    regoff_t rm_eo;
 }
+
+type Regex regex_t;
+type RegOff regoff_t;
+type Regmatch regmatch_t;
 
 /* regcomp() flags */
 const int REG_BASIC = 0000;
@@ -54,8 +58,8 @@ const int REG_TRACE = 00400;
 const int REG_LARGE = 01000;
 const int REG_BACKR = 02000;
 
-int regcomp(Regex_t* preg, const char* pattern, int cflags);
-int regexec(const Regex_t* preg, const char* string, size_t nmatch, Regmatch_t* pmatch, int eflags);
-size_t regerror(int errcode, const Regex_t* preg, char* errbuf, size_t errbuf_size);
-void regfree(Regex_t* preg);
+int regcomp(regex_t* preg, const char* pattern, int cflags);
+int regexec(const regex_t* preg, const char* string, size_t nmatch, regmatch_t* pmatch, int eflags);
+size_t regerror(int errcode, const regex_t* preg, char* errbuf, size_t errbuf_size);
+void regfree(regex_t* preg);
 

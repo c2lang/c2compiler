@@ -31,7 +31,7 @@ struct Ifaddrs {
    The storage returned in *IFAP is allocated dynamically and can
    only be properly freed by passing it to `freeifaddrs'.
 */
-int get(Ifaddrs** __ifap) @(cname="getifaddrs");
+int get(Ifaddrs** ifap) @(cname="getifaddrs");
 
 /* Reclaim the storage allocated by a previous `getifaddrs' call.  */
-void Ifaddrs.free(Ifaddrs* __ifa) @(cname="freeifaddrs");
+void Ifaddrs.free(Ifaddrs* ifa) @(cname="freeifaddrs");
