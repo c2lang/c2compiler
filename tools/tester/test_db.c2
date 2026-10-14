@@ -519,7 +519,7 @@ public fn void Db.testFile(Db* db) {
     }
 
     // spawn a child to run c2c
-    Pid pid = fork();
+    pid_t pid = fork();
     if (pid == -1) {
         fprintf(stderr, "fork() failed: %s\n", strerror(errno));
         exit(1);

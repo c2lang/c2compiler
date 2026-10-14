@@ -24,7 +24,6 @@ struct IO_marker @(cname="_IO_marker") {
 }
 */
 
-typedef i64 Offset @(cname="off_t");
 typedef i64 off_t;
 
 //NOTE: _G_fpos_t is some struct(_G_fpos_t.h)
@@ -74,93 +73,92 @@ FILE[] stderr @(cname="__stderr", cdef="extern FILE __stderr[]");
 #endif
 #endif
 
-int remove(const char* __filename);
-int rename(const char* __old, const char* __new);
+int remove(const char* filename);
+int rename(const char* oldname, const char* newname);
 
 FILE* tmpfile(void);
-char* tmpnam(char* __s) @(deprecated="use unistd.mkstemp instead");
-char* tempnam(const char* __dir, const char* __pfx) @(deprecated="use unistd.mkstemp instead");
-int fclose(FILE* __stream);
-int fflush(FILE* __stream);
-FILE* fopen(const char* __filename, const char* __modes);
-FILE* freopen(const char* __filename, const char* __modes, FILE* __stream);
-FILE* fdopen(int __fd, const char* __modes);
-void setbuf(FILE* __stream, char* __buf);
-int setvbuf(FILE* __stream, char* __buf, int __modes, size_t __n);
-void setbuffer(FILE* __stream, char* __buf, size_t __size);
-void setlinebuf(FILE* __stream);
-int fprintf(FILE* __stream, const char* __format @(printf_format), ...);
-int printf(const char* __format @(printf_format), ...);
-int sprintf(char* __s, const char* __format @(printf_format), ...);
-int snprintf(char* __s, size_t size, const char* __format @(printf_format), ...);
-int dprintf(int __fd, const char* __fmt @(printf_format), ...);
-int fscanf(FILE* __stream, const char* __format @(scanf_format), ...);
-int scanf(const char* __format @(scanf_format), ...);
-int sscanf(const char* __s, const char* __format @(scanf_format), ...);
-int fgetc(FILE* __stream);
-int getc(FILE* __stream);
+char* tmpnam(char* s) @(deprecated="use unistd.mkstemp instead");
+char* tempnam(const char* dir, const char* pfx) @(deprecated="use unistd.mkstemp instead");
+int fclose(FILE* stream);
+int fflush(FILE* stream);
+FILE* fopen(const char* filename, const char* modes);
+FILE* freopen(const char* filename, const char* modes, FILE* stream);
+FILE* fdopen(int fd, const char* modes);
+void setbuf(FILE* stream, char* buf);
+int setvbuf(FILE* stream, char* buf, int modes, size_t n);
+void setbuffer(FILE* stream, char* buf, size_t size);
+void setlinebuf(FILE* stream);
+int fprintf(FILE* stream, const char* format @(printf_format), ...);
+int printf(const char* format @(printf_format), ...);
+int sprintf(char* s, const char* format @(printf_format), ...);
+int snprintf(char* s, size_t size, const char* format @(printf_format), ...);
+int dprintf(int fd, const char* format @(printf_format), ...);
+int fscanf(FILE* stream, const char* format @(scanf_format), ...);
+int scanf(const char* format @(scanf_format), ...);
+int sscanf(const char* s, const char* format @(scanf_format), ...);
+int fgetc(FILE* stream);
+int getc(FILE* stream);
 int getchar(void);
-int getc_unlocked(FILE* __stream);
+int getc_unlocked(FILE* stream);
 int getchar_unlocked(void);
-int fputc(int __c, FILE* __stream);
-int putc(int __c, FILE* __stream);
-int putchar(int __c);
-int putchar_unlocked(int __c);
-char* gets(char* __s) @(deprecated="function cannot be used safely, consider using getsn");
-int getw(FILE* __stream);
-int putw(int __w, FILE* __stream);
-char* fgets(char* __s, int __n, FILE* __stream);
-ssize_t getdelim(char** __lineptr, size_t* __n, int __delimiter, FILE* __stream);
-ssize_t getline(char** __lineptr, size_t* __n, FILE* __stream);
-int fputs(const char* __s, FILE* __stream);
-int puts(const char* __s);
-int ungetc(int __c, FILE* __stream);
-size_t fread(void* __ptr, size_t __size, size_t __n, FILE* __stream);
-size_t fwrite(const void* __ptr, size_t __size, size_t __n, FILE* __s);
-int fseek(FILE* __stream, long __off, int __whence);
-long ftell(FILE* __stream);
-void rewind(FILE* __stream);
-int fseeko(FILE* __stream, Offset __off, int __whence);
-Offset ftello(FILE* __stream);
-int fgetpos(FILE* __stream, fpos_t* __pos);
-int fsetpos(FILE* __stream, const fpos_t* __pos);
-void clearerr(FILE* __stream);
-int feof(FILE* __stream);
-int ferror(FILE* __stream);
-void perror(const char* __s);
-int fileno(FILE* __stream);
-FILE* popen(const char* __command, const char* __modes);
-int pclose(FILE* __stream);
-char* ctermid(char* __s);
-void flockfile(FILE* __stream);
-int ftrylockfile(FILE* __stream);
-void funlockfile(FILE* __stream);
+int fputc(int c, FILE* stream);
+int putc(int c, FILE* stream);
+int putchar(int c);
+int putchar_unlocked(int c);
+char* gets(char* s) @(deprecated="function cannot be used safely, consider using getsn");
+int getw(FILE* stream);
+int putw(int w, FILE* stream);
+char* fgets(char* s, int n, FILE* stream);
+ssize_t getdelim(char** lineptr, size_t* n, int delimiter, FILE* stream);
+ssize_t getline(char** lineptr, size_t* n, FILE* stream);
+int fputs(const char* s, FILE* stream);
+int puts(const char* s);
+int ungetc(int c, FILE* stream);
+size_t fread(void* ptr, size_t size, size_t n, FILE* stream);
+size_t fwrite(const void* ptr, size_t size, size_t n, FILE* s);
+int fseek(FILE* stream, long off, int whence);
+long ftell(FILE* stream);
+void rewind(FILE* stream);
+int fseeko(FILE* stream, off_t off, int whence);
+off_t ftello(FILE* stream);
+int fgetpos(FILE* stream, fpos_t* pos);
+int fsetpos(FILE* stream, const fpos_t* pos);
+void clearerr(FILE* stream);
+int feof(FILE* stream);
+int ferror(FILE* stream);
+void perror(const char* s);
+int fileno(FILE* stream);
+FILE* popen(const char* command, const char* modes);
+int pclose(FILE* stream);
+char* ctermid(char* s);
+void flockfile(FILE* stream);
+int ftrylockfile(FILE* stream);
+void funlockfile(FILE* stream);
 
 // --- Linux only ---
 #if __USE_LARGEFILE64
 FILE* tmpfile64(void);
 #endif
-char* tmpnam_r(char* __s);
-int renameat(int __oldfd, const char* __old, int __newfd, const char* __new);
-FILE* fmemopen(void* __s, size_t __len, const char* __modes);
-FILE* open_memstream(char** __bufloc, size_t* __sizeloc);
-int fflush_unlocked(FILE* __stream);
-int fgetc_unlocked(FILE* __stream);
-int putc_unlocked(int __c, FILE* __stream);
-int fputc_unlocked(int __c, FILE* __stream);
-ssize_t __getdelim(char** __lineptr, size_t* __n, int __delimiter, FILE* __stream);
-int fread_unlocked(void* __ptr, size_t __size, size_t __n, FILE* __stream);
-size_t fwrite_unlocked(const void* __ptr, size_t __size, size_t __n, FILE* __stream);
-void clearerr_unlocked(FILE* __stream);
-int feof_unlocked(FILE* __stream);
-int ferror_unlocked(FILE* __stream);
+char* tmpnam_r(char* s);
+int renameat(int oldfd, const char* old, int newfd, const char* newname);
+FILE* fmemopen(void* s, size_t len, const char* modes);
+FILE* open_memstream(char** bufloc, size_t* sizeloc);
+int fflush_unlocked(FILE* stream);
+int fgetc_unlocked(FILE* stream);
+int putc_unlocked(int c, FILE* stream);
+int fputc_unlocked(int c, FILE* stream);
+int fread_unlocked(void* ptr, size_t size, size_t n, FILE* stream);
+size_t fwrite_unlocked(const void* ptr, size_t size, size_t n, FILE* stream);
+void clearerr_unlocked(FILE* stream);
+int feof_unlocked(FILE* stream);
+int ferror_unlocked(FILE* stream);
 
 // --- Darwin/BSD only----
 // unlocked functions below exist, but as macro
-//void clearerr_unlocked(FILE* __stream);
-//int feof_unlocked(FILE* __stream);
-//int ferror_unlocked(FILE* __stream);
-//int fileno_unlocked(FILE* __stream);
+//void clearerr_unlocked(FILE* stream);
+//int feof_unlocked(FILE* stream);
+//int ferror_unlocked(FILE* stream);
+//int fileno_unlocked(FILE* stream);
 
 int asprintf(char**, const char* @(printf_format), ...);
 char* ctermid_r(char*);
@@ -170,7 +168,7 @@ int fpurge(FILE*);
 //int vasprintf(char**, const char*, va_list);
 FILE* zopen(const char*, const char*, int);
 
-int vdprintf(int __fd, const char* format, va_list ap);
+int vdprintf(int fd, const char* format, va_list ap);
 int vfprintf(FILE* stream, const char* format, va_list ap);
 int vprintf(const char* format, va_list ap);
 int vsprintf(char* str, const char* format, va_list ap);

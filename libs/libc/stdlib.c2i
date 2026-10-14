@@ -4,12 +4,12 @@ module stdlib extern "C";
 import string { memset }
 #endif
 
-struct Div_t @(cname="div_t") {
+struct div_t {
     int quot;
     int rem;
 }
 
-struct Ldiv_t @(cname="ldiv_t") {
+struct ldiv_t {
     long quot;
     long rem;
 }
@@ -54,91 +54,91 @@ char* l64a(long n);
 long a64l(const char* s);
 
 long random(void);
-void srandom(unsigned int __seed);
-char* initstate(unsigned int __seed, char* __statebuf, size_t __statelen);
-char* setstate(char* __statebuf);
+void srandom(unsigned int seed);
+char* initstate(unsigned int seed, char* statebuf, size_t statelen);
+char* setstate(char* statebuf);
 
-struct Random_data @(opaque, cname="random_data");
+struct random_data @(opaque);
 
-int random_r(Random_data* __buf, int* __result);
-int srandom_r(unsigned int __seed, Random_data* __buf);
-int initstate_r(unsigned int __seed, char* __statebuf, size_t __statelen, Random_data* __buf);
-int setstate_r(char* __statebuf, Random_data* __buf);
+int random_r(random_data* buf, int* result);
+int srandom_r(unsigned int seed, random_data* buf);
+int initstate_r(unsigned int seed, char* statebuf, size_t statelen, random_data* buf);
+int setstate_r(char* statebuf, random_data* buf);
 int rand(void);
-void srand(unsigned int __seed);
-int rand_r(unsigned int* __seed);
+void srand(unsigned int seed);
+int rand_r(unsigned int* seed);
 double drand48(void);
-double erand48(u16* __xsubi);
+double erand48(u16* xsubi);
 long lrand48(void);
-long nrand48(u16* __xsubi);
+long nrand48(u16* xsubi);
 long mrand48(void);
-long jrand48(u16* __xsubi);
-void srand48(long __seedval);
-u16* seed48(u16* __seed16v);
-void lcong48(u16* __param);
+long jrand48(u16* xsubi);
+void srand48(long seedval);
+u16* seed48(u16* seed16v);
+void lcong48(u16* param);
 
-struct Drand48_data @(opaque, cname="drand48_data");
+struct drand48_data @(opaque);
 
-int drand48_r(Drand48_data* __buffer, double* __result);
-int erand48_r(u16* __xsubi, Drand48_data* __buffer, double* __result);
-int lrand48_r(Drand48_data* __buffer, long* __result);
-int nrand48_r(u16* __xsubi, Drand48_data* __buffer, long* __result);
-int mrand48_r(Drand48_data* __buffer, long* __result);
-int jrand48_r(u16* __xsubi, Drand48_data* __buffer, long* __result);
-int srand48_r(long __seedval, Drand48_data* __buffer);
-int seed48_r(u16* __seed16v, Drand48_data* __buffer);
-int lcong48_r(u16* __param, Drand48_data* __buffer);
+int drand48_r(drand48_data* buffer, double* result);
+int erand48_r(u16* xsubi, drand48_data* buffer, double* result);
+int lrand48_r(drand48_data* buffer, long* result);
+int nrand48_r(u16* xsubi, drand48_data* buffer, long* result);
+int mrand48_r(drand48_data* buffer, long* result);
+int jrand48_r(u16* xsubi, drand48_data* buffer, long* result);
+int srand48_r(long seedval, drand48_data* buffer);
+int seed48_r(u16* seed16v, drand48_data* buffer);
+int lcong48_r(u16* param, drand48_data* buffer);
 
-int posix_memalign(void** __memptr, size_t __alignment, size_t __size);
-void* aligned_alloc(int __alignment, size_t __size);
+int posix_memalign(void** memptr, size_t alignment, size_t size);
+void* aligned_alloc(int alignment, size_t size);
 
 void abort(void) @(noreturn);
 int atexit(fn void());
 int at_quick_exit(fn void());
 int on_exit(fn void(i32, void*), void*);
-void exit(int __status) @(noreturn);
-void quick_exit(int __status);
-void _Exit(int __status) @(noreturn);
+void exit(int status) @(noreturn);
+void quick_exit(int status);
+void _Exit(int status) @(noreturn);
 
-char* getenv(const char* __name);
-int putenv(char* __string);
-int setenv(const char* __name, const char* __value, int __replace);
-int unsetenv(const char* __name);
+char* getenv(const char* name);
+int putenv(char* string);
+int setenv(const char* name, const char* value, int replace);
+int unsetenv(const char* name);
 int clearenv(void);
 
-int mkstemp(char* __template);
-int mkstemps(char* __template, int __suffixlen);
-char* mkdtemp(char* __template);
-int system(const char* __command);
-char* realpath(const char* __name, char* __resolved);
-char* mktemp(char* __template);
+int mkstemp(char* tpl);
+int mkstemps(char* tpl, int suffixlen);
+char* mkdtemp(char* tpl);
+int system(const char* command);
+char* realpath(const char* name, char* resolved);
+char* mktemp(char* tpl);
 
-void* bsearch(const void* __key, const void* __base, size_t __nmemb, size_t __size, fn i32(const void*, const void*) __compare);
-void qsort(void* __base, size_t __nmemb, size_t __size, fn i32(const void*, const void*) __compar);
+void* bsearch(const void* key, const void* base, size_t nmemb, size_t size, fn i32(const void*, const void*) compare);
+void qsort(void* base, size_t nmemb, size_t size, fn i32(const void*, const void*) compar);
 
-int abs(int __x) @(pure);
-long labs(long __x) @(pure);
-Div_t div(int __numer, int __denom);
-Ldiv_t ldiv(long __numer, long __denom);
+int abs(int x) @(pure);
+long labs(long x) @(pure);
+div_t div(int numer, int denom);
+ldiv_t ldiv(long numer, long denom);
 
-char* ecvt(double __value, int __ndigit, int* __decpt, int* __sign);
-char* fcvt(double __value, int __ndigit, int* __decpt, int* __sign);
-char* gcvt(double __value, int __ndigit, char* __buf);
-char* qecvt(double __value, int __ndigit, int* __decpt, int* __sign);
-char* qfcvt(double __value, int __ndigit, int* __decpt, int* __sign);
-char* qgcvt(double __value, int __ndigit, char* __buf);
-int ecvt_r(double __value, int __ndigit, int* __decpt, int* __sign, char* __buf, size_t __len);
-int fcvt_r(double __value, int __ndigit, int* __decpt, int* __sign, char* __buf, size_t __len);
-int qecvt_r(double __value, int __ndigit, int* __decpt, int* __sign, char* __buf, size_t __len);
-int qfcvt_r(double __value, int __ndigit, int* __decpt, int* __sign, char* __buf, size_t __len);
+char* ecvt(double value, int ndigit, int* decpt, int* sign);
+char* fcvt(double value, int ndigit, int* decpt, int* sign);
+char* gcvt(double value, int ndigit, char* buf);
+char* qecvt(double value, int ndigit, int* decpt, int* sign);
+char* qfcvt(double value, int ndigit, int* decpt, int* sign);
+char* qgcvt(double value, int ndigit, char* buf);
+int ecvt_r(double value, int ndigit, int* decpt, int* sign, char* buf, size_t len);
+int fcvt_r(double value, int ndigit, int* decpt, int* sign, char* buf, size_t len);
+int qecvt_r(double value, int ndigit, int* decpt, int* sign, char* buf, size_t len);
+int qfcvt_r(double value, int ndigit, int* decpt, int* sign, char* buf, size_t len);
 
-int mblen(const char* __s, size_t __n);
-int mbtowc(int* __pwc, const char* __s, size_t __n);
+int mblen(const char* s, size_t n);
+int mbtowc(int* pwc, const char* s, size_t n);
 // needs wchar_t
-//fn int wctomb(char* __s, int __wchar);
-int mbstowcs(int* __pwcs, const char* __s, size_t __n);
-int wcstombs(char* __s, const int* __pwcs, size_t __n);
-int rpmatch(const char* __response);
-int getsubopt(char** __optionp, char* const* __tokens, char** __valuep);
-int getloadavg(double* __loadavg, int __nelem);
+//int wctomb(char* s, int wchar);
+int mbstowcs(int* pwcs, const char* s, size_t n);
+int wcstombs(char* s, const int* pwcs, size_t n);
+int rpmatch(const char* response);
+int getsubopt(char** optionp, char* const* tokens, char** valuep);
+int getloadavg(double* loadavg, int nelem);
 

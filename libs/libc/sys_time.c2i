@@ -1,17 +1,17 @@
 module sys_time extern "C";
 
 #if SYSTEM_DARWIN
-typedef long Time @(cname="time_t");
-typedef int SuSeconds @(cname="suseconds_t");
+typedef long time_t;
+typedef int suseconds_t;
 #else
 // Same for Linux, FreeBSD and OpenBSD
-typedef long Time @(cname="time_t");
-typedef long SuSeconds @(cname="suseconds_t");
+typedef long time_t;
+typedef long suseconds_t;
 #endif
 
 struct Timeval @(cname="timeval") {
-    Time tv_sec;
-    SuSeconds tv_usec;
+    time_t tv_sec;
+    suseconds_t tv_usec;
 }
 static_assert(16, sizeof(Timeval));
 

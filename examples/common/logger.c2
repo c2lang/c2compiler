@@ -18,7 +18,7 @@ module logger;
 import stdio { printf }
 import stdlib { exit, EXIT_FAILURE }
 import string { pstrcpy }
-import libc_time { Time, Tm, localtime }
+import libc_time { time_t, Tm, localtime }
 import sys_time { Timeval, gettimeofday }
 
 import color;
@@ -149,7 +149,7 @@ fn void Log.internal(Log* log, Level level, const char* color_, const char* form
     } else {
         Timeval tv;
         gettimeofday(&tv, nil);
-        Time now = tv.tv_sec;
+        time_t now = tv.tv_sec;
         Tm* now2 = localtime(&now);
         buf.printf("%02d/%02d/%02d %02d:%02d:%02d.%d",
                    now2.tm_year % 100, now2.tm_mon + 1, now2.tm_mday,
