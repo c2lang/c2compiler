@@ -405,6 +405,7 @@ public fn void InterferenceGraph.allocate(InterferenceGraph* g, u32 num_args) {
     for (u16 i = 0; i < num_args; i++) {
         if (g.register_map[i] == VAR_TODO) g.enqueue(i);
     }
+    g.handleQueue();
 
     // will go breadth-first from each variable, skipping already done
     for (u16 v=0; v<g.num_variables; v++) {
