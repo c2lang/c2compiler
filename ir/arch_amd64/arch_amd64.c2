@@ -35,7 +35,7 @@ fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
 fn void applyCallingConv(Tools* t, ir.FunctionInfo* f) {
 }
 
-fn void generateAsm(StringBuf* out, const char* name, const ir.FunctionInfo* f, bool is_external) {
+fn void generateAsm(StringBuf* out, const char* name, const ir.FunctionInfo* f, bool is_external, const char** symbol_names) {
 }
 
 const Target ArchInfo = {

@@ -109,18 +109,31 @@ public fn u32 PhiClauses.getCount(const PhiClauses* c) {
     return c.count;
 }
 
-fn bool PhiClauses.contains(const PhiClauses* c, Ref ref) {
+fn bool PhiClauses.containsBlock(const PhiClauses* c, BlockId blk_id) {
     const PhiClause* clauses = c.getClauses();
     for (u32 i=0; i<c.count; i++) {
-        if (clauses[i].ref.equals(ref)) return true;
+        if (clauses[i].src == blk_id) return true;
     }
 
     return false;
 }
 
+// A phi is only needed if the clauses do not all provide the same value
+public fn bool PhiClauses.needsPhi(const PhiClauses* c) {
+    const PhiClause* clauses = c.getClauses();
+    for (u32 i=1; i<c.count; i++) {
+        if (!clauses[i].ref.equals(clauses[0].ref)) return true;
+    }
+    return false;
+}
+
+public fn Ref PhiClauses.getFirstRef(const PhiClauses* c) {
+    return c.getClauses()[0].ref;
+}
+
+// Note: every predecessor gets its own clause, even if the value is the same as another one
 public fn void PhiClauses.add(PhiClauses* c, BlockId blk_id, Ref ref) {
-    // TODO also check if blk_id is the same
-    if (c.contains(ref)) return;
+    if (c.containsBlock(blk_id)) return;
 
     PhiClause* clause;
     if (c.count >= c.capacity) {
@@ -138,7 +151,7 @@ public fn void PhiClauses.add(PhiClauses* c, BlockId blk_id, Ref ref) {
             clause = &c.clauses[c.count];
         }
     } else {
-        if (c.count > countof(c.stash)) clause = &c.clauses[c.count];
+        if (c.capacity > countof(c.stash)) clause = &c.clauses[c.count];
         else clause = &c.stash[c.count];
     }
     c.count++;

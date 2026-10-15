@@ -22,6 +22,8 @@ import console;
 import string_buffer { StringBuf }
 
 import stdio { puts }
+import stdlib { calloc, free }
+import string { strlen }
 
 public fn void IrContext.writeOutput(IrContext* c, const char* output_dir, const char* target_name) {
     // generate create Makefile
@@ -48,16 +50,20 @@ public fn void IrContext.writeOutput(IrContext* c, const char* output_dir, const
     u32 block_start = 0;
     u32 num_symbols = c.symbols.getCount();
     const Symbol* symbols = c.symbols.get(0);
+    const char** symbol_names = calloc(num_symbols + 1, sizeof(const char*));
+    for (u32 i = 0; i < num_symbols; i++) symbol_names[i] = c.pool.idx2str(symbols[i].name);
     for (u32 i = 0; i < num_symbols; i++) {
         const Symbol* s = &symbols[i];
         if (s.is_function) {
             const ir.FunctionInfo* fi = s.f.info;
-            c.target.generateAsm(out, c.pool.idx2str(s.name), fi, s.is_external);
+            if (!fi) continue;  // external declaration, no body
+            c.target.generateAsm(out, symbol_names[i], fi, s.is_external, symbol_names);
             block_start += fi.blocks.getCount();
         }
-        // TODO emit other symbols as well
-
     }
+    c.writeGlobals(out, symbol_names);
+
+    free(symbol_names);
 
     out.newline();
     out.add("\t.ident \"C2C\"\n");
@@ -69,6 +75,72 @@ public fn void IrContext.writeOutput(IrContext* c, const char* output_dir, const
 
     c.write(output_dir, "output.s", out);
     out.free();
+}
+
+// emit global variables and string literals
+fn void IrContext.writeGlobals(IrContext* c, StringBuf* out, const char** symbol_names) {
+    u32 num_symbols = c.symbols.getCount();
+    for (u32 i = 1; i < num_symbols; i++) {  // symbol 0 is reserved (invalid)
+        const Symbol* s = c.symbols.get(i);
+        if (s.is_function || s.is_external) continue;   // external = declaration only
+
+        const char* name = symbol_names[i];
+        const InitValue* values = c.init_values.get(s.g.init_value_idx);
+        u32 count = s.g.init_value_count;
+
+        bool is_text = count == 1 && values[0].getKind() == InitValueKind.Text;
+        out.newline();
+        if (is_text) out.add("\t.section .rodata\n");
+        else out.add("\t.data\n");
+        if (s.align > 1) out.print("\t.balign  %d\n", s.align);
+        if (name[0] != '.') {   // names like .str1 are local
+            out.print("\t.global %s\n", name);
+            out.print("\t.type   %s, @object\n", name);
+        }
+        out.print("%s:\n", name);
+
+        for (u32 j = 0; j < count; j++) {
+            const InitValue* v = &values[j];
+            switch (v.getKind()) {
+            case None:
+                break;
+            case Byte:
+                out.print("\t.byte   %d\n", v.value);
+                break;
+            case Short:
+                out.print("\t.short  %d\n", v.value);
+                break;
+            case Word:
+                out.print("\t.word   %d\n", v.value);
+                break;
+            case Word2:
+                const Constant* con = c.constants.get(v.value);
+                out.print("\t.word   %d\n", (u32)con.uvalue);
+                break;
+            case Long:
+                out.print("\t.quad   %d\n", v.value);
+                break;
+            case Long2:
+                const Constant* con = c.constants.get(v.value);
+                out.print("\t.quad   %d\n", con.uvalue);
+                break;
+            case Symbol:
+                out.print("\t.quad   %s\n", symbol_names[v.value]);
+                break;
+            case Text:
+                // TODO: handle potential embedded null bytes
+                const char* text = c.pool.idx2str(v.value);
+                out.add("\t.asciz   ");
+                out.encodeBytes(text, (u32)strlen(text), '"');
+                out.newline();
+                break;
+            case Zero:
+                out.print("\t.zero   %d\n", v.value);
+                break;
+            }
+        }
+        if (!is_text && name[0] != '.') out.print("\t.size   %s, .-%s\n", name, name);
+    }
 }
 
 fn void IrContext.write(IrContext* c, const char* output_dir, const char* filename, const StringBuf* buf) {

@@ -27,6 +27,7 @@ type LiveVector struct {
     u32 count;
     u32 cap;
     u32 num_instr;
+    u32 num_clobbered;  // number of caller-saved registers (R0..), clobbered by calls
     u32* temps;     // [num_instr + num_regs(32)]
 
     // TEMP HERE, should be placed in tools and created once
@@ -35,13 +36,14 @@ type LiveVector struct {
     LiveMap* live_out;    // blk_id is index
 }
 
-fn void LiveVector.init(LiveVector* v, u32 num_blocks, u32 num_instr) {
+fn void LiveVector.init(LiveVector* v, u32 num_blocks, u32 num_instr, u32 num_clobbered) {
     v.count = 0;
     v.cap = 1024;
     v.num_instr = num_instr;
     v.temps = malloc(v.cap * sizeof(u32));
     assert(num_instr <= u16.max);
-    u16 num_regs = 8;  // always 8 for now (just for call return+args)
+    v.num_clobbered = num_clobbered;
+    u16 num_regs = (u16)num_clobbered;  // caller-saved registers (args + temps)
 
     // TODO this should be re-used between functions (also LiveVector)
     v.interferences = InterferenceGraph.create(32*1024, (u16)num_instr, num_regs);
@@ -207,7 +209,7 @@ fn void Tools.createBlockInterferences(Tools* t, u32 blk_id, FunctionInfo* fi, L
             for (u32 a = 0; a < num_args; a++) {
                 v.addRegister(a);
             }
-            for (u32 a=num_args; a<8; a++) {   // just take 8 as highest caller-saved register
+            for (u32 a=num_args; a<v.num_clobbered; a++) {   // all other caller-saved registers
                 v.addRegister(a);
                 v.removeRegister(a);
             }
@@ -571,7 +573,10 @@ fn void Tools.allocateRegisters(Tools* t, FunctionInfo* fi) {
     // Liveness part 1: initial LiveIn/Out
     Rpo rpo.create(fi); // TODO re-use
 
-    LiveVector v.init(num_blocks, fi.instructions.getCount());  // TODO re-use
+    // registers clobbered by calls: arguments + temporaries
+    u32 num_clobbered = t.target.num_args_in_regs + t.target.num_temps;
+    if (num_clobbered < 8) num_clobbered = 8;
+    LiveVector v.init(num_blocks, fi.instructions.getCount(), num_clobbered);  // TODO re-use
 
     for (u32 i = 0; i < num_blocks; i++) {
         u32 blk_id = rpo.blocks[i];

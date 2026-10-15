@@ -15,7 +15,7 @@
 
 module ir;
 
-public type InstrKind enum u8 (const char* const str) {
+public type InstrKind enum u8 (public const char* const str) {
     None        : { "none" },   // used when removing instructions
 
     // Arithmetic and Bits

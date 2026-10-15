@@ -18,13 +18,13 @@ Kind k = Kind.B;
 
 // TODO structs
 fn void add1(i32 a) {
-    local i32 total;
+    static i32 total;
 
     total += a;
 }
 
 fn void add2(i32 a) {
-    local i32 total;
+    static i32 total;
 
     total += a;
 }

@@ -22,7 +22,7 @@ public type Target struct {
 
     fn void (Tools* t, ir.FunctionInfo* f) instructionSelection;
     fn void (Tools* t, ir.FunctionInfo* f) applyCallingConv;
-    fn void (StringBuf* out, const char* name, const ir.FunctionInfo* f, bool is_external) generateAsm;
+    fn void (StringBuf* out, const char* name, const ir.FunctionInfo* f, bool is_external, const char** symbol_names) generateAsm;
 
     // architecture specific instruction names (for printing)
     const char** instr_names;

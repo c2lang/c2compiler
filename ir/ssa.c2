@@ -121,14 +121,14 @@ fn Ref Tools.checkBlockRead(Tools* t, BlockId blk_id, u16 slot) {
     // Note: clauses.getCount() can be 0 if only passing variable to calls
     Ref ref = {}
     if (clauses.getCount()) {
-        if (clauses.getCount() > 1) {
+        if (clauses.needsPhi()) {
             //printf("  B%d (a) NEED PHI for S%d\n", blk_id, slot);
             Block* b = fi.blocks.get(blk_id);
             u32 loc = b.instr.start;
             if (fi.instructions.get(loc).isComment()) loc++;
             ref = t.addPhiInstr(fi, &clauses, loc, slot);
         } else {
-            ref = clauses.stash[0].ref;
+            ref = clauses.getFirstRef();
         }
         t.collector.insertWriteIfNone(blk_id, slot, ref);
     }
@@ -176,7 +176,7 @@ fn Ref Tools.checkPredBlock(Tools* t, BlockId blk_id, u16 slot, FunctionInfo* fi
         }
 
         if (clauses.getCount() != 0) {
-            if (clauses.getCount() > 1) {
+            if (clauses.needsPhi()) {
                 //printf("  B%d (b) NEED PHI for S%d\n", blk_id, slot);
                 Block* b = fi.blocks.get(blk_id);
                 u32 loc = b.instr.start;
@@ -187,7 +187,7 @@ fn Ref Tools.checkPredBlock(Tools* t, BlockId blk_id, u16 slot, FunctionInfo* fi
                     // TODO replace load with copy with phi_ref
                 }
             } else {
-                ref = clauses.stash[0].ref;
+                ref = clauses.getFirstRef();
             }
 
             // add virtual write to prevent doing the same work again
@@ -360,7 +360,6 @@ fn bool Tools.propagateConstants(Tools* t) {
     // return true if changed
     // look for add x, y where x, y are both constants, replace with copy
     bool changed = false;
-    u32 matches = 0;
 
     Instr* all = fi.instructions.get(0);
     for (u32 i=0; i<fi.instructions.getCount(); i++) {
@@ -371,10 +370,22 @@ fn bool Tools.propagateConstants(Tools* t) {
         if (!instr.args[0].isConstant()) continue;
 
         if (instr.args[1].isConstant()) {
-            matches++;
-            printf("MATCH %d  %d\n", i, matches);
+            // fold simple integer arithmetic into a copy
+            if (instr.args[0].kind != RefKind.Value || instr.args[1].kind != RefKind.Value) continue;
+            i32 lhs = instr.args[0].value;
+            i32 rhs = instr.args[1].value;
+            i32 result;
+            switch (instr.getKind()) {
+            case Add: result = lhs + rhs; break;
+            case Sub: result = lhs - rhs; break;
+            case Mul: result = lhs * rhs; break;
+            default:
+                continue;
+            }
             changed = true;
-            // NOTE: only 29 matches in c2c!
+            instr.instrBits.kind = InstrKind.Copy;
+            instr.args[0].init(RefKind.Value, (u32)result);
+            instr.args[1].clear();
         } else {
             // swap constant to RHS in case of add/mul (easier to check in instr selection)
             switch (instr.getKind()) {

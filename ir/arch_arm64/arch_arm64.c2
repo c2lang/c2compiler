@@ -19,10 +19,17 @@ import ir_tools { Tools, Target }
 import ir { * }
 import string_buffer { StringBuf }
 
+import stdio { printf}
+
 type Arm64_InstrKind enum u8 {
     Add,
     Branch,
     Beq,
+    Bge,
+    Bgt,
+    Ble,
+    Blt,
+    Bl,
     Bne,
     Cmp,
     Mov,
@@ -35,8 +42,13 @@ type Arm64_InstrKind enum u8 {
 const char*[] instr_names = {
     [Arm64_InstrKind.Add]    = "add",
     [Arm64_InstrKind.Branch] = "b",
-    [Arm64_InstrKind.Beq]    = "beq",
-    [Arm64_InstrKind.Bne]    = "bne",
+    [Arm64_InstrKind.Beq]    = "b.eq",
+    [Arm64_InstrKind.Bge]    = "b.ge",
+    [Arm64_InstrKind.Bgt]    = "b.gt",
+    [Arm64_InstrKind.Ble]    = "b.le",
+    [Arm64_InstrKind.Blt]    = "b.lt",
+    [Arm64_InstrKind.Bl]     = "bl",
+    [Arm64_InstrKind.Bne]    = "b.ne",
     [Arm64_InstrKind.Cmp]    = "cmp",
     [Arm64_InstrKind.Lsl]    = "lsl",
     [Arm64_InstrKind.Mul]    = "mul",
@@ -59,6 +71,14 @@ const char*[] reg_names = {
     "w8", "w9", "w10", "w11", "w12", "w13", "w14", "w15",   // temp
     "w19", "w20", "w21", "w22", "w23", "w24", "w25", "w26", "w27", "w28",   // callee saved
     "w16", "w17", "w18", "w29", "w30", "w31",   // other
+}
+
+// 64-bit names of the same registers (same order as reg_names)
+const char*[] reg_names64 = {
+    "x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7",
+    "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15",
+    "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27", "x28",
+    "x16", "x17", "x18", "x29", "x30", "x31",
 }
 
 type RegAlloc struct {
@@ -136,25 +156,30 @@ fn void instructionSelection(Tools* t, ir.FunctionInfo* f) {
                 break;
             // Comparisons
             case CmpNe:
+            case CmpEq:
+            case CmpLt:
+            case CmpGt:
+            case CmpLe:
+            case CmpGe:
                 assert(j+1 != last);
                 Instr* next = &instrs[j+1];
+                assert(next.getKind() == JmpIf);
+                // cmp a, b; then a conditional branch. The targets are filled in
+                // when generating asm (dests can still change due to split-edges)
+                switch (ii.getKind()) {
+                case CmpNe: k = Arm64_InstrKind.Bne; break;
+                case CmpEq: k = Arm64_InstrKind.Beq; break;
+                case CmpLt: k = Arm64_InstrKind.Blt; break;
+                case CmpGt: k = Arm64_InstrKind.Bgt; break;
+                case CmpLe: k = Arm64_InstrKind.Ble; break;
+                case CmpGe: k = Arm64_InstrKind.Bge; break;
+                default: assert(0); break;
+                }
                 ii.setArch(Arm64_InstrKind.Cmp);
                 ii.instrBits.has_result = 0;
-                assert(next.getKind() == JmpIf);
-                // invert, assert true block is next
-                next.setArch(Arm64_InstrKind.Beq);
-                next.args[0].init(Block, b.dests[1]);
+                next.setArch(k);
+                next.args[0].clear();
                 next.args[1].clear();
-                break;
-            case CmpEq:
-                break;
-            case CmpLt:
-                break;
-            case CmpGt:
-                break;
-            case CmpLe:
-                break;
-            case CmpGe:
                 break;
             // Memory
             case Load1:
@@ -325,7 +350,22 @@ fn void applyCallingConv(Tools* t, FunctionInfo* f) {
     }
 }
 
-fn void generateAsm(StringBuf* out, const char* name, const FunctionInfo* fi, bool is_external) {
+fn Arm64_InstrKind invertCond(Arm64_InstrKind k) {
+    switch (k) {
+    case Beq: return Arm64_InstrKind.Bne;
+    case Bne: return Arm64_InstrKind.Beq;
+    case Blt: return Arm64_InstrKind.Bge;
+    case Bge: return Arm64_InstrKind.Blt;
+    case Bgt: return Arm64_InstrKind.Ble;
+    case Ble: return Arm64_InstrKind.Bgt;
+    default:
+        assert(0);
+        break;
+    }
+    return k;
+}
+
+fn void generateAsm(StringBuf* out, const char* name, const FunctionInfo* fi, bool is_external, const char** symbol_names) {
     // NOTE: currently exactly the same as RV64 version!
 #if 0
     PER FUNCTION:
@@ -353,8 +393,57 @@ fn void generateAsm(StringBuf* out, const char* name, const FunctionInfo* fi, bo
             bool first = true;
             if (ii.isNone()) continue;
             if (!ii.isArch()) {
-                assert(ii.isCopy());
-                ii.setArch(Arm64_InstrKind.Mov);
+                switch (ii.getKind()) {
+                case Call:
+                    // args[0] = callee Symbol, args[1] = number of args (not printed)
+                    assert(ii.args[0].getKind() == RefKind.Symbol);
+                    out.print("\t%-8s%s\n", instr_names[Arm64_InstrKind.Bl], symbol_names[ii.args[0].value]);
+                    continue;
+                case Copy:
+                    if (ii.args[0].getKind() == RefKind.Symbol) {
+                        // load address of symbol (pointers are 64-bit)
+                        assert(ii.hasRegister());
+                        const char* sym = symbol_names[ii.args[0].value];
+                        const char* dst = reg_names64[ii.getRegister()];
+                        out.print("\tadrp    %s, %s\n", dst, sym);
+                        out.print("\tadd     %s, %s, :lo12:%s\n", dst, dst, sym);
+                        continue;
+                    }
+                    ii.setArch(Arm64_InstrKind.Mov);
+                    break;
+                case Jmp:
+                    // blocks inserted after instruction selection (eg phi split-edges)
+                    ii.setArch(Arm64_InstrKind.Branch);
+                    ii.args[0].init(Block, b.dests[0]);
+                    break;
+                default:
+                    printf("UNHANDLED INSTRUCTION %s\n", ii.getKind().str);
+                    assert(0);
+                    break;
+                }
+            }
+            Arm64_InstrKind ak = (Arm64_InstrKind)ii.instrBits.arch_instr;
+            switch (ak) {
+            case Beq:
+            case Bne:
+            case Blt:
+            case Bgt:
+            case Ble:
+            case Bge:
+                // dests[0] = true block, dests[1] = false block
+                bool true_is_next = (b.dests[0] == blk_id + 1);
+                if (true_is_next) {
+                    // branch to false block on inverted condition, fall through to true block
+                    out.print("\t%-8s.BB%d_%d\n", instr_names[invertCond(ak)], fi.id, b.dests[1]);
+                } else {
+                    out.print("\t%-8s.BB%d_%d\n", instr_names[ak], fi.id, b.dests[0]);
+                    if (b.dests[1] != blk_id + 1) {
+                        out.print("\t%-8s.BB%d_%d\n", instr_names[Arm64_InstrKind.Branch], fi.id, b.dests[1]);
+                    }
+                }
+                continue;
+            default:
+                break;
             }
             out.print("\t%-8s", instr_names[ii.instrBits.arch_instr]);
             if (ii.hasResult()) {

@@ -248,7 +248,7 @@ next:
 }
 
 
-fn void generateAsm(StringBuf* out, const char* name, const FunctionInfo* fi, bool is_external) {
+fn void generateAsm(StringBuf* out, const char* name, const FunctionInfo* fi, bool is_external, const char** symbol_names) {
 #if 0
     PER FUNCTION:
     QBE:    .balign 16
