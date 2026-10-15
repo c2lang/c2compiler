@@ -72,7 +72,7 @@ public fn LiveMap* LiveMap.create(u32 max_elems, u16 num_variables) {
 
     // give everything to highest arena (map size must be multiple of 256)
     g.arenas[NumArenas-1].max_elems = max_elems;
-    g.arenas[NumArenas-1].free_slots = (u16)max_elems / Caps[NumArenas-1];
+    g.arenas[NumArenas-1].free_slots = (u16)(max_elems / Caps[NumArenas-1]);
 
     // all Variables start in first arena
     for (u16 i=0; i<num_variables; i++) g.addVariableToArenaTail(&g.arenas[0], i);
@@ -247,7 +247,7 @@ public fn void LiveMap.add(LiveMap* g, u16 var1, u16 var2) {
 
         assert(dest_idx < 65536);
         r.start = (u16)dest_idx;
-        r.capacity = (u8)cap;
+        r.capacity = cap;
 
         if (last_idx != NULL) {
             // fix hole in map by moving data of last Variable in arena

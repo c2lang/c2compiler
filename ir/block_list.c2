@@ -37,7 +37,7 @@ public fn void BlockList.free(BlockList* l) {
 fn void BlockList.resize(BlockList* l, u32 cap) {
     l.capacity = cap;
     Block* blocks2 = calloc(l.capacity, sizeof(Block));
-    if (l.count > 1) {
+    if (l.count) {
         memcpy(blocks2, l.blocks, l.count * sizeof(Block));
         free(l.blocks);
     }
@@ -55,7 +55,7 @@ public fn BlockId BlockList.add(BlockList* l, BlockKind kind) {
 }
 
 public fn BlockId BlockList.copy(BlockList* l, const Block* b2) {
-    if (l.count == l.capacity) l.resize(l.capacity * 2);
+    if (l.count == l.capacity) l.resize(l.capacity ? l.capacity * 2 : 8);
 
     BlockId idx = l.count;
     Block* b = &l.blocks[idx];

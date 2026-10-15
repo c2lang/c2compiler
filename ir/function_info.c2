@@ -32,7 +32,7 @@ public type FunctionInfo struct {
 }
 static_assert(88, sizeof(FunctionInfo));
 
-public fn FunctionInfo* FunctionInfo.create(u32 id, u32 num_blks, u32 num_instr, u32 num_refs) {
+public fn FunctionInfo* FunctionInfo.create(u32 id, u32 num_blks, u32 num_instr) {
     FunctionInfo* fi = malloc(sizeof(FunctionInfo));
     fi.id = id;
     fi.blocks.init(num_blks);

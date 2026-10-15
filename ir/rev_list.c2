@@ -19,7 +19,7 @@ import ir { * }
 
 import stdio { printf }
 import stdlib { malloc, free }
-import string { memset }
+import string { memset, memcpy }
 
 public type RevIndex struct {
     u16 start;
@@ -27,7 +27,7 @@ public type RevIndex struct {
 }
 
 public type RevList struct {
-    u8* nodes;
+    u16* nodes;
     u32 capacity;
     u32 count;
 
@@ -40,17 +40,41 @@ public fn void RevList.create(RevList* r, u32 num_blocks) {
     memset(r, 0, sizeof(RevList));
 
     r.capacity = 1024;
+    r.nodes = malloc(r.capacity * sizeof(u16));
+    r.resizeBlocks(num_blocks);
+}
+
+public fn void RevList.free(RevList* r) {
+    free(r.nodes);
+    free(r.indexes);
+}
+
+fn void RevList.resizeBlocks(RevList* r, u32 num_blocks) {
+    u32 old_cap = r.block_capacity;
     r.block_capacity = num_blocks;
-    r.nodes = malloc(r.capacity * sizeof(u8));
-    r.indexes = malloc(num_blocks * sizeof(RevIndex));
+    RevIndex* indexes2 = malloc(num_blocks * sizeof(RevIndex));
+    if (old_cap) {
+        memcpy(indexes2, r.indexes, old_cap * sizeof(RevIndex));
+        free(r.indexes);
+    }
+    r.block_capacity = num_blocks;
+    r.indexes = indexes2;
+}
+
+fn void RevList.resizeNodes(RevList* r, u32 capacity) {
+    assert(capacity <= u16.max); // RevIndex.start is u16
+    u16* nodes2 = malloc(capacity * sizeof(u16));
+    memcpy(nodes2, r.nodes, r.count * sizeof(u16));
+    free(r.nodes);
+    r.nodes = nodes2;
+    r.capacity = capacity;
 }
 
 public fn void RevList.build(RevList* r, FunctionInfo* info) {
     r.count = 0;
     u32 num_blocks = info.blocks.getCount();
-    if (num_blocks > r.block_capacity) {
-        assert(0); // TODO resize
-    }
+    assert(num_blocks <= MaxBlocks);
+    if (num_blocks > r.block_capacity) r.resizeBlocks(num_blocks);
     r.block_count = num_blocks;
 
     // no block goes to block 0
@@ -63,8 +87,12 @@ public fn void RevList.build(RevList* r, FunctionInfo* info) {
         for (u32 j=0; j<num_blocks; j++) {
             Block* b = info.blocks.get(j);
             if (block_has_dest(b, &info.cases, dest)) {
-                assert(r.count <  r.capacity); // TODO resize
-                r.nodes[r.count++] = (u8)j;
+                if (r.count == r.capacity) {
+                    u32 cap2 = r.capacity * 2;
+                    r.resizeNodes(cap2 < u16.max ? cap2 : u16.max);
+                }
+                assert(r.count < r.capacity);
+                r.nodes[r.count++] = (u16)j;
             }
         }
         u32 count = r.count - start;
@@ -77,16 +105,11 @@ public fn void RevList.build(RevList* r, FunctionInfo* info) {
     }
 }
 
-public fn void RevList.free(RevList* r) {
-    free(r.nodes);
-    free(r.indexes);
-}
-
 public fn RevIndex RevList.getBlockIndex(const RevList* r, BlockId blk_id) {
     return r.indexes[blk_id];
 }
 
-public fn u8 RevList.getRev(const RevList* r, u32 idx) {
+public fn u16 RevList.getRev(const RevList* r, u32 idx) {
     return r.nodes[idx];
 }
 

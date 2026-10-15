@@ -56,7 +56,7 @@ public fn void Tools.init(Tools* t, const Target* target, const void* arg1, Prin
     t.conversion.init(64);
     t.slot_values.create();
     t.collector.create();
-    t.revlist.create(256);
+    t.revlist.create(MaxBlocks);
     t.inserter.create();
     t.copies.init(1024);
     t.usage.init(1024);

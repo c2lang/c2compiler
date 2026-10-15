@@ -67,13 +67,12 @@ public fn void SlotCollector.create(SlotCollector* c) {
     memset(c, 0, sizeof(SlotCollector));
 
     // TODO scale with blocks
-    c.writes = ir_slot_writes_map.Map.create(1024, 256);
+    c.writes = ir_slot_writes_map.Map.create(1024, MaxBlocks);
     // TEMP hardcoded max
 
     c.reads = malloc(SlotMax * sizeof(ReadSlotAccess));
 
-    // TEMP hardcoded max
-    c.indexes = malloc(256 * sizeof(BlockIndex));
+    c.indexes = malloc(MaxBlocks * sizeof(BlockIndex));
 
 }
 
@@ -142,6 +141,7 @@ fn void SlotCollector.checkStaticSlots(SlotCollector* c, FunctionInfo* info) {
 public fn void SlotCollector.fill(SlotCollector* c, FunctionInfo* info) {
     c.read_idx = 0;
     c.num_blocks = info.blocks.getCount();
+    assert(c.num_blocks <= MaxBlocks);
     c.info = info;
     c.num_static_slots = 0;
     c.slot_idx = 0;
@@ -358,7 +358,7 @@ next:
             break;
         default:
             c.checkRef(&cur.args[0]);
-            c.checkRef(&cur.args[0]);
+            c.checkRef(&cur.args[1]);
             break;
         }
     }

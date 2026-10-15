@@ -26,6 +26,7 @@ public type SlotWrite struct {
     // u16 pad
     ir.Ref ref;
 }
+static_assert(8, sizeof(SlotWrite));
 
 const u32 NumArenas = 9;
 // Note: caps need to be double of previous (except first two)

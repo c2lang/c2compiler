@@ -91,7 +91,7 @@ public fn InterferenceGraph* InterferenceGraph.create(u32 max_elems, u16 num_var
 
     // give everything to highest arena (map size must be multiple of 256)
     g.arenas[NumArenas-1].max_elems = max_elems;
-    g.arenas[NumArenas-1].free_slots = (u16)max_elems / Caps[NumArenas-1];
+    g.arenas[NumArenas-1].free_slots = (u16)(max_elems / Caps[NumArenas-1]);
 
     // all Variables start in first arena
     for (u16 i=0; i<total; i++) g.addVariableToArenaTail(&g.arenas[0], i);
@@ -433,7 +433,7 @@ fn void InterferenceGraph.allocateVariable(InterferenceGraph* g, u16 var_idx) {
         u16 neighbor = iter.ids[i];
         u8 r = g.register_map[neighbor];
         if (r < 64) {
-            used_regs |= (1 << r);
+            used_regs |= ((u64)1 << r);
             //printf("  block %d  r%d\n", neighbor, r);
         }
         if (r == VAR_TODO) g.enqueue(neighbor);
@@ -441,7 +441,7 @@ fn void InterferenceGraph.allocateVariable(InterferenceGraph* g, u16 var_idx) {
 
     // first first free register
     for (u32 i=0; i<64; i++) {
-        if ((used_regs & (1 << i)) == 0) {
+        if ((used_regs & ((u64)1 << i)) == 0) {
             g.register_map[var_idx] = (u8)i;
             //printf("  %d -> r%d\n", var_idx, i);
             return;

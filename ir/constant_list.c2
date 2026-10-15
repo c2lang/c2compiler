@@ -25,6 +25,7 @@ type ConstantList struct {
 }
 
 fn void ConstantList.init(ConstantList* l, u32 initial_size) {
+    assert(initial_size);
     memset(l, 0, sizeof(ConstantList));
     if (initial_size) {
         l.capacity = initial_size;

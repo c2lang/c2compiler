@@ -30,6 +30,7 @@ public fn void Rpo.create(Rpo* rpo, const FunctionInfo* fi) {
 
     for (u32 i=0; i<num_blocks; i++) blocks[i].checked = false;
 
+    assert(num_blocks > 0 && num_blocks <= u16.max);
     rpo.blocks = malloc(num_blocks * sizeof(u16));
     //rpo.num_blocks = num_blocks;
 
@@ -37,7 +38,7 @@ public fn void Rpo.create(Rpo* rpo, const FunctionInfo* fi) {
     u32 idx = todo; // check point
     //printf("  rpo[%d] -> %d\n", todo, 0);
     rpo.blocks[todo--] = 0;
-    while (todo < num_blocks) { // will wrap
+    while (idx > todo) { // stop when all inserted blocks are processed
         u16 blk_id = rpo.blocks[idx];
         //printf("  %d/%d  rpo[%d]  B%d\n", todo, num_blocks, idx, blk_id);
         assert(blk_id < num_blocks);
@@ -55,6 +56,12 @@ public fn void Rpo.create(Rpo* rpo, const FunctionInfo* fi) {
         }
         idx--;
     }
+
+    // unreachable blocks are not visited above, put them first so the array stays complete
+    for (u32 i = 1; i < num_blocks; i++) {
+        if (!blocks[i].checked) rpo.blocks[todo--] = (u16)i;
+    }
+    assert(todo == u32.max);
 
 #if 0
     printf("RPO: ");

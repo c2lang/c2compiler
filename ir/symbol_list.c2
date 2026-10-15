@@ -67,7 +67,7 @@ fn void SymbolList.resize(SymbolList* l, u32 cap) {
 }
 
 fn SymbolId SymbolList.add(SymbolList* l, u32 name, bool is_function, u32 align, bool is_external) {
-    if (l.count == l.capacity) l.resize(l.capacity * 2);
+    if (l.count == l.capacity) l.resize(l.capacity ? l.capacity * 2 : 8);
 
     SymbolId idx = l.count;
     Symbol* s = &l.symbols[idx];

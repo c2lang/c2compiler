@@ -94,10 +94,9 @@ public fn IrContext* IrContext.create(bool print, const target_info.Info* info, 
     // pre-load pool with slot names
     for (u32 slot = 0; slot < SlotMax; slot++) {
         char[8] slot_name;
-        // Result: starts at 4, then +4 each
-        // Note: just 4,8,12,
         snprintf(slot_name, countof(slot_name), "s%d", slot);
         u32 idx = c.pool.addStr(slot_name, false);
+        ir_tools.registerSlotName(slot, idx);
     }
 
     c.b.init();
@@ -182,7 +181,7 @@ public fn void IrContext.startFunc(IrContext* c, SymbolId id) {
     printf("startFunc(%d)  cur %d\n", id, b.cur_func);
 #endif
     assert(b.tmp_info == nil);
-    b.tmp_info = FunctionInfo.create(id, 8, 16, 16);
+    b.tmp_info = FunctionInfo.create(id, 8, 16);
     assert(b.cur_func == 0);
     b.cur_func = id;
     b.num_scopes = 0;
@@ -647,16 +646,16 @@ fn void IrContext.finalizeFunction(IrContext* c, SymbolId id) {
 }
 
 fn bool empty_block(const Block* b, const InstrList* instructions) {
-    // empty means only a jump
-    if (b.instr.count == 1) return true;
-    if (b.instr.count == 2) {
-        Instr* instr = instructions.get(b.instr.start);
-        if (instr.getKind() == InstrKind.Comment) return true;
+    // empty means only a jump (optionally with a comment)
+    if (b.instr.count == 0 || b.instr.count > 2) return false;
+    if (b.dests[1]) return false;   // conditional branch
 
-        instr = instructions.get(b.instr.start+1);
-        if (instr.getKind() == InstrKind.Comment) return true;
-    }
-    return false;
+    Instr* last = instructions.get(b.instr.start + b.instr.count - 1);
+    if (last.getKind() != InstrKind.Jmp) return false;
+    if (b.instr.count == 1) return true;
+
+    Instr* first = instructions.get(b.instr.start);
+    return first.getKind() == InstrKind.Comment;
 }
 
 // uses tmp_info! TODO could also just use cur_info (points to current)

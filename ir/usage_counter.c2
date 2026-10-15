@@ -33,7 +33,6 @@ public type Counter struct {
 
 public fn void Counter.init(Counter* c, u32 cap) {
     c.count = 0;
-    c.capacity = 0;
     c.counts = nil;
     c.resize(cap);
     c.max_idx = 0;
@@ -46,6 +45,7 @@ public fn void Counter.free(Counter* c) {
 }
 
 fn void Counter.resize(Counter* c, u32 cap) {
+    c.capacity = cap;
     if (c.counts) free(c.counts);
     // Note: does not memcpy, since will not be resized during adds
     c.counts = malloc(cap * sizeof(u8));
@@ -68,6 +68,7 @@ public fn void Counter.incr(Counter* c, u32 idx) {
 }
 
 public fn void Counter.decr(Counter* c, u32 idx) {
+    assert(c.counts[idx]);
     c.counts[idx]--;
     if (c.counts[idx] == 1) {
         // add to work_queue if not already in

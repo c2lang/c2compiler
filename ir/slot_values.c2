@@ -34,7 +34,7 @@ public fn void SlotValues.free(SlotValues* v) {
 }
 
 public fn void SlotValues.clear(SlotValues* v, u32 num_slots) {
-    assert(num_slots < SlotMax);
+    assert(num_slots <= SlotMax);
     memset(v.values, 0, num_slots * sizeof(Ref));
 }
 

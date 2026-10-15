@@ -16,6 +16,7 @@
 module ir;
 
 public const u32 SlotMax = 256;
+public const u32 MaxBlocks = 2048; // per function
 
 public type BlockId u32;    // TODO make u16
 

@@ -203,9 +203,17 @@ fn Ref Tools.checkPredBlock(Tools* t, BlockId blk_id, u16 slot, FunctionInfo* fi
     return ref;
 }
 
+// string pool indexes of the pre-loaded slot names, filled by IrContext.create()
+// Note: entries have different sizes ("s9" vs "s100"), so cannot be computed from slot
+u32[SlotMax] slot_names;
+
+public fn void registerSlotName(u32 slot, u32 pool_idx) {
+    slot_names[slot] = pool_idx;
+}
+
 fn u32 getSlotName(u32 slot) {
-    // see Context.create()
-    return 4 + slot*4;
+    assert(slot < SlotMax);
+    return slot_names[slot];
 }
 
 fn Ref Tools.addPhiInstr(Tools* t, FunctionInfo* fi, const PhiClauses* cache, u32 loc, u16 slot) {

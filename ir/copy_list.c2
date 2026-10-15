@@ -55,7 +55,7 @@ public fn void CopyList.clear(CopyList* l) {
 }
 
 public fn void CopyList.add(CopyList* l, u32 idx, Ref ref) {
-    if (l.count == l.capacity) l.resize(l.capacity * 2);
+    if (l.count == l.capacity) l.resize(l.capacity ? l.capacity * 2 : 8);
 
     // if ref is already a copy, replace with that dest (only for temps)
     if (ref.isTemp()) {
