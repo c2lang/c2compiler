@@ -1161,7 +1161,14 @@ int main(int argc, char *argv[]) {
 #endif
         printf("\n");
 #ifdef MAP_FAILED
-        printf("const usize MAP_FAILED = (usize)(%lld);\n", (long long)MAP_FAILED);
+        if (sizeof(void*) == sizeof(long long)) {
+            printf("const usize MAP_FAILED = (usize)(%lld);\n", (long long)MAP_FAILED);
+        } else
+        if (sizeof(void*) == sizeof(long)) {
+            printf("const usize MAP_FAILED = (usize)(%ld);\n", (long)MAP_FAILED);
+        } else {
+            printf("const usize MAP_FAILED = (usize)(%d);\n", (int)MAP_FAILED);
+        }
 #endif
         printf("\n");
         preprocess_header("sys/mman.h");
@@ -1172,6 +1179,8 @@ int main(int argc, char *argv[]) {
     }
     printf("}\n");
     printf("// libc/sys_stat.c2i\n{\n"); {
+        printf("const u32 STAT_SIZE = %zu;\n", sizeof(struct stat));
+        printf("\n");
         preprocess_header("sys/stat.h");
     }
     printf("}\n");
@@ -1194,8 +1203,6 @@ int main(int argc, char *argv[]) {
 #ifdef STDERR_FILENO
         printf("const int STDERR_FILENO = %d;\n", STDERR_FILENO);
 #endif
-        printf("\n");
-        printf("const u32 STAT_SIZE = %zu;\n", sizeof(struct stat));
         printf("\n");
         printf("/* access flags.  */\n");
 #ifdef R_OK
