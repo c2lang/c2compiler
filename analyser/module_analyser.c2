@@ -21,7 +21,7 @@ import ast_builder { Builder }
 import attr { Attr }
 import conversion_checker;
 import diagnostics { Diags }
-import file_utils { File }
+import file_buffer { FileBuffer }
 import init_checker { InitChecker }
 import module_list { ModuleList }
 import label_vector { LabelVector }
@@ -753,15 +753,15 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
 
         // open file, copy contents to StringPool and close
         const char* filename = ma.idx2name(embed.value.text);
-        File reader.init(filename);
-        if (!reader.load()) {
+        FileBuffer reader.init();
+        if (!reader.loadFile(filename)) {
             ma.error(embed.loc, "error opening embedded file '%s': %s", filename, reader.getError());
             return;
         }
 
         //TODO: attribute should have source length
         u32 src_len = 8; // source length is attribute @(embed="xxx")
-        u32 len = reader.data_size();
+        u32 len = reader.size();
         //TODO: check input for weird chars if string
         u32 value = ma.astPool.add(reader.data(), len, false);
         Expr* init = ma.builder.actOnStringLiteral(embed.loc, src_len, value, len, is_char);
@@ -769,7 +769,7 @@ fn void Analyser.analyseGlobalVarDecl(Analyser* ma, VarDecl* v) {
         // Note: VarDecl already needed to allocate extra space during creation! (parser checks embed attr for this)
         v.setInit(init);
         d.setType(init.getType());
-        reader.close();
+        reader.deinit();
     }
 
     if (!d.getAST().isInterface())

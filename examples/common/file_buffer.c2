@@ -1,0 +1,252 @@
+/* Copyright 2022-2026 Bas van den Berg, Charlie Gordon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module file_buffer;
+
+import c_errno { errno, EINTR, EFBIG }
+import stdio { * }
+import stdlib { free, malloc, realloc }
+import string { memcpy, strerror }
+import libc_fcntl { open, O_RDONLY, O_CREAT, O_WRONLY, O_TRUNC, O_BINARY }
+import unistd { close, lseek, read, write }
+
+public type FileBuffer struct {
+    void* region;
+    u32 region_size;
+    i32 error;
+    bool own;
+    u8[1] empty;
+}
+
+public fn void FileBuffer.init(FileBuffer* file, const void* region = nil, u32 size = 0) @(unused) {
+    file.region = (void*)region;
+    file.region_size = size;
+    file.error = 0;
+    file.own = false;
+}
+
+public fn void FileBuffer.initOwn(FileBuffer* file, void* region, u32 size) @(unused) {
+    file.region = region;
+    file.region_size = size;
+    file.error = 0;
+    file.own = true;
+}
+
+public fn void FileBuffer.deinit(FileBuffer* file) @(unused) {
+    if (file.own) free(file.region);
+    *file = {}
+}
+
+public fn void* FileBuffer.detach(FileBuffer* file) @(unused) {
+    void *region = file.region;
+    file.region = nil;
+    return region;
+}
+
+public fn bool FileBuffer.loadFile(FileBuffer* file, const char* filename) @(unused) {
+    *file = {}
+
+    i32 fd = open(filename, O_RDONLY | O_BINARY);
+    if (fd == -1) {
+        file.error = errno;
+        return false;
+    }
+    bool res = file.loadHandle(fd);
+    close(fd);
+    return res;
+}
+
+public fn bool FileBuffer.loadStream(FileBuffer* file, FILE* fp) @(unused) {
+    char *data = nil;
+    usize size = 0;
+
+    *file = {}
+
+    i64 file_length;
+    if (fseek(fp, 0, SEEK_END) >= 0 && (file_length = ftell(fp)) >= 0) {
+        usize length = (usize)file_length;
+        if (length > u32.max - 1) {
+            file.error = EFBIG;
+            return false;
+        }
+        data = malloc(length + 1);
+        if (!data) {
+            file.error = errno;
+            return false;
+        }
+        fseek(fp, 0, SEEK_SET);
+        size = fread(data, 1, length, fp);
+    } else {
+        // stream is not seekable
+        char[4096] buf;
+        usize nread;
+        while ((nread = fread(buf, 1, countof(buf), fp)) > 0) {
+            if (size + nread > u32.max - 1) {
+                file.error = EFBIG;
+                free(data);
+                return false;
+            }
+            u8* new_data = realloc(data, size + nread + 1);
+            if (!new_data) {
+                file.error = errno;
+                free(data);
+                return false;
+            }
+            data = new_data;
+            memcpy(data + size, buf, nread);
+            size += nread;
+        }
+        if (!data) {
+            file.region = file.empty;
+            return true;
+        }
+    }
+    data[size] = '\0';
+    file.region = data;
+    file.region_size = (u32)size;
+    file.own = true;
+    return true;
+}
+
+public fn bool FileBuffer.loadHandle(FileBuffer* file, i32 fd) @(unused) {
+    char *data = nil;
+    usize size = 0;
+
+    *file = {}
+
+    i64 file_length = lseek(fd, 0, SEEK_END);
+    lseek(fd, 0, SEEK_SET);
+    if (file_length < 0) {   // file descriptor is not seekable
+        char[4096] buf;
+        isize nread;
+        while ((nread = read(fd, buf, sizeof(buf))) != 0) {
+            if (nread < 0) {
+                if (errno == EINTR)
+                    continue;
+                file.error = errno;
+                free(data);
+                return false;
+            }
+            if (size + (usize)nread > u32.max - 1) {
+                file.error = EFBIG;
+                free(data);
+                return false;
+            }
+            u8* new_data = realloc(data, size + (usize)nread + 1);
+            if (!new_data) {
+                file.error = errno;
+                free(data);
+                return false;
+            }
+            data = new_data;
+            memcpy(data + size, buf, (usize)nread);
+            size += nread;
+        }
+        if (!data) {
+            file.region = file.empty;
+            return true;
+        }
+    } else
+    if (file_length > 0) {
+        usize length = (usize)file_length;
+        if (length > u32.max - 1) {
+            file.error = EFBIG;
+            return false;
+        }
+        data = malloc(length + 1);
+        if (!data) {
+            file.error = errno;
+            return false;
+        }
+        while (size < length) {
+            isize nread = read(fd, data + size, length - size);
+            if (nread < 0) {
+                if (errno == EINTR)
+                    continue;
+                file.error = errno;
+                free(data);
+                return false;
+            }
+            if (nread == 0) break;
+            size += nread;
+        }
+    }
+    data[size] = '\0';
+    file.region = data;
+    file.region_size = (u32)size;
+    file.own = true;
+    return true;
+}
+
+public fn bool FileBuffer.writeFile(FileBuffer* file, const char* filename) @(unused) {
+    i32 fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC | O_BINARY, 0660);
+    if (fd == -1) {
+        file.error = errno;
+        return false;
+    }
+    bool res = file.writeHandle(fd);
+    close(fd);
+    return res;
+}
+
+public fn bool FileBuffer.writeHandle(FileBuffer* file, i32 fd) @(unused) {
+    const u8* data = file.region;
+    usize length = file.region_size;
+    usize size = 0;
+    while (size < length) {
+        isize n = write(fd, data + size, length - size);
+        if (n < 0) {
+            if (errno == EINTR)
+                continue;
+            file.error = errno;
+            return false;
+        }
+        if (n == 0) {  // out of disk space
+            file.error = errno;
+            return false;
+        }
+        size += n;
+    }
+    return true;
+}
+
+public fn bool FileBuffer.writeStream(FileBuffer* file, FILE* fp) @(unused) {
+    usize written = fwrite(file.region, 1, file.region_size, fp);
+    if (written != file.region_size) {
+        file.error = errno;
+        return false;
+    }
+    return true;
+}
+
+public fn bool FileBuffer.isLoaded(const FileBuffer* file) @(unused) {
+    return file.region != nil;
+}
+
+public fn const void* FileBuffer.data(FileBuffer* file) @(unused) {
+    return file.region;
+}
+
+public fn u32 FileBuffer.size(FileBuffer* file) @(unused) {
+    return file.region_size;
+}
+
+public fn bool FileBuffer.isEmpty(const FileBuffer* file) @(unused) {
+    return file.region_size == 0;
+}
+
+public fn const char* FileBuffer.getError(const FileBuffer* file) @(unused) {
+    return strerror(file.error);
+}

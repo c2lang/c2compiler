@@ -13,35 +13,40 @@
  * limitations under the License.
  */
 
-module file_utils;
+module file_copy;
 
-import string { pstrcpy }
+import file_buffer { FileBuffer }
+import file_utils { Pathname }
 
-// NOTE: depends on reader + writer
-public fn i32 copy_file(const char* source, const char* dest) {
+public fn bool copy_file(const char* source, const char* dest, i32* errp) {
     // Note: not most optimal yet
 
     // create required sub-directories in dest
-    char[file_utils.Max_path] tmp;
-    pstrcpy(tmp, countof(tmp), dest);
-    const char* base = get_basename(tmp);
-    if (base != tmp) {
-        u32 len = (u32)(base - tmp);
-        tmp[len-1] = 0;
-        if (create_path(tmp)) return -1;
+    Pathname tmp.init(dest);
+    if (tmp.error) {
+        *errp = tmp.error;
+        return false;
+    }
+
+    const char* base = tmp.get_basename();
+    if (base != tmp.path) {
+        u32 len = (u32)(base - tmp.path);
+        tmp.path[len-1] = '\0';
+        if (tmp.create_path()) {
+            *errp = tmp.error;
+            return false;
+        }
     }
 
     // copy file
-    File src.init(source);
+    FileBuffer fbuf.init();
 
     // TODO just open both and copy page-by-page (dont use reader/writer)
-    if (!src.load()) return -1;
-
-    File dst.init(dest);
-    bool ok = dst.write(src.contents, src.contents_size);
-
-    dst.close();
-    src.close();
-    return !ok;
+    if (!fbuf.loadFile(source) || !fbuf.writeFile(dest)) {
+        *errp = fbuf.error;
+        fbuf.deinit();
+        return false;
+    }
+    fbuf.deinit();
+    return true;
 }
-

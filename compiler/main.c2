@@ -22,7 +22,8 @@ import console;
 import c2recipe { Recipe }
 import compiler;
 import constants { recipe_name }
-import file_utils;
+import file_buffer { FileBuffer }
+import file_utils { Pathname, path_exists, get_basename, get_extension }
 #if C2_PLUGINS && !BOOTSTRAP
 import git_version; // from plugin
 #endif
@@ -39,7 +40,7 @@ import utils;
 import c_errno { errno }
 import stdio { snprintf }
 import stdlib { exit, EXIT_FAILURE, EXIT_SUCCESS, getenv }
-import string { memset, memchr, strlen, strerror, pstrcpy }
+import string { memset, memchr, strlen, strerror }
 
 type Options struct {
     bool log_verbose;
@@ -76,11 +77,12 @@ fn void Options.free(Options* opts) {
 }
 
 fn void write_file_or_die(const char* filename, StringBuf* buf) {
-    file_utils.File file.init(filename);
-    if (!file.write(buf.data(), buf.size())) {
-        console.error("c2c: cannot write to %s: %s", file.path, file.getError());
+    FileBuffer fbuf.init(buf.data(), buf.size());
+    if (!fbuf.writeFile(filename)) {
+        console.error("c2c: cannot write to %s: %s", filename, fbuf.getError());
         exit(EXIT_FAILURE);
     }
+    fbuf.deinit();
 }
 
 const char[] GenMain =
@@ -108,7 +110,7 @@ end
 
 fn void create_project(const char* name) {
 
-    if (file_utils.path_exists("main.c2") || file_utils.path_exists("recipe.txt")) {
+    if (path_exists("main.c2") || path_exists("recipe.txt")) {
         console.error("c2c: main.c2 and/or recipe.txt already exist");
         exit(EXIT_FAILURE);
     }
@@ -496,7 +498,7 @@ type Context struct {
 
     Recipe* recipe;
     build_file.Info* build_info;
-    char[file_utils.Max_path] build_filename;
+    Pathname build_filename;
     i32 recipe_id;
 
     PluginMgr* plugins;
@@ -552,8 +554,8 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
 
     if (c.opts.files.length()) {
         // use basename of first filename as target name
-        const char* basename = file_utils.get_basename(c.opts.files.get(0));
-        const char* ext = file_utils.get_extension(basename);
+        const char* basename = get_basename(c.opts.files.get(0));
+        const char* ext = get_extension(basename);
         u32 target_idx = c.auxPool.add(basename, (u32)(ext - basename), true);
         BackEndKind backend = C;
         if (c.opts.use_ir_backend) backend = IR;
@@ -593,13 +595,12 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
     bool have_plugin_dir = false;
     if (c.opts.build_file) {
         if (auto_found_buildfile) {
-            pstrcpy(c.build_filename, countof(c.build_filename), c.opts.build_file);
+            c.build_filename.init(c.opts.build_file);
         } else {
-            usize pos = pstrcpy(c.build_filename, countof(c.build_filename), c.path_info.orig2root);
-            pstrcpy(c.build_filename + pos, countof(c.build_filename) - pos, c.opts.build_file);
+            c.build_filename.init(c.path_info.orig2root, c.opts.build_file);
         }
-        console.log("using build-file %s", c.build_filename);
-        c.build_info = build_file_parser.parse(c.sm, c.auxPool, c.build_filename);
+        console.log("using build-file %s", c.build_filename.path);
+        c.build_info = build_file_parser.parse(c.sm, c.auxPool, c.build_filename.path);
         if (!c.build_info) exit(EXIT_FAILURE);
 
         const StringList* plugin_dirs = c.build_info.getPluginDirs();

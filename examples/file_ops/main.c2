@@ -16,9 +16,8 @@
 module event_test;
 
 import stdio { fprintf, fwrite, stderr, stdout }
-import string { strerror }
 
-import file_utils;
+import file_buffer { FileBuffer }
 
 public fn i32 main(i32 argc, char** argv) {
     if (argc != 2) {
@@ -27,10 +26,10 @@ public fn i32 main(i32 argc, char** argv) {
     }
 
     const char* filename = argv[1];
-    file_utils.Reader file;
-
-    if (!file.open(filename)) {
-        fprintf(stderr, "cannot load '%s': %s\n", filename, strerror(file.errno));
+    FileBuffer file.init();
+    if (!file.loadFile(filename)) {
+        fprintf(stderr, "cannot load '%s': %s\n", filename, file.getError());
+        file.deinit();
         return 1;
     }
 
@@ -38,7 +37,7 @@ public fn i32 main(i32 argc, char** argv) {
     usize size = file.size();
     fwrite(contents, 1, size, stdout);
 
-    file.close();
+    file.deinit();
 
     return 0;
 }

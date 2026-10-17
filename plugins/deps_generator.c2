@@ -18,7 +18,8 @@ module deps_generator;
 import ast { * }
 import ast_visitor { Visitor }
 import component { Component, ComponentList }
-import file_utils { File }
+import file_buffer { FileBuffer }
+import file_utils { Pathname }
 import string_buffer { StringBuf }
 import string_list { StringList }
 import string_pool { StringPool }
@@ -466,8 +467,10 @@ public fn void generate(const char* title, const char* output_dir, ComponentList
     gen.indent--;
     out.add("</dsm>\n");
 
-    File file.init(output_dir, "deps.xml");
-    file.write(out.data(), out.size());
+    Pathname pathname.init(output_dir, "deps.xml");
+    FileBuffer fbuf.init(out.data(), out.size());
+    fbuf.writeFile(pathname.path);
+    fbuf.deinit();
 
     if (gen.visitor) gen.visitor.free();
 

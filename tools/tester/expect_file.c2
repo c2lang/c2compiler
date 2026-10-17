@@ -17,9 +17,10 @@ module expect_file;
 
 import stdio { fprintf, stderr }
 import stdlib { calloc, free, exit, EXIT_FAILURE }
-import string { pstrcpy, strncmp }
+import string { strncmp }
 
-import file_utils;
+import file_buffer { FileBuffer }
+import file_utils { Pathname }
 import line_db { LineDb }
 import string_buffer { StringBuf }
 import test_utils { * }
@@ -42,7 +43,7 @@ public type ExpectMode enum u8 {
 }
 
 public type ExpectFile struct @(opaque) {
-    char[file_utils.Max_path] filename;
+    Pathname filename;
     ExpectMode mode;
     StringBuf* output;  // will be set in check()
 
@@ -57,7 +58,7 @@ public type ExpectFile struct @(opaque) {
 
 public fn ExpectFile* ExpectFile.create(const char* name, ExpectMode m) {
     ExpectFile* f = calloc(1, sizeof(ExpectFile));
-    pstrcpy(f.filename, countof(f.filename), name);
+    f.filename.init(name);
     f.mode = m;
     f.lines = LineDb.create();
     return f;
@@ -97,7 +98,7 @@ fn bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, cons
     if (f.expIndex >= f.lines.size()) {
         if (f.mode == COMPLETE) {
             color_print2(f.output, colError, "%s:%d: unexpected line '%.*s'",
-                         f.filename, line_nr, (i32)len, start);
+                         f.filename.path, line_nr, (i32)len, start);
             return false;
         } else {
             return true;
@@ -115,21 +116,22 @@ fn bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, cons
     }
     if (f.mode == COMPLETE || consecutive) {
         color_print2(f.output, colError, "%s:%d: expected '%s'\n       got '%.*s'",
-                     f.filename, line_nr, expectedLine, (i32)len, start);
+                     f.filename.path, line_nr, expectedLine, (i32)len, start);
         return false;
     }
     return true;
 }
 
 public fn bool ExpectFile.check(ExpectFile* f, StringBuf* output, const char* basedir) {
-    file_utils.File file.init(basedir, f.filename);
+    Pathname file.init(basedir, f.filename.path);
     if (!file.exists()) {
-        color_print2(output, colError, "  missing expected file '%s' (%s)", f.filename, file.path);
+        color_print2(output, colError, "  missing expected file '%s' (%s)", f.filename.path, file.path);
         return false;
     }
 
-    if (!file.load()) {
-        fprintf(stderr, "error loading %s: %s\n", file.path, file.getError());
+    FileBuffer fbuf.init();
+    if (!fbuf.loadFile(file.path)) {
+        fprintf(stderr, "error loading %s: %s\n", file.path, fbuf.getError());
         exit(EXIT_FAILURE);
     }
 
@@ -138,7 +140,7 @@ public fn bool ExpectFile.check(ExpectFile* f, StringBuf* output, const char* ba
     bool result = true;
 
     u32 line_nr = 1;
-    const char* lineStart = file.data();
+    const char* lineStart = fbuf.data();
     while (*lineStart) {
         // cut it up into lines (even if empty)
         const char* cp = lineEnd(lineStart);
@@ -153,11 +155,11 @@ public fn bool ExpectFile.check(ExpectFile* f, StringBuf* output, const char* ba
 
     if (result && f.expIndex < f.lines.size()) {
         const char* expectedLine = f.lines.getLine(f.expIndex);
-        color_print2(f.output, colError, "  in file %s: expected '%s'", f.filename, expectedLine);
+        color_print2(f.output, colError, "  in file %s: expected '%s'", f.filename.path, expectedLine);
         result = false;
     }
 
-    file.close();
+    fbuf.deinit();
     return result;
 }
 

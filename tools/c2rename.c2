@@ -17,7 +17,7 @@ module refs_main;
 
 import c2refs { Dest, Refs }
 import constants { Refs_filename, output_dir }
-import file_utils;
+import file_utils { Pathname }
 import replacer { Replacer }
 import refs_finder { Finder }
 import utils;
@@ -108,11 +108,10 @@ public fn i32 main(i32 argc, const char** argv)
     }
 
     const char* refsfile = Refs_filename;
-    char[file_utils.Max_path] refsname;
+    Pathname refsname;
     if (opts.target) {
-        file_utils.make_path3(refsname, countof(refsname),
-                              output_dir, opts.target, Refs_filename);
-        refsfile = refsname;
+        refsname.init_subdir(output_dir, opts.target, Refs_filename);
+        refsfile = refsname.path;
     } else {
         Finder* finder = Finder.create(output_dir, Refs_filename);
         u32 count = finder.search(nil);
@@ -122,8 +121,8 @@ public fn i32 main(i32 argc, const char** argv)
             return -1;
         }
         if (count == 1) {
-            pstrcpy(refsname, countof(refsname), finder.get(0));
-            refsfile = refsname;
+            refsname.init(finder.get(0));
+            refsfile = refsname.path;
         } else {
             fprintf(stderr, "multiple %s files, please specify target with '-t' option\n", Refs_filename);
             return -1;

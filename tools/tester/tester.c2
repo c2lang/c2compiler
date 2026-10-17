@@ -26,11 +26,12 @@ import sys_time { Timeval, gettimeofday }
 import unistd { sysconf, _SC_NPROCESSORS_ONLN, getcwd }
 
 import color;
-import test_utils { * }
-import test_db { TestKind }
+import file_buffer { FileBuffer }
+import file_utils { Pathname, is_file, is_dir }
 import string_buffer { StringBuf }
 import string_utils { endsWith }
-import file_utils;
+import test_utils { * }
+import test_db { TestKind }
 
 /*
     Syntax:
@@ -159,15 +160,15 @@ fn void handle_dir(TestQueue* queue, const char* path) {
     }
 
     while (Dirent* entry = readdir(dir)) {
-        char[file_utils.Max_path] temp;
-        if (file_utils.make_path(temp, countof(temp), path, entry.d_name)) {
+        Pathname temp;
+        if (temp.init(path, entry.d_name)) {
             switch (entry.d_type) {
             case DT_REG:
-                handle_file(queue, temp);
+                handle_file(queue, temp.path);
                 break;
             case DT_DIR:
                 if (strcmp(entry.d_name, ".") != 0 && strcmp(entry.d_name, "..") != 0) {
-                    handle_dir(queue, temp);
+                    handle_dir(queue, temp.path);
                 }
                 break;
             default:
@@ -248,8 +249,8 @@ fn void Tester.run_test(Tester* t, Test* test) {
     StringBuf* buf = StringBuf.create(4096, color_output, 2);
     buf.print("%s\n", test.filename);
 
-    file_utils.File file.init(test.filename);
-    if (!file.load()) {
+    FileBuffer file.init();
+    if (!file.loadFile(test.filename)) {
         print_error("cannot load %s: %s", test.filename, file.getError());
         exit(EXIT_FAILURE);
     }
@@ -275,7 +276,7 @@ fn void Tester.run_test(Tester* t, Test* test) {
     }
     if (print) fputs(buf.data(), stdout);
     db.destroy();
-    file.close();
+    file.deinit();
     buf.free();
 }
 
@@ -351,10 +352,10 @@ public fn i32 main(i32 argc, char** argv) {
         }
         target = arg;
 
-        if (file_utils.is_file(target)) {
+        if (is_file(target)) {
             handle_file(queue, target);
         } else
-        if (file_utils.is_dir(target)) {
+        if (is_dir(target)) {
             handle_dir(queue, target);
         } else {
             print_error("argument must be a regular file or a directory: %s", target);

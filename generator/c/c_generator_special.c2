@@ -19,13 +19,12 @@ import ast;
 import build_file;
 import build_target;
 import component { Component, ComponentList }
-import file_utils { Max_path }
+import file_utils { Pathname }
 import module_list { ModuleList }
 import string_buffer { StringBuf }
 import string_list { StringList }
 
-import stdio { snprintf }
-import string { pstrcpy, strcmp }
+import string { strcmp }
 
 fn void Generator.createMakefile(Generator* gen,
                                  const char* output_dir,
@@ -92,7 +91,7 @@ fn void Generator.createMakefile(Generator* gen,
         out.add("LDFLAGS+=-fsanitize=undefined\n");
     }
 
-    char[Max_path] target_name;
+    Pathname target_name;
 
     if (gen.fast_build) {
         // dont add *.c, but add (handy for switching between fast/normal build
@@ -123,10 +122,10 @@ fn void Generator.createMakefile(Generator* gen,
     switch (gen.target_kind) {
     case Image:
     case Executable:
-        pstrcpy(target_name, countof(target_name), gen.target);
-        out.print("all: ../%s\n\n", target_name);
+        target_name.init(gen.target);
+        out.print("all: ../%s\n\n", target_name.path);
 
-        out.print("../%s: $(objects) $(headers)\n", target_name);
+        out.print("../%s: $(objects) $(headers)\n", target_name.path);
 
         for (u32 i=0; i<asm_files.length(); i++) {
             const char* filename = asm_files.get(i);
@@ -144,7 +143,7 @@ fn void Generator.createMakefile(Generator* gen,
             }
         }
 
-        out.print(" -o ../%s $(objects)", target_name);
+        out.print(" -o ../%s $(objects)", target_name.path);
 
         // TODO solve in Makefile, just add to asm_objects (also fixed for Static/Dynamic libs then)
         for (u32 i=0; i<asm_files.length(); i++) {
@@ -190,28 +189,28 @@ fn void Generator.createMakefile(Generator* gen,
         out.newline();
         break;
     case StaticLibrary:
-        snprintf(target_name, countof(target_name), "lib%s.a", gen.target);
-        out.print("all: ../%s\n\n", target_name);
+        target_name.initf("lib%s.a", gen.target);
+        out.print("all: ../%s\n\n", target_name.path);
 
-        out.print("../%s: $(objects) $(headers)\n", target_name);
-        out.print("\t\tar rcs ../%s $(objects)\n", target_name);
+        out.print("../%s: $(objects) $(headers)\n", target_name.path);
+        out.print("\t\tar rcs ../%s $(objects)\n", target_name.path);
         break;
     case DynamicLibrary:
         out.add("CFLAGS+=-fPIC\n");
         if (gen.targetInfo.sys == Darwin) {
-            snprintf(target_name, countof(target_name), "lib%s.dylib", gen.target);
+            target_name.initf("lib%s.dylib", gen.target);
         } else {
-            snprintf(target_name, countof(target_name), "lib%s.so", gen.target);
+            target_name.initf("lib%s.so", gen.target);
         }
-        out.print("all: ../%s\n\n", target_name);
+        out.print("all: ../%s\n\n", target_name.path);
 
-        out.print("../%s: $(objects) $(headers)\n", target_name);
+        out.print("../%s: $(objects) $(headers)\n", target_name.path);
 
         if (gen.targetInfo.sys == Darwin) {
-            out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o $$(dirname $$(pwd))/%s $(LDFLAGS2)\n", target_name);
+            out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o $$(dirname $$(pwd))/%s $(LDFLAGS2)\n", target_name.path);
         } else {
             out.print("\t\t$(CC) $(LDFLAGS) $(objects) -shared -o ../%s -Wl,-soname,%s.1 -Wl,--version-script=exports.version $(LDFLAGS2)\n",
-                target_name, target_name);
+                target_name.path, target_name.path);
         }
         break;
     case SourceLibrary:
@@ -222,10 +221,10 @@ fn void Generator.createMakefile(Generator* gen,
     out.add("symbols:\n");
     out.add("\t\tnm -g");
     if (build_target.has_dynamic(gen.target_kind)) out.add(" -D");
-    out.print(" -C --defined-only ../%s\n\n", target_name);
+    out.print(" -C --defined-only ../%s\n\n", target_name.path);
 
     out.add("clean:\n");
-    out.print("\t\trm -f *.o *.a ../%s\n\n", target_name);
+    out.print("\t\trm -f *.o *.a ../%s\n\n", target_name.path);
 
     gen.write(gen.out, output_dir, "Makefile");
 }

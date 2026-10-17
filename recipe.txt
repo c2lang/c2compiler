@@ -11,9 +11,8 @@ set common
     common/console.c2
     common/diagnostics.c2
     common/file_list.c2
+    common/file/file_buffer.c2
     common/file/file_utils.c2
-    common/file/reader.c2
-    common/file/writer.c2
     common/library_list.c2
     common/linked_list.c2
     common/module_list.c2
@@ -199,7 +198,7 @@ executable c2c
     common/dsm_sorter.c2
     common/manifest_writer.c2
     common/target_info.c2
-    common/file/copy.c2
+    common/file/copy_file.c2
 
     parser/c2_parser.c2
     parser/c2_parser_expr.c2
@@ -357,8 +356,7 @@ executable c2rename
 
     ast_utils/constants.c2
 
-    common/file/reader.c2
-    common/file/writer.c2
+    common/file/file_buffer.c2
     common/quicksort.c2
 
     (refs)
@@ -383,9 +381,8 @@ executable tester
     ast_utils/constants.c2
     ast_utils/string_buffer.c2
 
+    common/file/file_buffer.c2
     common/file/file_utils.c2
-    common/file/reader.c2
-    common/file/writer.c2
     common/string_utils.c2
 
 	tools/tester/tester.c2
@@ -414,8 +411,8 @@ executable c2cat
     ast_utils/string_pool.c2
     ast_utils/value_type.c2
 
+    common/file/file_buffer.c2
     common/file/file_utils.c2
-    common/file/reader.c2
     common/string_list.c2
     common/string_map.c2
     common/utf8.c2
@@ -446,8 +443,8 @@ executable c2loc
 
     common/build_target.c2
     common/file_list.c2
+    common/file/file_buffer.c2
     common/file/file_utils.c2
-    common/file/reader.c2
     common/library_list.c2
     common/source_mgr.c2
     common/string_list.c2

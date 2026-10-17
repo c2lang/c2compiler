@@ -15,10 +15,11 @@
 
 module file_utils;
 
-import c_errno { * }
-import stdlib { free }
+import c_errno { errno, ENAMETOOLONG, EEXIST, EINVAL }
 import string { pstrcpy, strerror }
-import sys_stat { * }
+import stdio { vsnprintf }
+import sys_stat { Stat, stat, S_IFMT, S_IFREG, S_IFDIR, mkdir }
+import unistd { getcwd }
 
 public const u32 Max_path = 512;
 
@@ -73,7 +74,7 @@ public fn const char* make_path(char* buf, usize size, const char* path, const c
 // construct a path in a buffer from a directory name, a subdirectory name and a filename
 // if the path fits in the destination array, a pointer to it is returned.
 // otherwise the path is truncated, errno is set to ENAMETOOLONG and nil is returned
-public fn const char* make_path3(char* buf, usize size, const char* dir, const char* subdir, const char* filename) {
+fn const char* make_path3(char* buf, usize size, const char* dir, const char* subdir, const char* filename) {
     usize pos = 0;
     if (*filename != '/') {
         if (*subdir != '/') pos = copy_dirname(buf, size, dir);
@@ -88,27 +89,30 @@ public fn const char* make_path3(char* buf, usize size, const char* dir, const c
 // returns 0 on success, errno on failure
 // create a directory path, OK if exists already
 public fn i32 create_path(const char* path) {
-    char[file_utils.Max_path] tmp;
-    char* p = tmp;
+    if (!path) {
+        errno = EINVAL;
+        return -1;
+    }
     if (!*path) return 0;
-    *p++ = *path++;
-    for (;;) {
+    if (is_dir(path)) return 0;
+    char[Max_path] tmp;
+    u32 len = 0;
+    tmp[len++] = *path++;
+    while (len < countof(tmp)) {
         char c = *path++;
         // ignore duplicate and trailing slashes
-        if (c == '/' && (p[-1] == '/' || *path == '\0')) continue;
+        if (c == '/' && (tmp[len - 1] == '/' || *path == '\0')) continue;
         // create subdirectory chain if needed
         if (c == '/' || c == '\0') {
-            *p = '\0';
+            tmp[len] = '\0';
             if (mkdir(tmp, 0777) && errno != EEXIST)
                 return errno;
             if (c == '\0')
-                break;
+                return 0;
         }
-        if (p > &tmp[countof(tmp) - 2])
-            return errno = ENAMETOOLONG;
-        *p++ = c;
+        tmp[len++] = c;
     }
-    return 0;
+    return errno = ENAMETOOLONG;
 }
 
 public fn bool path_exists(const char* path) {
@@ -126,19 +130,13 @@ public fn bool is_dir(const char* dirname) @(unused) {
     return !stat(dirname, &statbuf) && (statbuf.st_mode & S_IFMT) == S_IFDIR;
 }
 
-public type File struct @(unused) {
+public type Pathname struct @(unused) {
     char[Max_path] path;
-    i32 handle;  // 0:none, otherwise unix handle +1
     i32 error;
-    u32 contents_size;
-    void* contents;
 }
 
-public fn bool File.init(File* file, const char* dir, const char* filename = nil, const char* ext = nil) {
-    file.handle = 0;
+public fn bool Pathname.init(Pathname* file, const char* dir, const char* filename = nil, const char* ext = nil) {
     file.error = 0;
-    file.contents_size = 0;
-    file.contents = nil;
     if (!make_path(file.path, countof(file.path), dir, filename, ext)) {
         file.error = ENAMETOOLONG;
         return false;
@@ -146,35 +144,68 @@ public fn bool File.init(File* file, const char* dir, const char* filename = nil
     return true;
 }
 
-public fn void File.close(File* file) @(unused) {
-    if (file.contents) {
-        free(file.contents);
-        file.contents = nil;
+public fn bool Pathname.initf(Pathname* file, const char* format @(printf_format), ...) @(unused) {
+    va_list args;
+    va_start(args, format);
+    i32 len = vsnprintf(file.path, countof(file.path), format, args);
+    va_end(args);
+    if (len < 0) {
+        file.error = errno;
+        return false;
     }
+    if ((u32)len >= countof(file.path)) {
+        file.error = ENAMETOOLONG;
+        return false;
+    }
+    file.error = 0;
+    return true;
 }
 
-public fn bool File.exists(File* file) @(unused) {
+public fn bool Pathname.init_subdir(Pathname* file, const char* dir, const char* subdir, const char* filename) @(unused) {
+    if (!make_path3(file.path, countof(file.path), dir, subdir, filename)) {
+        file.error = errno;
+        return false;
+    }
+    file.error = 0;
+    return true;
+}
+
+public fn bool Pathname.init_cwd(Pathname* file) @(unused) {
+    if (!getcwd(file.path, countof(file.path))) {
+        file.error = errno;
+        *file.path = '\0';
+        return false;
+    }
+    file.error = 0;
+    return true;
+}
+
+public fn void Pathname.deinit(Pathname* file) @(unused) {}
+
+public fn const char* Pathname.get_extension(const Pathname* file) @(unused) {
+    return get_extension(file.path);
+}
+
+public fn const char* Pathname.get_basename(const Pathname* file) @(unused) {
+    return get_basename(file.path);
+}
+
+public fn bool Pathname.exists(const Pathname* file) @(unused) {
     return path_exists(file.path);
 }
 
-const i32 Err_not_a_file = 2001;
-const i32 Err_read_error = 2002;
-const i32 Err_too_large = 2003;
-const i32 Err_write_error = 2004;
-
-public fn const char* File.getError(File* file) @(unused) {
-    switch (file.error) {
-    case Err_not_a_file:
-        return "not a regular file";
-    case Err_read_error:
-        return "read error";
-    case Err_write_error:
-        return "write error";
-    case Err_too_large:
-        return "file too large";
-    default:
-        break;
-    }
-    return strerror(file.error);
+public fn bool Pathname.is_file(const Pathname* file) @(unused) {
+    return is_file(file.path);
 }
 
+public fn bool Pathname.is_dir(const Pathname* file) @(unused) {
+    return is_dir(file.path);
+}
+
+public fn bool Pathname.create_path(const Pathname* file) @(unused) {
+    return create_path(file.path);
+}
+
+public fn const char* Pathname.getError(const Pathname* file) @(unused) {
+    return strerror(file.error);
+}

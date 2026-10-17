@@ -19,10 +19,10 @@ import build_target { BuildTarget }
 import component { Component }
 import console;
 import constants;
-import file_utils;
+import file_copy { copy_file }
+import file_utils { Pathname }
 import manifest_writer;
 
-import c_errno { errno }
 import stdlib { exit, EXIT_FAILURE }
 import string { strerror }
 
@@ -31,18 +31,18 @@ public fn void generate(BuildTarget* target,
                         const char* output_dir,
                         Component* mainComp) {
     // copy files
-    mainComp.visitFiles((void*)output_dir, copy_file);
+    mainComp.visitFiles((void*)output_dir, copy_source_file);
 
     // write manifest
     manifest_writer.write(output_dir, mainComp, constants.manifest_name);
 }
 
 
-fn void copy_file(void* arg, const char* filename, u32 src_loc) {
+fn void copy_source_file(void* arg, const char* filename, u32 src_loc) {
     const char* output_dir = arg;
 
-    char[file_utils.Max_path] dest;
-    if (!file_utils.make_path(dest, countof(dest), output_dir, filename)) {
+    Pathname dest.init(output_dir, filename);
+    if (dest.error) {
         console.error("filename too long %s: %s", output_dir, filename);
         exit(EXIT_FAILURE);
         return;
@@ -50,8 +50,9 @@ fn void copy_file(void* arg, const char* filename, u32 src_loc) {
 
     // TODO no need to copy file, just write, since we have contents in SourceMgr
     // dont know SourceMgr file_ids here!
-    if (file_utils.copy_file(filename, dest)) {
-        console.error("cannot copy file to %s: %s", dest, strerror(errno));
+    i32 error;
+    if (!copy_file(filename, dest.path, &error)) {
+        console.error("cannot copy file to %s: %s", dest.path, strerror(error));
         exit(EXIT_FAILURE);
     }
 }

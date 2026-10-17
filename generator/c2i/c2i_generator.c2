@@ -18,7 +18,8 @@ module c2i_generator;
 import ast { * }
 import component { Component, ComponentList }
 import console;
-import file_utils;
+import file_buffer { FileBuffer }
+import file_utils { Pathname }
 import string_buffer { StringBuf }
 import string_list { StringList }
 import string_pool { StringPool }
@@ -77,11 +78,12 @@ fn void Generator.on_module(void* arg, Module* m) {
     // public decls
     m.visitDecls(on_decl, gen);
 
-    file_utils.File file.init(gen.output_dir, gen.mod_name, ".c2i");
-    if (!file.write(gen.out.data(), gen.out.size())) {
-        console.error("cannot write to %s: %s", file.path, file.getError());
+    Pathname file.init(gen.output_dir, gen.mod_name, ".c2i");
+    FileBuffer fbuf.init(gen.out.data(), gen.out.size());
+    if (!fbuf.writeFile(file.path)) {
+        console.error("cannot write to %s: %s", file.path, fbuf.getError());
     }
-
+    fbuf.deinit();
     gen.imports.free();
 }
 

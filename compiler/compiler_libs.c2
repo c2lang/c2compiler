@@ -21,7 +21,7 @@ import component { Kind, Component }
 import component_sorter;
 import console;
 import constants { manifest_name }
-import file_utils;
+import file_utils { Pathname }
 import manifest;
 import module_list { ModuleList }
 import source_mgr { SourceMgr }
@@ -111,18 +111,18 @@ fn void Compiler.open_lib(Compiler* c, Component* comp) {
     const char* libstr = comp.getName();
 
     console.debug("opening lib %s", libstr);
-    char[file_utils.Max_path] libdir;
-    if (!c.find_lib(libstr, libdir, countof(libdir))) {
+    Pathname libdir = {}
+    if (!c.find_lib(libstr, &libdir)) {
         console.error("cannot find library '%s'", libstr);
         exit(EXIT_FAILURE);
     }
 
-    char[file_utils.Max_path] fullname;
-    if (!file_utils.make_path(fullname, countof(fullname), libdir, manifest_name)) return;
-    i32 file_id = c.sm.loadFile(fullname, 0);
+    Pathname fullname;
+    if (!fullname.init(libdir.path, manifest_name)) return;
+    i32 file_id = c.sm.loadFile(fullname.path, 0);
     if (file_id == -1) return;
 
-    u32 dirname = c.auxPool.addStr(libdir, false);
+    u32 dirname = c.auxPool.addStr(libdir.path, false);
 
     comp.setPath(dirname);
     StringList mods.init(c.astPool);
@@ -163,13 +163,12 @@ fn bool Compiler.has_component(const Compiler* c, u32 name) {
     return false;
 }
 
-fn bool Compiler.find_lib(const Compiler* c, const char* libname, char* libdir, usize size) {
-    for (u32 i=0; i<c.libdirs.length(); i++) {
+fn bool Compiler.find_lib(const Compiler* c, const char* libname, Pathname* libdir) {
+    for (u32 i = 0; i < c.libdirs.length(); i++) {
         const char* dirname = c.libdirs.get(i);
-        if (file_utils.make_path(libdir, size, dirname, libname)) {
-            char[file_utils.Max_path] path;
-            if (file_utils.make_path(path, countof(path), libdir, manifest_name)
-            &&  file_utils.is_file(path))
+        if (libdir.init(dirname, libname)) {
+            Pathname path;
+            if (path.init(libdir.path, manifest_name) && path.is_file())
                 return true;
         }
     }
@@ -180,15 +179,15 @@ fn void Compiler.parseExternalModule(void* arg, ast.Module* m) {
     Compiler* c = arg;
     if (!m.isUsed()) return;
 
-    char[file_utils.Max_path] filename;
-    if (!file_utils.make_path(filename, countof(filename), c.current.getPath(), m.getName(), ".c2i"))
+    Pathname filename;
+    if (!filename.init(c.current.getPath(), m.getName(), ".c2i"))
         return;
 
-    i32 file_id = c.sm.loadFile(filename, 0);
+    i32 file_id = c.sm.loadFile(filename.path, 0);
     if (file_id == -1) return;   // note: error already printed
 
     m.setLoaded();
-    console.debug("parsing %s", filename);
+    console.debug("parsing %s", filename.path);
     // on parse error, c.parser state has already been updated
     c.parser.parse(file_id, true, false);
 }
@@ -222,12 +221,12 @@ fn void parseSourceLibFile(void* arg, const char* filename, u32 src_loc) {
     SourceMgr* sm = c.sm;
 
     // prefix with component root
-    char[file_utils.Max_path] fullname;
-    if (!file_utils.make_path(fullname, countof(fullname), c.current.getPath(), filename)) return;
+    Pathname fullname;
+    if (!fullname.init(c.current.getPath(), filename)) return;
 
-    i32 file_id = sm.loadFile(fullname, src_loc);
+    i32 file_id = sm.loadFile(fullname.path, src_loc);
     if (file_id == -1) return;   // note: error already printed
-    console.debug("parsing %s", fullname);
+    console.debug("parsing %s", fullname.path);
 
     // TODO need new flag, is_external=true, is_interface=false, is_generated=false
     c.parser.parse(file_id, false, false);
@@ -275,17 +274,16 @@ fn void Compiler.showLibs(Compiler* c, StringBuf* out, const char* dirname, bool
     }
 
     while (Dirent* entry = readdir(dir)) {
-        char[file_utils.Max_path] fullname;
+        Pathname fullname;
         const char* name = entry.d_name;
         if (name[0] != '.' && entry.d_type == DT_DIR) {
-            if (!file_utils.make_path3(fullname, countof(fullname), dirname, name, manifest_name)
-            ||  !file_utils.is_file(fullname))
+            if (!fullname.init_subdir(dirname, name, manifest_name) || !fullname.is_file())
                 continue;
 
             out.indent(2);
             out.print("%-20s", name);
             {
-                i32 file_id = c.sm.loadFile(fullname, 0);
+                i32 file_id = c.sm.loadFile(fullname.path, 0);
                 if (file_id == -1) return;
 
                 u32 name_idx = c.auxPool.addStr(name, true);

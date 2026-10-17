@@ -17,7 +17,8 @@ module plugin_main;
 
 import ast;
 import console;
-import file_utils;
+import file_buffer { FileBuffer }
+import file_utils { Pathname }
 import plugin_info;
 import process_utils;
 import string_buffer { StringBuf }
@@ -72,8 +73,8 @@ fn void init(void* arg, plugin_info.Info* info) {
     ast.setGlobals(info.ast_globals);
 
     console.debug("shell_cmd: loading %s", p.config_file);
-    file_utils.File file.init(p.config_file);
-    if (!file.load()) {
+    FileBuffer file.init();
+    if (!file.loadFile(p.config_file)) {
         console.error("shell_cmd: cannot load file %s: %s", p.config_file, file.getError());
         exit(EXIT_FAILURE);
     }
@@ -91,7 +92,7 @@ fn void init(void* arg, plugin_info.Info* info) {
 
     p.info.addSource(p.info.fn_arg, "shell_cmd(generated)", out);
 
-    file.close();
+    file.deinit();
     parser.destroy();
 
     u64 t2 = utils.now();

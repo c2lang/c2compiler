@@ -18,15 +18,13 @@ module compiler;
 import ast { Module, QualType }
 import component { Component }
 import console;
-import file_utils { Max_path }
+import file_utils { Pathname }
 import module_list { ModuleList }
 import module_sorter;
 import string_list { StringList }
 import unused_checker;
 import utils;
 import warning_flags { WarningFlags }
-
-import stdio { snprintf }
 
 fn bool Compiler.analyse(Compiler* c) {
     u64 analysis_start = utils.now();
@@ -237,17 +235,14 @@ fn void Compiler.findStaticLib(Compiler* c, Component* comp) {
     // - libdir (same as .c2i file)
     // - system-path
 
-    char[Max_path] filename;
-    snprintf(filename, countof(filename), "lib%s.a", comp.getName());
-
-    char[Max_path] fullname;
+    Pathname filename.initf("lib%s.a", comp.getName());
 
     // build-file
     // TODO
+    Pathname fullname;
 
     // libdir
-    if (file_utils.make_path(fullname, countof(fullname), comp.getPath(), filename) &&
-        file_utils.is_file(fullname)) {
+    if (fullname.init(comp.getPath(), filename.path) && fullname.is_file()) {
         console.debug("found %s in %s", comp.getName(), comp.getPath());
         comp.setBinPath(comp.getPathIdx());
         return;

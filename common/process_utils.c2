@@ -15,7 +15,7 @@
 
 module process_utils;
 
-import file_utils;
+import file_utils { Pathname }
 
 import c_errno { errno, EINTR }
 import ctype { isspace }
@@ -95,12 +95,11 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
         close(error_pipe[0]);
 
         // redirect output to logfile
-        char[file_utils.Max_path] filename;
-        file_utils.make_path(filename, countof(filename), path, logfile);
+        Pathname file.init(path, logfile);
         close(STDOUT_FILENO);
-        i32 fdout = open(filename, O_TRUNC | O_CREAT | O_WRONLY, 0644);
+        i32 fdout = open(file.path, O_TRUNC | O_CREAT | O_WRONLY, 0644);
         if (fdout == -1) {
-            child_error(error_pipe[1], "cannot open output '%s': %s", filename, strerror(errno));
+            child_error(error_pipe[1], "cannot open output '%s': %s", file.path, strerror(errno));
         }
 
         // redirect stderr to stdout
@@ -121,15 +120,15 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
             printf("changing to dir: %s\n", path);
         }
 
-        char[file_utils.Max_path] self;
-        if (!find_bin(self, countof(self), cmd)) {
+        Pathname self;
+        if (!find_bin(self.path, countof(self.path), cmd)) {
             child_error(error_pipe[1], "command not found: %s", cmd);
         }
 
         char*[MAX_ARGS + 2] argv;
         char[MAX_ARG_LEN] argbuf;
         u32 argc = 0;
-        argv[argc++] = self;   // should be (char*)cmd
+        argv[argc++] = self.path;   // should be (char*)cmd
         if (args && *args) {
             argc += parseArgs(args, &argv[1], MAX_ARGS, argbuf, countof(argbuf));
         }
@@ -138,7 +137,7 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
         printf("running command: %s %s\n", cmd, args ? args : "");
         fflush(stdout);
 
-        execv(self, argv);
+        execv(self.path, argv);
         i32 lasterr = errno;
         fprintf(stderr, "failed to start %s: %s\n", cmd, strerror(lasterr));
         child_error(error_pipe[1], "error starting %s: %s", cmd, strerror(lasterr));
@@ -294,21 +293,21 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
             }
         }
 
-        char[file_utils.Max_path] self;
-        if (!find_bin(self, countof(self), cmd)) {
+        Pathname self;
+        if (!find_bin(self.path, countof(self.path), cmd)) {
             child_error(error_pipe[1], "command not found: %s", cmd);
         }
 
         char*[MAX_ARGS + 2] argv;
         char[MAX_ARG_LEN] argbuf;
         u32 argc = 0;
-        argv[argc++] = self;   // should be (char*)cmd
+        argv[argc++] = self.path;   // should be (char*)cmd
         if (args && *args) {
             argc += parseArgs(args, &argv[1], MAX_ARGS, argbuf, countof(argbuf));
         }
         argv[argc] = nil;
 
-        execv(self, argv);
+        execv(self.path, argv);
         i32 lasterr = errno;
         fprintf(stderr, "failed to start %s: %s\n", cmd, strerror(lasterr));
         child_error(error_pipe[1], "error starting %s: %s", cmd, strerror(lasterr));

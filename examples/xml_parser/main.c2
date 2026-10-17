@@ -15,11 +15,10 @@
 
 module test;
 
-import file_utils;
+import file_buffer { FileBuffer }
 import xml;
 
 import stdio { fprintf, printf, stderr }
-import string { strerror }
 
 public fn i32 main(i32 argc, char** argv) {
     if (argc != 2 && argc != 3) {
@@ -29,14 +28,16 @@ public fn i32 main(i32 argc, char** argv) {
     const char* filename = argv[1];
     bool verbose = (argc == 3);
     printf("parsing %s\n", filename);
-    file_utils.Reader file;
-    if (!file.open(filename)) {
-        fprintf(stderr, "cannot read %s: %s\n", filename, strerror(file.errno));
+    FileBuffer file.init();
+    if (!file.loadFile(filename)) {
+        fprintf(stderr, "cannot read %s: %s\n", filename, file.getError());
+        file.deinit();
         return 1;
     }
 
     if (file.isEmpty()) {
         printf("file %s is empty\n", filename);
+        file.deinit();
         return 0;
     }
 
@@ -60,7 +61,7 @@ public fn i32 main(i32 argc, char** argv) {
     }
 
     parser.destroy();
-    file.close();
+    file.deinit();
 
     return 0;
 }

@@ -22,7 +22,7 @@ import string { memcpy, strerror }
 import libc_fcntl { * }
 import unistd { close, write }
 
-import file_utils;
+import file_buffer { FileBuffer }
 
 fn u32 roundup(u32 size) {
     if ((size & 0x3) == 0) return size;
@@ -109,17 +109,19 @@ public fn bool Parser.read_cache(Parser* p, const char* filename) {
     if (p.data) p.data.destroy();
     p.message[0] = 0;
 
-    file_utils.Reader file;
-    if (!file.open(filename)) {
+    FileBuffer file.init();
+    if (!file.loadFile(filename)) {
         snprintf(p.message, countof(p.message), "cannot read file: %s", strerror(errno));
+        file.deinit();
         return false;
     }
     if (file.isEmpty()) {
         snprintf(p.message, countof(p.message), "invalid data");
+        file.deinit();
         return false;
     }
-    p.data = Data.read(file.data(), file.size());
-    file.close();
+    p.data = Data.read(file.data(), (u32)file.size());
+    file.deinit();
     if (!p.data) {
         snprintf(p.message, countof(p.message), "invalid data");
         return false;
