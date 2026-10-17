@@ -1,7 +1,5 @@
 #!/bin/sh
 
-echo "---- installing c2c plugins in $C2_PLUGINDIR"
-
 if [ $(uname -s) = 'Darwin' ] ; then
    LIB_EXT='.dylib'
 else
@@ -9,9 +7,12 @@ else
 fi
 
 if [ "$C2_PLUGINDIR" = "" ] ; then
-   echo C2_PLUGINDIR not set
-   exit 1
+   C2_PLUGINDIR=output/plugins
+   #echo C2_PLUGINDIR not set
+   #exit 1
 fi
+
+echo "---- installing c2c plugins in $C2_PLUGINDIR"
 
 set -e
 mkdir -p $C2_PLUGINDIR
