@@ -18,9 +18,9 @@ module toml;
 import csetjmp { JmpBufTag, setjmp, longjmp }
 import stdio { printf, snprintf }
 import stdlib { calloc, malloc, free, exit }
-import string { memcpy, memset, pstrcpy, strerror, strlen }
+import string { memcpy, memset, pstrcpy, strlen }
 
-import file_utils;
+import file_buffer { FileBuffer }
 
 const u32 NamesCacheSize = 8;
 const u32 MaxNodes = 1024;
@@ -409,20 +409,21 @@ public fn const char* Reader.getMsg(const Reader* r) {
 }
 
 public fn bool Reader.parse(Reader* r, const char* filename) {
-    file_utils.Reader file;
-    if (!file.open(filename)) {
-        snprintf(r.message, countof(r.message), "%s", strerror(file.errno));
+    FileBuffer file.init();
+    if (!file.loadFile(filename)) {
+        snprintf(r.message, countof(r.message), "%s", file.getError());
+        file.deinit();
         return false;
     }
 
     if (file.isEmpty()) {
         printf("file %s is empty\n", filename);
-        file.close();
+        file.deinit();
         return false;
     }
     Parser parser;
     bool status = parser.parse(file.data(), r.message, countof(r.message), r.blocks);
-    file.close();
+    file.deinit();
 
 #if DEBUG_NODES
     r.blocks.dump();

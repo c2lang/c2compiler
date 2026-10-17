@@ -20,7 +20,7 @@ import ast_visitor { Visitor }
 import c2refs { Refs }
 import component { ComponentList }
 import console;
-import file_utils;
+import file_utils { Pathname }
 import source_mgr { SourceMgr }
 import string_pool { StringPool }
 import string_utils { endsWith }
@@ -261,9 +261,8 @@ public fn void generate(SourceMgr* sm, StringPool* astPool, const char* output_d
         comps.get(i).visitModules(Generator.on_module, &gen);
     }
 
-    char[file_utils.Max_path] outfile;
-    file_utils.make_path(outfile, countof(outfile), output_dir, filename);
-    gen.refs.write(outfile);
+    Pathname outfile.init(output_dir, filename);
+    gen.refs.write(outfile.path);
 
     gen.free();
 }

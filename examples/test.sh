@@ -79,7 +79,7 @@ expect $stdout base64/HELLO.txt
 
 #----------------
 run 2 cstrip
-expect $stderr == "usage: parser [c-file]"
+expect $stderr == "usage: cstrip [c-file]"
 expect $stdout $empty
 
 #----------------
@@ -98,9 +98,7 @@ expect $stderr $empty
 # output is directory order dependend
 expect_sorted $stdout <<EOF
 common/
-  common/file/
-    common/file/reader.c2
-    common/file/writer.c2
+  common/file_buffer.c2
   common/logger.c2
   common/string_buffer.c2
   common/color.c2

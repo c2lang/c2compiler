@@ -17,11 +17,11 @@ module test;
 
 import stdio { fprintf, printf, snprintf, stderr }
 import stdlib { atoi }
-import string { strcmp, strlen, strerror }
+import string { strcmp, strlen }
 import sys_time { Timeval, gettimeofday }
 import unistd { isatty }
 
-import file_utils;
+import file_buffer { FileBuffer }
 import json;
 
 const char[] Cache_suffix = ".cache";
@@ -57,25 +57,28 @@ public fn i32 main(i32 argc, char** argv) {
 
     if (!use_cache || !isCache(filename)) {
         u64 t1 = current_time();
-        file_utils.Reader file;
-        if (!file.open(filename)) {
-            fprintf(stderr, "cannot load %s: %s\n", filename, strerror(file.errno));
+        FileBuffer file;
+        if (!file.loadFile(filename)) {
+            fprintf(stderr, "cannot load %s: %s\n", filename, file.getError());
+            file.deinit();
             return 1;
         }
 
         //printf("%s", file.data());
         if (file.isEmpty()) {
             printf("file %s is empty\n", filename);
+            file.deinit();
             return 0;
         }
 
         if (!parser.parse(file.data())) {
             fprintf(stderr, "error parsing %s: %s\n", filename, parser.getDiag());
+            file.deinit();
             return -1;
         }
         u64 t2 = current_time();
         if (show_times) printf("parsing took %d usec\n", t2 - t1);
-        file.close();
+        file.deinit();
     } else {
         u64 t1 = current_time();
         if (!parser.read_cache(filename)) {

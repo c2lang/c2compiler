@@ -16,7 +16,8 @@
 module ir_context;
 
 import ir;
-import file_utils;
+import file_buffer { FileBuffer }
+import file_utils { Pathname }
 // TODO dont use console!
 import console;
 import string_buffer { StringBuf }
@@ -144,9 +145,10 @@ fn void IrContext.writeGlobals(IrContext* c, StringBuf* out, const char** symbol
 }
 
 fn void IrContext.write(IrContext* c, const char* output_dir, const char* filename, const StringBuf* buf) {
-    file_utils.File file.init(output_dir, filename);
-    if (!file.write(buf.data(), buf.size())) {
-        console.error("cannot write to %s: %s", file.path, file.getError());
+    Pathname pathname.init(output_dir, filename);
+    FileBuffer fb.init(buf.data(), buf.size());
+    if (!fb.writeFile(pathname.path)) {
+        console.error("cannot write to %s: %s", pathname.path, fb.getError());
     }
 }
 

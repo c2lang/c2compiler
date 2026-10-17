@@ -16,18 +16,15 @@
 module test;
 
 import ctype { isdigit, isblank, isspace }
-import stdio { printf, fprintf, fwrite, stderr, stdin, stdout }
-import string { strcmp, strerror }
+import stdio { printf, fprintf, stdin, stdout, stderr }
+import string { strcmp }
 
-import file_utils;
+import file_buffer { FileBuffer }
 import utils { StringBuffer }
 
 const char NEWLINE = 0x0A;
 
-/*
-    strip all lines starting with '//'
-    TODO also handle multi-line comments
-*/
+// strip all comment lines (single and multiline)
 fn void strip_comments(const char* input, StringBuffer* out)
 {
     const char* cp = input;
@@ -170,59 +167,55 @@ fn const char* skip_comments(const char* cp, u32* linep, u32* comments) {
     return cp;
 }
 
+// XXX: should take multiple input files
+// XXX: should take a -o argument to name the output file or directory
 public fn i32 main(i32 argc, char** argv) {
     if (argc != 2) {
-        fprintf(stderr, "usage: parser [c-file]\n");
+        fprintf(stderr, "usage: cstrip [c-file]\n");
         return 2;
     }
     const char* filename = argv[1];
     const char* outname = "out.c";
     bool to_stdout = false;
     i32 status = 0;
+    bool loaded;
 
-    file_utils.Reader infile;
+    FileBuffer file.init();
     if (!strcmp(filename, "-")) {
         filename = "<stdin>";
         outname = "<stdout>";
         to_stdout = true;
-        infile.openStream(stdin);
+        loaded = file.loadStream(stdin);
     } else {
-        if (!infile.open(filename)) {
-            fprintf(stderr, "cstrip: cannot load %s: %s\n",
-                    filename, strerror(infile.errno));
-            return 1;
-        }
+        loaded = file.loadFile(filename);
     }
 
-    if (infile.errno) {
-        fprintf(stderr, "cstrip: error reading %s: %s\n",
-                filename, strerror(infile.errno));
-        infile.close();
+    if (!loaded) {
+        fprintf(stderr, "cstrip: cannot load %s: %s\n", filename, file.getError());
+        file.deinit();
         return 1;
     }
 
-    if (infile.isEmpty()) {
+    if (file.isEmpty()) {
         fprintf(stderr, "cstrip: file %s is empty\n", filename);
-        infile.close();
+        file.deinit();
         return 0;
     }
 
-    StringBuffer* buffer = StringBuffer.create(infile.size() + 1);
+    StringBuffer* buffer = StringBuffer.create((u32)(file.size() + 1));
 
-    strip_comments(infile.data(), buffer);
-    infile.close();
+    strip_comments(file.data(), buffer);
+    file.deinit();
+    file.init(buffer.data(), buffer.size());
 
-    file_utils.Writer outfile;
-    if (to_stdout) {
-        fwrite(buffer.data(), 1, buffer.size(), stdout);
+    bool saved = to_stdout ? file.writeStream(stdout) : file.writeFile(outname);
+    if (saved) {
+        printf("%d bytes written to %s\n", buffer.size(), outname);
     } else {
-        if (outfile.write(outname, buffer.data(), buffer.size())) {
-            printf("%d bytes written to %s\n", buffer.size(), outname);
-        } else {
-            fprintf(stderr, "cstrip: error writing file %s: %s\n", outname, outfile.getError());
-            status = 1;
-        }
+        fprintf(stderr, "cstrip: error writing file %s: %s\n", outname, file.getError());
+        status = 1;
     }
+    file.deinit();
     buffer.destroy();
     return status;
 }

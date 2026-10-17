@@ -16,7 +16,7 @@
 module plugin_mgr;
 
 import console;
-import file_utils;
+import file_utils { Pathname }
 import plugin_info;
 import string_list { StringList }
 import string_pool { StringPool }
@@ -144,8 +144,8 @@ fn bool PluginMgr.loadPlugin(PluginMgr* m, u32 name, u32 options, bool is_global
     char[128] filename;
     snprintf(filename, countof(filename), "lib%s%s", name_str, lib_ext);
 
-    char[file_utils.Max_path] fullname;
-    if (!m.find_file(fullname, countof(fullname), filename)) {
+    Pathname fullname = {}
+    if (!m.find_file(&fullname, filename)) {
         snprintf(m.error_msg, countof(m.error_msg), "cannot find plugin %s (%s)", name_str, filename);
         return false;
     }
@@ -154,24 +154,24 @@ fn bool PluginMgr.loadPlugin(PluginMgr* m, u32 name, u32 options, bool is_global
     p.name = name;
     p.is_global = is_global;
     p.is_active = true;
-    p.handle = dlopen(fullname, RTLD_NOW | RTLD_LOCAL);
+    p.handle = dlopen(fullname.path, RTLD_NOW | RTLD_LOCAL);
     if (p.handle == nil) {
-        snprintf(m.error_msg, countof(m.error_msg), "cannot load plugin %s: %s", fullname, dlerror());
+        snprintf(m.error_msg, countof(m.error_msg), "cannot load plugin %s: %s", fullname.path, dlerror());
         return false;
     }
 
     void* handle_symbol = dlsym(p.handle, "plugin_main_handle");
     if (!handle_symbol) {
-        snprintf(m.error_msg, countof(m.error_msg), "invalid plugin %s: %s", fullname, dlerror());
+        snprintf(m.error_msg, countof(m.error_msg), "invalid plugin %s: %s", fullname.path, dlerror());
         dlclose(p.handle);
         return false;
     }
     p.functions = handle_symbol;
-    console.debug("plugins: loading %s", fullname);
+    console.debug("plugins: loading %s", fullname.path);
     p.arg = p.functions.load(m.auxPool.idx2str(options), m.console_config);
     if (!p.arg) {
         dlclose(p.handle);
-        snprintf(m.error_msg, countof(m.error_msg), "plugin %s failed to load", fullname);
+        snprintf(m.error_msg, countof(m.error_msg), "plugin %s failed to load", fullname.path);
         return false;
     }
 
@@ -189,10 +189,9 @@ public fn bool PluginMgr.loadLocal(PluginMgr* m, u32 name, u32 options) {
 }
 
 
-fn bool PluginMgr.find_file(PluginMgr* m, char* fullname, usize size, const char* filename) {
-    for (u32 i=0; i<m.paths.length(); i++) {
-        if (file_utils.make_path(fullname, size, m.paths.get(i), filename)
-        &&  file_utils.is_file(fullname))
+fn bool PluginMgr.find_file(PluginMgr* m, Pathname* fullname, const char* filename) {
+    for (u32 i = 0; i < m.paths.length(); i++) {
+        if (fullname.init(m.paths.get(i), filename) && fullname.is_file())
             return true;
     }
     return false;

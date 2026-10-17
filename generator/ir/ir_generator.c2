@@ -21,7 +21,7 @@ import build_file;
 import component { Component, ComponentList }
 import console;
 import constants { MaxScopes, MaxCallArgs }
-import file_utils;
+import file_utils { Pathname }
 import ir { * }
 import ir_context { SymbolId, IrContext }
 import ir_gen_locals { Locals, StackVar }
@@ -590,14 +590,13 @@ public fn void generate(const char* target,
                         bool print,
                         bool print_all,
                         bool use_color) {
-    char[file_utils.Max_path] ir_dir;
-    if (!file_utils.make_path(ir_dir, countof(ir_dir), output_dir, "ir")
-    ||  file_utils.create_path(ir_dir)) {
-        console.error("cannot create directory %s: %s", ir_dir, strerror(errno));
+    Pathname ir_dir;
+    if (!ir_dir.init(output_dir, "ir") || ir_dir.create_path()) {
+        console.error("cannot create directory %s: %s", ir_dir.path, strerror(errno));
         return;
     }
 
-    Generator gen.init(sm, astPool, targetInfo, buildInfo, target, ir_dir, enable_asserts, print, print_all, use_color);
+    Generator gen.init(sm, astPool, targetInfo, buildInfo, target, ir_dir.path, enable_asserts, print, print_all, use_color);
     gen.mainFunc = mainFunc;
 
     // TODO also generate source libs, inline functions for interface files
@@ -608,7 +607,7 @@ public fn void generate(const char* target,
 
     if (gen.print) gen.ctx.print();
 
-    gen.ctx.writeOutput(ir_dir, target);
+    gen.ctx.writeOutput(ir_dir.path, target);
 
     gen.free();
 }

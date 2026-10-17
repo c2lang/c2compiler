@@ -17,7 +17,7 @@ module refs_main;
 
 import c2refs { Dest, RefUsesFn, Refs }
 import constants { Refs_filename }
-import file_utils;
+import file_utils { Pathname }
 import refs_finder { Finder }
 import string_pool { StringPool }
 import utils;
@@ -207,11 +207,11 @@ fn void use_fn(void* arg, const Dest* res) {
         count++;
 
         // TODO extract to info
-        char[file_utils.Max_path] fullname;
+        Pathname fullname;
         const char* filename = res.filename;
         if (info.hasSubdir()) {
-            file_utils.make_path(fullname, countof(fullname), info.root2orig, filename);
-            filename = fullname;
+            fullname.init(info.root2orig, filename);
+            filename = fullname.path;
         }
         if (opts.use_offsets) {
             printf("found %s %d\n", filename, res.offset);
@@ -225,11 +225,11 @@ fn void use_fn_multi(void* arg, const Dest* res) {
     const utils.PathInfo* info = arg;
 
     if (res.filename) {
-        char[file_utils.Max_path] fullname;
+        Pathname fullname;
         const char* filename = res.filename;
         if (opts.filename && info.hasSubdir()) {
-            file_utils.make_path(fullname, countof(fullname), info.root2orig, filename);
-            filename = fullname;
+            fullname.init(info.root2orig, filename);
+            filename = fullname.path;
         }
         results.add(filename, res.line, res.col);
     }
@@ -282,10 +282,10 @@ public fn i32 main(i32 argc, const char** argv)
     }
     //printf("P1 [%s]\n", info.root2orig);
     //printf("P2 [%s]\n", info.orig2root);
-    char[file_utils.Max_path] fullname;
+    Pathname fullname;
     if (opts.filename && info.hasSubdir()) {
-        file_utils.make_path(fullname, countof(fullname), info.orig2root, opts.filename);
-        opts.filename = fullname;
+        fullname.init(info.orig2root, opts.filename);
+        opts.filename = fullname.path;
     }
 #if MeasureTime
     u64 t1 = getCurrentTime();

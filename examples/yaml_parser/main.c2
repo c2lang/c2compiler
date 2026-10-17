@@ -16,9 +16,8 @@
 module test;
 
 import stdio { fprintf, stderr }
-import string { strerror }
 
-import file_utils;
+import file_buffer { FileBuffer }
 import yaml;
 
 fn void get_info(yaml.Parser* parser) {
@@ -31,18 +30,18 @@ public fn i32 main(i32 argc, char** argv) {
         return 2;
     }
     const char* filename = argv[1];
-
-    file_utils.Reader file;
-    if (!file.open(filename)) {
-        fprintf(stderr, "cannot load %s: %s\n", filename, strerror(file.errno));
-        return -1;
+    FileBuffer file.init();
+    if (!file.loadFile(filename)) {
+        fprintf(stderr, "cannot load %s: %s\n", filename, file.getError());
+        file.deinit();
+        return 1;
 
     }
 
     if (file.isEmpty()) {
         fprintf(stderr, "file %s is empty\n", filename);
-        file.close();
-        return -1;
+        file.deinit();
+        return 1;
     }
 
     yaml.Parser* parser = yaml.Parser.create();
@@ -56,7 +55,7 @@ public fn i32 main(i32 argc, char** argv) {
     }
 
     parser.destroy();
-    file.close();
+    file.deinit();
     return 0;
 }
 

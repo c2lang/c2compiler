@@ -24,7 +24,8 @@ import component { Component, ComponentList }
 import constants;
 import console;
 import dep_finder;
-import file_utils;
+import file_buffer { FileBuffer }
+import file_utils { Pathname }
 import linked_list { Element }
 import manifest_writer;
 import process_utils;
@@ -1265,9 +1266,10 @@ fn void Generator.free(Generator* gen) {
 }
 
 fn void Generator.write(Generator* gen, const StringBuf* buf, const char* output_dir, const char* filename, const char* ext = nil) {
-    file_utils.File file.init(output_dir, filename, ext);
-    if (!file.write(buf.data(), buf.size())) {
-        console.error("cannot write to %s: %s", file.path, file.getError());
+    Pathname file.init(output_dir, filename, ext);
+    FileBuffer fbuf.init(buf.data(), buf.size());
+    if (!fbuf.writeFile(file.path)) {
+        console.error("cannot write to %s: %s", file.path, fbuf.getError());
     }
 }
 
@@ -1287,14 +1289,13 @@ public fn void generate(StringPool* astPool,
                         bool fast_build, bool asan, bool msan, bool ubsan,
                         bool test_mode, bool trace_calls)
 {
-    char[file_utils.Max_path] dir;
-    if (!file_utils.make_path(dir, countof(dir), output_dir, Dir)
-    ||  file_utils.create_path(dir)) {
-        console.error("cannot create directory %s: %s", dir, strerror(errno));
+    Pathname dir;
+    if (!dir.init(output_dir, Dir) || dir.create_path()) {
+        console.error("cannot create directory %s: %s", dir.path, strerror(errno));
         return;
     }
 
-    Generator gen.init(astPool, target, kind, output_dir, dir, diags, sm, build_info, mainFunc);
+    Generator gen.init(astPool, target, kind, output_dir, dir.path, diags, sm, build_info, mainFunc);
     gen.auxPool = auxPool;
     gen.enable_asserts = enable_asserts;
     gen.fast_build = fast_build;
@@ -1303,7 +1304,7 @@ public fn void generate(StringPool* astPool,
     gen.ubsan = ubsan;
     gen.trace_calls = trace_calls;
     gen.targetInfo = targetInfo;
-    gen.cgen_dir = dir;
+    gen.cgen_dir = dir.path;
 
     if (!fast_build) {
         add_gen_warning(gen.out);
@@ -1343,19 +1344,19 @@ public fn void generate(StringPool* astPool,
             gen.out.clear();
             gen.out.add("#include \"c2_trace_tables.h\"\n\n");
             gen.writeCalls(gen.out);
-            gen.write(gen.out, dir, "c2_trace_tables.c");
+            gen.write(gen.out, dir.path, "c2_trace_tables.c");
         }
     } else {
         if (gen.trace_calls) {
             gen.writeCalls(gen.out);
         }
-        gen.write(gen.out, dir, "build.c");
+        gen.write(gen.out, dir.path, "build.c");
     }
 
     u32 libc_name = auxPool.addStr("libc", true);
 
-    gen.createMakefile(dir, comps, asm_files, enable_asserts, libc_name);
-    gen.createExportsFile(dir, comps.get(comps.size()-1));
+    gen.createMakefile(dir.path, comps, asm_files, enable_asserts, libc_name);
+    gen.createExportsFile(dir.path, comps.get(comps.size()-1));
 
     if (mainComp.isLibrary()) manifest_writer.write(output_dir, mainComp, constants.manifest_name);
 
@@ -1370,17 +1371,17 @@ public fn void build(const char* output_dir)
     const char* make = "make";
 #endif
 
-    char[file_utils.Max_path] dir;
-    if (!file_utils.make_path(dir, countof(dir), output_dir, Dir, "/")) {
+    Pathname dir;
+    if (!dir.init(output_dir, Dir, "/")) {
         console.error("cannot launch C compilation: %s", strerror(errno));
         return;
     }
 
     // TODO only run -j for --fast build
-    i32 retval = process_utils.run_args(dir, make, "-j", LogFile);
+    i32 retval = process_utils.run_args(dir.path, make, "-j", LogFile);
     if (retval != 0) {
         console.error("error during external C compilation");
-        console.log("see %s%s for details", dir, LogFile);
+        console.log("see %s%s for details", dir.path, LogFile);
     }
 }
 

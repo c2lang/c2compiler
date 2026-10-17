@@ -18,7 +18,8 @@ module manifest_writer;
 import ast { Module }
 import component { Component }
 import console;
-import file_utils { File }
+import file_buffer { FileBuffer }
+import file_utils { Pathname }
 import string_buffer { StringBuf }
 import string_list { StringList }
 
@@ -94,11 +95,13 @@ public fn void write(const char* dir, Component* c, const char* filename) {
         out.newline();
     }
 
-    File file.init(dir, filename);
-    if (!file.write(out.data(), out.size())) {
-        console.error("cannot write to %s: %s", file.path, file.getError());
+    Pathname file.init(dir, filename);
+    FileBuffer fbuf.init(out.data(), out.size());
+    if (!fbuf.writeFile(file.path)) {
+        console.error("cannot write to %s: %s", file.path, fbuf.getError());
         exit(EXIT_FAILURE);
     }
+    fbuf.deinit();
     out.free();
 }
 

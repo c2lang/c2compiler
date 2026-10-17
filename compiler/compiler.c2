@@ -27,7 +27,7 @@ import console;
 import constants;
 import diagnostics { Diags }
 import file_list { File }
-import file_utils;
+import file_utils { make_path, create_path }
 import keywords;
 import module_analyser { Analyser }
 import module_list { ModuleList }
@@ -364,8 +364,8 @@ fn void Compiler.build(Compiler* c,
     pstrcpy(info.target_name, countof(info.target_name), c.auxPool.idx2str(target.getNameIdx()));
 
     // create output directory
-    if (!file_utils.make_path(info.output_dir, countof(info.output_dir), output_base, c.auxPool.idx2str(target.getNameIdx()))
-    ||  file_utils.create_path(info.output_dir)) {
+    if (!make_path(info.output_dir, countof(info.output_dir), output_base, c.auxPool.idx2str(target.getNameIdx()))
+    ||  create_path(info.output_dir)) {
         console.error("cannot create directory %s: %s", info.output_dir, strerror(errno));
         exit(EXIT_FAILURE);
     }

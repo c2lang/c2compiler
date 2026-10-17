@@ -15,7 +15,7 @@
 
 module replacer;
 
-import file_utils;
+import file_buffer { FileBuffer }
 import quicksort;
 
 import c_errno { errno }
@@ -46,7 +46,7 @@ public type Replacer struct @(opaque) {
     u32 f_capacity;
     Fragment* fragments;
 
-    file_utils.File file;
+    FileBuffer file;
     u8* dest;
     u32 dest_capacity;
 }
@@ -56,12 +56,13 @@ public fn Replacer* Replacer.create(const char* new_name) {
     r.new_name = new_name;
     r.resize(16);
     r.f_resize(16);
+    r.file.init();
     return r;
 }
 
 public fn void Replacer.free(Replacer* r) {
-    if (r.file.isOpen()) r.file.close();
-    if (r.dest) free(r.dest);
+    r.file.deinit();
+    free(r.dest);
     free(r.locs);
     free(r.fragments);
     free(r);
@@ -97,7 +98,7 @@ fn void Replacer.addFragment(Replacer* r, u32 start, u32 end) {
 
 fn void Replacer.flushFragments(Replacer* r, const char* filename) {
     u32 new_len = (u32)strlen(r.new_name);
-    u32 new_size = r.file.data_size();
+    u32 new_size = r.file.size();
     new_size += (r.f_count - 1) * (new_len - r.old_len);
     if (new_size + 1 > r.dest_capacity) {
         if (r.dest) free(r.dest);
@@ -123,9 +124,9 @@ fn void Replacer.flushFragments(Replacer* r, const char* filename) {
     r.dest[dest_idx] = 0;
 
     // write
-    file_utils.File outfile.init(filename);
-    if (!outfile.write(r.dest, new_size)) {
-        fprintf(stderr, "cannot write to %s: %s\n", filename, outfile.getError());
+    FileBuffer fbuf.init(r.dest, new_size);
+    if (!fbuf.writeFile(filename)) {
+        fprintf(stderr, "cannot write to %s: %s\n", filename, fbuf.getError());
     }
 
     r.f_count = 0;
@@ -160,7 +161,7 @@ fn u32 findLine(const char* start, u32 line) {
 }
 
 fn u32 Replacer.findOffset(Replacer* r, u32 line, u32 column) {
-    //printf("find offset %d %d  file.size %d\n", line, column, r.file.data_size());
+    //printf("find offset %d %d  file.size %d\n", line, column, r.file.size());
     // TODO cache last entry
 
     u32 cur_line = 1;
@@ -195,21 +196,21 @@ public fn i32 Replacer.replace(Replacer* r, u16 old_len) {
         const char* filename = l.filename;
         if (!cur_file || strcmp(filename, cur_file) != 0) {
             num_files++;
-            if (r.file.isOpen()) {
-                r.addFragment(prev_offset, r.file.data_size());
+            if (r.file.isLoaded()) {
+                r.addFragment(prev_offset, r.file.size());
                 r.flushFragments(cur_file);
-                r.file.close();
+                r.file.deinit();
                 prev_offset = 0;
             }
             cur_file = filename;
-            r.file.init(filename);
-            if (!r.file.load()) {
+            if (!r.file.loadFile(filename)) {
                 fprintf(stderr, "error opening %s: %s\n", filename, r.file.getError());
+                r.file.deinit();
                 return -1;
             }
         }
         u32 offset = r.findOffset(l.line, l.column);
-        if (offset >= r.file.data_size()) {
+        if (offset >= r.file.size()) {
             printf("invalid position %s %d %d\n", l.filename, l.line, l.column);
             return -1;
         }
@@ -219,10 +220,10 @@ public fn i32 Replacer.replace(Replacer* r, u16 old_len) {
         num_subs++;
         prev_offset = offset += r.old_len;
     }
-    if (r.file.isOpen()) {
-        r.addFragment(prev_offset, r.file.data_size());
+    if (r.file.isLoaded()) {
+        r.addFragment(prev_offset, r.file.size());
         r.flushFragments(cur_file);
-        r.file.close();
+        r.file.deinit();
     }
     printf("%d substitution%s in %d file%s\n", num_subs, num_files != 1 ? "s" : "", num_files, num_files != 1 ? "s" : "");
     return 0;

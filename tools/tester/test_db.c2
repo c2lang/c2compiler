@@ -22,16 +22,17 @@ import stdlib { malloc, free, exit, EXIT_FAILURE, atoi }
 import string { * }
 import unistd { * }
 
+#if TesterDebug
+import color { Color }
+#endif
 import constants { buildfile_name }
 import expect_file { ExpectFile, ExpectMode }
-import file_utils;
+import file_buffer { FileBuffer }
+import file_utils { Pathname }
 import issues { Issues, Iter }
 import string_buffer { StringBuf }
 import string_utils { endsWith }
 import test_utils { * }
-#if TesterDebug
-import color { Color }
-#endif
 
 public const u32 MAX_LINE = 512;
 
@@ -76,7 +77,7 @@ public type Db struct {
     const char* cur;    // pointer inside source to the current byte
     u32 line_nr;        // line number, updated by db.skipLine()
     StringBuf* recipe;      // ownership
-    char[file_utils.Max_path] current_file;
+    Pathname current_file;
     char[64] target;
 
     char[32] word_buffer;
@@ -112,7 +113,7 @@ public fn void Db.init(Db* db,
     db.recipe = StringBuf.create(4096, false, 2);
 
     if (kind == C2) { // only for single file test
-        file_utils.make_path(db.current_file, countof(db.current_file), cwd, filename);
+        db.current_file.init(cwd, filename);
     }
 }
 
@@ -161,9 +162,10 @@ fn void Db.addExpected(Db* db, ExpectFile* f) {
 }
 
 fn void Db.writeFile(Db* db, const char* filename, const char* data, u32 len) {
-    file_utils.File file.init(db.tmp_dir, filename);
-    if (!file.write(data, len)) {
-        print_error("error writing %s: %s", file.path, file.getError());
+    Pathname file.init(db.tmp_dir, filename);
+    FileBuffer fbuf.init(data, len);
+    if (!fbuf.writeFile(file.path)) {
+        print_error("error writing %s: %s", file.path, fbuf.getError());
         exit(EXIT_FAILURE);
     }
 }
@@ -387,7 +389,7 @@ fn bool Db.parseKeyword(Db* db) {
     case "note":
         if (!db.checkKind(keyword, C2)) return false;
         db.cur = db.bol;
-        db.parseTags(db.current_file, db.line_nr);
+        db.parseTags(db.current_file.path, db.line_nr);
         db.skipLine();
         return true;
     default:
@@ -404,7 +406,7 @@ fn bool Db.parseOuter(Db* db) {
             return false;   // error already output
         }
         if (db.kind == C2) {
-            db.parseTags(db.current_file, db.line_nr);
+            db.parseTags(db.current_file.path, db.line_nr);
         } else {
             // in .c2t/.cta, only accept directives or comments
             db.cur = skipBlanks(db.cur);
@@ -477,7 +479,7 @@ public fn bool Db.parse(Db* db) {
         // parse file to generate extra options before the file name
         if (!db.parseOuter()) return false;
         // output the full pathname as c2c will be run from the tmp dir
-        db.recipe.print("  %s\n", db.current_file);
+        db.recipe.print("  %s\n", db.current_file.path);
         db.recipe.add("end\n");
         db.writeFile("recipe.txt", db.recipe.data(), db.recipe.size());
         break;
@@ -650,31 +652,29 @@ fn void Db.checkErrors(Db* db, const char* buffer, u32 size) {
 }
 
 fn void Db.checkExpectedFiles(Db* db) {
-    char[file_utils.Max_path] basedir;
-    file_utils.make_path(basedir, countof(basedir), db.tmp_dir, "output/test/");
+    Pathname basedir.init(db.tmp_dir, "output/test/");
     for (u32 i=0; i<db.expectedCount; ++i) {
         ExpectFile* e = db.expectedFiles[i];
-        if (!e.check(db.output, basedir)) db.hasErrors = true;
+        if (!e.check(db.output, basedir.path)) db.hasErrors = true;
     }
 }
 
 fn const char* relativeFilename(const char* name) {
-    char[file_utils.Max_path] buffer;
-    char* cwd = getcwd(buffer, countof(buffer));
-    if (cwd) {
-        usize len = strlen(cwd);
-        if (len > 1 && !strncmp(name, cwd, len) && name[len] == '/' && name[len + 1] != '\0')
+    Pathname cwd;
+    if (cwd.init_cwd()) {
+        usize len = strlen(cwd.path);
+        if (len > 1 && !strncmp(name, cwd.path, len) && name[len] == '/' && name[len + 1] != '\0')
             return name + len + 1;
     }
     return name;
 }
 
-fn const char* Db.getShowName(Db* db, char* path, usize path_size, const char* filename) {
+fn const char* Db.getShowName(Db* db, Pathname* path, const char* filename) {
     const char* show_filename;
     if (*filename != '/') {
         // filename is in the tmp directory: report full path in errors
-        file_utils.make_path(path, path_size, db.tmp_dir, filename);
-        return path;
+        path.init(db.tmp_dir, filename);
+        return path.path;
     } else {
         // otherwise report error with filename relative to current directory
         return relativeFilename(filename);
@@ -682,8 +682,8 @@ fn const char* Db.getShowName(Db* db, char* path, usize path_size, const char* f
 }
 
 fn void Db.matchIssues(Db* db, Issues* ip, const char* filename, u32 linenr, const char* msg) {
-    char[128] path;
-    const char* show_filename = db.getShowName(path, countof(path), filename);
+    Pathname path;
+    const char* show_filename = db.getShowName(&path, filename);
 
     Iter iter = ip.getIter();
     if (iter.find(filename, linenr)) {
@@ -713,8 +713,8 @@ fn void Db.matchIssues(Db* db, Issues* ip, const char* filename, u32 linenr, con
 public fn void Db.checkIssues(Db* db, Issues* ip) {
     for (Iter iter = ip.getIter(); iter.more(); iter.next()) {
         if (iter.getFound()) continue;
-        char[128] path;
-        const char* show_filename = db.getShowName(path, countof(path), iter.getFilename());
+        Pathname path;
+        const char* show_filename = db.getShowName(&path, iter.getFilename());
         color_print2(db.output, colError, "%s:%d: expected %s '%s'",
                      show_filename, iter.getLineNr(), ip.getName(), iter.getMsg());
         db.hasErrors = true;

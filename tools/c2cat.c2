@@ -18,7 +18,7 @@ module c2cat_main;
 import c2_tokenizer { Tokenizer, ErrorLevel }
 import attr { AttrRegistry }
 import color { Color }
-import file_utils;
+import file_buffer { FileBuffer }
 import keywords;
 import src_loc { SrcLoc }
 import string_buffer { StringBuf }
@@ -281,9 +281,10 @@ fn void C2cat.on_tokenizer_error(void* arg, ErrorLevel level, SrcLoc loc, const 
 
 fn i32 c2cat_file(const char* filename, bool use_color, bool use_color2, bool check_only)
 {
-    file_utils.File file.init(filename);
-    if (!file.load()) {
+    FileBuffer file.init();
+    if (!file.loadFile(filename)) {
         fprintf(stderr, "c2cat: error opening %s: %s\n", filename, file.getError());
+        file.deinit();
         return -1;
     }
 
@@ -292,7 +293,7 @@ fn i32 c2cat_file(const char* filename, bool use_color, bool use_color2, bool ch
     StringBuf* out2 = StringBuf.create(1024, use_color2, 2);
     StringBuf* buf = StringBuf.create(1024, false, 0);
     const char* input = file.data();
-    u32 file_size = file.data_size();
+    u32 file_size = file.size();
     keywords.Info kwinfo.init(pool);
     StringMap features.init(pool);
 
@@ -353,7 +354,7 @@ done:
     out2.free();
     buf.free();
     pool.free();
-    file.close();
+    file.deinit();
 
     return ctx.has_error;
 }
