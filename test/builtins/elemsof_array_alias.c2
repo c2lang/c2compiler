@@ -1,0 +1,8 @@
+// @warnings{no-unused}
+module test;
+
+type Array i32[20];
+Array a;
+
+static_assert(20, countof(Array));
+static_assert(20, countof(a));

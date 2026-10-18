@@ -15795,7 +15795,7 @@ static ast_StructType* ast_QualType_getStructTypeOrNil(const ast_QualType qt)
 
 static ast_ArrayType* ast_QualType_getArrayTypeOrNil(const ast_QualType qt)
 {
-   const ast_Type* t = ast_QualType_getTypeOrNil(qt);
+   const ast_Type* t = ast_QualType_getTypeOrNil(ast_QualType_getCanonicalType(qt));
    if (t && ast_Type_isArrayType(t)) return (ast_ArrayType*)t;
    return NULL;
 }
@@ -34109,9 +34109,9 @@ static void c_generator_Generator_emitAliasType(c_generator_Generator* gen, stri
    qt = ast_QualType_getCanonicalType(qt);
    string_buffer_Buf_add(out, "typedef ");
    c_generator_Generator_emitTypePre(gen, out, qt, false);
-   c_generator_Generator_emitTypePost(gen, out, qt);
    string_buffer_Buf_space(out);
    c_generator_Generator_emitCName(gen, out, d);
+   c_generator_Generator_emitTypePost(gen, out, qt);
    string_buffer_Buf_add(out, ";\n");
 }
 

@@ -367,7 +367,8 @@ public fn PointerType* QualType.getPointerTypeOrNil(const QualType qt) {
 */
 
 public fn ArrayType* QualType.getArrayTypeOrNil(const QualType qt) {
-    const Type* t = qt.getTypeOrNil();
+    QualType canon = qt.getCanonicalType();
+    const Type* t = canon.getTypeOrNil();
     if (t && t.isArrayType()) return (ArrayType*)t;
     return nil;
 }
