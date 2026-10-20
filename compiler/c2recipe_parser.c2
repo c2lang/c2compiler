@@ -16,7 +16,7 @@
 module c2recipe;
 
 import build_target { BuildTarget }
-import color;
+import color { Color }
 import ctype { isspace, isalnum }
 import file_list { FileList, File }
 import source_mgr { SourceMgr }
@@ -106,6 +106,7 @@ type Parser struct {
     Token token;
     bool new_line;
     bool targets_started;
+    bool use_color;
     BuildTarget* target;
     Set* sets;      // Note: will point to current set
 }
@@ -120,7 +121,7 @@ fn void Parser.free(Parser* p) {
     }
 }
 
-fn bool Parser.parse(Recipe* recipe, StringPool* pool, SourceMgr* sm, i32 file_id) {
+fn bool Parser.parse(Recipe* recipe, StringPool* pool, SourceMgr* sm, i32 file_id, bool use_color) {
     const char* data = sm.get_content(file_id);
     Parser p = { }
     p.recipe = recipe;
@@ -131,6 +132,7 @@ fn bool Parser.parse(Recipe* recipe, StringPool* pool, SourceMgr* sm, i32 file_i
     p.cur = data;
     p.loc_start = sm.get_offset(file_id);
     p.new_line = true;
+    p.use_color = use_color;
 
     p.token.init();
 
@@ -160,8 +162,8 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) @(nore
     char[256] locstr;
     p.sm.loc2str(p.token.loc, locstr, countof(locstr));
 
-    if (color.useColor()) {
-        fprintf(stderr, "%s: %serror:%s %s\n", locstr, color.Red.str(), color.Normal.str(), msg);
+    if (p.use_color) {
+        fprintf(stderr, "%s: %serror:%s %s\n", locstr, Color.Red.str(), Color.Normal.str(), msg);
     } else {
         fprintf(stderr, "%s: error: %s\n", locstr, msg);
     }
@@ -178,8 +180,8 @@ fn void Parser.warning(Parser* p, const char* format @(printf_format), ...) {
     char[256] locstr;
     p.sm.loc2str(p.token.loc, locstr, countof(locstr));
 
-    if (color.useColor()) {
-        fprintf(stderr, "%s: %swarning:%s %s\n", locstr, color.Red.str(), color.Normal.str(), msg);
+    if (p.use_color) {
+        fprintf(stderr, "%s: %swarning:%s %s\n", locstr, Color.Red.str(), Color.Normal.str(), msg);
     } else {
         fprintf(stderr, "%s: warning: %s\n", locstr, msg);
     }

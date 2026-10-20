@@ -16,7 +16,7 @@
 module ir_context;
 
 import ir { * }
-import color { * }
+import color { Color }
 import string_buffer { StringBuf }
 
 import stdio { puts }
@@ -59,7 +59,7 @@ type PrintHelper struct {
 }
 
 fn void PrintHelper.init(PrintHelper* ph, const IrContext* c) {
-    ph.out = StringBuf.create(64*1024, useColor(), 2);
+    ph.out = StringBuf.create(64*1024, c.use_color, 2);
 
     // TODO print name of module
 
@@ -77,7 +77,7 @@ fn void PrintHelper.free(PrintHelper* ph) {
 }
 
 fn void PrintHelper.print(const PrintHelper* ph) {
-    ph.out.color(color.Normal);
+    ph.out.color(Normal);
     puts(ph.out.data());
 }
 
@@ -145,7 +145,7 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
         out.space();
         out.color(col_Type);
         out.add(rt.str());
-        out.color(color.Normal);
+        out.color(Normal);
     }
     out.color(col_Symbol);
     out.print(" %s(", c.pool.idx2str(s.name));
@@ -155,7 +155,7 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
         out.color(col_Type);
         Type t = info.getArg(i);
         out.add(t.str());
-        out.color(color.Normal);
+        out.color(Normal);
     }
     out.add(") {");
     out.add("  ");
@@ -166,7 +166,7 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
     // print blocks
     u32 num_blks = info.blocks.getCount();
 #if DebugIr
-    out.color(color.Grey);
+    out.color(Grey);
     out.print("  %d blocks\n", num_blks);
 #endif
 
@@ -178,15 +178,15 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
     for (u32 blk_id=0; blk_id<num_blks; blk_id++) {
         ph.cur_block = &blks[blk_id];
         const Block* b = ph.cur_block;
-        out.color(color.Yellow);
+        out.color(Yellow);
         out.print("%s.%d:", b.getKindName(), blk_id);
         if (!b.used) {
-            out.color(color.Grey);
+            out.color(Grey);
             out.add("  # unused");
         }
         Index i_idx = b.getInstructions();
 #if DebugIr
-        out.color(color.Grey);
+        out.color(Grey);
         out.space();
         print_dest(out, b.dests[0]);
         out.space();
@@ -227,7 +227,7 @@ fn void PrintHelper.print_func(PrintHelper* ph, const Symbol* s, const FunctionI
         //ph.cur_block = nil;
     }
 
-    out.color(color.Normal);
+    out.color(Normal);
     out.add("}\n");
 }
 
@@ -349,7 +349,7 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
         out.color(col_Comment);
         out.add("# ");
         out.add(ph.c.pool.idx2str((u32)i.args[0].value));
-        out.color(color.Normal);
+        out.color(Normal);
         out.newline();
         return;
     }
@@ -377,7 +377,7 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
             out.print("%%%d", temp_nr);
         }
 
-        out.color(color.Normal);
+        out.color(Normal);
         out.add(" = ");
     }
     if (i.isArch()) {
@@ -416,7 +416,7 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
         }
         break;
     case Switch:
-        out.color(color.Normal);
+        out.color(Normal);
         out.space();
         ph.printRef(i.args[0], false);
         out.add(", ");
@@ -437,12 +437,12 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
             out.color(col_Block);
             dest = ph.blocks.get(cc.block);
             out.print("@%s.%d", dest.getKindName(), cc.block);
-            out.color(color.Normal);
+            out.color(Normal);
             out.newline();
         }
         return;
     case Phi:
-        out.color(color.Normal);
+        out.color(Normal);
         out.add(" [ ");
         const PhiClause* clauses = ph.cur_info.phis.get((u32)i.args[0].value);
         for (u32 j=0; j<i.args[1].value; j++) {
@@ -452,7 +452,7 @@ fn void PrintHelper.printInstr(PrintHelper* ph, const Instr* blk_instrs, u32 blk
             Block* src = ph.blocks.get(blk_id);
             out.color(col_Block);
             out.print("@%s.%d", src.getKindName(), blk_id);
-            out.color(color.Normal);
+            out.color(Normal);
             out.add(": ");
             ph.printRef(pc.ref, false);
         }
@@ -488,7 +488,7 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
         if (v == 0) out.color(col_Fixup);
         out.print("%%%d", v);
 #if DebugIr
-        out.color(color.Grey);
+        out.color(Grey);
         out.print("(T%d)", r.value);
 #endif
         break;
@@ -547,7 +547,7 @@ fn void PrintHelper.printRef(PrintHelper* ph, Ref r, bool print_type) {
         out.print("%d", r.value);
         break;
     }
-    out.color(color.Normal);
+    out.color(Normal);
 }
 
 

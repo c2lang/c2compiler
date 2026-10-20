@@ -16,7 +16,6 @@
 module ast;
 
 import ast_context { Context }
-import color;
 import string_buffer { StringBuf }
 import string_pool { StringPool }
 
@@ -227,7 +226,7 @@ public fn FunctionDecl* Module.getInstance(const Module* m, FunctionDecl* fd, u3
 }
 
 public fn void Module.print(const Module* m, StringBuf* out, bool show_funcs) {
-    out.color(color.Normal);
+    out.color(Normal);
     out.print("------ module %s (used %d, exported %d, private %d) ------\n",
               ast.idx2name(m.name_idx), m.is_used, m.is_exported, m.is_private);
     for (u32 i=0; i<m.num_files; i++) {

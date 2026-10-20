@@ -17,7 +17,7 @@ module ast;
 
 import ast_context { Context }
 import attr { Attr }
-import color { * }
+import color { Color }
 import string_buffer { StringBuf }
 import string_pool { StringPool }
 
@@ -245,17 +245,19 @@ fn void flushDumpBuf(StringBuf* out) {
     out.clear();
 }
 
-Color col_Stmt = Color.Bmagenta;
-Color col_Decl = Color.Bgreen;
-Color col_Expr = Color.Bmagenta;
-Color col_Attr = Color.Bblue;
-Color col_Template = Color.Green;
-//Color col_Cast = Color.Red;
-Color col_Type = Color.Green;
-Color col_Value = Color.Bcyan;
-Color col_Error = Color.Red;
-Color col_Calc = Color.Yellow;    // all calculated value
-Color col_Normal = Color.Normal;
+Color col_Stmt     = Bmagenta;
+Color col_Decl     = Bgreen;
+Color col_Expr     = Bmagenta;
+Color col_Attr     = Bblue;
+Color col_Template = Green;
+//Color col_Cast     = Red;
+Color col_Type     = Green;
+Color col_Value    = Bcyan;
+public Color col_Error    = Red;
+Color col_Calc     = Yellow;    // all calculated value
+Color col_Normal   = Normal;
+public Color col_Keyword  = Green;
+public Color col_Token    = Cyan;
 
 public type AttrHandlerFn fn bool (void* arg, Decl* d, const Attr* a);
 

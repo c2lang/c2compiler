@@ -17,7 +17,6 @@ module component;
 
 import ast { Module, SymbolTable }
 import ast_context { Context }
-import color;
 import file_list { FileList, File }
 import module_list { ModuleList, ModuleVisitor }
 import src_loc { SrcLoc }
@@ -201,29 +200,29 @@ public fn bool Component.hasModule(const Component* c, const Module* mod) {
 }
 
 public fn void Component.print(const Component* c, bool show_funcs) {
-    StringBuf* out = StringBuf.create(128*1024, color.useColor(), 1);
+    StringBuf* out = StringBuf.create(128*1024, ast.useColor(), 1);
     const Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {
         mods[i].print(out, show_funcs);
     }
-    out.color(color.Normal);
+    out.color(Normal);
     puts(out.data());
     out.free();
 }
 
 public fn void Component.printModules(const Component* c) {
-    StringBuf* out = StringBuf.create(4096, color.useColor(), 1);
+    StringBuf* out = StringBuf.create(4096, ast.useColor(), 1);
     out.print("--- %s [%s]", c.getName(), c.kind.name);
     out.add(" ---\n");
     const Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {
         const Module* m = mods[i];
-        out.color(m.isUsed() ? color.Normal : color.Grey);
+        out.color(m.isUsed() ? Normal : Grey);
         out.print("   %s", m.getName());
         if (m.isPrivate()) out.add("  (private)");
         out.newline();
     }
-    out.color(color.Normal);
+    out.color(Normal);
     puts(out.data());
     out.free();
 }
@@ -231,16 +230,16 @@ public fn void Component.printModules(const Component* c) {
 public fn void Component.printSymbols(const Component* c, bool print_external) {
     if (c.isExternal() != print_external) return;
 
-    StringBuf* out = StringBuf.create(4096, color.useColor(), 1);
+    StringBuf* out = StringBuf.create(4096, ast.useColor(), 1);
     out.print("--- %s [%s] ---\n", c.getName(), c.kind.name);
     const Module** mods = c.mods.getConst();
     for (u32 i=0; i<c.mods.length(); i++) {
-        out.color(color.Cyan);
+        out.color(Cyan);
         out.print("  %s\n", mods[i].getName());
         const SymbolTable* table = mods[i].getSymbols();
         table.print(out);
     }
-    out.color(color.Normal);
+    out.color(Normal);
     puts(out.data());
     out.free();
 }

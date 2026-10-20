@@ -18,7 +18,6 @@ module c2c_main;
 import build_file;
 import build_file_parser;
 import build_target { PluginList, BuildTarget }
-import color;
 import console;
 import c2recipe { Recipe }
 import compiler;
@@ -53,6 +52,7 @@ type Options struct {
     bool use_ir_backend;
     bool trace_calls;
     bool use_math_library;
+    bool use_color;
     const char* build_file;
     const char* other_dir;
     const char* output_name;
@@ -61,8 +61,9 @@ type Options struct {
     StringList features;
 }
 
-fn void Options.init(Options* opts, StringPool* pool) {
+fn void Options.init(Options* opts, StringPool* pool, bool use_color) {
     memset(opts, 0, sizeof(Options));
+    opts.use_color = use_color;
     opts.targets.init(pool);
     opts.files.init(pool);
     opts.features.init(pool);
@@ -221,6 +222,8 @@ Options:
   --create [name]   create an empty project recipe.txt and main.c2
   --fast            do fast, un-optimized build
   --no-build        generate backend files but do not make the targets
+  --color           force colorized output
+  --no-color        disable colorized output
   --help            print this help
   --help-recipe     print the recipe syntax
   --I2              use IR backend and print generated IR (all versions)
@@ -299,6 +302,14 @@ fn void parse_long_opt(ArgumentParser* ap, const char* arg, compiler.Options* co
         break;
     case "no-build":
         comp_opts.no_build = true;
+        break;
+    case "color":
+        comp_opts.use_color = true;
+        opts.use_color = true;
+        break;
+    case "no-color":
+        comp_opts.use_color = false;
+        opts.use_color = false;
         break;
     case "help":
         ap.showHelp();
@@ -494,15 +505,16 @@ type Context struct {
     u32 plugins_feature;
 }
 
-fn void Context.init(Context* c) {
+fn void Context.init(Context* c, bool use_color) {
     memset(c, 0, sizeof(Context));
     // note: auxPool is used by recipe, build-file and manifests
     c.auxPool = StringPool.create(32*1024, 256);
-    c.sm = SourceMgr.create(c.auxPool);
-    c.diags = Diags.create(c.sm, color.useColor(), &c.path_info);
-    c.recipe = Recipe.create(c.sm, c.auxPool);
+    c.sm = SourceMgr.create(c.auxPool, use_color);
+    c.diags = Diags.create(c.sm, use_color, &c.path_info);
+    c.recipe = Recipe.create(c.sm, c.auxPool, use_color);
 
-    c.opts.init(c.auxPool);
+    c.opts.init(c.auxPool, use_color);
+    c.comp_opts.use_color = use_color;
     c.recipe_id = -1;
 }
 
@@ -513,6 +525,7 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
     console.setTiming(c.opts.print_timing);
     console.setDebug(c.opts.log_verbose);
     console.setQuiet(c.opts.quiet_mode);
+    console.setColor(c.opts.use_color);
 
     const char[] notFound = "c2c: error: cannot find project root directory\n"
                             "     c2c requires a %s file in the project root,\n"
@@ -763,7 +776,7 @@ fn void Context.free(Context* c) {
 public fn i32 main(i32 argc, char** argv) {
     console.init();
 
-    Context c.init();
+    Context c.init(console.getColor());
     c.handle_args(argc, argv);
     c.handle_plugins();
 

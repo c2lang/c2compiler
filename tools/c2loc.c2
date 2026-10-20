@@ -23,50 +23,68 @@ import source_mgr { SourceMgr }
 import string_pool { StringPool }
 
 import c_errno { errno }
-import stdio { printf }
+import stdio { printf, fprintf, FILE, stdout, stderr }
 import stdlib { exit, EXIT_FAILURE }
 import string { strerror, strcmp }
-import unistd { chdir }
+import unistd { chdir, isatty }
 
 const char* target;
 const char* other_dir;
 bool verbose;
+bool use_color;
 
-StringPool* pool;
-SourceMgr* sm;
-
-fn void usage(const char* me) {
-    printf("Usage: %s <options> <target>\n", me);
-    printf("\tOptions:\n");
-    printf("\t-d [dir]          change to [dir] first\n");
-    printf("\t-h                print this help\n");
-    printf("\t-v                verbose (show lines per source file)\n");
-    exit(EXIT_FAILURE);
+fn void usage(const char* me, FILE *fp) {
+    fprintf(fp,
+            "Usage: %s <options> <target>\n"
+            "Options:\n"
+            "   -d [dir]         change to [dir] first\n"
+            "   -h  --help       print this help\n"
+            "       --color      force colorized output\n"
+            "       --no-color   disable colorized output\n"
+            "   -v  --verbose    verbose (show lines per source file)\n"
+            , me);
 }
 
 fn void parse_opts(i32 argc, const char** argv) {
     for (i32 i=1; i<argc; i++) {
         const char* arg = argv[i];
         if (arg[0] == '-') {
-            switch (arg[1]) {
-            case 'd':
-                if (i==argc-1) usage(argv[0]);
+            switch (arg) {
+            case "-d":
+                if (i == argc - 1) {
+                    fprintf(stderr, "%s: missing directory after '-d'\n", argv[0]);
+                    exit(EXIT_FAILURE);
+                }
                 i++;
                 other_dir = argv[i];
                 break;
-            case 'h':
-                usage(argv[0]);
+            case "-h":
+            case "--help":
+                usage(argv[0], stdout);
+                exit(EXIT_FAILURE);
                 break;
-            case 'v':
+            case "--color":
+                use_color = true;
+                break;
+            case "--no-color":
+                use_color = false;
+                break;
+            case "-v":
+            case "--verbose":
                 verbose = true;
                 break;
             default:
-                printf("unknown option '-%c'\n", arg[1]);
-                usage(argv[0]);
+                fprintf(stderr, "%s: unknown option '%s'\n", argv[0], arg);
+                usage(argv[0], stderr);
+                exit(EXIT_FAILURE);
                 break;
             }
         } else {
-            if (target) usage(argv[0]);
+            if (target) {
+                fprintf(stderr, "%s: too many arguments\n", argv[0]);
+                usage(argv[0], stderr);
+                exit(EXIT_FAILURE);
+            }
             target = arg;
         }
     }
@@ -81,7 +99,7 @@ fn u32 count_loc(const char* data) {
     return loc;
 }
 
-fn void handle_target(BuildTarget* t, const char* name) {
+fn void handle_target(BuildTarget* t, const char* name, SourceMgr* sm, StringPool* pool) {
     if (verbose) printf("%s: %d files\n", name, t.numFiles());
     u32 total_loc = 0;
     for (u32 i=0; i<t.numFiles(); i++) {
@@ -106,22 +124,27 @@ fn void handle_target(BuildTarget* t, const char* name) {
 
 public fn i32 main(i32 argc, const char** argv)
 {
+    i32 status = 0;
+
+    use_color = isatty(1);
+
     parse_opts(argc, argv);
 
     if (other_dir) {
         if (chdir(other_dir)) {
-            printf("cannot chdir to %s: %s\n", other_dir, strerror(errno));
-            exit(EXIT_FAILURE);
+            fprintf(stderr, "%s: cannot chdir to %s: %s\n",
+                    argv[0], other_dir, strerror(errno));
+            return EXIT_FAILURE;
         }
     }
 
-    pool = StringPool.create(32*1024, 1024);
-    sm = SourceMgr.create(pool);
-    Recipe* recipe = Recipe.create(sm, pool);
+    StringPool* pool = StringPool.create(32*1024, 1024);
+    SourceMgr* sm = SourceMgr.create(pool, use_color);
+    Recipe* recipe = Recipe.create(sm, pool, use_color);
 
     i32 file_id = sm.loadFile(recipe_name, 0);
-    if (file_id == -1) return -1;
-    if (!recipe.parse(file_id)) return -1;
+    if (file_id == -1) return EXIT_FAILURE;
+    if (!recipe.parse(file_id)) return EXIT_FAILURE;
 
     bool found = false;
     for (u32 i=0; i<recipe.numTargets(); i++) {
@@ -130,17 +153,18 @@ public fn i32 main(i32 argc, const char** argv)
         if (target && strcmp(target, target_name) != 0) continue;
         found = true;
 
-        handle_target(t, target_name);
+        handle_target(t, target_name, sm, pool);
         sm.clear(file_id);
     }
 
     if (target && !found) {
-        printf("no such target in %s\n", recipe_name);
+        fprintf(stderr, "%s: no such target in %s\n", argv[0], recipe_name);
+        status = EXIT_FAILURE;
     }
 
     recipe.free();
     sm.free();
 
-    return 0;
+    return status;
 }
 

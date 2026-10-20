@@ -17,7 +17,7 @@ module c2cat_main;
 
 import c2_tokenizer { Tokenizer, ErrorLevel }
 import attr { AttrRegistry }
-import color { * }
+import color { Color }
 import file_utils;
 import keywords;
 import src_loc { SrcLoc }
@@ -27,7 +27,7 @@ import string_pool { StringPool }
 import token { Kind, Token }
 
 import ctype { isspace }
-import stdio { * }
+import stdio { printf, fprintf, fflush, fputs, stdout, stderr }
 import stdlib { exit, EXIT_FAILURE, EXIT_SUCCESS }
 import string { strcmp }
 import unistd { isatty }
@@ -55,7 +55,7 @@ fn void usage(const char* me) {
     printf("Usage: %s [options] file.c2 ...\n"
            "    -c  --check  only check token syntax, no content output\n"
            "    --color      force colorized output\n"
-           "    --nocolor    disable colorized output\n"
+           "    --no-color   disable colorized output\n"
            , me);
 }
 
@@ -283,7 +283,7 @@ fn i32 c2cat_file(const char* filename, bool use_color, bool use_color2, bool ch
 {
     file_utils.File file.init(filename);
     if (!file.load()) {
-        fprintf(stderr, "error opening %s: %s\n", filename, file.getError());
+        fprintf(stderr, "c2cat: error opening %s: %s\n", filename, file.getError());
         return -1;
     }
 
@@ -382,7 +382,7 @@ public fn i32 main(i32 argc, const char** argv)
             case "--color":
                 use_color = true;
                 break;
-            case "--nocolor":
+            case "--no-color":
                 use_color = false;
                 use_color2 = false;
                 break;

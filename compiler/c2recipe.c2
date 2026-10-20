@@ -32,12 +32,14 @@ public type Recipe struct @(opaque) {
     u32 max_targets;
 
     PluginList plugins;
+    bool use_color;
 }
 
-public fn Recipe* Recipe.create(SourceMgr* sm, StringPool* pool) {
+public fn Recipe* Recipe.create(SourceMgr* sm, StringPool* pool, bool use_color) {
     Recipe* r = calloc(1, sizeof(Recipe));
     r.sm = sm;
     r.pool = pool;
+    r.use_color = use_color;
     r.max_targets = 4;
     r.targets = calloc(r.max_targets, sizeof(BuildTarget*));
     r.plugins.init();
@@ -79,7 +81,7 @@ public fn BuildTarget* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_t
 }
 
 public fn bool Recipe.parse(Recipe* r, i32 file_id) {
-    return Parser.parse(r, r.pool, r.sm, file_id);
+    return Parser.parse(r, r.pool, r.sm, file_id, r.use_color);
 }
 
 public fn u32 Recipe.numTargets(const Recipe* r) { return r.num_targets; }

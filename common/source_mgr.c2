@@ -15,7 +15,7 @@
 
 module source_mgr;
 
-import color { Red, Normal, useColor }
+import color { Color }
 import file_utils;
 import src_loc { SrcLoc }
 import string_pool { StringPool }
@@ -110,9 +110,11 @@ public type SourceMgr struct @(opaque) {
     u32 index_count;
     u32 index_capacity;
     u16* index;
+
+    bool use_color;
 }
 
-public fn SourceMgr* SourceMgr.create(StringPool* pool) {
+public fn SourceMgr* SourceMgr.create(StringPool* pool, bool use_color) {
     SourceMgr* sm = calloc(1, sizeof(SourceMgr));
     sm.pool = pool;
     sm.max_files = InitialMaxFiles;
@@ -121,6 +123,7 @@ public fn SourceMgr* SourceMgr.create(StringPool* pool) {
     sm.index_capacity = 1024 * 1024 / FileIndexSize;
     sm.index = malloc(sizeof(u16) * sm.index_capacity);
     sm.index[0] = 0;
+    sm.use_color = use_color;
     return sm;
 }
 
@@ -184,9 +187,9 @@ public fn i32 SourceMgr.loadFile(SourceMgr* sm, const char* filename, SrcLoc slo
             }
         }
         // Cannot use console since we need source loc first
-        if (useColor()) {
+        if (sm.use_color) {
             fprintf(stderr, "%s%serror:%s cannot open %s: %s\n",
-                          tmp, Red.str(), Normal.str(), filename, file.getError());
+                    tmp, Color.Red.str(), Color.Normal.str(), filename, file.getError());
         } else {
             fprintf(stderr, "%serror: cannot open %s: %s\n", tmp, filename, file.getError());
         }

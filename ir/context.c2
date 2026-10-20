@@ -71,6 +71,7 @@ public type IrContext struct @(opaque) {
 
     bool single_thread;
     bool print_all;
+    bool use_color;
 
     WorkQueue queue;
 }
@@ -80,7 +81,7 @@ public type BuildInfo struct {
     const char* linkerflags;    // no ownership
 }
 
-public fn IrContext* IrContext.create(bool print, const target_info.Info* info, const BuildInfo* buildInfo) {
+public fn IrContext* IrContext.create(bool print, const target_info.Info* info, const BuildInfo* buildInfo, bool use_color) {
     IrContext* c = calloc(1, sizeof(IrContext));
     c.pool = StringPool.create(2*1024, 256);
     c.constants.init(128);
@@ -89,6 +90,7 @@ public fn IrContext* IrContext.create(bool print, const target_info.Info* info, 
     c.queue.init();
     c.single_thread = true;
     c.print_all = print;
+    c.use_color = use_color;
     //c.single_thread = false;
 
     // pre-load pool with slot names

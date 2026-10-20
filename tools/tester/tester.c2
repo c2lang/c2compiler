@@ -280,13 +280,17 @@ fn void Tester.run_test(Tester* t, Test* test) {
 }
 
 fn void usage(const char* name) {
-    printf("Usage: %s <options> target ...\n", name);
-    printf("    -j[#] use multi-threading (optional # of threads)\n");
-    printf("    -n    no multi-threading\n");
-    printf("    -q    quiet mode, only errors shown\n");
-    printf("    -s    only run skipped tests\n");
-    printf("    -v    verbose output\n");
-    printf("    targets can be single files or full directories\n");
+    printf("Usage: %s <options> target ...\n"
+           "   -j[#]      use multi-threading (optional # of threads)\n"
+           "   -n         no multi-threading\n"
+           "   -q         quiet mode, only errors shown\n"
+           "   -s         only run skipped tests\n"
+           "   -v         verbose output\n"
+           "   --help     print this message\n"
+           "   --color    force colorized output\n"
+           "   --no-color disable colorized output\n"
+           "   targets can be single files or full directories\n"
+           , name);
     exit(EXIT_FAILURE);
 }
 
@@ -312,6 +316,16 @@ public fn i32 main(i32 argc, char** argv) {
         char* arg = argv[i];
         if (arg[0] == '-') {
             switch (arg) {
+            case "--color":
+                color_output = true;
+                break;
+            case "--no-color":
+                color_output = false;
+                break;
+            case "-h":
+            case "--help":
+                usage(argv[0]);
+                break;
             case "-s":
                 runSkipped = true;
                 break;
@@ -324,10 +338,12 @@ public fn i32 main(i32 argc, char** argv) {
             case "-n":
                 num_threads = 1;
                 break;
-            case "-j":
-                num_threads = (u32)atoi(arg + 2);
-                break;
             default:
+                if (arg[1] == 'j') {
+                    num_threads = (u32)atoi(arg + 2);
+                    break;
+                }
+                print_error("unknown option '%s'\n", arg);
                 usage(argv[0]);
                 break;
             }

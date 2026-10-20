@@ -30,7 +30,7 @@ import string_buffer { StringBuf }
 import string_utils { endsWith }
 import test_utils { * }
 #if TesterDebug
-import color;
+import color { Color }
 #endif
 
 public const u32 MAX_LINE = 512;
@@ -456,7 +456,7 @@ fn void Db.parseTags(Db* db, const char* filename, u32 line_nr) {
     const char* p = skipBlanks(db.cur);
     if (*p && *p != '\n') line_nr += atoi(p);
 #if TesterDebug
-    color_print(color.Blue, "  expecting %s '%s' at %s:%d", ip.name, msg, filename, line_nr);
+    color_print(Blue, "  expecting %s '%s' at %s:%d", ip.name, msg, filename, line_nr);
 #endif
     ip.add(filename, line_nr, msg);
 }
@@ -591,7 +591,7 @@ public fn void Db.testFile(Db* db) {
 
 fn void Db.checkDiagnosticLine(Db* db, const char* line) {
 #if TesterDebug
-    color_print(color.White, "line: '%s'", line);
+    color_print(White, "line: '%s'", line);
 #endif
     // line syntax: '<filename>.c2:<linenr>:<colnr>: error/warning/note: <msg>\n'
     char[128] filename_full;
@@ -612,7 +612,7 @@ fn void Db.checkDiagnosticLine(Db* db, const char* line) {
 
     if (Issues* ip = db.getIssues(tag)) {
 #if TesterDebug
-        color_print(color.Cyan, "%s:%d:%d: %s '%s'", filename, error_line, col, tag, msg);
+        color_print(Cyan, "%s:%d:%d: %s '%s'", filename, error_line, col, tag, msg);
 #endif
         db.matchIssues(ip, filename, error_line, msg);
     } else {
@@ -622,7 +622,7 @@ fn void Db.checkDiagnosticLine(Db* db, const char* line) {
 
 fn void Db.checkErrors(Db* db, const char* buffer, u32 size) {
 #if TesterDebug
-    color_print(color.Magenta, "stderr:\n%s", buffer);
+    color_print(Magenta, "stderr:\n%s", buffer);
 #endif
     const char* cp = buffer;
     const char* end = cp + size;

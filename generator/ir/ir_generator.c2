@@ -73,7 +73,8 @@ fn void Generator.init(Generator* gen,
                        const char* output_dir,
                        bool enable_asserts,
                        bool print,
-                       bool print_all) {
+                       bool print_all,
+                       bool use_color) {
     memset(gen, 0, sizeof(Generator));
 
     ir_context.BuildInfo build_info = {}
@@ -82,7 +83,7 @@ fn void Generator.init(Generator* gen,
         build_info.linkerflags = buildInfo.getLinkerFlags();
     }
 
-    gen.ctx = IrContext.create(print_all, targetInfo, &build_info);
+    gen.ctx = IrContext.create(print_all, targetInfo, &build_info, use_color);
     gen.names = names;
     gen.labels.init();
     gen.target = target;
@@ -587,7 +588,8 @@ public fn void generate(const char* target,
                         const Decl* mainFunc,
                         bool enable_asserts,
                         bool print,
-                        bool print_all) {
+                        bool print_all,
+                        bool use_color) {
     char[file_utils.Max_path] ir_dir;
     if (!file_utils.make_path(ir_dir, countof(ir_dir), output_dir, "ir")
     ||  file_utils.create_path(ir_dir)) {
@@ -595,7 +597,7 @@ public fn void generate(const char* target,
         return;
     }
 
-    Generator gen.init(sm, astPool, targetInfo, buildInfo, target, ir_dir, enable_asserts, print, print_all);
+    Generator gen.init(sm, astPool, targetInfo, buildInfo, target, ir_dir, enable_asserts, print, print_all, use_color);
     gen.mainFunc = mainFunc;
 
     // TODO also generate source libs, inline functions for interface files

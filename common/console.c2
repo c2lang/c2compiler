@@ -15,7 +15,7 @@
 
 module console;
 
-import color;
+import color { Color }
 
 import stdio { vsnprintf, printf, fprintf, stderr }
 
@@ -43,6 +43,14 @@ public fn void setQuiet(bool enable) {
     config.quiet_mode = enable;
 }
 
+public fn void setColor(bool enable) {
+    config.use_color = enable;
+}
+
+public fn bool getColor() {
+    return config.use_color;
+}
+
 public fn void setDebug(bool enable) {
     config.show_debug = enable;
 }
@@ -68,7 +76,7 @@ public fn void debug(const char* format @(printf_format), ...) {
     vsnprintf(buf, countof(buf), format, args);
     va_end(args);
     if (config.use_color) {
-        printf("%s%s%s\n", color.Blue.str(), buf, color.Normal.str());
+        printf("%s%s%s\n", Color.Blue.str(), buf, Color.Normal.str());
     } else {
         printf("%s\n", buf);
     }
@@ -92,7 +100,7 @@ public fn void warn(const char* format @(printf_format), ...) {
     vsnprintf(buf, countof(buf), format, args);
     va_end(args);
     if (config.use_color) {
-        fprintf(stderr, "%swarning: %s%s\n", color.Yellow.str(), buf, color.Normal.str());
+        fprintf(stderr, "%swarning: %s%s\n", Color.Yellow.str(), buf, Color.Normal.str());
     } else {
         fprintf(stderr, "warning: %s\n", buf);
     }
@@ -105,7 +113,7 @@ public fn void error(const char* format @(printf_format), ...) {
     vsnprintf(buf, countof(buf), format, args);
     va_end(args);
     if (config.use_color) {
-        fprintf(stderr, "%serror: %s%s\n", color.Red.str(), buf, color.Normal.str());
+        fprintf(stderr, "%serror: %s%s\n", Color.Red.str(), buf, Color.Normal.str());
     } else {
         fprintf(stderr, "error: %s\n", buf);
     }
@@ -118,7 +126,7 @@ public fn void error_diag(const char* loc, const char* format @(printf_format), 
     vsnprintf(buf, countof(buf), format, args);
     va_end(args);
     if (config.use_color) {
-        fprintf(stderr, "%s%s: error: %s%s\n", color.Red.str(), loc, buf, color.Normal.str());
+        fprintf(stderr, "%s%s: error: %s%s\n", Color.Red.str(), loc, buf, Color.Normal.str());
     } else {
         fprintf(stderr, "%s: error: %s\n", loc, buf);
     }
@@ -128,7 +136,7 @@ public fn void log_time(const char* item, u64 duration) {
     if (!config.show_timing) return;
 
     if (config.use_color) {
-        printf("%s%s took %d usec%s\n", color.Blue.str(), item, duration, color.Normal.str());
+        printf("%s%s took %d usec%s\n", Color.Blue.str(), item, duration, Color.Normal.str());
     } else {
         printf("%s took %d usec\n", item, duration);
     }
