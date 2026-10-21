@@ -31919,6 +31919,7 @@ static void module_analyser_Analyser_analyseStructMember(module_analyser_Analyse
    }
    ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref, true);
    if (ast_QualType_isInvalid(res)) return;
+#if 0
    if (ast_QualType_isArray(res)) {
       ast_ArrayType* at = ast_QualType_getArrayType(res);
       if (!ast_ArrayType_hasSize(at)) {
@@ -31926,6 +31927,7 @@ static void module_analyser_Analyser_analyseStructMember(module_analyser_Analyse
          return;
       }
    }
+#endif
    if (ast_QualType_isVoid(res)) {
       module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "member has invalid type 'void'");
       return;
@@ -33898,6 +33900,7 @@ static void c_generator_Generator_emitTypePost(c_generator_Generator* gen, strin
    ast_ArrayType* at = (ast_ArrayType*)ast_QualType_getType(qt);
    string_buffer_Buf_add1(out, '[');
    if (ast_ArrayType_hasSize(at)) string_buffer_Buf_print(out, "%u", ast_ArrayType_getSize(at));
+   else string_buffer_Buf_add(out, "0");
    string_buffer_Buf_add1(out, ']');
    c_generator_Generator_emitTypePost(gen, out, ast_ArrayType_getElemType(at));
 }

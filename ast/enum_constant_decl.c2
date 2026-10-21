@@ -30,7 +30,7 @@ static_assert(4, sizeof(EnumConstantDeclBits));
 public type EnumConstantDecl struct @(opaque) {
     Decl base;
     Value value;
-    Expr*[0] init;  // tail-allocated
+    Expr*[] init;  // tail-allocated
 }
 
 public fn EnumConstantDecl* EnumConstantDecl.create(Context* c,

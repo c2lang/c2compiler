@@ -47,7 +47,7 @@ type Node struct @(aligned=4) {
 */
     u32 value;
 #endif
-    u32[0] children;
+    u32[] children;
 }
 
 #if RadixTreeValue
@@ -66,7 +66,7 @@ type Nodes struct {
     u32 total_size; // must be first
     u32 capacity;
     u32 root_idx;
-    u8[0] nodes;
+    u8[] nodes;
 }
 
 fn Nodes* Nodes.create(u32 capacity) {
@@ -91,7 +91,7 @@ type Words struct {
     u32 total_size; // must be first
     u32 size;
     u32 capacity;
-    char[0] data;
+    char[] data;
 }
 
 fn Words* Words.create(u32 capacity) {

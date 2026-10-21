@@ -145,15 +145,6 @@ fn bool Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
     QualType res = ma.analyseTypeRef(ref, true);
     if (res.isInvalid()) return false;
 
-    // check that array size is specified
-    if (res.isArray()) {
-        ArrayType* at = res.getArrayType();
-        if (!at.hasSize()) {
-            ma.error(ref.getLoc(), "array size must be specified for struct/union members");
-            return false;
-        }
-    }
-
     if (res.isVoid()) {
         ma.error(ref.getLoc(), "member has invalid type 'void'");
         return false;

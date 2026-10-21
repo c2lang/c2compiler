@@ -31,7 +31,7 @@ public type ArrayType struct @(opaque) {
     QualType elem;
     u32 size;       // set during analysis, number of elements
     // Note: 4 bytes padding here on 64-bit systems
-    QualType[0] index_type;
+    QualType[] index_type;
 }
 
 public fn ArrayType* ArrayType.create(Context* c,

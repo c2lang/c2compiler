@@ -29,7 +29,7 @@ static_assert(4, sizeof(DeclStmtBits));
 
 public type DeclStmt struct @(opaque) {
     Stmt base;
-    VarDecl*[0] decl;
+    VarDecl*[] decl;
 }
 
 public fn DeclStmt* DeclStmt.create(Context* c,

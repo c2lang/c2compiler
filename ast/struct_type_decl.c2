@@ -34,7 +34,7 @@ static_assert(4, sizeof(StructTypeDeclBits));
 public type FieldInitInfo struct {
     u32 num_fields;     // fields[num_fields]
     u32 num_indexes;    // number of different indexes (unions use 1)
-    FieldInitField[0] fields;
+    FieldInitField[] fields;
 }
 static_assert(8, sizeof(FieldInitInfo));
 
@@ -90,7 +90,7 @@ public type StructLayout struct {
     u32 size;
     u32 alignment;
     u32 attr_alignment; // can be removed? (should be same as alignment)
-    StructMemberLayout[0] members;
+    StructMemberLayout[] members;
 }
 
 public type StructTypeDecl struct @(opaque) {
@@ -99,8 +99,8 @@ public type StructTypeDecl struct @(opaque) {
     u32 num_struct_functions;
     FunctionDecl** struct_functions;
     FieldInitInfo* field_info;  // set lazily on Field-Designated inits
-    Decl*[0] members;   // tail-allocated
-    //StructLayout layout[0]; // tail-allocated
+    Decl*[] members;   // tail-allocated
+    //StructLayout layout[]; // tail-allocated
 }
 
 public fn StructTypeDecl* StructTypeDecl.create(Context* c,

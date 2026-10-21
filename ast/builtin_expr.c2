@@ -58,9 +58,9 @@ public type BuiltinExpr struct @(opaque) {
     Expr* inner;
     u64 value;
 
-    OffsetOfData[0] offset;     // tail-allocated, only for offsetof
-    ToContainerData[0] container;   // tail-allocated, only for to_container
-    VaArgData[0] va_arg_data;
+    OffsetOfData[] offset;     // tail-allocated, only for offsetof
+    ToContainerData[] container;   // tail-allocated, only for to_container
+    VaArgData[] va_arg_data;
 }
 
 public fn BuiltinExpr* BuiltinExpr.create(Context* c, SrcLoc loc, u32 src_len, Expr* inner, BuiltinExprKind kind) {

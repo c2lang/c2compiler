@@ -27,7 +27,7 @@ static_assert(4, sizeof(ReturnStmtBits));
 
 public type ReturnStmt struct @(opaque) {
     Stmt base;
-    Expr*[0] value; // tail-allocated, dependent on returnStmtBits.has_value
+    Expr*[] value; // tail-allocated, dependent on returnStmtBits.has_value
 }
 
 public fn ReturnStmt* ReturnStmt.create(Context* c, SrcLoc loc, Expr* value) {

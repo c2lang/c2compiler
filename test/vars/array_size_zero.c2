@@ -1,6 +1,6 @@
 module test;
 
 fn void test1() {
-    i32[0] a;    // @error{only struct members may have array size zero}
+    i32[0] a;    // @error{array size may not be zero}
 }
 

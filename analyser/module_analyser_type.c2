@@ -295,6 +295,10 @@ fn QualType Analyser.analyseTypeRef(Analyser* ma, TypeRef* ref, bool full) {
                 }
                 size = value.as_u32();
             }
+            if (size == 0) {
+                ma.errorRange(sizeExpr.getLoc(), sizeExpr.getRange(), "array size may not be zero");
+                return QualType_Invalid;
+            }
         }
         if (resolved.isVoid()) {
             ma.error(ref.getLoc(), "array element has invalid type 'void'");

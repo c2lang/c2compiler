@@ -335,6 +335,7 @@ fn void Generator.emitTypePost(Generator* gen, StringBuf* out, QualType qt) {
 
     out.add1('[');
     if (at.hasSize()) out.print("%d", at.getSize());
+    else out.add("0");
     out.add1(']');
     gen.emitTypePost(out, at.getElemType());
 }

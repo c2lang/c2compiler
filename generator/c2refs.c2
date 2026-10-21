@@ -130,7 +130,7 @@ type Files struct {
     u32 files_cap;
     u32 names_len;          // total len of 0-terminated names
     u32 names_cap;
-    File[0] files;          // tail allocated
+    File[] files;          // tail allocated
     // names                // list of 0-terminated names, tail allocated
 }
 
@@ -279,7 +279,7 @@ type Lengths struct {
     u32 total_size;     // of whole Files
     u32 count;          // current number of entries
     u32 cap;            // max number of entries
-    u8[0] lengths;
+    u8[] lengths;
 }
 
 static_assert(12, sizeof(Lengths));
@@ -384,7 +384,7 @@ type Links struct {
     u32 total_size;
     u32 count;
     u32 capacity;
-    Link[0] data;
+    Link[] data;
 }
 
 static_assert(12, sizeof(Links));

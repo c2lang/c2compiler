@@ -27,7 +27,7 @@ static_assert(4, sizeof(BreakStmtBits));
 
 public type BreakStmt struct @(opaque) {
     Stmt base;
-    u32[0] name_idx;
+    u32[] name_idx;
 }
 
 public fn BreakStmt* BreakStmt.create(Context* c, SrcLoc loc, u32 name_idx) {

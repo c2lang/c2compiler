@@ -36,7 +36,7 @@ public type ArrayDesignatedInitExpr struct @(opaque) {
     Expr base;
     u32 start, end;
     Expr* initValue;
-    Expr*[0] expr;
+    Expr*[] expr;
 }
 
 public fn ArrayDesignatedInitExpr* ArrayDesignatedInitExpr.create(Context* c,

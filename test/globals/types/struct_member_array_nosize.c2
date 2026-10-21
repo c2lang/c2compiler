@@ -1,7 +1,13 @@
 module test;
 
 type Struct struct {
-    i32[] a;    // @error{array size must be specified for struct/union members}
-    i32[0] b;   // ok
+    i32[] a;    // ok
+    i32[0] b;   // @error{array size may not be zero}
+}
+
+type Struct2 struct {
+    i32[] a;
+    i32[] b;
+    i32[] c;
 }
 

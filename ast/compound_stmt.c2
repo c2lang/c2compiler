@@ -29,7 +29,7 @@ static_assert(4, sizeof(CompoundStmtBits));
 
 public type CompoundStmt struct @(opaque) {
     Stmt base;
-    Stmt*[0] stmts; // tail-allocated
+    Stmt*[] stmts; // tail-allocated
 }
 
 public fn CompoundStmt* CompoundStmt.create(Context* c, SrcLoc endLoc, Stmt** stmts, u32 count) {

@@ -34,8 +34,8 @@ static_assert(4, sizeof(SwitchStmtBits));
 public type SwitchStmt struct @(opaque) {
     Stmt base;
     Expr* cond;
-    Stmt*[0] decl;  // tail allocated, optional
-    //SwitchCase*[0] cases; // tail-allocated
+    Stmt*[] decl;  // tail allocated, optional
+    //SwitchCase*[] cases; // tail-allocated
 }
 
 public fn SwitchStmt* SwitchStmt.create(Context* c,

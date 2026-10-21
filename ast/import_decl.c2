@@ -34,7 +34,7 @@ public type ImportDecl struct @(opaque) {
     u32 alias_idx;
     SrcLoc alias_loc;
     Module* dest;
-    Symbol[0] symlist;
+    Symbol[] symlist;
 }
 
 public fn ImportDecl* ImportDecl.create(Context* c,

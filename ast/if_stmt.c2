@@ -31,7 +31,7 @@ public type IfStmt struct @(opaque) {
     Stmt base;
     Expr* cond;
     Stmt* then;
-    Stmt*[0] tail; // tail-allocated: else/decl
+    Stmt*[] tail; // tail-allocated: else/decl
 }
 
 public fn IfStmt* IfStmt.create(Context* c,

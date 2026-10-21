@@ -37,7 +37,7 @@ public type CallExpr struct @(opaque) {
     u16 template_idx;   // instance number
     u16 instance_ast_idx; // for template function calls
     Expr* func;
-    Expr*[0] args; // tail-allocated
+    Expr*[] args; // tail-allocated
     //TypeRef template_arg; // tail-allocated, variable size
 }
 

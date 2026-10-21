@@ -25,7 +25,7 @@ type Block struct {
     Block* next;
     u32 size;
     u32 allocated;
-    u8[0] data;  // tail allocated
+    u8[] data;  // tail allocated
 }
 
 fn Block* Block.create(u32 blk_size) {

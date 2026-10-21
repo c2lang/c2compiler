@@ -36,8 +36,8 @@ public type SwitchCase struct @(opaque) {
         u32 allbits;
     }
     SrcLoc loc;
-    Expr*[0] conds;    // tail-allocated
-    //Stmt*[0] stmts; // tail-allocated
+    Expr*[] conds;    // tail-allocated
+    //Stmt*[] stmts; // tail-allocated
 }
 
 public fn SwitchCase* SwitchCase.create(Context* c,
