@@ -18,7 +18,7 @@ module refs_generator;
 import ast { * }
 import ast_visitor { Visitor }
 import c2refs { Refs }
-import component;
+import component { ComponentList }
 import console;
 import file_utils;
 import source_mgr { SourceMgr }
@@ -251,7 +251,7 @@ fn void Generator.free(Generator* gen) {
     gen.refs.free();
 }
 
-public fn void generate(SourceMgr* sm, StringPool* astPool, const char* output_dir, component.List* comps, const char* filename) {
+public fn void generate(SourceMgr* sm, StringPool* astPool, const char* output_dir, ComponentList* comps, const char* filename) {
     Generator gen.init(sm, astPool);
 
     // for each file, store:  start, size, filename. Store line lengths

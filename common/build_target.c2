@@ -31,7 +31,7 @@ public type BackEndKind enum u8 {
     IR,
 }
 
-public type Kind enum u8 {
+public type TargetKind enum u8 {
     Image,
     Executable,
     StaticLibrary,
@@ -39,7 +39,7 @@ public type Kind enum u8 {
     SourceLibrary,
 }
 
-public fn bool has_dynamic(Kind k) {
+public fn bool has_dynamic(TargetKind k) {
     switch (k) {
     case Image:
         return false;
@@ -102,7 +102,7 @@ public type BuildTarget struct @(opaque) {
     u32 name_idx;       // index into auxPool
     SrcLoc loc;
     WarningFlags warnings;
-    Kind kind;
+    TargetKind kind;
 
     bool disable_asserts;
     bool no_libc;
@@ -113,7 +113,7 @@ public type BuildTarget struct @(opaque) {
     bool disabled;
 
     StringMap features;
-    List libs;
+    LibList libs;
     StringList exports;
     PluginList plugins;
 
@@ -121,7 +121,7 @@ public type BuildTarget struct @(opaque) {
     FileList asm_files;
 }
 
-public fn BuildTarget* BuildTarget.create(u32 name_idx, SrcLoc loc, Kind kind, StringPool* pool) {
+public fn BuildTarget* BuildTarget.create(u32 name_idx, SrcLoc loc, TargetKind kind, StringPool* pool) {
     BuildTarget* t = calloc(1, sizeof(BuildTarget));
     t.name_idx = name_idx;
     t.loc = loc;
@@ -175,7 +175,7 @@ public fn void BuildTarget.disableAsserts(BuildTarget* t) { t.disable_asserts = 
 
 public fn bool BuildTarget.hasAsserts(const BuildTarget* t) { return !t.disable_asserts; }
 
-public type Visitor fn void (void* arg, u32 name, Kind kind);
+public type Visitor fn void (void* arg, u32 name, TargetKind kind);
 
 public fn void BuildTarget.visitLibs(const BuildTarget* t, Visitor visitor, void* arg) {
     t.libs.visit(visitor, arg);
@@ -185,7 +185,7 @@ public fn bool BuildTarget.hasLib(const BuildTarget* t, u32 lib) {
     return t.libs.contains(lib);
 }
 
-public fn void BuildTarget.addLib(BuildTarget* t, u32 lib, Kind kind) {
+public fn void BuildTarget.addLib(BuildTarget* t, u32 lib, TargetKind kind) {
     t.libs.add(lib, kind);
 }
 
@@ -239,7 +239,7 @@ public fn void BuildTarget.addExport(BuildTarget* t, u32 export) {
 
 public fn const StringList* BuildTarget.getExports(const BuildTarget* t) { return &t.exports; }
 
-public fn Kind BuildTarget.getKind(const BuildTarget* t) { return t.kind; }
+public fn TargetKind BuildTarget.getKind(const BuildTarget* t) { return t.kind; }
 
 public fn bool BuildTarget.needsMain(const BuildTarget* t) {
     switch (t.kind) {

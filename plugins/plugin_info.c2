@@ -19,7 +19,7 @@ import ast;
 import ast_builder { Builder }
 import ast_context { Context }
 import build_target { BuildTarget }
-import component;
+import component { ComponentList }
 import console;
 import diagnostics { Diags }
 import file_utils;
@@ -36,7 +36,7 @@ public type Info struct {
     Diags* diags;    // no ownership
     BuildTarget* target;
 
-    component.List* components;
+    ComponentList* components;
     StringPool* astPool;
     StringPool* auxPool;
     Context* context;

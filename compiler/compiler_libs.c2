@@ -16,7 +16,7 @@
 module compiler;
 
 import ast;
-import build_target;
+import build_target { TargetKind }
 import component { Kind, Component }
 import component_sorter;
 import console;
@@ -34,7 +34,7 @@ import stdlib { exit, EXIT_FAILURE }
 import string { strerror }
 import libc_dirent { * }
 
-fn Kind convertKind(build_target.Kind kind) {
+fn Kind convertKind(TargetKind kind) {
     switch (kind) {
     case Image:
     case Executable:
@@ -57,7 +57,7 @@ fn void Compiler.createComponent(Compiler* c, u32 name, Kind kind) {
     if (name != c.c2_name) comp.addDep(c.c2_name);
 }
 
-fn void Compiler.onLib(void* arg, u32 name, build_target.Kind kind) {
+fn void Compiler.onLib(void* arg, u32 name, TargetKind kind) {
     Compiler* c = arg;
     if (kind == DynamicLibrary && c.is_image) {
         console.error("images cannot use dynamic libraries");

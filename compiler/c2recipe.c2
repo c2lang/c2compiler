@@ -15,7 +15,7 @@
 
 module c2recipe;
 
-import build_target { BuildTarget, PluginList }
+import build_target { BuildTarget, TargetKind, PluginList }
 import source_mgr { SourceMgr }
 import src_loc { SrcLoc }
 import string_pool { StringPool }
@@ -60,7 +60,7 @@ fn void Recipe.addPlugin(Recipe* r, u32 name, u32 options, SrcLoc loc) {
     r.plugins.add(name, options, loc);
 }
 
-public fn BuildTarget* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, build_target.Kind kind) {
+public fn BuildTarget* Recipe.addTarget(Recipe* r, u32 name, SrcLoc loc, TargetKind kind) {
     // search for duplicates
     for (u32 i = 0; i < r.num_targets; i++) {
         BuildTarget* t = r.targets[i];

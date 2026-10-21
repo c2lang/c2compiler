@@ -16,7 +16,7 @@
 module c2i_generator;
 
 import ast { * }
-import component { Component }
+import component { Component, ComponentList }
 import console;
 import file_utils;
 import string_buffer { StringBuf }
@@ -38,7 +38,7 @@ fn const char* Generator.idx2name(const Generator* gen, u32 name_idx) {
     return gen.astPool.idx2str(name_idx);
 }
 
-public fn void generate(StringPool* astPool, const char* output_dir, component.List* comps)
+public fn void generate(StringPool* astPool, const char* output_dir, ComponentList* comps)
 {
     Generator gen = {}
     gen.astPool = astPool;

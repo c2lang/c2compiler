@@ -18,7 +18,7 @@ module ir_generator;
 import ast { * }
 import array_init_sorter { Sorter }
 import build_file;
-import component { Component }
+import component { Component, ComponentList }
 import console;
 import constants { MaxScopes, MaxCallArgs }
 import file_utils;
@@ -580,7 +580,7 @@ fn void Generator.on_module(void* arg, Module* m) {
 // TODO only pass main component
 public fn void generate(const char* target,
                         const char* output_dir,
-                        component.List* comps,
+                        ComponentList* comps,
                         SourceMgr* sm,
                         const StringPool* astPool,
                         const target_info.Info* targetInfo,

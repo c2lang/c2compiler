@@ -257,26 +257,26 @@ public fn bool Component.hasDep(const Component* c, u32 name_idx) {
     return c.deps.contains_idx(name_idx);
 }
 
-public type List struct {
+public type ComponentList struct {
     Component** components;
     u32 count;
     u32 capacity;
 }
 
-public fn void List.init(List* l) {
+public fn void ComponentList.init(ComponentList* l) {
     l.components = nil;
     l.count = 0;
     l.resize(4);
 }
 
-public fn void List.free(List* l) {
+public fn void ComponentList.free(ComponentList* l) {
     for (u32 i=0; i<l.count; i++) {
         l.components[i].free();
     }
     free(l.components);
 }
 
-fn void List.resize(List* l, u32 capacity) {
+fn void ComponentList.resize(ComponentList* l, u32 capacity) {
     l.capacity = capacity;
     Component** comps2 = malloc(l.capacity * sizeof(Component*));
     if (l.count) {
@@ -286,26 +286,26 @@ fn void List.resize(List* l, u32 capacity) {
     l.components = comps2;
 }
 
-public fn void List.add(List* l, Component* c) {
+public fn void ComponentList.add(ComponentList* l, Component* c) {
     if (l.count == l.capacity) l.resize(l.capacity * 2);
 
     l.components[l.count] = c;
     l.count++;
 }
 
-public fn u32 List.size(const List* l) {
+public fn u32 ComponentList.size(const ComponentList* l) {
     return l.count;
 }
 
-public fn Component* List.get(const List* l, u32 idx) {
+public fn Component* ComponentList.get(const ComponentList* l, u32 idx) {
     return l.components[idx];
 }
 
-public fn Component** List.get_all(List* l) {
+public fn Component** ComponentList.get_all(ComponentList* l) {
     return l.components;
 }
 
-public fn Component* List.getLast(const List* l) {
+public fn Component* ComponentList.getLast(const ComponentList* l) {
     if (l.count == 0) return nil;
     return l.components[l.count-1];
 }
@@ -326,7 +326,7 @@ public fn const char* Component.getKindName(const Component* c) @(unused) {
     return c.kind.name;
 }
 
-public fn Component* List.find(const List* l, u32 name_idx) {
+public fn Component* ComponentList.find(const ComponentList* l, u32 name_idx) {
     for (u32 i = 0; i < l.count; i++) {
         if (l.components[i].name_idx == name_idx) return l.components[i];
     }

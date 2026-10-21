@@ -18,7 +18,7 @@ module c_generator;
 import ast;
 import build_file;
 import build_target;
-import component { Component }
+import component { Component, ComponentList }
 import file_utils { Max_path }
 import module_list { ModuleList }
 import string_buffer { StringBuf }
@@ -29,7 +29,7 @@ import string { pstrcpy, strcmp }
 
 fn void Generator.createMakefile(Generator* gen,
                                  const char* output_dir,
-                                 component.List* comps,
+                                 ComponentList* comps,
                                  StringList* asm_files,
                                  bool enable_asserts,
                                  u32 libc_name)

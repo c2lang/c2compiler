@@ -19,8 +19,8 @@ import ast { * }
 import c_prec { C_Prec }
 import diagnostics { Diags }
 import build_file;
-import build_target;
-import component { Component }
+import build_target { TargetKind }
+import component { Component, ComponentList }
 import constants;
 import console;
 import dep_finder;
@@ -66,7 +66,7 @@ type Generator struct {
     StringPool* auxPool;
     StringBuf* out;
     const char* target;
-    build_target.Kind target_kind;
+    TargetKind target_kind;
     const char* results_dir;
     const char* output_dir;     // output/<target>
     const char* cgen_dir;       // output/<target>/cgen
@@ -1220,7 +1220,7 @@ fn void Generator.write_files(Generator* gen) {
 fn void Generator.init(Generator* gen,
                        StringPool* astPool,
                        const char* target,
-                       build_target.Kind kind,
+                       TargetKind kind,
                        const char* results_dir,       // output/<target>/
                        const char* output_dir,        // output/<target>/cgen/
                        Diags* diags,
@@ -1274,13 +1274,13 @@ fn void Generator.write(Generator* gen, const StringBuf* buf, const char* output
 public fn void generate(StringPool* astPool,
                         StringPool* auxPool,
                         const char* target,
-                        build_target.Kind kind,
+                        TargetKind kind,
                         const char* output_dir,
                         Diags* diags,
                         SourceMgr* sm,
                         const build_file.Info* build_info,
                         const target_info.Info* targetInfo,
-                        component.List* comps,
+                        ComponentList* comps,
                         Decl* mainFunc,
                         StringList* asm_files,
                         bool enable_asserts,

@@ -20,33 +20,33 @@ import string { memset, memcpy }
 
 type Lib struct {
     u32 name; // into auxPool
-    Kind kind;
+    TargetKind kind;
     // TODO src_loc (of recipe/manifest?)
 }
 
-type List struct {
+type LibList struct {
     Lib* libs;
     u32 count;
     u32 capacity;
 }
 
-fn void List.init(List* l) {
-    memset(l, 0, sizeof(List));
+fn void LibList.init(LibList* l) {
+    memset(l, 0, sizeof(LibList));
     l.resize(2);
 }
 
-fn void List.free(List* l) {
+fn void LibList.free(LibList* l) {
     free(l.libs);
 }
 
-fn void List.visit(const List* l, Visitor visitor, void* arg) {
+fn void LibList.visit(const LibList* l, Visitor visitor, void* arg) {
     for (u32 i=0; i<l.count; i++) {
         const Lib* lib = &l.libs[i];
         visitor(arg, lib.name, lib.kind);
     }
 }
 
-fn void List.add(List* l, u32 name, Kind kind) {
+fn void LibList.add(LibList* l, u32 name, TargetKind kind) {
     // Note: we dont check for duplicates here
     if (l.count == l.capacity) l.resize(l.capacity * 2);
     l.libs[l.count].name = name;
@@ -54,17 +54,16 @@ fn void List.add(List* l, u32 name, Kind kind) {
     l.count++;
 }
 
-fn bool List.contains(const List* l, u32 name) {
+fn bool LibList.contains(const LibList* l, u32 name) {
     for (u32 i=0; i<l.count; i++) {
         if (l.libs[i].name == name) return true;
     }
     return false;
-
 }
 
-//public fn u32 List.size(const List* l) { return l.count; }
+//public fn u32 LibList.size(const LibList* l) { return l.count; }
 
-fn void List.resize(List* l, u32 cap) {
+fn void LibList.resize(LibList* l, u32 cap) {
     l.capacity = cap;
     Lib* libs2 = malloc(l.capacity * sizeof(Lib));
     if (l.libs) {

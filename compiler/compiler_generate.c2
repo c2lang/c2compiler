@@ -19,7 +19,7 @@ import c_generator;
 import c2i_generator;
 import component { Component }
 import console;
-import file_list;
+import file_list { File }
 import generator_utils;
 import ir_generator;
 import source_lib_generator;
@@ -64,7 +64,7 @@ fn void Compiler.generate(Compiler* c, const char* target_name, const char* outp
 
         StringList asm_files.init(c.auxPool);
         for (u32 i=0; i<c.target.numAsmFiles(); i++) {
-            const file_list.File* file = c.target.getAsmFile(i);
+            const File* file = c.target.getAsmFile(i);
             asm_files.add(file.name);
         }
 

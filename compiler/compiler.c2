@@ -20,13 +20,13 @@ import ast_builder { Builder }
 import ast_context { Context }
 import attr_handler { AttrHandler }
 import build_file;
-import build_target { BuildTarget }
+import build_target { BuildTarget, TargetKind }
 import c2_parser { Parser }
-import component { Component }
+import component { Component, ComponentList }
 import console;
 import constants;
 import diagnostics { Diags }
-import file_list;
+import file_list { File }
 import file_utils;
 import keywords;
 import module_analyser { Analyser }
@@ -131,7 +131,7 @@ type Compiler struct {
     Builder* builder;
     AttrHandler* attr_handler;
     ModuleList allmodules;
-    component.List components;
+    ComponentList components;
     keywords.Info kwinfo;
     Parser* parser;
     Analyser* analyser;
@@ -151,7 +151,7 @@ type Compiler struct {
     Component* current;
 }
 
-fn component.Kind target2compKind(build_target.Kind k) {
+fn component.Kind target2compKind(TargetKind k) {
     switch (k) {
     case Image:
         return Image;
@@ -339,7 +339,7 @@ fn void Compiler.build(Compiler* c,
     // add files to Component for manifest_writer
     if (c.mainComp.isSourceLib()) {
         for (u32 i = 0; i < c.target.numFiles(); i++) {
-            const file_list.File* f = c.target.getFile(i);
+            const File* f = c.target.getFile(i);
             c.mainComp.addFile(f.name, f.loc);
         }
     }
@@ -432,7 +432,7 @@ fn bool Compiler.parseMainComponent(Compiler* c) {
     console.debug("parsing %s", c.auxPool.idx2str(c.target.getNameIdx()));
     u64 t1_start = utils.now();
     for (u32 j=0; j<c.target.numFiles(); j++) {
-        const file_list.File* f = c.target.getFile(j);
+        const File* f = c.target.getFile(j);
         i32 file_id = c.sm.loadFile(c.auxPool.idx2str(f.name), f.loc);
         if (file_id == -1) return false;   // note: error already printed
         console.debug("parsing %s", c.sm.getFileName(file_id));

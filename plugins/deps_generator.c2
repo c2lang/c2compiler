@@ -17,7 +17,7 @@ module deps_generator;
 
 import ast { * }
 import ast_visitor { Visitor }
-import component { Component }
+import component { Component, ComponentList }
 import file_utils { File }
 import string_buffer { StringBuf }
 import string_list { StringList }
@@ -409,7 +409,7 @@ fn void Generator.create_basic(Generator* gen, Component* c) {
 #endif
 
 
-public fn void generate(const char* title, const char* output_dir, component.List* comps, StringPool* astPool, bool basic_mode) {
+public fn void generate(const char* title, const char* output_dir, ComponentList* comps, StringPool* astPool, bool basic_mode) {
     Generator gen = { nil }
 
 

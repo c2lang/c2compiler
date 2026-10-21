@@ -17,7 +17,7 @@ module c2c_main;
 
 import build_file;
 import build_file_parser;
-import build_target { PluginList, BuildTarget }
+import build_target { PluginList, BuildTarget, BackEndKind }
 import console;
 import c2recipe { Recipe }
 import compiler;
@@ -555,7 +555,7 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
         const char* basename = file_utils.get_basename(c.opts.files.get(0));
         const char* ext = file_utils.get_extension(basename);
         u32 target_idx = c.auxPool.add(basename, (u32)(ext - basename), true);
-        build_target.BackEndKind backend = C;
+        BackEndKind backend = C;
         if (c.opts.use_ir_backend) backend = IR;
         BuildTarget* t = c.recipe.addTarget(target_idx, 0, Executable);
         t.setBackEnd(backend);

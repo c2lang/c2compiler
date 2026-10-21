@@ -15,9 +15,8 @@
 
 module c2recipe;
 
-import build_target { BuildTarget }
+import build_target { BuildTarget, TargetKind }
 import color { Color }
-import ctype { isspace, isalnum }
 import file_list { FileList, File }
 import source_mgr { SourceMgr }
 import src_loc { SrcLoc }
@@ -26,6 +25,7 @@ import string_pool { StringPool }
 import warning_flags { WarningFlags }
 
 import csetjmp { JmpBufTag, setjmp, longjmp }
+import ctype { isspace, isalnum }
 import stdio { vsnprintf, fprintf, stderr }
 import stdlib { calloc, free }
 import string { memset, memcpy, strncmp, strlen }
@@ -659,7 +659,7 @@ fn void Parser.parseLibrary(Parser* p) {
     p.consumeToken();
     p.expect(Text, "expect lib type");
     u32 kind_name = p.token.value;
-    build_target.Kind kind = StaticLibrary;
+    TargetKind kind = StaticLibrary;
     switch (p.pool.idx2str(kind_name)) {
     case "static":
         kind = StaticLibrary;
@@ -763,7 +763,7 @@ fn void Parser.parseTarget(Parser* p) {
             p.expect(Text, "expect library type");
             const char* libtype = p.pool.idx2str(p.token.value);
             // TODO extract to common function
-            build_target.Kind kind = StaticLibrary;
+            TargetKind kind = StaticLibrary;
             switch (libtype) {
             case "static":
                 kind = StaticLibrary;
