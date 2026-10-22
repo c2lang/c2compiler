@@ -329,15 +329,15 @@ fn void Generator.emitTypePre(Generator* gen, StringBuf* out, QualType qt, bool 
     gen.emitCNameMod(out, decl, decl.getModule());
 }
 
-fn void Generator.emitTypePost(Generator* gen, StringBuf* out, QualType qt) {
+fn void Generator.emitTypePost(Generator* gen, StringBuf* out, QualType qt, bool struct_member = false) {
     if (!qt.isArray()) return;
     ArrayType* at = (ArrayType*)qt.getType();
 
     out.add1('[');
     if (at.hasSize()) out.print("%d", at.getSize());
-    else out.add("0");
+    else if (struct_member) out.add1('0');
     out.add1(']');
-    gen.emitTypePost(out, at.getElemType());
+    gen.emitTypePost(out, at.getElemType(), struct_member);
 }
 
 fn void Generator.genDeclIfNeeded(Generator* gen, Decl* d) {
@@ -414,7 +414,7 @@ fn void Generator.emitStructMember(Generator* gen, StringBuf* out, Decl* d, u32 
         gen.emitTypePre(out, qt, bitfield != nil);
         out.space();
         gen.emitName(out, d);
-        gen.emitTypePost(out, qt);
+        gen.emitTypePost(out, qt, true);
 
         if (bitfield) {
             out.add(" : ");

@@ -37,10 +37,12 @@ public type AsmStmt struct @(opaque) {
     u8 num_outputs;
     u8 num_inputs;
     u8[2] pad; // keep names in right place without other members
-    Expr*[] constraints;   // StringLiterals
-    Expr*[] exprs;
-    Expr*[] clobbers;  // StringLiterals
-    u32[] names;   // tail-allocated
+    union {
+        Expr*[] constraints;   // StringLiterals
+        Expr*[] exprs;
+        Expr*[] clobbers;  // StringLiterals
+        u32[] names;   // tail-allocated
+    }
 }
 
 public fn AsmStmt* AsmStmt.create(Context* c,

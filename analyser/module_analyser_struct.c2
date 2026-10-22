@@ -62,7 +62,7 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
             VarDecl* vd = (VarDecl*)member;
             // Note: dont push to stack, because can self-ref to StructType
             member.setCheckInProgress();
-            bool ok = ma.analyseStructMember(vd);
+            bool ok = ma.analyseStructMember(vd, d, i, count);
             if (!ok) continue;
 
 #if 0
@@ -134,7 +134,7 @@ fn void Analyser.analyseStructMembers(Analyser* ma, StructTypeDecl* d) {
     size_analyser.sizeOfStruct(d);
 }
 
-fn bool Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
+fn bool Analyser.analyseStructMember(Analyser* ma, VarDecl* v, StructTypeDecl* std, u32 i, u32 count) {
     TypeRef* ref = v.getTypeRef();
 
     if (ref.isIncrArray()) {
@@ -144,6 +144,23 @@ fn bool Analyser.analyseStructMember(Analyser* ma, VarDecl* v) {
 
     QualType res = ma.analyseTypeRef(ref, true);
     if (res.isInvalid()) return false;
+
+    // check that array size is specified
+    if (res.isArray()) {
+        ArrayType* at = res.getArrayType();
+        if (!at.hasSize() && !std.isUnion()) {
+            // A struct member without a size is called a flexible array.
+            // It must appear as the last member and cannot be the only named member of a struct.
+            if (count == 1) {
+                ma.error(ref.getLoc(), "flexible array member cannot be the single member in a struct");
+                return false;
+            }
+            if (i != count - 1) {
+                ma.error(ref.getLoc(), "flexible array member must be the last member in a struct");
+                return false;
+            }
+        }
+    }
 
     if (res.isVoid()) {
         ma.error(ref.getLoc(), "member has invalid type 'void'");

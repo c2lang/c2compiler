@@ -38,8 +38,10 @@ public type EnumTypeDecl struct @(opaque) {
     FunctionDecl** enum_functions;
     VarDecl** assoc_values;     // TODO make tail-allocated?
     VarDecl** assoc_decls;      // created during analysis
-    EnumConstantDecl*[] constants; // tail-allocated, for non-incremental enums
-    EnumConstantDecl**[] incr_constants; // tail-allocated, for incremental enums
+    union {
+        EnumConstantDecl*[] constants; // tail-allocated, for non-incremental enums
+        EnumConstantDecl**[] incr_constants; // tail-allocated, for incremental enums
+    }
 }
 
 public fn EnumTypeDecl* EnumTypeDecl.create(Context* c,

@@ -57,10 +57,11 @@ public type BuiltinExpr struct @(opaque) {
     // TODO use TypeRef (can contain Type or VarDecl ref)
     Expr* inner;
     u64 value;
-
-    OffsetOfData[] offset;     // tail-allocated, only for offsetof
-    ToContainerData[] container;   // tail-allocated, only for to_container
-    VaArgData[] va_arg_data;
+    union {
+        OffsetOfData[] offset;     // tail-allocated, only for offsetof
+        ToContainerData[] container;   // tail-allocated, only for to_container
+        VaArgData[] va_arg_data;
+    }
 }
 
 public fn BuiltinExpr* BuiltinExpr.create(Context* c, SrcLoc loc, u32 src_len, Expr* inner, BuiltinExprKind kind) {

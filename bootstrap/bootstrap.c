@@ -31919,15 +31919,13 @@ static void module_analyser_Analyser_analyseStructMember(module_analyser_Analyse
    }
    ast_QualType res = module_analyser_Analyser_analyseTypeRef(ma, ref, true);
    if (ast_QualType_isInvalid(res)) return;
-#if 0
    if (ast_QualType_isArray(res)) {
       ast_ArrayType* at = ast_QualType_getArrayType(res);
       if (!ast_ArrayType_hasSize(at)) {
-         module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "array size must be specified for struct/union members");
-         return;
+         //module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "array size must be specified for struct/union members");
+         //return;
       }
    }
-#endif
    if (ast_QualType_isVoid(res)) {
       module_analyser_Analyser_error(ma, ast_TypeRef_getLoc(ref), "member has invalid type 'void'");
       return;
@@ -33537,7 +33535,7 @@ static void c_generator_Generator_emitCNameMod(c_generator_Generator* gen, strin
 static void c_generator_Generator_emitDeclName(c_generator_Generator* gen, string_buffer_Buf* out, const ast_Decl* d);
 static void c_generator_Generator_emitEnumType(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d);
 static void c_generator_Generator_emitTypePre(c_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt, bool bitfield);
-static void c_generator_Generator_emitTypePost(c_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt);
+static void c_generator_Generator_emitTypePost(c_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt, bool struct_member);
 static void c_generator_Generator_genDeclIfNeeded(c_generator_Generator* gen, ast_Decl* d);
 static void c_generator_Generator_genTypeIfNeeded(c_generator_Generator* gen, ast_QualType qt, bool full);
 static void c_generator_Generator_emitStructMember(c_generator_Generator* gen, string_buffer_Buf* out, ast_Decl* d, u32 indent);
@@ -33894,15 +33892,14 @@ static void c_generator_Generator_emitTypePre(c_generator_Generator* gen, string
    c_generator_Generator_emitCNameMod(gen, out, decl, ast_Decl_getModule(decl));
 }
 
-static void c_generator_Generator_emitTypePost(c_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt)
+static void c_generator_Generator_emitTypePost(c_generator_Generator* gen, string_buffer_Buf* out, ast_QualType qt, bool struct_member)
 {
    if (!ast_QualType_isArray(qt)) return;
    ast_ArrayType* at = (ast_ArrayType*)ast_QualType_getType(qt);
    string_buffer_Buf_add1(out, '[');
-   if (ast_ArrayType_hasSize(at)) string_buffer_Buf_print(out, "%u", ast_ArrayType_getSize(at));
-   else string_buffer_Buf_add(out, "0");
+   if (ast_ArrayType_hasSize(at)) string_buffer_Buf_print(out, "%u", ast_ArrayType_getSize(at)); else if (struct_member) string_buffer_Buf_add1(out, '0');
    string_buffer_Buf_add1(out, ']');
-   c_generator_Generator_emitTypePost(gen, out, ast_ArrayType_getElemType(at));
+   c_generator_Generator_emitTypePost(gen, out, ast_ArrayType_getElemType(at), struct_member);
 }
 
 static void c_generator_Generator_genDeclIfNeeded(c_generator_Generator* gen, ast_Decl* d)
@@ -33981,7 +33978,7 @@ static void c_generator_Generator_emitStructMember(c_generator_Generator* gen, s
       c_generator_Generator_emitTypePre(gen, out, qt, bitfield != NULL);
       string_buffer_Buf_space(out);
       c_generator_Generator_emitName(gen, out, d);
-      c_generator_Generator_emitTypePost(gen, out, qt);
+      c_generator_Generator_emitTypePost(gen, out, qt, true);
       if (bitfield) {
          string_buffer_Buf_add(out, " : ");
          c_generator_Generator_emitCtv(gen, out, bitfield);
@@ -34114,7 +34111,7 @@ static void c_generator_Generator_emitAliasType(c_generator_Generator* gen, stri
    c_generator_Generator_emitTypePre(gen, out, qt, false);
    string_buffer_Buf_space(out);
    c_generator_Generator_emitCName(gen, out, d);
-   c_generator_Generator_emitTypePost(gen, out, qt);
+   c_generator_Generator_emitTypePost(gen, out, qt, false);
    string_buffer_Buf_add(out, ";\n");
 }
 
@@ -34158,7 +34155,7 @@ static void c_generator_Generator_emitGlobalVarDeclCommon(c_generator_Generator*
       c_generator_Generator_emitTypePre(gen, out, qt, false);
       string_buffer_Buf_space(out);
       c_generator_Generator_emitCName(gen, out, d);
-      c_generator_Generator_emitTypePost(gen, out, qt);
+      c_generator_Generator_emitTypePost(gen, out, qt, false);
    }
    ast_VarDecl* vd = (ast_VarDecl*)d;
    if (ast_VarDecl_hasAttrWeak(vd)) string_buffer_Buf_add(out, " __attribute__((weak))");
@@ -34992,7 +34989,7 @@ static void c_generator_Generator_emitExpr2(c_generator_Generator* gen, string_b
    }
    case ast_ExprKind_Type:
       c_generator_Generator_emitTypePre(gen, out, ast_Expr_getType(e), false);
-      c_generator_Generator_emitTypePost(gen, out, ast_Expr_getType(e));
+      c_generator_Generator_emitTypePost(gen, out, ast_Expr_getType(e), false);
       break;
    case ast_ExprKind_Call:
       if (gen->need_const_expr) c_generator_Generator_emitExprValue(gen, out, e);
@@ -35148,7 +35145,7 @@ static void c_generator_Generator_emitCast(c_generator_Generator* gen, string_bu
 {
    string_buffer_Buf_add1(out, '(');
    c_generator_Generator_emitTypePre(gen, out, qt, false);
-   if (full) c_generator_Generator_emitTypePost(gen, out, qt);
+   if (full) c_generator_Generator_emitTypePost(gen, out, qt, false);
    string_buffer_Buf_add1(out, ')');
 }
 
@@ -35605,7 +35602,7 @@ static void c_generator_Generator_emitVarDecl(c_generator_Generator* gen, ast_Va
    }
    string_buffer_Buf_space(out);
    c_generator_Generator_emitName(gen, out, d);
-   c_generator_Generator_emitTypePost(gen, out, ast_Decl_getType(d));
+   c_generator_Generator_emitTypePost(gen, out, ast_Decl_getType(d), false);
    ast_Decl_setGenerated(d);
    ast_Expr* ie = ast_VarDecl_getInit(vd);
    if (ie && emit_init) {

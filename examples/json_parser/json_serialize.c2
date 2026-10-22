@@ -33,7 +33,7 @@ type Header struct @(packed) {
     u32 names_size;
     u32 values_size;
     u32 nodes_size;
-    u8[0] data;
+    u8[] data;
 }
 
 fn bool Data.write(const Data* d, i32 fd) {

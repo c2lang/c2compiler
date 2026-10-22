@@ -1,13 +1,40 @@
 module test;
 
+public type A union {
+    i32[] a;
+    char[] b;
+}
+
+public type B struct {
+    i32 a;
+    i32[] b;
+}
+
+public type C struct {
+    i32 a;
+    union {
+        i32[] b;
+        char[] c;
+    }
+}
+
+public type D struct {
+    i32[] a; // @error{flexible array member cannot be the single member in a struct}
+}
+
+public type E struct {
+    i32[] a; // @error{flexible array member must be the last member in a struct}
+    i32 b;
+}
+
 type Struct struct {
-    i32[] a;    // ok
+    i32[] a;    // @error{flexible array member must be the last member in a struct}
     i32[0] b;   // @error{array size may not be zero}
 }
 
 type Struct2 struct {
-    i32[] a;
-    i32[] b;
+    i32[] a; // @error{flexible array member must be the last member in a struct}
+    i32[] b; // @error{flexible array member must be the last member in a struct}
     i32[] c;
 }
 
