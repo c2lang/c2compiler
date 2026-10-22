@@ -550,9 +550,9 @@ fn void Generator.emitAliasType(Generator* gen, StringBuf* out, Decl* d) {
     qt = qt.getCanonicalType(); // just generate final type
     out.add("typedef ");
     gen.emitTypePre(out, qt);
-    gen.emitTypePost(out, qt);
     out.space();
     gen.emitCName(out, d);
+    gen.emitTypePost(out, qt);
     out.add(";\n");
 }
 
