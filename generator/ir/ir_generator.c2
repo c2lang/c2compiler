@@ -29,7 +29,7 @@ import label_map { LabelMap }
 import source_mgr { SourceMgr }
 import string_buffer { StringBuf }
 import string_pool { StringPool }
-import target_info;
+import target_info { TargetInfo }
 import value_type { Value }
 
 import c_errno { errno }
@@ -60,14 +60,14 @@ type Generator struct {
     const char* target;
     const char* output_dir;
     SourceMgr* sm;
-    const target_info.Info* targetInfo;
+    const TargetInfo* targetInfo;
     FunctionDecl* cur_function;
 }
 
 fn void Generator.init(Generator* gen,
                        SourceMgr* sm,
                        const StringPool* names,
-                       const target_info.Info* targetInfo,
+                       const TargetInfo* targetInfo,
                        const build_file.Info* buildInfo,
                        const char* target,
                        const char* output_dir,
@@ -583,7 +583,7 @@ public fn void generate(const char* target,
                         ComponentList* comps,
                         SourceMgr* sm,
                         const StringPool* astPool,
-                        const target_info.Info* targetInfo,
+                        const TargetInfo* targetInfo,
                         const build_file.Info* buildInfo,   // can be nil
                         const Decl* mainFunc,
                         bool enable_asserts,

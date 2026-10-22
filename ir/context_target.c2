@@ -19,9 +19,9 @@ import arch_arm64;
 import arch_amd64;
 import arch_rv64;
 import ir_tools;
-import target_info;
+import target_info { TargetInfo }
 
-fn const ir_tools.Target* getArchTarget(const target_info.Info* info) {
+fn const ir_tools.Target* getArchTarget(const TargetInfo* info) {
     switch (info.arch) {
     case Unknown:
     case I686:

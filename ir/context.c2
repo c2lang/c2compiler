@@ -19,7 +19,7 @@ import index_list;
 import ir { * }
 import ir_tools { Target, Tools }
 import string_pool { StringPool }
-import target_info;
+import target_info { TargetInfo }
 
 import stdio {
     snprintf,
@@ -64,7 +64,7 @@ public type IrContext struct @(opaque) {
     Builder b;
 
     // used during conversion of IR -> ASM
-    const target_info.Info* target_info;
+    const TargetInfo* target_info;
     BuildInfo build_info;
     const Target* target; // no ownership
     Tools tools;
@@ -81,7 +81,7 @@ public type BuildInfo struct {
     const char* linkerflags;    // no ownership
 }
 
-public fn IrContext* IrContext.create(bool print, const target_info.Info* info, const BuildInfo* buildInfo, bool use_color) {
+public fn IrContext* IrContext.create(bool print, const TargetInfo* info, const BuildInfo* buildInfo, bool use_color) {
     IrContext* c = calloc(1, sizeof(IrContext));
     c.pool = StringPool.create(2*1024, 256);
     c.constants.init(128);
