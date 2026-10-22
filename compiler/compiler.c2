@@ -37,7 +37,7 @@ import string_buffer { StringBuf }
 import string_list { StringList }
 import string_pool { StringPool }
 import string_utils;
-import target_info;
+import target_info { TargetInfo }
 import utils;
 
 import c_errno { errno }
@@ -123,7 +123,7 @@ type Compiler struct {
     build_file.Info* build_info; // no ownership, can be nil
     BuildTarget* target; // no ownership
     const Options* opts;         // no ownership
-    target_info.Info targetInfo;
+    TargetInfo targetInfo;
     PluginHandler* pluginHandler; // no ownership
 
     Context* context;

@@ -81,7 +81,7 @@ public fn Abi str2abi(const char* name) {
     return Unknown;
 }
 
-public type Info struct {
+public type TargetInfo struct {
     Arch arch;
     System sys;
     Vendor vendor;
@@ -93,7 +93,7 @@ public type Info struct {
     char[80] triple;
 }
 
-public fn void Info.init(Info* info) {
+public fn void TargetInfo.init(TargetInfo* info) {
     switch (info.arch) {
     case Unknown:
         info.ptrWidth = 64;
@@ -124,15 +124,15 @@ public fn void Info.init(Info* info) {
              info.arch.name, info.vendor.name, info.sys.name, info.abi.name);
 }
 
-public fn const char* Info.str(const Info* info) {
+public fn const char* TargetInfo.str(const TargetInfo* info) {
     return info.triple;
 }
 
-public fn const char* Info.getSystemName(const Info* info) {
+public fn const char* TargetInfo.getSystemName(const TargetInfo* info) {
     return info.sys.name;
 }
 
-public fn const char* Info.getArchName(const Info* info) {
+public fn const char* TargetInfo.getArchName(const TargetInfo* info) {
     return info.arch.name;
 }
 
