@@ -19,7 +19,7 @@ public type C struct {
 }
 
 public type D struct {
-    i32[] a; // @error{flexible array member cannot be the single member in a struct}
+    i32[] a; // @error{flexible array member cannot be the only member in a struct}
 }
 
 public type E struct {

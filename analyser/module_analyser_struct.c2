@@ -152,7 +152,7 @@ fn bool Analyser.analyseStructMember(Analyser* ma, VarDecl* v, StructTypeDecl* s
             // A struct member without a size is called a flexible array.
             // It must appear as the last member and cannot be the only named member of a struct.
             if (count == 1) {
-                ma.error(ref.getLoc(), "flexible array member cannot be the single member in a struct");
+                ma.error(ref.getLoc(), "flexible array member cannot be the only member in a struct");
                 return false;
             }
             if (i != count - 1) {
