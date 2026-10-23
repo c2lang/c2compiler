@@ -40,7 +40,7 @@ import utils;
 import c_errno { errno }
 import stdio { snprintf }
 import stdlib { exit, EXIT_FAILURE, EXIT_SUCCESS, getenv }
-import string { memset, memchr, strlen, strerror }
+import string { memset, memchr, strlen, strerror, strdup }
 
 type Options struct {
     bool log_verbose;
@@ -520,6 +520,53 @@ fn void Context.init(Context* c, bool use_color) {
     c.recipe_id = -1;
 }
 
+fn bool find_compiler_dir(Pathname *dir) {
+    Pathname path;
+    if (!dir.init_cwd()) return false;
+    for (;;) {
+        if (path.init(dir.path, "libs/libc/stdio.c2i") && path.exists()) {
+            return true;
+        }
+        if (!dir.parent_dir()) {
+            return false;
+        }
+    }
+}
+
+fn char* get_plugin_dir(const char *progname) {
+    Pathname path;
+    const char* plugin_dir = getenv("C2_PLUGINDIR");
+    if (!plugin_dir) {
+        // Should try and locate the compiler and check for development version or installed version
+        Pathname comp_path;
+        if (find_compiler_dir(&comp_path)) {
+            path.init(comp_path.path, "output/plugins");
+            plugin_dir = path.path;
+        } else
+        if (path.init_abs("~/c2_plugins") && path.exists()) {
+            plugin_dir = path.path;
+        }
+    }
+    return plugin_dir ? strdup(plugin_dir) : nil;
+}
+
+fn char* get_libdir(const char *progname) {
+    Pathname path;
+    char *libdir = getenv("C2_LIBDIR");
+    if (!libdir) {
+        // Should try and locate the compiler and check for development version or installed version
+        Pathname comp_path;
+        if (find_compiler_dir(&comp_path)) {
+            path.init(comp_path.path, "libs");
+            libdir = path.path;
+        } else
+        if (path.init_abs("~/c2_libs") && path.exists()) {
+            libdir = path.path;
+        }
+    }
+    return libdir ? strdup(libdir) : nil;
+}
+
 fn void Context.handle_args(Context* c, i32 argc, char** argv) {
     ArgumentParser ap.init(argc, argv, "c2c", Usage_help);
     parse_arguments(&ap, &c.comp_opts, &c.opts);
@@ -528,6 +575,10 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
     console.setDebug(c.opts.log_verbose);
     console.setQuiet(c.opts.quiet_mode);
     console.setColor(c.opts.use_color);
+
+    // retrieve lib and plugin directories before changing current dir
+    char* plugin_dir = get_plugin_dir(argv[0]);
+    char* libdir = get_libdir(argv[0]);
 
     const char[] notFound = "c2c: error: cannot find project root directory\n"
                             "     c2c requires a %s file in the project root,\n"
@@ -623,16 +674,19 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
             }
         }
     }
-
     if (!have_plugin_dir) {
-        const char* plugin_dir = getenv("C2_PLUGINDIR");
-        if (plugin_dir) string_utils.split_paths(plugin_dir, c, on_plugin_dir);
-        else console.warn("environment variable C2_PLUGINDIR not set!");
+        if (plugin_dir) {
+            string_utils.split_paths(plugin_dir, c, on_plugin_dir);
+        } else {
+            console.warn("environment variable C2_PLUGINDIR not set!");
+        }
     }
-
-    c.comp_opts.libdir = getenv("C2_LIBDIR");
-    if (!c.comp_opts.libdir && !c.opts.build_file) {
-        console.warn("environment variable C2_LIBDIR not set!");
+    if (libdir) {
+        c.comp_opts.libdir = libdir;
+    } else {
+        if (!c.opts.build_file) {
+            console.warn("environment variable C2_LIBDIR not set!");
+        }
     }
 }
 
