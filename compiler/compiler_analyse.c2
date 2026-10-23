@@ -66,7 +66,7 @@ fn bool Compiler.analyse(Compiler* c) {
 
     // check unused
     const WarningFlags* warnings = c.target.getWarnings();
-    if (!warnings.no_unused) {
+    if (warnings.test(W_unused)) {
         c.mainComp.visitModules(Compiler.checkUnused, c);
     }
 
