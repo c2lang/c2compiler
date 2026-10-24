@@ -51,19 +51,3 @@ public fn bool endsWith(const char* text, const char* tail) @(unused) {
     usize tlen = strlen(tail);
     return (tlen <= len && !memcmp(text + len - tlen, tail, tlen));
 }
-
-// NOTE: path is not 0-terminated
-public type PathHandler fn void (void* arg, const char* path, u32 len);
-
-public fn void split_paths(const char* input, void* arg, PathHandler handler) @(unused) {
-    // split by ':'
-    const char* start = input;
-    for (const char* cp = start;; cp++) {
-        if (*cp == '\0' || *cp == ':') {
-            if (cp != start) handler(arg, start, (u32)(cp - start));
-            if (*cp == '\0') return;
-            start = cp + 1;
-        }
-    }
-}
-

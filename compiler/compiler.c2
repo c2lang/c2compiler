@@ -36,7 +36,7 @@ import source_mgr { SourceMgr }
 import string_buffer { StringBuf }
 import string_list { StringList }
 import string_pool { StringPool }
-import string_utils;
+import string_splitter { StringSplitter }
 import target_info { TargetInfo }
 import utils;
 
@@ -240,7 +240,7 @@ fn void Compiler.build(Compiler* c,
     }
 
     // add output dir as first libdir, unless --showlibs
-    if (!opts.show_libs) c.libdirs.add(c.auxPool.addStr(output_base, true));
+    if (!opts.show_libs) c.libdirs.addStr(output_base);
 
     if (c.build_info) {
         const StringList* dirs = c.build_info.getLibDirs();
@@ -259,8 +259,13 @@ fn void Compiler.build(Compiler* c,
             exit(EXIT_FAILURE);
         }
         if (c.opts.libdir) {
-            // parse into multiple, add each to string-pool
-            string_utils.split_paths(c.opts.libdir, c, Compiler.addLibPath);
+            // parse lib path, add each entry to libdirs
+            StringSplitter split.init(c.opts.libdir, ':');
+            while (split.next()) {
+                u32 path_idx = c.auxPool.add(split.cur, split.len, true);
+                //printf("PATH [%s]\n", c.auxPool.idx2str(path_idx));
+                c.libdirs.add(path_idx);
+            }
         }
         getNativeTarget(&c.targetInfo);
     }
@@ -522,12 +527,3 @@ fn void Compiler.addGlobalDefine(Compiler* c, const char* prefix, const char* ta
 
     c.addFeature(tmp);
 }
-
-// NOTE: paths are not 0-terminated
-fn void Compiler.addLibPath(void* arg, const char* path, u32 len) {
-    Compiler* c = arg;
-    u32 path_idx = c.auxPool.add(path, len, true);
-    //printf("PATH [%s]\n", c.auxPool.idx2str(path_idx));
-    c.libdirs.add(path_idx);
-}
-

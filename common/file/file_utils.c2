@@ -16,8 +16,8 @@
 module file_utils;
 
 import c_errno { errno, ENAMETOOLONG, EEXIST, EINVAL }
-import string { pstrcpy, strerror }
 import stdio { vsnprintf }
+import string { memcpy, pstrcpy, strerror, strlen }
 import sys_stat { Stat, stat, S_IFMT, S_IFREG, S_IFDIR, mkdir }
 import unistd { getcwd }
 
@@ -178,6 +178,31 @@ public fn bool Pathname.init_cwd(Pathname* file) @(unused) {
     }
     file.error = 0;
     return true;
+}
+
+public fn bool Pathname.init_len(Pathname* file, const char* s, u32 len) @(unused) {
+    if (len < countof(file.path)) {
+        memcpy(file.path, s, len);
+        file.path[len] = '\0';
+        file.error = 0;
+        return true;
+    }
+    memcpy(file.path, s, countof(file.path) - 1);
+    file.path[countof(file.path) - 1] = '\0';
+    file.error = ENAMETOOLONG;
+    return false;
+}
+
+public fn bool Pathname.append_name(Pathname* file, const char* name) @(unused) {
+    usize pos = strlen(file.path);
+    if (pos && file.path[pos - 1] != '/') {
+        if (pos < countof(file.path) - 1) file.path[pos] = '/';
+        pos++;
+    }
+    pos = pstrcpy(file.path + pos, countof(file.path) - pos, name);
+    if (pos < countof(file.path)) return true;
+    file.error = ENAMETOOLONG;
+    return false;
 }
 
 public fn void Pathname.deinit(Pathname* file) @(unused) {}

@@ -20,6 +20,7 @@ set common
     common/source_mgr.c2
     common/string_list.c2
     common/string_map.c2
+    common/string_splitter.c2
     common/string_utils.c2
     common/utf8.c2
     common/utils.c2

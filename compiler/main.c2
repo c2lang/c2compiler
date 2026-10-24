@@ -34,6 +34,7 @@ import source_mgr { SourceMgr, Location }
 import string_list { StringList }
 import string_buffer { StringBuf }
 import string_pool { StringPool }
+import string_splitter { StringSplitter }
 import string_utils;
 import utils;
 
@@ -626,20 +627,21 @@ fn void Context.handle_args(Context* c, i32 argc, char** argv) {
 
     if (!have_plugin_dir) {
         const char* plugin_dir = getenv("C2_PLUGINDIR");
-        if (plugin_dir) string_utils.split_paths(plugin_dir, c, on_plugin_dir);
-        else console.warn("environment variable C2_PLUGINDIR not set!");
+        if (plugin_dir) {
+            StringSplitter split.init(plugin_dir, ':');
+            while (split.next()) {
+                u32 path_idx = c.auxPool.add(split.cur, split.len, true);
+                c.plugins.addPath(path_idx);
+            }
+        } else {
+            console.warn("environment variable C2_PLUGINDIR not set!");
+        }
     }
 
     c.comp_opts.libdir = getenv("C2_LIBDIR");
     if (!c.comp_opts.libdir && !c.opts.build_file) {
         console.warn("environment variable C2_LIBDIR not set!");
     }
-}
-
-fn void on_plugin_dir(void* arg, const char* path, u32 size) {
-    Context* c = arg;
-    u32 path_idx = c.auxPool.add(path, size, true);
-    c.plugins.addPath(path_idx);
 }
 
 fn void Context.handle_plugins(Context* c) {

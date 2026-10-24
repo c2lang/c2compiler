@@ -1,0 +1,21 @@
+module string_splitter;
+
+public type StringSplitter struct {
+    const char* cur;
+    u32 len;
+    char sep;
+}
+
+public fn void StringSplitter.init(StringSplitter* sp, const char* s, char sep = ':') {
+    *sp = { .cur = s, .sep = sep }
+}
+
+public fn bool StringSplitter.next(StringSplitter* sp) {
+    if (!sp.cur) return false;
+    sp.cur += sp.len;
+    sp.len = 0;
+    while (*sp.cur == sp.sep) sp.cur++;
+    if (!*sp.cur) return false;
+    while (sp.cur[sp.len] && sp.cur[sp.len] != sp.sep) sp.len++;
+    return true;
+}

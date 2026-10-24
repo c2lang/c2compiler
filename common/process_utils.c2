@@ -16,6 +16,7 @@
 module process_utils;
 
 import file_utils { Pathname }
+import string_splitter { StringSplitter }
 
 import c_errno { errno, EINTR }
 import ctype { isspace }
@@ -23,7 +24,6 @@ import stdio { * }
 import stdlib { * }
 import string { * }
 import libc_fcntl { * }
-import sys_stat { Stat, stat }
 import unistd { * }
 
 const u32 MAX_ARG_LEN = 512;
@@ -121,7 +121,7 @@ public fn i32 run_args(const char* path, const char* cmd, const char* args, cons
         }
 
         Pathname self;
-        if (!find_bin(self.path, countof(self.path), cmd)) {
+        if (!find_bin(&self, cmd)) {
             child_error(error_pipe[1], "command not found: %s", cmd);
         }
 
@@ -205,23 +205,14 @@ fn u32 parseArgs(const char* args, char** argv, u32 maxargs, char* tmp, usize tm
 }
 
 /* Find file in one of the PATH directories */
-fn const char* find_bin(char* dest, usize size, const char* name) {
-    Stat statbuf;
-    const char* s = getenv("PATH");
-    if (!s) s = "";
-    for (;;) {
-        i32 len = 0;
-        while (s[len] && s[len] != ':')
-            len++;
-        i32 len2 = (len > 0 && s[len - 1] != '/');
-        i32 len3 = snprintf(dest, size, "%.*s%.*s%s", len, s, len2, "/", name);
-        if ((usize)len3 < size && stat(dest, &statbuf) == 0)
-            return dest;
-        s += len;
-        if (!*s++)
-            break;
+fn bool find_bin(Pathname *dest, const char* name) {
+    StringSplitter split.init(getenv("PATH"), ':');
+    while (split.next()) {
+        dest.init_len(split.cur, split.len);
+        if (dest.append_name(name) && dest.is_file())
+            return true;
     }
-    return nil;
+    return false;
 }
 
 public fn i32 run2(const char* path, const char* cmd, const char* args, char* output, usize output_size)
@@ -294,7 +285,7 @@ public fn i32 run2(const char* path, const char* cmd, const char* args, char* ou
         }
 
         Pathname self;
-        if (!find_bin(self.path, countof(self.path), cmd)) {
+        if (!find_bin(&self, cmd)) {
             child_error(error_pipe[1], "command not found: %s", cmd);
         }
 
