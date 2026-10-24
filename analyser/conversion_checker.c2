@@ -229,7 +229,7 @@ fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon
     case 2:     // incompatible
         return c.conversionError("invalid type conversion from");
     case 3:     // sign-conversion
-        if (c.checkIntConversion(lbuiltin)) {
+        if (c.checkIntConversion(lbuiltin, rbuiltin)) {
             c.builder.insertImplicitCast(IntegralCast, c.expr_ptr, c.lhs);
         } else {
             // TODO: is this just a warning?
@@ -237,7 +237,7 @@ fn bool Checker.checkBuiltins(Checker* c, const Type* lcanon, const Type* rcanon
         }
         return true;
     case 4:     // loss of integer-precision
-        if (c.checkIntConversion(lbuiltin)) {
+        if (c.checkIntConversion(lbuiltin, rbuiltin)) {
             c.builder.insertImplicitCast(IntegralCast, c.expr_ptr, c.lhs);
         } else {
             // TODO: is this just a warning?
@@ -321,11 +321,14 @@ fn bool Checker.checkPointer2Func(Checker* c, const Type* lcanon, const Type* rc
     return true;
 }
 
-fn bool Checker.checkIntConversion(Checker* c, const BuiltinType* bi) {
+fn bool Checker.checkIntConversion(Checker* c, const BuiltinType* bi, const BuiltinType* br) {
     Expr* e = *c.expr_ptr;
     u32 wl = bi.getWidth();
     ExprWidth w = getExprWidth(e);
     //printf("INT CONVERSION signed|width: %d %d -> %d %d\n", w.is_signed, w.width, bi.isSigned(), w.width);
+
+    // silently convert usize to u32, assuming object size fits in 32 bits
+    //if (br.getKind() == USize && bi.getKind() == UInt32) return true;
 
     if (w.width > wl) return false;
 
@@ -594,80 +597,90 @@ fn bool Checker.checkPointer2BuiltinCast(Checker* c, const Type* lcanon, const T
     return false;
 }
 
-// Just takes smallest type, dont promote both sides to i32
-// No need to adjust for 32-bit as ISize and USize are converted before the lookup
+// Just takes larger type, dont promote both sides to i32
+// No need to adjust for 32-bit as ISize and USize are converted before the lookup in 32-bit systems
 const BuiltinKind X = Bool;  // used as a placeholder for ISize/Usize entries
 const BuiltinKind[BuiltinKind][BuiltinKind] ConditionalOperatorResult = {
-    //  Bool    Char    Int8     Int16    Int32    Int64    UInt8    UInt16   UInt32   UInt64   Float32  Float64 ISize USize
+    // Bool     Char     Int8     Int16    Int32    Int64    UInt8    UInt16   UInt32   UInt64   Float32  Float64    ISize  USize
     // Bool ->
-    {  Bool,    Char,    Int8,    Int16,   Int32,   Int64,   UInt8,   UInt16,  UInt32,  UInt64,  Float32, Float64, X, X },
+    {  Bool,    Char,    Int8,    Int16,   Int32,   Int64,   UInt8,   UInt16,  UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // Char ->
-    {  Char,    Char,    Int16,   Int16,   Int32,   Int64,   UInt8,   UInt16,  UInt32,  UInt64,  Float32, Float64, X, X },
+    {  Char,    Char,    Int16,   Int16,   Int32,   Int64,   UInt8,   UInt16,  UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // Int8 ->
-    {  Int8,    Int16,   Int8,    Int16,   Int32,   Int64,   UInt8,   UInt16,  UInt32,  UInt64,  Float32, Float64, X, X },
+    {  Int8,    Int16,   Int8,    Int16,   Int32,   Int64,   UInt8,   UInt16,  UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // Int16 ->
-    {  Int16,   Int16,   Int16,   Int16,   Int32,   Int64,   Int16,   UInt16,  UInt32,  UInt64,  Float32, Float64, X, X },
+    {  Int16,   Int16,   Int16,   Int16,   Int32,   Int64,   Int16,   UInt16,  UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // Int32 ->
-    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64, X, X },
+    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // Int64 ->
-    {  Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   UInt64,  Float32, Float64, X, X },
+    {  Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   UInt64,  Float32, Float64,   Int64, USize },
     // UInt8 ->
-    {  UInt8,   UInt8,   UInt8,   Int16,   Int32,   Int64,   UInt8,   UInt16,  UInt32,  UInt64,  Float32, Float64, X, X },
+    {  UInt8,   UInt8,   UInt8,   Int16,   Int32,   Int64,   UInt8,   UInt16,  UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // UInt16 ->
-    {  UInt16,  UInt16,  UInt16,  UInt16,  Int32,   Int64,   UInt16,  UInt16,  UInt32,  UInt64,  Float32, Float64, X, X },
+    {  UInt16,  UInt16,  UInt16,  UInt16,  Int32,   Int64,   UInt16,  UInt16,  UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // UInt32 ->
-    {  UInt32,  UInt32,  UInt32,  UInt32,  UInt32,  Int64,   UInt32,  UInt32,  UInt32,  UInt64,  Float32, Float64, X, X },
+    {  UInt32,  UInt32,  UInt32,  UInt32,  UInt32,  Int64,   UInt32,  UInt32,  UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // UInt64 ->
-    {  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  Float32, Float64, X, X },
+    {  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  Float32, Float64,  UInt64, USize },
     // Flt32 ->
-    {  Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float64, X, X },
+    {  Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float64, Float32, Float32 },
     // Flt64 ->
-    {  Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, X, X },
-    // ISize ->
-    {  X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X, X },
-    // USize ->
-    {  X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X, X },
+    {  Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64 },
+    // ISize64 ->
+    {  Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   UInt64,  Float32, Float64,   Int64, USize },
+    // USize64 ->
+    {  USize,   USize,   USize,   USize,   USize,   USize,   USize,   USize,   USize,   USize,   Float32, Float64,   USize, USize },
 }
 
-public fn QualType get_common_arithmetic_type(BuiltinType* bi1, BuiltinType* bi2) {
-    return getBuiltinQT(ConditionalOperatorResult[bi2.getBaseKind()][bi1.getBaseKind()]);
+public fn QualType get_common_arithmetic_type(BuiltinType* bi1, BuiltinType* bi2, u32 word_size) {
+    if (word_size == 8) {
+        // preserve usize type as common arithmetic type on 64-bit systems
+        return getBuiltinQT(ConditionalOperatorResult[bi2.getKind()][bi1.getKind()]);
+    } else {
+        return getBuiltinQT(ConditionalOperatorResult[bi2.getBaseKind()][bi1.getBaseKind()]);
+    }
 }
 
 // See ISO/IEC 9899:201x 6.3.1
-// No need to adjust for 32-bit as ISize and USize are converted before the lookup
+// No need to adjust for 32-bit as ISize and USize are converted before the lookup on 32-bit systems
 const BuiltinKind[BuiltinKind][BuiltinKind] UsualArithmeticConversions = {
-    // Bool     Char     Int8     Int16    Int32    Int64    UInt8    UInt16   UInt32   UInt64   Float32  Float64  ISize USize
+    // Bool     Char     Int8     Int16    Int32    Int64    UInt8    UInt16   UInt32   UInt64   Float32  Float64    ISize  USize
     // Bool ->
-    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64, X, X },
+    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // Char ->
-    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64, X, X },
+    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // Int8 ->
-    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64, X, X },
+    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // Int16 ->
-    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64, X, X },
+    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // Int32 ->
-    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64, X, X },
+    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // Int64 ->
-    {  Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   UInt64,  Float32, Float64, X, X },
+    {  Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   UInt64,  Float32, Float64,   Int64, USize },
     // UInt8 ->
-    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64, X, X },
+    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // UInt16 ->
-    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64, X, X },
+    {  Int32,   Int32,   Int32,   Int32,   Int32,   Int64,   Int32,   Int32,   UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // UInt32 ->
-    {  UInt32,  UInt32,  UInt32,  UInt32,  UInt32,  Int64,   UInt32,  UInt32,  UInt32,  UInt64,  Float32, Float64, X, X },
+    {  UInt32,  UInt32,  UInt32,  UInt32,  UInt32,  Int64,   UInt32,  UInt32,  UInt32,  UInt64,  Float32, Float64,   Int64, USize },
     // UInt64 ->
-    {  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  Float32, Float64, X, X },
+    {  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  UInt64,  Float32, Float64,  UInt64, USize },
     // Flt32 ->
-    {  Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float64, X, X },
+    {  Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float32, Float64, Float32, Float32 },
     // Flt64 ->
-    {  Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, X, X },
+    {  Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64, Float64 },
     // ISize ->
-    {  X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X, X },
+    {  Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   Int64,   UInt64,  Float32, Float64,   Int64, USize },
     // USize ->
-    {  X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X,       X, X },
+    {  USize,   USize,   USize,   USize,   USize,   USize,   USize,   USize,   USize,   USize,   Float32, Float64,   USize, USize },
 }
 
-public fn QualType usual_arithmetic_conversion(const BuiltinType* bi1, const BuiltinType* bi2) {
-    return getBuiltinQT(UsualArithmeticConversions[bi1.getBaseKind()][bi2.getBaseKind()]);
+public fn QualType usual_arithmetic_conversion(const BuiltinType* bi1, const BuiltinType* bi2, u32 word_size) {
+    if (word_size == 8) {
+        // preserve usize type as common arithmetic type on 64-bit systems
+        return getBuiltinQT(UsualArithmeticConversions[bi1.getKind()][bi2.getKind()]);
+    } else {
+        return getBuiltinQT(UsualArithmeticConversions[bi1.getBaseKind()][bi2.getBaseKind()]);
+    }
 }
 
