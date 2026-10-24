@@ -1,0 +1,11 @@
+// @warnings{no-unused}
+module test;
+
+type X struct {
+    i32[32] a;
+}
+
+u32 total = sizeof(X) + 10;
+
+// This does not work because sizeof currently has u32 type
+//static_assert(sizeof(sizeof(usize)) == sizeof(usize));

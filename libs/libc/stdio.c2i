@@ -68,9 +68,9 @@ FILE[] stderr @(cname="(&__sF[2])", cdef="extern FILE __sF[]");
 //#define stdout ((struct __sFILE *)__stdout)
 //#define stderr ((struct __sFILE *)__stderr)
 struct FILE { long _stub; }
-FILE[] stdin  @(cname="__stdin",  cdef="extern FILE __stdin[]");
-FILE[] stdout @(cname="__stdout", cdef="extern FILE __stdout[]");
-FILE[] stderr @(cname="__stderr", cdef="extern FILE __stderr[]");
+FILE[] stdin  @(cname="__stdin");
+FILE[] stdout @(cname="__stdout");
+FILE[] stderr @(cname="__stderr");
 #endif
 #endif
 

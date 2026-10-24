@@ -27,6 +27,7 @@ type CallExprBits struct {
     u32 calls_static_sf : 1;
     u32 is_template_call : 1;
     u32 is_noreturn : 1;
+    u32 is_variadic : 1;
     u32 num_args : 8;
 }
 static_assert(4, sizeof(CallExprBits));
@@ -149,6 +150,14 @@ public fn void CallExpr.setNoreturn(CallExpr* e) {
 
 public fn bool CallExpr.isNoreturn(const CallExpr* e) {
     return e.base.base.callExprBits.is_noreturn;
+}
+
+public fn void CallExpr.setVariadic(CallExpr* e) {
+    e.base.base.callExprBits.is_variadic = 1;
+}
+
+public fn bool CallExpr.isVariadic(const CallExpr* e) {
+    return e.base.base.callExprBits.is_variadic;
 }
 
 public fn SrcLoc CallExpr.getStartLoc(const CallExpr* e) {

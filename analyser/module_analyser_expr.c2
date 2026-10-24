@@ -321,7 +321,7 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
     assert(lcanon.isValid());
     assert(rcanon.isValid());
 
-    e.setEffect(cond.getLHS().hasEffect() & cond.getRHS().hasEffect());
+    e.setEffect(cond.getLHS().hasEffect() && cond.getRHS().hasEffect());
 
     // TODO: refine this by selecting branch depending on cond value
     if (cond.getCond().isCtv()) e.combineConstantFlags(cond.getLHS(), cond.getRHS());

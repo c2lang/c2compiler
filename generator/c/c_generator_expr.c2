@@ -415,7 +415,7 @@ fn void Generator.emitBuiltinExpr(Generator* gen, StringBuf* out, Expr* e) {
     switch (b.getKind()) {
     case Sizeof:
         if (b.useLiteral()) {
-            out.add("sizeof(");
+            out.add("(u32)sizeof(");
             gen.emitExpr(out, b.getInner());
             out.rparen();
         } else {
@@ -425,7 +425,7 @@ fn void Generator.emitBuiltinExpr(Generator* gen, StringBuf* out, Expr* e) {
     case Countof:
         if (b.useLiteral()) {
             // Note: ARRAY_SIZE looks nicer, but doesn't work for countof(Enum)
-            out.add("ARRAY_SIZE(");
+            out.add("(u32)ARRAY_SIZE(");
             gen.emitExpr(out, b.getInner());
             out.rparen();
         } else {
@@ -434,7 +434,7 @@ fn void Generator.emitBuiltinExpr(Generator* gen, StringBuf* out, Expr* e) {
         break;
     case OffsetOf:
         if (b.useLiteral()) {
-            out.add("offsetof("); // type, member
+            out.add("(u32)offsetof("); // type, member
             gen.emitExpr(out, b.getInner());
             out.add(", ");
             gen.emitExpr(out, b.getOffsetOfMember());

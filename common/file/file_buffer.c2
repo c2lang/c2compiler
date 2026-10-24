@@ -69,7 +69,7 @@ public fn bool FileBuffer.loadFile(FileBuffer* file, const char* filename) @(unu
 }
 
 public fn bool FileBuffer.loadStream(FileBuffer* file, FILE* fp) @(unused) {
-    char *data = nil;
+    u8 *data = nil;
     usize size = 0;
 
     file.deinit();
@@ -97,7 +97,7 @@ public fn bool FileBuffer.loadStream(FileBuffer* file, FILE* fp) @(unused) {
         }
     } else {
         // stream is not seekable
-        char[4096] buf;
+        u8[4096] buf;
         while (!file.error) {
             usize nread = fread(buf, 1, countof(buf), fp);
             if (ferror(fp)) {
@@ -133,7 +133,7 @@ public fn bool FileBuffer.loadStream(FileBuffer* file, FILE* fp) @(unused) {
 }
 
 public fn bool FileBuffer.loadHandle(FileBuffer* file, i32 fd) @(unused) {
-    char *data = nil;
+    u8 *data = nil;
     usize size = 0;
 
     file.deinit();
@@ -141,7 +141,7 @@ public fn bool FileBuffer.loadHandle(FileBuffer* file, i32 fd) @(unused) {
     i64 file_length = lseek(fd, 0, SEEK_END);
     lseek(fd, 0, SEEK_SET);
     if (file_length < 0) {   // file descriptor is not seekable
-        char[4096] buf;
+        u8[4096] buf;
         isize nread;
         while ((nread = read(fd, buf, sizeof(buf))) != 0) {
             if (nread < 0) {

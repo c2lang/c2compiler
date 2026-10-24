@@ -40,8 +40,9 @@ fn QualType Analyser.analyseBuiltin(Analyser* ma, Expr** e_ptr) {
     return QualType_Invalid;
 }
 
-fn QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
-    Expr* inner = e.getInner();
+fn QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* b) {
+    Expr* e = (Expr*)b;
+    Expr* inner = b.getInner();
     assert(inner);
 
     bool savedPublic = ma.usedPublic;
@@ -86,13 +87,15 @@ fn QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* e) {
     if (qt.isInvalid()) return QualType_Invalid;
 
     size_analyser.TypeSize info = size_analyser.sizeOfType(qt);
-    e.setValue(info.size);
-    return getBuiltinQT(UInt32);
+    b.setValue(info.size);
+    qt = getBuiltinQT(UInt32);
+    e.setType(qt);
+    return qt;
 }
 
 fn QualType Analyser.analyseCountof(Analyser* ma, BuiltinExpr* b) {
     // could be EnumType or array VarDecl
-
+    Expr* e = (Expr*)b;
     Expr* inner = b.getInner();
     bool savedPublic = ma.usedPublic;
     ma.usedPublic = false;
@@ -107,13 +110,17 @@ fn QualType Analyser.analyseCountof(Analyser* ma, BuiltinExpr* b) {
             return QualType_Invalid;
         }
         b.setValue(at.getSize());
-        return getBuiltinQT(UInt32);
+        qt = getBuiltinQT(UInt32);
+        e.setType(qt);
+        return qt;
     }
     const EnumType* et = qt.getEnumTypeOrNil();
     if (et) {
         const EnumTypeDecl* etd = et.getDecl();
         b.setValue(etd.getNumConstants());
-        return getBuiltinQT(UInt32);
+        qt = getBuiltinQT(UInt32);
+        e.setType(qt);
+        return qt;
     }
     ma.error(inner.getLoc(), "countof can only be used on arrays/enums");
     return QualType_Invalid;

@@ -82,6 +82,7 @@ fn QualType Analyser.analyseCallExpr(Analyser* ma, Expr** e_ptr) {
     }
 
     if (fd.hasAttrNoReturn()) call.setNoreturn();
+    if (fd.isVariadic()) call.setVariadic();
 
     if (fd.isTemplate()) {
         if (!call.getTemplateArg()) {

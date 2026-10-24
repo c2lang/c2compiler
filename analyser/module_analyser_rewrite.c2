@@ -191,6 +191,7 @@ fn void Analyser.rewriteCall(Analyser* ma, Expr** e_ptr, FunctionDecl* fd, Expr*
     } else {
         call2 = ma.builder.actOnCallExpr(0, 0, func2, args.getExprs(), args.size());
     }
+    if (call.isVariadic()) ((CallExpr*)call2).setVariadic();
     // Note: the type is only set on AlternateExpr by analyseExpr()
     e.setType(fd.getRType());
     call2.copyFlags(e);

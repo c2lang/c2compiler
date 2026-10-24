@@ -40,6 +40,7 @@ $(C2C)~: output/bootstrap/bootstrap $(C2C_DEPS)
 	@echo "---- running c2c (optimized with plugins$(C2FLAGS)) ----"
 	@output/c2c/c2c_fast $(C2FLAGS) --quiet
 	@./install_plugins.sh
+	@./tools/show_diags.sh output/*/cgen/build.log
 
 output/bootstrap/bootstrap:
 	@$(MAKE) -B -C bootstrap $(MAKEFLAGS)
@@ -93,13 +94,11 @@ alloc_trace: $(C2C) output/c2c_trace/c2c_trace
 	C2_TRACE="min=10;min2=1;mode=3;name=stdlib.malloc,stdlib.calloc,stdlib.realloc;fd=2" output/c2c_trace/c2c_trace --quiet c2c -o c2c_alloc --test 2> output/c2c/calls
 	cat output/c2c/calls
 
-errors:
-	@( grep -H 'error:' `find output -name build.log` | sed -E 's/build.log://' ; true )
+show-diags:;	@./tools/show_diags.sh output/*/cgen/build.log
+show-errors:;	@./tools/show_errors.sh output/*/cgen/build.log
+show-warnings:;	@./tools/show_warnings.sh output/*/cgen/build.log
 
-warnings:
-	@( grep -H '[[]-W' `find output -name build.log` | sed -E 's/build.log://' ; true )
-
-rebuild: clean all test trace_calls
+rebuild: clean all test trace_calls examples
 
 .PHONY: examples
 examples: c2c

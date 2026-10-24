@@ -675,7 +675,7 @@ fn bool Generator.emitExprValue(Generator* gen, StringBuf* out, Expr* e) {
         gen.diags.errorRange(e.getLoc(), e.getRange(), "%s", result.error_msg);
         return false;
     }
-    out.add(result.str());
+    out.add(result.str());  // XXX parsed literal type may differ from e.getType()
     return true;
 }
 
@@ -1373,7 +1373,7 @@ public fn void build(const char* output_dir)
 #endif
 
     Pathname dir;
-    if (!dir.init(output_dir, Dir, "/")) {
+    if (!dir.init(output_dir, Dir)) {
         console.error("cannot launch C compilation: %s", strerror(errno));
         return;
     }
@@ -1473,10 +1473,16 @@ fn void Generator.emit_external_header(Generator* gen, StringBuf* out) {
                 typedef signed int ssize_t;
                 typedef unsigned int size_t;
                 ```);
-    } else {
+    } else
+    if (gen.targetInfo.longWidth == 32) {
         out.add(```c
                 typedef signed long long ssize_t;
                 typedef unsigned long long size_t;
+                ```);
+    } else {
+        out.add(```c
+                typedef signed long ssize_t;
+                typedef unsigned long size_t;
                 ```);
     }
     out.add(C_defines);

@@ -556,6 +556,10 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
         if (inner.isComparison()) {
             BinaryOperator* b = (BinaryOperator*)inner;
             Expr* lhs = b.getLHS();
+            if (lhs.isImplicitCast() && ((ImplicitCastExpr*)lhs).getKind() == IntegralCast) {
+                // remove implicit cast to common type if any
+                lhs = ((ImplicitCastExpr*)lhs).getInner();
+            }
             const char* fmt1 = lhs.isLiteral() ? nil : get_type_format(lhs);
             if (fmt1) {
                 out.add(", ");
@@ -564,6 +568,10 @@ fn void Analyser.analyseAssertStmt(Analyser* ma, Stmt* s) {
                 args[num_args++] = lhs;
             }
             Expr* rhs = b.getRHS();
+            if (rhs.isImplicitCast() && ((ImplicitCastExpr*)rhs).getKind() == IntegralCast) {
+                // remove implicit cast to common type if any
+                rhs = ((ImplicitCastExpr*)rhs).getInner();
+            }
             const char* fmt2 = rhs.isLiteral() ? nil : get_type_format(rhs);
             if (fmt2) {
                 out.add(", ");
