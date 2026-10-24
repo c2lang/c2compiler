@@ -26,13 +26,16 @@ fn i32 vdprintf(i32 hd, const char* format, va_list ap) {
             case 'd':
                 char[24] buf;
                 char *p = buf + countof(buf);
-                i32 n = va_arg(ap, i32);
+                i32 i = va_arg(ap, i32);
+                u32 n = (u32)i;
+                if (i < 0) n = -n;
                 *--p = '\0';
                 for (;;) {
                     *--p = n % 10 + '0';
                     if ((n /= 10) == 0)
                         break;
                 }
+                if (i < 0) *--p = '-';
                 len += dputs(hd, p);
                 continue;
             case 'c':

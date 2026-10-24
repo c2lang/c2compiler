@@ -85,6 +85,7 @@ public type Analyser struct @(opaque) {
 
     u32 global_initializer;
     u32 need_const_expr;
+    u32 word_size;
 }
 
 public fn Analyser* Analyser.create(Diags* diags,
@@ -93,7 +94,7 @@ public fn Analyser* Analyser.create(Diags* diags,
                                     Builder* builder,
                                     ModuleList* allmodules,
                                     const WarningFlags* warnings,
-                                    bool has_asserts, bool check_only)
+                                    bool has_asserts, bool check_only, u32 word_size)
 {
     Analyser* ma = calloc(1, sizeof(Analyser));
     ma.diags = diags;
@@ -105,6 +106,7 @@ public fn Analyser* Analyser.create(Diags* diags,
     ma.warnings = warnings;
     ma.has_asserts = has_asserts;
     ma.check_only = check_only;
+    ma.word_size = word_size;
     /* zero initialization is OK for ma.labels and ma.init_checkers */
     ma.min_idx = astPool.addStr("min", true);
     ma.max_idx = astPool.addStr("max", true);

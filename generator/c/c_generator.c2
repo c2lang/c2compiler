@@ -87,6 +87,7 @@ type Generator struct {
     // set during generation
     bool cur_external;  // whether current component is external
     u32 need_const_expr;
+    u32 need_exact_type;
     FunctionDecl* cur_function; // needed for assert
     const char* mod_name; // set per module
     StringList imports;  // used to filter out duplicate imports (from different ASTs)

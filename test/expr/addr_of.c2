@@ -53,7 +53,7 @@ fn void test5() {
 }
 
 fn void test6() {
-    i32 a = &sizeof(i32); // @error{cannot take the address of an rvalue of type 'u32'}
+    i32 a = &sizeof(i32); // @error{cannot take the address of an rvalue of type 'usize'}
 }
 
 fn void test7() {
