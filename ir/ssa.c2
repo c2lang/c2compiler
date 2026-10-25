@@ -355,6 +355,16 @@ fn void Tools.removeUnused(Tools* t) {
     }
 }
 
+// replace a temp that is a copy of a small constant by that constant
+fn void propagateCopy(const Instr* all, Ref* r, bool* changed) {
+    if (!r.isTemp()) return;
+    const Instr* def = &all[r.value];
+    if (!def.isCopy() || def.hasRegister()) return;
+    if (def.args[0].kind != RefKind.Value) return;
+    *r = def.args[0];
+    *changed = true;
+}
+
 fn bool Tools.propagateConstants(Tools* t) {
     FunctionInfo* fi = t.fi;
     // return true if changed
@@ -364,7 +374,13 @@ fn bool Tools.propagateConstants(Tools* t) {
     Instr* all = fi.instructions.get(0);
     for (u32 i=0; i<fi.instructions.getCount(); i++) {
         Instr* instr = &all[i];
+        if (instr.isReturn()) {
+            propagateCopy(all, &instr.args[0], &changed);
+            continue;
+        }
         if (!instr.isArithmetic()) continue;
+        propagateCopy(all, &instr.args[0], &changed);
+        propagateCopy(all, &instr.args[1], &changed);
 
         // also move constant to RHS in case of add / mul
         if (!instr.args[0].isConstant()) continue;

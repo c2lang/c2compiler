@@ -113,7 +113,13 @@ public fn void Tools.convert_fn(Tools* t) {
     t.removeNone();
     t.print_func("after remove none");
 
-    if (t.propagateConstants()) t.print_func("after propagate constants");
+    if (t.propagateConstants()) {
+        t.print_func("after propagate constants");
+        // constants may have made more temps unused
+        t.removeUnused();
+        t.removeNone();
+        t.print_func("after remove unused constants");
+    }
 
     // lower ABI (calling convention)
     t.inserter.clear(fi.blocks.getCount(), fi.instructions.getCount());
