@@ -1,0 +1,363 @@
+/* Copyright 2022-2026 Bas van den Berg
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module ir_context;
+
+import constants { MaxCallArgs }
+import ir { * }
+
+import stdlib { calloc, malloc, free }
+
+// Function inlining. Runs on the freshly generated IR of all functions, before
+// any of them is converted to SSA (so it still has slots, params stored to slots, etc).
+//
+// Only simple functions are inlined: a single block, no calls (leaf), no control
+// flow, limited size. Calls to such functions are replaced by a copy of the body:
+// - Param instructions are replaced by the argument refs of the call
+// - the Ret value replaces the result of the call
+// - Slots of the callee get new slot numbers in the caller
+//
+// Since Temp refs are instruction indices, the instruction list of the caller is
+// rebuilt and all Temp refs, slots and block ranges are updated.
+
+const u32 MaxInlineInstrs = 40; // excluding params, comments and the return
+
+// instructions that are copied into the caller
+fn bool isEmitted(const Instr* i) {
+    switch (i.getKind()) {
+    case None:
+    case Comment:
+    case Param:
+    case Ret:
+        return false;
+    default:
+        break;
+    }
+    return true;
+}
+
+fn bool isInlineCandidate(const FunctionInfo* fi) {
+    if (fi.blocks.getCount() != 1) return false;
+    if (fi.num_args == 0) return false;
+
+    const Block* b = fi.blocks.get(0);
+    u32 start = b.instr.start;
+    u32 count = b.instr.count;
+    if (start + count > fi.instructions.getCount()) return false;
+
+    u32 num_params = 0;
+    u32 num_allocs = 0;
+    u32 body = 0;
+    bool has_ret = false;
+
+    for (u32 i = 0; i < count; i++) {
+        const Instr* ii = fi.instructions.get(start + i);
+        if (has_ret && !ii.isNone() && !ii.isComment()) return false;
+
+        switch (ii.getKind()) {
+        case None:
+        case Comment:
+            break;
+        case Param:
+            num_params++;
+            break;
+        case Ret:
+            has_ret = true;
+            const Ref* r = &ii.args[0];
+            switch (r.getKind()) {
+            case None:
+            case Value:
+            case Integer:
+            case Float:
+            case Double:
+                break;
+            case Temp:
+                // value must be calculated inside the body
+                if ((u32)r.value < start || (u32)r.value >= start + count) return false;
+                const Instr* v = fi.instructions.get((u32)r.value);
+                if (v.isNone() || v.isPseudo()) return false;
+                break;
+            default:
+                return false;
+            }
+            break;
+        case Alloc1...Alloc8:
+            num_allocs++;
+            body++;
+            break;
+        case Add...Store8:
+            body++;
+            break;
+        default:
+            // calls, jumps, switch, phi, etc
+            return false;
+        }
+    }
+    if (!has_ret) return false;
+    if (body > MaxInlineInstrs) return false;
+    if (num_params + 1 != fi.num_args) return false;
+    if (num_allocs != fi.num_slots) return false;
+    return true;
+}
+
+// number of instructions copied into the caller before callee instruction 'idx'
+fn u32 emittedBefore(const FunctionInfo* fi, u32 idx) {
+    const Block* b = fi.blocks.get(0);
+    u32 n = 0;
+    for (u32 i = b.instr.start; i < idx; i++) {
+        if (isEmitted(fi.instructions.get(i))) n++;
+    }
+    return n;
+}
+
+fn Ref remap(Ref r, const Ref* map) {
+    if (r.isTemp()) return map[(u32)r.value];
+    return r;
+}
+
+type Inliner struct {
+    InstrList out;
+    u32* order;     // provisional slot number of each Alloc, in output order
+    u32 num_order;
+}
+
+// Appends the body of callee to inl.out. args are the (already converted) call arguments.
+fn void Inliner.appendBody(Inliner* inl, const FunctionInfo* callee, const Ref* args, u32 slot_base) {
+    const Block* b = callee.blocks.get(0);
+    u32 start = b.instr.start;
+    u32 count = b.instr.count;
+
+    Ref* temps = calloc(callee.instructions.getCount(), sizeof(Ref));
+    u32 pos = inl.out.getCount();
+    u32 param_idx = 0;
+    u32 alloc_idx = 0;
+
+    for (u32 i = 0; i < count; i++) {
+        const Instr* src = callee.instructions.get(start + i);
+        if (src.isParam()) {
+            temps[start + i] = args[param_idx++];
+            continue;
+        }
+        if (!isEmitted(src)) continue;
+
+        Ref ref.init(RefKind.Temp, pos++);
+        temps[start + i] = ref;
+
+        Instr* dst = inl.out.add();
+        dst.copy(src);
+        switch (src.getKind()) {
+        case Alloc1...Alloc8:
+            inl.order[inl.num_order++] = slot_base + alloc_idx;
+            alloc_idx++;
+            break;
+        default:
+            break;
+        }
+        for (u32 j = 0; j < 2; j++) {
+            Ref* r = &dst.args[j];
+            if (r.isTemp()) {
+                *r = temps[(u32)r.value];
+            } else if (r.isSlot()) {
+                r.value += (i32)slot_base;
+            }
+        }
+    }
+    free(temps);
+}
+
+// returns true if any call was inlined
+fn bool IrContext.inlineCalls(IrContext* c, FunctionInfo* fi) {
+    u32 num_instr = fi.instructions.getCount();
+    const Instr* instrs = fi.instructions.get(0);
+
+    // 1: find calls to inline
+    const FunctionInfo** callees = nil;
+    u8* skip = nil;     // Arg instructions belonging to inlined calls
+    u32 total_slots = fi.num_slots;
+    u32 num_allocs = 0;
+    bool found = false;
+
+    for (u32 k = 0; k < num_instr; k++) {
+        const Instr* ii = &instrs[k];
+        switch (ii.getKind()) {
+        case Alloc1...Alloc8:
+            num_allocs++;
+            continue;
+        case Call:
+            break;
+        default:
+            continue;
+        }
+        if (ii.args[0].getKind() != RefKind.Symbol) continue;
+        if (ii.args[1].getKind() != RefKind.CallNumArgs) continue;
+
+        const Symbol* s = c.symbols.get((u32)ii.args[0].value);
+        if (!s.is_function) continue;
+        const FunctionInfo* callee = s.f.info;
+        if (!callee || callee == fi) continue;
+
+        u32 num_args = (u32)ii.args[1].value;
+        if (num_args + 1 != callee.num_args) continue;
+        if (k < num_args) continue;
+        bool args_ok = true;
+        for (u32 a = k - num_args; a < k; a++) {
+            if (instrs[a].getKind() != InstrKind.Arg) args_ok = false;
+        }
+        if (!args_ok) continue;
+        if (total_slots + callee.num_slots > SlotMax) continue;
+        if (!isInlineCandidate(callee)) continue;
+
+        if (!found) {
+            callees = calloc(num_instr, sizeof(FunctionInfo*));
+            skip = calloc(num_instr, sizeof(u8));
+            found = true;
+        }
+        callees[k] = callee;
+        for (u32 a = k - num_args; a < k; a++) skip[a] = 1;
+        total_slots += callee.num_slots;
+    }
+    if (!found) return false;
+    if (num_allocs != fi.num_slots) {   // slots cannot be renumbered reliably
+        free(callees);
+        free(skip);
+        return false;
+    }
+
+    // 2: determine new position of all instructions, and what replaces Temp refs
+    //    (instructions in range [start[i], start[i+1]) replace instruction i)
+    u32* start = malloc((num_instr + 1) * sizeof(u32));
+    Ref* map = calloc(num_instr, sizeof(Ref));
+    u32 pos = 0;
+    for (u32 k = 0; k < num_instr; k++) {
+        start[k] = pos;
+        if (skip[k]) continue;
+        const FunctionInfo* callee = callees[k];
+        if (callee) {
+            const Block* cb = callee.blocks.get(0);
+            u32 size = emittedBefore(callee, cb.instr.start + cb.instr.count);
+            const Instr* ret = nil;
+            for (u32 i = cb.instr.start; i < cb.instr.start + cb.instr.count; i++) {
+                const Instr* ci = callee.instructions.get(i);
+                if (ci.isReturn()) ret = ci;
+            }
+            Ref r = ret.args[0];
+            if (r.isTemp()) {
+                map[k].init(RefKind.Temp, pos + emittedBefore(callee, (u32)r.value));
+            } else {
+                map[k] = r;
+            }
+            pos += size;
+        } else {
+            map[k].init(RefKind.Temp, pos);
+            pos++;
+        }
+    }
+    start[num_instr] = pos;
+
+    // 3: build new instruction list
+    Inliner inl;
+    inl.out.init(pos);
+    inl.order = malloc(total_slots * sizeof(u32));
+    inl.num_order = 0;
+
+    u32 slot_base = fi.num_slots;
+    u32 caller_slot = 0;
+    for (u32 k = 0; k < num_instr; k++) {
+        if (skip[k]) continue;
+        const FunctionInfo* callee = callees[k];
+        if (callee) {
+            u32 num_args = (u32)instrs[k].args[1].value;
+            Ref[MaxCallArgs] args;
+            for (u32 a = 0; a < num_args; a++) {
+                args[a] = remap(instrs[k - num_args + a].args[0], map);
+            }
+            inl.appendBody(callee, args, slot_base);
+            slot_base += callee.num_slots;
+            continue;
+        }
+        Instr* dst = inl.out.add();
+        dst.copy(&instrs[k]);
+        if (dst.getKind() >= InstrKind.Alloc1 && dst.getKind() <= InstrKind.Alloc8) {
+            inl.order[inl.num_order++] = caller_slot++;
+        }
+        for (u32 j = 0; j < 2; j++) dst.args[j] = remap(dst.args[j], map);
+    }
+    assert(inl.out.getCount() == pos);
+
+    // 4: renumber slots (Allocs must be numbered in instruction order)
+    u32* slot_map = malloc(total_slots * sizeof(u32));
+    for (u32 i = 0; i < inl.num_order; i++) slot_map[inl.order[i]] = i;
+    Instr* new_instrs = inl.out.get(0);
+    for (u32 k = 0; k < pos; k++) {
+        Instr* ii = &new_instrs[k];
+        for (u32 j = 0; j < 2; j++) {
+            Ref* r = &ii.args[j];
+            if (r.isSlot()) r.value = (i32)slot_map[(u32)r.value];
+        }
+    }
+    fi.num_slots = (u16)inl.num_order;
+
+    // 5: update phi clauses and block ranges
+    for (u32 i = 0; i < fi.phis.getCount(); i++) {
+        PhiClause* pc = fi.phis.get(i);
+        pc.dest_idx = (u32)map[pc.dest_idx].value;
+        pc.ref = remap(pc.ref, map);
+    }
+    for (u32 i = 0; i < fi.blocks.getCount(); i++) {
+        Block* b = fi.blocks.get(i);
+        u32 s = b.instr.start;
+        u32 e = s + b.instr.count;
+        b.setInstructions(start[s], start[e] - start[s]);
+    }
+
+    fi.instructions.swap(&inl.out);
+    inl.out.free();
+
+    free(slot_map);
+    free(inl.order);
+    free(map);
+    free(start);
+    free(skip);
+    free(callees);
+    return true;
+}
+
+// depth-first, so callees are added to order before their callers (cycles are cut)
+fn void IrContext.visitCallees(IrContext* c, SymbolId id, u8* visited, u32* order, u32* num_order) {
+    if (visited[id]) return;
+    visited[id] = 1;
+
+    const Symbol* s = c.symbols.get(id);
+    const FunctionInfo* fi = s.f.info;
+    u32 num_instr = fi.instructions.getCount();
+    for (u32 k = 0; k < num_instr; k++) {
+        const Instr* ii = fi.instructions.get(k);
+        if (!ii.isCall()) continue;
+        if (ii.args[0].getKind() != RefKind.Symbol) continue;
+
+        SymbolId callee = (SymbolId)ii.args[0].value;
+        const Symbol* cs = c.symbols.get(callee);
+        if (cs.is_function && cs.f.info) c.visitCallees(callee, visited, order, num_order);
+    }
+    order[(*num_order)++] = id;
+}
+
+// Fills order with all generated functions, callees before callers
+fn void IrContext.sortBottomUp(IrContext* c, const u32* ids, u32 count, u32* order) {
+    u8* visited = calloc(c.symbols.getCount(), sizeof(u8));
+    u32 num_order = 0;
+    for (u32 i = 0; i < count; i++) c.visitCallees(ids[i], visited, order, &num_order);
+    free(visited);
+}
