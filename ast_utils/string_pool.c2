@@ -62,7 +62,7 @@ public type StringPool struct @(opaque) {
     u32 entry_capacity;
     HashEntry* entries; // contain hash table followed by collision lists
 }
-static_assert(64, sizeof(StringPool));
+static_assert(sizeof(void*) == 4 ? 56 : 64, sizeof(StringPool));
 
 public fn StringPool* StringPool.create(u32 data_capacity, u32 hash_size) {
     StringPool* p = calloc(1, sizeof(StringPool));

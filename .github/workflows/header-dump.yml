@@ -23,20 +23,20 @@ jobs:
       - name: header dump
         run: make globals
 
-#  linux-32bits:
-#    name: Linux 32-bits
-#    runs-on: ubuntu-latest
-#    defaults:
-#      run:
-#        shell: alpine.sh {0}
-#    steps:
-#      - uses: actions/checkout@v6
-#      - uses: jirutka/setup-alpine@v1
-#        with:
-#          arch: x86
-#          packages: "build-base make"
-#      - name: header dump
-#        run: make globals CONFIG_32BIT=y
+  linux-32bits:
+    name: Linux 32-bits
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: alpine.sh {0}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: jirutka/setup-alpine@v1
+        with:
+          arch: x86
+          packages: "build-base make"
+      - name: header dump
+        run: make globals CONFIG_32BIT=y
 
   macos:
     name: macOS
