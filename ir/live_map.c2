@@ -53,7 +53,11 @@ public type LiveMap struct @(opaque) {
     u32 max_elems;   // only used for dump
     Arena[NumArenas] arenas;
 }
+#if ARCH_32BIT
+static_assert(160, sizeof(LiveMap));
+#else
 static_assert(168, sizeof(LiveMap));
+#endif
 
 // Note: map size must be a multiple of largest arena size (so 256)
 public fn LiveMap* LiveMap.create(u32 max_elems, u16 num_variables) {
