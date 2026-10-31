@@ -41,6 +41,7 @@ type WorkQueue struct {
     u32 count;
     u32 capacity;
     ir.FunctionInfo** funcs;
+    bool lower;     // false: run optimize_fn, true: run lower_fn
 }
 
 fn WorkQueue* WorkQueue.init(WorkQueue* q) {
@@ -48,6 +49,11 @@ fn WorkQueue* WorkQueue.init(WorkQueue* q) {
     q.lock.init(nil);
     q.resize(64);
     return q;
+}
+
+fn void WorkQueue.reset(WorkQueue* q, bool lower) {
+    q.idx = 0;
+    q.lower = lower;
 }
 
 fn void WorkQueue.free(WorkQueue* q) {
@@ -91,6 +97,7 @@ type QueueWorker struct {
     Pthread thread;
 
     ir_tools.Tools tools;
+    bool lower;
 }
 
 fn void* worker_main(void* arg) {
@@ -103,7 +110,8 @@ fn void* worker_main(void* arg) {
         w.tools.fi = fi;
         w.tools.arg2 = nil;
         // TODO set w.tools.arg2 t Symbol* (only used during printing)
-        w.tools.convert_fn();
+        if (w.lower) w.tools.lower_fn();
+        else w.tools.optimize_fn();
     }
     return nil;
 }
@@ -112,6 +120,7 @@ fn QueueWorker* QueueWorker.create(u32 idx, WorkQueue* q, IrContext* c) {
     QueueWorker* w = calloc(1, sizeof(QueueWorker));
     w.index = idx;
     w.queue = q;
+    w.lower = q.lower;
     w.tools.init(c.target, c, nil); // never print during multi-threading
     pthread.create(&w.thread, nil, worker_main, w);
     return w;

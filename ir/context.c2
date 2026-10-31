@@ -132,36 +132,58 @@ public fn void IrContext.free(IrContext* c) {
     free(c);
 }
 
-// Inlines simple functions, then converts all functions (generated IR -> ASM)
+// Optimizes all functions (to SSA + constant propagation), inlines simple functions,
+// then lowers all functions (ABI -> ASM)
 public fn void IrContext.convert_functions(IrContext* c) {
     u32 count = c.functions.getCount();
     const u32* ids = c.functions.getFrom(0);
+    Tools* t = &c.tools;
+
+    // phase 1: optimize
+    if (c.single_thread) {
+        for (u32 i = 0; i < count; i++) {
+            Symbol* symbol = c.symbols.get(ids[i]);
+            t.arg2 = symbol;
+            t.fi = symbol.f.info;
+            t.optimize_fn();
+        }
+    } else {
+        for (u32 i = 0; i < count; i++) {
+            Symbol* symbol = c.symbols.get(ids[i]);
+            c.queue.add(symbol.f.info);
+        }
+        c.queue.reset(false);
+        c.queue.run(c, 0);
+    }
 
     // inline callees before callers, so functions that become simple after inlining can be inlined as well
     u32* order = malloc(count * sizeof(u32));
     c.sortBottomUp(ids, count, order);
-    Tools* t = &c.tools;
     for (u32 i = 0; i < count; i++) {
         Symbol* symbol = c.symbols.get(order[i]);
         if (c.inlineCalls(symbol.f.info)) {
             t.arg2 = symbol;
             t.fi = symbol.f.info;
             t.print_func("after inlining");
+            // inlined constants/params may have made code removable
+            t.cleanup_fn();
+            t.print_func("after inline cleanup");
         }
     }
     free(order);
 
-    for (u32 i = 0; i < count; i++) {
-        Symbol* symbol = c.symbols.get(ids[i]);
-        if (c.single_thread) {
+    // phase 2: lower
+    if (c.single_thread) {
+        for (u32 i = 0; i < count; i++) {
+            Symbol* symbol = c.symbols.get(ids[i]);
             t.arg2 = symbol;
             t.fi = symbol.f.info;
-            t.convert_fn();
-        } else {
-            c.queue.add(symbol.f.info);
+            t.lower_fn();
         }
+    } else {
+        c.queue.reset(true);
+        c.queue.run(c, 0);
     }
-    if (!c.single_thread) c.queue.run(c, 0);
 }
 
 fn void print_function(const void* arg1, const void* arg2, const FunctionInfo* fi, const char* label) {

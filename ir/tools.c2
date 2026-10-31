@@ -80,7 +80,8 @@ public fn void Tools.print_func(const Tools* t, const char* label) {
     if (t.print) t.print(t.arg1, t.arg2, t.fi, label);
 }
 
-public fn void Tools.convert_fn(Tools* t) {
+// Phase 1: generated IR -> optimized SSA (target independent)
+public fn void Tools.optimize_fn(Tools* t) {
     FunctionInfo* fi = t.fi;
     if (fi.blocks.getCount() > 1) t.print_func("after reorder");
     //t.generate_graphviz(fi);
@@ -113,6 +114,11 @@ public fn void Tools.convert_fn(Tools* t) {
     t.removeNone();
     t.print_func("after remove none");
 
+    t.propagate_and_clean();
+}
+
+// propagate constants, then remove what became unused
+fn void Tools.propagate_and_clean(Tools* t) {
     if (t.propagateConstants()) {
         t.print_func("after propagate constants");
         // constants may have made more temps unused
@@ -120,6 +126,19 @@ public fn void Tools.convert_fn(Tools* t) {
         t.removeNone();
         t.print_func("after remove unused constants");
     }
+}
+
+// Cleanup of an optimized function after inlining
+public fn void Tools.cleanup_fn(Tools* t) {
+    t.eliminateCopies();
+    t.removeUnused();
+    t.removeNone();
+    t.propagate_and_clean();
+}
+
+// Phase 2: SSA -> target code (ABI lowering, instruction selection, register allocation)
+public fn void Tools.lower_fn(Tools* t) {
+    FunctionInfo* fi = t.fi;
 
     // lower ABI (calling convention)
     t.inserter.clear(fi.blocks.getCount(), fi.instructions.getCount());

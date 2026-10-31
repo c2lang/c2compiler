@@ -20,17 +20,16 @@ import ir { * }
 
 import stdlib { calloc, malloc, free }
 
-// Function inlining. Runs on the freshly generated IR of all functions, before
-// any of them is converted to SSA (so it still has slots, params stored to slots, etc).
+// Function inlining. Runs after the functions have been optimized (SSA + constant propagation),
+// but before ABI lowering.
 //
 // Only simple functions are inlined: a single block, no calls (leaf), no control
 // flow, limited size. Calls to such functions are replaced by a copy of the body:
 // - Param instructions are replaced by the argument refs of the call
 // - the Ret value replaces the result of the call
-// - Slots of the callee get new slot numbers in the caller
 //
 // Since Temp refs are instruction indices, the instruction list of the caller is
-// rebuilt and all Temp refs, slots and block ranges are updated.
+// rebuilt and all Temp refs, phi clauses and block ranges are updated.
 
 const u32 MaxInlineInstrs = 40; // excluding params, comments and the return
 
@@ -108,7 +107,8 @@ fn bool isInlineCandidate(const FunctionInfo* fi) {
     if (!has_ret) return false;
     if (body > MaxInlineInstrs) return false;
     if (num_params + 1 != fi.num_args) return false;
-    if (num_allocs != fi.num_slots) return false;
+    // slots surviving SSA would need renumbering in the caller (fi.num_slots is stale after SSA)
+    if (num_allocs != 0) return false;
     return true;
 }
 
@@ -129,12 +129,10 @@ fn Ref remap(Ref r, const Ref* map) {
 
 type Inliner struct {
     InstrList out;
-    u32* order;     // provisional slot number of each Alloc, in output order
-    u32 num_order;
 }
 
 // Appends the body of callee to inl.out. args are the (already converted) call arguments.
-fn void Inliner.appendBody(Inliner* inl, const FunctionInfo* callee, const Ref* args, u32 slot_base) {
+fn void Inliner.appendBody(Inliner* inl, const FunctionInfo* callee, const Ref* args) {
     const Block* b = callee.blocks.get(0);
     u32 start = b.instr.start;
     u32 count = b.instr.count;
@@ -142,7 +140,6 @@ fn void Inliner.appendBody(Inliner* inl, const FunctionInfo* callee, const Ref* 
     Ref* temps = calloc(callee.instructions.getCount(), sizeof(Ref));
     u32 pos = inl.out.getCount();
     u32 param_idx = 0;
-    u32 alloc_idx = 0;
 
     for (u32 i = 0; i < count; i++) {
         const Instr* src = callee.instructions.get(start + i);
@@ -157,20 +154,10 @@ fn void Inliner.appendBody(Inliner* inl, const FunctionInfo* callee, const Ref* 
 
         Instr* dst = inl.out.add();
         dst.copy(src);
-        switch (src.getKind()) {
-        case Alloc1...Alloc8:
-            inl.order[inl.num_order++] = slot_base + alloc_idx;
-            alloc_idx++;
-            break;
-        default:
-            break;
-        }
         for (u32 j = 0; j < 2; j++) {
             Ref* r = &dst.args[j];
             if (r.isTemp()) {
                 *r = temps[(u32)r.value];
-            } else if (r.isSlot()) {
-                r.value += (i32)slot_base;
             }
         }
     }
@@ -185,16 +172,11 @@ fn bool IrContext.inlineCalls(IrContext* c, FunctionInfo* fi) {
     // 1: find calls to inline
     const FunctionInfo** callees = nil;
     u8* skip = nil;     // Arg instructions belonging to inlined calls
-    u32 total_slots = fi.num_slots;
-    u32 num_allocs = 0;
     bool found = false;
 
     for (u32 k = 0; k < num_instr; k++) {
         const Instr* ii = &instrs[k];
         switch (ii.getKind()) {
-        case Alloc1...Alloc8:
-            num_allocs++;
-            continue;
         case Call:
             break;
         default:
@@ -216,7 +198,6 @@ fn bool IrContext.inlineCalls(IrContext* c, FunctionInfo* fi) {
             if (instrs[a].getKind() != InstrKind.Arg) args_ok = false;
         }
         if (!args_ok) continue;
-        if (total_slots + callee.num_slots > SlotMax) continue;
         if (!isInlineCandidate(callee)) continue;
 
         if (!found) {
@@ -226,14 +207,8 @@ fn bool IrContext.inlineCalls(IrContext* c, FunctionInfo* fi) {
         }
         callees[k] = callee;
         for (u32 a = k - num_args; a < k; a++) skip[a] = 1;
-        total_slots += callee.num_slots;
     }
     if (!found) return false;
-    if (num_allocs != fi.num_slots) {   // slots cannot be renumbered reliably
-        free(callees);
-        free(skip);
-        return false;
-    }
 
     // 2: determine new position of all instructions, and what replaces Temp refs
     //    (instructions in range [start[i], start[i+1]) replace instruction i)
@@ -269,11 +244,7 @@ fn bool IrContext.inlineCalls(IrContext* c, FunctionInfo* fi) {
     // 3: build new instruction list
     Inliner inl;
     inl.out.init(pos);
-    inl.order = malloc(total_slots * sizeof(u32));
-    inl.num_order = 0;
 
-    u32 slot_base = fi.num_slots;
-    u32 caller_slot = 0;
     for (u32 k = 0; k < num_instr; k++) {
         if (skip[k]) continue;
         const FunctionInfo* callee = callees[k];
@@ -283,31 +254,14 @@ fn bool IrContext.inlineCalls(IrContext* c, FunctionInfo* fi) {
             for (u32 a = 0; a < num_args; a++) {
                 args[a] = remap(instrs[k - num_args + a].args[0], map);
             }
-            inl.appendBody(callee, args, slot_base);
-            slot_base += callee.num_slots;
+            inl.appendBody(callee, args);
             continue;
         }
         Instr* dst = inl.out.add();
         dst.copy(&instrs[k]);
-        if (dst.getKind() >= InstrKind.Alloc1 && dst.getKind() <= InstrKind.Alloc8) {
-            inl.order[inl.num_order++] = caller_slot++;
-        }
         for (u32 j = 0; j < 2; j++) dst.args[j] = remap(dst.args[j], map);
     }
     assert(inl.out.getCount() == pos);
-
-    // 4: renumber slots (Allocs must be numbered in instruction order)
-    u32* slot_map = malloc(total_slots * sizeof(u32));
-    for (u32 i = 0; i < inl.num_order; i++) slot_map[inl.order[i]] = i;
-    Instr* new_instrs = inl.out.get(0);
-    for (u32 k = 0; k < pos; k++) {
-        Instr* ii = &new_instrs[k];
-        for (u32 j = 0; j < 2; j++) {
-            Ref* r = &ii.args[j];
-            if (r.isSlot()) r.value = (i32)slot_map[(u32)r.value];
-        }
-    }
-    fi.num_slots = (u16)inl.num_order;
 
     // 5: update phi clauses and block ranges
     for (u32 i = 0; i < fi.phis.getCount(); i++) {
@@ -325,8 +279,6 @@ fn bool IrContext.inlineCalls(IrContext* c, FunctionInfo* fi) {
     fi.instructions.swap(&inl.out);
     inl.out.free();
 
-    free(slot_map);
-    free(inl.order);
     free(map);
     free(start);
     free(skip);
