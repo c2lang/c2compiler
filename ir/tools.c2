@@ -119,9 +119,18 @@ public fn void Tools.optimize_fn(Tools* t) {
 
 // propagate constants, then remove what became unused
 fn void Tools.propagate_and_clean(Tools* t) {
-    if (t.propagateConstants()) {
+    // folding can enable more folding, so repeat until nothing changes
+    for (u32 round = 0; round < 8; round++) {
+        bool changed = t.propagateConstants();
+        if (t.foldBranches()) {
+            changed = true;
+            t.print_func("after fold branches");
+        }
+        if (t.mergeBlocks()) changed = true;
+        if (!changed) break;
         t.print_func("after propagate constants");
         // constants may have made more temps unused
+        t.eliminateCopies();
         t.removeUnused();
         t.removeNone();
         t.print_func("after remove unused constants");

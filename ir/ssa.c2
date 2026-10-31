@@ -20,6 +20,7 @@ import ir_rev_list { RevIndex }
 import ir_slot_collector { ReadSlotAccess }
 
 import stdio { printf }
+import stdlib { calloc, malloc, free }
 
 fn void Tools.createSSA(Tools* t) {
     FunctionInfo* fi = t.fi;
@@ -378,7 +379,9 @@ fn bool Tools.propagateConstants(Tools* t) {
             propagateCopy(all, &instr.args[0], &changed);
             continue;
         }
-        if (!instr.isArithmetic()) continue;
+        InstrKind kind = instr.getKind();
+        bool is_compare = kind >= InstrKind.CmpNe && kind <= InstrKind.CmpGe;
+        if (!instr.isArithmetic() && !is_compare) continue;
         propagateCopy(all, &instr.args[0], &changed);
         propagateCopy(all, &instr.args[1], &changed);
 
@@ -395,6 +398,12 @@ fn bool Tools.propagateConstants(Tools* t) {
             case Add: result = lhs + rhs; break;
             case Sub: result = lhs - rhs; break;
             case Mul: result = lhs * rhs; break;
+            case CmpNe: result = lhs != rhs; break;
+            case CmpEq: result = lhs == rhs; break;
+            case CmpLt: result = lhs < rhs; break;
+            case CmpGt: result = lhs > rhs; break;
+            case CmpLe: result = lhs <= rhs; break;
+            case CmpGe: result = lhs >= rhs; break;
             default:
                 continue;
             }
@@ -420,6 +429,269 @@ fn bool Tools.propagateConstants(Tools* t) {
     }
 
     return changed;
+}
+
+// Folds conditional branches with a constant condition into a jump.
+// Blocks that became unreachable are removed (and their phi clauses), phis that are left with
+// a single clause become copies.
+fn bool Tools.foldBranches(Tools* t) {
+    FunctionInfo* fi = t.fi;
+    u32 nb = fi.blocks.getCount();
+    Instr* all = fi.instructions.get(0);
+    bool changed = false;
+
+    for (u32 bi = 0; bi < nb; bi++) {
+        Block* b = fi.blocks.get(bi);
+        if (b.end_with_switch) return false;    // switches are lowered before, so should not happen
+        u32 first = b.instr.start;
+        u32 idx = first + b.instr.count;
+        // find the last real instruction
+        while (idx > first) {
+            idx--;
+            if (!all[idx].isNone() && !all[idx].isComment()) break;
+        }
+        if (b.instr.count == 0) continue;
+
+        Instr* last = &all[idx];
+        if (last.getKind() != InstrKind.JmpIf) continue;
+
+        Ref cond = last.args[0];
+        bool dummy = false;
+        propagateCopy(all, &cond, &dummy);
+        if (cond.kind != RefKind.Value) continue;
+
+        BlockId taken = (cond.value != 0) ? b.dests[0] : b.dests[1];
+        Ref jref.init(RefKind.JmpDest, 0);
+        last.init1(InstrKind.Jmp, jref);
+        b.setDest(taken, 0);
+        changed = true;
+    }
+    if (!changed) return false;
+
+    // find reachable blocks
+    u8* reach = calloc(nb, sizeof(u8));
+    u32* stack = malloc(nb * sizeof(u32));
+    u32 sp = 0;
+    stack[sp++] = 0;
+    reach[0] = 1;
+    while (sp != 0) {
+        const Block* b = fi.blocks.get(stack[--sp]);
+        for (u32 d = 0; d < 2; d++) {
+            u32 dest = b.dests[d];
+            if (dest == 0) continue;
+            if (reach[dest]) continue;
+            reach[dest] = 1;
+            stack[sp++] = dest;
+        }
+    }
+    free(stack);
+
+    u32* new_id = malloc(nb * sizeof(u32));
+    u32 count = 0;
+    for (u32 bi = 0; bi < nb; bi++) {
+        if (reach[bi]) {
+            new_id[bi] = count++;
+            continue;
+        }
+        // clear instructions of unreachable blocks
+        const Block* b = fi.blocks.get(bi);
+        for (u32 i = 0; i < b.instr.count; i++) all[b.instr.start + i].clear();
+    }
+
+    // update phis (block ids are still the old ones), then rebuild the clause list
+    // so no clauses of removed phis are left
+    u32 total = fi.phis.getCount();
+    PhiClause* clauses = calloc(total + 1, sizeof(PhiClause));
+    u32 num_clauses = 0;
+    for (u32 bi = 0; bi < nb; bi++) {
+        if (!reach[bi]) continue;
+        const Block* b = fi.blocks.get(bi);
+        for (u32 i = b.instr.start; i < b.instr.start + b.instr.count; i++) {
+            Instr* ii = &all[i];
+            if (!ii.isPhi()) continue;
+
+            const PhiClause* old = fi.phis.get((u32)ii.args[0].value);
+            u32 old_count = (u32)ii.args[1].value;
+            u32 start = num_clauses;
+            for (u32 c = 0; c < old_count; c++) {
+                if (!reach[old[c].src]) continue;
+                if (!block_has_dest(fi.blocks.get(old[c].src), &fi.cases, bi)) continue;
+                clauses[num_clauses] = old[c];
+                clauses[num_clauses].src = new_id[old[c].src];
+                num_clauses++;
+            }
+            u32 n = num_clauses - start;
+            ii.args[0].value = (i32)start;
+            ii.args[1].value = (i32)n;
+            if (n == 1) {
+                // single value left, no phi needed
+                Ref r = clauses[start].ref;
+                num_clauses = start;
+                ii.instrBits.kind = InstrKind.Copy;
+                ii.args[0] = r;
+                ii.args[1].clear();
+            }
+        }
+    }
+    fi.phis.clear();
+    for (u32 i = 0; i < num_clauses; i++) {
+        fi.phis.add(clauses[i].dest_idx, clauses[i].src, clauses[i].ref);
+    }
+    free(clauses);
+
+    // remove unreachable blocks
+    BlockList list2.init(count);
+    for (u32 bi = 0; bi < nb; bi++) {
+        if (!reach[bi]) continue;
+        BlockId id = list2.copy(fi.blocks.get(bi));
+        Block* nbk = list2.get(id);
+        if (nbk.dests[0]) nbk.dests[0] = new_id[nbk.dests[0]];
+        if (nbk.dests[1]) nbk.dests[1] = new_id[nbk.dests[1]];
+    }
+    fi.blocks.swap(&list2);
+    list2.free();
+    free(new_id);
+    free(reach);
+    return true;
+}
+
+// index of the last instruction that is not None/Comment, or u32.max if there is none
+fn u32 lastRealInstr(const FunctionInfo* fi, const Block* b) {
+    u32 idx = b.instr.start + b.instr.count;
+    while (idx > b.instr.start) {
+        idx--;
+        const Instr* ii = fi.instructions.get(idx);
+        if (!ii.isNone() && !ii.isComment()) return idx;
+    }
+    return u32.max;
+}
+
+fn bool startsWithPhi(const FunctionInfo* fi, const Block* b) {
+    for (u32 i = b.instr.start; i < b.instr.start + b.instr.count; i++) {
+        const Instr* ii = fi.instructions.get(i);
+        if (ii.isNone() || ii.isComment()) continue;
+        return ii.isPhi();
+    }
+    return false;
+}
+
+// Merges a block that ends with a jump into its destination if it is the only predecessor of
+// that destination: A: ...; jmp B   B: ...  =>  A: ...; ...
+fn bool Tools.mergeBlocks(Tools* t) {
+    FunctionInfo* fi = t.fi;
+    u32 nb = fi.blocks.getCount();
+    for (u32 bi = 0; bi < nb; bi++) {
+        if (fi.blocks.get(bi).end_with_switch) return false;
+    }
+
+    u32* preds = calloc(nb, sizeof(u32));
+    for (u32 bi = 0; bi < nb; bi++) {
+        const Block* b = fi.blocks.get(bi);
+        if (b.dests[0]) preds[b.dests[0]]++;
+        if (b.dests[1]) preds[b.dests[1]]++;
+    }
+
+    // next[a] = block that is merged into a (0 = none)
+    u32* next = calloc(nb, sizeof(u32));
+    u8* merged = calloc(nb, sizeof(u8));    // block is merged into its predecessor
+    bool found = false;
+    for (u32 bi = 0; bi < nb; bi++) {
+        const Block* b = fi.blocks.get(bi);
+        if (b.dests[1] != 0 || b.dests[0] == 0) continue;
+        u32 last = lastRealInstr(fi, b);
+        if (last == u32.max || fi.instructions.get(last).getKind() != InstrKind.Jmp) continue;
+
+        u32 d = b.dests[0];
+        if (d == bi || d == 0 || preds[d] != 1 || merged[d]) continue;
+        if (startsWithPhi(fi, fi.blocks.get(d))) continue;
+        next[bi] = d;
+        merged[d] = 1;
+        found = true;
+    }
+    free(preds);
+    if (!found) {
+        free(next);
+        free(merged);
+        return false;
+    }
+
+    u32 old_count = fi.instructions.getCount();
+    u32* imap = malloc(old_count * sizeof(u32));
+    for (u32 i = 0; i < old_count; i++) imap[i] = u32.max;
+    u32* bmap = malloc(nb * sizeof(u32));
+    InstrList out.init(old_count);
+    BlockList blocks.init(nb);
+
+    for (u32 bi = 0; bi < nb; bi++) {
+        if (merged[bi]) continue;
+        u32 first = out.getCount();
+        u32 cur = bi;
+        u32 chain_last = bi;
+        while (1) {
+            bmap[cur] = blocks.getCount();
+            const Block* cb = fi.blocks.get(cur);
+            u32 skip = next[cur] ? lastRealInstr(fi, cb) : u32.max;
+            for (u32 i = cb.instr.start; i < cb.instr.start + cb.instr.count; i++) {
+                if (i == skip) continue;
+                imap[i] = out.getCount();
+                out.add().copy(fi.instructions.get(i));
+            }
+            chain_last = cur;
+            if (!next[cur]) break;
+            cur = next[cur];
+        }
+        BlockId id = blocks.copy(fi.blocks.get(chain_last));
+        Block* nbk = blocks.get(id);
+        nbk.kind = fi.blocks.get(bi).kind;
+        nbk.setInstructions(first, out.getCount() - first);
+    }
+    // bmap now maps every block (also merged ones) to the block it ended up in
+    u32 new_nb = blocks.getCount();
+    for (u32 i = 0; i < new_nb; i++) {
+        Block* b = blocks.get(i);
+        if (b.dests[0]) b.dests[0] = bmap[b.dests[0]];
+        if (b.dests[1]) b.dests[1] = bmap[b.dests[1]];
+    }
+
+    // update refs and phis
+    PhiClause* clauses = calloc(fi.phis.getCount() + 1, sizeof(PhiClause));
+    u32 num_clauses = 0;
+    u32 total = out.getCount();
+    for (u32 p = 0; p < total; p++) {
+        Instr* ii = out.get(p);
+        if (ii.isPhi()) {
+            const PhiClause* old = fi.phis.get((u32)ii.args[0].value);
+            u32 count = (u32)ii.args[1].value;
+            ii.args[0].value = (i32)num_clauses;
+            for (u32 c = 0; c < count; c++) {
+                PhiClause* pc = &clauses[num_clauses++];
+                pc.src = bmap[old[c].src];
+                pc.dest_idx = p;
+                pc.ref = old[c].ref;
+                if (pc.ref.isTemp()) pc.ref.value = (i32)imap[(u32)pc.ref.value];
+            }
+            continue;
+        }
+        for (u32 j = 0; j < 2; j++) {
+            Ref* r = &ii.args[j];
+            if (r.isTemp()) r.value = (i32)imap[(u32)r.value];
+        }
+    }
+    fi.phis.clear();
+    for (u32 i = 0; i < num_clauses; i++) {
+        fi.phis.add(clauses[i].dest_idx, clauses[i].src, clauses[i].ref);
+    }
+    free(clauses);
+
+    fi.instructions.swap(&out);
+    fi.blocks.swap(&blocks);
+    out.free();
+    blocks.free();
+    free(bmap);
+    free(imap);
+    free(next);
+    free(merged);
+    return true;
 }
 
 fn void Tools.removeNone(Tools* t) {
