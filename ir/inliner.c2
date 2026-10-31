@@ -165,7 +165,7 @@ fn void Inliner.appendBody(Inliner* inl, const FunctionInfo* callee, const Ref* 
 }
 
 // returns true if any call was inlined
-fn bool IrContext.inlineCalls(IrContext* c, FunctionInfo* fi) {
+fn bool IrContext.inlineSimple(IrContext* c, FunctionInfo* fi) {
     u32 num_instr = fi.instructions.getCount();
     const Instr* instrs = fi.instructions.get(0);
 
@@ -284,6 +284,362 @@ fn bool IrContext.inlineCalls(IrContext* c, FunctionInfo* fi) {
     free(skip);
     free(callees);
     return true;
+}
+
+// ---- multi-block callees ----
+//
+// A call to a callee with control flow is inlined by splitting the block B that contains
+// the call into B1 (before the call) and B2 (after the call). The callee blocks are placed
+// between them: B1 jumps to the callee entry, every Ret of the callee becomes a jump to B2.
+// If the callee has multiple returns with a value, a Phi in B2 merges them.
+// This works on SSA form, so the callee Param instructions are replaced by the call arguments.
+
+const u32 MaxInlineBlocks = 12;
+const u32 MaxInlinesPerFunction = 16;
+
+fn bool isMultiCandidate(const FunctionInfo* fi) {
+    u32 nb = fi.blocks.getCount();
+    if (nb < 2 || nb > MaxInlineBlocks) return false;
+    if (fi.num_args == 0) return false;
+
+    u32 num_params = 0;
+    u32 body = 0;
+    u32 num_rets = 0;
+    u32 num_valued = 0;
+
+    for (u32 bi = 0; bi < nb; bi++) {
+        const Block* b = fi.blocks.get(bi);
+        if (b.end_with_switch) return false;
+        if (b.instr.count == 0) return false;
+        if (b.instr.start + b.instr.count > fi.instructions.getCount()) return false;
+
+        // nothing may jump to the entry block
+        if (b.dests[1] != 0 && b.dests[0] == 0) return false;
+
+        InstrKind last = InstrKind.None;
+        for (u32 i = 0; i < b.instr.count; i++) {
+            const Instr* ii = fi.instructions.get(b.instr.start + i);
+            InstrKind k = ii.getKind();
+            switch (k) {
+            case None:
+            case Comment:
+                continue;
+            case Param:
+                if (bi != 0) return false;
+                num_params++;
+                break;
+            case Ret:
+                num_rets++;
+                if (!ii.args[0].isNone()) num_valued++;
+                break;
+            case Jmp:
+            case JmpIf:
+            case Phi:
+                body++;
+                break;
+            case Add...Store8:
+            case Copy:
+                body++;
+                break;
+            default:
+                // calls, allocs, args, switch, etc
+                return false;
+            }
+            if (k != InstrKind.Phi) {
+                for (u32 j = 0; j < 2; j++) {
+                    if (ii.args[j].isSlot()) return false;
+                }
+            }
+            last = k;
+        }
+        if (last != InstrKind.Jmp && last != InstrKind.JmpIf && last != InstrKind.Ret) return false;
+        if (last == InstrKind.JmpIf && b.dests[1] == 0) return false;
+        if (last == InstrKind.Jmp && b.dests[0] == 0) return false;
+    }
+    if (num_rets == 0) return false;
+    if (num_valued != 0 && num_valued != num_rets) return false;
+    if (body > MaxInlineInstrs) return false;
+    if (num_params + 1 != fi.num_args) return false;
+    return true;
+}
+
+type Splice struct {
+    const FunctionInfo* callee;
+    u32 bi;         // caller block with the call
+    u32 k;          // instr index of the call
+    u32 num_args;
+}
+
+fn BlockId blockMap(const Splice* sp, BlockId x) {
+    if (x <= sp.bi) return x;
+    return x + sp.callee.blocks.getCount() + 1;
+}
+
+fn Ref remapRef(Ref r, const Ref* map) {
+    if (r.isTemp()) return map[(u32)r.value];
+    return r;
+}
+
+fn void IrContext.spliceCall(IrContext* c, FunctionInfo* fi, const Splice* sp) {
+    const FunctionInfo* callee = sp.callee;
+    u32 bi = sp.bi;
+    u32 k = sp.k;
+    u32 nbC = fi.blocks.getCount();
+    u32 nbE = callee.blocks.getCount();
+    u32 numC = fi.instructions.getCount();
+    u32 numE = callee.instructions.getCount();
+    u32 base = bi + 1;          // block id of callee entry
+    u32 b2 = bi + 1 + nbE;      // block id of the second half of the split block
+    const Block* bb = fi.blocks.get(bi);
+    u32 call_first = k - sp.num_args;
+
+    // count returns
+    u32 num_rets = 0;
+    bool valued = false;
+    for (u32 j = 0; j < nbE; j++) {
+        const Block* eb = callee.blocks.get(j);
+        for (u32 i = 0; i < eb.instr.count; i++) {
+            const Instr* ii = callee.instructions.get(eb.instr.start + i);
+            if (ii.isReturn()) {
+                num_rets++;
+                if (!ii.args[0].isNone()) valued = true;
+            }
+        }
+    }
+    bool need_phi = valued && num_rets > 1;
+
+    Ref* cmap = calloc(numC, sizeof(Ref));
+    Ref* emap = calloc(numE, sizeof(Ref));
+    u32 max_out = numC + numE + 2;
+    u8* org = calloc(max_out, sizeof(u8));    // 1 = instruction from callee
+    u32* ret_blk = calloc(num_rets + 1, sizeof(u32));
+    Ref* ret_ref = calloc(num_rets + 1, sizeof(Ref));
+    u32 ret_idx = 0;
+    u32 phi_pos = 0;
+
+    InstrList out.init(max_out);
+    BlockList blocks.init(nbC + nbE + 1);
+
+    for (u32 x = 0; x < nbC; x++) {
+        const Block* src = fi.blocks.get(x);
+        u32 s = src.instr.start;
+        u32 e = s + src.instr.count;
+        if (x != bi) {
+            u32 first = out.getCount();
+            for (u32 i = s; i < e; i++) {
+                cmap[i].init(RefKind.Temp, out.getCount());
+                out.add().copy(fi.instructions.get(i));
+            }
+            BlockId id = blocks.copy(src);
+            Block* nb = blocks.get(id);
+            nb.setInstructions(first, out.getCount() - first);
+            if (nb.dests[0]) nb.dests[0] = blockMap(sp, nb.dests[0]);
+            if (nb.dests[1]) nb.dests[1] = blockMap(sp, nb.dests[1]);
+            continue;
+        }
+
+        // B1: everything before the arguments of the call, then jump to the callee
+        u32 first = out.getCount();
+        for (u32 i = s; i < call_first; i++) {
+            cmap[i].init(RefKind.Temp, out.getCount());
+            out.add().copy(fi.instructions.get(i));
+        }
+        Ref jref.init(RefKind.JmpDest, 0);
+        out.add().init1(InstrKind.Jmp, jref);
+        org[out.getCount() - 1] = 0;
+        BlockId id1 = blocks.copy(src);
+        Block* b1 = blocks.get(id1);
+        b1.setInstructions(first, out.getCount() - first);
+        b1.setDest(base, 0);
+        b1.phi_source = 0;
+        b1.end_block = 0;
+
+        // callee blocks
+        for (u32 j = 0; j < nbE; j++) {
+            const Block* eb = callee.blocks.get(j);
+            u32 efirst = out.getCount();
+            bool is_ret = false;
+            for (u32 i = eb.instr.start; i < eb.instr.start + eb.instr.count; i++) {
+                const Instr* ii = callee.instructions.get(i);
+                switch (ii.getKind()) {
+                case None:
+                case Comment:
+                    continue;
+                case Param:
+                    continue;   // mapped to call arguments below
+                case Ret:
+                    ret_blk[ret_idx] = base + j;
+                    ret_ref[ret_idx] = ii.args[0];
+                    ret_idx++;
+                    out.add().init1(InstrKind.Jmp, jref);
+                    org[out.getCount() - 1] = 1;
+                    is_ret = true;
+                    continue;
+                default:
+                    break;
+                }
+                emap[i].init(RefKind.Temp, out.getCount());
+                org[out.getCount()] = 1;
+                out.add().copy(ii);
+            }
+            BlockId eid = blocks.copy(eb);
+            Block* nb = blocks.get(eid);
+            nb.setInstructions(efirst, out.getCount() - efirst);
+            nb.kind = BlockKind.Unspecified;
+            nb.used = 1;
+            nb.checked = 0;
+            nb.end_block = 0;
+            if (is_ret) {
+                nb.setDest(b2, 0);
+                if (need_phi) nb.phi_source = 1;
+            } else {
+                if (nb.dests[0]) nb.dests[0] += base;
+                if (nb.dests[1]) nb.dests[1] += base;
+            }
+        }
+
+        // B2: the rest of the block
+        u32 f2 = out.getCount();
+        if (need_phi) {
+            phi_pos = out.getCount();
+            out.add().initPhi(0, num_rets);    // clauses are filled in below
+        }
+        for (u32 i = k + 1; i < e; i++) {
+            cmap[i].init(RefKind.Temp, out.getCount());
+            out.add().copy(fi.instructions.get(i));
+        }
+        BlockId id2 = blocks.copy(src);
+        Block* nb2 = blocks.get(id2);
+        nb2.setInstructions(f2, out.getCount() - f2);
+        if (bi == 0) nb2.kind = BlockKind.Unspecified;
+        if (nb2.dests[0]) nb2.dests[0] = blockMap(sp, nb2.dests[0]);
+        if (nb2.dests[1]) nb2.dests[1] = blockMap(sp, nb2.dests[1]);
+    }
+    assert(blocks.getCount() == nbC + nbE + 1);
+    assert(ret_idx == num_rets);
+
+    // map callee params to the call arguments
+    u32 param_idx = 0;
+    const Block* eb0 = callee.blocks.get(0);
+    for (u32 i = eb0.instr.start; i < eb0.instr.start + eb0.instr.count; i++) {
+        if (callee.instructions.get(i).isParam()) {
+            emap[i] = remapRef(fi.instructions.get(call_first + param_idx).args[0], cmap);
+            param_idx++;
+        }
+    }
+    // result of the call
+    if (valued) {
+        if (need_phi) cmap[k].init(RefKind.Temp, phi_pos);
+        else cmap[k] = remapRef(ret_ref[0], emap);
+    }
+
+    // remap refs and rebuild the phi clauses
+    u32 max_clauses = fi.phis.getCount() + callee.phis.getCount() + num_rets;
+    PhiClause* clauses = calloc(max_clauses + 1, sizeof(PhiClause));
+    u32 num_clauses = 0;
+    u32 total = out.getCount();
+    for (u32 p = 0; p < total; p++) {
+        Instr* ii = out.get(p);
+        const Ref* map = org[p] ? emap : cmap;
+        if (ii.isPhi()) {
+            if (p == phi_pos && need_phi) {
+                ii.args[0].value = (i32)num_clauses;
+                for (u32 r = 0; r < num_rets; r++) {
+                    PhiClause* pc = &clauses[num_clauses++];
+                    pc.src = ret_blk[r];
+                    pc.dest_idx = p;
+                    pc.ref = remapRef(ret_ref[r], emap);
+                }
+                continue;
+            }
+            const PhiClause* old = fi.phis.get(0);
+            u32 start = (u32)ii.args[0].value;
+            u32 count = (u32)ii.args[1].value;
+            ii.args[0].value = (i32)num_clauses;
+            for (u32 r = 0; r < count; r++) {
+                const PhiClause* src;
+                if (org[p]) src = callee.phis.get(start + r);
+                else src = &old[start + r];
+                PhiClause* pc = &clauses[num_clauses++];
+                if (org[p]) pc.src = base + src.src;
+                else pc.src = (src.src == bi) ? b2 : blockMap(sp, src.src);
+                pc.dest_idx = p;
+                pc.ref = remapRef(src.ref, map);
+            }
+            continue;
+        }
+        for (u32 j = 0; j < 2; j++) {
+            if (ii.args[j].isTemp()) ii.args[j] = remapRef(ii.args[j], map);
+        }
+    }
+    assert(num_clauses <= max_clauses);
+
+    fi.phis.clear();
+    for (u32 i = 0; i < num_clauses; i++) {
+        fi.phis.add(clauses[i].dest_idx, clauses[i].src, clauses[i].ref);
+    }
+
+    fi.instructions.swap(&out);
+    fi.blocks.swap(&blocks);
+    out.free();
+    blocks.free();
+
+    free(clauses);
+    free(ret_ref);
+    free(ret_blk);
+    free(org);
+    free(emap);
+    free(cmap);
+}
+
+// inlines one call to a multi-block callee, returns false if there is none
+fn bool IrContext.inlineMulti(IrContext* c, FunctionInfo* fi) {
+    u32 nb = fi.blocks.getCount();
+    if (nb + MaxInlineBlocks + 1 > MaxBlocks) return false;
+    for (u32 bi = 0; bi < nb; bi++) {
+        if (fi.blocks.get(bi).end_with_switch) return false;
+    }
+
+    for (u32 bi = 0; bi < nb; bi++) {
+        const Block* b = fi.blocks.get(bi);
+        u32 first = b.instr.start;
+        for (u32 k = first; k < first + b.instr.count; k++) {
+            const Instr* ii = fi.instructions.get(k);
+            if (!ii.isCall()) continue;
+            if (ii.args[0].getKind() != RefKind.Symbol) continue;
+            if (ii.args[1].getKind() != RefKind.CallNumArgs) continue;
+
+            const Symbol* s = c.symbols.get((u32)ii.args[0].value);
+            if (!s.is_function) continue;
+            const FunctionInfo* callee = s.f.info;
+            if (!callee || callee == fi) continue;
+
+            u32 num_args = (u32)ii.args[1].value;
+            if (num_args + 1 != callee.num_args) continue;
+            if (k < first + num_args) continue;
+            bool args_ok = true;
+            for (u32 a = k - num_args; a < k; a++) {
+                if (fi.instructions.get(a).getKind() != InstrKind.Arg) args_ok = false;
+            }
+            if (!args_ok) continue;
+            if (!isMultiCandidate(callee)) continue;
+
+            Splice sp = { callee, bi, k, num_args }
+            c.spliceCall(fi, &sp);
+            return true;
+        }
+    }
+    return false;
+}
+
+// returns true if any call was inlined
+fn bool IrContext.inlineCalls(IrContext* c, FunctionInfo* fi) {
+    bool changed = c.inlineSimple(fi);
+    for (u32 n = 0; n < MaxInlinesPerFunction; n++) {
+        if (!c.inlineMulti(fi)) break;
+        changed = true;
+    }
+    return changed;
 }
 
 // depth-first, so callees are added to order before their callers (cycles are cut)
