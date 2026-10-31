@@ -178,13 +178,17 @@ fn ExprWidth getBinOpWidth(const BinaryOperator* b) {
     case Divide:
         return getExprWidth(b.getLHS());
     case Remainder:
-        return getExprWidth(b.getRHS());
+        //return getExprWidth(b.getRHS());
+        ExprWidth l = getExprWidth(b.getLHS());
+        ExprWidth r = getExprWidth(b.getRHS());
+        return ExprWidth.mergeSmaller(l, r);
     case Add:
     case Subtract:
         break;
     case ShiftLeft:
         ExprWidth result = getExprWidth(b.getLHS());
         // TODO handle constant RHS and int promotion
+        // this is also incorrect for (u64)1 << n
         if (result.width < 32) { result.width = 32; result.is_signed = true; }
         return result;
     case ShiftRight:
@@ -220,7 +224,7 @@ fn ExprWidth getBinOpWidth(const BinaryOperator* b) {
     case AndAssign:
     case XorAssign:
     case OrAssign:
-        // TODO: refine this
+        // TODO: refine this: smaller of expr result and LHS type
         return getExprWidth(b.getLHS());
     }
 

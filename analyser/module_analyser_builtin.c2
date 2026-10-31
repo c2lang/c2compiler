@@ -88,7 +88,7 @@ fn QualType Analyser.analyseSizeof(Analyser* ma, BuiltinExpr* b) {
 
     size_analyser.TypeSize info = size_analyser.sizeOfType(qt);
     b.setValue(info.size);
-    qt = getBuiltinQT(UInt32);
+    qt = getBuiltinQT(USize);
     e.setType(qt);
     return qt;
 }
@@ -110,7 +110,7 @@ fn QualType Analyser.analyseCountof(Analyser* ma, BuiltinExpr* b) {
             return QualType_Invalid;
         }
         b.setValue(at.getSize());
-        qt = getBuiltinQT(UInt32);
+        qt = getBuiltinQT(USize);
         e.setType(qt);
         return qt;
     }
@@ -118,7 +118,7 @@ fn QualType Analyser.analyseCountof(Analyser* ma, BuiltinExpr* b) {
     if (et) {
         const EnumTypeDecl* etd = et.getDecl();
         b.setValue(etd.getNumConstants());
-        qt = getBuiltinQT(UInt32);
+        qt = getBuiltinQT(USize);
         e.setType(qt);
         return qt;
     }
@@ -146,7 +146,7 @@ fn QualType Analyser.analyseOffsetOf(Analyser* ma, BuiltinExpr* b) {
     QualType qmem = ma.findMemberOffset(qt, member, &offset);
     if (qmem.isInvalid()) return QualType_Invalid;
     b.setValue(offset);
-    qt = getBuiltinQT(UInt32);
+    qt = getBuiltinQT(USize);
     e.setType(qt);
     return qt;
 }
@@ -296,7 +296,6 @@ fn QualType Analyser.analyseVaArg(Analyser* ma, BuiltinExpr* b) {
         return QualType_Invalid;
     }
     e.setType(destType);
-
     return destType;
 }
 

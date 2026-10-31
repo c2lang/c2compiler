@@ -103,7 +103,9 @@ fn void Generator.emitCall(Generator* gen, StringBuf* out, Expr* e) {
         Expr* arg = args[i];
         if (arg.isInitList()) gen.emitCast(out, arg.getType(), true);
 
+        gen.need_exact_type += call.isVariadic();
         gen.emitExpr(out, arg);
+        gen.need_exact_type -= call.isVariadic();
         need_comma = true;
     }
     out.rparen();
