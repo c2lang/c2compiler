@@ -28,7 +28,8 @@ type Symbol struct {
     u32 is_external : 1;
     u32 is_function : 1;
     u32 align : 8;  // global only
-    u32 size : 22;  // global only    NOT USED YET
+    u32 size : 21;  // global only    NOT USED YET
+    u32 is_dead : 1;    // function is not used anymore, so it is not processed/generated
     union {
         struct f {
             FunctionInfo* info;

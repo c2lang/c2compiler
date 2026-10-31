@@ -133,34 +133,44 @@ public fn void IrContext.free(IrContext* c) {
 }
 
 // Optimizes all functions (to SSA + constant propagation), inlines simple functions,
-// then lowers all functions (ABI -> ASM)
+// then lowers all functions (ABI -> ASM). Functions without uses are skipped.
 public fn void IrContext.convert_functions(IrContext* c) {
     u32 count = c.functions.getCount();
     const u32* ids = c.functions.getFrom(0);
     Tools* t = &c.tools;
 
+    c.countUses();
+    c.pruneUnused();
+
     // phase 1: optimize
     if (c.single_thread) {
         for (u32 i = 0; i < count; i++) {
             Symbol* symbol = c.symbols.get(ids[i]);
+            if (symbol.is_dead) continue;
             t.arg2 = symbol;
             t.fi = symbol.f.info;
             t.optimize_fn();
         }
     } else {
+        c.queue.clear();
         for (u32 i = 0; i < count; i++) {
             Symbol* symbol = c.symbols.get(ids[i]);
-            c.queue.add(symbol.f.info);
+            if (!symbol.is_dead) c.queue.add(symbol.f.info);
         }
         c.queue.reset(false);
         c.queue.run(c, 0);
     }
+
+    // optimizing may have removed code (and thereby uses)
+    c.countUses();
+    c.pruneUnused();
 
     // inline callees before callers, so functions that become simple after inlining can be inlined as well
     u32* order = malloc(count * sizeof(u32));
     c.sortBottomUp(ids, count, order);
     for (u32 i = 0; i < count; i++) {
         Symbol* symbol = c.symbols.get(order[i]);
+        if (symbol.is_dead) continue;
         if (c.inlineCalls(symbol.f.info)) {
             t.arg2 = symbol;
             t.fi = symbol.f.info;
@@ -171,16 +181,23 @@ public fn void IrContext.convert_functions(IrContext* c) {
         }
     }
     free(order);
+    c.pruneUnused();
 
     // phase 2: lower
     if (c.single_thread) {
         for (u32 i = 0; i < count; i++) {
             Symbol* symbol = c.symbols.get(ids[i]);
+            if (symbol.is_dead) continue;
             t.arg2 = symbol;
             t.fi = symbol.f.info;
             t.lower_fn();
         }
     } else {
+        c.queue.clear();
+        for (u32 i = 0; i < count; i++) {
+            Symbol* symbol = c.symbols.get(ids[i]);
+            if (!symbol.is_dead) c.queue.add(symbol.f.info);
+        }
         c.queue.reset(true);
         c.queue.run(c, 0);
     }

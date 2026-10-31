@@ -29,6 +29,7 @@ public type FunctionInfo struct {
     // args[0][low bits] is return type (None if no return value)
     u8[1 + MaxCallArgs/2] args;   // stores 2 ir.Types per u8, first low, then high bits
     u32 id;
+    u32 use_count;  // static number of uses (calls, address taken, initializers), see use_count.c2
 }
 static_assert(88, sizeof(FunctionInfo));
 
@@ -40,6 +41,7 @@ public fn FunctionInfo* FunctionInfo.create(u32 id, u32 num_blks, u32 num_instr)
     fi.cases.init();
     fi.phis.init();
     fi.num_args = 0;
+    fi.use_count = 0;
     return fi;
 }
 

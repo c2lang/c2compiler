@@ -58,6 +58,7 @@ public fn void IrContext.writeOutput(IrContext* c, const char* output_dir, const
         if (s.is_function) {
             const ir.FunctionInfo* fi = s.f.info;
             if (!fi) continue;  // external declaration, no body
+            if (s.is_dead) continue;    // not used anymore
             c.target.generateAsm(out, symbol_names[i], fi, s.is_external, symbol_names);
             block_start += fi.blocks.getCount();
         }

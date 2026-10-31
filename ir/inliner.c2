@@ -185,7 +185,7 @@ fn bool IrContext.inlineSimple(IrContext* c, FunctionInfo* fi) {
         if (ii.args[0].getKind() != RefKind.Symbol) continue;
         if (ii.args[1].getKind() != RefKind.CallNumArgs) continue;
 
-        const Symbol* s = c.symbols.get((u32)ii.args[0].value);
+        Symbol* s = c.symbols.get((u32)ii.args[0].value);
         if (!s.is_function) continue;
         const FunctionInfo* callee = s.f.info;
         if (!callee || callee == fi) continue;
@@ -199,6 +199,7 @@ fn bool IrContext.inlineSimple(IrContext* c, FunctionInfo* fi) {
         }
         if (!args_ok) continue;
         if (!isInlineCandidate(callee)) continue;
+        if (c.hasFunctionRefs(callee)) continue;    // copying would add uses
 
         if (!found) {
             callees = calloc(num_instr, sizeof(FunctionInfo*));
@@ -206,6 +207,7 @@ fn bool IrContext.inlineSimple(IrContext* c, FunctionInfo* fi) {
             found = true;
         }
         callees[k] = callee;
+        c.releaseUse(s);
         for (u32 a = k - num_args; a < k; a++) skip[a] = 1;
     }
     if (!found) return false;
@@ -609,7 +611,7 @@ fn bool IrContext.inlineMulti(IrContext* c, FunctionInfo* fi) {
             if (ii.args[0].getKind() != RefKind.Symbol) continue;
             if (ii.args[1].getKind() != RefKind.CallNumArgs) continue;
 
-            const Symbol* s = c.symbols.get((u32)ii.args[0].value);
+            Symbol* s = c.symbols.get((u32)ii.args[0].value);
             if (!s.is_function) continue;
             const FunctionInfo* callee = s.f.info;
             if (!callee || callee == fi) continue;
@@ -623,9 +625,11 @@ fn bool IrContext.inlineMulti(IrContext* c, FunctionInfo* fi) {
             }
             if (!args_ok) continue;
             if (!isMultiCandidate(callee)) continue;
+            if (c.hasFunctionRefs(callee)) continue;    // copying would add uses
 
             Splice sp = { callee, bi, k, num_args }
             c.spliceCall(fi, &sp);
+            c.releaseUse(s);
             return true;
         }
     }

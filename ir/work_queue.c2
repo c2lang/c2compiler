@@ -56,6 +56,11 @@ fn void WorkQueue.reset(WorkQueue* q, bool lower) {
     q.lower = lower;
 }
 
+fn void WorkQueue.clear(WorkQueue* q) {
+    q.idx = 0;
+    q.count = 0;
+}
+
 fn void WorkQueue.free(WorkQueue* q) {
     free(q.funcs);
 }
