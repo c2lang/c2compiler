@@ -1,0 +1,23 @@
+module test;
+
+type Foo struct {
+    i32 a;
+}
+
+Foo[4] foos;
+
+fn Foo* getPointer(i32 a) {
+    if (a > countof(foos)) return nil;
+    return &foos[a];
+}
+
+public fn i32 main(i32 argc, const char** argv) {
+    for (i32 i = 0; i < countof(foos); i++) {
+        foos[i].a = i + 1;
+    }
+
+    Foo* f = getPointer(argc);
+    if (f) return f.a;
+    return 0;
+}
+
