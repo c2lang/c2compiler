@@ -366,6 +366,15 @@ fn void propagateCopy(const Instr* all, Ref* r, bool* changed) {
     *changed = true;
 }
 
+// symbol address, or symbol address + offset (in-bounds pointer arithmetic cannot produce null)
+fn bool isNonNull(const Instr* all, Ref r) {
+    if (r.kind == RefKind.Symbol) return true;
+    if (!r.isTemp()) return false;
+    const Instr* def = &all[r.value];
+    if (def.getKind() != InstrKind.Add || def.hasRegister()) return false;
+    return def.args[0].kind == RefKind.Symbol || def.args[1].kind == RefKind.Symbol;
+}
+
 fn bool Tools.propagateConstants(Tools* t) {
     FunctionInfo* fi = t.fi;
     // return true if changed
@@ -384,6 +393,16 @@ fn bool Tools.propagateConstants(Tools* t) {
         if (!instr.isArithmetic() && !is_compare) continue;
         propagateCopy(all, &instr.args[0], &changed);
         propagateCopy(all, &instr.args[1], &changed);
+
+        // comparing the address of a symbol (plus offset) with null has a known outcome
+        if ((kind == InstrKind.CmpNe || kind == InstrKind.CmpEq) && instr.args[1].kind == RefKind.Value && instr.args[1].value == 0
+            && isNonNull(all, instr.args[0])) {
+            changed = true;
+            instr.instrBits.kind = InstrKind.Copy;
+            instr.args[0].init(RefKind.Value, kind == InstrKind.CmpNe ? 1 : 0);
+            instr.args[1].clear();
+            continue;
+        }
 
         // also move constant to RHS in case of add / mul
         if (!instr.args[0].isConstant()) continue;
@@ -431,6 +450,112 @@ fn bool Tools.propagateConstants(Tools* t) {
     return changed;
 }
 
+fn bool evalCompare(InstrKind kind, i32 lhs, i32 rhs) {
+    switch (kind) {
+    case CmpNe: return lhs != rhs;
+    case CmpEq: return lhs == rhs;
+    case CmpLt: return lhs < rhs;
+    case CmpGt: return lhs > rhs;
+    case CmpLe: return lhs <= rhs;
+    case CmpGe: return lhs >= rhs;
+    default: break;
+    }
+    return false;
+}
+
+// Is any temp in [lo, hi] (instruction indices of block J) used outside J other than in block 'allowed'?
+fn bool Tools.usedOutside(Tools* t, BlockId j, BlockId allowed, u32 lo, u32 hi) {
+    FunctionInfo* fi = t.fi;
+    u32 nb = fi.blocks.getCount();
+    for (u32 bi = 0; bi < nb; bi++) {
+        if (bi == j || bi == allowed) continue;
+        const Block* b = fi.blocks.get(bi);
+        for (u32 i = b.instr.start; i < b.instr.start + b.instr.count; i++) {
+            const Instr* ii = fi.instructions.get(i);
+            if (ii.isNone() || ii.isComment() || ii.isPhi()) continue;
+            for (u32 a = 0; a < 2; a++) {
+                if (ii.args[a].isTemp() && (u32)ii.args[a].value >= lo && (u32)ii.args[a].value <= hi) return true;
+            }
+        }
+    }
+    // phi clauses
+    u32 np = fi.phis.getCount();
+    for (u32 p = 0; p < np; p++) {
+        const PhiClause* pc = fi.phis.get(p);
+        if (pc.ref.isTemp() && (u32)pc.ref.value >= lo && (u32)pc.ref.value <= hi) return true;
+    }
+    return false;
+}
+
+// Jump threading: a block J that only has  phi; compare phi with constant; jmp_if
+// can be bypassed by predecessors that provide a constant for the phi, since the branch outcome is known.
+// The phi clauses of the bypassed predecessors are removed by foldBranches afterwards.
+fn bool Tools.threadBranches(Tools* t) {
+    FunctionInfo* fi = t.fi;
+    u32 nb = fi.blocks.getCount();
+    Instr* all = fi.instructions.get(0);
+    bool changed = false;
+
+    for (u32 bi = 0; bi < nb; bi++) if (fi.blocks.get(bi).end_with_switch) return false;
+
+    for (u32 bi = 1; bi < nb; bi++) {
+        Block* jb = fi.blocks.get(bi);
+        if (jb.dests[0] == 0 || jb.dests[1] == 0) continue;
+
+        u32[3] idx;
+        u32 n = 0;
+        bool ok = true;
+        for (u32 i = jb.instr.start; i < jb.instr.start + jb.instr.count; i++) {
+            const Instr* ii = &all[i];
+            if (ii.isNone() || ii.isComment()) continue;
+            if (n == 3) { ok = false; break; }
+            idx[n++] = i;
+        }
+        if (!ok || n != 3) continue;
+        Instr* phi = &all[idx[0]];
+        Instr* cmp = &all[idx[1]];
+        Instr* jif = &all[idx[2]];
+        if (!phi.isPhi() || jif.getKind() != InstrKind.JmpIf) continue;
+        InstrKind ck = cmp.getKind();
+        if (ck < InstrKind.CmpNe || ck > InstrKind.CmpGe) continue;
+        if (!cmp.args[0].isTemp() || (u32)cmp.args[0].value != idx[0]) continue;
+        if (cmp.args[1].kind != RefKind.Value) continue;
+        if (!jif.args[0].isTemp() || (u32)jif.args[0].value != idx[1]) continue;
+
+        PhiClause* clauses = fi.phis.get((u32)phi.args[0].value);
+        u32 nclauses = (u32)phi.args[1].value;
+        for (u32 c = 0; c < nclauses; c++) {
+            if (clauses[c].ref.kind != RefKind.Value) continue;
+            BlockId src = clauses[c].src;
+            if (src == bi) continue;
+            Block* pb = fi.blocks.get(src);
+            if (pb.dests[0] != bi || pb.dests[1] != 0) continue;
+            u32 last = lastRealInstr(fi, pb);
+            if (last == u32.max || all[last].getKind() != InstrKind.Jmp) continue;
+
+            bool res = evalCompare(ck, clauses[c].ref.value, cmp.args[1].value);
+            BlockId taken = res ? jb.dests[0] : jb.dests[1];
+            BlockId other = res ? jb.dests[1] : jb.dests[0];
+            if (taken == bi || other == bi || taken == other) continue;
+            // taken must not need new phi clauses
+            if (startsWithPhi(fi, fi.blocks.get(taken))) continue;
+            // 'other' must only be reachable through J, otherwise we cannot tell about its uses
+            u32 preds = 0;
+            for (u32 b2 = 0; b2 < nb; b2++) {
+                const Block* x = fi.blocks.get(b2);
+                if (x.dests[0] == other) preds++;
+                if (x.dests[1] == other) preds++;
+            }
+            if (preds != 1) continue;
+            if (t.usedOutside(bi, other, idx[0], idx[1])) continue;
+
+            pb.setDest(taken, 0);
+            changed = true;
+        }
+    }
+    return changed;
+}
+
 // Folds conditional branches with a constant condition into a jump.
 // Blocks that became unreachable are removed (and their phi clauses), phis that are left with
 // a single clause become copies.
@@ -438,7 +563,7 @@ fn bool Tools.foldBranches(Tools* t) {
     FunctionInfo* fi = t.fi;
     u32 nb = fi.blocks.getCount();
     Instr* all = fi.instructions.get(0);
-    bool changed = false;
+    bool changed = t.threadBranches();
 
     for (u32 bi = 0; bi < nb; bi++) {
         Block* b = fi.blocks.get(bi);
