@@ -682,6 +682,16 @@ fn void Tools.fixReturn(Tools* t, FunctionInfo* fi) {
         Instr* last = &instrs[instr_idx];
         if (!last.isReturn()) continue;
         Ref* ref = &last.args[0];
+        if (ref.isRegister()) {
+            // value already in the return register: just drop the operand, otherwise copy it there
+            if (ref.value != 0) {
+                t.inserter.addInstr(instr_idx);
+                Instr* copy = t.inserter.getLastInstr();
+                copy.initRegCopy(0, *ref);
+            }
+            ref.clear();
+            continue;
+        }
         if (!ref.isConstant()) continue;
 
         u32 instr_idx2 = t.inserter.addInstr(instr_idx);
