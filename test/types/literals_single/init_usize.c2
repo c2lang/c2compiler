@@ -3,7 +3,12 @@ module test;
 
 fn void test1() {
     usize a = 0;
+#if ARCH_32BIT
+    usize b = 4294967295;
+    usize c = -1;  // @error32{constant value -1 out-of-bounds for type 'usize', range [0, 4294967295]}
+#else
     usize b = 18446744073709551615;
-    usize c = -1;  // @error{constant value -1 out-of-bounds for type 'usize', range [0, 18446744073709551615]}
+    usize c = -1;  // @error64{constant value -1 out-of-bounds for type 'usize', range [0, 18446744073709551615]}
+#endif
 }
 

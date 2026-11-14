@@ -1,7 +1,6 @@
 module sys_mman extern "C";
 
-typedef long long off_t;
-type Offset off_t;
+import sys_types { off_t }
 
 void* mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset);
 int munmap(void* addr, size_t length);

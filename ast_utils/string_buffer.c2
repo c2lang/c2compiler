@@ -32,7 +32,11 @@ public type StringBuf struct {
     u32 indent_step;
 }
 
+#if ARCH_32BIT
+static_assert(20, sizeof(StringBuf));
+#else
 static_assert(24, sizeof(StringBuf));
+#endif
 
 public fn StringBuf* StringBuf.init(StringBuf* buf, char* data, u32 capacity, bool grow, bool use_colors, u32 indent_step) {
     assert(capacity);

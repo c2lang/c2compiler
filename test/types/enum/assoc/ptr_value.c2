@@ -5,7 +5,7 @@ i32 number = 10;
 
 type Enum enum u8 (i32* a) {
     A : { 10 }, // @error{incompatible integer to pointer conversion: 'i32' to 'i32*'}
-    B : { (i32*)(u64)10 },
+    B : { (i32*)(usize)10 },
     C : { &number  },
 }
 
