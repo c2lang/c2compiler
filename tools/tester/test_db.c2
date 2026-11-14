@@ -373,7 +373,10 @@ fn bool Db.parseKeyword(Db* db) {
         StringBuf* build = StringBuf.create(1024, false, 0);
         build.print("target: \"%s\"\n", db.target);
         build.add("libdir:\n");
-        build.add("   - \"$C2_LIBDIR\"\n");
+        //build.add("   - \"$C2_LIBDIR\"\n");
+        Pathname libdir;
+        libdir.init_abs("libs");
+        build.print("   - \"%s\"\n", libdir.path);
         db.writeFile(buildfile_name, build.data(), build.size());
         build.free();
         db.skipLine();

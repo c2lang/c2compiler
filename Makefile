@@ -30,7 +30,7 @@ c2c: $(C2C)~
 
 $(C2C)~: output/bootstrap/bootstrap $(C2C_DEPS)
 	@echo "---- running (bootstrapped$(C2FLAGS)) c2c ----"
-	@output/bootstrap/bootstrap c2c $(C2FLAGS) --fast --quiet --noplugins
+	@C2_PLUGINDIR=output/plugins C2_LIBDIR=libs output/bootstrap/bootstrap c2c $(C2FLAGS) --fast --quiet --noplugins
 	@rm -rf output/bootstrap/cgen
 	@mv -f output/c2c/* output/bootstrap
 	@echo "---- running c2c (no plugins$(C2FLAGS)) ----"
