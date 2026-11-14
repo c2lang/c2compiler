@@ -5,7 +5,7 @@ u32 b;
 u32 a = 0;
 
 fn void test1() {
-    b = a[32:0];     // @error{bitoffset index value '32' too large for type 'u32'}
+    b = a[32:0];     // @error{selection index value '32' too large for type 'u32'}
 }
 
 fn void test2() {
@@ -13,6 +13,6 @@ fn void test2() {
     b = d[63:40];
 
     u8 c = 1;
-    b = c[8:0];     // @error{bitoffset index value '8' too large for type 'u8'}
+    b = c[8:0];     // @error{selection index value '8' too large for type 'u8'}
 }
 

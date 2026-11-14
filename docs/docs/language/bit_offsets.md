@@ -1,10 +1,10 @@
-# Bit offsets
+# Bit selections
 
-__Bit offsets__ are a feature new to C2 — don't confuse them with __bit fields__,
+__Bit selection__ are a feature new to C2 — don't confuse them with __bit fields__,
 which are struct members that are only *x* bits wide, used to pack data tightly
 into memory.
 
-Bit offsets instead let you pull a range of bits directly out of an unsigned
+Bit selections instead let you pull a range of bits directly out of an unsigned
 integer value, which is convenient in code that works with hardware registers,
 wire protocols, or other bit-packed data.
 
@@ -29,16 +29,16 @@ fn void demo() {
 
 * The base value must have an *unsigned* integer type (`u8`/`u16`/`u32`/`u64`, or
   a `type` alias of one) — signed integers, `bool`, pointers and functions are all
-  rejected with `bitoffsets are only allowed on unsigned integer type`.
+  rejected with `bit selections are only allowed on unsigned integer type`.
 * The two indices must themselves be integers; the high index may not be lower
-  than the low index (`left bitoffset index is smaller than right index`), and
-  neither may be negative or exceed the base value's bit width (`bitoffset index
+  than the low index (`left selection index is smaller than right index`), and
+  neither may be negative or exceed the base value's bit width (`selection index
   value 'N' too large for type 'uN'`).
-* A bit offset is a read-only expression: it cannot appear on the left-hand side
-  of an assignment (`bitoffset cannot be used as left hand side expression`).
-* For consistency, the type of a bitoffset is the type of the base value, but
-  when both indices are compile-time constants, the expression value range is known and the
-  bitoffset expression can be stored directly into a smaller type. When either index
+* A bit selection is a read-only expression: it cannot appear on the left-hand side
+  of an assignment (`bit selections cannot be used as left hand side expression`).
+* For consistency, the type of a bit selection is the type of the base value, but
+  when both indices are compile-time constants, the result range is known and the
+  selection expression can be stored directly into a smaller type. When either index
   value is only known at run time, the compiler cannot determine if the value fits
   so an explicit narrowing conversion is needed when assigning to a smaller type:
 
