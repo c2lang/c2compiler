@@ -25,7 +25,11 @@ struct Stat @(cname="stat", no_typedef) {
     long st_ctime_nsec;
     long[3] reserved;
 }
+#if ARCH_32BIT
+static_assert(76, sizeof(Stat));
+#else
 static_assert(144, sizeof(Stat));
+#endif
 int fstat(int fd, Stat* buf);
 int lstat(const char* pathname, Stat* buf);
 int stat(const char* pathname, Stat* buf);
@@ -56,7 +60,11 @@ struct Stat @(cname="stat", no_typedef) {
     int st_lspare;
     long[2] st_qspare;
 }
+#if ARCH_32BIT
+static_assert(88, sizeof(Stat));
+#else
 static_assert(144, sizeof(Stat));
+#endif
 #if ARCH_X86_64
 int fstat(int fd, Stat* buf) @(cname="fstat64");
 int lstat(const char* pathname, Stat* buf) @(cname="lstat64");
@@ -94,7 +102,11 @@ struct Stat @(cname="stat", no_typedef) {
     u64 st_gen;
     u64[10] st_lspare;
 }
+#if ARCH_32BITS
+static_assert(208, sizeof(Stat));
+#else
 static_assert(224, sizeof(Stat));
+#endif
 int fstat(int fd, Stat* buf);
 int lstat(const char* pathname, Stat* buf);
 int stat(const char* pathname, Stat* buf);
