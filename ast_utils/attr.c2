@@ -45,6 +45,7 @@ public type AttrKind enum u8 (const char* const name, const AttrReq required_arg
     AutoExpr     : { "auto_expr",     NoArg },  //               Var, function param only
     Embed        : { "embed",         String }, //               Var, globals only
     Deprecated   : { "deprecated",    String }, //        Func
+    NoInit       : { "noinit",        NoArg },  //               Var
 }
 
 public type AttrValueKind enum u8 {

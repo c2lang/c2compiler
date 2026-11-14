@@ -176,7 +176,7 @@ public fn void StringBuf.print(StringBuf* buf, const char* format @(printf_forma
 
 public fn void StringBuf.vprintf(StringBuf* buf, const char* format, va_list args) @(unused) {
     // formatted output is limited to 4095 bytes
-    char[4096] tmp;
+    char[4096] tmp /*@(noinit)*/;
     char* dest = tmp;
     u32 dest_size = countof(tmp);
     u32 avail = buf.capacity - buf.size_;
