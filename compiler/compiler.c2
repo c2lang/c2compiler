@@ -71,6 +71,7 @@ public type Options struct {
     bool print_external_symbols;
     bool print_ast_stats;
     u8 print_reports;
+    u8 c_warnings;
     bool show_libs;
     bool print_ir;
     bool print_all_ir;

@@ -142,28 +142,29 @@ public fn bool FileBuffer.loadHandle(FileBuffer* file, i32 fd) @(unused) {
     lseek(fd, 0, SEEK_SET);
     if (file_length < 0) {   // file descriptor is not seekable
         u8[4096] buf;
-        isize nread;
-        while ((nread = read(fd, buf, sizeof(buf))) != 0) {
-            if (nread < 0) {
+        isize niread;
+        while ((niread = read(fd, buf, sizeof(buf))) != 0) {
+            if (niread < 0) {
                 if (errno == EINTR)
                     continue;
                 file.error = errno;
                 free(data);
                 return false;
             }
-            if (size + (usize)nread > u32.max - 1) {
+            usize nread = (usize)niread;
+            if (size + nread > u32.max - 1) {
                 file.error = EFBIG;
                 free(data);
                 return false;
             }
-            u8* new_data = realloc(data, size + (usize)nread + 1);
+            u8* new_data = realloc(data, size + nread + 1);
             if (!new_data) {
                 file.error = errno;
                 free(data);
                 return false;
             }
             data = new_data;
-            memcpy(data + size, buf, (usize)nread);
+            memcpy(data + size, buf, nread);
             size += nread;
         }
         if (!data) {
@@ -195,7 +196,7 @@ public fn bool FileBuffer.loadHandle(FileBuffer* file, i32 fd) @(unused) {
                 return false;
             }
             if (nread == 0) break;
-            size += nread;
+            size += (usize)nread;
         }
     }
     if (data) {
@@ -236,7 +237,7 @@ public fn bool FileBuffer.writeHandle(FileBuffer* file, i32 fd) @(unused) {
             file.error = errno;
             return false;
         }
-        size += n;
+        size += (usize)n;
     }
     return true;
 }

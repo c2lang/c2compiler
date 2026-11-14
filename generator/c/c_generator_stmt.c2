@@ -46,6 +46,7 @@ fn void Generator.emitStmt(Generator* gen, StringBuf* out, Stmt* s, u32 indent, 
 
     if (out.endsWith('\n')) out.indent(indent);
 
+    if (gen.map) gen.addLoc(out, s.getLoc());
     gen.indent = indent;
     switch (s.getKind()) {
     case Return:

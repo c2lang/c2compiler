@@ -17,6 +17,7 @@ module c_generator;
 
 import ast { * }
 import c_prec { C_Prec, C_Prec_table }
+import source_map { SourceMap }
 import string_buffer { StringBuf }
 
 fn void Generator.emitExpr(Generator* gen, StringBuf* out, Expr* e) {
@@ -25,6 +26,7 @@ fn void Generator.emitExpr(Generator* gen, StringBuf* out, Expr* e) {
 
 // TODO: use default argument: C_Prec = Assignment
 fn void Generator.emitExpr2(Generator* gen, StringBuf* out, Expr* e, C_Prec prec) {
+    if (gen.map) gen.addLoc(out, e.getStartLoc());
     switch (e.getKind()) {
     case IntegerLiteral:
         IntegerLiteral* i = (IntegerLiteral*)e;
@@ -99,6 +101,7 @@ fn void Generator.emitExpr2(Generator* gen, StringBuf* out, Expr* e, C_Prec prec
             gen.emitBitOffset(out, a.getBase(), index, prec);
         } else {
             gen.emitExpr2(out, a.getBase(), Postfix);
+            if (gen.map) gen.addLoc(out, e.getLoc());
             out.add1('[');
             gen.emitExpr2(out, index, Comma);
             out.add1(']');
@@ -286,6 +289,7 @@ fn void Generator.emitBinaryOperator(Generator* gen, StringBuf* out, Expr* e, C_
     Expr* lhs = b.getLHS();
     gen.emitExpr2(out, lhs, prec2);
     out.space();
+    if (gen.map) gen.addLoc(out, e.getLoc());
     out.add(b.getOpcodeStr());
     out.space();
     Expr* rhs = b.getRHS();
@@ -307,6 +311,7 @@ fn void Generator.emitUnaryOperator(Generator* gen, StringBuf* out, Expr* e, C_P
         if (prec > Prefix) out.rparen();
     } else {
         gen.emitExpr2(out, u.getInner(), Postfix);
+        if (gen.map) gen.addLoc(out, e.getLoc());
         out.add(u.getOpcodeStr());
     }
 }
@@ -385,7 +390,10 @@ fn void Generator.emitMemberExpr(Generator* gen, StringBuf* out, MemberExpr* m, 
         gen.emitMemberDecl(out, m.getDecl(0), mc);
     }
     // dont switch on final, just generate
-    if (!base_only) gen.emitMemberDecl(out, m.getDecl(1), mc);
+    if (!base_only) {
+        if (gen.map) gen.addLoc(out, m.getLoc());
+        gen.emitMemberDecl(out, m.getDecl(1), mc);
+    }
 }
 
 fn void Generator.emitFieldDesigExpr(Generator* gen, StringBuf* out, Expr* e) {
@@ -477,6 +485,10 @@ fn void Generator.emitInitListExpr(Generator* gen, StringBuf* out, InitListExpr*
     u32 start_offset = out.size();
     u32 start_column = out.getColumn();
     u32 num_cols = 1;
+    u32 max_expr_len = 32;
+    u32 max_line_len = 110;
+    SourceMap* save_map = gen.map;
+    gen.map = nil;
     for (u32 i = 0;;) {
         out.space();
         Expr* v = values[i++];
@@ -488,28 +500,40 @@ fn void Generator.emitInitListExpr(Generator* gen, StringBuf* out, InitListExpr*
         total_len += len + 2;
         if (len > max_len) max_len = len;
         if (i == num_values) {
-            if (start_column + total_len <= 110) {
+            num_cols = num_values;
+            if (start_column + total_len <= max_line_len) {
+                if (save_map) {
+                    gen.map = save_map;
+                    out.trim(out.size() - start_offset);
+                    for (i = 0;;) {
+                        out.space();
+                        gen.emitExpr(out, values[i++]);
+                        if (i == num_values) break;
+                        out.add1(',');
+                    }
+                }
                 out.space();
                 gen.indent--;
                 out.add1('}');
                 return;
             }
-            num_cols = num_values;
             break;
         }
         out.add1(',');
-        if (len > 32) break;
+        if (len > max_expr_len) break;
     }
-    // restart output on multiple lines
-    bool align_columns = false;
+    gen.map = save_map;
+    // compute number of columns
+    bool align_columns = false; // align columns only if multiple lines
     static u32[] cols = { 32, 30, 20, 16, 10, 8, 5, 4, 2, 1 }
     u32 j = 0;
     start_column = gen.indent * out.indent_step;
-    while (num_cols > 1 && start_column + num_cols * (max_len + 2) > 110) {
+    while (num_cols > 1 && start_column + num_cols * (max_len + 2) > max_line_len) {
         while (num_cols <= cols[j] || ((cols[j] & (cols[j] - 1)) && !(num_values & (num_values - 1)))) j++;
         num_cols = cols[j];
         align_columns = true;
     }
+    // restart output on multiple lines
     out.trim(out.size() - start_offset);
     out.newline();
     out.indent(gen.indent);

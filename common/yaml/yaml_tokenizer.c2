@@ -279,8 +279,9 @@ fn void Tokenizer.error(Tokenizer* t, Token* result, const char* format @(printf
     va_start(args, format);
     i32 len = vsnprintf(t.error_msg, t.error_msg_size, format, args);
     if ((u32)len < t.error_msg_size) {
+        u32 pos = (u32)len;
         // TODO output standard error message <filename:line:col: msg>
-        snprintf(t.error_msg + len, t.error_msg_size - len, "at line %d:%d", result.loc.line, result.loc.column);
+        snprintf(t.error_msg + pos, t.error_msg_size - pos, "at line %d:%d", result.loc.line, result.loc.column);
     }
     va_end(args);
     result.kind = Error;

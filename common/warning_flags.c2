@@ -30,6 +30,7 @@ public type WarningFlags struct {
     bool no_unused_enum_assoc_value;
     bool no_unreachable_code;
     bool no_unknown_attribute;
+    bool no_unknown_warning;
     bool no_deprecated;
     bool are_errors;
 }

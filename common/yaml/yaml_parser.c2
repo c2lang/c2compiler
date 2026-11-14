@@ -78,8 +78,9 @@ fn void Parser.error(Parser* p, const char* format @(printf_format), ...) {
     i32 len = vsnprintf(cp, size, format, args);
     va_end(args);
     if ((u32)len < size) {
+        u32 pos = (u32)len;
         // TODO output standard error message <filename:line:col: msg>
-        snprintf(cp + len, size - len, " at line %d:%d", p.token.loc.line, p.token.loc.column);
+        snprintf(cp + pos, size - pos, " at line %d:%d", p.token.loc.line, p.token.loc.column);
     }
     longjmp(&p.jmp_err, 1);
 }

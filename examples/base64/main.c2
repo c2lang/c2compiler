@@ -130,7 +130,7 @@ fn i32 handle_string(const char* str, bool decode, base64.Mode mode) {
     u32 len = (u32)strlen(str);
     if (decode) {
         u32 out_len = 0;
-        u8* out = base64.decode(str, len, mode, &out_len);
+        char* out = base64.decode(str, len, mode, &out_len);
         if (!out) {
             fprintf(stderr, "encoding error\n");
             return 1;
@@ -172,7 +172,7 @@ fn i32 handle_file(const char* filename, bool decode, base64.Mode mode, u32 widt
         u32 pos = 0;
         while (usize len = fread(decoded_buf, 1, countof(decoded_buf), fp)) {
             u32 encode_len = base64.encode_block(decoded_buf, (u32)len, encoded_buf);
-            u8* p = encoded_buf;
+            char* p = encoded_buf;
             u32 size = encode_len;
             if (width) {
                 while (pos + size >= width) {

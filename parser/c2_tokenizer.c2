@@ -1968,7 +1968,7 @@ fn u32 hexconv(const char* p, u32 maxn, u32* pc) {
     u32 cc = 0;
     u32 i;
     for (i = 0; i < maxn; i++) {
-        i32 xval = 0;
+        u32 xval = 0;
         char c = p[i];
         if (c >= '0' && c <= '9')
             xval = c - '0';

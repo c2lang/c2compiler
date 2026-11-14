@@ -17,7 +17,7 @@ module expect_file;
 
 import stdio { fprintf, stderr }
 import stdlib { calloc, free, exit, EXIT_FAILURE }
-import string { strncmp }
+import string { strcmp, strncmp }
 
 import file_buffer { FileBuffer }
 import file_utils { Pathname }
@@ -30,6 +30,7 @@ import test_utils { * }
     - compares file content with expectations
     - start/end whitespace is always ingored
     - empty lines test file are ignored
+    - comment lines are ignored (starting with '//')
     - can be in mode complete -> every line must match
     - can be in mode atleast -> at least given lines must be present
     - if lines are sequential, they must also be sequential in test file
@@ -112,6 +113,18 @@ fn bool ExpectFile.checkLine(ExpectFile* f, u32 line_nr, const char* start, cons
         printf("-> match\n");
 #endif
         f.expIndex++;
+        return true;
+    }
+    if (len > 2 && start[len - 1] == '{' && start[len - 2] == ' '
+    &&  strncmp(expectedLine, start, len - 2) == 0
+    &&  f.expIndex + 1 < f.lines.size()
+    &&  !strcmp(f.lines.getLine(f.expIndex + 1), "{")
+    &&  f.lines.getConsecutive(f.expIndex + 1)) {
+        // silently accept non K&R style blocks
+#if TesterDebug
+        printf("-> match 2\n");
+#endif
+        f.expIndex += 2;
         return true;
     }
     if (f.mode == COMPLETE || consecutive) {

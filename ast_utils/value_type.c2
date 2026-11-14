@@ -43,7 +43,7 @@ public fn Value Value.createUnsigned(u64 uvalue) {
 
 public fn Value Value.createSigned(i64 svalue) {
     if (svalue < 0) {
-        return { .kind = Integer, .negative = true, .uvalue = ~svalue + 1 }
+        return { .kind = Integer, .negative = true, .uvalue = ~(u64)svalue + 1 }
     } else {
         return { .kind = Integer, .uvalue = (u64)svalue }
     }
@@ -75,7 +75,7 @@ public fn void Value.setSigned(Value* v, i64 svalue) {
     v.overflow = false;
     if (svalue < 0) {
         v.negative = true;
-        v.uvalue = ~svalue + 1;
+        v.uvalue = ~(u64)svalue + 1;
     } else {
         v.negative = false;
         v.uvalue = (u64)svalue;
@@ -842,7 +842,7 @@ public fn char* ftoa(char* dest, usize size, f64 d) {
         dest[pos++] = '-';
         d = fabs(d);
     }
-    if (!d) {
+    if (d == 0.0) {
         snprintf(dest + pos, size - pos, "0.0");
         return dest;
     }

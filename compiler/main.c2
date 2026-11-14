@@ -231,8 +231,10 @@ Options:
   --help-recipe     print the recipe syntax
   --I2              use IR backend and print generated IR (all versions)
   --noplugins       do not use plugins
-  --showlibs        print available libraries
-  --showplugins     print available plugins
+  --convert-c-warnings  parse the C warnings and errors to produce C2 diagnostics
+  --show-c-warnings  output the warnings and errors produced by the C compiler
+  --show-libs       print available libraries
+  --show-plugins    print available plugins
   --target [triple] cross compile for a specified architecture
   --targets         show available targets in recipe
   -q  --quiet       prevent compiler logging messages
@@ -327,10 +329,18 @@ fn void parse_long_opt(ArgumentParser* ap, const char* arg, compiler.Options* co
         opts.quiet_mode = true;
         break;
     case "showlibs":
+    case "show-libs":
         comp_opts.show_libs = true;
         break;
     case "showplugins":
+    case "show-plugins":
         opts.show_plugins = true;
+        break;
+    case "convert-c-warnings":
+        comp_opts.c_warnings |= 2;
+        break;
+    case "show-c-warnings":
+        comp_opts.c_warnings |= 1;
         break;
     case "target":
         comp_opts.target_triple = ap.getOptionArgument(arg);
@@ -378,6 +388,9 @@ fn void parse_arguments(ArgumentParser* ap, compiler.Options* comp_opts, Options
                         exit(EXIT_SUCCESS);
                     case "lm":
                         opts.use_math_library = true;
+                        continue;
+                    case "Wconversion":
+                        comp_opts.c_warnings |= 4;
                         continue;
                     }
                     ap.unknownOption(arg);

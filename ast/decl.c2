@@ -205,7 +205,10 @@ public fn const char* Decl.getModuleName(const Decl* d) {
     return mod.getName();
 }
 
-public fn SrcLoc Decl.getLoc(const Decl* d) { return d.loc; }
+public fn SrcLoc Decl.getLoc(const Decl* d) {
+    if (d.declBits.has_gen_idx) return 0;
+    return d.loc;
+}
 
 public fn QualType Decl.getType(const Decl* d) { return d.qt; }
 public fn void Decl.setType(Decl* d, QualType qt) { d.qt = qt; }

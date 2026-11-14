@@ -29,7 +29,9 @@ import file_utils { Pathname }
 import linked_list { Element }
 import manifest_writer;
 import process_utils;
+import source_map { SourceMap }
 import source_mgr { SourceMgr }
+import src_loc { SrcLoc }
 import string_buffer { StringBuf }
 import string_list { StringList }
 import string_pool { StringPool }
@@ -38,9 +40,9 @@ import target_info { TargetInfo }
 import value_type { Value }
 
 import c_errno { errno }
-import stdio { snprintf }
-import stdlib { malloc, free }
-import string { strcmp, memset, strerror }
+import stdio { snprintf, printf }
+import stdlib { malloc, free, strtoul }
+import string { strcmp, strncmp, memset, strerror }
 
 type Fragment struct {
     StringBuf* buf;
@@ -73,6 +75,7 @@ type Generator struct {
     const char* cgen_dir;       // output/<target>/cgen
     Diags* diags;
     SourceMgr* sm;
+    SourceMap *map;
     const build_file.Info* build_info;
     const TargetInfo* targetInfo;
     bool enable_asserts;
@@ -82,6 +85,7 @@ type Generator struct {
     bool ubsan;
     bool trace_calls;
     bool no_trace;  //to disable tracing on c2_trace module
+    u8 c_warnings;  // 1: show, 2: convert, 4: enable -Wconversion
     u32 indent;
 
     // set during generation
@@ -110,6 +114,7 @@ type Generator struct {
     TraceCallList calls;
     StringHashMap filenames;
     StringHashMap funcnames;
+    u32 last_off, last_line_off, last_line_num; // for c_warning conoversion
 }
 
 fn const char* Generator.idx2name(const Generator* gen, u32 name_idx) {
@@ -123,10 +128,12 @@ fn StringBuf* Generator.getBuf(Generator* gen, bool is_public) {
     // TODO just have 2 pointers, one for publics, one for non-publics. Might point to same buffer?
     StringBuf* out = gen.out;
     if (gen.fast_build && (is_public || gen.cur_external)) out = gen.header;
+    gen.last_off = gen.last_line_off = out.size();
     return out;
 }
 
 fn Fragment* Generator.getFragment(Generator* gen) {
+    gen.last_off = gen.last_line_off = 0;
     if (gen.free_list.isEmpty()) {
         return Fragment.create();
     }
@@ -142,6 +149,8 @@ fn void Generator.addFragment(Generator* gen, Fragment* f, bool is_public) {
         gen.header_fragments.addTail(&f.list);
     } else {
         gen.used_list.addTail(&f.list);
+        if (gen.map) gen.addLoc(f.buf);
+        gen.last_off = gen.last_line_off = (u32)-1;
     }
 }
 
@@ -149,6 +158,20 @@ fn void Generator.freeFragment(Generator* gen, Fragment* f) {
     gen.free_list.addTail(&f.list);
 }
 
+fn void Generator.addLoc(Generator* gen, StringBuf* out, SrcLoc loc = 0) {
+    if (!gen.map) return;
+    const char* p = out.data();
+    u32 end = out.size();
+    u32 off = gen.last_off;
+    while (off < end) {
+        if (p[off++] == '\n') {
+            gen.last_line_off = off;
+            gen.last_line_num += 1;
+        }
+    }
+    gen.last_off = off;
+    if (loc) gen.map.add(gen.last_line_num, off - gen.last_line_off, loc);
+}
 
 fn void Generator.emitCtv(Generator* /*gen*/, StringBuf* out, const Expr* e) {
     Value val = ast.evalExpr(e);
@@ -214,6 +237,7 @@ fn void Generator.emitDeclName(Generator* gen, StringBuf* out, const Decl* d) {
 }
 
 fn void Generator.emitEnumType(Generator* gen, StringBuf* out, Decl* d) {
+    if (gen.map) gen.addLoc(out, d.getLoc());
     EnumTypeDecl* etd = (EnumTypeDecl*)d;
 
     // typedef enum types to their implementation type
@@ -393,6 +417,7 @@ fn void Generator.genTypeIfNeeded(Generator* gen, QualType qt, bool full) {
 }
 
 fn void Generator.emitStructMember(Generator* gen, StringBuf* out, Decl* d, u32 indent) {
+    if (gen.map) gen.addLoc(out, d.getLoc());
     if (d.isVariable()) {
         out.indent(indent);
 
@@ -429,6 +454,7 @@ fn void Generator.emitStructMember(Generator* gen, StringBuf* out, Decl* d, u32 
 }
 
 fn void Generator.emitStruct(Generator* gen, StringBuf* out, Decl* d, u32 indent) {
+    if (gen.map) gen.addLoc(out, d.getLoc());
     StructTypeDecl* std = (StructTypeDecl*)d;
     const char* stype = std.isStruct() ? "struct" : "union";
     if (std.isGlobal()) {
@@ -544,6 +570,7 @@ fn bool is_c_type(const char* s) {
 }
 
 fn void Generator.emitAliasType(Generator* gen, StringBuf* out, Decl* d) {
+    if (gen.map) gen.addLoc(out, d.getLoc());
     u32 cname = d.getCName();
     if (cname && is_c_type(gen.idx2name(cname)))
         return;
@@ -584,11 +611,13 @@ fn bool emitAsDefine(const VarDecl* vd) {
 
 fn void Generator.emitConstExpr(Generator* gen, StringBuf* out, Expr* e, C_Prec prec) {
     gen.need_const_expr++;
+    if (gen.map) gen.addLoc(out, e.getLoc());
     gen.emitExpr2(out, e, prec);
     gen.need_const_expr--;
 }
 
 fn void Generator.emitGlobalVarDeclCommon(Generator* gen, StringBuf* out, Decl* d) {
+    if (gen.map) gen.addLoc(out, d.getLoc());
     u32 cdef = d.getCDef();
     if (cdef) {
         out.add(gen.idx2name(cdef));
@@ -619,6 +648,7 @@ fn bool Generator.emitGlobalVarDecl(Generator* gen, StringBuf* out, Decl* d) {
         out.space();
         gen.emitConstExpr(out, vd.getInit(), Postfix);
         out.newline();
+        if (gen.map) gen.addLoc(out);
         return true;
     }
 
@@ -675,6 +705,7 @@ fn bool Generator.emitExprValue(Generator* gen, StringBuf* out, Expr* e) {
         gen.diags.errorRange(e.getLoc(), e.getRange(), "%s", result.error_msg);
         return false;
     }
+    if (gen.map) gen.addLoc(out, e.getLoc());
     out.add(result.str());  // XXX parsed literal type may differ from e.getType()
     return true;
 }
@@ -728,6 +759,7 @@ fn void Generator.on_forward_structs(void* arg, Decl* d) {
     if (gen.cur_external && !d.isUsed()) return;
 
     gen.emitForwardStructDecl(d, gen.getBuf(d.isPublic()));
+    if (gen.map) gen.addLoc(gen.out);
 }
 
 fn void Generator.emitForwardStructDecl(Generator* gen, Decl* d, StringBuf* out) {
@@ -760,18 +792,20 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
         if (fd.isTemplate()) break;
 
         StringBuf* out = gen.getBuf(d.isPublic());
+        if (gen.map) gen.addLoc(out, d.getLoc());
         gen.gen_func_proto(fd, out);
         // TODO do in 'normal' body generation step? (also for interfaces)
         if (fd.isInline()) {
             gen.cur_function = fd;
             d.setGenerated();  // for recursive inline functions
-            out.newline();
+            out.space();
             gen.emitStmt(out, (Stmt*)fd.getBody(), 0, true);
             out.newline();
             gen.cur_function = nil;
         } else {
             out.add(";\n");
         }
+        if (gen.map) gen.addLoc(out);
         break;
     case Import:
         break;
@@ -816,12 +850,17 @@ fn void Generator.emitGlobalDecl(Generator* gen, Decl* d) {
 }
 
 fn void Generator.flattenFragments(Generator* gen) {
+    //u32 count = 0;
+    //u32 off = gen.out.size();
     while (!gen.used_list.isEmpty()) {
         Element* e = gen.used_list.popFront();
         Fragment* f = to_container(Fragment, list, e);
         gen.out.add2(f.buf.data(), f.buf.size());
         gen.freeFragment(f);
+        //count++;
     }
+    gen.last_off = gen.last_line_off = gen.out.size();
+    //if (count > 1) printf("flattenFragments: %d fragments at %d ... %d\n", count, off, gen.last_off);
 
     if (!gen.fast_build) {
         assert(gen.header_fragments.isEmpty());
@@ -939,7 +978,7 @@ fn void Generator.emitFunction(Generator* gen, FunctionDecl* fd) {
 
     gen.indent = 0;
     gen.gen_func_proto(fd, out);
-    out.newline();
+    out.space();
     gen.emitStmt(out, (Stmt*)fd.getBody(), 0, true);
     out.newline();
     gen.addFragment(f, false);
@@ -1057,13 +1096,14 @@ fn void Generator.emitHeaderDecl(Generator* gen, StringBuf* out, Decl* d) {
         if (fd.isTemplate()) break;
         gen.gen_func_proto(fd, out);
         if (fd.isInline()) {
-            out.newline();
+            out.space();
             gen.emitStmt(out, (Stmt*)fd.getBody(), 0, true);
             out.newline();
         } else {
             out.add(";\n");
         }
         out.newline();
+        if (gen.map) gen.addLoc(out);
         break;
     case Import:
         assert(0); // cannot happen
@@ -1150,6 +1190,7 @@ fn void Generator.on_module(void* arg, Module* m) {
         add_gen_warning(gen.out);
     } else {
         gen.out.print("\n// --- module %s ---\n", gen.mod_name);
+        gen.addLoc(gen.out);
     }
 
     // Note: special case for stdarg.h va_list
@@ -1164,8 +1205,12 @@ fn void Generator.on_module(void* arg, Module* m) {
 
         ```;
 
-        if (gen.fast_build) gen.header.add(builtin_defs);
-        else gen.out.add(builtin_defs);
+        if (gen.fast_build) {
+            gen.header.add(builtin_defs);
+        } else {
+            gen.out.add(builtin_defs);
+            gen.addLoc(gen.out);
+        }
 
         // set all decls to generated
         m.visitASTs(Generator.ast_mark_generated, arg);
@@ -1193,11 +1238,13 @@ fn void Generator.on_module(void* arg, Module* m) {
     // generate forward decls of structs
     m.visitASTs(Generator.on_ast_structs, arg);
     gen.out.newline();
+    gen.addLoc(gen.out);
 
     gen.deps.init(m, gen, Generator.on_decl);
     m.visitASTs(Generator.on_ast_decl, arg);
 
     gen.out.newline();
+    gen.addLoc(gen.out);
     m.visitASTs(Generator.gen_full_funcs, arg);
 
     if (gen.fast_build) gen.write_files();
@@ -1288,7 +1335,8 @@ public fn void generate(StringPool* astPool,
                         StringList* asm_files,
                         bool enable_asserts,
                         bool fast_build, bool asan, bool msan, bool ubsan,
-                        bool test_mode, bool trace_calls)
+                        bool test_mode, bool trace_calls,
+                        SourceMap* map, u8 c_warnings)
 {
     Pathname dir;
     if (!dir.init(output_dir, Dir) || dir.create_path()) {
@@ -1306,8 +1354,10 @@ public fn void generate(StringPool* astPool,
     gen.trace_calls = trace_calls;
     gen.targetInfo = targetInfo;
     gen.cgen_dir = dir.path;
+    gen.c_warnings = c_warnings;
 
     if (!fast_build) {
+        if (c_warnings & 2) gen.map = map;
         add_gen_warning(gen.out);
     }
 
@@ -1323,6 +1373,8 @@ public fn void generate(StringPool* astPool,
 
     // re-mark used globals from entry points recursively
     Component* mainComp = comps.getLast();
+
+    gen.addLoc(gen.out);
 
     if (gen.target_kind != Executable) {
         gen.generateC2TypesHeader();
@@ -1364,7 +1416,7 @@ public fn void generate(StringPool* astPool,
     gen.free();
 }
 
-public fn void build(const char* output_dir)
+public fn void build(const char* output_dir, Diags* diags, SourceMap* map, u8 c_warnings)
 {
 #if SYSTEM_FREEBSD || SYSTEM_OPENBSD
     const char* make = "gmake";
@@ -1382,7 +1434,59 @@ public fn void build(const char* output_dir)
     i32 retval = process_utils.run_args(dir.path, make, "-j", LogFile);
     if (retval != 0) {
         console.error("error during external C compilation");
-        console.log("see %s%s for details", dir.path, LogFile);
+        console.log("see %s/%s for details", dir.path, LogFile);
+    }
+    if (!c_warnings) return;
+
+    Pathname log_file.init(dir.path, LogFile);
+    FileBuffer fbuf.init();
+    if (fbuf.loadFile(log_file.path)) {
+        bool echo = false;
+        for (const char *p = fbuf.data(); *p;) {
+            const char *str = p;
+            while (p && *p != '\n') p++;
+            if (!strncmp(str, "build.c:", 8)) {
+                // parse the C diagnostic
+                char *p1;
+                char *p2;
+                u32 line = (u32)strtoul(str + 8, &p1, 10);
+                u32 col = (u32)strtoul(p1 + 1, &p2, 10);
+                u8 show_c_diag = c_warnings & 1;
+                if ((c_warnings & 2) && line && col && *p1 == ':' && *p2 == ':') {
+                    // try and locate C2 source position
+                    p2++;
+                    if (*p2 == ' ') p2++;
+                    SrcLoc loc = map.find(line - 1, col - 1);
+                    if (loc) {
+                        //printf("xxx:%d:%d: %06x\n", line, col, loc);
+                        if (!strncmp(p2, "error: ", 7)) {
+                            p2 += 7;
+                            diags.error(loc, "%.*s", (i32)(p - p2), p2);
+                        } else if (!strncmp(p2, "warning: ", 9)) {
+                            p2 += 9;
+                            diags.warn(loc, "%.*s", (i32)(p - p2), p2);
+                        } else {
+                            if (!strncmp(p2, "note: ", 6)) p2 += 6;
+                            diags.note(loc, "%.*s", (i32)(p - p2), p2);
+                        }
+                    } else {
+                        show_c_diag = 1;
+                    }
+                }
+                if (show_c_diag) {
+                    // output C diagnostic
+                    printf("%s/%.*s\n", dir.path, (i32)(p - str), str);
+                    echo = true;
+                }
+            } else
+            if (*str == ' ') {
+                if (echo) printf("%.*s\n", (i32)(p - str), str);
+            } else {
+                echo = false;
+            }
+            if (*p) p++;
+        }
+        fbuf.deinit();
     }
 }
 
