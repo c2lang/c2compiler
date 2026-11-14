@@ -98,7 +98,7 @@ public fn bool FileBuffer.loadStream(FileBuffer* file, FILE* fp) @(unused) {
                 free(data);
                 return false;
             }
-            u8* new_data = realloc(data, size + nread + 1);
+            char* new_data = realloc(data, size + nread + 1);
             if (!new_data) {
                 file.error = errno;
                 free(data);
@@ -144,7 +144,7 @@ public fn bool FileBuffer.loadHandle(FileBuffer* file, i32 fd) @(unused) {
                 free(data);
                 return false;
             }
-            u8* new_data = realloc(data, size + (usize)nread + 1);
+            char* new_data = realloc(data, size + (usize)nread + 1);
             if (!new_data) {
                 file.error = errno;
                 free(data);

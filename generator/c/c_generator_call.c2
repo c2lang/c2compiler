@@ -101,8 +101,8 @@ fn void Generator.emitCall(Generator* gen, StringBuf* out, Expr* e) {
     for (u32 i = 0; i < call_num_args; i++) {
         if (need_comma) out.add(", ");
         Expr* arg = args[i];
+        if (gen.map) gen.addLoc(out, arg.getLoc());
         if (arg.isInitList()) gen.emitCast(out, arg.getType(), true);
-
         gen.emitExpr(out, arg);
         need_comma = true;
     }

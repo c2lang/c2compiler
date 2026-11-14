@@ -204,6 +204,7 @@ public fn void BuildTarget.disableWarnings(BuildTarget* t) {
     t.warnings.no_unused_enum_assoc_value = true;
     t.warnings.no_unreachable_code = true;
     t.warnings.no_unknown_attribute = true;
+    t.warnings.no_unknown_warning = true;
     t.warnings.no_deprecated = true;
 }
 
@@ -222,6 +223,11 @@ public fn void BuildTarget.enableWarnings(BuildTarget* t) {
     t.warnings.no_unused_enum_assoc_value = false;
     t.warnings.no_unreachable_code = false;
     t.warnings.no_unknown_attribute = false;
+#ifdef BOOTSTRAP
+    t.warnings.no_unknown_warning = true;
+#else
+    t.warnings.no_unknown_warning = false;
+#endif
     t.warnings.no_deprecated = false;
 }
 

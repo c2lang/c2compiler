@@ -17,6 +17,7 @@ set common
     common/linked_list.c2
     common/module_list.c2
     common/process_utils.c2
+    common/source_map.c2
     common/source_mgr.c2
     common/string_list.c2
     common/string_map.c2
@@ -165,6 +166,7 @@ executable c2c
     $warnings no-unused-enum-constant
     $warnings unreachable-code
     #$warnings promote-to-error
+    #$warnings conversion
     $use pthread dynamic
     $use math dynamic
 

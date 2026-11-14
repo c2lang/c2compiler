@@ -580,6 +580,9 @@ fn void Parser.parseWarnings(Parser* p) {
         case "unknown-attribute":
             warnings.no_unknown_attribute = disable;
             break;
+        case "unknown-warning":
+            warnings.no_unknown_warning = disable;
+            break;
         case "deprecated":
             warnings.no_deprecated = disable;
             break;
@@ -587,7 +590,9 @@ fn void Parser.parseWarnings(Parser* p) {
             warnings.are_errors = !disable;
             break;
         default:
-            p.warning("unknown warning '%s'", option);
+            if (!warnings.no_unknown_warning) {
+                p.warning("unknown warning '%s'", option);
+            }
             break;
         }
         p.consumeToken();

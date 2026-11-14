@@ -1,0 +1,71 @@
+/* Copyright 2022-2026 Bas van den Berg, Charlie Gordon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module source_map;
+
+//import stdio { printf }
+import stdlib { realloc, free }
+
+public type SourceMap struct {
+    u32 len, cap;
+    u32* arr;
+}
+
+public fn void SourceMap.init(SourceMap *map) {
+    *map = {}
+}
+
+public fn void SourceMap.destroy(SourceMap *map) {
+    free(map.arr);
+    *map = {}
+}
+
+public fn void SourceMap.add(SourceMap *map, u32 line, u32 col, u32 loc) {
+    u32 lcn = (line << 10) + col;
+    if (map.len) {
+        u32 last_lcn = map.arr[map.len - 2];
+        u32 last_loc = map.arr[map.len - 1];
+        if (last_lcn >> 10 == line) {
+            // ignore if same line and column difference
+            if (lcn == last_lcn) {
+                map.arr[map.len - 1] = loc;
+                return;
+            }
+            if (lcn - last_lcn == loc - last_loc) {
+                return;
+            }
+        }
+    }
+    if (map.len + 2 > map.cap) {
+        u32 new_cap = map.cap + map.cap / 2 + 16;
+        u32* new_arr = realloc(map.arr, new_cap * sizeof(*map.arr));
+        map.arr = new_arr;
+        map.cap = new_cap;
+    }
+    //printf("xxx:%d:%d: %06x\n", line, col, loc);
+    map.arr[map.len++] = lcn;
+    map.arr[map.len++] = loc;
+}
+
+public fn u32 SourceMap.find(const SourceMap *map, u32 line, u32 col) {
+    if (map.len < 2) return 0;
+    u32 lcn = (line << 10) + col;
+    u32 i = 2;
+    while (i < map.cap && map.arr[i] <= lcn) i += 2;
+    u32 found = map.arr[i - 2];
+    if (found >> 10 != line) return 0;
+    //printf("xxx:%d:%d: %06x + %d\n", found >> 10, found & 1023, map.arr[i - 1], (lcn - found));
+    return map.arr[i - 1] + (lcn - found);
+}
