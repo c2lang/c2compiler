@@ -4,8 +4,51 @@ module test;
 type X struct {
     i32[32] a;
 }
+X an_x;
 
 u32 total = sizeof(X) + 10;
 
-// This does not work because sizeof currently has u32 type
-//static_assert(sizeof(sizeof(usize)) == sizeof(usize));
+static_assert(sizeof(sizeof(usize)) == sizeof(usize));
+static_assert(sizeof(offsetof(X, a)) == sizeof(usize));
+//static_assert(sizeof(countof(X.a)) == sizeof(usize));
+static_assert(sizeof(countof(an_x.a)) == sizeof(usize));
+
+fn u32 bar(u32 x, u32 y) {
+    return x + y;
+}
+
+fn u32 foo(usize x, u32 y) {
+    u32[] a = {
+        sizeof(X),
+        +sizeof(X),
+        //-sizeof(X),
+        ~sizeof(X),
+        sizeof(X) + 1,
+        sizeof(X) - 1,
+        sizeof(X) * 2,
+        sizeof(X) / 2,
+        sizeof(X) % 2,
+        sizeof(X) << 1,
+        sizeof(X) >> 1,
+        sizeof(X) | 1,
+        sizeof(X) & 1,
+        sizeof(X) ^ 1,
+        sizeof(X) + y,
+        sizeof(X) - y,
+        sizeof(X) * y,
+        sizeof(X) / y,
+        sizeof(X) % y,
+        sizeof(X) << y,
+        sizeof(X) >> y,
+        sizeof(X) | y,
+        sizeof(X) & y,
+        sizeof(X) ^ y,
+        sizeof(X) ? sizeof(X) : 1,
+        sizeof(X) ? 1 : y, sizeof(X) ? sizeof(X) : y,
+        sizeof(X) + y * sizeof(i32),
+    }
+    return bar(sizeof(X), y);
+}
+
+public fn i32 main() { foo(sizeof(X), 1); return 0; }
+

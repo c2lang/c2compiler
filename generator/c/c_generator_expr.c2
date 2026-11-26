@@ -137,7 +137,7 @@ fn void Generator.emitExpr2(Generator* gen, StringBuf* out, Expr* e, C_Prec prec
         ImplicitCastExpr* i = (ImplicitCastExpr*)e;
         if (i.getKind() == IntegralCast) {
             QualType qt = e.getType();
-            if (qt.isFloat32()) {
+            if (qt.isFloat32() /* || gen.need_exact_type*/) {
                 if (prec > Prefix) out.lparen();
                 gen.emitCast(out, qt, false);
                 gen.emitExpr2(out, i.getInner(), Prefix);
@@ -412,35 +412,37 @@ fn void Generator.emitArrayDesigExpr(Generator* gen, StringBuf* out, Expr* e) {
 
 fn void Generator.emitBuiltinExpr(Generator* gen, StringBuf* out, Expr* e) {
     BuiltinExpr* b = (BuiltinExpr*)e;
+    const char* cast_prefix = gen.need_exact_type ? "(size_t)" : "";
+
     switch (b.getKind()) {
     case Sizeof:
         if (b.useLiteral()) {
-            out.add("(u32)sizeof(");
+            out.add("sizeof(");
             gen.emitExpr(out, b.getInner());
             out.rparen();
         } else {
-            out.print("%d", b.getValue());
+            out.print("%s%d", cast_prefix, b.getValue());
         }
         break;
     case Countof:
         if (b.useLiteral()) {
             // Note: ARRAY_SIZE looks nicer, but doesn't work for countof(Enum)
-            out.add("(u32)ARRAY_SIZE(");
+            out.add("ARRAY_SIZE(");
             gen.emitExpr(out, b.getInner());
             out.rparen();
         } else {
-            out.print("%d", b.getValue());
+            out.print("%s%d", cast_prefix, b.getValue());
         }
         break;
     case OffsetOf:
         if (b.useLiteral()) {
-            out.add("(u32)offsetof("); // type, member
+            out.add("offsetof("); // type, member
             gen.emitExpr(out, b.getInner());
             out.add(", ");
             gen.emitExpr(out, b.getOffsetOfMember());
             out.rparen();
         } else {
-            out.print("%d", b.getValue());
+            out.print("%s%d", cast_prefix, b.getValue());
         }
         break;
     case ToContainer:

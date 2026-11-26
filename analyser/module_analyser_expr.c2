@@ -339,7 +339,7 @@ fn QualType Analyser.analyseConditionalOperator(Analyser* ma, Expr** e_ptr) {
         BuiltinType* bl = lcanon.getBuiltin();
         BuiltinType* br = rcanon.getBuiltin();
         // Use modified version of usual_arithmetic_conversion
-        QualType optype = conversion_checker.get_common_arithmetic_type(bl, br);
+        QualType optype = conversion_checker.get_common_arithmetic_type(bl, br, ma.word_size);
         if (!optype.isValid()) goto invalid;
         BuiltinType* bi = optype.getBuiltin();
         if (bl != bi) {
