@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+import stdlib;
+
+public fn bool test1() @(noreturn) {    // @error{noreturn functions must have a void return type}
+    stdlib.exit(-1);
+    return true;
+}
+

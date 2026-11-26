@@ -49,6 +49,10 @@ fn void Analyser.analyseFunction(Analyser* ma, FunctionDecl* fd, bool full) {
     QualType qt = ma.analyseTypeRef(rtype, full);
     if (qt.isInvalid()) return;
 
+    if (fd.hasAttrNoReturn() && !qt.isVoid()) {
+        ma.error(rtype.getLoc(), "noreturn functions must have a void return type");
+    }
+
     QualType canon = qt.getCanonicalType();
     if (canon.isArray()) {
         ma.error(rtype.getLoc(), "functions are not allowed to return array types");
