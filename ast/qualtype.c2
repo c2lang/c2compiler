@@ -105,6 +105,22 @@ public fn bool QualType.isValid(const QualType qt) { return qt.ptr != 0; }
 public fn bool QualType.isInvalid(const QualType qt) { return qt.ptr == 0; }
 
 // Note: assumes type is valid
+public fn bool QualType.isSigned(const QualType qt) {
+    QualType canon = qt.getCanonicalType();
+    const Type* t = canon.getTypeOrNil();
+    if (t.isBuiltinType()) {
+        BuiltinType* bi = (BuiltinType*)t;
+        return bi.isSigned();
+    }
+    if (t.isEnumType()) {
+        EnumTypeDecl* d = ((EnumType*)t).getDecl();
+        QualType impl = d.getImplType();
+        return impl.isSigned();
+    }
+    return false;
+}
+
+// Note: assumes type is valid
 public fn u32 QualType.getBitFieldWidth(const QualType qt, bool precise = false) {
     QualType canon = qt.getCanonicalType();
     const Type* t = canon.getTypeOrNil();

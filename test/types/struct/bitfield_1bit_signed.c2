@@ -1,0 +1,10 @@
+// @warnings{no-unused}
+module test;
+
+type Foo struct {
+    u32 a : 1;
+    i32 b : 2;
+    bool c : 1;
+    i32 d : 1;  // @error{1 bit bit-fields must be unsigned}
+}
+
